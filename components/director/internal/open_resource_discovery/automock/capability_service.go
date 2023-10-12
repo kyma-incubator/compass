@@ -21,13 +21,16 @@ func (_m *CapabilityService) Create(ctx context.Context, resourceType resource.T
 	ret := _m.Called(ctx, resourceType, resourceID, packageID, in, spec, capabilityHash)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, *string, model.CapabilityInput, []*model.SpecInput, uint64) (string, error)); ok {
+		return rf(ctx, resourceType, resourceID, packageID, in, spec, capabilityHash)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, *string, model.CapabilityInput, []*model.SpecInput, uint64) string); ok {
 		r0 = rf(ctx, resourceType, resourceID, packageID, in, spec, capabilityHash)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, *string, model.CapabilityInput, []*model.SpecInput, uint64) error); ok {
 		r1 = rf(ctx, resourceType, resourceID, packageID, in, spec, capabilityHash)
 	} else {
@@ -56,6 +59,10 @@ func (_m *CapabilityService) ListByApplicationID(ctx context.Context, appID stri
 	ret := _m.Called(ctx, appID)
 
 	var r0 []*model.Capability
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Capability, error)); ok {
+		return rf(ctx, appID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Capability); ok {
 		r0 = rf(ctx, appID)
 	} else {
@@ -64,7 +71,6 @@ func (_m *CapabilityService) ListByApplicationID(ctx context.Context, appID stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appID)
 	} else {
@@ -79,6 +85,10 @@ func (_m *CapabilityService) ListByApplicationTemplateVersionID(ctx context.Cont
 	ret := _m.Called(ctx, appTemplateVersionID)
 
 	var r0 []*model.Capability
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Capability, error)); ok {
+		return rf(ctx, appTemplateVersionID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Capability); ok {
 		r0 = rf(ctx, appTemplateVersionID)
 	} else {
@@ -87,7 +97,6 @@ func (_m *CapabilityService) ListByApplicationTemplateVersionID(ctx context.Cont
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appTemplateVersionID)
 	} else {
@@ -111,13 +120,12 @@ func (_m *CapabilityService) Update(ctx context.Context, resourceType resource.T
 	return r0
 }
 
-type mockConstructorTestingTNewCapabilityService interface {
+// NewCapabilityService creates a new instance of CapabilityService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewCapabilityService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewCapabilityService creates a new instance of CapabilityService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewCapabilityService(t mockConstructorTestingTNewCapabilityService) *CapabilityService {
+}) *CapabilityService {
 	mock := &CapabilityService{}
 	mock.Mock.Test(t)
 
