@@ -9,10 +9,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ParentAccessVerifier defines parent access verifier
 type ParentAccessVerifier struct {
 	repo LabelRepository
 }
 
+// NewDefaultParentAccessVerifier creates new ParentAccessVerifier with default converter and label repository
 func NewDefaultParentAccessVerifier() *ParentAccessVerifier {
 	conv := NewConverter()
 	return &ParentAccessVerifier{
@@ -20,12 +22,14 @@ func NewDefaultParentAccessVerifier() *ParentAccessVerifier {
 	}
 }
 
+// NewParentAccessVerifier creates new ParentAccessVerifier
 func NewParentAccessVerifier(labelRepo LabelRepository) *ParentAccessVerifier {
 	return &ParentAccessVerifier{
 		repo: labelRepo,
 	}
 }
 
+// Verify verifies that the provided parent belongs to the same tenant as the one in the context
 func (p *ParentAccessVerifier) Verify(ctx context.Context, parentResourceType resource.Type, parentID string) error {
 	tnt, err := tenant.LoadTenantPairFromContext(ctx)
 	if err != nil {
