@@ -1,0 +1,100 @@
+package label
+
+import (
+	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/pkg/errors"
+)
+
+type ParentAccessVerifier struct {
+	repo LabelRepository
+}
+
+func NewDefaultParentAccessVerifier() *ParentAccessVerifier {
+	conv := NewConverter()
+	return &ParentAccessVerifier{
+		repo: NewRepository(conv),
+	}
+}
+
+func NewParentAccessVerifier(labelRepo LabelRepository) *ParentAccessVerifier {
+	return &ParentAccessVerifier{
+		repo: labelRepo,
+	}
+}
+
+func (p *ParentAccessVerifier) Verify(ctx context.Context, parentResourceType resource.Type, parentID string) error {
+	tnt, err := tenant.LoadTenantPairFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	labelableObject := resourceTypeToLabelableObject(parentResourceType)
+	if labelableObject == "" {
+		return errors.Errorf("unknown labelable object for resource %s", parentResourceType)
+	}
+
+	lbl, err := p.repo.GetByKeyGlobal(ctx, labelableObject, parentID, globalSubaccountIDLabelKey)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return errors.Errorf("the parent of type %s with id %s does not have %q label", parentResourceType, parentID, globalSubaccountIDLabelKey)
+		}
+		return errors.Wrapf(err, "cannot retrieve %q label for parent of type %s with id %s", globalSubaccountIDLabelKey, parentResourceType, parentID)
+	}
+	value, ok := lbl.Value.(string)
+	if !ok {
+		return errors.Errorf("unexpected type of %q label, expect: string, got: %T", globalSubaccountIDLabelKey, lbl.Value)
+	}
+
+	if value == tnt.ExternalID {
+		return nil
+	}
+
+	//objectField := getLabelableObjectField(parentResourceType)
+	//if objectField == "" {
+	//	return errors.Errorf("unkown labelable object field for resource %s", parentResourceType)
+	//}
+	//
+	//labelGetter := repo.NewSingleGetterGlobal(resource.Label, tableName, tableColumns)
+	//conds := repo.Conditions{
+	//	repo.NewEqualCondition(keyColumn, globalSubaccountIDLabelKey),
+	//	repo.NewEqualCondition(objectField, parentID),
+	//}
+	//var entity Entity
+	//if err := labelGetter.GetGlobal(ctx, conds, repo.NoOrderBy, &entity); err != nil {
+	//	if apperrors.IsNotFoundError(err) {
+	//		return errors.Errorf("the parent of type %s with id %s does not have %q label", parentResourceType, parentID, globalSubaccountIDLabelKey)
+	//	}
+	//	return errors.Wrapf(err, "cannot retrieve %q label for parent of type %s with id %s", globalSubaccountIDLabelKey, parentResourceType, parentID)
+	//}
+	//tenantLabelValue := stripQuotes(entity.Value)
+	//if tenantLabelValue == tnt.ExternalID {
+	//	return nil
+	//}
+
+	return errors.Errorf("the provided tenant %s and the parent tenant %s do not match", tnt.ExternalID, value)
+}
+
+//func getLabelableObjectField(r resource.Type) string {
+//	if r == resource.ApplicationTemplate {
+//		return labelableObjectField(model.AppTemplateLabelableObject)
+//	}
+//	return ""
+//}
+
+func resourceTypeToLabelableObject(r resource.Type) model.LabelableObject {
+	if r == resource.ApplicationTemplate {
+		return model.AppTemplateLabelableObject
+	}
+	return ""
+}
+
+//func stripQuotes(input string) string {
+//	if strings.HasPrefix(input, `"`) && strings.HasSuffix(input, `"`) {
+//		return input[1 : len(input)-1]
+//	}
+//	return input
+//}
