@@ -105,7 +105,7 @@ FROM capabilities,
      jsonb_each(capabilities.documentation_labels) AS expand,
      jsonb_array_elements_text(expand.value) AS elements;
 
--- Create views tenants_capabilities, capability_definitions, capability_specifications_tenants and capabilities_tenants
+-- Create views tenants_capabilities, capability_definitions, capability_specifications_tenants, capabilities_tenants and capability_specifications_fetch_requests_tenants
 -- Recreate views api_specifications_tenants and event_specifications_tenants
 DROP VIEW IF EXISTS event_specifications_tenants;
 CREATE VIEW tenants_capabilities
@@ -174,18 +174,26 @@ WHERE capability_def_id IS NOT NULL;
 CREATE OR REPLACE VIEW api_specifications_tenants AS
 (SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
                                              INNER JOIN api_definitions AS ad ON ad.id = s.api_def_id
-                                             INNER JOIN tenant_applications ta on ta.id = ad.app_id);
+                                             INNER JOIN tenant_applications ta ON ta.id = ad.app_id);
 
 
 CREATE OR REPLACE VIEW event_specifications_tenants AS
 (SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
                                             INNER JOIN event_api_definitions AS ead ON ead.id = s.event_def_id
-                                            INNER JOIN tenant_applications ta on ta.id = ead.app_id);
+                                            INNER JOIN tenant_applications ta ON ta.id = ead.app_id);
 
 CREATE VIEW capability_specifications_tenants AS
 (SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
                                              INNER JOIN capabilities AS cd ON cd.id = s.capability_def_id
-                                             INNER JOIN tenant_applications ta on ta.id = cd.app_id);
+                                             INNER JOIN tenant_applications ta ON ta.id = cd.app_id);
+
+
+CREATE VIEW capability_specifications_fetch_requests_tenants AS
+(SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
+                                             INNER JOIN specifications s ON fr.spec_id = s.id
+                                             INNER JOIN capabilities AS cd ON cd.id = s.capability_def_id
+                                             INNER JOIN tenant_applications ta ON ta.id = cd.app_id);
+
 
 CREATE VIEW capabilities_tenants AS
 SELECT cd.*, ta.tenant_id, ta.owner FROM capabilities AS cd

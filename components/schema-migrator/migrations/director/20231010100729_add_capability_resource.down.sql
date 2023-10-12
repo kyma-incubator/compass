@@ -12,6 +12,7 @@ DROP VIEW IF EXISTS capability_definitions;
 DROP VIEW IF EXISTS api_specifications_tenants;
 DROP VIEW IF EXISTS event_specifications_tenants;
 DROP VIEW IF EXISTS capability_specifications_tenants;
+DROP VIEW IF EXISTS capability_specifications_fetch_requests_tenants;
 DROP VIEW IF EXISTS capabilities_tenants;
 
 DROP VIEW IF EXISTS tenants_specifications;

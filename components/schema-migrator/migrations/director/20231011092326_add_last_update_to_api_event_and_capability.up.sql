@@ -227,7 +227,6 @@ FROM capabilities c
                FROM apps_subaccounts) t_apps ON c.app_id = t_apps.id;
 
 
-
 -- Recreate views api_specifications_tenants, event_specifications_tenants and capability_specifications_tenants
 CREATE OR REPLACE VIEW api_specifications_tenants AS
 (SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
