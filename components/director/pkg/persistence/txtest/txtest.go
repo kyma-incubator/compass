@@ -145,6 +145,17 @@ func (g txCtxGenerator) ThatDoesntExpectCommit() (*automock.PersistenceTx, *auto
 	return persistTx, transact
 }
 
+func (g txCtxGenerator) ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(times int) (*automock.PersistenceTx, *automock.Transactioner) {
+	persistTx := &automock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil).Once()
+
+	transact := &automock.Transactioner{}
+	transact.On("Begin").Return(persistTx, nil).Times(times + 1)
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(times + 1)
+
+	return persistTx, transact
+}
+
 // ThatFailsOnCommit missing godoc
 func (g txCtxGenerator) ThatFailsOnCommit() (*automock.PersistenceTx, *automock.Transactioner) {
 	persistTx := &automock.PersistenceTx{}
