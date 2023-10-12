@@ -64,9 +64,10 @@ spec:
               drop:
               - ALL
             privileged: false
-            runAsGroup: 65534
             runAsNonRoot: true
-            runAsUser: 65534
+            # Run as user 1337 to avoid networking problems caused by the Istio CNI approach
+            # https://istio.io/latest/docs/setup/additional-setup/cni/#compatibility-with-application-init-containers
+            runAsUser: 1337
         {{- end }}
         - name: {{ .Chart.Name }}-automigrate
           image: "{{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.hydra) }}"
@@ -95,9 +96,10 @@ spec:
               drop:
               - ALL
             privileged: false
-            runAsGroup: 1000
             runAsNonRoot: true
-            runAsUser: 1000
+            # Run as user 1337 to avoid networking problems caused by the Istio CNI approach
+            # https://istio.io/latest/docs/setup/additional-setup/cni/#compatibility-with-application-init-containers
+            runAsUser: 1337
     {{- end}}
       volumes:
         - name: {{ include "hydra.name" . }}-config-volume
