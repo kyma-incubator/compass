@@ -70,7 +70,7 @@ const (
 	// CapabilityCustomTypeRegex represents the valid structure of a Capability custom type
 	CapabilityCustomTypeRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	// ShortDescriptionSapCorePolicyRegex represents the valid structure of a short description field due to sap core policy
-	ShortDescriptionSapCorePolicyRegex = "^([a-zA-Z0-9 _\\-.(),']+|(S/4HANA|country/region|G/L))$"
+	ShortDescriptionSapCorePolicyRegex = "^([a-zA-Z0-9 _\\-.(),']*(S/4HANA|country/region|G/L)*[a-zA-Z0-9 _\\-.(),']*)$"
 
 	// MinDescriptionLength represents the minimal accepted length of the Description field
 	MinDescriptionLength = 1
@@ -635,12 +635,12 @@ func validateCapabilityInput(capability *model.CapabilityInput) error {
 	return validation.ValidateStruct(capability,
 		validation.Field(&capability.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&capability.Name, validation.Required),
-		validation.Field(&capability.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
+		validation.Field(&capability.Description, validation.NilOrNotEmpty, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&capability.OrdID, validation.Required, validation.Match(regexp.MustCompile(CapabilityOrdIDRegex))),
 		validation.Field(&capability.Type, validation.Required, validation.In(CapabilityTypeCustom, CapabilityTypeMDICapabilityV1), validation.When(capability.CustomType != nil, validation.In(CapabilityTypeCustom))),
 		validation.Field(&capability.CustomType, validation.When(capability.Type != CapabilityTypeCustom, validation.Empty), validation.Match(regexp.MustCompile(CapabilityCustomTypeRegex))),
 		validation.Field(&capability.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
-		validation.Field(&capability.ShortDescription, shortDescriptionRules...),
+		validation.Field(&capability.ShortDescription, optionalShortDescriptionRules...),
 		validation.Field(&capability.Tags, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),

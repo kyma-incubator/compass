@@ -4193,6 +4193,7 @@ func TestDocument_ValidateCapability(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Invalid `description` field with exceeding max length for Capability",
 			DocumentProvider: func() []*ord.Document {
@@ -4282,6 +4283,7 @@ func TestDocument_ValidateCapability(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Exceeded length of `shortDescription` field for Capability",
 			DocumentProvider: func() []*ord.Document {
