@@ -55,7 +55,6 @@ func TestTombstoneProcessor_Process(t *testing.T) {
 			Name: "Success for application resource",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(3)
-
 			},
 			TombstoneSvcFn: func() *automock.TombstoneService {
 				tombstoneSvc := &automock.TombstoneService{}
@@ -72,7 +71,6 @@ func TestTombstoneProcessor_Process(t *testing.T) {
 			Name: "Success for application template version resource",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(3)
-
 			},
 			TombstoneSvcFn: func() *automock.TombstoneService {
 				tombstoneSvc := &automock.TombstoneService{}
