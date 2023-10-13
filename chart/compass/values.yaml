@@ -163,7 +163,7 @@ global:
       name: compass-instance-creator
     gateway:
       dir: dev/incubator/
-      version: "PR-3369"
+      version: "PR-3387"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
