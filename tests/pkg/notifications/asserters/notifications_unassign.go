@@ -24,7 +24,19 @@ type UnassignNotificationsAsserter struct {
 }
 
 func NewUnassignNotificationsAsserter(expectedNotificationsCountForOp int, targetObjectID string, sourceObjectID string, localTenantID string, appNamespace string, region string, tenant string, tenantParentCustomer string, externalServicesMockMtlsSecuredURL string, client *http.Client) *UnassignNotificationsAsserter {
-	return &UnassignNotificationsAsserter{op: unassignOperation, expectedNotificationsCountForOp: expectedNotificationsCountForOp, targetObjectID: targetObjectID, sourceObjectID: sourceObjectID, localTenantID: localTenantID, appNamespace: appNamespace, region: region, tenant: tenant, tenantParentCustomer: tenantParentCustomer, externalServicesMockMtlsSecuredURL: externalServicesMockMtlsSecuredURL, client: client}
+	return &UnassignNotificationsAsserter{
+		op:                                 unassignOperation,
+		expectedNotificationsCountForOp:    expectedNotificationsCountForOp,
+		targetObjectID:                     targetObjectID,
+		sourceObjectID:                     sourceObjectID,
+		localTenantID:                      localTenantID,
+		appNamespace:                       appNamespace,
+		region:                             region,
+		tenant:                             tenant,
+		tenantParentCustomer:               tenantParentCustomer,
+		externalServicesMockMtlsSecuredURL: externalServicesMockMtlsSecuredURL,
+		client:                             client,
+	}
 }
 
 func (a *UnassignNotificationsAsserter) AssertExpectations(t *testing.T, ctx context.Context) {

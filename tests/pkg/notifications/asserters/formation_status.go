@@ -19,7 +19,12 @@ type FormationStatusAsserter struct {
 }
 
 func NewFormationStatusAsserter(tenant string, certSecuredGraphQLClient *graphql.Client) *FormationStatusAsserter {
-	return &FormationStatusAsserter{tenant: tenant, certSecuredGraphQLClient: certSecuredGraphQLClient, condition: gql.FormationStatusConditionReady, errors: nil}
+	return &FormationStatusAsserter{
+		tenant:                   tenant,
+		certSecuredGraphQLClient: certSecuredGraphQLClient,
+		condition:                gql.FormationStatusConditionReady,
+		errors:                   nil,
+	}
 }
 
 func (a *FormationStatusAsserter) WithCondition(condition gql.FormationStatusCondition) *FormationStatusAsserter {

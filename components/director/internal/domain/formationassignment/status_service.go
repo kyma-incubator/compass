@@ -114,6 +114,7 @@ func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.C
 
 	fa.State = string(model.ReadyAssignmentState)
 	fa.Value = nil
+	// update the fa and do not delete it as it is needed for the destination creator operator constraint
 	if err := fau.repo.Update(ctx, fa); err != nil {
 		return errors.Wrapf(err, "while updating formation asssignment with ID: %s to: %q state", id, model.ReadyAssignmentState)
 	}

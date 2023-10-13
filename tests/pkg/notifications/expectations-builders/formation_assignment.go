@@ -27,29 +27,32 @@ func (b *FAExpectationsBuilder) GetExpectedAssignmentsCount() int {
 	return count
 }
 
-func (b *FAExpectationsBuilder) getCurrentParticipants() []string {
-	participants := make([]string, 0, len(b.expectations))
+func (b *FAExpectationsBuilder) getCurrentParticipantIDs() []string {
+	participantIDs := make([]string, 0, len(b.expectations))
 	for participantID, _ := range b.expectations {
-		participants = append(participants, participantID)
+		participantIDs = append(participantIDs, participantID)
 	}
 
-	return participants
+	return participantIDs
 }
 
-func (b *FAExpectationsBuilder) WithParticipant(participantID string) *FAExpectationsBuilder {
-	if _, ok := b.expectations[participantID]; ok {
+func (b *FAExpectationsBuilder) WithParticipant(newParticipantID string) *FAExpectationsBuilder {
+	if _, ok := b.expectations[newParticipantID]; ok {
 		return b
 	}
 
-	for _, val := range b.expectations {
-		val[participantID] = fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}
+	// add records for assignments where the new participant is source and a participant that was already added to the expectations structure is target
+	for _, expectationsForPreviouslyAddedParticipantTarget := range b.expectations {
+		expectationsForPreviouslyAddedParticipantTarget[newParticipantID] = fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}
 	}
 
-	currentParticipants := b.getCurrentParticipants()
-	b.expectations[participantID] = make(map[string]fixtures.AssignmentState, len(currentParticipants)+1)
-	b.expectations[participantID][participantID] = fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}
-	for _, participant := range currentParticipants {
-		b.expectations[participantID][participant] = fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}
+	currentParticipantIDs := b.getCurrentParticipantIDs()
+	b.expectations[newParticipantID] = make(map[string]fixtures.AssignmentState, len(currentParticipantIDs)+1)
+	// add record for the loop assignment
+	b.expectations[newParticipantID][newParticipantID] = fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}
+	// add records for assignments where the new participant is target and the source is a participant that was already added to the expectations structure
+	for _, previouslyAddedParticipantID := range currentParticipantIDs {
+		b.expectations[newParticipantID][previouslyAddedParticipantID] = fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}
 	}
 
 	return b

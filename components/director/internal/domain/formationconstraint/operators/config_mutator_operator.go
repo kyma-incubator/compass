@@ -26,7 +26,7 @@ func (e *ConstraintEngine) MutateConfig(ctx context.Context, input OperatorInput
 
 	i, ok := input.(*formationconstraint.ConfigMutatorInput)
 	if !ok {
-		return false, errors.New("Incompatible input")
+		return false, errors.Errorf("Incompatible input for operator: %s", ConfigMutatorOperator)
 	}
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q for location with constraint type: %q and operation name: %q during %q operation", i.ResourceType, i.ResourceSubtype, i.Location.ConstraintType, i.Location.OperationName, i.Operation)
@@ -60,9 +60,9 @@ func (e *ConstraintEngine) MutateConfig(ctx context.Context, input OperatorInput
 		formationAssignment.State = *i.State
 	}
 
-	if i.Configuration != nil {
+	if i.ModifiedConfiguration != nil {
 		log.C(ctx).Infof("Updating formation assignment configuration for formation assignment with ID: %s", formationAssignment.ID)
-		formationAssignment.Value = json.RawMessage(*i.Configuration)
+		formationAssignment.Value = json.RawMessage(*i.ModifiedConfiguration)
 	}
 
 	return true, nil

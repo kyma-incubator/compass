@@ -316,7 +316,7 @@ func fixDestinationCreatorInputForUnassignWithLocationOperation(operationName mo
 	}
 }
 
-func fixConfigMutatorInput(fa *model.FormationAssignment, state, config *string) *formationconstraintpkg.ConfigMutatorInput {
+func fixConfigMutatorInput(fa *model.FormationAssignment, state, config *string, onlyForSourceSubtypes []string) *formationconstraintpkg.ConfigMutatorInput {
 	return &formationconstraintpkg.ConfigMutatorInput{
 		Operation:                       model.UnassignFormation,
 		JoinPointDetailsFAMemoryAddress: fa.GetAddress(),
@@ -324,8 +324,10 @@ func fixConfigMutatorInput(fa *model.FormationAssignment, state, config *string)
 			OperationName:  model.NotificationStatusReturned,
 			ConstraintType: model.PreOperation,
 		},
-		Configuration: config,
-		State:         state,
+		ModifiedConfiguration: config,
+		State:                 state,
+		Tenant:                testTenantID,
+		OnlyForSourceSubtypes: onlyForSourceSubtypes,
 	}
 }
 

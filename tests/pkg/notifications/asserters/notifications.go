@@ -6,7 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 )
@@ -31,7 +31,19 @@ type NotificationsAsserter struct {
 }
 
 func NewNotificationsAsserter(expectedNotificationsCount int, op string, targetObjectID, sourceObjectID string, localTenantID string, appNamespace string, region string, tenant string, tenantParentCustomer string, externalServicesMockMtlsSecuredURL string, client *http.Client) *NotificationsAsserter {
-	return &NotificationsAsserter{expectedNotificationsCount: expectedNotificationsCount, op: op, targetObjectID: targetObjectID, sourceObjectID: sourceObjectID, localTenantID: localTenantID, appNamespace: appNamespace, region: region, tenant: tenant, tenantParentCustomer: tenantParentCustomer, externalServicesMockMtlsSecuredURL: externalServicesMockMtlsSecuredURL, client: client}
+	return &NotificationsAsserter{
+		expectedNotificationsCount:         expectedNotificationsCount,
+		op:                                 op,
+		targetObjectID:                     targetObjectID,
+		sourceObjectID:                     sourceObjectID,
+		localTenantID:                      localTenantID,
+		appNamespace:                       appNamespace,
+		region:                             region,
+		tenant:                             tenant,
+		tenantParentCustomer:               tenantParentCustomer,
+		externalServicesMockMtlsSecuredURL: externalServicesMockMtlsSecuredURL,
+		client:                             client,
+	}
 }
 
 func (a *NotificationsAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
@@ -54,7 +66,7 @@ func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client, Exte
 		}
 	}()
 	require.NoError(t, err)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusOK, string(body)))
 	return body

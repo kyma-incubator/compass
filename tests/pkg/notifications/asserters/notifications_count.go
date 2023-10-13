@@ -17,7 +17,13 @@ type NotificationsCountAsserter struct {
 }
 
 func NewNotificationsCountAsserter(expectedNotificationsCount int, op string, targetObjectID, externalServicesMockMtlsSecuredURL string, client *http.Client) *NotificationsCountAsserter {
-	return &NotificationsCountAsserter{expectedNotificationsCount: expectedNotificationsCount, op: op, targetObjectID: targetObjectID, externalServicesMockMtlsSecuredURL: externalServicesMockMtlsSecuredURL, client: client}
+	return &NotificationsCountAsserter{
+		expectedNotificationsCount:         expectedNotificationsCount,
+		op:                                 op,
+		targetObjectID:                     targetObjectID,
+		externalServicesMockMtlsSecuredURL: externalServicesMockMtlsSecuredURL,
+		client:                             client,
+	}
 }
 
 func (a *NotificationsCountAsserter) AssertExpectations(t *testing.T, _ context.Context) {

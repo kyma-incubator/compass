@@ -52,7 +52,7 @@ type ConfigMutatorInput struct {
 	State                                  *string                  `json:"state"`
 	Tenant                                 string                   `json:"tenant"`
 	OnlyForSourceSubtypes                  []string                 `json:"only_for_source_subtypes"`
-	Configuration                          *string                  `json:"configuration"`
+	ModifiedConfiguration                  *string                  `json:"modified_configuration"`
 	Operation                              model.FormationOperation `json:"operation"`
 	ResourceType                           model.ResourceType       `json:"resource_type"`
 	ResourceSubtype                        string                   `json:"resource_subtype"`
