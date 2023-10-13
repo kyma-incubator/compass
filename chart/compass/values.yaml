@@ -159,7 +159,7 @@ global:
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3366"
+      version: "PR-3392"
       name: compass-instance-creator
     gateway:
       dir: dev/incubator/
