@@ -42,8 +42,11 @@ else
    git clone --single-branch --branch "${KYMA_SOURCE}" https://github.com/kyma-project/kyma.git "$KYMA_WORKSPACE"
 fi
 
+# Kyma CLI 2.9.3 introduces a visual bug where using `run.sh` with the flag `skip-k3d-start` would not show some user-interaction options
+# Thus, `--non-interactive` flag is used to bypass the hidden user
+# TODO: Remove `--non-interactive` flag whenever Kyma CLI 2.13 is reached
 echo "Installing minimal Kyma"
-kyma deploy --components-file "$KYMA_COMPONENTS_MINIMAL"  --values-file "$MINIMAL_OVERRIDES_TEMP" --source=local --workspace "$KYMA_WORKSPACE"
+kyma deploy --components-file "$KYMA_COMPONENTS_MINIMAL"  --values-file "$MINIMAL_OVERRIDES_TEMP" --source=local --workspace "$KYMA_WORKSPACE" --non-interactive
 
 # Needed since Kyma 2.5.2 to gather metrics
 echo "Patch the metrics port of the kube state metrics service resource to have 'http-' prefix"
