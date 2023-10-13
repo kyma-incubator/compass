@@ -155,7 +155,7 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3365"
+      version: "PR-3389"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
