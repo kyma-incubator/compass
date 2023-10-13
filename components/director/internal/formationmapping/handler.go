@@ -128,6 +128,10 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	fa, err := h.faService.GetGlobalByIDAndFormationID(ctx, formationAssignmentID, formationID)
 	if err != nil {
 		log.C(ctx).Error(err)
+		if apperrors.IsNotFoundError(err) {
+			respondWithError(ctx, w, http.StatusBadRequest, errResp)
+			return
+		}
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
@@ -137,6 +141,10 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	formation, err := h.formationService.Get(ctx, formationID)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while getting formation from formation assignment with ID: %q", fa.FormationID)
+		if apperrors.IsNotFoundError(err) {
+			respondWithError(ctx, w, http.StatusBadRequest, errResp)
+			return
+		}
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
