@@ -178,7 +178,7 @@ if [[  ${TENANT_CREATION} == true ]]; then
     echo -e "${GREEN}Tenant created:${NC}"
     echo ${CREATE_TENANT_RESULT}
 else
-    echo -e "${GREEN}Teant creation skipped${NC}"
+    echo -e "${GREEN}Tenant creation skipped${NC}"
 fi
 
 # Start Debug or Run mode
