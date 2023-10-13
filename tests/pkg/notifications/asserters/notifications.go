@@ -3,7 +3,7 @@ package asserters
 import (
 	"context"
 	"fmt"
-	context_keys "github.com/kyma-incubator/compass/tests/pkg/context-keys"
+	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 	"io/ioutil"

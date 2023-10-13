@@ -3,8 +3,8 @@ package operations
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/pkg/asserters"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
 	gcli "github.com/machinebox/graphql"
 	"testing"
 )
@@ -25,8 +25,13 @@ func NewAddWebhookToApplicationOperation(webhookType graphql.WebhookType, applic
 	return &AddWebhookToApplicationOperation{webhookType: webhookType, applicationID: applicationID, tenantID: tenantID}
 }
 
-func (o *AddWebhookToApplicationOperation) WithMode(mode graphql.WebhookMode) *AddWebhookToApplicationOperation {
-	o.webhookMode = mode
+func (o *AddWebhookToApplicationOperation) WithWebhookMode(webhookMode graphql.WebhookMode) *AddWebhookToApplicationOperation {
+	o.webhookMode = webhookMode
+	return o
+}
+
+func (o *AddWebhookToApplicationOperation) WithWebhookType(webhookType graphql.WebhookType) *AddWebhookToApplicationOperation {
+	o.webhookType = webhookType
 	return o
 }
 

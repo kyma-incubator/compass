@@ -4,4 +4,5 @@ const (
 	FormationIDKey         = "formationID"
 	FormationNameKey       = "formationName"
 	FormationTemplateIDKey = "formationTemplateID"
+	ApplicationID          = "applicationID"
 )

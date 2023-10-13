@@ -3,8 +3,8 @@ package asserters
 import (
 	"context"
 	gql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	context_keys "github.com/kyma-incubator/compass/tests/pkg/context-keys"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"

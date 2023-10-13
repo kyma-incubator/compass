@@ -2,10 +2,10 @@ package expectations_builders
 
 import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"k8s.io/utils/strings/slices"
 )
 
 type FAExpectationsBuilder struct {
+	// target: source: state
 	expectations map[string]map[string]fixtures.AssignmentState
 }
 
@@ -85,25 +85,5 @@ func (b *FAExpectationsBuilder) WithNotifications(notifications []*NotificationD
 	for _, notification := range notifications {
 		b.expectations[notification.TargetID][notification.SourceID] = notification.getAssignmentState()
 	}
-	return b
-}
-
-func (b *FAExpectationsBuilder) WithoutParticipantAsync(participantID string, participantsAsyncForRemovedParticipant, asyncForParticipants []string) *FAExpectationsBuilder {
-	for key, val := range b.expectations {
-		if !slices.Contains(asyncForParticipants, key) {
-			delete(val, participantID)
-		}
-	}
-
-	if len(participantsAsyncForRemovedParticipant) == 0 {
-		delete(b.expectations, participantID)
-	} else {
-		for key, _ := range b.expectations[participantID] {
-			if !slices.Contains(participantsAsyncForRemovedParticipant, key) {
-				delete(b.expectations[participantID], key)
-			}
-		}
-	}
-
 	return b
 }

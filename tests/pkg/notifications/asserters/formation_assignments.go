@@ -3,8 +3,8 @@ package asserters
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	context_keys "github.com/kyma-incubator/compass/tests/pkg/context-keys"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -37,10 +37,10 @@ func (a *FormationAssignmentsAsserter) assertFormationAssignments(t *testing.T, 
 	assignments := assignmentsPage.Data
 	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
 	for _, assignment := range assignments {
-		targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
-		require.Truef(t, ok, "Could not find expectations for assignment with source %q", assignment.Source)
+		targetAssignmentsExpectations, ok := expectedAssignments[assignment.Target]
+		require.Truef(t, ok, "Could not find expectations for assignment with source %q", assignment.Target)
 
-		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
+		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Source]
 		require.Truef(t, ok, "Could not find expectations for assignment with source %q and target %q", assignment.Source, assignment.Target)
 
 		require.Equal(t, assignmentExpectation.State, assignment.State)

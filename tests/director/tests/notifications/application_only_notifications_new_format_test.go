@@ -2,22 +2,22 @@ package notifications
 
 import (
 	"context"
-	context_keys "github.com/kyma-incubator/compass/tests/pkg/context-keys"
-	resource_providers "github.com/kyma-incubator/compass/tests/pkg/resource-providers"
+	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
+	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
+	mock_data "github.com/kyma-incubator/compass/tests/pkg/notifications/expectations-builders"
+	"github.com/kyma-incubator/compass/tests/pkg/notifications/operations"
+	resource_providers "github.com/kyma-incubator/compass/tests/pkg/notifications/resource-providers"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/kyma-incubator/compass/tests/pkg/asserters"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	mock_data "github.com/kyma-incubator/compass/tests/pkg/expectations-builders"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
-	"github.com/kyma-incubator/compass/tests/pkg/operations"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
@@ -155,7 +155,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app1ID)
 		op := operations.NewAddWebhookToApplicationOperation(graphql.WebhookTypeApplicationTenantMapping, app1ID, tnt).
-			WithMode(graphql.WebhookModeSync).
+			WithWebhookMode(graphql.WebhookModeSync).
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}").
 			WithOutputTemplate("{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}").Operation()
@@ -176,7 +176,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithParticipant(app1ID).
 			WithParticipant(app2ID).
 			WithNotifications([]*mock_data.NotificationData{
-				mock_data.NewNotificationData(app1ID, app2ID, "READY", expectedConfig, nil),
+				mock_data.NewNotificationData(app2ID, app1ID, "READY", expectedConfig, nil),
 			})
 		faAsserter := asserters.NewFormationAssignmentAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
@@ -189,7 +189,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().WithParticipant(app2ID)
 		faAsserter = asserters.NewFormationAssignmentAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		unassignNotificationsAsserter := asserters.NewUnassignNotificationsAsserter(unassignOperation, 1, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		unassignNotificationsAsserter := asserters.NewUnassignNotificationsAsserter(1, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		op = operations.NewUnassignAppToFormationOperation(app1ID, tnt).WithAsserters(faAsserter, statusAsserter, unassignNotificationsAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -199,7 +199,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithParticipant(app1ID).
 			WithParticipant(app2ID).
 			WithNotifications([]*mock_data.NotificationData{
-				mock_data.NewNotificationData(app1ID, app2ID, "READY", expectedConfig, nil),
+				mock_data.NewNotificationData(app2ID, app1ID, "READY", expectedConfig, nil),
 			})
 		asserter = asserters.NewFormationAssignmentAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
@@ -213,7 +213,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithParticipant(app1ID)
 		faAsserter = asserters.NewFormationAssignmentAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		unassignNotificationsAsserter = asserters.NewUnassignNotificationsAsserter(unassignOperation, 2, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		unassignNotificationsAsserter = asserters.NewUnassignNotificationsAsserter(2, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		op = operations.NewUnassignAppToFormationOperation(app2ID, tnt).WithAsserters(faAsserter, statusAsserter, unassignNotificationsAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -235,7 +235,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithOperator("ConfigMutator").
 			WithResourceType(graphql.ResourceTypeApplication).
 			WithResourceSubtype(applicationType1).
-			WithInputTemplate(`{ \"tenant\":\"{{.Tenant}}\", \"last_formation_assignment_state\":\"{{.LastFormationAssignmentState}}\",\"configuration\":\"{\\\"tmp\\\":\\\"tmpval\\\"}\",\"state\":{{if and (eq .LastFormationAssignmentState \"INITIAL\") (eq .LastFormationAssignmentConfiguration \"\")}}\"CONFIG_PENDING\"{{ else }}\"{{.FormationAssignment.State}}\"{{ end }},\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"operation\": \"{{.Operation}}\",{{ if .FormationAssignment }}\"details_formation_assignment_memory_address\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\"details_reverse_formation_assignment_memory_address\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\"join_point_location\": {\"OperationName\":\"{{.Location.OperationName}}\",\"ConstraintType\":\"{{.Location.ConstraintType}}\"}}`).
+			WithInputTemplate(`{ \"tenant\":\"{{.Tenant}}\", \"last_formation_assignment_state\":\"{{.LastFormationAssignmentState}}\"{{if ne .FormationAssignment.State \"CREATE_ERROR\"}},\"configuration\":\"{\\\"tmp\\\":\\\"tmpval\\\"}\",\"state\":{{if and (eq .LastFormationAssignmentState \"INITIAL\") (eq .LastFormationAssignmentConfiguration \"\")}}\"CONFIG_PENDING\"{{ else }}\"{{.FormationAssignment.State}}\"{{ end }}{{ end }},\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"operation\": \"{{.Operation}}\",{{ if .FormationAssignment }}\"details_formation_assignment_memory_address\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\"details_reverse_formation_assignment_memory_address\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\"join_point_location\": {\"OperationName\":\"{{.Location.OperationName}}\",\"ConstraintType\":\"{{.Location.ConstraintType}}\"}}`).
 			WithTenant(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -245,7 +245,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithOperator("ConfigMutator").
 			WithResourceType(graphql.ResourceTypeApplication).
 			WithResourceSubtype(applicationType2).
-			WithInputTemplate(`{ \"tenant\":\"{{.Tenant}}\",\"only_for_source_subtypes\":[\"app-type-1\"],\"last_formation_assignment_state\":\"{{.LastFormationAssignmentState}}\",\"configuration\": {{ $slice := mkslice \"{\\\"key\\\":\\\"key\\\",\\\"value\\\": \\\"example.com\\\"}\" \"{\\\"key\\\":\\\"ID\\\", \\\"value\\\":\\\"0000-0000000-0000\\\"}\" \"{\\\"key\\\":\\\"config\\\":\\\"value\\\":{\\\"clientID\\\":\\\"1111-11111\\\", \\\"clientSecret\\\":\\\"secret\\\"}}\" }} {{updateAndCopy .FormationAssignment.Value \"key2\" $slice}}{{if eq .LastFormationAssignmentState \"INITIAL\"}},\"state\":\"CONFIG_PENDING\"{{ end }},\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"operation\": \"{{.Operation}}\",{{ if .FormationAssignment }}\"details_formation_assignment_memory_address\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\"details_reverse_formation_assignment_memory_address\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\"join_point_location\": {\"OperationName\":\"{{.Location.OperationName}}\",\"ConstraintType\":\"{{.Location.ConstraintType}}\"}}`).
+			WithInputTemplate(`{ \"tenant\":\"{{.Tenant}}\",\"only_for_source_subtypes\":[\"app-type-1\"],\"last_formation_assignment_state\":\"{{.LastFormationAssignmentState}}\"{{if ne .FormationAssignment.State \"CREATE_ERROR\"}},\"configuration\": {{ $slice := mkslice \"{\\\"key\\\":\\\"key\\\",\\\"value\\\": \\\"example.com\\\"}\" \"{\\\"key\\\":\\\"ID\\\", \\\"value\\\":\\\"0000-0000000-0000\\\"}\" \"{\\\"key\\\":\\\"config\\\":\\\"value\\\":{\\\"clientID\\\":\\\"1111-11111\\\", \\\"clientSecret\\\":\\\"secret\\\"}}\" }} {{updateAndCopy .FormationAssignment.Value \"key2\" $slice}}{{if eq .LastFormationAssignmentState \"INITIAL\"}},\"state\":\"CONFIG_PENDING\"{{ end }}{{ end }},\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"operation\": \"{{.Operation}}\",{{ if .FormationAssignment }}\"details_formation_assignment_memory_address\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\"details_reverse_formation_assignment_memory_address\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\"join_point_location\": {\"OperationName\":\"{{.Location.OperationName}}\",\"ConstraintType\":\"{{.Location.ConstraintType}}\"}}`).
 			WithTenant(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -279,7 +279,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app2ID)
 		op = operations.NewAddWebhookToApplicationOperation(graphql.WebhookTypeApplicationTenantMapping, app2ID, tnt).
-			WithMode(graphql.WebhookModeSync).
+			WithWebhookMode(graphql.WebhookModeSync).
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}").
 			WithOutputTemplate("{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}").Operation()
@@ -288,7 +288,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, app1ID)
 		op = operations.NewAddWebhookToApplicationOperation(graphql.WebhookTypeApplicationTenantMapping, app1ID, tnt).
-			WithMode(graphql.WebhookModeAsyncCallback).
+			WithWebhookMode(graphql.WebhookModeAsyncCallback).
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}").
 			WithOutputTemplate("{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}").Operation()
@@ -305,13 +305,13 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 
 		t.Logf("Assign application 2 to formation %s", formationName)
 		expectedConfig := str.Ptr("{\"key\":\"example.com\",\"ID\":\"0000-0000000-0000\",\"config\":{\"clientID\":\"1111-11111\", \"clientSecret\":\"secret\"}}")
-		expectedConf2 := str.Ptr("{\"tmp\":\"tmpval\"}")
+		expectedConfig2 := str.Ptr("{\"tmp\":\"tmpval\"}")
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
 			WithParticipant(app1ID).
 			WithParticipant(app2ID).
 			WithNotifications([]*mock_data.NotificationData{
-				mock_data.NewNotificationData(app1ID, app2ID, "READY", expectedConf2, nil),
-				mock_data.NewNotificationData(app2ID, app1ID, "READY", expectedConfig, nil),
+				mock_data.NewNotificationData(app1ID, app2ID, "READY", expectedConfig, nil),
+				mock_data.NewNotificationData(app2ID, app1ID, "READY", expectedConfig2, nil),
 			})
 		faAsyncAsserter := asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt, (conf.TenantMappingAsyncResponseDelay+5)*2)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
@@ -325,8 +325,20 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().WithParticipant(app2ID)
 		faAsyncAsserter = asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt, conf.TenantMappingAsyncResponseDelay+5)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		unassignNotificationsAsserter := asserters.NewUnassignNotificationsAsserter(unassignOperation, 1, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		unassignNotificationsAsserter := asserters.NewUnassignNotificationsAsserter(1, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		op = operations.NewUnassignAppToFormationOperation(app1ID, tnt).WithAsserters(faAsyncAsserter, statusAsserter, unassignNotificationsAsserter).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Update URL template for webhook with type %q and mode: %q for application with ID %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, app1ID)
+		op = operations.NewUpdateWebhookOperation().
+			WithWebhookType(graphql.WebhookTypeApplicationTenantMapping).
+			WithWebhookMode(graphql.WebhookModeAsyncCallback).
+			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async-fail/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
+			WithInputTemplate("{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}").
+			WithOutputTemplate("{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}").
+			WithApplicationID(app1ID).
+			WithTenantID(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
@@ -335,23 +347,54 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithParticipant(app1ID).
 			WithParticipant(app2ID).
 			WithNotifications([]*mock_data.NotificationData{
-				mock_data.NewNotificationData(app1ID, app2ID, "READY", expectedConf2, nil),
-				mock_data.NewNotificationData(app2ID, app1ID, "READY", expectedConfig, nil),
+				mock_data.NewNotificationData(app1ID, app2ID, "CONFIG_PENDING", expectedConfig, nil),
+				mock_data.NewNotificationData(app2ID, app1ID, "CREATE_ERROR", nil, fixtures.StatusAPIAsyncErrorMessageJSON),
 			})
 		faAsyncAsserter = asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt, conf.TenantMappingAsyncResponseDelay+5)
-		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		notificationsCountAsserter = asserters.NewNotificationsCountAsserter(4, assignOperation, app1ID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
-		notificationsCountAsserter2 = asserters.NewNotificationsCountAsserter(4, assignOperation, app2ID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
-		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(faAsyncAsserter, statusAsserter, notificationsCountAsserter, notificationsCountAsserter2).Operation()
+		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient).WithCondition(graphql.FormationStatusConditionError).WithErrors([]*graphql.FormationStatusError{fixtures.StatusAPIAsyncError})
+		notificationsCountAsserter = asserters.NewNotificationsCountAsserter(3, assignOperation, app1ID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		notificationsCountAsserter2 = asserters.NewNotificationsCountAsserter(3, assignOperation, app2ID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(notificationsCountAsserter, notificationsCountAsserter2, faAsyncAsserter, statusAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Update URL template for webhook with type %q and mode: %q for application with ID %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, app1ID)
+		op = operations.NewUpdateWebhookOperation().
+			WithWebhookType(graphql.WebhookTypeApplicationTenantMapping).
+			WithWebhookMode(graphql.WebhookModeAsyncCallback).
+			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
+			WithInputTemplate("{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}").
+			WithOutputTemplate("{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}").
+			WithApplicationID(app1ID).
+			WithTenantID(tnt).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Cleanup notifications")
+		op = operations.NewCleanupNotificationsOperation().WithExternalServicesMockMtlsSecuredURL(conf.ExternalServicesMockMtlsSecuredURL).WithHTTPClient(certSecuredHTTPClient).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Resynchronize formation")
+		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
+			WithParticipant(app1ID).
+			WithParticipant(app2ID).
+			WithNotifications([]*mock_data.NotificationData{
+				mock_data.NewNotificationData(app1ID, app2ID, "READY", expectedConfig, nil),
+				mock_data.NewNotificationData(app2ID, app1ID, "READY", expectedConfig2, nil),
+			})
+		faAsyncAsserter = asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt, (conf.TenantMappingAsyncResponseDelay+5)*2)
+		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
+		notificationsCountAsserter = asserters.NewNotificationsCountAsserter(2, assignOperation, app1ID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		notificationsCountAsserter2 = asserters.NewNotificationsCountAsserter(2, assignOperation, app2ID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		op = operations.NewResynchronizeFormationOperation().WithTenantID(tnt).WithAsserters()
 
 		t.Logf("Unassign Application 2 from formation %s", formationName)
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
 			WithParticipant(app1ID)
 		faAsyncAsserter = asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt, conf.TenantMappingAsyncResponseDelay+5)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		unassignNotificationsAsserter = asserters.NewUnassignNotificationsAsserter(unassignOperation, 2, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		unassignNotificationsAsserter = asserters.NewUnassignNotificationsAsserter(1, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		op = operations.NewUnassignAppToFormationOperation(app2ID, tnt).WithAsserters(faAsyncAsserter, statusAsserter, unassignNotificationsAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
