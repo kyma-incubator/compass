@@ -54,6 +54,8 @@ const (
 	EventSpecFetchRequest Type = "eventSpecFetchRequest"
 	// Specification type represents generic specification resource. This resource does not assume the referenced resource type of the Spec.
 	Specification Type = "specification"
+	// EntityType type represents Entity Type resource.
+	EntityType Type = "entityType"
 	// APISpecification type represents API specification resource.
 	APISpecification Type = "apiSpecification"
 	// EventSpecification type represents Event specification resource.

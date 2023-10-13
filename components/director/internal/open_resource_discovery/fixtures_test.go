@@ -39,6 +39,8 @@ const (
 	api2ORDID              = "ns:apiResource:API_ID2:v1"
 	event1ORDID            = "ns:eventResource:EVENT_ID:v1"
 	event2ORDID            = "ns2:eventResource:EVENT_ID:v1"
+	entityType1ORDID       = "ns:entityType:ENTITYTYPE_ID:v1"
+	entityType2ORDID       = "ns2:entityType:ENTITYTYPE_ID:v1"
 
 	whID             = "testWh"
 	tenantID         = "testTenant"
@@ -55,6 +57,7 @@ const (
 	tombstoneID      = "testTs"
 	localTenantID    = "localTenantID"
 	webhookID        = "webhookID"
+	localID          = "localID"
 
 	api1spec1ID  = "api1spec1ID"
 	api1spec2ID  = "api1spec2ID"
@@ -66,6 +69,7 @@ const (
 
 	cursor                    = "cursor"
 	policyLevel               = "sap:core:v1"
+	customPolicyLevel         = "sap:core:v1"
 	apiImplementationStandard = "cff:open-service-broker:v2"
 	correlationIDs            = `["foo.bar.baz:foo:123456","foo.bar.baz:bar:654321"]`
 	partners                  = `["microsoft:vendor:Microsoft:"]`
@@ -645,6 +649,59 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						BundleOrdID: bundleORDID,
 					},
 				},
+				VersionInput: &model.VersionInput{
+					Value: "1.1.0",
+				},
+			},
+		},
+		EntityTypes: []*model.EntityTypeInput{
+			{
+				OrdID:               entityType1ORDID,
+				LocalID:             localID,
+				Level:               "aggregate",
+				Title:               "Business Partner",
+				ShortDescription:    str.Ptr("short desc"),
+				Description:         str.Ptr("long desc"),
+				SystemInstanceAware: &boolPtr,
+				ChangeLogEntries:    json.RawMessage(changeLogEntries),
+				OrdPackageID:        packageORDID,
+				Visibility:          "public",
+				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+				PolicyLevel:         str.Ptr(policyLevel),
+				ReleaseStatus:       "active",
+				SunsetDate:          nil,
+				Successors:          nil,
+				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
+				Tags:                json.RawMessage(`["eventTestTag"]`),
+				Labels:              json.RawMessage(labels),
+				DocumentationLabels: json.RawMessage(documentLabels),
+				VersionInput: &model.VersionInput{
+					Value: "2.1.2",
+				},
+			},
+			{
+				OrdID:               entityType2ORDID,
+				LocalID:             localID,
+				Level:               "aggregate",
+				Title:               "Workforce Person",
+				ShortDescription:    str.Ptr("short desc"),
+				Description:         str.Ptr("long desc"),
+				SystemInstanceAware: &boolPtr,
+				ChangeLogEntries:    json.RawMessage(changeLogEntries),
+				OrdPackageID:        packageORDID,
+				Visibility:          "public",
+				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+				PolicyLevel:         str.Ptr("custom"),
+				CustomPolicyLevel:   str.Ptr(customPolicyLevel),
+				ReleaseStatus:       "active",
+				SunsetDate:          nil,
+				Successors:          nil,
+				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
+				Tags:                json.RawMessage(`["eventTestTag"]`),
+				Labels:              json.RawMessage(labels),
+				DocumentationLabels: json.RawMessage(documentLabels),
 				VersionInput: &model.VersionInput{
 					Value: "1.1.0",
 				},

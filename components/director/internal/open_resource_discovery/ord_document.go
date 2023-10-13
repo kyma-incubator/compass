@@ -78,6 +78,7 @@ type Document struct {
 	Products           []*model.ProductInput         `json:"products"`
 	APIResources       []*model.APIDefinitionInput   `json:"apiResources"`
 	EventResources     []*model.EventDefinitionInput `json:"eventResources"`
+	EntityTypes        []*model.EntityTypeInput      `json:"entityTypes"`
 	Tombstones         []*model.TombstoneInput       `json:"tombstones"`
 	Vendors            []*model.VendorInput          `json:"vendors"`
 }
@@ -115,10 +116,11 @@ type Documents []*Document
 
 // ResourcesFromDB holds some of the ORD data from the database
 type ResourcesFromDB struct {
-	APIs     map[string]*model.APIDefinition
-	Events   map[string]*model.EventDefinition
-	Packages map[string]*model.Package
-	Bundles  map[string]*model.Bundle
+	APIs        map[string]*model.APIDefinition
+	Events      map[string]*model.EventDefinition
+	EntityTypes map[string]*model.EntityType
+	Packages    map[string]*model.Package
+	Bundles     map[string]*model.Bundle
 }
 
 // ResourceIDs holds some of the ORD entities' IDs
@@ -129,6 +131,7 @@ type ResourceIDs struct {
 	ProductIDs          map[string]bool
 	APIIDs              map[string]bool
 	EventIDs            map[string]bool
+	EntityTypeIDs       map[string]bool
 	VendorIDs           map[string]bool
 }
 
@@ -173,6 +176,7 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 		ProductIDs:          make(map[string]bool),
 		APIIDs:              make(map[string]bool),
 		EventIDs:            make(map[string]bool),
+		EntityTypeIDs:       make(map[string]bool),
 		VendorIDs:           make(map[string]bool),
 	}
 
@@ -191,6 +195,7 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 
 	invalidApisIndices := make([]int, 0)
 	invalidEventsIndices := make([]int, 0)
+	invalidEntityTypesIndices := make([]int, 0)
 
 	r1, e1 := docs.validateAndCheckForDuplications(SystemVersionPerspective, true, resourcesFromDB, resourceIDs, resourceHashes, credentialExchangeStrategyTenantMappings)
 	r2, e2 := docs.validateAndCheckForDuplications(SystemInstancePerspective, true, resourcesFromDB, resourceIDs, resourceHashes, credentialExchangeStrategyTenantMappings)
@@ -269,8 +274,23 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 			}
 		}
 
+		for i, entityType := range doc.EntityTypes {
+			if !resourceIDs.PackageIDs[entityType.OrdPackageID] {
+				errs = multierror.Append(errs, errors.Errorf("entity type with id %q has a reference to unknown package %q", entityType.OrdID, entityType.OrdPackageID))
+				invalidEntityTypesIndices = append(invalidEntityTypesIndices, i)
+			}
+
+			ordIDs := gjson.ParseBytes(entityType.PartOfProducts).Array()
+			for _, productID := range ordIDs {
+				if !resourceIDs.ProductIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
+					errs = multierror.Append(errs, errors.Errorf("entity type with id %q has a reference to unknown product %q", entityType.OrdID, productID.String()))
+				}
+			}
+		}
+
 		doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
 		doc.EventResources = deleteInvalidInputObjects(invalidEventsIndices, doc.EventResources)
+		doc.EntityTypes = deleteInvalidInputObjects(invalidEntityTypesIndices, doc.EntityTypes)
 		invalidApisIndices = nil
 		invalidEventsIndices = nil
 	}
@@ -288,6 +308,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		ProductIDs:          make(map[string]bool),
 		APIIDs:              make(map[string]bool),
 		EventIDs:            make(map[string]bool),
+		EntityTypeIDs:       make(map[string]bool),
 		VendorIDs:           make(map[string]bool),
 	}
 	for _, doc := range docs {
@@ -301,6 +322,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		invalidTombstonesIndices := make([]int, 0)
 		invalidApisIndices := make([]int, 0)
 		invalidEventsIndices := make([]int, 0)
+		invalidEntityTypesIndices := make([]int, 0)
 
 		if err := validateDocumentInput(doc); err != nil {
 			errs = multierror.Append(errs, errors.Wrap(err, "error validating document"))
@@ -382,6 +404,23 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 			}
 		}
 
+		for i, entityType := range doc.EntityTypes {
+			if err := validateEntityTypeInputWithSuppressedErrors(entityType, resourcesFromDB.EntityTypes, resourceHashes); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating entity type with ord id %q", entityType.OrdID))
+			}
+			if err := validateEntityTypeInput(entityType, doc.PolicyLevel); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "error validating entity type with ord id %q", entityType.OrdID))
+				invalidEntityTypesIndices = append(invalidEntityTypesIndices, i)
+				continue
+			}
+
+			if _, ok := resourceIDs.EventIDs[entityType.OrdID]; ok && forbidDuplications {
+				errs = multierror.Append(errs, errors.Errorf("found duplicate event with ord id %q", entityType.OrdID))
+			}
+
+			resourceIDs.EventIDs[entityType.OrdID] = true
+		}
+
 		for i, vendor := range doc.Vendors {
 			if err := validateVendorInput(vendor); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating vendor with ord id %q", vendor.OrdID))
@@ -406,6 +445,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		doc.Products = deleteInvalidInputObjects(invalidProductsIndices, doc.Products)
 		doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
 		doc.EventResources = deleteInvalidInputObjects(invalidEventsIndices, doc.EventResources)
+		doc.EntityTypes = deleteInvalidInputObjects(invalidEntityTypesIndices, doc.EntityTypes)
 		doc.Vendors = deleteInvalidInputObjects(invalidVendorsIndices, doc.Vendors)
 		doc.Tombstones = deleteInvalidInputObjects(invalidTombstonesIndices, doc.Tombstones)
 	}
@@ -415,6 +455,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		ProductIDs:          resourceIDs.ProductIDs,
 		APIIDs:              resourceIDs.APIIDs,
 		EventIDs:            resourceIDs.EventIDs,
+		EntityTypeIDs:       resourceIDs.EntityTypeIDs,
 		VendorIDs:           resourceIDs.VendorIDs,
 		BundleIDs:           resourceIDs.BundleIDs,
 		PackagePolicyLevels: resourceIDs.PackagePolicyLevels,
@@ -562,6 +603,26 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 			}
 			if event.Labels, err = mergeORDLabels(referredPkg.Labels, event.Labels); err != nil {
 				return errors.Wrapf(err, "error while merging labels for event with ord id %q", *event.OrdID)
+			}
+		}
+		for _, entityType := range doc.EntityTypes {
+			if entityType.PolicyLevel == nil {
+				entityType.PolicyLevel = doc.PolicyLevel
+				entityType.CustomPolicyLevel = doc.CustomPolicyLevel
+			}
+
+			referredPkg, ok := packages[entityType.OrdPackageID]
+			if !ok {
+				return errors.Errorf("entity type with ord id %q has a reference to unknown package %q", entityType.OrdID, entityType.OrdPackageID)
+			}
+			if entityType.PartOfProducts, err = mergeJSONArraysOfStrings(referredPkg.PartOfProducts, entityType.PartOfProducts); err != nil {
+				return errors.Wrapf(err, "error while merging partOfProducts for entity type with ord id %q", entityType.OrdID)
+			}
+			if entityType.Tags, err = mergeJSONArraysOfStrings(referredPkg.Tags, entityType.Tags); err != nil {
+				return errors.Wrapf(err, "error while merging tags for entity type with ord id %q", entityType.OrdID)
+			}
+			if entityType.Labels, err = mergeORDLabels(referredPkg.Labels, entityType.Labels); err != nil {
+				return errors.Wrapf(err, "error while merging labels for entity type with ord id %q", entityType.OrdID)
 			}
 		}
 	}

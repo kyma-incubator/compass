@@ -94,6 +94,7 @@ type Service struct {
 	bundleReferenceSvc    BundleReferenceService
 	apiSvc                APIService
 	eventSvc              EventService
+	entityTypeSvc         EntityTypeService
 	specSvc               SpecService
 	fetchReqSvc           FetchRequestService
 	packageSvc            PackageService
@@ -115,7 +116,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, entityTypeSvc EntityTypeService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
 		config:                config,
 		metricsCfg:            metricsCfg,
@@ -126,6 +127,7 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		bundleReferenceSvc:    bundleReferenceSvc,
 		apiSvc:                apiSvc,
 		eventSvc:              eventSvc,
+		entityTypeSvc:         entityTypeSvc,
 		specSvc:               specSvc,
 		fetchReqSvc:           fetchReqSvc,
 		packageSvc:            packageSvc,
@@ -393,13 +395,18 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 			return err
 		}
 
+		entityTypesFromDB, err := s.processEntityTypes(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.EntityTypes, resourceHashes)
+		if err != nil {
+			return err
+		}
+
 		tombstonesFromDB, err := s.processTombstones(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Tombstones)
 		if err != nil {
 			return err
 		}
 
 		fetchRequests := append(apiFetchRequests, eventFetchRequests...)
-		fetchRequests, err = s.deleteTombstonedResources(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, tombstonesFromDB, fetchRequests)
+		fetchRequests, err = s.deleteTombstonedResources(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, tombstonesFromDB, fetchRequests)
 		if err != nil {
 			return err
 		}
@@ -539,7 +546,7 @@ func (s *Service) processFetchRequestResultGlobal(ctx context.Context, result *f
 	return s.fetchReqSvc.UpdateGlobal(ctx, result.fetchRequest)
 }
 
-func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType directorresource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, tombstonesFromDB []*model.Tombstone, fetchRequests []*ordFetchRequest) ([]*ordFetchRequest, error) {
+func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType directorresource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, entityTypesFromDB []*model.EntityType, tombstonesFromDB []*model.Tombstone, fetchRequests []*ordFetchRequest) ([]*ordFetchRequest, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -568,6 +575,13 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType di
 			return equalStrings(eventsFromDB[i].OrdID, &ts.OrdID)
 		}); found {
 			if err := s.eventSvc.Delete(ctx, resourceType, eventsFromDB[i].ID); err != nil {
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+			}
+		}
+		if i, found := searchInSlice(len(entityTypesFromDB), func(i int) bool {
+			return equalStrings(&entityTypesFromDB[i].OrdID, &ts.OrdID)
+		}); found {
+			if err := s.entityTypeSvc.Delete(ctx, resourceType, eventsFromDB[i].ID); err != nil {
 				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
@@ -1187,6 +1201,64 @@ func (s *Service) resyncEventInTx(ctx context.Context, resourceType directorreso
 	return fetchRequests, tx.Commit()
 }
 
+func (s *Service) processEntityTypes(ctx context.Context, resourceType directorresource.Type, resourceID string, packagesFromDB []*model.Package, entityTypes []*model.EntityTypeInput, resourceHashes map[string]uint64) ([]*model.EntityType, error) {
+	entityTypesFromDB, err := s.listEntityTypesInTx(ctx, resourceType, resourceID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, entityType := range entityTypes {
+		entityTypeHash := resourceHashes[entityType.OrdID]
+		err := s.resyncEntityTypeInTx(ctx, resourceType, resourceID, entityTypesFromDB, packagesFromDB, entityType, entityTypeHash)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	entityTypesFromDB, err = s.listEntityTypesInTx(ctx, resourceType, resourceID)
+	if err != nil {
+		return nil, err
+	}
+	return entityTypesFromDB, nil
+}
+
+func (s *Service) listEntityTypesInTx(ctx context.Context, resourceType directorresource.Type, resourceID string) ([]*model.EntityType, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	var entityTypesFromDB []*model.EntityType
+	switch resourceType {
+	case directorresource.Application:
+		entityTypesFromDB, err = s.entityTypeSvc.ListByApplicationID(ctx, resourceID)
+	case directorresource.ApplicationTemplateVersion:
+		entityTypesFromDB, err = s.entityTypeSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+	}
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while listing entity types for %s with id %q", resourceType, resourceID)
+	}
+
+	return entityTypesFromDB, tx.Commit()
+}
+
+func (s *Service) resyncEntityTypeInTx(ctx context.Context, resourceType directorresource.Type, resourceID string, entityTypesFromDB []*model.EntityType, packagesFromDB []*model.Package, entityType *model.EntityTypeInput, entityTypeHash uint64) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	err = s.resyncEntityType(ctx, resourceType, resourceID, entityTypesFromDB, packagesFromDB, *entityType, entityTypeHash)
+	if err != nil {
+		return errors.Wrapf(err, "error while resyncing entity type with ORD ID %q", entityType.OrdID)
+	}
+	return tx.Commit()
+}
+
 func (s *Service) processTombstones(ctx context.Context, resourceType directorresource.Type, resourceID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error) {
 	tombstonesFromDB, err := s.listTombstonesInTx(ctx, resourceType, resourceID)
 	if err != nil {
@@ -1447,6 +1519,33 @@ func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource
 	}
 
 	return fetchRequests, nil
+}
+
+func (s *Service) resyncEntityType(ctx context.Context, resourceType directorresource.Type, resourceID string, entityTypesFromDB []*model.EntityType, packagesFromDB []*model.Package, entityType model.EntityTypeInput, entityTypeHash uint64) error {
+	ctx = addFieldToLogger(ctx, "entity_type_ord_id", entityType.OrdID)
+	_, isEntityTypeFound := searchInSlice(len(entityTypesFromDB), func(i int) bool {
+		return equalStrings(&entityTypesFromDB[i].OrdID, &entityType.OrdID)
+	})
+
+	var packageID *string
+	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
+		return equalStrings(&packagesFromDB[i].OrdID, &entityType.OrdPackageID)
+	}); found {
+		packageID = &packagesFromDB[i].ID
+	}
+
+	if !isEntityTypeFound {
+		_, err := s.entityTypeSvc.Create(ctx, resourceType, resourceID, nil, packageID, entityType, entityTypeHash)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := s.entityTypeSvc.Update(ctx, resourceType, resourceID, entityType, entityTypeHash)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Service) createSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput, resourceType directorresource.Type) ([]*model.FetchRequest, error) {
@@ -2020,6 +2119,20 @@ func hashResources(docs Documents) (map[string]uint64, error) {
 			}
 
 			resourceHashes[str.PtrStrToStr(eventInput.OrdID)] = hash
+		}
+
+		for _, entityTypeInput := range doc.EntityTypes {
+			normalizedEntityType, err := normalizeEntityType(entityTypeInput)
+			if err != nil {
+				return nil, err
+			}
+
+			hash, err := HashObject(normalizedEntityType)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while hashing entity type with ORD ID: %s", normalizedEntityType.OrdID)
+			}
+
+			resourceHashes[entityTypeInput.OrdID] = hash
 		}
 
 		for _, packageInput := range doc.Packages {
