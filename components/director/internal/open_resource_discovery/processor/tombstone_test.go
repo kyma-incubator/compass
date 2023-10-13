@@ -224,5 +224,4 @@ func TestTombstoneProcessor_Process(t *testing.T) {
 			mock.AssertExpectationsForObjects(t, tx, tombstoneSvc)
 		})
 	}
-
 }

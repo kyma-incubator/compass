@@ -18,6 +18,7 @@ type TombstoneService interface {
 	ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Tombstone, error)
 }
 
+// TombstoneProcessor defines tombstone processor
 type TombstoneProcessor struct {
 	transact     persistence.Transactioner
 	tombstoneSvc TombstoneService
@@ -31,6 +32,7 @@ func NewTombstoneProcessor(transact persistence.Transactioner, tombstoneSvc Tomb
 	}
 }
 
+// Process re-syncs the tombstones passed as an argument.
 func (tp *TombstoneProcessor) Process(ctx context.Context, resourceType resource.Type, resourceID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error) {
 	tombstonesFromDB, err := tp.listTombstonesInTx(ctx, resourceType, resourceID)
 	if err != nil {
