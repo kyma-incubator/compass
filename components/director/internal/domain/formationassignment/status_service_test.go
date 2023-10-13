@@ -15,10 +15,9 @@ import (
 )
 
 var (
-	initialStateAssignment                       = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.InitialAssignmentState), nil, nil)
-	lastConfig                                   = json.RawMessage(`{"foo": "bar"}`)
-	assignmentWithStateAndConfig                 = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, TestSourceType, TestTargetType, string(model.ConfigPendingAssignmentState), lastConfig, nil)
-	assignmentWithStateAndConfigWithRtmCtxTarget = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, TestSourceType, TestTargetType, string(model.ConfigPendingAssignmentState), lastConfig, nil)
+	initialStateAssignment       = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.InitialAssignmentState), nil, nil)
+	lastConfig                   = json.RawMessage(`{"foo": "bar"}`)
+	assignmentWithStateAndConfig = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, TestSourceType, TestTargetType, string(model.ConfigPendingAssignmentState), lastConfig, nil)
 )
 
 func TestStatusService_UpdateWithConstraints(t *testing.T) {
