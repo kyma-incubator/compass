@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -57,10 +58,12 @@ type repository struct {
 
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
+	creator := repo.NewCreator(tableName, webhookColumns)
+	creator.SetParentAccessVerifier(label.NewDefaultParentAccessVerifier().Verify)
 	return &repository{
 		singleGetter:           repo.NewSingleGetter(tableName, webhookColumns),
 		singleGetterGlobal:     repo.NewSingleGetterGlobal(resource.Webhook, tableName, webhookColumns),
-		creator:                repo.NewCreator(tableName, webhookColumns),
+		creator:                creator,
 		globalCreator:          repo.NewCreatorGlobal(resource.Webhook, tableName, webhookColumns),
 		webhookUpdater:         repo.NewUpdater(tableName, updatableColumns, []string{"id"}),
 		updaterGlobal:          repo.NewUpdaterGlobal(resource.Webhook, tableName, updatableColumns, []string{"id", "app_template_id"}),
