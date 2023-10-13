@@ -153,14 +153,11 @@ type GlobalVendorService interface {
 	ListGlobal(ctx context.Context) ([]*model.Vendor, error)
 }
 
-// TombstoneService is responsible for the service-layer Tombstone operations.
+// TombstoneProcessor is responsible for processing of tombstone entities.
 //
-//go:generate mockery --name=TombstoneService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type TombstoneService interface {
-	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.TombstoneInput) (string, error)
-	Update(ctx context.Context, resourceType resource.Type, id string, in model.TombstoneInput) error
-	ListByApplicationID(ctx context.Context, appID string) ([]*model.Tombstone, error)
-	ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Tombstone, error)
+//go:generate mockery --name=TombstoneProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TombstoneProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error)
 }
 
 // TenantService missing godoc
