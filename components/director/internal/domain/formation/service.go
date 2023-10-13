@@ -1144,7 +1144,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				}
 			}
 
-			if notificationForFA != nil && operation == model.UnassignFormation {
+			if notificationForFA != nil {
 				faClone := fa.Clone()
 				if operation == model.UnassignFormation {
 					faClone.State = string(model.DeletingAssignmentState)
