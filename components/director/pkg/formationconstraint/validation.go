@@ -67,19 +67,6 @@ func NewFormationConstraintInputWrapper(input *graphql.FormationConstraintInput)
 
 // Validate validates FormationConstraintInput
 func (i FormationConstraintInputWrapper) Validate() error {
-	//if err := validation.ValidateStruct(&i,
-	//	validation.Field(&i.Name, validation.Required),
-	//	validation.Field(&i.ConstraintType, validation.Required, validation.In(graphql.ConstraintTypePre, graphql.ConstraintTypePost, graphql.ConstraintTypeUI)),
-	//	validation.Field(&i.TargetOperation, validation.Required, validation.In(graphql.TargetOperationAssignFormation, graphql.TargetOperationUnassignFormation, graphql.TargetOperationCreateFormation, graphql.TargetOperationDeleteFormation, graphql.TargetOperationGenerateFormationAssignmentNotification, graphql.TargetOperationGenerateFormationNotification, graphql.TargetOperationLoadFormations, graphql.TargetOperationSelectSystemsForFormation, graphql.TargetOperationSendNotification, graphql.TargetOperationNotificationStatusReturned)),
-	//	validation.Field(&i.Operator, validation.Required),
-	//	validation.Field(&i.ResourceType, validation.Required, validation.In(graphql.ResourceTypeApplication, graphql.ResourceTypeRuntime, graphql.ResourceTypeFormation, graphql.ResourceTypeTenant, graphql.ResourceTypeRuntimeContext)),
-	//	validation.Field(&i.ResourceSubtype, validation.Required),
-	//	validation.Field(&i.InputTemplate, validation.Required),
-	//	validation.Field(&i.ConstraintScope, validation.Required, validation.In(graphql.ConstraintScopeFormationType, graphql.ConstraintScopeGlobal)),
-	//); err != nil {
-	//	return err
-	//}
-
 	if i.ConstraintType != graphql.ConstraintTypeUI {
 		input := FormationConstraintInputByOperator[i.Operator]
 		if err := ParseInputTemplate(i.InputTemplate, JoinPointDetailsByLocation[JoinPointLocation{ConstraintType: model.FormationConstraintType(i.ConstraintType), OperationName: model.TargetOperation(i.TargetOperation)}], input); err != nil {

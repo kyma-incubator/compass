@@ -46,16 +46,6 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q for location with constraint type: %q and operation name: %q during %q operation", di.ResourceType, di.ResourceSubtype, di.Location.ConstraintType, di.Location.OperationName, di.Operation)
 
-	//entity, err := RetrieveEntityPointerFromMemoryAddress2(ctx, &model.FormationAssignment{}, di.JoinPointDetailsFAMemoryAddress)
-	//if err != nil {
-	//	return false, err
-	//}
-	//
-	//formationAssignment, ok := entity.(*model.FormationAssignment)
-	//if !ok {
-	//	return false, errors.New("Failed to cast to formation assignment entity")
-	//}
-
 	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsFAMemoryAddress)
 	if err != nil {
 		return false, err
@@ -138,16 +128,6 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		log.C(ctx).Infof("Finished executing operator: %q for location with constraint type: %q and operation name: %q during %q operation", DestinationCreatorOperator, di.Location.ConstraintType, di.Location.OperationName, model.AssignFormation)
 		return true, nil
 	}
-
-	//reverseEntity, err := RetrieveEntityPointerFromMemoryAddress2(ctx, &model.FormationAssignment{}, di.JoinPointDetailsReverseFAMemoryAddress)
-	//if err != nil {
-	//	return false, err
-	//}
-	//
-	//reverseFormationAssignment, ok := reverseEntity.(*model.FormationAssignment)
-	//if !ok {
-	//	return false, errors.New("Failed to cast to formation assignment entity")
-	//}
 
 	reverseFormationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsReverseFAMemoryAddress)
 	if err != nil {
