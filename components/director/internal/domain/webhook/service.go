@@ -84,8 +84,8 @@ func NewService(repo WebhookRepository, appRepo ApplicationRepository, uidSvc UI
 // Get missing godoc
 func (s *service) Get(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) (webhook *model.Webhook, err error) {
 	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil || tnt == "" {
-		log.C(ctx).Infof("tenant was not loaded while getting Webhook id %s", id)
+	if err != nil || tnt == "" || objectType.GetResourceType() == resource.Webhook {
+		log.C(ctx).Infof("empty tenant or global webhook resource with id %s", id)
 		webhook, err = s.webhookRepo.GetByIDGlobal(ctx, id)
 	} else {
 		webhook, err = s.webhookRepo.GetByID(ctx, tnt, id, objectType)
