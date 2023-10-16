@@ -131,11 +131,11 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3369"
+      version: "PR-3385"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3369"
+      version: "PR-3365"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
@@ -143,11 +143,11 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3369"
+      version: "PR-3396"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3369"
+      version: "PR-3384"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
@@ -155,15 +155,15 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3369"
+      version: "PR-3389"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3366"
+      version: "PR-3392"
       name: compass-instance-creator
     gateway:
       dir: dev/incubator/
-      version: "PR-3369"
+      version: "PR-3387"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
@@ -175,11 +175,11 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3368"
+      version: "PR-3375"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
-      version: "PR-3369"
+      version: "PR-3382"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -188,7 +188,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3369"
+      version: "PR-3383"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -196,7 +196,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3369"
+      version: "PR-3379"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
