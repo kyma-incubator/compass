@@ -22,6 +22,8 @@ const (
 	DestinationCreator = "DestinationCreator"
 	// RedirectNotificationOperator contains the name of the RedirectNotificationOperator
 	RedirectNotificationOperator = "RedirectNotification"
+	// ConfigMutatorOperator contains the name of the ConfigMutator
+	ConfigMutatorOperator = "ConfigMutator"
 )
 
 // OperatorInput represent the input needed by the operators
@@ -35,6 +37,7 @@ var FormationConstraintInputByOperator = map[string]OperatorInput{
 	DoNotGenerateFormationAssignmentNotificationForLoopsOperator: &DoNotGenerateFormationAssignmentNotificationInput{},
 	DestinationCreator:                                           &DestinationCreatorInput{},
 	RedirectNotificationOperator:                                 &RedirectNotificationInput{},
+	ConfigMutatorOperator:                                        &ConfigMutatorInput{},
 }
 
 // JoinPointDetailsByLocation represents a mapping between JoinPointLocation and JoinPointDetails
