@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.3.1
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20231005103340-fffd3ee4e20f
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20231005103340-fffd3ee4e20f
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231016074628-378ecb40d7dc
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231016150355-b2065e17a2e2
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231005103340-fffd3ee4e20f
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20231005103340-fffd3ee4e20f
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231005103340-fffd3ee4e20f
@@ -23,7 +23,6 @@ require (
 	k8s.io/api v0.26.9
 	k8s.io/apimachinery v0.26.9
 	k8s.io/client-go v0.26.9
-	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
 )
 
 require (
@@ -84,6 +83,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
+	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448 // indirect
 	sigs.k8s.io/controller-runtime v0.14.5 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
