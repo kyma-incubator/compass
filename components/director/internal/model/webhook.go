@@ -137,10 +137,3 @@ func (i *WebhookInput) ToWebhook(id, objID string, objectType WebhookReferenceOb
 		StatusTemplate:   i.StatusTemplate,
 	}
 }
-
-// todo::: delete
-//// GetAddress returns the memory address of the Webhook in the form of an uninterpreted type(integer number)
-//// Currently, it's used in some formation constraints input templates, so we could propagate the memory address to the formation constraints operators and later on to modify/update it.
-//func (w *Webhook) GetAddress() uintptr {
-//	return uintptr(unsafe.Pointer(w))
-//}
