@@ -99,7 +99,7 @@ type Service struct {
 	packageSvc            PackageService
 	productSvc            ProductService
 	vendorSvc             VendorService
-	tombstoneSvc          TombstoneService
+	tombstoneProcessor    TombstoneProcessor
 	tenantSvc             TenantService
 	appTemplateVersionSvc ApplicationTemplateVersionService
 	appTemplateSvc        ApplicationTemplateService
@@ -115,7 +115,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
 		config:                config,
 		metricsCfg:            metricsCfg,
@@ -131,7 +131,7 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		packageSvc:            packageSvc,
 		productSvc:            productSvc,
 		vendorSvc:             vendorSvc,
-		tombstoneSvc:          tombstoneSvc,
+		tombstoneProcessor:    tombstoneProcessor,
 		tenantSvc:             tenantSvc,
 		globalRegistrySvc:     globalRegistrySvc,
 		ordClient:             client,
@@ -393,7 +393,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 			return err
 		}
 
-		tombstonesFromDB, err := s.processTombstones(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Tombstones)
+		tombstonesFromDB, err := s.tombstoneProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Tombstones)
 		if err != nil {
 			return err
 		}
@@ -1187,61 +1187,6 @@ func (s *Service) resyncEventInTx(ctx context.Context, resourceType directorreso
 	return fetchRequests, tx.Commit()
 }
 
-func (s *Service) processTombstones(ctx context.Context, resourceType directorresource.Type, resourceID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error) {
-	tombstonesFromDB, err := s.listTombstonesInTx(ctx, resourceType, resourceID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, tombstone := range tombstones {
-		if err := s.resyncTombstoneInTx(ctx, resourceType, resourceID, tombstonesFromDB, tombstone); err != nil {
-			return nil, err
-		}
-	}
-
-	tombstonesFromDB, err = s.listTombstonesInTx(ctx, resourceType, resourceID)
-	if err != nil {
-		return nil, err
-	}
-	return tombstonesFromDB, nil
-}
-
-func (s *Service) listTombstonesInTx(ctx context.Context, resourceType directorresource.Type, resourceID string) ([]*model.Tombstone, error) {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	var tombstonesFromDB []*model.Tombstone
-	switch resourceType {
-	case directorresource.Application:
-		tombstonesFromDB, err = s.tombstoneSvc.ListByApplicationID(ctx, resourceID)
-	case directorresource.ApplicationTemplateVersion:
-		tombstonesFromDB, err = s.tombstoneSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, errors.Wrapf(err, "error while listing tombstones for %s with id %q", resourceType, resourceID)
-	}
-
-	return tombstonesFromDB, tx.Commit()
-}
-
-func (s *Service) resyncTombstoneInTx(ctx context.Context, resourceType directorresource.Type, resourceID string, tombstonesFromDB []*model.Tombstone, tombstone *model.TombstoneInput) error {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	if err := s.resyncTombstone(ctx, resourceType, resourceID, tombstonesFromDB, *tombstone); err != nil {
-		return errors.Wrapf(err, "error while resyncing tombstone for resource with ORD ID %q", tombstone.OrdID)
-	}
-	return tx.Commit()
-}
-
 func (s *Service) resyncPackage(ctx context.Context, resourceType directorresource.Type, resourceID string, packagesFromDB []*model.Package, pkg model.PackageInput, pkgHash uint64) error {
 	ctx = addFieldToLogger(ctx, "package_ord_id", pkg.OrdID)
 	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
@@ -1503,17 +1448,6 @@ func (s *Service) refetchFailedSpecs(ctx context.Context, resourceType directorr
 		}
 	}
 	return fetchRequests, nil
-}
-
-func (s *Service) resyncTombstone(ctx context.Context, resourceType directorresource.Type, resourceID string, tombstonesFromDB []*model.Tombstone, tombstone model.TombstoneInput) error {
-	if i, found := searchInSlice(len(tombstonesFromDB), func(i int) bool {
-		return tombstonesFromDB[i].OrdID == tombstone.OrdID
-	}); found {
-		return s.tombstoneSvc.Update(ctx, resourceType, tombstonesFromDB[i].ID, tombstone)
-	}
-
-	_, err := s.tombstoneSvc.Create(ctx, resourceType, resourceID, tombstone)
-	return err
 }
 
 func (s *Service) fetchAPIDefFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.APIDefinition, error) {
