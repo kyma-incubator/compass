@@ -819,15 +819,18 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 	return []*webhookclient.FormationAssignmentNotificationRequest{request, requestReverse}, templateInput, templateInputReverse
 }
 
-func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation) *formationconstraint.NotificationStatusReturnedOperationDetails {
+func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation, lastFormationAssignmentState, lastFormationAssignmentConfig, tenantID string) *formationconstraint.NotificationStatusReturnedOperationDetails {
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		ResourceType:               resourceType,
-		ResourceSubtype:            resourceSubtype,
-		Location:                   location,
-		Operation:                  assignOperation,
-		FormationAssignment:        fa,
-		ReverseFormationAssignment: reverseFa,
-		Formation:                  formation,
+		ResourceType:                         resourceType,
+		ResourceSubtype:                      resourceSubtype,
+		Location:                             location,
+		Tenant:                               tenantID,
+		Operation:                            assignOperation,
+		FormationAssignment:                  fa,
+		ReverseFormationAssignment:           reverseFa,
+		LastFormationAssignmentState:         lastFormationAssignmentState,
+		LastFormationAssignmentConfiguration: lastFormationAssignmentConfig,
+		Formation:                            formation,
 	}
 }
 
