@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"net/http"
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"net/http"
 )
 
 const (
@@ -54,7 +52,6 @@ func (tmh *DefaultTenantMappingHandler) HandlerFunc(w http.ResponseWriter, r *ht
 }
 
 func (tmh *DefaultTenantMappingHandler) callUCLStatusAPI(statusAPIURL, correlationID string) {
-	time.Sleep(5 * time.Second) // todo::: temporary workaround for validation purposes
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
