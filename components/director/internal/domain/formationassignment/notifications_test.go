@@ -90,7 +90,7 @@ var (
 
 	testAppTenantMappingWebhookInput            = fixAppTenantMappingWebhookInput(TestFormationID, testAppWithLabels, testAppWithLabels, testAppTemplateWithLabels, testAppTemplateWithLabels, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceAppAndTargetApp), fixConvertFAFromModel(faWithSourceAppAndTargetAppReverse))
 	testAppNotificationReqWithTenantMappingType = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook:       *testGqlAppWebhook,
+		Webhook:       testGqlAppWebhook,
 		Object:        testAppTenantMappingWebhookInput,
 		CorrelationID: "",
 	}
@@ -138,35 +138,35 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 
 	testAppTenantMappingWebhookInputWithTenantPath := fixAppTenantMappingWebhookInput(TestFormationID, testAppWithLabels, testAppWithLabels, testAppTemplateWithLabels, testAppTemplateWithLabels, testCustomerTenantContextWithPath, fixConvertFAFromModel(faWithSourceAppAndTargetApp), fixConvertFAFromModel(faWithSourceAppAndTargetAppReverse))
 	testAppNotificationReqWithTenantMappingTypeWithTenantPath := &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook:       *testGqlAppWebhook,
+		Webhook:       testGqlAppWebhook,
 		Object:        testAppTenantMappingWebhookInputWithTenantPath,
 		CorrelationID: "",
 	}
 
 	testFormationConfigurationChangeInputWithSourceRuntimeAndTargetApp := fixFormationConfigurationChangeInput(TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, testRuntimeCtxWithLabels, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceRuntimeAndTargetApp), fixConvertFAFromModel(faWithSourceRuntimeAndTargetAppReverse))
 	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceRuntimeAndTargetApp := &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook:       *testGqlAppWebhook,
+		Webhook:       testGqlAppWebhook,
 		Object:        testFormationConfigurationChangeInputWithSourceRuntimeAndTargetApp,
 		CorrelationID: "",
 	}
 
 	testFormationConfigurationChangeInputWithSourceRtmCtxAndTargetApp := fixFormationConfigurationChangeInput(TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, testRuntimeCtxWithLabels, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceRuntimeCtxAndTargetApp), fixConvertFAFromModel(faWithSourceRuntimeCtxAndTargetAppReverse))
 	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceRtmCtxAndTargetApp := &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook:       *testGqlAppWebhook,
+		Webhook:       testGqlAppWebhook,
 		Object:        testFormationConfigurationChangeInputWithSourceRtmCtxAndTargetApp,
 		CorrelationID: "",
 	}
 
 	testFormationConfigurationChangeInputWithSourceAppAndTargetRuntime := fixFormationConfigurationChangeInput(TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, nil, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceAppAndTargetRuntime), fixConvertFAFromModel(faWithSourceAppAndTargetRuntimeReverse))
 	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceAppAndTargetRuntime := &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook:       *testGqlRuntimeWebhook,
+		Webhook:       testGqlRuntimeWebhook,
 		Object:        testFormationConfigurationChangeInputWithSourceAppAndTargetRuntime,
 		CorrelationID: "",
 	}
 
 	testFormationConfigurationChangeInputWithSourceAppAndTargetRtmCtx := fixFormationConfigurationChangeInput(TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, testRuntimeCtxWithLabels, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceAppCtxAndTargetRtmCtx), fixConvertFAFromModel(faWithSourceAppCtxAndTargetRtmCtxReverse))
 	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceAppAndTargetRtmCtx := &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook:       *testGqlRuntimeWebhook,
+		Webhook:       testGqlRuntimeWebhook,
 		Object:        testFormationConfigurationChangeInputWithSourceAppAndTargetRtmCtx,
 		CorrelationID: "",
 	}

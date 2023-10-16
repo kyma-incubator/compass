@@ -567,7 +567,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 		ResourceSubtype:            subtype,
 		Location:                   formationconstraint.PreSendNotification,
 		Operation:                  model.AssignFormation,
-		Webhook:                    fixRuntimeWebhookModel(WebhookID, RuntimeID),
+		Webhook:                    fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 		CorrelationID:              "",
 		TemplateInput:              templateInput,
 		FormationAssignment:        fa,
@@ -579,7 +579,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 		ResourceSubtype:            subtype,
 		Location:                   formationconstraint.PostSendNotification,
 		Operation:                  model.AssignFormation,
-		Webhook:                    fixRuntimeWebhookModel(WebhookID, RuntimeID),
+		Webhook:                    fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 		CorrelationID:              "",
 		TemplateInput:              templateInput,
 		FormationAssignment:        fa,
@@ -589,7 +589,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 
 	faRequestExt := &webhookclient.FormationAssignmentNotificationRequestExt{
 		FormationAssignmentNotificationRequest: &webhookclient.FormationAssignmentNotificationRequest{
-			Webhook:       *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+			Webhook:       fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 			Object:        templateInput,
 			CorrelationID: "",
 		},

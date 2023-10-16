@@ -963,7 +963,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 	}
 
-	formationAssignmentClonesForObject := make([]*model.FormationAssignment, 0)
+	formationAssignmentClonesForObject := make([]*model.FormationAssignment, 0, len(initialAssignmentsData))
 	for _, ia := range initialAssignmentsData {
 		formationAssignmentClonesForObject = append(formationAssignmentClonesForObject, ia.Clone())
 	}
@@ -1260,7 +1260,7 @@ func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenan
 			log.C(ctx).Error(processErr)
 			return nil, false, processErr
 		}
-		if errorState == model.DeleteErrorFormationState && formation.State == model.ReadyFormationState && formationReq.Webhook.Mode != nil && *formationReq.Webhook.Mode == graphql.WebhookModeSync {
+		if errorState == model.DeleteErrorFormationState && formation.State == model.ReadyFormationState && formationReq.Webhook != nil && formationReq.Webhook.Mode != nil && *formationReq.Webhook.Mode == graphql.WebhookModeSync {
 			if err = s.DeleteFormationEntityAndScenarios(formationResyncTransactionCtx, tenantID, formation.Name); err != nil {
 				return nil, false, errors.Wrapf(err, "while deleting formation with name %s", formation.Name)
 			}
@@ -1766,7 +1766,7 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 		return nil
 	}
 
-	if formationReq.Webhook.Mode != nil && *formationReq.Webhook.Mode == graphql.WebhookModeAsyncCallback {
+	if formationReq.Webhook != nil && formationReq.Webhook.Mode != nil && *formationReq.Webhook.Mode == graphql.WebhookModeAsyncCallback {
 		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Waiting for the receiver to report the status on the status API...", formationReq.Webhook.ID, graphql.WebhookModeAsyncCallback)
 		if errorState == model.CreateErrorFormationState {
 			formation.State = model.InitialFormationState

@@ -515,7 +515,7 @@ func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 }
 
 // AsyncOld handles asynchronous formation assignment notification requests for Assign operation using old request body format
-// Should minimize the usage of this one and migrate to the new handler and request body format
+// Should minimize/restrict the usage of this one and migrate to the new handler and request body format
 func (h *Handler) AsyncOld(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
@@ -781,7 +781,7 @@ func isInitialNotificationRequest(ctx context.Context, bodyBytes []byte) (bool, 
 		return true, http.StatusAccepted, nil
 	}
 
-	return false, http.StatusInternalServerError, errors.New(respErrorMsg)
+	return false, http.StatusAccepted, nil
 }
 
 func retrieveFormationID(ctx context.Context, bodyBytes []byte) (string, error) {

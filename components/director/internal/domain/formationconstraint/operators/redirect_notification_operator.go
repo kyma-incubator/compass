@@ -38,6 +38,21 @@ func (e *ConstraintEngine) RedirectNotification(ctx context.Context, input Opera
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q for location with constraint type: %q and operation name: %q during %q operation", ri.ResourceType, ri.ResourceSubtype, ri.Location.ConstraintType, ri.Location.OperationName, ri.Operation)
 
+	//ww := &WebhookWrapper{webhook: &graphql.Webhook{}}
+	//w, err := RetrieveEntityPointerFromMemoryAddress[*WebhookWrapper, *graphql.Webhook](ctx, ww, ri.WebhookMemoryAddress)
+	//if err != nil {
+	//	return false, err
+	//}
+
+	//entity, err := RetrieveEntityPointerFromMemoryAddress2(ctx, &graphql.Webhook{}, ri.WebhookMemoryAddress)
+	//if err != nil {
+	//	return false, err
+	//}
+	//w, ok := entity.(*graphql.Webhook)
+	//if !ok {
+	//	return false, errors.New("Failed to cast to webhook entity")
+	//}
+
 	w, err := RetrieveWebhookPointerFromMemoryAddress(ctx, ri.WebhookMemoryAddress)
 	if err != nil {
 		return false, err

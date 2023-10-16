@@ -652,17 +652,19 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		return nil
 	}
 
-	requestWebhookMode := assignmentReqMappingClone.Request.Webhook.Mode
-	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
-		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment state to: %q and waiting for the receiver to report the status on the status API...", assignmentReqMappingClone.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, string(model.InitialFormationState))
-		assignment.State = string(model.InitialFormationState)
-		// Cleanup the error if present as new notification has been sent. The previous configuration should be left intact.
-		assignment.Error = nil
-		if err := s.Update(ctx, assignment.ID, assignment); err != nil {
-			return errors.Wrapf(err, "while updating formation assignment with ID: %s", assignment.ID)
-		}
+	if assignmentReqMappingClone.Request.Webhook != nil {
+		requestWebhookMode := assignmentReqMappingClone.Request.Webhook.Mode
+		if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
+			log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment state to: %q and waiting for the receiver to report the status on the status API...", assignmentReqMappingClone.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, string(model.InitialFormationState))
+			assignment.State = string(model.InitialFormationState)
+			// Cleanup the error if present as new notification has been sent. The previous configuration should be left intact.
+			assignment.Error = nil
+			if err := s.Update(ctx, assignment.ID, assignment); err != nil {
+				return errors.Wrapf(err, "while updating formation assignment with ID: %s", assignment.ID)
+			}
 
-		return nil
+			return nil
+		}
 	}
 
 	if isStateInResponse(response) {
@@ -798,10 +800,12 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		return false, errors.Errorf("Received error from response: %v", *response.Error)
 	}
 
-	requestWebhookMode := mappingPair.AssignmentReqMapping.Request.Webhook.Mode
-	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
-		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Waiting for the receiver to report the status on the status API...", mappingPair.AssignmentReqMapping.Request.Webhook.ID, graphql.WebhookModeAsyncCallback)
-		return false, nil
+	if mappingPair.AssignmentReqMapping.Request.Webhook != nil {
+		requestWebhookMode := mappingPair.AssignmentReqMapping.Request.Webhook.Mode
+		if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
+			log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Waiting for the receiver to report the status on the status API...", mappingPair.AssignmentReqMapping.Request.Webhook.ID, graphql.WebhookModeAsyncCallback)
+			return false, nil
+		}
 	}
 
 	if isStateInResponse(response) {
@@ -916,15 +920,15 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 	assignment:
 		for j, request := range requests {
 			var objectID string
-			if request.Webhook.RuntimeID != nil {
+			if request.Webhook != nil && request.Webhook.RuntimeID != nil {
 				objectID = *request.Webhook.RuntimeID
 			}
 
 			// It is possible for both the application and the application template to have registered webhooks.
 			// In such case the application webhook should be used.
-			if request.Webhook.ApplicationID != nil {
+			if request.Webhook != nil && request.Webhook.ApplicationID != nil {
 				objectID = *request.Webhook.ApplicationID
-			} else if request.Webhook.ApplicationTemplateID != nil &&
+			} else if request.Webhook != nil && request.Webhook.ApplicationTemplateID != nil &&
 				*request.Webhook.ApplicationTemplateID == applicationIDToApplicationTemplateIDMapping[target] {
 				objectID = target
 			}
