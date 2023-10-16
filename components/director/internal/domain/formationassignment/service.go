@@ -116,7 +116,7 @@ type statusService interface {
 //go:generate mockery --exported --name=faNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type faNotificationService interface {
 	GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)
-	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)
+	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)
 }
 
 type service struct {
@@ -654,14 +654,6 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 
 	requestWebhookMode := assignmentReqMappingClone.Request.Webhook.Mode
 	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
-		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment state to: %q and waiting for the receiver to report the status on the status API...", assignmentReqMappingClone.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, string(model.InitialFormationState))
-		assignment.State = string(model.InitialFormationState)
-		// Cleanup the error if present as new notification has been sent. The previous configuration should be left intact.
-		assignment.Error = nil
-		if err := s.Update(ctx, assignment.ID, assignment); err != nil {
-			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
-		}
-
 		return nil
 	}
 
@@ -771,6 +763,12 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 
 	extendedRequest, err := s.faNotificationService.GenerateFormationAssignmentNotificationExt(ctx, mappingPair.AssignmentReqMapping, mappingPair.ReverseAssignmentReqMapping, mappingPair.Operation)
 	if err != nil {
+		if updateError := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState); updateError != nil {
+			return false, errors.Wrapf(
+				updateError,
+				"while updating error state: %s",
+				errors.Wrapf(err, "while generating notifications for formation assignment with ID: %q", assignment.ID).Error())
+		}
 		return false, errors.Wrap(err, "while creating extended formation assignment request")
 	}
 
@@ -794,17 +792,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 
 	requestWebhookMode := mappingPair.AssignmentReqMapping.Request.Webhook.Mode
 	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
-		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment with ID: %q to state: %q and waiting for the receiver to report the status on the status API...", mappingPair.AssignmentReqMapping.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, assignment.ID, string(model.DeletingAssignmentState))
-		assignment.State = string(model.DeletingAssignmentState)
-		// clearing the error and configuration as new notification has been sent
-		ResetAssignmentConfigAndError(assignment)
-		if err = s.Update(ctx, assignment.ID, assignment); err != nil {
-			if apperrors.IsNotFoundError(err) {
-				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
-				return false, nil
-			}
-			return false, errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
-		}
+		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Waiting for the receiver to report the status on the status API...", mappingPair.AssignmentReqMapping.Request.Webhook.ID, graphql.WebhookModeAsyncCallback)
 		return false, nil
 	}
 
@@ -891,13 +879,13 @@ func (s *service) SetAssignmentToErrorState(ctx context.Context, assignment *mod
 	}}
 	marshaled, err := json.Marshal(assignmentError)
 	if err != nil {
-		return errors.Wrapf(err, "While preparing error message for assignment with ID %q", assignment.ID)
+		return errors.Wrapf(err, "while preparing error message for assignment with ID: %q", assignment.ID)
 	}
 	assignment.Error = marshaled
 	if err := s.Update(ctx, assignment.ID, assignment); err != nil {
-		return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
+		return errors.Wrapf(err, "while updating formation assignment with ID: %s", assignment.ID)
 	}
-	log.C(ctx).Infof("Assignment with ID %s set to state %s", assignment.ID, assignment.State)
+	log.C(ctx).Infof("Assignment with ID: %s set to state: %s", assignment.ID, assignment.State)
 	return nil
 }
 

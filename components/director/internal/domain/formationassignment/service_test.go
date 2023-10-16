@@ -2609,14 +2609,9 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			ExpectedErrorMsg:                     testErr.Error(),
 		},
 		{
-			Name:    "Success: webhook has mode ASYNC_CALLBACK",
-			Context: ctxWithTenant,
-			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
-				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
-				repo.On("Update", ctxWithTenant, initialStateAssignment).Return(nil).Once()
-				return repo
-			},
+			Name:                    "Success: webhook has mode ASYNC_CALLBACK",
+			Context:                 ctxWithTenant,
+			FormationAssignmentRepo: unusedFormationAssignmentRepository,
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
 				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReqAsync).Return(&webhook.Response{
@@ -2628,38 +2623,11 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
-				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhookWithAsyncCallbackMode)
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configPendingStateAssignment, reqWebhookWithAsyncCallbackMode)
 				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialReqAsync, nil).Once()
 				return faNotificationSvc
 			},
-			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhookWithAsyncCallbackMode),
-		},
-		{
-			Name:    "ERROR: webhook has mode ASYNC_CALLBACK but fails on update",
-			Context: ctxWithTenant,
-			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
-				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
-				repo.On("Update", ctxWithTenant, initialStateAssignment).Return(testErr).Once()
-				return repo
-			},
-			NotificationService: func() *automock.NotificationService {
-				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReqAsync).Return(&webhook.Response{
-					SuccessStatusCode:    &ok,
-					IncompleteStatusCode: &incomplete,
-					ActualStatusCode:     &ok,
-				}, nil)
-				return notificationSvc
-			},
-			FANotificationSvc: func() *automock.FaNotificationService {
-				faNotificationSvc := &automock.FaNotificationService{}
-				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhookWithAsyncCallbackMode)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialReqAsync, nil).Once()
-				return faNotificationSvc
-			},
-			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhookWithAsyncCallbackMode),
-			ExpectedErrorMsg:                     testErr.Error(),
+			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configPendingStateAssignment, reqWebhookWithAsyncCallbackMode),
 		},
 		{
 			Name:    "Success: assignment with config",
@@ -3085,18 +3053,6 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 
 	configAssignmentWithTenantAndID := fixFormationAssignmentModelWithParameters(TestID, formation.ID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ReadyAssignmentState), []byte(config), nil)
 
-	assignmentWithTenantAndIDInDeletingState := &model.FormationAssignment{
-		ID:          TestID,
-		FormationID: formation.ID,
-		TenantID:    TestTenantID,
-		Source:      TestSource,
-		SourceType:  model.FormationAssignmentTypeApplication,
-		Target:      TestTarget,
-		TargetType:  model.FormationAssignmentTypeApplication,
-		State:       string(model.DeletingAssignmentState),
-		Value:       nil,
-	}
-
 	marshaledErrTechnicalError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
 		Error: formationassignment.AssignmentError{
 			Message:   "Error while deleting assignment: config propagation is not supported on unassign notifications",
@@ -3212,12 +3168,6 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 		{
 			Name:    "sets assignment in deleting state when webhook is async callback",
 			Context: ctxWithTenant,
-			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
-				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
-				repo.On("Update", ctxWithTenant, assignmentWithTenantAndIDInDeletingState).Return(nil).Once()
-				return repo
-			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
 				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
@@ -3257,6 +3207,12 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 		{
 			Name:    "error when can't generate extended formation assignment notification",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, deleteErrorStateAssignmentTechnicalErr).Return(nil).Once()
+				return repo
+			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
@@ -3267,26 +3223,20 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
-			Name:    "error when update assignment to deleting state when webhook is async callback",
+			Name:    "error when can't generate extended formation assignment notification and updating assignment to error state fails",
 			Context: ctxWithTenant,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
-				repo.On("Update", ctxWithTenant, assignmentWithTenantAndIDInDeletingState).Return(testErr).Once()
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(false, testErr).Once()
 				return repo
-			},
-			NotificationService: func() *automock.NotificationService {
-				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
-				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
-				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID), nil).Once()
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(nil, testErr).Once()
 				return faNotificationSvc
 			},
-			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq),
+			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req),
 			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
@@ -3310,28 +3260,6 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req),
 			ExpectedErrorMsg: "Received error from response: Test Error",
-		},
-		{
-			Name:    "error when update assignment to deleting state when webhook is async callback",
-			Context: ctxWithTenant,
-			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
-				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
-				repo.On("Update", ctxWithTenant, assignmentWithTenantAndIDInDeletingState).Return(notFoundError).Once()
-				return repo
-			},
-			NotificationService: func() *automock.NotificationService {
-				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
-				return svc
-			},
-			FANotificationSvc: func() *automock.FaNotificationService {
-				faNotificationSvc := &automock.FaNotificationService{}
-				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID), nil).Once()
-				return faNotificationSvc
-			},
-			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq),
 		},
 		{
 			Name:    "error while delete assignment when there is no request succeed in updating",
