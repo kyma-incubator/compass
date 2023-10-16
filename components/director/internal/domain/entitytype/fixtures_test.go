@@ -2,6 +2,7 @@ package entitytype_test
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
 	"strings"
 	"time"
@@ -29,20 +30,24 @@ const (
 )
 
 var (
-	fixedTimestamp       = time.Now()
-	appID                = "appID"
-	appTemplateVersionID = "appTemplateVersionID"
-	shortDescription     = "A business partner is a person, an organization, or a group of persons or organizations in which a company has a business interest."
-	description          = "A workforce person is a natural person with a work agreement or relationship in form of a work assignment; it can be an employee or a contingent worker.\n"
-	systemInstanceAware  = false
-	policyLevel          = "custom"
-	customPolicyLevel    = "sap:core:v1"
-	sunsetDate           = "2022-01-08T15:47:04+00:00"
-	successors           = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1"]`
-	extensible           = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
-	tags                 = `["storage","high-availability"]`
-	resourceHash         = "123456"
-	changeLogEntries     = removeWhitespace(`[
+	fixedTimestamp          = time.Now()
+	appID                   = "appID"
+	appTemplateVersionID    = "appTemplateVersionID"
+	shortDescription        = "A business partner is a person, an organization, or a group of persons or organizations in which a company has a business interest."
+	description             = "A workforce person is a natural person with a work agreement or relationship in form of a work assignment; it can be an employee or a contingent worker.\n"
+	systemInstanceAware     = false
+	policyLevel             = "custom"
+	customPolicyLevel       = "sap:core:v1"
+	sunsetDate              = "2022-01-08T15:47:04+00:00"
+	successors              = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1"]`
+	extensible              = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
+	tags                    = `["storage","high-availability"]`
+	resourceHash            = "123456"
+	version_value           = "v1.1"
+	version_deprecated      = false
+	version_deprecatedSince = "v1.0"
+	version_forRemoval      = false
+	changeLogEntries        = removeWhitespace(`[
         {
 		  "date": "2020-04-29",
 		  "description": "lorem ipsum dolor sit amet",
@@ -96,10 +101,10 @@ func fixVersionModel(value string, deprecated bool, deprecatedSince string, forR
 	}
 }
 
-func fixEntityTypeEntity() *entitytype.Entity {
+func fixEntityTypeEntity(entityTypeID string) *entitytype.Entity {
 	return &entitytype.Entity{
 		BaseEntity: &repo.BaseEntity{
-			ID:        ID,
+			ID:        entityTypeID,
 			Ready:     true,
 			CreatedAt: &fixedTimestamp,
 			UpdatedAt: &time.Time{},
@@ -130,15 +135,15 @@ func fixEntityTypeEntity() *entitytype.Entity {
 		Tags:                         repo.NewNullableStringFromJSONRawMessage(json.RawMessage(tags)),
 		Labels:                       repo.NewNullableStringFromJSONRawMessage(json.RawMessage(labels)),
 		DocumentationLabels:          repo.NewNullableStringFromJSONRawMessage(json.RawMessage(documentLabels)),
-		Version:                      fixVersionEntity("v1.1", false, "v1.0", false),
+		Version:                      fixVersionEntity(version_value, version_deprecated, version_deprecatedSince, version_forRemoval),
 		ResourceHash:                 repo.NewNullableString(&resourceHash),
 	}
 }
 
-func fixEntityTypeModel() *model.EntityType {
+func fixEntityTypeModel(entityTypeID string) *model.EntityType {
 	return &model.EntityType{
 		BaseEntity: &model.BaseEntity{
-			ID:        ID,
+			ID:        entityTypeID,
 			Ready:     true,
 			CreatedAt: &fixedTimestamp,
 			UpdatedAt: &time.Time{},
@@ -169,7 +174,21 @@ func fixEntityTypeModel() *model.EntityType {
 		Tags:                         json.RawMessage(tags),
 		Labels:                       json.RawMessage(labels),
 		DocumentationLabels:          json.RawMessage(documentLabels),
-		Version:                      fixVersionModel("v1.1", false, "v1.0", false),
+		Version:                      fixVersionModel(version_value, version_deprecated, version_deprecatedSince, version_forRemoval),
 		ResourceHash:                 &resourceHash,
 	}
+}
+
+func fixEntityTypeColumns() []string {
+	return []string{"id", "ready", "created_at", "updated_at", "deleted_at", "error", "app_id", "app_template_version_id", "ord_id", "local_id",
+		"correlation_ids", "level", "title", "short_description", "description", "system_instance_aware", "changelog_entries", "package_id", "visibility",
+		"links", "part_of_products", "policy_level", "custom_policy_level", "release_status", "sunset_date", "successors", "extensible", "tags", "labels",
+		"documentation_labels", "resource_hash", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+}
+
+func fixEntityTypeRow(id string) []driver.Value {
+	return []driver.Value{id, ready, fixedTimestamp, time.Time{}, time.Time{}, nil, appID, repo.NewValidNullableString(""), ordID, localID,
+		repo.NewValidNullableString(correlationIDs), level, title, repo.NewNullableString(&shortDescription), repo.NewNullableString(&description), repo.NewNullableBool(&systemInstanceAware), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(changeLogEntries)), packageID, publicVisibility,
+		repo.NewNullableStringFromJSONRawMessage(json.RawMessage(links)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(product)), repo.NewNullableString(&policyLevel), repo.NewNullableString(&customPolicyLevel), releaseStatus, repo.NewNullableString(&sunsetDate), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(successors)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(extensible)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(tags)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(labels)),
+		repo.NewNullableStringFromJSONRawMessage(json.RawMessage(documentLabels)), repo.NewNullableString(&resourceHash), repo.NewNullableString(&version_value), repo.NewNullableBool(&version_deprecated), repo.NewNullableString(&version_deprecatedSince), repo.NewNullableBool(&version_forRemoval)}
 }

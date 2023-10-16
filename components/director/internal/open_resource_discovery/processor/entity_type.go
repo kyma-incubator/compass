@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -12,7 +13,7 @@ import (
 //
 //go:generate mockery --name=EntityTypeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityTypeService interface {
-	Create(ctx context.Context, resourceType resource.Type, resourceID string, bundleID, packageID *string, in model.EntityTypeInput, entityTypeHash uint64) (string, error)
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.EntityTypeInput, entityTypeHash uint64) (string, error)
 	Update(ctx context.Context, resourceType resource.Type, id string, in model.EntityTypeInput, entityTypeHash uint64) error
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.EntityType, error)
@@ -97,15 +98,8 @@ func (ep *EntityTypeProcessor) resyncEntityType(ctx context.Context, resourceTyp
 		return equalStrings(&entityTypesFromDB[i].OrdID, &entityType.OrdID)
 	})
 
-	var packageID *string
-	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
-		return equalStrings(&packagesFromDB[i].OrdID, &entityType.OrdPackageID)
-	}); found {
-		packageID = &packagesFromDB[i].ID
-	}
-
 	if !isEntityTypeFound {
-		_, err := ep.entityTypeSvc.Create(ctx, resourceType, resourceID, nil, packageID, entityType, entityTypeHash)
+		_, err := ep.entityTypeSvc.Create(ctx, resourceType, resourceID, entityType, entityTypeHash)
 		if err != nil {
 			return err
 		}

@@ -7,12 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
@@ -73,6 +74,8 @@ const (
 	firstBundleOrdIDRegex                    = "ns:consumptionBundle:BUNDLE_ID(.+):v1"
 	expectedPackageTitle                     = "PACKAGE 1 TITLE"
 	expectedPackageDescription               = "lorem ipsum dolor set"
+	expectedEntityTypeTitle                  = "ENTITYTYPE 1 TITLE"
+	expectedEntityTypeDescription            = "lorem ipsum dolor set"
 	firstProductTitle                        = "PRODUCT TITLE"
 	firstProductShortDescription             = "lorem ipsum"
 	secondProductTitle                       = "SAP Business Technology Platform"
@@ -101,6 +104,7 @@ const (
 	expectedNumberOfSystemInstancesInSubscription = 1
 	expectedNumberOfPackages                      = 7
 	expectedNumberOfPackagesInSubscription        = 1
+	expectedNumberOfEntityTypes                   = 1
 	expectedNumberOfBundles                       = 14
 	expectedNumberOfBundlesInSubscription         = 2
 	expectedNumberOfAPIs                          = 21
@@ -356,6 +360,16 @@ func TestORDAggregator(stdT *testing.T) {
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfPackages)
 			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
 			t.Log("Successfully verified packages")
+
+			// Verify entity types
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/entityTypes?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfEntityTypes {
+				t.Log("Missing Entity Types...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfEntityTypes)
+			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfEntityTypes, expectedEntityTypeTitle, expectedEntityTypeDescription, descriptionField)
+			t.Log("Successfully verified EntityTypes")
 
 			// Verify bundles
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})

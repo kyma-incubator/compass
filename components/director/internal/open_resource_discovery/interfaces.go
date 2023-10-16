@@ -79,7 +79,7 @@ type EventService interface {
 //
 //go:generate mockery --name=EntityTypeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityTypeService interface {
-	Create(ctx context.Context, resourceType resource.Type, resourceID string, bundleID, packageID *string, in model.EntityTypeInput, entityTypeHash uint64) (string, error)
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.EntityTypeInput, entityTypeHash uint64) (string, error)
 	Update(ctx context.Context, resourceType resource.Type, id string, in model.EntityTypeInput, entityTypeHash uint64) error
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.EntityType, error)
