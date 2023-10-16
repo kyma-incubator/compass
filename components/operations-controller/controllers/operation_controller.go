@@ -149,7 +149,7 @@ func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
-	request := webhookclient.NewPollRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID, operation.PollURL())
+	request := webhookclient.NewPollRequest(webhookEntity, requestObject, operation.Spec.CorrelationID, operation.PollURL())
 	response, err := r.webhookClient.Poll(ctx, request)
 	if err != nil {
 		log.C(ctx).Error(err, "Unable to execute Webhook Poll request")

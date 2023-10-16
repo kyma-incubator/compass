@@ -77,16 +77,16 @@ type FormationAssignmentNotificationRequestExt struct {
 }
 
 // NewRequest constructs a webhook Request
-func NewRequest(webhook graphql.Webhook, requestObject webhook.TemplateInput, correlationID string) *Request {
+func NewRequest(webhook *graphql.Webhook, requestObject webhook.TemplateInput, correlationID string) *Request {
 	return &Request{
-		Webhook:       &webhook,
+		Webhook:       webhook,
 		Object:        requestObject,
 		CorrelationID: correlationID,
 	}
 }
 
 // NewPollRequest constructs a webhook Request
-func NewPollRequest(webhook graphql.Webhook, requestObject webhook.TemplateInput, correlationID string, pollURL string) *PollRequest {
+func NewPollRequest(webhook *graphql.Webhook, requestObject webhook.TemplateInput, correlationID string, pollURL string) *PollRequest {
 	return &PollRequest{
 		Request: NewRequest(webhook, requestObject, correlationID),
 		PollURL: pollURL,

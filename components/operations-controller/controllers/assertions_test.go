@@ -175,7 +175,7 @@ func assertWebhookPollInvocation(t *testing.T, webhookClient *controllersfakes.F
 	_, actualRequest := webhookClient.PollArgsForCall(invocation)
 	expectedRequestObject, err := operation.RequestObject()
 	require.NoError(t, err)
-	expectedRequest := webhookclient.NewPollRequest(*webhookEntity, expectedRequestObject, operation.Spec.CorrelationID, mockedLocationURL)
+	expectedRequest := webhookclient.NewPollRequest(webhookEntity, expectedRequestObject, operation.Spec.CorrelationID, mockedLocationURL)
 	require.Equal(t, expectedRequest, actualRequest)
 }
 

@@ -92,7 +92,7 @@ func (nb *NotificationBuilder) BuildFormationNotificationRequests(ctx context.Co
 
 		req := &webhookclient.FormationNotificationRequest{
 			Request: webhookclient.NewRequest(
-				*gqlWebhook,
+				gqlWebhook,
 				formationTemplateInput,
 				correlation.CorrelationIDFromContext(ctx),
 			),
