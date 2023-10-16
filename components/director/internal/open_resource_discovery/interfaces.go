@@ -171,6 +171,13 @@ type TombstoneProcessor interface {
 	Process(ctx context.Context, resourceType resource.Type, resourceID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error)
 }
 
+// EntityTypeProcessor is responsible for processing of entity type entities.
+//
+//go:generate mockery --name=TombstoneProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type EntityTypeProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, packagesFromDB []*model.Package, entityTypes []*model.EntityTypeInput, resourceHashes map[string]uint64) ([]*model.EntityType, error)
+}
+
 // TenantService missing godoc
 //
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
