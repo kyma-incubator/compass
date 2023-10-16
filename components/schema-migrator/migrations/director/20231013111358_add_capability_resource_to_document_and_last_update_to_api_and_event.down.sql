@@ -38,6 +38,11 @@ ALTER TABLE specifications
 DROP TYPE capability_spec_type;
 DROP TYPE capability_spec_format;
 
+-- Drop index for specifications table
+DROP INDEX IF EXISTS capability_specifications_tenants_app_id;
+-- Drop index for capabilities table
+DROP INDEX IF EXISTS capabilities_app_id;
+
 -- Drop table capability
 DROP TABLE IF EXISTS capabilities;
 -- Drop type associated with capability

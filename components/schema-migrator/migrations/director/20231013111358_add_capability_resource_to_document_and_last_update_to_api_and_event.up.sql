@@ -224,12 +224,18 @@ CREATE TYPE capability_spec_format AS ENUM (
     'application/octet-stream'
 );
 
+-- Create index for capabilities table
+CREATE INDEX IF NOT EXISTS capabilities_app_id ON capabilities (app_id);
+
 -- Alter table specifications - add capability_def_id, capability_spec_type and capability_spec_format
 ALTER TABLE specifications
     ADD COLUMN capability_def_id UUID,
     ADD CONSTRAINT specifications_capability_id_fkey FOREIGN KEY (capability_def_id) REFERENCES capabilities (id) ON DELETE CASCADE,
     ADD COLUMN capability_spec_type capability_spec_type,
     ADD COLUMN capability_spec_format capability_spec_format;
+
+-- Create index for specifications table
+CREATE INDEX capability_specifications_tenants_app_id ON specifications (capability_def_id);
 
 -- Create helper views for tags, links, ord_labels, correlation_ids and ord_documentation_labels of Capability
 CREATE VIEW tags_capabilities AS
