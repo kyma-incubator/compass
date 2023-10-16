@@ -19,7 +19,7 @@ if [[ "${BUILD_TYPE}" == "pr" ]]; then
     log::info "Execute Job Guard"
     export JOB_NAME_PATTERN="(pull-.*)"
     export JOBGUARD_TIMEOUT="60m"
-    "${TEST_INFRA_SOURCES_DIR}/development/jobguard/scripts/run.sh"
+    "${COMPASS_SOURCE_DIR}/installation/scripts/kyma-scripts/jobguard/scripts/run.sh"
 fi
 
 log::info "Installing gcloud CLI"
@@ -48,9 +48,7 @@ cp yq "$HOME/bin/yq" && cp yq "/usr/local/bin/yq"
 log::info "Successfully installed yq version: $YQ_VERSION"
 
 # Install Kyma to be later used in run.sh
-# KYMA_CLI_VERSION=$(cat ${COMPASS_SOURCE_DIR}/installation/resources/KYMA_VERSION)
-# TODO: Kyma 2.6.3 release exists, but Kyma CLI with the same version does not. That's why we're using 2.7.0
-KYMA_CLI_VERSION="2.7.0"
+KYMA_CLI_VERSION="2.8.4"
 log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
 
 curl -Lo kyma.tar.gz "https://github.com/kyma-project/cli/releases/download/${KYMA_CLI_VERSION}/kyma_Linux_x86_64.tar.gz" \

@@ -34,6 +34,10 @@ func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectTy
 	ret := _m.Called(ctx, tenant, objectType, objectID, key)
 
 	var r0 *model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) (*model.Label, error)); ok {
+		return rf(ctx, tenant, objectType, objectID, key)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) *model.Label); ok {
 		r0 = rf(ctx, tenant, objectType, objectID, key)
 	} else {
@@ -42,9 +46,34 @@ func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectTy
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectID, key)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetByKeyGlobal provides a mock function with given fields: ctx, objectType, objectID, key
+func (_m *LabelRepository) GetByKeyGlobal(ctx context.Context, objectType model.LabelableObject, objectID string, key string) (*model.Label, error) {
+	ret := _m.Called(ctx, objectType, objectID, key)
+
+	var r0 *model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.LabelableObject, string, string) (*model.Label, error)); ok {
+		return rf(ctx, objectType, objectID, key)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, model.LabelableObject, string, string) *model.Label); ok {
+		r0 = rf(ctx, objectType, objectID, key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Label)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, model.LabelableObject, string, string) error); ok {
+		r1 = rf(ctx, objectType, objectID, key)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -94,13 +123,12 @@ func (_m *LabelRepository) UpsertGlobal(ctx context.Context, _a1 *model.Label) e
 	return r0
 }
 
-type mockConstructorTestingTNewLabelRepository interface {
+// NewLabelRepository creates a new instance of LabelRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewLabelRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewLabelRepository creates a new instance of LabelRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewLabelRepository(t mockConstructorTestingTNewLabelRepository) *LabelRepository {
+}) *LabelRepository {
 	mock := &LabelRepository{}
 	mock.Mock.Test(t)
 

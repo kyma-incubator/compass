@@ -20,6 +20,10 @@ func (_m *ScenarioAssignmentLister) List(ctx context.Context, tenant string, pag
 	ret := _m.Called(ctx, tenant, pageSize, cursor)
 
 	var r0 *model.AutomaticScenarioAssignmentPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) (*model.AutomaticScenarioAssignmentPage, error)); ok {
+		return rf(ctx, tenant, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.AutomaticScenarioAssignmentPage); ok {
 		r0 = rf(ctx, tenant, pageSize, cursor)
 	} else {
@@ -28,7 +32,6 @@ func (_m *ScenarioAssignmentLister) List(ctx context.Context, tenant string, pag
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
 		r1 = rf(ctx, tenant, pageSize, cursor)
 	} else {
@@ -38,13 +41,12 @@ func (_m *ScenarioAssignmentLister) List(ctx context.Context, tenant string, pag
 	return r0, r1
 }
 
-type mockConstructorTestingTNewScenarioAssignmentLister interface {
+// NewScenarioAssignmentLister creates a new instance of ScenarioAssignmentLister. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewScenarioAssignmentLister(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewScenarioAssignmentLister creates a new instance of ScenarioAssignmentLister. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewScenarioAssignmentLister(t mockConstructorTestingTNewScenarioAssignmentLister) *ScenarioAssignmentLister {
+}) *ScenarioAssignmentLister {
 	mock := &ScenarioAssignmentLister{}
 	mock.Mock.Test(t)
 

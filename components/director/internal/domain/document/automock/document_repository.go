@@ -62,13 +62,16 @@ func (_m *DocumentRepository) Exists(ctx context.Context, tenant string, id stri
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -83,6 +86,10 @@ func (_m *DocumentRepository) GetByID(ctx context.Context, tenant string, id str
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.Document
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Document, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Document); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
@@ -91,7 +98,6 @@ func (_m *DocumentRepository) GetByID(ctx context.Context, tenant string, id str
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -106,6 +112,10 @@ func (_m *DocumentRepository) GetForBundle(ctx context.Context, tenant string, i
 	ret := _m.Called(ctx, tenant, id, bundleID)
 
 	var r0 *model.Document
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.Document, error)); ok {
+		return rf(ctx, tenant, id, bundleID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.Document); ok {
 		r0 = rf(ctx, tenant, id, bundleID)
 	} else {
@@ -114,7 +124,6 @@ func (_m *DocumentRepository) GetForBundle(ctx context.Context, tenant string, i
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenant, id, bundleID)
 	} else {
@@ -129,6 +138,10 @@ func (_m *DocumentRepository) ListByBundleIDs(ctx context.Context, tenantID stri
 	ret := _m.Called(ctx, tenantID, bundleIDs, pageSize, cursor)
 
 	var r0 []*model.DocumentPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int, string) ([]*model.DocumentPage, error)); ok {
+		return rf(ctx, tenantID, bundleIDs, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int, string) []*model.DocumentPage); ok {
 		r0 = rf(ctx, tenantID, bundleIDs, pageSize, cursor)
 	} else {
@@ -137,7 +150,6 @@ func (_m *DocumentRepository) ListByBundleIDs(ctx context.Context, tenantID stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, int, string) error); ok {
 		r1 = rf(ctx, tenantID, bundleIDs, pageSize, cursor)
 	} else {
@@ -147,13 +159,12 @@ func (_m *DocumentRepository) ListByBundleIDs(ctx context.Context, tenantID stri
 	return r0, r1
 }
 
-type mockConstructorTestingTNewDocumentRepository interface {
+// NewDocumentRepository creates a new instance of DocumentRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDocumentRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDocumentRepository creates a new instance of DocumentRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDocumentRepository(t mockConstructorTestingTNewDocumentRepository) *DocumentRepository {
+}) *DocumentRepository {
 	mock := &DocumentRepository{}
 	mock.Mock.Test(t)
 

@@ -20,13 +20,16 @@ func (_m *FormationConstraintService) Create(ctx context.Context, in *model.Form
 	ret := _m.Called(ctx, in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationConstraintInput) (string, error)); ok {
+		return rf(ctx, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationConstraintInput) string); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *model.FormationConstraintInput) error); ok {
 		r1 = rf(ctx, in)
 	} else {
@@ -55,6 +58,10 @@ func (_m *FormationConstraintService) Get(ctx context.Context, id string) (*mode
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.FormationConstraint
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.FormationConstraint, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.FormationConstraint); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -63,7 +70,6 @@ func (_m *FormationConstraintService) Get(ctx context.Context, id string) (*mode
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -78,6 +84,10 @@ func (_m *FormationConstraintService) List(ctx context.Context) ([]*model.Format
 	ret := _m.Called(ctx)
 
 	var r0 []*model.FormationConstraint
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.FormationConstraint, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []*model.FormationConstraint); ok {
 		r0 = rf(ctx)
 	} else {
@@ -86,7 +96,6 @@ func (_m *FormationConstraintService) List(ctx context.Context) ([]*model.Format
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -101,6 +110,10 @@ func (_m *FormationConstraintService) ListByFormationTemplateID(ctx context.Cont
 	ret := _m.Called(ctx, formationTemplateID)
 
 	var r0 []*model.FormationConstraint
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.FormationConstraint, error)); ok {
+		return rf(ctx, formationTemplateID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.FormationConstraint); ok {
 		r0 = rf(ctx, formationTemplateID)
 	} else {
@@ -109,7 +122,6 @@ func (_m *FormationConstraintService) ListByFormationTemplateID(ctx context.Cont
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, formationTemplateID)
 	} else {
@@ -133,13 +145,12 @@ func (_m *FormationConstraintService) Update(ctx context.Context, id string, in 
 	return r0
 }
 
-type mockConstructorTestingTNewFormationConstraintService interface {
+// NewFormationConstraintService creates a new instance of FormationConstraintService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationConstraintService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationConstraintService creates a new instance of FormationConstraintService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationConstraintService(t mockConstructorTestingTNewFormationConstraintService) *FormationConstraintService {
+}) *FormationConstraintService {
 	mock := &FormationConstraintService{}
 	mock.Mock.Test(t)
 

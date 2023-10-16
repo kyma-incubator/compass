@@ -1858,25 +1858,9 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 	})
 
-	t.Run("Synchronous App to App Formation Assignment Notifications with status reset API", func(t *testing.T) {
+	t.Run("Formation Assignment Notifications with status reset API", func(t *testing.T) {
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-
-		applicationTntMappingWebhookType := graphql.WebhookTypeApplicationTenantMapping
-		syncWebhookMode := graphql.WebhookModeSync
-		urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
-		outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
-
-		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplate, inputTemplate, outputTemplate)
-
-		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", applicationTntMappingWebhookType, syncWebhookMode, app1.ID)
-		actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app1.ID)
-		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID)
-
-		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", applicationTntMappingWebhookType, syncWebhookMode, app2.ID)
-		actualApplicationWebhookApp2 := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app2.ID)
-		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhookApp2.ID)
 
 		formationName := "app-to-app-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)
@@ -1894,12 +1878,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, formationName, assignedFormation.Name)
 
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
-		}
-		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
-
 		t.Logf("Assign application 2 to formation %s", formationName)
 		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app2.ID, graphql.FormationObjectTypeApplication, tnt)
 		assignReq = fixtures.FixAssignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -1907,98 +1885,262 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, formationName, assignedFormation.Name)
 
-		expectedConfig := str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
-			},
-			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-			},
-		}
-		assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		t.Run("Synchronous App to App reset", func(t *testing.T) {
+			applicationTntMappingWebhookType := graphql.WebhookTypeApplicationTenantMapping
+			syncWebhookMode := graphql.WebhookModeSync
+			urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
+			inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
+			outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-		body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		assertNotificationsCountForTenant(t, body, app1.ID, 1)
-		assertNotificationsCountForTenant(t, body, app2.ID, 1)
+			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplate, inputTemplate, outputTemplate)
 
-		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+			t.Logf("Add webhook with type %q and mode: %q to application with ID %q", applicationTntMappingWebhookType, syncWebhookMode, app1.ID)
+			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app1.ID)
+			defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID)
 
-		expectedResetConfig := "{\"resetKey\":\"resetValue\",\"resetKey2\":{\"resetKey\":\"resetValue2\"}}"
-		assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, tnt, 4)
-		formationAssignmentID := getFormationAssignmentIDBySourceAndTarget(t, assignmentsPage, app1.ID, app2.ID)
-		reverseAssignmentID := getFormationAssignmentIDBySourceAndTarget(t, assignmentsPage, app2.ID, app1.ID)
+			t.Logf("Add webhook with type %q and mode: %q to application with ID %q", applicationTntMappingWebhookType, syncWebhookMode, app2.ID)
+			actualApplicationWebhookApp2 := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app2.ID)
+			defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhookApp2.ID)
+			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
-		t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app1.ID, app2.ID)
-		executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, expectedResetConfig, tnt, formation.ID, formationAssignmentID, http.StatusOK)
+			expectedResetConfig := "{\"resetKey\":\"resetValue\",\"resetKey2\":{\"resetKey\":\"resetValue2\"}}"
+			assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, tnt, 4)
+			formationAssignmentID := getFormationAssignmentIDBySourceAndTarget(t, assignmentsPage, app1.ID, app2.ID)
+			reverseAssignmentID := getFormationAssignmentIDBySourceAndTarget(t, assignmentsPage, app2.ID, app1.ID)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
-			},
-			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-			},
-		}
-		// We use the async method, because the status API is being called.
-		// Even though the case is synchronous, the notification is executed in a separate goroutine and isn't guaranteed
-		// to have been executed before we perform the checks otherwise.
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+			t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app1.ID, app2.ID)
+			executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "CONFIG_PENDING", expectedResetConfig, tnt, formation.ID, formationAssignmentID, http.StatusOK)
 
-		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		assertNotificationsCountForTenant(t, body, app1.ID, 1)
-		notificationsForApp1Tenant := gjson.GetBytes(body, app1.ID)
-		assignNotificationForApp1 := notificationsForApp1Tenant.Array()[0]
-		err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp1, assignOperation, formation.ID, app1.ID, "", appRegion, expectedResetConfig, tnt, tntParentCustomer)
-		require.NoError(t, err)
+			expectedConfig := str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")
+			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+				app1.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
+				},
+				app2.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				},
+			}
+			// We use the async method, because the status API is being called.
+			// Even though the case is synchronous, the notification is executed in a separate goroutine and isn't guaranteed
+			// to have been executed before we perform the checks otherwise.
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
-		assertNotificationsCountForTenant(t, body, app2.ID, 1)
-		notificationsForApp2Tenant := gjson.GetBytes(body, app2.ID)
-		assignNotificationForApp2 := notificationsForApp2Tenant.Array()[0]
-		err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp2, assignOperation, formation.ID, app2.ID, "", appRegion, *expectedConfig, tnt, tntParentCustomer)
-		require.NoError(t, err)
+			body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+			assertNotificationsCountForTenant(t, body, app1.ID, 1)
+			notificationsForApp1Tenant := gjson.GetBytes(body, app1.ID)
+			assignNotificationForApp1 := notificationsForApp1Tenant.Array()[0]
+			err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp1, assignOperation, formation.ID, app1.ID, "", appRegion, expectedResetConfig, tnt, tntParentCustomer)
+			require.NoError(t, err)
 
-		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+			assertNotificationsCountForTenant(t, body, app2.ID, 1)
+			notificationsForApp2Tenant := gjson.GetBytes(body, app2.ID)
+			assignNotificationForApp2 := notificationsForApp2Tenant.Array()[0]
+			err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp2, assignOperation, formation.ID, app2.ID, "", appRegion, *expectedConfig, tnt, tntParentCustomer)
+			require.NoError(t, err)
 
-		t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app2.ID, app1.ID)
-		executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, expectedResetConfig, tnt, formation.ID, reverseAssignmentID, http.StatusOK)
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
-			},
-			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-			},
-		}
+			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
-		// We use the async method, because the status API is being called.
-		// Even though the case is synchronous, the notification is executed in a separate goroutine and isn't guaranteed
-		// to have been executed before we perform the checks otherwise.
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+			t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app2.ID, app1.ID)
+			executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "CONFIG_PENDING", expectedResetConfig, tnt, formation.ID, reverseAssignmentID, http.StatusOK)
+			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+				app1.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
+				},
+				app2.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				},
+			}
 
-		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		assertNotificationsCountForTenant(t, body, app1.ID, 1)
-		assignNotificationForApp1 = gjson.GetBytes(body, app1.ID)
-		assignNotificationForApp1 = assignNotificationForApp1.Array()[0]
-		err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp1, assignOperation, formation.ID, app1.ID, "", appRegion, *expectedConfig, tnt, tntParentCustomer)
-		require.NoError(t, err)
+			// We use the async method, because the status API is being called.
+			// Even though the case is synchronous, the notification is executed in a separate goroutine and isn't guaranteed
+			// to have been executed before we perform the checks otherwise.
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
-		assertNotificationsCountForTenant(t, body, app2.ID, 1)
-		notificationsForApp2Tenant = gjson.GetBytes(body, app2.ID)
-		assignNotificationForApp2 = notificationsForApp2Tenant.Array()[0]
-		err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp2, assignOperation, formation.ID, app2.ID, "", appRegion, expectedResetConfig, tnt, tntParentCustomer)
-		require.NoError(t, err)
+			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+			assertNotificationsCountForTenant(t, body, app1.ID, 1)
+			assignNotificationForApp1 = gjson.GetBytes(body, app1.ID)
+			assignNotificationForApp1 = assignNotificationForApp1.Array()[0]
+			err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp1, assignOperation, formation.ID, app1.ID, "", appRegion, *expectedConfig, tnt, tntParentCustomer)
+			require.NoError(t, err)
 
-		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+			assertNotificationsCountForTenant(t, body, app2.ID, 1)
+			notificationsForApp2Tenant = gjson.GetBytes(body, app2.ID)
+			assignNotificationForApp2 = notificationsForApp2Tenant.Array()[0]
+			err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp2, assignOperation, formation.ID, app2.ID, "", appRegion, expectedResetConfig, tnt, tntParentCustomer)
+			require.NoError(t, err)
+		})
+		t.Run("Asynchronous App to App reset", func(t *testing.T) {
+			applicationTntMappingWebhookType := graphql.WebhookTypeApplicationTenantMapping
+			asyncWebhookMode := graphql.WebhookModeAsyncCallback
+			urlTemplateAsync := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
+			inputTemplateAsync := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"config\\\":{{ .ReverseAssignment.Value }},\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
+			outputTemplateAsync := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
+
+			applicationWebhookInputAsync := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncWebhookMode, urlTemplateAsync, inputTemplateAsync, outputTemplateAsync)
+
+			syncWebhookMode := graphql.WebhookModeSync
+			urlTemplateSync := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
+			inputTemplateSync := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
+			outputTemplateSync := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
+
+			applicationWebhookInputSync := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplateSync, inputTemplateSync, outputTemplateSync)
+
+			t.Logf("Add webhook with type %q and mode: %q to application with ID %q", applicationTntMappingWebhookType, asyncWebhookMode, app1.ID)
+			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInputAsync, tnt, app1.ID)
+			defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID)
+
+			t.Logf("Add webhook with type %q and mode: %q to application with ID %q", applicationTntMappingWebhookType, syncWebhookMode, app2.ID)
+			actualApplicationWebhookApp2 := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInputSync, tnt, app2.ID)
+			defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhookApp2.ID)
+			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
+			expectedResetConfig := "{\"resetKeyAsync\":\"resetValue\",\"resetKeyAsync2\":{\"resetKeyAsync\":\"resetValue2\"}}"
+			assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, tnt, 4)
+			formationAssignmentID := getFormationAssignmentIDBySourceAndTarget(t, assignmentsPage, app1.ID, app2.ID)
+			reverseAssignmentID := getFormationAssignmentIDBySourceAndTarget(t, assignmentsPage, app2.ID, app1.ID)
+
+			t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app1.ID, app2.ID)
+			executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "CONFIG_PENDING", expectedResetConfig, tnt, formation.ID, formationAssignmentID, http.StatusOK)
+
+			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+				app1.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+				},
+				app2.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				},
+			}
+			// We use the async method, because the status API is being called.
+			// Even though the case is synchronous, the notification is executed in a separate goroutine and isn't guaranteed
+			// to have been executed before we perform the checks otherwise.
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
+			body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+			assertNotificationsCountForTenant(t, body, app1.ID, 1)
+			notificationsForApp1Tenant := gjson.GetBytes(body, app1.ID)
+			assignNotificationForApp1 := notificationsForApp1Tenant.Array()[0]
+			err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp1, assignOperation, formation.ID, app1.ID, "", appRegion, expectedResetConfig, tnt, tntParentCustomer)
+			require.NoError(t, err)
+
+			assertNotificationsCountForTenant(t, body, app2.ID, 1)
+			notificationsForApp2Tenant := gjson.GetBytes(body, app2.ID)
+			assignNotificationForApp2 := notificationsForApp2Tenant.Array()[0]
+			err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp2, assignOperation, formation.ID, app2.ID, "", appRegion, *fixtures.StatusAPIAsyncConfigJSON, tnt, tntParentCustomer)
+			require.NoError(t, err)
+
+			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
+			t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app2.ID, app1.ID)
+			executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "CONFIG_PENDING", expectedResetConfig, tnt, formation.ID, reverseAssignmentID, http.StatusOK)
+			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+				app1.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+				},
+				app2.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				},
+			}
+
+			// We use the async method, because the status API is being called.
+			// Even though the case is synchronous, the notification is executed in a separate goroutine and isn't guaranteed
+			// to have been executed before we perform the checks otherwise.
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
+			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+			assertNotificationsCountForTenant(t, body, app1.ID, 1)
+			assignNotificationForApp1 = gjson.GetBytes(body, app1.ID)
+			assignNotificationForApp1 = assignNotificationForApp1.Array()[0]
+			err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp1, assignOperation, formation.ID, app1.ID, "", appRegion, "", tnt, tntParentCustomer)
+			require.NoError(t, err)
+
+			assertNotificationsCountForTenant(t, body, app2.ID, 1)
+			notificationsForApp2Tenant = gjson.GetBytes(body, app2.ID)
+			assignNotificationForApp2 = notificationsForApp2Tenant.Array()[0]
+			err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp2, assignOperation, formation.ID, app2.ID, "", appRegion, "", tnt, tntParentCustomer)
+			require.NoError(t, err)
+		})
+		t.Run("App to App reset with one webhook", func(t *testing.T) {
+			applicationTntMappingWebhookType := graphql.WebhookTypeApplicationTenantMapping
+			syncWebhookMode := graphql.WebhookModeSync
+			urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/no-configuration/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
+			inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
+			outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
+
+			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplate, inputTemplate, outputTemplate)
+
+			t.Logf("Add webhook with type %q and mode: %q to application with ID %q", applicationTntMappingWebhookType, syncWebhookMode, app1.ID)
+			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app1.ID)
+			defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID)
+
+			assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, tnt, 4)
+			formationAssignmentID := getFormationAssignmentIDBySourceAndTarget(t, assignmentsPage, app1.ID, app2.ID)
+
+			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
+			t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app1.ID, app2.ID)
+			executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "READY", *fixtures.StatusAPIResetConfigJSON, tnt, formation.ID, formationAssignmentID, http.StatusOK)
+
+			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+				app1.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIResetConfigJSON, Value: fixtures.StatusAPIResetConfigJSON, Error: nil},
+				},
+				app2.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				},
+			}
+
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
+			body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+			assertNotificationsCountForTenant(t, body, app1.ID, 1)
+			notificationsForApp1Tenant := gjson.GetBytes(body, app1.ID)
+			assignNotificationForApp1 := notificationsForApp1Tenant.Array()[0]
+			err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp1, assignOperation, formation.ID, app1.ID, "", appRegion, *fixtures.StatusAPIResetConfigJSON, tnt, tntParentCustomer)
+
+			assertNotificationsCountForTenant(t, body, app2.ID, 0)
+
+			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
+			t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app1.ID, app2.ID)
+			executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "CONFIG_PENDING", *fixtures.StatusAPIResetConfigJSON, tnt, formation.ID, formationAssignmentID, http.StatusOK)
+
+			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+				app1.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: fixtures.StatusAPIResetConfigJSON, Value: fixtures.StatusAPIResetConfigJSON, Error: nil},
+				},
+				app2.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				},
+			}
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+
+			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+			assertNotificationsCountForTenant(t, body, app1.ID, 1)
+			notificationsForApp1Tenant = gjson.GetBytes(body, app1.ID)
+			assignNotificationForApp1 = notificationsForApp1Tenant.Array()[0]
+			err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp1, assignOperation, formation.ID, app1.ID, "", appRegion, *fixtures.StatusAPIResetConfigJSON, tnt, tntParentCustomer)
+
+			assertNotificationsCountForTenant(t, body, app2.ID, 0)
+
+		})
 
 		t.Logf("Unassign Application 1 from formation %s", formationName)
 		unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -2007,35 +2149,11 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			app2.ID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
-		}
-		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
-
-		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		assertNotificationsCountForTenant(t, body, app1.ID, 1)
-		assertNotificationsCountForTenant(t, body, app2.ID, 1)
-
-		notificationsForApp1 := gjson.GetBytes(body, app1.ID)
-		unassignNotificationFound := false
-		for _, notification := range notificationsForApp1.Array() {
-			op := notification.Get("Operation").String()
-			if op == unassignOperation {
-				unassignNotificationFound = true
-				assertFormationAssignmentsNotificationWithItemsStructure(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
-			}
-		}
-		require.True(t, unassignNotificationFound, "notification for unassign app2 not found")
-
 		t.Logf("Unassign Application 2 from formation %s", formationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), formationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, unassignReq, &unassignFormation)
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
-
-		assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 	})
 
 	t.Run("Formation Assignment notifications with self-referenced notifications", func(t *testing.T) {
@@ -2121,6 +2239,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 		})
+
 		t.Run("Assign and Unassign should correctly send notifications for async participant", func(t *testing.T) {
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 			defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -2167,6 +2286,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		})
+
 		t.Run("Resynchronize should correctly send notifications for sync participant", func(t *testing.T) {
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 			defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -2242,6 +2362,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			require.Equal(t, formationName, assignedFormation.Name)
 			assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
 		})
+
 		t.Run("Resynchronize should correctly send notifications for async participant", func(t *testing.T) {
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 			defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -2333,6 +2454,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
 			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 2)
 		})
+
 		t.Run("Resynchronize should correctly send notifications for multiple participants", func(t *testing.T) {
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 			defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -2476,11 +2598,11 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
-			t.Logf("Update webhook with ID: %q of type: %q and mode: %q to have URLTemlate that points to endpoint that respnds with error", actualApplicationAsyncWebhookInput.ID, graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback)
+			t.Logf("Update webhook with ID: %q of type: %q and mode: %q to have URLTemlate that points to endpoint that responds with error", actualApplicationAsyncWebhookInput.ID, graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback)
 			updatedWebhook = fixtures.UpdateWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationAsyncWebhookInput.ID, applicationAsyncWebhookInput)
 			require.Equal(t, updatedWebhook.ID, actualApplicationAsyncWebhookInput.ID)
 
-			t.Logf("Update webhook with ID: %q of type: %q and mode: %q to have URLTemlate that points to endpoint that respnds with error", actualApplicationWebhook.ID, graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync)
+			t.Logf("Update webhook with ID: %q of type: %q and mode: %q to have URLTemlate that points to endpoint that responds with error", actualApplicationWebhook.ID, graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync)
 			updatedWebhookSync = fixtures.UpdateWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID, applicationWebhookThatFailsInput)
 			require.Equal(t, updatedWebhookSync.ID, actualApplicationWebhook.ID)
 

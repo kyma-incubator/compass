@@ -356,6 +356,8 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	// formation assignment notifications sync handlers
 	router.HandleFunc("/formation-callback/{tenantId}", notificationHandler.Patch).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/no-configuration/{tenantId}", notificationHandler.RespondWithNoConfig).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/no-configuration/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/configuration/{tenantId}", notificationHandler.RespondWithIncomplete).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/configuration/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/with-state/{tenantId}", notificationHandler.PatchWithState).Methods(http.MethodPatch)
@@ -381,8 +383,8 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	// formation assignment notifications handler for the destination creation/deletion
 	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}", notificationHandler.RespondWithIncompleteAndDestinationDetails).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}/{applicationId}", notificationHandler.DestinationDelete).Methods(http.MethodDelete)
-	router.HandleFunc("/formation-callback/async/destinations/{delay}/{tenantId}", notificationHandler.AsyncDestinationPatch).Methods(http.MethodPatch)
-	router.HandleFunc("/formation-callback/async/destinations/{delay}/{tenantId}/{applicationId}", notificationHandler.AsyncDestinationDelete).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/async/destinations/{tenantId}", notificationHandler.AsyncDestinationPatch).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/async/destinations/{tenantId}/{applicationId}", notificationHandler.AsyncDestinationDelete).Methods(http.MethodDelete)
 	// formation(lifecycle) notifications sync handlers
 	router.HandleFunc("/v1/businessIntegration/{uclFormationId}", notificationHandler.PostFormation).Methods(http.MethodPost)
 	router.HandleFunc("/v1/businessIntegration/{uclFormationId}", notificationHandler.DeleteFormation).Methods(http.MethodDelete)
@@ -399,25 +401,21 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	// destination creator handlers
 	destinationCreatorSubaccountLevelPath := cfg.DestinationCreatorConfig.DestinationAPIConfig.SubaccountLevelPath
 	deleteDestinationCreatorSubaccountLevelPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.DestinationAPIConfig.DestinationNameParam)
-
 	router.HandleFunc(destinationCreatorSubaccountLevelPath, destinationCreatorHandler.CreateDestinations).Methods(http.MethodPost)
 	router.HandleFunc(destinationCreatorSubaccountLevelPath+deleteDestinationCreatorSubaccountLevelPathSuffix, destinationCreatorHandler.DeleteDestinations).Methods(http.MethodDelete)
 
 	destinationCreatorInstanceLevelPath := cfg.DestinationCreatorConfig.DestinationAPIConfig.InstanceLevelPath
 	deleteDestinationCreatorInstanceLevelPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.DestinationAPIConfig.DestinationNameParam)
-
 	router.HandleFunc(destinationCreatorInstanceLevelPath, destinationCreatorHandler.CreateDestinations).Methods(http.MethodPost)
 	router.HandleFunc(destinationCreatorInstanceLevelPath+deleteDestinationCreatorInstanceLevelPathSuffix, destinationCreatorHandler.DeleteDestinations).Methods(http.MethodDelete)
 
 	certificateSubaccountLevelPath := cfg.DestinationCreatorConfig.CertificateAPIConfig.SubaccountLevelPath
 	deleteCertificateSubaccountLevelPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.CertificateAPIConfig.CertificateNameParam)
-
 	router.HandleFunc(certificateSubaccountLevelPath, destinationCreatorHandler.CreateCertificate).Methods(http.MethodPost)
 	router.HandleFunc(certificateSubaccountLevelPath+deleteCertificateSubaccountLevelPathSuffix, destinationCreatorHandler.DeleteCertificate).Methods(http.MethodDelete)
 
 	certificateInstanceLevelPath := cfg.DestinationCreatorConfig.CertificateAPIConfig.InstanceLevelPath
 	deleteCertificateInstanceLevelPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.CertificateAPIConfig.CertificateNameParam)
-
 	router.HandleFunc(certificateInstanceLevelPath, destinationCreatorHandler.CreateCertificate).Methods(http.MethodPost)
 	router.HandleFunc(certificateInstanceLevelPath+deleteCertificateInstanceLevelPathSuffix, destinationCreatorHandler.DeleteCertificate).Methods(http.MethodDelete)
 

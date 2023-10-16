@@ -1,9 +1,10 @@
 APP_NAME = compass-director-tests
 APP_PATH = tests/director-tests
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
+BUILDPACK = europe-docker.pkg.dev/kyma-project/prod/test-infra/buildpack-golang:v20230323-a1ac96db
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 INSTALLATION_SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/installation/scripts
 DIRECTOR_GRAPHQL_API = "http://compass-dev-director:3000"
+withExamples=false
 export DIRECTOR_GRAPHQL_API
 export GO111MODULE = on
 export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
@@ -43,6 +44,10 @@ sandbox-test:
 
 run:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-director-local-0 -c director-tests -- ./director.test -test.run $(testName) -test.v
+	@if [[ ${withExamples} = true ]]; then\
+		echo "Generating examples...";\
+		./copy-examples.sh;\
+	fi
 
 
 run-application:

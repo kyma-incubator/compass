@@ -8,6 +8,9 @@ function enableNodeExporterMTLS() {
   # The patches around the DaemonSet involve an addition of two init containers that together setup certificates
   # for the node-exporter application to use. There are also two new mounts - a shared directory (node-certs)
   # and the Istio CA secret (istio-certs).
+  # This can be moved to the Helm values.yaml but it depends on the existence of Istio (its certificate Secret has to be
+  # replicated in the kyma-system namespace as well). As Istio and the monitoring stack are both deployed by Kyma this
+  # Secret replication is tricky, that's why the patch is kept.
 
   daemonset=$(cat <<"EOF"
 apiVersion: apps/v1
@@ -163,9 +166,7 @@ EOF
 function patchKymaServiceMonitorsForMTLS() {
   # Some of the ServiceMonitor MTLS overrides were moved to the Kyma Helm chart overrides
   kymaSvcMonitors=(
-    monitoring-kube-state-metrics
     monitoring-operator
-    monitoring-prometheus-pushgateway
     ory-stack-oathkeeper-maester
   )
 

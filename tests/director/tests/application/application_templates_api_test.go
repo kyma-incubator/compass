@@ -1281,11 +1281,9 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 	require.Contains(t, err.Error(), fmt.Sprintf("application template with name %q and consumer id %q not found", appTemplateName, conf.TestProviderSubaccountIDRegion2))
 }
 
-func TestAddWebhookToApplicationTemplate(t *testing.T) {
-	// GIVEN
+func TestAddWebhookToApplicationTemplateWithTenant(t *testing.T) {
 	ctx := context.Background()
 	name := "app-template"
-
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create integration system")
@@ -1294,6 +1292,7 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, intSys.ID)
 
+	t.Log("Request Client Credentials for Integration System")
 	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
 	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
@@ -1307,14 +1306,20 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 
 	t.Log("Create application template")
 	appTmplInput := fixtures.FixApplicationTemplate(name)
+	appTmplInput.Labels = graphql.Labels{
+		"a":                             []string{"b", "c"},
+		"d":                             []string{"e", "f"},
+		"displayName":                   "{{display-name}}",
+		conf.GlobalSubaccountIDLabelKey: tenantId,
+	}
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTemplate)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplate.ID)
 
+	t.Log("Add Webhook to application template with invalid tenant")
 	// add
 	url := "http://new-webhook.url"
-	urlUpdated := "http://updated-webhook.url"
 	outputTemplate := "{\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"success_status_code\\\": 202,\\\"error\\\": \\\"{{.Body.error}}\\\"}"
 
 	webhookInStr, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
@@ -1322,35 +1327,31 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 		Type:           graphql.WebhookTypeUnregisterApplication,
 		OutputTemplate: &outputTemplate,
 	})
-
 	require.NoError(t, err)
-	addReq := fixtures.FixAddWebhookToTemplateRequest(appTemplate.ID, webhookInStr)
-	example.SaveExampleInCustomDir(t, addReq.Query(), example.AddWebhookCategory, "add application template webhook")
 
 	actualWebhook := graphql.Webhook{}
-	t.Run("fails when tenant is present", func(t *testing.T) {
-		t.Log("Trying to Webhook to application template with tenant")
-		err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, addReq, &actualWebhook)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "unknown parent for entity type webhook")
-	})
+	addReq := fixtures.FixAddWebhookToTemplateRequest(appTemplate.ID, webhookInStr)
+	example.SaveExampleInCustomDir(t, addReq.Query(), example.AddWebhookCategory, "add application template webhook")
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenant.TestTenants.GetSystemFetcherTenantID(), addReq, &actualWebhook)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "the provided tenant c395681d-11dd-4cde-bbcf-570b4a153e79 and the parent tenant 5577cf46-4f78-45fa-b55f-a42a3bdba868 do not match")
 
-	t.Run("succeeds with no tenant", func(t *testing.T) {
+	t.Log("Add Webhook to application template with valid tenant")
+	actualWebhook = graphql.Webhook{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenantId, addReq, &actualWebhook)
+	require.NoError(t, err)
+	assert.NotNil(t, actualWebhook.URL)
+	assert.Equal(t, "http://new-webhook.url", *actualWebhook.URL)
+	assert.Equal(t, graphql.WebhookTypeUnregisterApplication, actualWebhook.Type)
+	id := actualWebhook.ID
+	require.NotNil(t, id)
 
-		t.Log("Add Webhook to application template")
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, oauthGraphQLClient, addReq, &actualWebhook)
-		require.NoError(t, err)
-		assert.NotNil(t, actualWebhook.URL)
-		assert.Equal(t, "http://new-webhook.url", *actualWebhook.URL)
-		assert.Equal(t, graphql.WebhookTypeUnregisterApplication, actualWebhook.Type)
-		id := actualWebhook.ID
-		require.NotNil(t, id)
-
-	})
-
+	t.Log("Get Application Template")
 	updatedAppTemplate := fixtures.GetApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTemplate.ID)
 	assert.Len(t, updatedAppTemplate.Webhooks, 1)
 
+	t.Log("Update Application Template webhook with tenant")
+	urlUpdated := "http://updated-webhook.url"
 	webhookInStr, err = testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
 		URL:            &urlUpdated,
 		Type:           graphql.WebhookTypeUnregisterApplication,
@@ -1358,25 +1359,97 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	t.Log("Getting Webhooks for application template")
+	updateReq := fixtures.FixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenantId, updateReq, &actualWebhook)
+	require.NoError(t, err)
+	assert.NotNil(t, actualWebhook.URL)
+	assert.Equal(t, urlUpdated, *actualWebhook.URL)
+
+	t.Log("Delete Application Template webhook with tenant")
+	deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenantId, deleteReq, &actualWebhook)
+	require.NoError(t, err)
+}
+
+func TestAddWebhookToApplicationTemplateWithoutTenant(t *testing.T) {
+	ctx := context.Background()
+	name := "app-template"
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	t.Log("Create integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, name)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	t.Log("Request Client Credentials for Integration System")
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+	t.Log("Create application template")
+	appTmplInput := fixtures.FixApplicationTemplate(name)
+	appTmplInput.Labels = graphql.Labels{
+		"a":                             []string{"b", "c"},
+		"d":                             []string{"e", "f"},
+		"displayName":                   "{{display-name}}",
+		conf.GlobalSubaccountIDLabelKey: tenantId,
+	}
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTemplate)
+	require.NoError(t, err)
+	require.NotEmpty(t, appTemplate.ID)
+
+	t.Log("Add Webhook to application template without tenant")
+	url := "http://new-webhook.url"
+	outputTemplate := "{\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"success_status_code\\\": 202,\\\"error\\\": \\\"{{.Body.error}}\\\"}"
+	webhookInStr, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
+		URL:            &url,
+		Type:           graphql.WebhookTypeUnregisterApplication,
+		OutputTemplate: &outputTemplate,
+	})
+	require.NoError(t, err)
+
+	actualWebhook := graphql.Webhook{}
+	addReq := fixtures.FixAddWebhookToTemplateRequest(appTemplate.ID, webhookInStr)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, oauthGraphQLClient, addReq, &actualWebhook)
+	require.NoError(t, err)
+	assert.NotNil(t, actualWebhook.URL)
+	assert.Equal(t, "http://new-webhook.url", *actualWebhook.URL)
+	assert.Equal(t, graphql.WebhookTypeUnregisterApplication, actualWebhook.Type)
+	id := actualWebhook.ID
+	require.NotNil(t, id)
+
+	t.Log("Get Application Template")
+	updatedAppTemplate := fixtures.GetApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTemplate.ID)
+	assert.Len(t, updatedAppTemplate.Webhooks, 1)
+
+	t.Log("Update Application Template webhook without tenant")
+	urlUpdated := "http://updated-webhook.url"
+	webhookInStr, err = testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
+		URL:            &urlUpdated,
+		Type:           graphql.WebhookTypeUnregisterApplication,
+		OutputTemplate: &outputTemplate,
+	})
+	require.NoError(t, err)
+
 	updateReq := fixtures.FixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, oauthGraphQLClient, updateReq, &actualWebhook)
 	require.NoError(t, err)
 	assert.NotNil(t, actualWebhook.URL)
 	assert.Equal(t, urlUpdated, *actualWebhook.URL)
 
-	// delete
-
-	//GIVEN
+	t.Log("Delete Application Template webhook without tenant")
 	deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
-
-	//WHEN
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, oauthGraphQLClient, deleteReq, &actualWebhook)
-
-	//THEN
 	require.NoError(t, err)
-	assert.NotNil(t, actualWebhook.URL)
-	assert.Equal(t, urlUpdated, *actualWebhook.URL)
 }
 
 func createDirectorCertClientForAnotherRegion(t *testing.T, ctx context.Context) *gcli.Client {

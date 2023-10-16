@@ -423,6 +423,16 @@ func (r *RootResolver) Tenant() graphql.TenantResolver {
 	return &tenantResolver{r}
 }
 
+// EventDefinition resolver for Event Defs
+func (r *RootResolver) EventDefinition() graphql.EventDefinitionResolver {
+	return &eventDefinitionResolver{r}
+}
+
+// APIDefinition resolver for API Defs
+func (r *RootResolver) APIDefinition() graphql.APIDefinitionResolver {
+	return &apiDefinitionResolver{r}
+}
+
 type queryResolver struct {
 	*RootResolver
 }
@@ -606,9 +616,9 @@ func (r *queryResolver) Tenants(ctx context.Context, first *int, after *graphql.
 	return r.tenant.Tenants(ctx, first, after, searchTerm)
 }
 
-// RootTenant fetches the top parent external ID for a given tenant
-func (r *queryResolver) RootTenant(ctx context.Context, tenantID string) (string, error) {
-	return r.tenant.RootTenant(ctx, tenantID)
+// RootTenant fetches the top parent external ID for a given external tenant
+func (r *queryResolver) RootTenant(ctx context.Context, externalTenant string) (*graphql.Tenant, error) {
+	return r.tenant.RootTenant(ctx, externalTenant)
 }
 
 // AutomaticScenarioAssignmentForScenario missing godoc
@@ -1309,6 +1319,22 @@ func (r *BundleResolver) EventDefinition(ctx context.Context, obj *graphql.Bundl
 // Document missing godoc
 func (r *BundleResolver) Document(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.Document, error) {
 	return r.mpBundle.Document(ctx, obj, id)
+}
+
+type eventDefinitionResolver struct {
+	*RootResolver
+}
+
+func (r *eventDefinitionResolver) Spec(ctx context.Context, obj *graphql.EventDefinition) (*graphql.EventSpec, error) {
+	return r.eventAPI.Spec(ctx, obj)
+}
+
+type apiDefinitionResolver struct {
+	*RootResolver
+}
+
+func (r *apiDefinitionResolver) Spec(ctx context.Context, obj *graphql.APIDefinition) (*graphql.APISpec, error) {
+	return r.api.Spec(ctx, obj)
 }
 
 type tenantResolver struct {

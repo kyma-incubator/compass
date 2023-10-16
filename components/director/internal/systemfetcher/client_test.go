@@ -101,7 +101,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				Labels: map[string]*model.Label{
 					labelFilter: {
 						Key:   labelFilter,
-						Value: "type1",
+						Value: []interface{}{"type1"},
 					},
 				},
 			},
@@ -139,7 +139,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				Labels: map[string]*model.Label{
 					labelFilter: {
 						Key:   labelFilter,
-						Value: "type1",
+						Value: []interface{}{"type1"},
 					},
 				},
 			},
@@ -189,7 +189,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				Labels: map[string]*model.Label{
 					labelFilter: {
 						Key:   labelFilter,
-						Value: "type1",
+						Value: []interface{}{"type1"},
 					},
 				},
 			},
@@ -221,7 +221,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				Labels: map[string]*model.Label{
 					labelFilter: {
 						Key:   labelFilter,
-						Value: "type1",
+						Value: []interface{}{"type1"},
 					},
 				},
 			},
@@ -232,7 +232,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				Labels: map[string]*model.Label{
 					labelFilter: {
 						Key:   labelFilter,
-						Value: "type2",
+						Value: []interface{}{"type2"},
 					},
 				},
 			},
@@ -243,7 +243,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				Labels: map[string]*model.Label{
 					labelFilter: {
 						Key:   labelFilter,
-						Value: "type3",
+						Value: []interface{}{"type3"},
 					},
 				},
 			},

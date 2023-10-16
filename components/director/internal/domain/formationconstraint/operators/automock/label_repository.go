@@ -19,6 +19,10 @@ func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectTy
 	ret := _m.Called(ctx, tenant, objectType, objectID, key)
 
 	var r0 *model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) (*model.Label, error)); ok {
+		return rf(ctx, tenant, objectType, objectID, key)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) *model.Label); ok {
 		r0 = rf(ctx, tenant, objectType, objectID, key)
 	} else {
@@ -27,7 +31,6 @@ func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectTy
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectID, key)
 	} else {
@@ -42,6 +45,10 @@ func (_m *LabelRepository) ListForGlobalObject(ctx context.Context, objectType m
 	ret := _m.Called(ctx, objectType, objectID)
 
 	var r0 map[string]*model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.LabelableObject, string) (map[string]*model.Label, error)); ok {
+		return rf(ctx, objectType, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.LabelableObject, string) map[string]*model.Label); ok {
 		r0 = rf(ctx, objectType, objectID)
 	} else {
@@ -50,7 +57,6 @@ func (_m *LabelRepository) ListForGlobalObject(ctx context.Context, objectType m
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.LabelableObject, string) error); ok {
 		r1 = rf(ctx, objectType, objectID)
 	} else {
@@ -65,6 +71,10 @@ func (_m *LabelRepository) ListForObject(ctx context.Context, tenant string, obj
 	ret := _m.Called(ctx, tenant, objectType, objectID)
 
 	var r0 map[string]*model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string) (map[string]*model.Label, error)); ok {
+		return rf(ctx, tenant, objectType, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string) map[string]*model.Label); ok {
 		r0 = rf(ctx, tenant, objectType, objectID)
 	} else {
@@ -73,7 +83,6 @@ func (_m *LabelRepository) ListForObject(ctx context.Context, tenant string, obj
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.LabelableObject, string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectID)
 	} else {
@@ -83,13 +92,12 @@ func (_m *LabelRepository) ListForObject(ctx context.Context, tenant string, obj
 	return r0, r1
 }
 
-type mockConstructorTestingTNewLabelRepository interface {
+// NewLabelRepository creates a new instance of LabelRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewLabelRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewLabelRepository creates a new instance of LabelRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewLabelRepository(t mockConstructorTestingTNewLabelRepository) *LabelRepository {
+}) *LabelRepository {
 	mock := &LabelRepository{}
 	mock.Mock.Test(t)
 

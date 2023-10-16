@@ -21,13 +21,16 @@ func (_m *DocumentService) CreateInBundle(ctx context.Context, resourceType reso
 	ret := _m.Called(ctx, resourceType, resourceID, bundleID, in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.DocumentInput) (string, error)); ok {
+		return rf(ctx, resourceType, resourceID, bundleID, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.DocumentInput) string); ok {
 		r0 = rf(ctx, resourceType, resourceID, bundleID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, string, model.DocumentInput) error); ok {
 		r1 = rf(ctx, resourceType, resourceID, bundleID, in)
 	} else {
@@ -42,6 +45,10 @@ func (_m *DocumentService) GetForBundle(ctx context.Context, id string, bundleID
 	ret := _m.Called(ctx, id, bundleID)
 
 	var r0 *model.Document
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Document, error)); ok {
+		return rf(ctx, id, bundleID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Document); ok {
 		r0 = rf(ctx, id, bundleID)
 	} else {
@@ -50,7 +57,6 @@ func (_m *DocumentService) GetForBundle(ctx context.Context, id string, bundleID
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, id, bundleID)
 	} else {
@@ -65,6 +71,10 @@ func (_m *DocumentService) ListByBundleIDs(ctx context.Context, bundleIDs []stri
 	ret := _m.Called(ctx, bundleIDs, pageSize, cursor)
 
 	var r0 []*model.DocumentPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) ([]*model.DocumentPage, error)); ok {
+		return rf(ctx, bundleIDs, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) []*model.DocumentPage); ok {
 		r0 = rf(ctx, bundleIDs, pageSize, cursor)
 	} else {
@@ -73,7 +83,6 @@ func (_m *DocumentService) ListByBundleIDs(ctx context.Context, bundleIDs []stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string, int, string) error); ok {
 		r1 = rf(ctx, bundleIDs, pageSize, cursor)
 	} else {
@@ -83,13 +92,12 @@ func (_m *DocumentService) ListByBundleIDs(ctx context.Context, bundleIDs []stri
 	return r0, r1
 }
 
-type mockConstructorTestingTNewDocumentService interface {
+// NewDocumentService creates a new instance of DocumentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDocumentService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDocumentService creates a new instance of DocumentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDocumentService(t mockConstructorTestingTNewDocumentService) *DocumentService {
+}) *DocumentService {
 	mock := &DocumentService{}
 	mock.Mock.Test(t)
 

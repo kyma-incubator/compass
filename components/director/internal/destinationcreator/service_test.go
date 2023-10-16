@@ -1328,6 +1328,7 @@ func Test_CreateCertificate(t *testing.T) {
 		{
 			name:                "Error while building certificate url and region is empty",
 			destinationsDetails: samlAssertionDestsDetails,
+			destinationAuthType: destinationcreatorpkg.AuthTypeClientCertificate,
 			formationAssignment: faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}

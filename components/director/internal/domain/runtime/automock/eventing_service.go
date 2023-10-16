@@ -21,6 +21,10 @@ func (_m *EventingService) GetForRuntime(ctx context.Context, runtimeID uuid.UUI
 	ret := _m.Called(ctx, runtimeID)
 
 	var r0 *model.RuntimeEventingConfiguration
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.RuntimeEventingConfiguration, error)); ok {
+		return rf(ctx, runtimeID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.RuntimeEventingConfiguration); ok {
 		r0 = rf(ctx, runtimeID)
 	} else {
@@ -29,7 +33,6 @@ func (_m *EventingService) GetForRuntime(ctx context.Context, runtimeID uuid.UUI
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
 		r1 = rf(ctx, runtimeID)
 	} else {
@@ -39,13 +42,12 @@ func (_m *EventingService) GetForRuntime(ctx context.Context, runtimeID uuid.UUI
 	return r0, r1
 }
 
-type mockConstructorTestingTNewEventingService interface {
+// NewEventingService creates a new instance of EventingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEventingService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEventingService creates a new instance of EventingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEventingService(t mockConstructorTestingTNewEventingService) *EventingService {
+}) *EventingService {
 	mock := &EventingService{}
 	mock.Mock.Test(t)
 

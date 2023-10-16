@@ -20,6 +20,10 @@ func (_m *CertSubjectRepository) ListByConsumerID(ctx context.Context, consumerI
 	ret := _m.Called(ctx, consumerID)
 
 	var r0 []*model.CertSubjectMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.CertSubjectMapping, error)); ok {
+		return rf(ctx, consumerID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.CertSubjectMapping); ok {
 		r0 = rf(ctx, consumerID)
 	} else {
@@ -28,7 +32,6 @@ func (_m *CertSubjectRepository) ListByConsumerID(ctx context.Context, consumerI
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, consumerID)
 	} else {
@@ -38,13 +41,12 @@ func (_m *CertSubjectRepository) ListByConsumerID(ctx context.Context, consumerI
 	return r0, r1
 }
 
-type mockConstructorTestingTNewCertSubjectRepository interface {
+// NewCertSubjectRepository creates a new instance of CertSubjectRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewCertSubjectRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewCertSubjectRepository creates a new instance of CertSubjectRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewCertSubjectRepository(t mockConstructorTestingTNewCertSubjectRepository) *CertSubjectRepository {
+}) *CertSubjectRepository {
 	mock := &CertSubjectRepository{}
 	mock.Mock.Test(t)
 

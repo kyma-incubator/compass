@@ -162,7 +162,7 @@ function installHelm() {
 }
 
 function installKymaCLI() {
-  KYMA_CLI_VERSION="2.7.0"
+  KYMA_CLI_VERSION="2.8.4"
   log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
 
   PREV_WD=$(pwd)
@@ -214,18 +214,6 @@ function installCompassOld() {
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
 
-  # Added with Kyma 2.6.3 upgrade can be removed after it reaches main
-  kubectl create ns compass-system --dry-run=client -o yaml | kubectl apply -f -
-  kubectl label ns compass-system istio-injection=enabled --overwrite
-
-  kubectl create ns ory --dry-run=client -o yaml | kubectl apply -f -
-  kubectl label ns ory istio-injection=enabled --overwrite
-
-  # -------------------------------------------------------------------
-
-  echo "Installing Ory"
-  installOry
-
   echo 'Installing DB'
   mkdir "$COMPASS_SOURCES_DIR/installation/data"
   bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
@@ -256,9 +244,6 @@ function installCompassNew() {
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
 
-  echo "Installing Ory"
-  installOry
-
   echo 'Installing DB'
   bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
   STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
@@ -288,7 +273,7 @@ if [[ "${BUILD_TYPE}" == "pr" ]]; then
     log::info "Execute Job Guard"
     export JOB_NAME_PATTERN="(pull-.*)"
     export JOBGUARD_TIMEOUT="60m"
-    "${TEST_INFRA_SOURCES_DIR}/development/jobguard/scripts/run.sh"
+    "${COMPASS_SCRIPTS_DIR}/kyma-scripts/jobguard/scripts/run.sh"
 fi
 
 log::info "Create new cluster"
@@ -312,6 +297,9 @@ installKymaCLI
 
 log::info "Installing Kyma"
 installKyma
+
+log::info "Installing Ory"
+installOry
 
 NEW_VERSION_COMMIT_ID=$(cd "$COMPASS_SOURCES_DIR" && git rev-parse --short HEAD)
 log::info "Install Compass version from main"

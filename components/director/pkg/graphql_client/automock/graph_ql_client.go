@@ -29,13 +29,12 @@ func (_m *GraphQLClient) Run(_a0 context.Context, _a1 *graphql.Request, _a2 inte
 	return r0
 }
 
-type mockConstructorTestingTNewGraphQLClient interface {
+// NewGraphQLClient creates a new instance of GraphQLClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewGraphQLClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewGraphQLClient creates a new instance of GraphQLClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewGraphQLClient(t mockConstructorTestingTNewGraphQLClient) *GraphQLClient {
+}) *GraphQLClient {
 	mock := &GraphQLClient{}
 	mock.Mock.Test(t)
 

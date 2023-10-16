@@ -33,6 +33,10 @@ func (_m *RuntimeContextService) GetForRuntime(ctx context.Context, id string, r
 	ret := _m.Called(ctx, id, runtimeID)
 
 	var r0 *model.RuntimeContext
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.RuntimeContext, error)); ok {
+		return rf(ctx, id, runtimeID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.RuntimeContext); ok {
 		r0 = rf(ctx, id, runtimeID)
 	} else {
@@ -41,7 +45,6 @@ func (_m *RuntimeContextService) GetForRuntime(ctx context.Context, id string, r
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, id, runtimeID)
 	} else {
@@ -56,6 +59,10 @@ func (_m *RuntimeContextService) ListAllForRuntime(ctx context.Context, runtimeI
 	ret := _m.Called(ctx, runtimeID)
 
 	var r0 []*model.RuntimeContext
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.RuntimeContext, error)); ok {
+		return rf(ctx, runtimeID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.RuntimeContext); ok {
 		r0 = rf(ctx, runtimeID)
 	} else {
@@ -64,7 +71,6 @@ func (_m *RuntimeContextService) ListAllForRuntime(ctx context.Context, runtimeI
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, runtimeID)
 	} else {
@@ -79,6 +85,10 @@ func (_m *RuntimeContextService) ListByRuntimeIDs(ctx context.Context, runtimeID
 	ret := _m.Called(ctx, runtimeIDs, pageSize, cursor)
 
 	var r0 []*model.RuntimeContextPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) ([]*model.RuntimeContextPage, error)); ok {
+		return rf(ctx, runtimeIDs, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) []*model.RuntimeContextPage); ok {
 		r0 = rf(ctx, runtimeIDs, pageSize, cursor)
 	} else {
@@ -87,7 +97,6 @@ func (_m *RuntimeContextService) ListByRuntimeIDs(ctx context.Context, runtimeID
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string, int, string) error); ok {
 		r1 = rf(ctx, runtimeIDs, pageSize, cursor)
 	} else {
@@ -97,13 +106,12 @@ func (_m *RuntimeContextService) ListByRuntimeIDs(ctx context.Context, runtimeID
 	return r0, r1
 }
 
-type mockConstructorTestingTNewRuntimeContextService interface {
+// NewRuntimeContextService creates a new instance of RuntimeContextService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeContextService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeContextService creates a new instance of RuntimeContextService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeContextService(t mockConstructorTestingTNewRuntimeContextService) *RuntimeContextService {
+}) *RuntimeContextService {
 	mock := &RuntimeContextService{}
 	mock.Mock.Test(t)
 

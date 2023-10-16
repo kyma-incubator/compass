@@ -32,6 +32,7 @@ type tenantRepository interface {
 }
 
 // UIDService generates UUIDs for new entities
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -113,7 +114,7 @@ func (s *Service) createDesignTimeDestinations(ctx context.Context, destinationD
 		if !apperrors.IsNotFoundError(err) {
 			return err
 		}
-		log.C(ctx).Infof("No destination with name: %q and tenant ID: %q found in our DB, it will be created...", destinationDetails.Name, tenantID)
+		log.C(ctx).Infof("Destination with name: %q and tenant ID: %q was not found in our DB, it will be created...", destinationDetails.Name, tenantID)
 	}
 
 	if destinationFromDB != nil && destinationFromDB.FormationAssignmentID != nil && *destinationFromDB.FormationAssignmentID != formationAssignment.ID {
@@ -172,7 +173,7 @@ func (s *Service) createBasicCredentialDestination(ctx context.Context, destinat
 		if !apperrors.IsNotFoundError(err) {
 			return err
 		}
-		log.C(ctx).Infof("No destination with name: %q and tenant ID: %q found in our DB, it will be created...", destinationDetails.Name, tenantID)
+		log.C(ctx).Infof("Destination with name: %q and tenant ID: %q was not found in our DB, it will be created...", destinationDetails.Name, tenantID)
 	}
 
 	if destinationFromDB != nil && destinationFromDB.FormationAssignmentID != nil && *destinationFromDB.FormationAssignmentID != formationAssignment.ID {
@@ -222,7 +223,7 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 }
 
 // createSAMLAssertionDestination is responsible to create SAML assertion destination resource in the remote destination service as well as in our DB
-func (s *Service) createSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAssertionAuthCredentials *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool, ) error {
+func (s *Service) createSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAssertionAuthCredentials *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
 	t, err := s.tenantRepo.GetByExternalTenant(ctx, destinationDetails.SubaccountID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting tenant by external ID: %q", destinationDetails.SubaccountID)
@@ -234,7 +235,7 @@ func (s *Service) createSAMLAssertionDestination(ctx context.Context, destinatio
 		if !apperrors.IsNotFoundError(err) {
 			return err
 		}
-		log.C(ctx).Infof("No destination with name: %q and tenant ID: %q found in our DB, it will be created...", destinationDetails.Name, tenantID)
+		log.C(ctx).Infof("Destination with name: %q and tenant ID: %q was not found in our DB, it will be created...", destinationDetails.Name, tenantID)
 	}
 
 	if destinationFromDB != nil && destinationFromDB.FormationAssignmentID != nil && *destinationFromDB.FormationAssignmentID != formationAssignment.ID {
@@ -278,7 +279,7 @@ func (s *Service) CreateClientCertificateAuthenticationDestination(ctx context.C
 	return nil
 }
 
-func (s *Service) createClientCertificateAuthenticationDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCredentials *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool, ) error {
+func (s *Service) createClientCertificateAuthenticationDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCredentials *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
 	t, err := s.tenantRepo.GetByExternalTenant(ctx, destinationDetails.SubaccountID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting tenant by external ID: %q", destinationDetails.SubaccountID)
@@ -290,7 +291,7 @@ func (s *Service) createClientCertificateAuthenticationDestination(ctx context.C
 		if !apperrors.IsNotFoundError(err) {
 			return err
 		}
-		log.C(ctx).Infof("No destination with name: %q and tenant ID: %q found in our DB, it will be created...", destinationDetails.Name, tenantID)
+		log.C(ctx).Infof("Destination with name: %q and tenant ID: %q was not found in our DB, it will be created...", destinationDetails.Name, tenantID)
 	}
 
 	if destinationFromDB != nil && destinationFromDB.FormationAssignmentID != nil && *destinationFromDB.FormationAssignmentID != formationAssignment.ID {

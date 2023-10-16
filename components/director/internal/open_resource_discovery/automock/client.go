@@ -26,6 +26,11 @@ func (_m *Client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resou
 	ret := _m.Called(ctx, resource, _a2, ordWebhookMapping, appBaseURL)
 
 	var r0 ord.Documents
+	var r1 string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, ord.Resource, *model.Webhook, application.ORDWebhookMapping, webhook.OpenResourceDiscoveryWebhookRequestObject) (ord.Documents, string, error)); ok {
+		return rf(ctx, resource, _a2, ordWebhookMapping, appBaseURL)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, ord.Resource, *model.Webhook, application.ORDWebhookMapping, webhook.OpenResourceDiscoveryWebhookRequestObject) ord.Documents); ok {
 		r0 = rf(ctx, resource, _a2, ordWebhookMapping, appBaseURL)
 	} else {
@@ -34,14 +39,12 @@ func (_m *Client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resou
 		}
 	}
 
-	var r1 string
 	if rf, ok := ret.Get(1).(func(context.Context, ord.Resource, *model.Webhook, application.ORDWebhookMapping, webhook.OpenResourceDiscoveryWebhookRequestObject) string); ok {
 		r1 = rf(ctx, resource, _a2, ordWebhookMapping, appBaseURL)
 	} else {
 		r1 = ret.Get(1).(string)
 	}
 
-	var r2 error
 	if rf, ok := ret.Get(2).(func(context.Context, ord.Resource, *model.Webhook, application.ORDWebhookMapping, webhook.OpenResourceDiscoveryWebhookRequestObject) error); ok {
 		r2 = rf(ctx, resource, _a2, ordWebhookMapping, appBaseURL)
 	} else {
@@ -51,13 +54,12 @@ func (_m *Client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resou
 	return r0, r1, r2
 }
 
-type mockConstructorTestingTNewClient interface {
+// NewClient creates a new instance of Client. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewClient creates a new instance of Client. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewClient(t mockConstructorTestingTNewClient) *Client {
+}) *Client {
 	mock := &Client{}
 	mock.Mock.Test(t)
 

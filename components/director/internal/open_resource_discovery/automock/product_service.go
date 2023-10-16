@@ -21,13 +21,16 @@ func (_m *ProductService) Create(ctx context.Context, resourceType resource.Type
 	ret := _m.Called(ctx, resourceType, resourceID, in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.ProductInput) (string, error)); ok {
+		return rf(ctx, resourceType, resourceID, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.ProductInput) string); ok {
 		r0 = rf(ctx, resourceType, resourceID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, model.ProductInput) error); ok {
 		r1 = rf(ctx, resourceType, resourceID, in)
 	} else {
@@ -56,6 +59,10 @@ func (_m *ProductService) ListByApplicationID(ctx context.Context, appID string)
 	ret := _m.Called(ctx, appID)
 
 	var r0 []*model.Product
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Product, error)); ok {
+		return rf(ctx, appID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Product); ok {
 		r0 = rf(ctx, appID)
 	} else {
@@ -64,7 +71,6 @@ func (_m *ProductService) ListByApplicationID(ctx context.Context, appID string)
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appID)
 	} else {
@@ -79,6 +85,10 @@ func (_m *ProductService) ListByApplicationTemplateVersionID(ctx context.Context
 	ret := _m.Called(ctx, appID)
 
 	var r0 []*model.Product
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Product, error)); ok {
+		return rf(ctx, appID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Product); ok {
 		r0 = rf(ctx, appID)
 	} else {
@@ -87,7 +97,6 @@ func (_m *ProductService) ListByApplicationTemplateVersionID(ctx context.Context
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appID)
 	} else {
@@ -111,13 +120,12 @@ func (_m *ProductService) Update(ctx context.Context, resourceType resource.Type
 	return r0
 }
 
-type mockConstructorTestingTNewProductService interface {
+// NewProductService creates a new instance of ProductService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewProductService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewProductService creates a new instance of ProductService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewProductService(t mockConstructorTestingTNewProductService) *ProductService {
+}) *ProductService {
 	mock := &ProductService{}
 	mock.Mock.Test(t)
 
