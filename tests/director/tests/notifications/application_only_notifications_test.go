@@ -1431,7 +1431,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			Name:            "TestDoNotGenerateFormationAssignmentNotifications",
 			ConstraintType:  graphql.ConstraintTypePre,
 			TargetOperation: graphql.TargetOperationGenerateFormationAssignmentNotification,
-			Operator:        graphql.DoNotGenerateFormationAssignmentNotificationOperator,
+			Operator:        formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationOperator,
 			ResourceType:    graphql.ResourceTypeApplication,
 			ResourceSubtype: applicationType1,
 			InputTemplate:   fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"source_resource_type\\\": \\\"{{if .SourceApplication}}APPLICATION{{else if .RuntimeContext}}RUNTIME_CONTEXT{{else}}RUNTIME{{end}}\\\",\\\"source_resource_id\\\": \\\"{{if .SourceApplication}}{{.SourceApplication.ID}}{{else if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\",\\\"except_subtypes\\\": [\\\"%s\\\"]}", exceptionSystemType),
@@ -1683,7 +1683,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			Name:            "TestDoNotGenerateFormationAssignmentNotifications",
 			ConstraintType:  graphql.ConstraintTypePre,
 			TargetOperation: graphql.TargetOperationGenerateFormationAssignmentNotification,
-			Operator:        graphql.DoNotGenerateFormationAssignmentNotificationOperator,
+			Operator:        formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationOperator,
 			ResourceType:    graphql.ResourceTypeApplication,
 			ResourceSubtype: applicationType1,
 			InputTemplate:   fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"source_resource_type\\\": \\\"{{if .SourceApplication}}APPLICATION{{else if .RuntimeContext}}RUNTIME_CONTEXT{{else}}RUNTIME{{end}}\\\",\\\"source_resource_id\\\": \\\"{{if .SourceApplication}}{{.SourceApplication.ID}}{{else if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\",\\\"except_formation_types\\\": [\\\"%s\\\"]}", formationTmplName),
@@ -2749,7 +2749,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			Name:            "e2e-redirect-operator-constraint",
 			ConstraintType:  graphql.ConstraintTypePre,
 			TargetOperation: graphql.TargetOperationSendNotification,
-			Operator:        graphql.RedirectNotificationOperator,
+			Operator:        formationconstraintpkg.RedirectNotificationOperator,
 			ResourceType:    graphql.ResourceTypeApplication,
 			ResourceSubtype: applicationType2,
 			InputTemplate:   fmt.Sprintf("{\\\"condition\\\": {{ if contains .FormationAssignment.Value \\\"redirectProperties\\\" }}true{{else}}false{{end}},\\\"url_template\\\": \\\"%s\\\",\\\"url\\\": \\\"%s\\\",{{ if .Webhook }}\\\"webhook_memory_address\\\":{{ .Webhook.GetAddress }},{{ end }}\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}", redirectURLTemplate, redirectURL),
@@ -2798,10 +2798,9 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		assignedFormation = fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formationInput, app1.ID, tnt)
 		require.Equal(t, formationName, assignedFormation.Name)
 
-		redirectDetailsConfig := str.Ptr("{\"redirectProperties\":[{\"redirectPropertyName\":\"redirectName\",\"redirectPropertyID\":\"redirectID\"}]}")
 		expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
-				app2.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: redirectDetailsConfig, Value: redirectDetailsConfig, Error: nil},
+				app2.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: fixtures.RedirectConfigJSON, Value: fixtures.RedirectConfigJSON, Error: nil},
 				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 			},
 			app2.ID: {
@@ -2815,15 +2814,13 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
 		require.Empty(t, formation.Error)
 
-		asyncConfig := str.Ptr("{\"asyncKey\":\"asyncValue\",\"asyncKey2\":{\"asyncNestedKey\":\"asyncNestedValue\"}}")
 		expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
 				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
-				//app2.ID: fixtures.AssignmentState{State: "READY", Config: redirectDetailsConfig},
 				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: asyncConfig},
+				app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON},
 				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
 			},
 		}

@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"net/http"
 	"strings"
 	"testing"
@@ -344,7 +345,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				Name:            "e2e-destination-creator-notification-status-returned",
 				ConstraintType:  graphql.ConstraintTypePre,
 				TargetOperation: graphql.TargetOperationNotificationStatusReturned,
-				Operator:        graphql.DestinationCreator,
+				Operator:        formationconstraintpkg.DestinationCreator,
 				ResourceType:    graphql.ResourceTypeApplication,
 				ResourceSubtype: applicationType1,
 				InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
@@ -364,7 +365,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				Name:            "e2e-destination-creator-send-notification",
 				ConstraintType:  graphql.ConstraintTypePre,
 				TargetOperation: graphql.TargetOperationSendNotification,
-				Operator:        graphql.DestinationCreator,
+				Operator:        formationconstraintpkg.DestinationCreator,
 				ResourceType:    graphql.ResourceTypeApplication,
 				ResourceSubtype: applicationType1,
 				InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",

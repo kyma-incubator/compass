@@ -5,7 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -261,7 +262,7 @@ func attachDestinationCreatorConstraints(t *testing.T, ctx context.Context, form
 		Name:            "e2e-destination-creator-notification-status-returned",
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationNotificationStatusReturned,
-		Operator:        graphql.DestinationCreator,
+		Operator:        formationconstraintpkg.DestinationCreator,
 		ResourceType:    statusReturnedConstraintResourceType,
 		ResourceSubtype: "ANY",
 		InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
@@ -281,7 +282,7 @@ func attachDestinationCreatorConstraints(t *testing.T, ctx context.Context, form
 		Name:            "e2e-destination-creator-send-notification",
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationSendNotification,
-		Operator:        graphql.DestinationCreator,
+		Operator:        formationconstraintpkg.DestinationCreator,
 		ResourceType:    sendNotificationConstraintResourceType,
 		ResourceSubtype: "ANY",
 		InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
@@ -466,7 +467,7 @@ func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) []by
 		}
 	}()
 	require.NoError(t, err)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusOK, string(body)))
 	return body

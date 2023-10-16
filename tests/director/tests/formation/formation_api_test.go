@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"net/http"
 	"testing"
 	"time"
@@ -585,7 +586,7 @@ func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
 		Name:            "TestSubaccountInAtMostOneFormationOfType",
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationAssignFormation,
-		Operator:        graphql.IsNotAssignedToAnyFormationOfType,
+		Operator:        formationconstraintpkg.IsNotAssignedToAnyFormationOfType,
 		ResourceType:    graphql.ResourceTypeTenant,
 		ResourceSubtype: "subaccount",
 		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
@@ -671,7 +672,7 @@ func TestApplicationOfGivenTypeInAtMostOneFormationOfGivenType(t *testing.T) {
 		Name:            "SystemOfGivenTypeInAtMostOneFormationOfGivenType",
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationAssignFormation,
-		Operator:        graphql.DoesNotContainResourceOfSubtype,
+		Operator:        formationconstraintpkg.DoesNotContainResourceOfSubtype,
 		ResourceType:    graphql.ResourceTypeApplication,
 		ResourceSubtype: applicationType,
 		InputTemplate:   "{\\\"formation_name\\\": \\\"{{.FormationName}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
@@ -743,7 +744,7 @@ func TestSystemInAtMostOneFormationOfType(t *testing.T) {
 		Name:            "TestSystemInAtMostOneFormationOfType",
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationAssignFormation,
-		Operator:        graphql.IsNotAssignedToAnyFormationOfType,
+		Operator:        formationconstraintpkg.IsNotAssignedToAnyFormationOfType,
 		ResourceType:    graphql.ResourceTypeApplication,
 		ResourceSubtype: resourceSubtypeANY,
 		InputTemplate:   fmt.Sprintf("{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"exceptSystemTypes\\\": [\\\"%s\\\"]}", exceptionSystemType),
