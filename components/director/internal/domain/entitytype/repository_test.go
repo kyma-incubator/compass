@@ -19,7 +19,7 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 		Name: "Get EntityType for Application",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, extensible, successors, resource_hash, documentation_labels, correlation_ids FROM "public"."event_api_definitions" WHERE id = $1 AND app_id = $2 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $3))`),
+				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE id = $1 AND app_id = $2 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{ID, appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {

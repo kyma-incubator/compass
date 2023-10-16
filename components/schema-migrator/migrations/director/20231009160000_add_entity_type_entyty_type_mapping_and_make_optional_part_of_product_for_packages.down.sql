@@ -5,6 +5,7 @@ ALTER TABLE packages
 
 DROP INDEX IF EXISTS entity_types_app_template_version_id;
 
+DROP VIEW IF EXISTS entity_types_tenants;
 DROP VIEW IF EXISTS tenants_entity_types;
 DROP VIEW IF EXISTS correlation_ids_entity_types;
 DROP VIEW IF EXISTS changelog_entries_entity_types;

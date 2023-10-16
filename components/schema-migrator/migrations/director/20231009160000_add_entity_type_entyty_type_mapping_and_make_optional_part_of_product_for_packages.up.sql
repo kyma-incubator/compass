@@ -132,6 +132,12 @@ FROM entity_types,
      jsonb_array_elements_text(expand.value) AS elements;
 
 
+DROP VIEW IF EXISTS entity_types_tenants;
+
+CREATE VIEW entity_types_tenants AS
+SELECT e.*, ta.tenant_id, ta.owner FROM entity_types AS e
+                                            INNER JOIN tenant_applications ta ON ta.id = e.app_id;
+
 DROP VIEW IF EXISTS tenants_entity_types;
 
 CREATE OR REPLACE VIEW tenants_entity_types

@@ -162,7 +162,7 @@ func (r *pgRepository) GetByApplicationID(ctx context.Context, tenantID string, 
 	var entityTypeEntity Entity
 	err := r.singleGetter.Get(ctx, resource.EntityType, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id), repo.NewEqualCondition(appIDColumn, appID)}, repo.NoOrderBy, &entityTypeEntity)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting EventDefinition for Application ID %s", appID)
+		return nil, errors.Wrapf(err, "while getting EntityType for Application ID %s", appID)
 	}
 
 	entityTypeModel, err := r.conv.FromEntity(&entityTypeEntity)

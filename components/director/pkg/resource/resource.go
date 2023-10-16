@@ -135,6 +135,7 @@ var tenantAccessTable = map[Type]string{
 	BundleInstanceAuth:       "bundle_instance_auths_tenants",
 	API:                      "api_definitions_tenants",
 	EventDefinition:          "event_api_definitions_tenants",
+	EntityType:               "entity_types_tenants",
 	Webhook:                  "webhooks_tenants",
 	AppWebhook:               "application_webhooks_tenants",
 	RuntimeWebhook:           "runtime_webhooks_tenants",
