@@ -121,7 +121,7 @@ func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	if !operation.HasPollURL() {
 		log.C(ctx).Info("Webhook Poll URL is not found. Will attempt to execute the webhook")
-		request := webhookclient.NewRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID)
+		request := webhookclient.NewRequest(webhookEntity, requestObject, operation.Spec.CorrelationID)
 		isDeleteOrUnpair := operation.Spec.OperationType == v1alpha1.OperationTypeDelete ||
 			(operation.Spec.OperationType == v1alpha1.OperationTypeUpdate && operation.Spec.OperationCategory == directoroperation.OperationCategoryUnpairApplication)
 		response, err := r.webhookClient.Do(ctx, request)
