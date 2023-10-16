@@ -380,7 +380,7 @@ func (s *Service) CreateClientCertificateDestination(ctx context.Context, destin
 }
 
 // CreateCertificate is responsible to create certificate resource in the remote destination service
-func (s *Service) CreateCertificate(ctx context.Context, destinationsDetails []operators.Destination, destinationAuthType destinationcreatorpkg.AuthType, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) (*operators.CertificateData, error) {
+func (s *Service) CreateCertificate(ctx context.Context, destinationsDetails []operators.Destination, destinationAuthType destinationcreatorpkg.AuthType, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation, useSelfSignedCert bool) (*operators.CertificateData, error) {
 	if err := s.EnsureDestinationSubaccountIDsCorrectness(ctx, destinationsDetails, formationAssignment, skipSubaccountValidation); err != nil {
 		return nil, err
 	}
@@ -407,6 +407,9 @@ func (s *Service) CreateCertificate(ctx context.Context, destinationsDetails []o
 	}
 
 	certReqBody := &CertificateRequestBody{Name: certName}
+	if useSelfSignedCert {
+		certReqBody.SelfSigned = true
+	}
 
 	if err := certReqBody.Validate(); err != nil {
 		return nil, errors.Wrapf(err, "while validating certificate request body")
@@ -429,7 +432,7 @@ func (s *Service) CreateCertificate(ctx context.Context, destinationsDetails []o
 			return nil, errors.Wrapf(err, "while deleting certificate with name: %q and subaccount ID: %q", certName, subaccountID)
 		}
 
-		return s.CreateCertificate(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation)
+		return s.CreateCertificate(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation, useSelfSignedCert)
 	}
 
 	var certResp CertificateResponse
