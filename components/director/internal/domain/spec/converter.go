@@ -133,6 +133,10 @@ func (c *converter) ToEntity(in *model.Spec) *Entity {
 	var eventSpecFormat sql.NullString
 	var eventSpecType sql.NullString
 
+	var capabilityID sql.NullString
+	var capabilitySpecFormat sql.NullString
+	var capabilitySpecType sql.NullString
+
 	switch in.ObjectType {
 	case model.APISpecReference:
 		apiDefID = refID
@@ -142,18 +146,25 @@ func (c *converter) ToEntity(in *model.Spec) *Entity {
 		eventAPIDefID = refID
 		eventSpecFormat = repo.NewValidNullableString(string(in.Format))
 		eventSpecType = repo.NewValidNullableString(string(*in.EventType))
+	case model.CapabilitySpecReference:
+		capabilityID = refID
+		capabilitySpecFormat = repo.NewValidNullableString(string(in.Format))
+		capabilitySpecType = repo.NewValidNullableString(string(*in.CapabilityType))
 	}
 
 	return &Entity{
-		ID:              in.ID,
-		APIDefID:        apiDefID,
-		EventAPIDefID:   eventAPIDefID,
-		SpecData:        repo.NewNullableString(in.Data),
-		APISpecFormat:   apiSpecFormat,
-		APISpecType:     apiSpecType,
-		EventSpecFormat: eventSpecFormat,
-		EventSpecType:   eventSpecType,
-		CustomType:      repo.NewNullableString(in.CustomType),
+		ID:                   in.ID,
+		APIDefID:             apiDefID,
+		EventAPIDefID:        eventAPIDefID,
+		CapabilityID:         capabilityID,
+		SpecData:             repo.NewNullableString(in.Data),
+		APISpecFormat:        apiSpecFormat,
+		APISpecType:          apiSpecType,
+		EventSpecFormat:      eventSpecFormat,
+		EventSpecType:        eventSpecType,
+		CapabilitySpecFormat: capabilitySpecFormat,
+		CapabilitySpecType:   capabilitySpecType,
+		CustomType:           repo.NewNullableString(in.CustomType),
 	}
 }
 
@@ -169,6 +180,9 @@ func (c *converter) FromEntity(in *Entity) (*model.Spec, error) {
 
 	var eventSpecFormat model.SpecFormat
 	var eventSpecType *model.EventSpecType
+
+	var capabilitySpecFormat model.SpecFormat
+	var capabilitySpecType *model.CapabilitySpecType
 
 	apiSpecFormatStr := repo.StringPtrFromNullableString(in.APISpecFormat)
 	if apiSpecFormatStr != nil {
@@ -192,20 +206,35 @@ func (c *converter) FromEntity(in *Entity) (*model.Spec, error) {
 		eventSpecType = &eventType
 	}
 
+	capabilitySpecFormatStr := repo.StringPtrFromNullableString(in.CapabilitySpecFormat)
+	if capabilitySpecFormatStr != nil {
+		capabilitySpecFormat = model.SpecFormat(*capabilitySpecFormatStr)
+	}
+
+	capabilitySpecTypeStr := repo.StringPtrFromNullableString(in.CapabilitySpecType)
+	if capabilitySpecTypeStr != nil {
+		capabilityType := model.CapabilitySpecType(*capabilitySpecTypeStr)
+		capabilitySpecType = &capabilityType
+	}
+
 	specFormat := apiSpecFormat
-	if objectType == model.EventSpecReference {
+	switch objectType {
+	case model.EventSpecReference:
 		specFormat = eventSpecFormat
+	case model.CapabilitySpecReference:
+		specFormat = capabilitySpecFormat
 	}
 
 	return &model.Spec{
-		ID:         in.ID,
-		ObjectType: objectType,
-		ObjectID:   objectID,
-		Data:       repo.StringPtrFromNullableString(in.SpecData),
-		Format:     specFormat,
-		APIType:    apiSpecType,
-		EventType:  eventSpecType,
-		CustomType: repo.StringPtrFromNullableString(in.CustomType),
+		ID:             in.ID,
+		ObjectType:     objectType,
+		ObjectID:       objectID,
+		Data:           repo.StringPtrFromNullableString(in.SpecData),
+		Format:         specFormat,
+		APIType:        apiSpecType,
+		EventType:      eventSpecType,
+		CapabilityType: capabilitySpecType,
+		CustomType:     repo.StringPtrFromNullableString(in.CustomType),
 	}, nil
 }
 
@@ -216,6 +245,10 @@ func (c *converter) objectReferenceFromEntity(in Entity) (string, model.SpecRefe
 
 	if in.EventAPIDefID.Valid {
 		return in.EventAPIDefID.String, model.EventSpecReference, nil
+	}
+
+	if in.CapabilityID.Valid {
+		return in.CapabilityID.String, model.CapabilitySpecReference, nil
 	}
 
 	return "", "", fmt.Errorf("incorrect Object Reference ID and its type for Entity with ID '%s'", in.ID)

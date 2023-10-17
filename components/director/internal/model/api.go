@@ -57,6 +57,7 @@ type APIDefinition struct {
 	DocumentationLabels                     json.RawMessage
 	CorrelationIDs                          json.RawMessage
 	Direction                               *string
+	LastUpdate                              *string
 	*BaseEntity
 }
 
@@ -105,6 +106,7 @@ type APIDefinitionInput struct {
 	DocumentationLabels                     json.RawMessage               `json:"documentationLabels"`
 	CorrelationIDs                          json.RawMessage               `json:"correlationIds,omitempty"`
 	Direction                               *string                       `json:"direction"`
+	LastUpdate                              *string                       `json:"lastUpdate"`
 
 	*VersionInput `hash:"ignore"`
 }
@@ -220,6 +222,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, resourceType resource.Ty
 		DocumentationLabels: a.DocumentationLabels,
 		CorrelationIDs:      a.CorrelationIDs,
 		Direction:           a.Direction,
+		LastUpdate:          a.LastUpdate,
 		ResourceHash:        hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,

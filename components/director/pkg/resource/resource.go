@@ -52,12 +52,16 @@ const (
 	APISpecFetchRequest Type = "apiSpecFetchRequest"
 	// EventSpecFetchRequest type represents Event specification fetch request resource.
 	EventSpecFetchRequest Type = "eventSpecFetchRequest"
+	// CapabilitySpecFetchRequest type represents Capability specification fetch request resource.
+	CapabilitySpecFetchRequest Type = "capabilitySpecFetchRequest"
 	// Specification type represents generic specification resource. This resource does not assume the referenced resource type of the Spec.
 	Specification Type = "specification"
 	// APISpecification type represents API specification resource.
 	APISpecification Type = "apiSpecification"
 	// EventSpecification type represents Event specification resource.
 	EventSpecification Type = "eventSpecification"
+	// CapabilitySpecification type represents Capability specification resource.
+	CapabilitySpecification Type = "capabilitySpecification"
 	// Document type represents document resource.
 	Document Type = "document"
 	// BundleInstanceAuth type represents bundle instance auth resource.
@@ -66,6 +70,8 @@ const (
 	API Type = "api"
 	// EventDefinition type represents event resource.
 	EventDefinition Type = "eventDefinition"
+	// Capability type represents capability resource.
+	Capability Type = "capability"
 	// AutomaticScenarioAssigment type represents ASA resource.
 	AutomaticScenarioAssigment Type = "automaticScenarioAssigment"
 	// CertSubjectMapping type represents certificate subject mapping resource
@@ -115,28 +121,31 @@ var tenantAccessTable = map[Type]string{
 
 	// Views
 
-	Label:                    "labels_tenants",
-	ApplicationLabel:         "application_labels_tenants",
-	RuntimeLabel:             "runtime_labels_tenants",
-	RuntimeContextLabel:      "runtime_contexts_labels_tenants",
-	Bundle:                   "bundles_tenants",
-	Package:                  "packages_tenants",
-	Product:                  "products_tenants",
-	Vendor:                   "vendors_tenants",
-	Tombstone:                "tombstones_tenants",
-	DocFetchRequest:          "document_fetch_requests_tenants",
-	APISpecFetchRequest:      "api_specifications_fetch_requests_tenants",
-	EventSpecFetchRequest:    "event_specifications_fetch_requests_tenants",
-	APISpecification:         "api_specifications_tenants",
-	EventSpecification:       "event_specifications_tenants",
-	Document:                 "documents_tenants",
-	BundleInstanceAuth:       "bundle_instance_auths_tenants",
-	API:                      "api_definitions_tenants",
-	EventDefinition:          "event_api_definitions_tenants",
-	Webhook:                  "webhooks_tenants",
-	AppWebhook:               "application_webhooks_tenants",
-	RuntimeWebhook:           "runtime_webhooks_tenants",
-	FormationTemplateWebhook: "formation_templates_webhooks_tenants",
+	Label:                      "labels_tenants",
+	ApplicationLabel:           "application_labels_tenants",
+	RuntimeLabel:               "runtime_labels_tenants",
+	RuntimeContextLabel:        "runtime_contexts_labels_tenants",
+	Bundle:                     "bundles_tenants",
+	Package:                    "packages_tenants",
+	Product:                    "products_tenants",
+	Vendor:                     "vendors_tenants",
+	Tombstone:                  "tombstones_tenants",
+	DocFetchRequest:            "document_fetch_requests_tenants",
+	APISpecFetchRequest:        "api_specifications_fetch_requests_tenants",
+	EventSpecFetchRequest:      "event_specifications_fetch_requests_tenants",
+	CapabilitySpecFetchRequest: "capability_specifications_fetch_requests_tenants",
+	APISpecification:           "api_specifications_tenants",
+	EventSpecification:         "event_specifications_tenants",
+	CapabilitySpecification:    "capability_specifications_tenants",
+	Document:                   "documents_tenants",
+	BundleInstanceAuth:         "bundle_instance_auths_tenants",
+	API:                        "api_definitions_tenants",
+	EventDefinition:            "event_api_definitions_tenants",
+	Capability:                 "capabilities_tenants",
+	Webhook:                    "webhooks_tenants",
+	AppWebhook:                 "application_webhooks_tenants",
+	RuntimeWebhook:             "runtime_webhooks_tenants",
+	FormationTemplateWebhook:   "formation_templates_webhooks_tenants",
 }
 
 var tablesWithEmbeddedTenant = map[Type]string{

@@ -6,8 +6,8 @@ require (
 	github.com/avast/retry-go/v4 v4.5.0
 	github.com/go-openapi/runtime v0.26.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231006120745-5db957a8f4b6
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231005103340-fffd3ee4e20f
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231017062655-ff258cdc2e36
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231017062655-ff258cdc2e36
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
@@ -37,6 +37,8 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/imdario/mergo v0.3.14 // indirect
+	github.com/itchyny/gojq v0.12.13 // indirect
+	github.com/itchyny/timefmt-go v0.1.5 // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
