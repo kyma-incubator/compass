@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"text/template"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
@@ -184,13 +183,6 @@ func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 	}
 
 	return nil
-}
-
-func joinStrings(elems []string) string {
-	if len(elems) == 0 {
-		return ""
-	}
-	return `"` + strings.Join(elems, `", "`) + `"`
 }
 
 func isAllowedHTTPMethod(method string) bool {
