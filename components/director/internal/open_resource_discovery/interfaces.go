@@ -86,6 +86,17 @@ type EntityTypeService interface {
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.EntityType, error)
 }
 
+// CapabilityService is responsible for the service-layer Capability operations.
+//
+//go:generate mockery --name=CapabilityService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type CapabilityService interface {
+	ListByApplicationID(ctx context.Context, appID string) ([]*model.Capability, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Capability, error)
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.CapabilityInput, spec []*model.SpecInput, capabilityHash uint64) (string, error)
+	Update(ctx context.Context, resourceType resource.Type, id string, in model.CapabilityInput, capabilityHash uint64) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
+}
+
 // SpecService is responsible for the service-layer Specification operations.
 //
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string

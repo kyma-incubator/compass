@@ -116,7 +116,7 @@ type statusService interface {
 //go:generate mockery --exported --name=faNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type faNotificationService interface {
 	GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)
-	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)
+	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)
 }
 
 type service struct {
@@ -654,14 +654,6 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 
 	requestWebhookMode := assignmentReqMappingClone.Request.Webhook.Mode
 	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
-		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment state to: %q and waiting for the receiver to report the status on the status API...", assignmentReqMappingClone.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, string(model.InitialFormationState))
-		assignment.State = string(model.InitialFormationState)
-		// Cleanup the error if present as new notification has been sent. The previous configuration should be left intact.
-		assignment.Error = nil
-		if err := s.Update(ctx, assignment.ID, assignment); err != nil {
-			return errors.Wrapf(err, "while updating formation assignment with ID: %s", assignment.ID)
-		}
-
 		return nil
 	}
 

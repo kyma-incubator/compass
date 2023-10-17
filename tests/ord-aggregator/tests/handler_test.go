@@ -48,10 +48,12 @@ const (
 	shortDescriptionField = "shortDescription"
 	apisField             = "apis"
 	eventsField           = "events"
+	capabilitiesField     = "capabilities"
 	publicAPIsField       = "publicAPIs"
 	publicEventsField     = "publicEvents"
 
 	expectedSpecType                         = "openapi-v3"
+	expectedCapabilitySpecType               = "sap.mdo:mdi-capability-definition:v1"
 	expectedSpecFormat                       = "application/json"
 	expectedSystemInstanceName               = "test-app"
 	expectedSecondSystemInstanceName         = "second-test-app"
@@ -97,6 +99,9 @@ const (
 	thirdEventDescription                    = "Test description internal"
 	fourthEventTitle                         = "EVENT TITLE PRIVATE"
 	fourthEventDescription                   = "Test description private"
+	expectedCapabilityTitle                  = "CAPABILITY TITLE"
+	expectedCapabilityDescription            = "Optional, longer description"
+	expectedCapabilityNumberOfSpecs          = 1
 	expectedTombstoneOrdIDRegex              = "ns:apiResource:API_ID2(.+):v1"
 	expectedVendorTitle                      = "SAP SE"
 
@@ -111,11 +116,14 @@ const (
 	expectedNumberOfAPIsInSubscription            = 3
 	expectedNumberOfEvents                        = 28
 	expectedNumberOfEventsInSubscription          = 4
+	expectedNumberOfCapabilities                  = 7
+	expectedNumberOfCapabilitiesInSubscription    = 1
 	expectedNumberOfTombstones                    = 7
 	expectedNumberOfTombstonesInSubscription      = 1
 
-	expectedNumberOfPublicAPIs   = 7
-	expectedNumberOfPublicEvents = 14
+	expectedNumberOfPublicAPIs         = 7
+	expectedNumberOfPublicEvents       = 14
+	expectedNumberOfPublicCapabilities = 7
 
 	expectedNumberOfAPIsInFirstBundle    = 2
 	expectedNumberOfAPIsInSecondBundle   = 2
@@ -133,6 +141,9 @@ const (
 	documentationLabelKey         = "Documentation label key"
 	documentationLabelFirstValue  = "Markdown Documentation with links"
 	documentationLabelSecondValue = "With multiple values"
+
+	apiResourceDefinitionsFieldName        = "resourceDefinitions"
+	capabilityResourceDefinitionsFieldName = "definitions"
 )
 
 var (
@@ -215,6 +226,15 @@ func TestORDAggregator(stdT *testing.T) {
 
 		eventsDefaultBundleMap := make(map[string]string)
 		eventsDefaultBundleMap[firstEventTitle] = firstBundleOrdIDRegex
+
+		capabilitiesMap := make(map[string]string)
+		capabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
+
+		publicCapabilitiesMap := make(map[string]string)
+		publicCapabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
+
+		capabilitySpecsMap := make(map[string]int)
+		capabilitySpecsMap[expectedCapabilityTitle] = expectedCapabilityNumberOfSpecs
 
 		apisAndEventsNumber := make(map[string]int)
 		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
@@ -384,11 +404,17 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData)
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", apisField)
+				return false
+			}
 			t.Log("Successfully verified relation between apis and bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=events&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData)
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", eventsField)
+				return false
+			}
 			t.Log("Successfully verified relation between events and bundles")
 
 			// Verify products
@@ -416,7 +442,7 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified defaultBundles for apis")
 
 			// Verify the api spec
-			specs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfAPIs, apiSpecsMap)
+			specs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfAPIs, apiSpecsMap, apiResourceDefinitionsFieldName)
 			t.Log("Successfully verified specs for apis")
 
 			var specURL string
@@ -459,6 +485,41 @@ func TestORDAggregator(stdT *testing.T) {
 
 			// verify apis and events visibility via Director's graphql
 			verifyEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, mergeMaps(apisMap, eventsMap), mergeMaps(publicApisMap, publicEventsMap), apisAndEventsNumber, app.ID)
+
+			// Verify capabilities
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/capabilities?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfCapabilities {
+				t.Log("Missing Capabilities...will try again")
+				return false
+			}
+
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfCapabilities)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, capabilitiesMap, expectedNumberOfCapabilities, descriptionField)
+			t.Log("Successfully verified capabilities")
+
+			// Verify the capability spec
+			capabilitySpecs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfCapabilities, capabilitySpecsMap, capabilityResourceDefinitionsFieldName)
+			t.Log("Successfully verified specs for capabilities")
+
+			var capabilitySpecURL string
+			for _, s := range capabilitySpecs {
+				specType := s.Get("type").String()
+				specFormat := s.Get("mediaType").String()
+				if specType == expectedCapabilitySpecType && specFormat == expectedSpecFormat {
+					capabilitySpecURL = s.Get("url").String()
+					break
+				}
+			}
+
+			respBody = makeRequestWithHeaders(t, httpClient, capabilitySpecURL, map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(respBody) == 0 || !strings.Contains(respBody, "swagger") {
+				t.Logf("Spec %s not successfully fetched... will try again", specURL)
+				return false
+			}
+			t.Log("Successfully verified capability spec")
+
+			// verify public capabilities via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicCapabilitiesMap, capabilitiesField, expectedNumberOfPublicCapabilities)
 
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
@@ -515,6 +576,15 @@ func TestORDAggregator(stdT *testing.T) {
 
 		eventsDefaultBundleMap := make(map[string]string)
 		eventsDefaultBundleMap[firstEventTitle] = firstBundleOrdIDRegex
+
+		capabilitiesMap := make(map[string]string)
+		capabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
+
+		publicCapabilitiesMap := make(map[string]string)
+		publicCapabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
+
+		capabilitySpecsMap := make(map[string]int)
+		capabilitySpecsMap[expectedCapabilityTitle] = expectedCapabilityNumberOfSpecs
 
 		apisAndEventsNumber := make(map[string]int)
 		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
@@ -711,11 +781,17 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
-			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData)
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", apisField)
+				return false
+			}
 			t.Log("Successfully verified relation between apis and bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=events&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
-			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData)
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", eventsField)
+				return false
+			}
 			t.Log("Successfully verified relation between events and bundles")
 
 			globalProductsNumber, globalVendorsNumber := getGlobalResourcesNumber(ctx, t, unsecuredHttpClient)
@@ -750,7 +826,7 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified defaultBundles for apis")
 
 			// Verify the api spec
-			specs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfAPIsInSubscription, apiSpecsMap)
+			specs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfAPIsInSubscription, apiSpecsMap, apiResourceDefinitionsFieldName)
 			t.Log("Successfully verified specs for apis")
 
 			var specURL string
@@ -783,6 +859,38 @@ func TestORDAggregator(stdT *testing.T) {
 			// Verify defaultBundle for events
 			assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfEventsInSubscription, eventsDefaultBundleMap, ordAndInternalIDsMappingForBundles)
 			t.Log("Successfully verified defaultBundles for events")
+
+			// Verify capabilities
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/capabilities?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfCapabilitiesInSubscription {
+				t.Log("Missing Capabilities...will try again")
+				return false
+			}
+
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfCapabilitiesInSubscription)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, capabilitiesMap, expectedNumberOfCapabilitiesInSubscription, descriptionField)
+			t.Log("Successfully verified capabilities")
+
+			// Verify the capability spec
+			capabilitySpecs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfCapabilitiesInSubscription, capabilitySpecsMap, capabilityResourceDefinitionsFieldName)
+			t.Log("Successfully verified specs for capabilities")
+
+			var capabilitySpecURL string
+			for _, s := range capabilitySpecs {
+				specType := s.Get("type").String()
+				specFormat := s.Get("mediaType").String()
+				if specType == expectedCapabilitySpecType && specFormat == expectedSpecFormat {
+					capabilitySpecURL = s.Get("url").String()
+					break
+				}
+			}
+
+			respBody = makeRequestWithHeaders(t, httpClient, capabilitySpecURL, map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(respBody) == 0 || !strings.Contains(respBody, "swagger") {
+				t.Logf("Spec %s not successfully fetched... will try again", specURL)
+				return false
+			}
+			t.Log("Successfully verified capability spec")
 
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
@@ -818,6 +926,8 @@ func TestORDAggregator(stdT *testing.T) {
 		numberOfPublicAPIs := 1
 		numberOfEvents := 4
 		numberOfPublicEvents := 2
+		numberOfCapabilities := 1
+		numberOfPublicCapabilities := 1
 		numberOfTombstones := 1
 
 		ctx := context.Background()
@@ -883,6 +993,15 @@ func TestORDAggregator(stdT *testing.T) {
 
 		eventsDefaultBundleMap := make(map[string]string)
 		eventsDefaultBundleMap[firstEventTitle] = firstBundleOrdIDRegex
+
+		capabilitiesMap := make(map[string]string)
+		capabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
+
+		publicCapabilitiesMap := make(map[string]string)
+		publicCapabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
+
+		capabilitySpecsMap := make(map[string]int)
+		capabilitySpecsMap[expectedCapabilityTitle] = expectedCapabilityNumberOfSpecs
 
 		apisAndEventsNumber := make(map[string]int)
 		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
@@ -1000,11 +1119,17 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData)
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", apisField)
+				return false
+			}
 			t.Log("Successfully verified relation between apis and bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=events&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData)
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", eventsField)
+				return false
+			}
 			t.Log("Successfully verified relation between events and bundles")
 
 			// Verify products
@@ -1032,7 +1157,7 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified defaultBundles for apis")
 
 			// Verify the api spec
-			specs := assertions.AssertSpecsFromORDService(t, respBody, numberOfAPIs, apiSpecsMap)
+			specs := assertions.AssertSpecsFromORDService(t, respBody, numberOfAPIs, apiSpecsMap, apiResourceDefinitionsFieldName)
 			t.Log("Successfully verified specs for apis")
 
 			var specURL string
@@ -1074,6 +1199,41 @@ func TestORDAggregator(stdT *testing.T) {
 
 			// verify apis and events visibility via Director's graphql
 			verifyEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, mergeMaps(apisMap, eventsMap), mergeMaps(publicApisMap, publicEventsMap), apisAndEventsNumber, app.ID)
+
+			// Verify capabilities
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/capabilities?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfCapabilities {
+				t.Log("Missing Capabilities...will try again")
+				return false
+			}
+
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfCapabilities)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, capabilitiesMap, numberOfCapabilities, descriptionField)
+			t.Log("Successfully verified capabilities")
+
+			// Verify the capability spec
+			capabilitySpecs := assertions.AssertSpecsFromORDService(t, respBody, numberOfCapabilities, capabilitySpecsMap, capabilityResourceDefinitionsFieldName)
+			t.Log("Successfully verified specs for capabilities")
+
+			var capabilitySpecURL string
+			for _, s := range capabilitySpecs {
+				specType := s.Get("type").String()
+				specFormat := s.Get("mediaType").String()
+				if specType == expectedCapabilitySpecType && specFormat == expectedSpecFormat {
+					capabilitySpecURL = s.Get("url").String()
+					break
+				}
+			}
+
+			respBody = makeRequestWithHeaders(t, httpClient, capabilitySpecURL, map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(respBody) == 0 || !strings.Contains(respBody, "swagger") {
+				t.Logf("Spec %s not successfully fetched... will try again", specURL)
+				return false
+			}
+			t.Log("Successfully verified capability spec")
+
+			// verify public capabilities via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicCapabilitiesMap, capabilitiesField, numberOfPublicCapabilities)
 
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
