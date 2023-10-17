@@ -81,7 +81,7 @@ func NewService(repo SpecRepository, fetchRequestRepo FetchRequestRepository, ui
 	}
 }
 
-// GetByID takes care of retrieving a specific spec entity from db based on a provided id and objectType (API or Event)
+// GetByID takes care of retrieving a specific spec entity from db based on a provided id and objectType (API, Event or Capability)
 func (s *service) GetByID(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -91,6 +91,7 @@ func (s *service) GetByID(ctx context.Context, id string, objectType model.SpecR
 	return s.repo.GetByID(ctx, tnt, id, objectType)
 }
 
+// GetByIDGlobal retrieves spec by id without tenant isolation
 func (s *service) GetByIDGlobal(ctx context.Context, id string) (*model.Spec, error) {
 	return s.repo.GetByIDGlobal(ctx, id)
 }
@@ -120,7 +121,7 @@ func (s *service) ListIDByReferenceObjectID(ctx context.Context, resourceType re
 }
 
 // GetByReferenceObjectID
-// Until now APIs and Events had embedded specification in them, we will model this behavior by relying that the first created spec is the one which GraphQL expects
+// Until now APIs, Events and Capabilities had embedded specification in them, we will model this behavior by relying on that the first created spec is the one which GraphQL expects
 func (s *service) GetByReferenceObjectID(ctx context.Context, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error) {
 	specs, err := s.listSpecsByReferenceObjectID(ctx, objectType, objectID, resourceType)
 	if err != nil {
@@ -435,6 +436,8 @@ func getFetchRequestObjectTypeBySpecObjectType(specObjectType model.SpecReferenc
 		return model.APISpecFetchRequestReference
 	case model.EventSpecReference:
 		return model.EventSpecFetchRequestReference
+	case model.CapabilitySpecReference:
+		return model.CapabilitySpecFetchRequestReference
 	}
 	return ""
 }

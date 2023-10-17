@@ -892,6 +892,34 @@ const ordDocument = `{
 		 {{ .additionalProperties }}
       }
    ],
+	"capabilities":[
+    {
+      "ordId": "sap.foo.bar:capability:{{ .randomSuffix }}:v1",
+      "title": "CAPABILITY TITLE",
+      "type": "sap.mdo:mdi-capability:v1",
+      "shortDescription": "Short description of capability",
+      "description": "Optional, longer description",
+      "version": "1.0.0",
+      "lastUpdate": "2023-01-26T15:47:04+00:00",
+      "releaseStatus": "active",
+      "visibility": "public",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "definitions": [
+        {
+          "type": "sap.mdo:mdi-capability-definition:v1",
+          "mediaType": "application/json",
+          "url": "/external-api/spec?format=json", 
+          "accessStrategies": [
+            {
+                "type":"{{ .specsAccessStrategy }}",
+                "customType":"",
+				"customDescription":""
+			}
+          ]
+        }
+      ]
+    }
+  ],
    "tombstones":[
       {
          "ordId":"ns:apiResource:API_ID2{{ .randomSuffix }}:v1",
