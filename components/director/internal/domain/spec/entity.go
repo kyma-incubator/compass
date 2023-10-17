@@ -11,6 +11,7 @@ type Entity struct {
 	ID            string         `db:"id"`
 	APIDefID      sql.NullString `db:"api_def_id"`
 	EventAPIDefID sql.NullString `db:"event_def_id"`
+	CapabilityID  sql.NullString `db:"capability_def_id"`
 	SpecData      sql.NullString `db:"spec_data"`
 
 	APISpecFormat sql.NullString `db:"api_spec_format"`
@@ -18,6 +19,9 @@ type Entity struct {
 
 	EventSpecFormat sql.NullString `db:"event_spec_format"`
 	EventSpecType   sql.NullString `db:"event_spec_type"`
+
+	CapabilitySpecFormat sql.NullString `db:"capability_spec_format"`
+	CapabilitySpecType   sql.NullString `db:"capability_spec_type"`
 
 	CustomType sql.NullString `db:"custom_type"`
 }
@@ -31,8 +35,10 @@ func (e *Entity) GetID() string {
 func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
 	if e.APIDefID.Valid {
 		return resource.API, e.APIDefID.String
+	} else if e.EventAPIDefID.Valid {
+		return resource.EventDefinition, e.EventAPIDefID.String
 	}
-	return resource.EventDefinition, e.EventAPIDefID.String
+	return resource.Capability, e.CapabilityID.String
 }
 
 // DecorateWithTenantID decorates the entity with the given tenant ID.

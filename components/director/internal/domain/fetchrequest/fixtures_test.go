@@ -127,6 +127,8 @@ func fixFullFetchRequestEntityWithRefID(t *testing.T, id string, timestamp time.
 		specID = sql.NullString{Valid: true, String: objectID}
 	case model.EventSpecFetchRequestReference:
 		specID = sql.NullString{Valid: true, String: objectID}
+	case model.CapabilitySpecFetchRequestReference:
+		specID = sql.NullString{Valid: true, String: objectID}
 	}
 
 	filter := "filter"

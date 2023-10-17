@@ -78,6 +78,7 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 	apisInput := make([]*model.APIDefinitionInput, 0)
 	eventsInput := make([]*model.EventDefinitionInput, 0)
 	tombstonesInput := make([]*model.TombstoneInput, 0)
+	capabilitiesInput := make([]*model.CapabilityInput, 0)
 	for _, doc := range documents {
 		vendorsInput = append(vendorsInput, doc.Vendors...)
 		productsInput = append(productsInput, doc.Products...)
@@ -86,9 +87,10 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 		apisInput = append(apisInput, doc.APIResources...)
 		eventsInput = append(eventsInput, doc.EventResources...)
 		tombstonesInput = append(tombstonesInput, doc.Tombstones...)
+		capabilitiesInput = append(capabilitiesInput, doc.Capabilities...)
 	}
 
-	if len(packagesInput) > 0 || len(bundlesInput) > 0 || len(apisInput) > 0 || len(eventsInput) > 0 || len(tombstonesInput) > 0 {
+	if len(packagesInput) > 0 || len(bundlesInput) > 0 || len(apisInput) > 0 || len(eventsInput) > 0 || len(tombstonesInput) > 0 || len(capabilitiesInput) > 0 {
 		return nil, errors.New("global registry supports only vendors and products")
 	}
 
