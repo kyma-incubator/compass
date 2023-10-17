@@ -34,6 +34,7 @@ func NewEntityTypeProcessor(transact persistence.Transactioner, entityTypeSvc En
 	}
 }
 
+// Process re-syncs the entity types passed as an argument.
 func (ep *EntityTypeProcessor) Process(ctx context.Context, resourceType resource.Type, resourceID string, packagesFromDB []*model.Package, entityTypes []*model.EntityTypeInput, resourceHashes map[string]uint64) ([]*model.EntityType, error) {
 	entityTypesFromDB, err := ep.listEntityTypesInTx(ctx, resourceType, resourceID)
 	if err != nil {

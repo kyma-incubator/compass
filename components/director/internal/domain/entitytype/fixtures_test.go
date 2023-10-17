@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"github.com/pkg/errors"
 	"strings"
 	"time"
 
@@ -15,21 +16,25 @@ import (
 )
 
 const (
-	ID               = "ID"
-	ready            = true
-	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
-	ordID            = "com.compass.v1"
-	localID          = "BusinessPartner"
-	correlationIDs   = `["sap.s4:sot:BusinessPartner", "sap.s4:sot:CostCenter", "sap.s4:sot:WorkforcePerson"]`
-	level            = "aggregate"
-	title            = "BusinessPartner"
-	packageID        = "sap.xref:package:SomePackage:v1"
-	publicVisibility = "public"
-	product          = `["sap:product:S4HANA_OD:"]`
-	releaseStatus    = "active"
+	ID                 = "ID"
+	ready              = true
+	tenantID           = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+	ordID              = "com.compass.v1"
+	localID            = "BusinessPartner"
+	correlationIDs     = `["sap.s4:sot:BusinessPartner", "sap.s4:sot:CostCenter", "sap.s4:sot:WorkforcePerson"]`
+	level              = "aggregate"
+	title              = "BusinessPartner"
+	packageID          = "sap.xref:package:SomePackage:v1"
+	publicVisibility   = "public"
+	product            = `["sap:product:S4HANA_OD:"]`
+	releaseStatus      = "active"
+	testTenant         = "tnt"
+	testExternalTenant = "external-tnt"
+	entityTypeID       = "entity-type-id"
 )
 
 var (
+	testError               = errors.New("test error")
 	fixedTimestamp          = time.Now()
 	appID                   = "appID"
 	appTemplateVersionID    = "appTemplateVersionID"
@@ -176,6 +181,33 @@ func fixEntityTypeModel(entityTypeID string) *model.EntityType {
 		DocumentationLabels:          json.RawMessage(documentLabels),
 		Version:                      fixVersionModel(version_value, version_deprecated, version_deprecatedSince, version_forRemoval),
 		ResourceHash:                 &resourceHash,
+	}
+}
+
+func fixEntityTypeInputModel() model.EntityTypeInput {
+	return model.EntityTypeInput{
+		OrdID:               ordID,
+		LocalID:             localID,
+		CorrelationIDs:      json.RawMessage(correlationIDs),
+		Level:               level,
+		Title:               title,
+		ShortDescription:    &shortDescription,
+		Description:         &description,
+		SystemInstanceAware: &systemInstanceAware,
+		ChangeLogEntries:    json.RawMessage(changeLogEntries),
+		OrdPackageID:        packageID,
+		Visibility:          publicVisibility,
+		Links:               json.RawMessage(links),
+		PartOfProducts:      json.RawMessage(product),
+		PolicyLevel:         &policyLevel,
+		CustomPolicyLevel:   &customPolicyLevel,
+		ReleaseStatus:       releaseStatus,
+		SunsetDate:          &sunsetDate,
+		Successors:          json.RawMessage(successors),
+		Extensible:          json.RawMessage(extensible),
+		Tags:                json.RawMessage(tags),
+		Labels:              json.RawMessage(labels),
+		DocumentationLabels: json.RawMessage(documentLabels),
 	}
 }
 
