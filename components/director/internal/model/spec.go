@@ -11,11 +11,12 @@ type Spec struct {
 	ObjectType SpecReferenceObjectType
 	ObjectID   string
 
-	Data       *string
-	Format     SpecFormat
-	APIType    *APISpecType
-	EventType  *EventSpecType
-	CustomType *string
+	Data           *string
+	Format         SpecFormat
+	APIType        *APISpecType
+	EventType      *EventSpecType
+	CapabilityType *CapabilitySpecType
+	CustomType     *string
 }
 
 // SpecReferenceObjectType represents the type of the referenced object by the Spec.
@@ -26,6 +27,8 @@ const (
 	APISpecReference SpecReferenceObjectType = "API"
 	// EventSpecReference is a reference to an Event Specification.
 	EventSpecReference SpecReferenceObjectType = "Event"
+	// CapabilitySpecReference is a reference to a Capability Specification.
+	CapabilitySpecReference SpecReferenceObjectType = "Capability"
 )
 
 // GetResourceType returns the resource type of the specification based on the referenced entity.
@@ -35,6 +38,8 @@ func (obj SpecReferenceObjectType) GetResourceType() resource.Type {
 		return resource.APISpecification
 	case EventSpecReference:
 		return resource.EventSpecification
+	case CapabilitySpecReference:
+		return resource.CapabilitySpecification
 	}
 	return ""
 }
@@ -114,13 +119,24 @@ const (
 	EventSpecTypeCustom EventSpecType = "custom"
 )
 
+// CapabilitySpecType is the type of the Capability Specification
+type CapabilitySpecType string
+
+const (
+	// CapabilitySpecTypeMDICapabilityDefinitionV1 is the MDI Capability Definition V1 Specification
+	CapabilitySpecTypeMDICapabilityDefinitionV1 CapabilitySpecType = "sap.mdo:mdi-capability-definition:v1"
+	// CapabilitySpecTypeCustom is the Custom specification
+	CapabilitySpecTypeCustom CapabilitySpecType = "custom"
+)
+
 // SpecInput is an input for creating/updating specification.
 type SpecInput struct {
-	Data       *string
-	Format     SpecFormat
-	APIType    *APISpecType
-	EventType  *EventSpecType
-	CustomType *string
+	Data           *string
+	Format         SpecFormat
+	APIType        *APISpecType
+	EventType      *EventSpecType
+	CapabilityType *CapabilitySpecType
+	CustomType     *string
 
 	FetchRequest *FetchRequestInput
 }
@@ -139,14 +155,19 @@ func (s *SpecInput) ToSpec(id string, objectType SpecReferenceObjectType, object
 		return nil, errors.New("event spec type cannot be empty")
 	}
 
+	if objectType == CapabilitySpecReference && s.CapabilityType == nil {
+		return nil, errors.New("capability spec type cannot be empty")
+	}
+
 	return &Spec{
-		ID:         id,
-		ObjectType: objectType,
-		ObjectID:   objectID,
-		Data:       s.Data,
-		Format:     s.Format,
-		APIType:    s.APIType,
-		EventType:  s.EventType,
-		CustomType: s.CustomType,
+		ID:             id,
+		ObjectType:     objectType,
+		ObjectID:       objectID,
+		Data:           s.Data,
+		Format:         s.Format,
+		APIType:        s.APIType,
+		EventType:      s.EventType,
+		CapabilityType: s.CapabilityType,
+		CustomType:     s.CustomType,
 	}, nil
 }
