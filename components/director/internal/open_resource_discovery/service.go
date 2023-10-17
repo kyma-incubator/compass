@@ -427,7 +427,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		if err != nil {
 			return err
 		}
-		log.C(ctx).Infof("Finished deleteing tombstoned resources for %s with id: %q", resource.Type, resource.ID)
+		log.C(ctx).Infof("Finished deleting tombstoned resources for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing specs for %s with id: %q", resource.Type, resource.ID)
 		if err := s.processSpecs(ctx, resourceToAggregate.Type, fetchRequests, ordRequestObject); err != nil {
