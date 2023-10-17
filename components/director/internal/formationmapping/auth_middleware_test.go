@@ -163,7 +163,7 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
-			expectedStatusCode: http.StatusBadRequest,
+			expectedStatusCode: http.StatusNotFound,
 			expectedErrOutput:  "An unexpected error occurred while processing the request",
 		},
 		{
@@ -1252,7 +1252,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
-			expectedStatusCode: http.StatusBadRequest,
+			expectedStatusCode: http.StatusNotFound,
 			expectedErrOutput:  "An unexpected error occurred while processing the request",
 		},
 		{

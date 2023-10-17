@@ -237,8 +237,8 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				Configuration: json.RawMessage(testValidConfig),
 			},
 			hasURLVars:         true,
-			expectedStatusCode: http.StatusBadRequest,
-			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
+			expectedStatusCode: http.StatusNotFound,
+			expectedErrOutput:  "Formation assignment with ID",
 		},
 		{
 			name: "Error when getting formation by formation ID fail",
@@ -283,8 +283,8 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				Configuration: json.RawMessage(testValidConfig),
 			},
 			hasURLVars:         true,
-			expectedStatusCode: http.StatusBadRequest,
-			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
+			expectedStatusCode: http.StatusNotFound,
+			expectedErrOutput:  "Formation with ID",
 		},
 		{
 			name: "Error when the retrieved formation is not in READY state",

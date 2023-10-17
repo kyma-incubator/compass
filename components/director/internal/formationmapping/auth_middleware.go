@@ -279,7 +279,7 @@ func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID s
 	f, err := a.formationRepo.GetGlobalByID(ctx, formationID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return false, http.StatusBadRequest, errors.Wrapf(err, "while getting formation with ID: %q globally", formationID)
+			return false, http.StatusNotFound, errors.Wrapf(err, "while getting formation with ID: %q globally", formationID)
 		}
 		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation with ID: %q globally", formationID)
 	}
@@ -324,7 +324,7 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 	fa, err := a.faService.GetGlobalByIDAndFormationID(ctx, formationAssignmentID, formationID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return false, http.StatusBadRequest, err
+			return false, http.StatusNotFound, err
 		}
 		return false, http.StatusInternalServerError, err
 	}
