@@ -98,5 +98,3 @@ log::info "Compass provisioning done"
 log::info "Triggering the tests"
 ${COMPASS_SOURCE_DIR}/installation/scripts/prow/execute-tests.sh ${DUMP_DB}
 log::info "Test execution completed"
-
-kubectl logs -n compass-system --selector app=director --tail=-1
