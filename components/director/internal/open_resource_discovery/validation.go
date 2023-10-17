@@ -598,7 +598,9 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 				return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 			}),
 		),
-		validation.Field(&event.ResourceDefinitions),
+		validation.Field(&event.ResourceDefinitions, validation.By(func(value interface{}) error {
+			return validateEventResourceDefinition(value, *event, docPolicyLevel)
+		})),
 		validation.Field(&event.Links, validation.By(validateORDLinks)),
 		validation.Field(&event.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate))),
@@ -1000,6 +1002,30 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 
 	if apiProtocol == APIProtocolSAPSQLAPIV1 && !(resourceDefinitionTypes[model.APISpecTypeCustom] || resourceDefinitionTypes[model.APISpecTypeSQLAPIDefinitionV1]) {
 		return errors.New("for APIResources with apiProtocol='sap-sql-api-v1' it is mandatory type to be set either to sap-sql-api-definition-v1 or custom")
+	}
+
+	return nil
+}
+
+func validateEventResourceDefinition(value interface{}, event model.EventDefinitionInput, docPolicyLevel *string) error {
+	if value == nil {
+		return nil
+	}
+
+	policyLevel := str.PtrStrToStr(docPolicyLevel)
+	eventVisibility := str.PtrStrToStr(event.Visibility)
+
+	if policyLevel == PolicyLevelSap && eventVisibility == EventVisibilityPrivate {
+		return nil
+	}
+
+	eventResourceDef, ok := value.([]*model.EventResourceDefinition)
+	if !ok {
+		return errors.New("error while casting to EventResourceDefinition")
+	}
+
+	if len(eventResourceDef) == 0 {
+		return errors.New("when event resource visibility is public or internal, resource definitions must be provided")
 	}
 
 	return nil
