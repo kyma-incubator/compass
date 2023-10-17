@@ -2,14 +2,15 @@ package notifications
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
-	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
-	mock_data "github.com/kyma-incubator/compass/tests/pkg/notifications/expectations-builders"
-	"github.com/kyma-incubator/compass/tests/pkg/notifications/operations"
-	resource_providers "github.com/kyma-incubator/compass/tests/pkg/notifications/resource-providers"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
+	mock_data "github.com/kyma-incubator/compass/tests/pkg/notifications/expectations-builders"
+	"github.com/kyma-incubator/compass/tests/pkg/notifications/operations"
+	resource_providers "github.com/kyma-incubator/compass/tests/pkg/notifications/resource-providers"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"

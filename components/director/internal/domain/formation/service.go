@@ -889,6 +889,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, errors.Wrapf(err, "while listing formation assignments for object with type %q and ID %q", objectType, objectID)
 	}
 
+	initialAssignmentsClones := make([]*model.FormationAssignment, 0, len(initialAssignmentsData))
+	for _, ia := range initialAssignmentsData {
+		initialAssignmentsClones = append(initialAssignmentsClones, ia.Clone())
+	}
+
 	// Flag that is used to determine whether to revert the changes made in the transaction below or not.
 	// If any errors occur after we committed the transaction below but before the formation assignments processing, we need to revert them.
 	// If errors occur after formation assignments processing, we should not revert them
@@ -901,10 +906,9 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	if err := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
 		for _, ia := range initialAssignmentsData {
 			log.C(ctx).Infof("Update and persist in the DB '%s' state of formation assignment with ID: '%s'", ia.State, ia.ID)
-			faClone := ia.Clone()
-			faClone.State = string(model.DeletingAssignmentState)
-			formationassignment.ResetAssignmentConfigAndError(faClone)
-			if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
+			ia.State = string(model.DeletingAssignmentState)
+			formationassignment.ResetAssignmentConfigAndError(ia)
+			if err := s.formationAssignmentService.Update(ctxWithTransact, ia.ID, ia); err != nil {
 				return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", ia.ID, ia.State)
 			}
 		}
@@ -924,9 +928,9 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 		log.C(ctx).Infof("Reverting formation assignment changes that updated them to DELETING state and reset their configuration in the first transaction...")
 		if terr := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
-			for _, fa := range initialAssignmentsData {
-				if updateErr := s.formationAssignmentService.Update(ctxWithTransact, fa.ID, fa); updateErr != nil {
-					log.C(ctx).WithError(updateErr).Errorf("while updating formation assignment with ID: %s", fa.ID)
+			for _, FAClone := range initialAssignmentsClones {
+				if updateErr := s.formationAssignmentService.Update(ctxWithTransact, FAClone.ID, FAClone); updateErr != nil {
+					log.C(ctx).WithError(updateErr).Errorf("while updating formation assignment with ID: %s", FAClone.ID)
 					return updateErr
 				}
 			}
@@ -963,24 +967,19 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 	}
 
-	formationAssignmentClonesForObject := make([]*model.FormationAssignment, 0, len(initialAssignmentsData))
-	for _, ia := range initialAssignmentsData {
-		formationAssignmentClonesForObject = append(formationAssignmentClonesForObject, ia.Clone())
-	}
-
-	rtmContextIDsMapping, nerr := s.getRuntimeContextIDToRuntimeIDMapping(transactionCtx, tnt, formationAssignmentClonesForObject)
+	rtmContextIDsMapping, nerr := s.getRuntimeContextIDToRuntimeIDMapping(transactionCtx, tnt, initialAssignmentsData)
 	err = nerr
 	if err != nil {
 		return nil, err
 	}
 
-	applicationIDToApplicationTemplateIDMapping, nerr := s.getApplicationIDToApplicationTemplateIDMapping(transactionCtx, tnt, formationAssignmentClonesForObject)
+	applicationIDToApplicationTemplateIDMapping, nerr := s.getApplicationIDToApplicationTemplateIDMapping(transactionCtx, tnt, initialAssignmentsData)
 	err = nerr
 	if err != nil {
 		return nil, err
 	}
 
-	if nerr = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentClonesForObject, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); nerr != nil {
+	if nerr = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, initialAssignmentsData, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); nerr != nil {
 		err = nerr
 		if commitErr := tx.Commit(); commitErr != nil {
 			err = errors.Wrapf(

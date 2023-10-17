@@ -2,13 +2,15 @@ package asserters
 
 import (
 	"context"
+	"testing"
+
 	gql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 type FormationStatusAsserter struct {

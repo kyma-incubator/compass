@@ -290,14 +290,19 @@ func (h *Handler) RespondWithIncompleteAndDestinationDetails(writer http.Respons
 	h.syncFAResponse(ctx, writer, r, responseFunc)
 }
 
-// RespondWithIncompleteAndRedirectDetails handles synchronous formation assignment notification requests for Assign operation
-// that returns a random configuration later which will be used to redirect the notification based on some property of it.
+// RespondWithIncompleteAndRedirectDetails handles synchronous formation assignment notification requests for Assign and Unassign operation
+// that returns a random configuration later which will be used to redirect the notification based on some property of it in case of Assign request.
+// And in case of Unassign operation, we only return ready state
 func (h *Handler) RespondWithIncompleteAndRedirectDetails(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if r.Method == http.MethodDelete {
 		log.C(ctx).Infof("Handling unassign redirect notification, returning only READY state")
-		httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
+		responseFunc := func([]byte) {
+			httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
+		}
+		h.syncFAResponse(ctx, writer, r, responseFunc)
+		return
 	}
 
 	responseFunc := func(bodyBytes []byte) {
@@ -776,7 +781,7 @@ func isInitialNotificationRequest(ctx context.Context, bodyBytes []byte) (bool, 
 	}
 
 	assignedTenantConfig := gjson.GetBytes(bodyBytes, "assignedTenant.configuration").String()
-	if assignedTenantState == string(InitialAssignmentState) && assignedTenantConfig == "" || assignedTenantConfig == "\"\"" {
+	if assignedTenantState == string(InitialAssignmentState) && (assignedTenantConfig == "" || assignedTenantConfig == "\"\"") {
 		log.C(ctx).Infof("Initial notification request is received with empty config in the assigned tenant. Returning 202 Accepted with noop response func")
 		return true, http.StatusAccepted, nil
 	}

@@ -3,6 +3,8 @@ package label_test
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -11,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestParentAccessVerifier_Verify(t *testing.T) {

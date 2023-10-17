@@ -2774,7 +2774,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName, &formationTmplName)
 
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady})
 
 		formationInput := graphql.FormationInput{Name: formationName}
 		t.Logf("Assign application 2 with ID: %s to formation: %q", app2.ID, formationName)
@@ -2790,11 +2790,11 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		expectedAssignmentsBySourceID := map[string]map[string]fixtures.AssignmentState{
 			app2.ID: {
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+				app2.ID: fixtures.AssignmentState{State: "READY"},
 			},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignmentsBySourceID)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady})
 
 		t.Logf("Assign application 1 with ID: %s to formation %s", app1.ID, formationName)
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formationInput, app1.ID, tnt)
@@ -2803,33 +2803,33 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
-				app2.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: fixtures.RedirectConfigJSON, Value: fixtures.RedirectConfigJSON, Error: nil},
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app2.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: fixtures.RedirectConfigJSON, Value: fixtures.RedirectConfigJSON},
+				app1.ID: fixtures.AssignmentState{State: "READY"},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.AssignmentState{State: "INITIAL"},
+				app2.ID: fixtures.AssignmentState{State: "READY"},
 			},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignmentsBySourceID)
 		// The aggregated formation status is IN_PROGRESS because of the FAs, but the Formation state should be READY
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress})
 		require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
 		require.Empty(t, formation.Error)
 
 		expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+				app2.ID: fixtures.AssignmentState{State: "READY"},
+				app1.ID: fixtures.AssignmentState{State: "READY"},
 			},
 			app2.ID: {
 				app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+				app2.ID: fixtures.AssignmentState{State: "READY"},
 			},
 		}
 
 		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignmentsBySourceID)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady})
 
 		t.Logf("Assert formation assignment notifications for %s operation...", assignOperation)
 		notifications := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -2856,63 +2856,55 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 		var unassignFormation graphql.Formation
-		t.Logf("Unassign Application 1 from formation %s", formationName)
-		unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, graphql.FormationObjectTypeApplication.String(), formationName)
+		t.Logf("Unassign Application 2 from formation %s", formationName)
+		unassignReq := fixtures.FixUnassignFormationRequest(app2.ID, graphql.FormationObjectTypeApplication.String(), formationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, unassignReq, &unassignFormation)
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
 
 		expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "DELETING", Config: nil},
+				app1.ID: fixtures.AssignmentState{State: "DELETING"},
 			},
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+				app1.ID: fixtures.AssignmentState{State: "READY"},
 			},
 		}
 
-		assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignmentsBySourceID)
+		assertFormationAssignments(t, ctx, tnt, formation.ID, 2, expectedAssignmentsBySourceID)
 		// The aggregated formation status is IN_PROGRESS because of the FAs, but the Formation state should be READY
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress})
 		require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
 		require.Empty(t, formation.Error)
 
 		expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+				app1.ID: fixtures.AssignmentState{State: "READY"},
 			},
 		}
 
 		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 1, expectedAssignmentsBySourceID)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady})
 
-		t.Logf("Assert formation assignment notifications for %s operation of the first app...", unassignOperation)
+		t.Logf("Assert formation assignment notifications for %s operation...", unassignOperation)
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		assertNotificationsCountForTenant(t, body, localTenantID, 1)
-		assertNotificationsCountForTenant(t, body, localTenantID, 1)
 		assertNotificationsCountForTenant(t, body, localTenantID, 1)
 		unassignNotificationsForApp1 := gjson.GetBytes(body, localTenantID)
 		unassignNotificationForApp1 := unassignNotificationsForApp1.Array()[0]
-		assertFormationAssignmentsNotification(t, unassignNotificationForApp1, unassignOperation, formation.ID, app2.ID, app1.ID, readyAssignmentState, readyAssignmentState, localTenantID, appNamespace, appRegion, tnt, emptyParentCustomerID)
+		assertFormationAssignmentsNotification(t, unassignNotificationForApp1, unassignOperation, formation.ID, app2.ID, app1.ID, deletingAssignmentState, deletingAssignmentState, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer)
 
-		// todo::: adapt/delete - that's the original receiver notification but due to "always redirect issue" it will be redirected to the another receiver
-		//assertNotificationsCountForTenant(t, body, localTenantID2, 1)
-		//unassignNotificationsForApp2 := gjson.GetBytes(body, localTenantID2)
-		//unassignNotificationForApp2 := unassignNotificationsForApp2.Array()[0]
-		//assertFormationAssignmentsNotification(t, unassignNotificationForApp2, unassignOperation, formation.ID, app1.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, emptyParentCustomerID)
+		assertNotificationsCountForTenant(t, body, localTenantID2, 1)
+		unassignNotificationsForApp2 := gjson.GetBytes(body, localTenantID2)
+		unassignNotificationForApp2 := unassignNotificationsForApp2.Array()[0]
+		assertFormationAssignmentsNotification(t, unassignNotificationForApp2, unassignOperation, formation.ID, app1.ID, app2.ID, deletingAssignmentState, deletingAssignmentState, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 
-		assertNotificationsCountForTenant(t, body, redirectedTntID, 1)
-		unassignRedirectedNotifications := gjson.GetBytes(body, redirectedTntID)
-		unassignRedirectedNotification := unassignRedirectedNotifications.Array()[0]
-		require.Equal(t, redirectPath, unassignRedirectedNotification.Get("RequestPath").String())
-
-		t.Logf("Unassign Application 2 from formation %s", formationName)
-		unassignReq = fixtures.FixUnassignFormationRequest(app2.ID, graphql.FormationObjectTypeApplication.String(), formationName)
+		t.Logf("Unassign Application 1 from formation %s", formationName)
+		unassignReq = fixtures.FixUnassignFormationRequest(app1.ID, graphql.FormationObjectTypeApplication.String(), formationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, unassignReq, &unassignFormation)
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
 
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady})
 	})
 }

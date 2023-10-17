@@ -363,6 +363,7 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/with-state/{tenantId}", notificationHandler.PatchWithState).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/with-state/{tenantId}/{applicationId}", notificationHandler.DeleteWithState).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/configuration/redirect-notification/{tenantId}", notificationHandler.RespondWithIncompleteAndRedirectDetails).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/configuration/redirect-notification/{tenantId}/{applicationId}", notificationHandler.RespondWithIncompleteAndRedirectDetails).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/redirect-notification/{tenantId}", notificationHandler.RedirectNotificationHandler).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/fail-once/{tenantId}", notificationHandler.FailOnceResponse).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/fail-once/{tenantId}/{applicationId}", notificationHandler.FailOnceResponse).Methods(http.MethodDelete)

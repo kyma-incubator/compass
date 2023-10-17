@@ -2,11 +2,13 @@ package asserters
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
-	"github.com/stretchr/testify/require"
-	"github.com/tidwall/gjson"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
+	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 type UnassignNotificationsAsserter struct {
