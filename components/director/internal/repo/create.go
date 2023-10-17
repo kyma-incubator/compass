@@ -177,6 +177,7 @@ func (c *universalCreator) createChildEntity(ctx context.Context, tenant string,
 func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string, dbEntity interface{}, resourceType resource.Type) error {
 	var parentID string
 	var parentResourceType resource.Type
+
 	if childEntity, ok := dbEntity.(ChildEntity); ok {
 		parentResourceType, parentID = childEntity.GetParent(resourceType)
 	}
