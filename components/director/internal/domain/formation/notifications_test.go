@@ -621,11 +621,6 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 				engine.On("EnforceConstraints", ctx, formationconstraint.PostSendNotification, postJoinPointDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
-			WebhookConverter: func() *automock.WebhookConverter {
-				conv := &automock.WebhookConverter{}
-				conv.On("ToModel", fixRuntimeWebhookGQLModel(WebhookID, RuntimeID)).Return(fixRuntimeWebhookModel(WebhookID, RuntimeID), nil).Once()
-				return conv
-			},
 			InputRequest: faRequestExt,
 		},
 		{
@@ -639,11 +634,6 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preJoinPointDetails, FormationTemplateID).Return(nil).Once()
 				return engine
-			},
-			WebhookConverter: func() *automock.WebhookConverter {
-				conv := &automock.WebhookConverter{}
-				conv.On("ToModel", fixRuntimeWebhookGQLModel(WebhookID, RuntimeID)).Return(fixRuntimeWebhookModel(WebhookID, RuntimeID), nil).Once()
-				return conv
 			},
 			InputRequest:       faRequestExt,
 			ExpectedErrMessage: testErr.Error(),
@@ -661,11 +651,6 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 				engine.On("EnforceConstraints", ctx, formationconstraint.PostSendNotification, postJoinPointDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
-			WebhookConverter: func() *automock.WebhookConverter {
-				conv := &automock.WebhookConverter{}
-				conv.On("ToModel", fixRuntimeWebhookGQLModel(WebhookID, RuntimeID)).Return(fixRuntimeWebhookModel(WebhookID, RuntimeID), nil).Once()
-				return conv
-			},
 			InputRequest:       faRequestExt,
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -675,21 +660,6 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preJoinPointDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
-			},
-			WebhookConverter: func() *automock.WebhookConverter {
-				conv := &automock.WebhookConverter{}
-				conv.On("ToModel", fixRuntimeWebhookGQLModel(WebhookID, RuntimeID)).Return(fixRuntimeWebhookModel(WebhookID, RuntimeID), nil).Once()
-				return conv
-			},
-			InputRequest:       faRequestExt,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "fail when converting gql webhook to model returns error",
-			WebhookConverter: func() *automock.WebhookConverter {
-				conv := &automock.WebhookConverter{}
-				conv.On("ToModel", fixRuntimeWebhookGQLModel(WebhookID, RuntimeID)).Return(nil, testErr).Once()
-				return conv
 			},
 			InputRequest:       faRequestExt,
 			ExpectedErrMessage: testErr.Error(),

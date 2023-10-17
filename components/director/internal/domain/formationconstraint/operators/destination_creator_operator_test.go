@@ -113,7 +113,7 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 		{
 			Name:             "Error when retrieving fa pointer fails",
 			Input:            inputWithoutAssignmentMemoryAddress,
-			ExpectedErrorMsg: "The entity memory address cannot be 0",
+			ExpectedErrorMsg: "The join point details' assignment memory address cannot be 0",
 		},
 		{
 			Name:  "Error when operation is 'assign' and location is 'NotificationStatusReturned' and the creation of design time dests fails",
@@ -242,7 +242,7 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 		{
 			Name:             "Error when operation is 'assign' and location is 'SendNotification' and retrieving reverse assignment pointer fails",
 			Input:            inputForAssignSendNotificationWithoutReverseAssignmentMemoryAddress,
-			ExpectedErrorMsg: "The entity memory address cannot be 0",
+			ExpectedErrorMsg: "The join point details' assignment memory address cannot be 0",
 		},
 		{
 			Name:  "Error when operation is 'assign' and location is 'SendNotification' and the creation of basic dests fails",

@@ -129,6 +129,10 @@ func (r *Resolver) CreateFormationConstraint(ctx context.Context, in graphql.For
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	if err = in.Validate(); err != nil {
+		return nil, err
+	}
+
 	inputWrapper := formationconstraint.NewFormationConstraintInputWrapper(&in)
 	if err = inputWrapper.Validate(); err != nil {
 		return nil, err
@@ -215,6 +219,10 @@ func (r *Resolver) UpdateFormationConstraint(ctx context.Context, id string, in 
 		InputTemplate:   in.InputTemplate,
 		ConstraintScope: graphql.ConstraintScope(currentConstraint.ConstraintScope),
 		Priority:        &priority,
+	}
+
+	if err = updatedConstraintInput.Validate(); err != nil {
+		return nil, err
 	}
 
 	inputWrapper := formationconstraint.NewFormationConstraintInputWrapper(updatedConstraintInput)
