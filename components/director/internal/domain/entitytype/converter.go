@@ -3,7 +3,6 @@ package entitytype
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -88,9 +87,9 @@ func (c *converter) convertVersionToEntity(inVer *model.Version) version.Version
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(entity *Entity) (*model.EntityType, error) {
+func (c *converter) FromEntity(entity *Entity) *model.EntityType {
 	if entity == nil {
-		return nil, apperrors.NewInternalError("the EntityType entity is nil")
+		return nil
 	}
 
 	output := &model.EntityType{
@@ -129,6 +128,5 @@ func (c *converter) FromEntity(entity *Entity) (*model.EntityType, error) {
 		Version:                      c.vc.FromEntity(entity.Version),
 		ResourceHash:                 repo.StringPtrFromNullableString(entity.ResourceHash),
 	}
-
-	return output, nil
+	return output
 }

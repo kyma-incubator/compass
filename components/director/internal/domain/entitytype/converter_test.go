@@ -11,11 +11,11 @@ import (
 
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		etModel := fixEntityTypeModel(ID)
-		require.NotNil(t, etModel)
+		entityTypeModel := fixEntityTypeModel(ID)
+		require.NotNil(t, entityTypeModel)
 		conv := entitytype.NewConverter(version.NewConverter())
 
-		entity := conv.ToEntity(etModel)
+		entity := conv.ToEntity(entityTypeModel)
 
 		assert.Equal(t, fixEntityTypeEntity(ID), entity)
 	})
@@ -23,9 +23,9 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("Returns nil if package model is nil", func(t *testing.T) {
 		conv := entitytype.NewConverter(version.NewConverter())
 
-		ent := conv.ToEntity(nil)
+		entityTypeEntity := conv.ToEntity(nil)
 
-		require.Nil(t, ent)
+		require.Nil(t, entityTypeEntity)
 	})
 }
 
@@ -34,17 +34,16 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		entity := fixEntityTypeEntity(ID)
 		conv := entitytype.NewConverter(version.NewConverter())
 
-		etModel, err := conv.FromEntity(entity)
+		entityTypeModel := conv.FromEntity(entity)
 
-		require.NoError(t, err)
-		assert.Equal(t, fixEntityTypeModel(ID), etModel)
+		assert.Equal(t, fixEntityTypeModel(ID), entityTypeModel)
 	})
 
-	t.Run("Returns error if Entity is nil", func(t *testing.T) {
+	t.Run("Returns nil if Entity is nil", func(t *testing.T) {
 		conv := entitytype.NewConverter(version.NewConverter())
 
-		_, err := conv.FromEntity(nil)
+		entityTypeModel := conv.FromEntity(nil)
 
-		require.Error(t, err)
+		require.Nil(t, entityTypeModel)
 	})
 }

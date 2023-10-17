@@ -34,12 +34,13 @@ var (
 //go:generate mockery --name=EntityTypeConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityTypeConverter interface {
 	ToEntity(in *model.EntityType) *Entity
-	FromEntity(entity *Entity) (*model.EntityType, error)
+	FromEntity(entity *Entity) *model.EntityType
 }
 
 type pgRepository struct {
 	conv               EntityTypeConverter
 	existQuerier       repo.ExistQuerier
+	pageableQuerier    repo.PageableQuerier
 	lister             repo.Lister
 	listerGlobal       repo.ListerGlobal
 	singleGetter       repo.SingleGetter
@@ -57,6 +58,7 @@ func NewRepository(conv EntityTypeConverter) *pgRepository {
 	return &pgRepository{
 		conv:               conv,
 		existQuerier:       repo.NewExistQuerier(entityTypeTable),
+		pageableQuerier:    repo.NewPageableQuerier(entityTypeTable, entityTypeColumns),
 		lister:             repo.NewLister(entityTypeTable, entityTypeColumns),
 		listerGlobal:       repo.NewListerGlobal(resource.EntityType, entityTypeTable, entityTypeColumns),
 		singleGetter:       repo.NewSingleGetter(entityTypeTable, entityTypeColumns),
@@ -68,6 +70,14 @@ func NewRepository(conv EntityTypeConverter) *pgRepository {
 		updater:            repo.NewUpdater(entityTypeTable, updatableColumns, []string{"id"}),
 		updaterGlobal:      repo.NewUpdaterGlobal(resource.EntityType, entityTypeTable, updatableColumns, []string{"id"}),
 	}
+}
+
+// EntityTypeCollection is an array of Entities
+type EntityTypeCollection []Entity
+
+// Len returns the length of the collection
+func (r EntityTypeCollection) Len() int {
+	return len(r)
 }
 
 // Create missing godoc
@@ -133,10 +143,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.E
 		return nil, err
 	}
 
-	entityTypeModel, err := r.conv.FromEntity(&entityTypeEnt)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting EntityType from Entity")
-	}
+	entityTypeModel := r.conv.FromEntity(&entityTypeEnt)
 
 	return entityTypeModel, nil
 }
@@ -149,10 +156,7 @@ func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Ent
 		return nil, err
 	}
 
-	entityTypeModel, err := r.conv.FromEntity(&entityTypeEnt)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting EntityType from Entity")
-	}
+	entityTypeModel := r.conv.FromEntity(&entityTypeEnt)
 
 	return entityTypeModel, nil
 }
@@ -165,12 +169,31 @@ func (r *pgRepository) GetByApplicationID(ctx context.Context, tenantID string, 
 		return nil, errors.Wrapf(err, "while getting EntityType for Application ID %s", appID)
 	}
 
-	entityTypeModel, err := r.conv.FromEntity(&entityTypeEntity)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting EntityType from Entity")
-	}
+	entityTypeModel := r.conv.FromEntity(&entityTypeEntity)
 
 	return entityTypeModel, nil
+}
+
+// ListByApplicationIDPage lists all EntityTypes for a given application ID with paging.
+func (r *pgRepository) ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.EntityTypePage, error) {
+	var entityTypeCollection EntityTypeCollection
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.EntityType, tenantID, pageSize, cursor, idColumn, &entityTypeCollection, repo.NewEqualCondition("app_id", appID))
+
+	if err != nil {
+		return nil, errors.Wrap(err, "while decoding page cursor")
+	}
+
+	items := make([]*model.EntityType, 0, len(entityTypeCollection))
+	for _, entityType := range entityTypeCollection {
+		m := r.conv.FromEntity(&entityType)
+		items = append(items, m)
+	}
+
+	return &model.EntityTypePage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page,
+	}, nil
 }
 
 // ListByResourceID lists EntityTypes by a given resource type and resource ID
@@ -192,10 +215,7 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceI
 
 	entityTypes := make([]*model.EntityType, 0, entityTypeCollection.Len())
 	for _, entityTypeEnt := range entityTypeCollection {
-		entityTypeModel, err := r.conv.FromEntity(&entityTypeEnt)
-		if err != nil {
-			return nil, err
-		}
+		entityTypeModel := r.conv.FromEntity(&entityTypeEnt)
 		entityTypes = append(entityTypes, entityTypeModel)
 	}
 	return entityTypes, nil

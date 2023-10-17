@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"github.com/pkg/errors"
+	"errors"
 	"strings"
 	"time"
 
@@ -26,7 +26,7 @@ const (
 	title              = "BusinessPartner"
 	packageID          = "sap.xref:package:SomePackage:v1"
 	publicVisibility   = "public"
-	product            = `["sap:product:S4HANA_OD:"]`
+	products           = `["sap:product:S4HANA_OD:"]`
 	releaseStatus      = "active"
 	testTenant         = "tnt"
 	testExternalTenant = "external-tnt"
@@ -79,9 +79,10 @@ var (
           "label-value-2"
         ]
       }`)
-	documentLabels = removeWhitespace(`{
+	documentationLabels = removeWhitespace(`{
         "Some Aspect": ["Markdown Documentation [with links](#)", "With multiple values"]
       }`)
+	errTest = errors.New("test error")
 )
 
 func removeWhitespace(s string) string {
@@ -130,7 +131,7 @@ func fixEntityTypeEntity(entityTypeID string) *entitytype.Entity {
 		PackageID:                    packageID,
 		Visibility:                   publicVisibility,
 		Links:                        repo.NewNullableStringFromJSONRawMessage(json.RawMessage(links)),
-		PartOfProducts:               repo.NewNullableStringFromJSONRawMessage(json.RawMessage(product)),
+		PartOfProducts:               repo.NewNullableStringFromJSONRawMessage(json.RawMessage(products)),
 		PolicyLevel:                  repo.NewNullableString(&policyLevel),
 		CustomPolicyLevel:            repo.NewNullableString(&customPolicyLevel),
 		ReleaseStatus:                releaseStatus,
@@ -139,7 +140,7 @@ func fixEntityTypeEntity(entityTypeID string) *entitytype.Entity {
 		Extensible:                   repo.NewNullableStringFromJSONRawMessage(json.RawMessage(extensible)),
 		Tags:                         repo.NewNullableStringFromJSONRawMessage(json.RawMessage(tags)),
 		Labels:                       repo.NewNullableStringFromJSONRawMessage(json.RawMessage(labels)),
-		DocumentationLabels:          repo.NewNullableStringFromJSONRawMessage(json.RawMessage(documentLabels)),
+		DocumentationLabels:          repo.NewNullableStringFromJSONRawMessage(json.RawMessage(documentationLabels)),
 		Version:                      fixVersionEntity(version_value, version_deprecated, version_deprecatedSince, version_forRemoval),
 		ResourceHash:                 repo.NewNullableString(&resourceHash),
 	}
@@ -169,7 +170,7 @@ func fixEntityTypeModel(entityTypeID string) *model.EntityType {
 		OrdPackageID:                 packageID,
 		Visibility:                   publicVisibility,
 		Links:                        json.RawMessage(links),
-		PartOfProducts:               json.RawMessage(product),
+		PartOfProducts:               json.RawMessage(products),
 		PolicyLevel:                  &policyLevel,
 		CustomPolicyLevel:            &customPolicyLevel,
 		ReleaseStatus:                releaseStatus,
@@ -178,7 +179,7 @@ func fixEntityTypeModel(entityTypeID string) *model.EntityType {
 		Extensible:                   json.RawMessage(extensible),
 		Tags:                         json.RawMessage(tags),
 		Labels:                       json.RawMessage(labels),
-		DocumentationLabels:          json.RawMessage(documentLabels),
+		DocumentationLabels:          json.RawMessage(documentationLabels),
 		Version:                      fixVersionModel(version_value, version_deprecated, version_deprecatedSince, version_forRemoval),
 		ResourceHash:                 &resourceHash,
 	}
@@ -198,7 +199,7 @@ func fixEntityTypeInputModel() model.EntityTypeInput {
 		OrdPackageID:        packageID,
 		Visibility:          publicVisibility,
 		Links:               json.RawMessage(links),
-		PartOfProducts:      json.RawMessage(product),
+		PartOfProducts:      json.RawMessage(products),
 		PolicyLevel:         &policyLevel,
 		CustomPolicyLevel:   &customPolicyLevel,
 		ReleaseStatus:       releaseStatus,
@@ -207,7 +208,7 @@ func fixEntityTypeInputModel() model.EntityTypeInput {
 		Extensible:          json.RawMessage(extensible),
 		Tags:                json.RawMessage(tags),
 		Labels:              json.RawMessage(labels),
-		DocumentationLabels: json.RawMessage(documentLabels),
+		DocumentationLabels: json.RawMessage(documentationLabels),
 	}
 }
 
@@ -219,8 +220,22 @@ func fixEntityTypeColumns() []string {
 }
 
 func fixEntityTypeRow(id string) []driver.Value {
-	return []driver.Value{id, ready, fixedTimestamp, time.Time{}, time.Time{}, nil, appID, repo.NewValidNullableString(""), ordID, localID,
-		repo.NewValidNullableString(correlationIDs), level, title, repo.NewNullableString(&shortDescription), repo.NewNullableString(&description), repo.NewNullableBool(&systemInstanceAware), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(changeLogEntries)), packageID, publicVisibility,
-		repo.NewNullableStringFromJSONRawMessage(json.RawMessage(links)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(product)), repo.NewNullableString(&policyLevel), repo.NewNullableString(&customPolicyLevel), releaseStatus, repo.NewNullableString(&sunsetDate), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(successors)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(extensible)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(tags)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(labels)),
-		repo.NewNullableStringFromJSONRawMessage(json.RawMessage(documentLabels)), repo.NewNullableString(&resourceHash), repo.NewNullableString(&version_value), repo.NewNullableBool(&version_deprecated), repo.NewNullableString(&version_deprecatedSince), repo.NewNullableBool(&version_forRemoval)}
+	return []driver.Value{id, ready, fixedTimestamp, time.Time{}, time.Time{}, nil, appID, repo.NewValidNullableString(appTemplateVersionID), ordID, localID,
+		repo.NewNullableStringFromJSONRawMessage(json.RawMessage(correlationIDs)), level, title, repo.NewNullableString(&shortDescription), repo.NewNullableString(&description), repo.NewNullableBool(&systemInstanceAware), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(changeLogEntries)), packageID, publicVisibility,
+		repo.NewNullableStringFromJSONRawMessage(json.RawMessage(links)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(products)), repo.NewNullableString(&policyLevel), repo.NewNullableString(&customPolicyLevel), releaseStatus, repo.NewNullableString(&sunsetDate), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(successors)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(extensible)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(tags)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(labels)),
+		repo.NewNullableStringFromJSONRawMessage(json.RawMessage(documentationLabels)), repo.NewNullableString(&resourceHash), repo.NewNullableString(&version_value), repo.NewNullableBool(&version_deprecated), repo.NewNullableString(&version_deprecatedSince), repo.NewNullableBool(&version_forRemoval)}
+}
+
+func fixEntityTypeCreateArgs(id string, entityType *model.EntityType) []driver.Value {
+	return []driver.Value{id, ready, fixedTimestamp, time.Time{}, time.Time{}, nil, appID, repo.NewValidNullableString(*entityType.ApplicationTemplateVersionID), entityType.OrdID, entityType.LocalID,
+		repo.NewNullableStringFromJSONRawMessage(entityType.CorrelationIDs), entityType.Level, entityType.Title, repo.NewNullableString(entityType.ShortDescription), repo.NewNullableString(entityType.Description), repo.NewNullableBool(entityType.SystemInstanceAware), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.ChangeLogEntries)), entityType.OrdPackageID, entityType.Visibility,
+		repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.Links)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.PartOfProducts)), repo.NewNullableString(entityType.PolicyLevel), repo.NewNullableString(entityType.CustomPolicyLevel), entityType.ReleaseStatus, repo.NewNullableString(entityType.SunsetDate), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.Successors)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.Extensible)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.Tags)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.Labels)),
+		repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.DocumentationLabels)), repo.NewNullableString(entityType.ResourceHash), repo.NewNullableString(&entityType.Version.Value), repo.NewNullableBool(entityType.Version.Deprecated), repo.NewNullableString(entityType.Version.DeprecatedSince), repo.NewNullableBool(entityType.Version.ForRemoval)}
+}
+
+func fixEntityTypeUpdateArgs(id string, entityType *entitytype.Entity) []driver.Value {
+	return []driver.Value{entityType.Ready, entityType.CreatedAt, entityType.UpdatedAt, entityType.DeletedAt, entityType.Error, entityType.OrdID, entityType.LocalID,
+		entityType.CorrelationIDs, entityType.Level, entityType.Title, entityType.ShortDescription, entityType.Description, entityType.SystemInstanceAware, entityType.ChangeLogEntries, entityType.PackageID, entityType.Visibility,
+		entityType.Links, entityType.PartOfProducts, entityType.PolicyLevel, entityType.CustomPolicyLevel, entityType.ReleaseStatus, entityType.SunsetDate, entityType.Successors, entityType.Extensible, entityType.Tags, entityType.Labels,
+		entityType.DocumentationLabels, entityType.ResourceHash, entityType.Version.Value, entityType.Version.Deprecated, entityType.Version.DeprecatedSince, entityType.Version.ForRemoval, entityType.ID}
 }
