@@ -390,11 +390,17 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData)
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", apisField)
+				return false
+			}
 			t.Log("Successfully verified relation between apis and bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=events&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData)
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", eventsField)
+				return false
+			}
 			t.Log("Successfully verified relation between events and bundles")
 
 			// Verify products
@@ -761,11 +767,17 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
-			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData)
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", apisField)
+				return false
+			}
 			t.Log("Successfully verified relation between apis and bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=events&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
-			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData)
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", eventsField)
+				return false
+			}
 			t.Log("Successfully verified relation between events and bundles")
 
 			globalProductsNumber, globalVendorsNumber := getGlobalResourcesNumber(ctx, t, unsecuredHttpClient)
@@ -1093,11 +1105,17 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData)
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", apisField)
+				return false
+			}
 			t.Log("Successfully verified relation between apis and bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=events&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-			assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData)
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", eventsField)
+				return false
+			}
 			t.Log("Successfully verified relation between events and bundles")
 
 			// Verify products

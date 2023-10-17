@@ -674,14 +674,16 @@ func AssertDefaultBundleID(t *testing.T, respBody string, numberOfEntities int, 
 	}
 }
 
-func AssertRelationBetweenBundleAndEntityFromORDService(t *testing.T, respBody string, entityType string, numberOfEntitiesForBundle map[string]int, entitiesDataForBundle map[string][]string) {
+func AssertRelationBetweenBundleAndEntityFromORDService(t *testing.T, respBody string, entityType string, numberOfEntitiesForBundle map[string]int, entitiesDataForBundle map[string][]string) bool {
 	numberOfBundles := len(gjson.Get(respBody, "value").Array())
 
 	for i := 0; i < numberOfBundles; i++ {
 		bundleTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
 		numberOfEntities := len(gjson.Get(respBody, fmt.Sprintf("value.%d.%s", i, entityType)).Array())
 		require.NotEmpty(t, bundleTitle)
-		require.Equal(t, numberOfEntitiesForBundle[bundleTitle], numberOfEntities)
+		if numberOfEntitiesForBundle[bundleTitle] != numberOfEntities {
+			return false
+		}
 
 		for j := 0; j < numberOfEntities; j++ {
 			entityTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.%s.%d.title", i, entityType, j)).String()
@@ -689,6 +691,7 @@ func AssertRelationBetweenBundleAndEntityFromORDService(t *testing.T, respBody s
 			require.Contains(t, entitiesDataForBundle[bundleTitle], entityTitle)
 		}
 	}
+	return true
 }
 
 func AssertTombstoneFromORDService(t *testing.T, respBody string, expectedNumber int, expectedIDRegex string) {
