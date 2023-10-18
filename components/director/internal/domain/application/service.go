@@ -90,7 +90,6 @@ type ApplicationRepository interface {
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
-	GetByKeyGlobal(ctx context.Context, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 	ListGlobalByKey(ctx context.Context, key string) ([]*model.Label, error)
 	ListGlobalByKeyAndObjects(ctx context.Context, objectType model.LabelableObject, objectIDs []string, key string) ([]*model.Label, error)
@@ -791,8 +790,8 @@ func (s *service) GetLabel(ctx context.Context, applicationID string, key string
 	return label, nil
 }
 
-// GetScenarios list the scenario labels for the application globally and merges their values
-func (s *service) GetScenarios(ctx context.Context, applicationID string) ([]string, error) {
+// GetScenariosGlobal list the scenario labels for the application globally and merges their values
+func (s *service) GetScenariosGlobal(ctx context.Context, applicationID string) ([]string, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -800,7 +799,7 @@ func (s *service) GetScenarios(ctx context.Context, applicationID string) ([]str
 
 	appExists, err := s.appRepo.Exists(ctx, appTenant, applicationID)
 	if err != nil {
-		return nil, errors.Wrap(err, "while checking Application existence")
+		return nil, errors.Wrapf(err, "while checking the existence of Application with ID: %s", applicationID)
 	}
 	if !appExists {
 		return nil, fmt.Errorf("application with ID %s doesn't exist", applicationID)
@@ -808,14 +807,14 @@ func (s *service) GetScenarios(ctx context.Context, applicationID string) ([]str
 
 	labels, err := s.labelRepo.ListGlobalByKeyAndObjects(ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting label for Application")
+		return nil, errors.Wrapf(err, "while getting label for Application with ID: %s", applicationID)
 	}
 
 	var scenarios []string
 	for _, lbl := range labels {
 		scenariosFromLabel, err := label.ValueToStringsSlice(lbl.Value)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while parsing application label values")
+			return nil, errors.Wrapf(err, "while parsing label values for Application with ID: %s", applicationID)
 		}
 
 		scenarios = append(scenarios, scenariosFromLabel...)
@@ -1267,7 +1266,7 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 func (s *service) getScenarioNamesForApplication(ctx context.Context, applicationID string) ([]string, error) {
 	log.C(ctx).Infof("Getting scenarios for application with id %s", applicationID)
 
-	scenarios, err := s.GetScenarios(ctx, applicationID)
+	scenarios, err := s.GetScenariosGlobal(ctx, applicationID)
 	if err != nil {
 		if apperrors.ErrorCode(err) == apperrors.NotFound {
 			log.C(ctx).Infof("No scenarios found for application")

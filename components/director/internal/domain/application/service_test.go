@@ -4913,7 +4913,7 @@ func TestService_GetLabel(t *testing.T) {
 	}
 }
 
-func TestService_GetScenariosLabelGlobal(t *testing.T) {
+func TestService_GetScenariosGlobal(t *testing.T) {
 	// GIVEN
 	tnt := "tenant"
 	externalTnt := "external-tnt"
@@ -5017,7 +5017,7 @@ func TestService_GetScenariosLabelGlobal(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when application doesn't exist",
+			Name: "Returns error when fails to check for application existence",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Exists", ctx, tnt, applicationID).Return(false, testErr).Once()
@@ -5028,6 +5028,18 @@ func TestService_GetScenariosLabelGlobal(t *testing.T) {
 			InputApplicationID: applicationID,
 			ExpectedErrMessage: testErr.Error(),
 		},
+		{
+			Name: "Returns error when application doesn't exist",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(false, nil).Once()
+
+				return repo
+			},
+			LabelRepositoryFn:  UnusedLabelRepository,
+			InputApplicationID: applicationID,
+			ExpectedErrMessage: "application with ID foo doesn't exist",
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -5037,7 +5049,7 @@ func TestService_GetScenariosLabelGlobal(t *testing.T) {
 			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
-			scenarios, err := svc.GetScenarios(ctx, testCase.InputApplicationID)
+			scenarios, err := svc.GetScenariosGlobal(ctx, testCase.InputApplicationID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -5051,6 +5063,13 @@ func TestService_GetScenariosLabelGlobal(t *testing.T) {
 			labelRepo.AssertExpectations(t)
 		})
 	}
+
+	t.Run("Returns error on loading tenant", func(t *testing.T) {
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+		// WHEN
+		_, err := svc.GetScenariosGlobal(context.TODO(), applicationID)
+		assert.Contains(t, err.Error(), "while loading tenant from context")
+	})
 }
 
 func TestService_ListLabel(t *testing.T) {
