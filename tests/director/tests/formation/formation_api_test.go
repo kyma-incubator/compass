@@ -597,8 +597,7 @@ func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
 	require.NotEmpty(t, constraint.ID)
 
-	t.Logf("Attaching constraint to formation template")
-	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, formationTemplate.ID)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, constraint.Name, formationTemplate.ID, formationTemplate.Name)
 
 	t.Logf("Should create formation: %s", firstFormationName)
 	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, firstFormationName)
@@ -683,8 +682,7 @@ func TestApplicationOfGivenTypeInAtMostOneFormationOfGivenType(t *testing.T) {
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
 	require.NotEmpty(t, constraint.ID)
 
-	t.Logf("Attaching constraint to formation template")
-	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, formationTemplate.ID)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, constraint.Name, formationTemplate.ID, formationTemplate.Name)
 
 	t.Logf("Should create formation: %q", formationName)
 	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
@@ -755,8 +753,7 @@ func TestSystemInAtMostOneFormationOfType(t *testing.T) {
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
 	require.NotEmpty(t, constraint.ID)
 
-	t.Logf("Attaching constraint to formation template")
-	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, formationTemplate.ID)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, constraint.Name, formationTemplate.ID, formationTemplate.Name)
 
 	t.Logf("Should create first formation: %s", firstFormationName)
 	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, firstFormationName)

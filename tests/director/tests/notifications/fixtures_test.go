@@ -271,13 +271,11 @@ func attachDestinationCreatorConstraints(t *testing.T, ctx context.Context, form
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
-	t.Logf("Create formation constraint with name: %s", firstConstraintInput.Name)
 	firstConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraintInput)
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint.ID)
 	require.NotEmpty(t, firstConstraint.ID)
 
-	t.Logf("Attaching constraint with name: %q to formation template with name: %q", firstConstraint.Name, formationTemplate.Name)
-	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, formationTemplate.ID)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, firstConstraint.Name, formationTemplate.ID, formationTemplate.Name)
 
 	// second constraint
 	secondConstraintInput := graphql.FormationConstraintInput{
@@ -291,13 +289,11 @@ func attachDestinationCreatorConstraints(t *testing.T, ctx context.Context, form
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
-	t.Logf("Create formation constraint with name: %s", secondConstraintInput.Name)
 	secondConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraintInput)
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraint.ID)
 	require.NotEmpty(t, secondConstraint.ID)
 
-	t.Logf("Attaching constraint with name: %q to formation template with name: %q", secondConstraint.Name, formationTemplate.Name)
-	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, formationTemplate.ID)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, secondConstraint.Name, formationTemplate.ID, formationTemplate.Name)
 }
 
 func assertTrustDetailsForTargetAndNoTrustDetailsForSource(t *testing.T, assignNotificationAboutApp2 gjson.Result, expectedSubjectOne, expectedSubjectSecond string) {

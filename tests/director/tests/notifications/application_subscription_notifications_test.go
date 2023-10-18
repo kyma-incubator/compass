@@ -353,13 +353,11 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				ConstraintScope: graphql.ConstraintScopeFormationType,
 			}
 
-			t.Logf("Create formation constraint with name: %s", firstConstraintInput.Name)
 			firstConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraintInput)
 			defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint.ID)
 			require.NotEmpty(t, firstConstraint.ID)
 
-			t.Logf("Attaching constraint with name: %q to formation template with name: %q", firstConstraint.Name, ft.Name)
-			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, ft.ID)
+			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, firstConstraint.Name, ft.ID, ft.Name)
 
 			// second constraint
 			secondConstraintInput := graphql.FormationConstraintInput{
@@ -373,13 +371,11 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				ConstraintScope: graphql.ConstraintScopeFormationType,
 			}
 
-			t.Logf("Create formation constraint with name: %s", secondConstraintInput.Name)
 			secondConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraintInput)
 			defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraint.ID)
 			require.NotEmpty(t, secondConstraint.ID)
 
-			t.Logf("Attaching constraint with name: %q to formation template with name: %q", secondConstraint.Name, ft.Name)
-			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, ft.ID)
+			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, secondConstraint.Name, ft.ID, ft.Name)
 
 			// create formation
 			t.Logf("Creating formation with name: %q from template with name: %q", formationName, providerFormationTmplName)

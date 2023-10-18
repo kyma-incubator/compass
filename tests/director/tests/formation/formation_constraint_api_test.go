@@ -76,7 +76,6 @@ func TestDeleteFormationConstraint(t *testing.T) {
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
-	t.Logf("Create formation constraint with name: %s", in.Name)
 	constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, in)
 	require.NotEmpty(t, constraint.ID)
 
@@ -106,7 +105,6 @@ func TestFormationConstraint(t *testing.T) {
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
-	t.Logf("Create formation constraint with name: %s", firstConstraint.Name)
 	constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint)
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
 	require.NotEmpty(t, constraint.ID)
@@ -146,7 +144,6 @@ func TestUpdateFormationConstraint(t *testing.T) {
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
-	t.Logf("Create formation constraint with name: %s", firstConstraint.Name)
 	constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint)
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
 	require.NotEmpty(t, constraint.ID)
@@ -200,7 +197,6 @@ func TestListFormationConstraints(t *testing.T) {
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
-	t.Logf("Create formation constraint with name: %s", firstConstraint.Name)
 	constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint)
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
 	require.NotEmpty(t, constraint.ID)
@@ -216,7 +212,6 @@ func TestListFormationConstraints(t *testing.T) {
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
-	t.Logf("Create formation constraint with name: %s", secondConstraint.Name)
 	constraintSecond := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraint)
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraintSecond.ID)
 	require.NotEmpty(t, constraintSecond.ID)
@@ -290,7 +285,6 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
-	t.Logf("Create formation constraint with name: %s", firstConstraint.Name)
 	constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint)
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
 	require.NotEmpty(t, constraint.ID)
@@ -320,8 +314,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	secondFormationTemplateOutput := fixtures.QueryFormationTemplateWithConstraints(t, ctx, certSecuredGraphQLClient, secondFormationTemplate.ID)
 	require.ElementsMatch(t, secondFormationTemplateOutput.FormationConstraints, globalFormationConstraints) // only global constraints and no attached ones
 
-	t.Logf("Attaching constraint to formation template")
-	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, formationTemplate.ID)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, constraint.Name, formationTemplate.ID, formationTemplate.Name)
 
 	// Assert the constraint is attached only to the first formation template
 	t.Logf("Get formation template with name %q and id %q, and assert there is one constraint attached to it", formationTemplate.Name, formationTemplate.ID)
@@ -343,13 +336,11 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
-	t.Logf("Create formation constraint with name: %s", secondConstraint.Name)
 	constraintSecond := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraint)
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraintSecond.ID)
 	require.NotEmpty(t, constraintSecond.ID)
 
-	t.Logf("Attaching second constraint to formation template")
-	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraintSecond.ID, formationTemplate.ID)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraintSecond.ID, constraint.Name, formationTemplate.ID, formationTemplate.Name)
 
 	// Assert the two constraints are attached only to the first formation template
 	t.Logf("Get formation template with name %q and id %q, and assert there are are two constraints attached to it", formationTemplate.Name, formationTemplate.ID)
@@ -371,13 +362,11 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
-	t.Logf("Create formation constraint with name: %s", constraintForOtherTemplateInput.Name)
 	constraintForOtherTemplate := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, constraintForOtherTemplateInput)
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraintForOtherTemplate.ID)
 	require.NotEmpty(t, constraintForOtherTemplate.ID)
 
-	t.Logf("Attaching constraintForOtherTemplate to formation template other")
-	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraintForOtherTemplate.ID, secondFormationTemplate.ID)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraintForOtherTemplate.ID, constraint.Name, secondFormationTemplate.ID, formationTemplate.Name)
 
 	// Assert the two constraints are attached to the first formation template and one to the second formation template
 	t.Logf("Get formation template with name %q and id %q, and assert there are are two constraints attached to it", formationTemplate.Name, formationTemplate.ID)

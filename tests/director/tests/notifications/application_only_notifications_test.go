@@ -1557,9 +1557,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
 		require.NotEmpty(t, constraint.ID)
 
-		t.Logf("Attaching constraint to formation template")
-		defer fixtures.DetachConstraintFromFormationTemplateNoCheckError(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
-		fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
+		defer fixtures.DetachConstraintFromFormationTemplateNoCheckError(ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
+		fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.Name, constraint.ID, ft.ID, ft.Name)
 
 		formationName := "app-to-app-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)
@@ -2872,13 +2871,11 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			ConstraintScope: graphql.ConstraintScopeFormationType,
 		}
 
-		t.Logf("Create formation constraint with name: %s", redirectConstraintInput.Name)
 		firstConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, redirectConstraintInput)
 		defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint.ID)
 		require.NotEmpty(t, firstConstraint.ID)
 
-		t.Logf("Attaching constraint with name: %q to formation template with name: %q", firstConstraint.Name, ft.Name)
-		fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, ft.ID)
+		fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, firstConstraint.Name, ft.ID, ft.Name)
 
 		// create formation
 		formationName := "e2e-redirect-formation-name"
