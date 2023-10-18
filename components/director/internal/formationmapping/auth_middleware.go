@@ -261,7 +261,11 @@ func (a *Authenticator) FormationHandler() func(next http.Handler) http.Handler 
 			isAuthorized, statusCode, err := a.isFormationAuthorized(ctx, formationID)
 			if err != nil {
 				log.C(ctx).Error(err.Error())
-				respondWithError(ctx, w, statusCode, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
+				errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
+				if statusCode == http.StatusNotFound && apperrors.IsNotFoundError(err) {
+					errResp = errors.Errorf("Formation with ID %q was not found. X-Request-Id: %s", formationID, correlationID)
+				}
+				respondWithError(ctx, w, statusCode, errResp)
 				return
 			}
 

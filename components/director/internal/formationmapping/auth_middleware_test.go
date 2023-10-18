@@ -1300,7 +1300,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusNotFound,
-			expectedErrOutput:  "An unexpected error occurred while processing the request",
+			expectedErrOutput:  "Formation with ID",
 		},
 		{
 			name:       "Authorization fail: error when getting formation template fails",
