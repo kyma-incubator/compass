@@ -247,14 +247,13 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			expectedConfig := str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")
 			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
 					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
 					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 				},
 			}
@@ -593,13 +592,13 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			notificationsForApp1 := gjson.GetBytes(body, subscriptionConsumerTenantID)
 			unassignNotificationForApp1 := notificationsForApp1.Array()[0]
 			validateFormationNameInAssignmentNotification(t, unassignNotificationForApp1, formationName)
-			assertFormationAssignmentsNotification(t, unassignNotificationForApp1, unassignOperation, formation.ID, app2.ID, app1.ID, readyAssignmentState, readyAssignmentState, subscriptionConsumerTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
+			assertFormationAssignmentsNotification(t, unassignNotificationForApp1, unassignOperation, formation.ID, app2.ID, app1.ID, deletingAssignmentState, deletingAssignmentState, subscriptionConsumerTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 			assertNotificationsCountForTenant(t, body, localTenantID2, 1)
 			notificationsForApp2 := gjson.GetBytes(body, localTenantID2)
 			unassignNotificationForApp2 := notificationsForApp2.Array()[0]
 			validateFormationNameInAssignmentNotification(t, unassignNotificationForApp2, formationName)
-			assertFormationAssignmentsNotification(t, unassignNotificationForApp2, unassignOperation, formation.ID, app1.ID, app2.ID, readyAssignmentState, readyAssignmentState, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
+			assertFormationAssignmentsNotification(t, unassignNotificationForApp2, unassignOperation, formation.ID, app1.ID, app2.ID, deletingAssignmentState, deletingAssignmentState, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 			t.Logf("Unassign Application 2 from formation %s", formationName)
 			unassignReq = fixtures.FixUnassignFormationRequest(app2.ID, graphql.FormationObjectTypeApplication.String(), formationName)

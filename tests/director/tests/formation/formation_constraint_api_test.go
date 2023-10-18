@@ -340,7 +340,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraintSecond.ID)
 	require.NotEmpty(t, constraintSecond.ID)
 
-	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraintSecond.ID, constraint.Name, formationTemplate.ID, formationTemplate.Name)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraintSecond.ID, constraintSecond.Name, formationTemplate.ID, formationTemplate.Name)
 
 	// Assert the two constraints are attached only to the first formation template
 	t.Logf("Get formation template with name %q and id %q, and assert there are are two constraints attached to it", formationTemplate.Name, formationTemplate.ID)
@@ -366,7 +366,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraintForOtherTemplate.ID)
 	require.NotEmpty(t, constraintForOtherTemplate.ID)
 
-	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraintForOtherTemplate.ID, constraint.Name, secondFormationTemplate.ID, formationTemplate.Name)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraintForOtherTemplate.ID, constraintForOtherTemplate.Name, secondFormationTemplate.ID, formationTemplate.Name)
 
 	// Assert the two constraints are attached to the first formation template and one to the second formation template
 	t.Logf("Get formation template with name %q and id %q, and assert there are are two constraints attached to it", formationTemplate.Name, formationTemplate.ID)

@@ -376,6 +376,7 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/v1/tenants/oauthCredentials", notificationHandler.KymaOauthCredentials).Methods(http.MethodPatch, http.MethodDelete)
 	// formation assignment notifications async handlers
 	router.HandleFunc("/formation-callback/async-old/{tenantId}", notificationHandler.AsyncOld).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/async-old/{tenantId}/{applicationId}", notificationHandler.AsyncDelete).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async/{tenantId}", notificationHandler.Async).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async/{tenantId}/{applicationId}", notificationHandler.AsyncDelete).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async-no-response/{tenantId}", notificationHandler.AsyncNoResponseAssign).Methods(http.MethodPatch)

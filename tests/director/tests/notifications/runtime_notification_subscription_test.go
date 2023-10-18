@@ -228,11 +228,10 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			require.NoError(t, err)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			expectedConfig := str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")
 			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
 					app1.ID:  fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
+					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
 				},
 				rtCtx.ID: {
 					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
@@ -259,7 +258,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
 					app1.ID:  fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
+					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
 					app2.ID:  fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 				},
 				rtCtx.ID: {
@@ -269,7 +268,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				},
 				app2.ID: {
 					app2.ID:  fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
+					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
 					app1.ID:  fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 				},
 			}
@@ -304,7 +303,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app2.ID: {
 					app2.ID:  fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
+					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
 				},
 				rtCtx.ID: {
 					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
@@ -409,14 +408,13 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			require.NoError(t, err)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			expectedConfig := str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")
 			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
 					app1.ID:  fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
 				rtCtx.ID: {
 					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					app1.ID:  fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
+					app1.ID:  fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
 				},
 			}
 
@@ -464,7 +462,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
 				rtCtx.ID: {
 					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					app1.ID:  fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
+					app1.ID:  fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
 				},
 			}
 
@@ -543,16 +541,14 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
-			syncConfig := str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")
-			asyncConfig := str.Ptr("{\"asyncKey\":\"asyncValue\",\"asyncKey2\":{\"asyncNestedKey\":\"asyncNestedValue\"}}")
 			expectedAssignmentsBySourceID := map[string]map[string]fixtures.AssignmentState{
 				rtCtx.ID: {
-					app1.ID:  fixtures.AssignmentState{State: "READY", Config: syncConfig, Value: syncConfig, Error: nil},
+					app1.ID:  fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
 					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 				},
 				app1.ID: {
 					app1.ID:  fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: asyncConfig, Value: asyncConfig, Error: nil},
+					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
 				},
 			}
 
@@ -888,7 +884,6 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			require.NoError(t, err)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			expectedError := str.Ptr("{\"error\":{\"message\":\"failed to parse request\",\"errorCode\":2}}")
 			// target:source:state
 			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				rtCtx.ID: {
@@ -897,7 +892,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				},
 				app1.ID: {
 					app1.ID:  fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					rtCtx.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: expectedError, Error: expectedError},
+					rtCtx.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
 				},
 			}
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignments)
@@ -926,7 +921,6 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			require.NoError(t, err)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			expectedConfig := str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")
 			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				rtCtx.ID: {
 					app1.ID:  fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
@@ -934,7 +928,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				},
 				app1.ID: {
 					app1.ID:  fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
+					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
 				},
 			}
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignments)
@@ -1071,7 +1065,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 
 			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
-					rtCtx.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
+					rtCtx.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
 				},
 				rtCtx.ID: {
 					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
@@ -1277,7 +1271,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 				},
 				app1.ID: {
-					rtCtx.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
+					rtCtx.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
 				},
 			}
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
@@ -1535,7 +1529,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 						t.Logf("Found notification for app %q", appIDFromNotification)
 						if appIDFromNotification == app1.ID {
 							unassignNotificationFound = true
-							assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t, notification, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, fixtures.StatusAPISyncConfigJSON)
+							assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t, notification, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, nil)
 						}
 					}
 				}
@@ -1696,16 +1690,14 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				require.NoError(t, err)
 				require.Equal(t, formationName, assignedFormation.Name)
 
-				expectedConfig := str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")
-				asyncConfig := str.Ptr("{\"asyncKey\":\"asyncValue\",\"asyncKey2\":{\"asyncNestedKey\":\"asyncNestedValue\"}}")
 				expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 					rtCtx.ID: {
-						app1.ID:  fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
+						app1.ID:  fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
 						rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 					},
 					app1.ID: {
 						app1.ID:  fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-						rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: asyncConfig, Value: asyncConfig, Error: nil},
+						rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
 					},
 				}
 				assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID, 5)
