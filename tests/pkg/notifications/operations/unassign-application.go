@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
-	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	gcli "github.com/machinebox/graphql"
 )
