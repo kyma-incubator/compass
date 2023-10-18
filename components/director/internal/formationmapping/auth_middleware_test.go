@@ -164,7 +164,7 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusNotFound,
-			expectedErrOutput:  "An unexpected error occurred while processing the request",
+			expectedErrOutput:  "Formation assignment with ID",
 		},
 		{
 			name:       "Authorization fail: error when tenant loading from context fails",

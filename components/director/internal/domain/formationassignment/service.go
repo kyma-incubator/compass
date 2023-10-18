@@ -76,7 +76,7 @@ type tenantRepository interface {
 }
 
 // Used for testing
-//nolint
+// nolint
 //
 //go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
 type templateInput interface {
@@ -369,8 +369,11 @@ func (s *service) Update(ctx context.Context, id string, fa *model.FormationAssi
 	} else if !exists {
 		return apperrors.NewNotFoundError(resource.FormationAssignment, id)
 	}
-
-	if err = s.repo.Update(ctx, fa); err != nil {
+	err = s.repo.Update(ctx, fa)
+	if apperrors.IsUnauthorizedError(err) {
+		return apperrors.NewNotFoundError(resource.FormationAssignment, id)
+	}
+	if err != nil {
 		return errors.Wrapf(err, "while updating formation assignment with ID: %q", id)
 	}
 	return nil
@@ -385,7 +388,11 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	if err := s.repo.Delete(ctx, id, tenantID); err != nil {
+	err = s.repo.Delete(ctx, id, tenantID)
+	if apperrors.IsUnauthorizedError(err) {
+		return apperrors.NewNotFoundError(resource.FormationAssignment, id)
+	}
+	if err != nil {
 		return errors.Wrapf(err, "while deleting formation assignment with ID: %q", id)
 	}
 	return nil
