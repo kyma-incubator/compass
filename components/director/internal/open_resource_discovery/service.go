@@ -411,10 +411,12 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		}
 		log.C(ctx).Infof("Finished processing events for %s with id: %q", resource.Type, resource.ID)
 
+		log.C(ctx).Infof("Starting processing entity types for %s with id: %q", resource.Type, resource.ID)
 		entityTypesFromDB, err := s.entityTypeProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.EntityTypes, resourceHashes)
 		if err != nil {
 			return err
 		}
+		log.C(ctx).Infof("Finished processing entity types for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing capabilities for %s with id: %q", resource.Type, resource.ID)
 		capabilitiesFromDB, capabilitiesFetchRequests, err := s.processCapabilities(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.Capabilities, resourceHashes)
