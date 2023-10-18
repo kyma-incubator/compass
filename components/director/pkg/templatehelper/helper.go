@@ -2,12 +2,13 @@ package templatehelper
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/tidwall/gjson"
-	"github.com/tidwall/sjson"
 	"strconv"
 	"strings"
 	"text/template"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 
 	"github.com/Masterminds/sprig/v3"
 )
