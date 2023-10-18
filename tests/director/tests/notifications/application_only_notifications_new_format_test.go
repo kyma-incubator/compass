@@ -2,10 +2,11 @@ package notifications
 
 import (
 	"context"
-	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"strings"
 	"testing"
 	"time"
+
+	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
 	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
