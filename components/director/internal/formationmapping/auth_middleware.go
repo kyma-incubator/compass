@@ -31,6 +31,8 @@ const (
 	FormationIDParam = "ucl-formation-id"
 	// FormationAssignmentIDParam is formation assignment URL path parameter placeholder
 	FormationAssignmentIDParam = "ucl-assignment-id"
+	// ClientIDFromCertificateHeader contains the name of the header containing the client id from the certificate
+	ClientIDFromCertificateHeader = "Client-Id-From-Certificate"
 )
 
 // FormationAssignmentService is responsible for the service-layer FormationAssignment operations
@@ -152,6 +154,7 @@ type Authenticator struct {
 	formationTemplateRepo      FormationTemplateRepository
 	tenantRepo                 TenantRepository
 	globalSubaccountIDLabelKey string
+	uclCertOUSubaccountID      string
 }
 
 // NewFormationMappingAuthenticator creates a new Authenticator
@@ -167,6 +170,7 @@ func NewFormationMappingAuthenticator(
 	formationTemplateRepo FormationTemplateRepository,
 	tenantRepo TenantRepository,
 	globalSubaccountIDLabelKey string,
+	uclCertOUSubaccountID string,
 ) *Authenticator {
 	return &Authenticator{
 		transact:                   transact,
@@ -180,6 +184,7 @@ func NewFormationMappingAuthenticator(
 		formationTemplateRepo:      formationTemplateRepo,
 		tenantRepo:                 tenantRepo,
 		globalSubaccountIDLabelKey: globalSubaccountIDLabelKey,
+		uclCertOUSubaccountID:      uclCertOUSubaccountID,
 	}
 }
 
@@ -205,7 +210,13 @@ func (a *Authenticator) FormationAssignmentHandler() func(next http.Handler) htt
 				return
 			}
 
-			isAuthorized, statusCode, err := a.isFormationAssignmentAuthorized(ctx, formationAssignmentID, formationID)
+			clientID := r.Header.Get(ClientIDFromCertificateHeader)
+			if clientID == "" {
+				log.C(ctx).Errorf("Failed to find client ID from header: %s", ClientIDFromCertificateHeader)
+				respondWithError(ctx, w, http.StatusBadRequest, errors.New("tenant not found in the request"))
+			}
+
+			isAuthorized, statusCode, err := a.isFormationAssignmentAuthorized(ctx, formationAssignmentID, formationID, clientID)
 			if err != nil {
 				log.C(ctx).Error(err.Error())
 				errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
@@ -310,7 +321,7 @@ func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID s
 }
 
 // isFormationAssignmentAuthorized verify through custom logic the caller is authorized to update the formation assignment status
-func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, formationAssignmentID, formationID string) (bool, int, error) {
+func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, formationAssignmentID, formationID, clientID string) (bool, int, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
 		return false, http.StatusInternalServerError, errors.Wrap(err, "while fetching consumer info from context")
@@ -324,6 +335,15 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 	}
 	defer a.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	if a.uclCertOUSubaccountID == clientID {
+		if err := tx.Commit(); err != nil {
+			return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")
+		}
+
+		log.C(ctx).Infof("The caller with ID: %s is UCL and is allowed to update formation assignments", clientID)
+		return true, http.StatusOK, nil
+	}
 
 	fa, err := a.faService.GetGlobalByIDAndFormationID(ctx, formationAssignmentID, formationID)
 	if err != nil {

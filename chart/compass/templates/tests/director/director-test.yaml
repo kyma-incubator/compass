@@ -299,6 +299,8 @@ spec:
               value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
             - name: APP_TEST_DESTINATION_INSTANCE_ID
               value: {{ .Values.global.tests.destination.instanceID | quote }}
+            - name: APP_DIRECTOR_EXTERNAL_CERT_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
@@ -619,6 +621,8 @@ spec:
               value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
             - name: APP_TEST_DESTINATION_INSTANCE_ID
               value: {{ .Values.global.tests.destination.instanceID | quote }}
+            - name: APP_DIRECTOR_EXTERNAL_CERT_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
@@ -939,6 +943,8 @@ spec:
               value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
             - name: APP_TEST_DESTINATION_INSTANCE_ID
               value: {{ .Values.global.tests.destination.instanceID | quote }}
+            - name: APP_DIRECTOR_EXTERNAL_CERT_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
@@ -1259,6 +1265,8 @@ spec:
               value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
             - name: APP_TEST_DESTINATION_INSTANCE_ID
               value: {{ .Values.global.tests.destination.instanceID | quote }}
+            - name: APP_DIRECTOR_EXTERNAL_CERT_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
@@ -1579,6 +1587,8 @@ spec:
               value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
             - name: APP_TEST_DESTINATION_INSTANCE_ID
               value: {{ .Values.global.tests.destination.instanceID | quote }}
+            - name: APP_DIRECTOR_EXTERNAL_CERT_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}

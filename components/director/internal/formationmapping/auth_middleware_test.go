@@ -73,6 +73,8 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 		tenantRepoFn               func() *automock.TenantRepository
 		globalSubaccountIDLabelKey string
 		hasURLVars                 bool
+		missingClientIDHeader      bool
+		matchingClientID           bool
 		contextFn                  func() context.Context
 		httpMethod                 string
 		expectedStatusCode         int
@@ -97,6 +99,16 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 			},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedErrOutput:  fixBuildExpectedErrResponse(t, "Not all of the required parameters are provided"),
+		},
+		{
+			name: "Error when trying to find client ID from header",
+			contextFn: func() context.Context {
+				return emptyCtx
+			},
+			hasURLVars:            true,
+			missingClientIDHeader: true,
+			expectedStatusCode:    http.StatusBadRequest,
+			expectedErrOutput:     fixBuildExpectedErrResponse(t, "tenant not found in the request"),
 		},
 		{
 			name:       "Unauthorized error when authorization check is unsuccessful but there is no error",
@@ -564,6 +576,30 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 				return fixContextWithConsumer(c)
 			},
 			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request",
+		},
+		{
+			name:       "Authorization success: when caller is UCL",
+			transactFn: txGen.ThatSucceeds,
+			contextFn: func() context.Context {
+				c := fixGetConsumer(appTemplateID, consumer.ExternalCertificate)
+				return fixContextWithConsumer(c)
+			},
+			hasURLVars:         true,
+			matchingClientID:   true,
+			expectedStatusCode: http.StatusOK,
+			expectedErrOutput:  "",
+		},
+		{
+			name:       "Authorization fail: when caller is UCL but transaction fails",
+			transactFn: txGen.ThatFailsOnCommit,
+			contextFn: func() context.Context {
+				c := fixGetConsumer(appTemplateID, consumer.ExternalCertificate)
+				return fixContextWithConsumer(c)
+			},
+			hasURLVars:         true,
+			matchingClientID:   true,
 			expectedStatusCode: http.StatusInternalServerError,
 			expectedErrOutput:  "An unexpected error occurred while processing the request",
 		},
@@ -1075,7 +1111,14 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, persist, transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo)
 
 			// GIVEN
-			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo, nil, nil, tenantRepo, tCase.globalSubaccountIDLabelKey)
+			var clientID string
+			if tCase.matchingClientID {
+				clientID = matchingTestUCLSubaccountID
+			} else {
+				clientID = nonMatchingUCLSubaccountID
+			}
+
+			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo, nil, nil, tenantRepo, tCase.globalSubaccountIDLabelKey, clientID)
 			fmAuthMiddleware := fmAuthenticator.FormationAssignmentHandler()
 			rw := httptest.NewRecorder()
 
@@ -1088,6 +1131,10 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 
 			if tCase.hasURLVars {
 				httpReq = mux.SetURLVars(httpReq, urlVars)
+			}
+
+			if tCase.missingClientIDHeader {
+				httpReq.Header.Set(fm.ClientIDFromCertificateHeader, "")
 			}
 
 			// WHEN
@@ -1319,7 +1366,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, persist, transact, formationRepo, formationTemplateRepo)
 
 			// GIVEN
-			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, nil, nil, nil, nil, nil, nil, formationRepo, formationTemplateRepo, nil, tCase.globalSubaccountIDLabelKey)
+			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, nil, nil, nil, nil, nil, nil, formationRepo, formationTemplateRepo, nil, tCase.globalSubaccountIDLabelKey, "") // todo::: adjust uclCertOUSubaccountID value
 			formationAuthMiddleware := fmAuthenticator.FormationHandler()
 			rw := httptest.NewRecorder()
 
