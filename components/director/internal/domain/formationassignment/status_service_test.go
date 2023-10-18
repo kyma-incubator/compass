@@ -149,6 +149,28 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
+			Name:                "Not found error when updating formation assignment when update fails due to unauthorized",
+			Context:             ctxWithTenant,
+			FormationAssignment: fa,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(initialStateAssignment, nil).Once()
+				repo.On("Update", ctxWithTenant, fa).Return(unauthorizedError).Once()
+				return repo
+			},
+			ConstraintEngine: func() *automock.ConstraintEngine {
+				constraintEngine := &automock.ConstraintEngine{}
+				constraintEngine.On("EnforceConstraints", ctxWithTenant, formationconstraint.PreNotificationStatusReturned, preJoinPointDetails, formation.FormationTemplateID).Return(nil).Once()
+				return constraintEngine
+			},
+			NotificationSvc: func() *automock.FaNotificationService {
+				notificationSvc := &automock.FaNotificationService{}
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation, initialStateAssignment.State, "").Return(preJoinPointDetails, nil).Once()
+				return notificationSvc
+			},
+			ExpectedErrorMsg: notFoundError.Error(),
+		},
+		{
 			Name:                "Error when enforcing POST constraints",
 			Context:             ctxWithTenant,
 			FormationAssignment: fa,
@@ -303,6 +325,29 @@ func TestUpdater_SetAssignmentToErrorState(t *testing.T) {
 			FormationOperation: assignOperation,
 			ExpectedErrorMsg:   testErr.Error(),
 		},
+		{
+			Name:                "Returns not found error when updating fails with not found",
+			Context:             ctxWithTenant,
+			FormationAssignment: fa.Clone(),
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(initialStateAssignment, nil).Once()
+				repo.On("Update", ctxWithTenant, faErrorState).Return(notFoundError).Once()
+				return repo
+			},
+			ConstraintEngine: func() *automock.ConstraintEngine {
+				constraintEngine := &automock.ConstraintEngine{}
+				constraintEngine.On("EnforceConstraints", ctxWithTenant, formationconstraint.PreNotificationStatusReturned, preJoinPointDetails, formation.FormationTemplateID).Return(nil).Once()
+				return constraintEngine
+			},
+			NotificationSvc: func() *automock.FaNotificationService {
+				notificationSvc := &automock.FaNotificationService{}
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faErrorState, model.AssignFormation, initialStateAssignment.State, "").Return(preJoinPointDetails, nil).Once()
+				return notificationSvc
+			},
+			FormationOperation: assignOperation,
+			ExpectedErrorMsg:   notFoundError.Error(),
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -436,6 +481,18 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
+			Name:    "Returns not found error when can't update the formation assignment due to conflict",
+			Context: ctxWithTenant,
+			InputID: TestID,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(fa.Clone(), nil).Once()
+				repo.On("Update", ctxWithTenant, faWithReadyStateAndNoConfig).Return(unauthorizedError).Once()
+				return repo
+			},
+			ExpectedErrorMsg: notFoundError.Error(),
+		},
+		{
 			Name:    "Returns error when can't enforce post constraints",
 			Context: ctxWithTenant,
 			InputID: TestID,
@@ -481,6 +538,29 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 				return notificationSvc
 			},
 			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name:    "Returns not found error when delete fails due to unauthorized",
+			Context: ctxWithTenant,
+			InputID: TestID,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(fa.Clone(), nil).Once()
+				repo.On("Update", ctxWithTenant, faWithReadyStateAndNoConfig).Return(nil).Once()
+				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(unauthorizedError).Once()
+				return repo
+			},
+			ConstraintEngine: func() *automock.ConstraintEngine {
+				constraintEngine := &automock.ConstraintEngine{}
+				constraintEngine.On("EnforceConstraints", ctxWithTenant, formationconstraint.PreNotificationStatusReturned, preJoinPointDetails, formation.FormationTemplateID).Return(nil).Once()
+				return constraintEngine
+			},
+			NotificationSvc: func() *automock.FaNotificationService {
+				notificationSvc := &automock.FaNotificationService{}
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faWithReadyStateAndNoConfig, model.UnassignFormation, fa.State, strconv.Quote(string(TestConfigValueRawJSON))).Return(preJoinPointDetails, nil).Once()
+				return notificationSvc
+			},
+			ExpectedErrorMsg: notFoundError.Error(),
 		},
 		{
 			Name:    "Returns error when can't enforce pre constraints",

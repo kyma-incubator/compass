@@ -30,8 +30,9 @@ var (
 	externalTnt   = "externalTenant"
 	ctxWithTenant = tenant.SaveToContext(emptyCtx, TestTenantID, externalTnt)
 
-	testErr       = errors.New("Test Error")
-	notFoundError = apperrors.NewNotFoundError(resource.FormationAssignment, TestID)
+	testErr           = errors.New("Test Error")
+	unauthorizedError = apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
+	notFoundError     = apperrors.NewNotFoundError(resource.FormationAssignment, TestID)
 
 	faInput = fixFormationAssignmentModelInput(TestConfigValueRawJSON)
 	fa      = fixFormationAssignmentModelWithFormationID(TestFormationID)
@@ -1092,6 +1093,18 @@ func TestService_Update(t *testing.T) {
 			},
 			ExpectedErrorMsg: testErr.Error(),
 		},
+		{
+			Name:                "Not found error when updating formation assignment fails with unauthorized error",
+			Context:             ctxWithTenant,
+			FormationAssignment: fa,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, faModel).Return(unauthorizedError).Once()
+				return repo
+			},
+			ExpectedErrorMsg: notFoundError.Error(),
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -1148,6 +1161,16 @@ func TestService_Delete(t *testing.T) {
 				return repo
 			},
 			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name:    "Not found error when deleting formation assignment due to unauthorized error",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(unauthorizedError).Once()
+				return repo
+			},
+			ExpectedErrorMsg: notFoundError.Error(),
 		},
 	}
 
