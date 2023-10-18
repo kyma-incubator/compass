@@ -42,6 +42,10 @@ var (
 	testFormationID         = "testFormationID"
 	testFormationName       = "testFormationName"
 	testFormationTemplateID = "testFormationTemplateID"
+
+	// UCL Subaccount IDs
+	matchingTestUCLSubaccountID = "testSubaccID"
+	nonMatchingUCLSubaccountID  = "anotherTestSubaccID"
 )
 
 func fixTestHandler(t *testing.T) http.HandlerFunc {
@@ -56,6 +60,7 @@ func fixRequestWithContext(t *testing.T, ctx context.Context, httpMethod string)
 	reqWithContext, err := http.NewRequest(httpMethod, "/", nil)
 	require.NoError(t, err)
 	reqWithContext = reqWithContext.WithContext(ctx)
+	reqWithContext.Header.Set(fm.ClientIDFromCertificateHeader, matchingTestUCLSubaccountID)
 	return reqWithContext
 }
 
