@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/header"
 	"net/http"
 	"os"
 	"strings"
@@ -141,7 +142,7 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, sy
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
-		cfg.TenantsRootAPI+healthzEndpoint, cfg.TenantsRootAPI+readyzEndpoint))
+		cfg.TenantsRootAPI+healthzEndpoint, cfg.TenantsRootAPI+readyzEndpoint), header.AttachHeadersToContext())
 
 	tenantsAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, tenantsAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.SubscriptionCallbackScope)
