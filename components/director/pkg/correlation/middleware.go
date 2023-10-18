@@ -18,6 +18,7 @@ package correlation
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
@@ -66,6 +67,9 @@ func HeadersForRequest(request *http.Request) Headers {
 	reqHeaders := make(map[string]string)
 	headersFromCtx := HeadersFromContext(request.Context())
 
+	fmt.Println("ALEX 0", headersFromCtx[RequestIDHeaderKey])
+	fmt.Println("ALEX 1", request.Header.Get(RequestIDHeaderKey))
+
 	for _, headerKey := range headerKeys {
 		headerValue := request.Header.Get(headerKey)
 		if headerValue != "" {
@@ -87,6 +91,8 @@ func HeadersForRequest(request *http.Request) Headers {
 			reqHeaders[headerKey] = headerValue
 		}
 	}
+
+	fmt.Println("ALEX 2", reqHeaders[RequestIDHeaderKey])
 
 	if _, ok := reqHeaders[RequestIDHeaderKey]; !ok {
 		newRequestID := uuid.New().String()
