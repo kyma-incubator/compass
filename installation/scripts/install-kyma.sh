@@ -26,16 +26,6 @@ cp ${KYMA_OVERRIDES_MINIMAL} ${MINIMAL_OVERRIDES_TEMP}
 
 yq -i ".istio.helmValues.pilot.jwksResolverExtraRootCA = \"$CERT\"" "${MINIMAL_OVERRIDES_TEMP}"
 
-if [[ $(uname -m) == 'arm64' ]]; then
-  yq -i ".istio.global.images.istio_proxyv2.containerRegistryPath = \"europe-west1-docker.pkg.dev\"" "${MINIMAL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio_proxyv2.directory = \"sap-cp-cmp-dev/ucl-dev\"" "${MINIMAL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio_proxyv2.version = \"1.14.4-distroless\"" "${MINIMAL_OVERRIDES_TEMP}"
-
-  yq -i ".istio.global.images.istio_pilot.containerRegistryPath = \"europe-west1-docker.pkg.dev\"" "${MINIMAL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio_pilot.directory = \"sap-cp-cmp-dev/ucl-dev\"" "${MINIMAL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio_pilot.version = \"1.14.4-distroless\"" "${MINIMAL_OVERRIDES_TEMP}"
-fi
-
 trap "rm -f ${MINIMAL_OVERRIDES_TEMP}" EXIT INT TERM
 
 KYMA_SOURCE=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION)

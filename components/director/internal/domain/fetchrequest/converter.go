@@ -97,6 +97,8 @@ func (c *converter) ToEntity(in *model.FetchRequest) (*Entity, error) {
 		fallthrough
 	case model.EventSpecFetchRequestReference:
 		specID = refID
+	case model.CapabilitySpecFetchRequestReference:
+		specID = refID
 	case model.DocumentFetchRequestReference:
 		documentID = refID
 	}
