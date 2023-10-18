@@ -20,7 +20,7 @@ func GetFuncMap() template.FuncMap {
 	fm["toString"] = toString
 	fm["contains"] = contains
 	fm["Join"] = joinStrings
-	fm["copy"] = copy
+	fm["copy"] = copyFromJSON
 	fm["updateAndCopy"] = updateAndCopy
 	fm["mkslice"] = mkslice
 
@@ -47,8 +47,8 @@ func joinStrings(elems []string) string {
 	return `"` + strings.Join(elems, `", "`) + `"`
 }
 
-// copy copies the value that is found under "path" in "jsonString" and returns it
-func copy(jsonstring, path string) string {
+// copyFromJSON copies the value that is found under "path" in "jsonString" and returns it
+func copyFromJSON(jsonstring, path string) string {
 	return gjson.Get(jsonstring, path).String()
 }
 
