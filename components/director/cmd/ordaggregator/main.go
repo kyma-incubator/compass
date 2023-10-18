@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/capability"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 	"net/http"
 	"os"
@@ -194,6 +195,7 @@ func main() {
 	specConverter := spec.NewConverter(frConverter)
 	apiConverter := api.NewConverter(versionConverter, specConverter)
 	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	capabilityConverter := capability.NewConverter(versionConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
 	intSysConverter := integrationsystem.NewConverter()
@@ -226,6 +228,7 @@ func main() {
 	webhookRepo := webhook.NewRepository(webhookConverter)
 	apiRepo := api.NewRepository(apiConverter)
 	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
+	capabilityRepo := capability.NewRepository(capabilityConverter)
 	specRepo := spec.NewRepository(specConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
@@ -257,6 +260,7 @@ func main() {
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
+	capabilitySvc := capability.NewService(capabilityRepo, uidSvc, specSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, tenantMappingConfig, cfg.TenantMappingCallbackURL)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
@@ -290,6 +294,7 @@ func main() {
 
 	opRepo := operation.NewRepository(operation.NewConverter())
 	opSvc := operation.NewService(opRepo, uuid.NewService())
+
 	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeOrdAggregation, cfg.OperationsManagerConfig)
 
 	jwtHTTPClient := &http.Client{
@@ -317,7 +322,7 @@ func main() {
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
 	ordConfig := ord.NewServiceConfig(cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
-	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping, opSvc)
+	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, capabilitySvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping, opSvc)
 	ordOpProcessor := &ord.OperationsProcessor{
 		OrdSvc: ordSvc,
 	}

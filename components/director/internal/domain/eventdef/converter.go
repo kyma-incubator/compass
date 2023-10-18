@@ -170,6 +170,7 @@ func (c *converter) FromEntity(entity *Entity) *model.EventDefinition {
 		ResourceHash:                            repo.StringPtrFromNullableString(entity.ResourceHash),
 		DocumentationLabels:                     repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 		CorrelationIDs:                          repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
+		LastUpdate:                              repo.StringPtrFromNullableString(entity.LastUpdate),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -222,6 +223,7 @@ func (c *converter) ToEntity(eventModel *model.EventDefinition) *Entity {
 		ResourceHash:                            repo.NewNullableString(eventModel.ResourceHash),
 		DocumentationLabels:                     repo.NewNullableStringFromJSONRawMessage(eventModel.DocumentationLabels),
 		CorrelationIDs:                          repo.NewNullableStringFromJSONRawMessage(eventModel.CorrelationIDs),
+		LastUpdate:                              repo.NewNullableString(eventModel.LastUpdate),
 		BaseEntity: &repo.BaseEntity{
 			ID:        eventModel.ID,
 			Ready:     eventModel.Ready,

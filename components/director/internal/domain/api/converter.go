@@ -188,6 +188,7 @@ func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
 		DocumentationLabels:                     repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 		CorrelationIDs:                          repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
 		Direction:                               repo.StringPtrFromNullableString(entity.Direction),
+		LastUpdate:                              repo.StringPtrFromNullableString(entity.LastUpdate),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -245,6 +246,7 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
 		SupportedUseCases:                       repo.NewNullableStringFromJSONRawMessage(apiModel.SupportedUseCases),
 		CorrelationIDs:                          repo.NewNullableStringFromJSONRawMessage(apiModel.CorrelationIDs),
 		Direction:                               repo.NewNullableString(apiModel.Direction),
+		LastUpdate:                              repo.NewNullableString(apiModel.LastUpdate),
 		BaseEntity: &repo.BaseEntity{
 			ID:        apiModel.ID,
 			Ready:     apiModel.Ready,

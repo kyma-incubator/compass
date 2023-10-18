@@ -80,6 +80,7 @@ type Document struct {
 	EventResources     []*model.EventDefinitionInput `json:"eventResources"`
 	Tombstones         []*model.TombstoneInput       `json:"tombstones"`
 	Vendors            []*model.VendorInput          `json:"vendors"`
+	Capabilities       []*model.CapabilityInput      `json:"capabilities"`
 }
 
 // Validate validates if the Config object complies with the spec requirements
@@ -115,10 +116,11 @@ type Documents []*Document
 
 // ResourcesFromDB holds some of the ORD data from the database
 type ResourcesFromDB struct {
-	APIs     map[string]*model.APIDefinition
-	Events   map[string]*model.EventDefinition
-	Packages map[string]*model.Package
-	Bundles  map[string]*model.Bundle
+	APIs         map[string]*model.APIDefinition
+	Events       map[string]*model.EventDefinition
+	Packages     map[string]*model.Package
+	Bundles      map[string]*model.Bundle
+	Capabilities map[string]*model.Capability
 }
 
 // ResourceIDs holds some of the ORD entities' IDs
@@ -130,6 +132,7 @@ type ResourceIDs struct {
 	APIIDs              map[string]bool
 	EventIDs            map[string]bool
 	VendorIDs           map[string]bool
+	CapabilityIDs       map[string]bool
 }
 
 // Validate validates all the documents for a system instance
@@ -191,6 +194,7 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 
 	invalidApisIndices := make([]int, 0)
 	invalidEventsIndices := make([]int, 0)
+	invalidCapabilitiesIndices := make([]int, 0)
 
 	r1, e1 := docs.validateAndCheckForDuplications(SystemVersionPerspective, true, resourcesFromDB, resourceIDs, resourceHashes, credentialExchangeStrategyTenantMappings)
 	r2, e2 := docs.validateAndCheckForDuplications(SystemInstancePerspective, true, resourcesFromDB, resourceIDs, resourceHashes, credentialExchangeStrategyTenantMappings)
@@ -229,7 +233,7 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 		}
 		for i, api := range doc.APIResources {
 			if api.OrdPackageID != nil && !resourceIDs.PackageIDs[*api.OrdPackageID] {
-				errs = multierror.Append(errs, errors.Errorf("api with id %q has a REFERENCEe to unknown package %q", *api.OrdID, *api.OrdPackageID))
+				errs = multierror.Append(errs, errors.Errorf("api with id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID))
 				invalidApisIndices = append(invalidApisIndices, i)
 			}
 			if api.PartOfConsumptionBundles != nil {
@@ -269,10 +273,19 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 			}
 		}
 
+		for i, capability := range doc.Capabilities {
+			if capability.OrdPackageID != nil && !resourceIDs.PackageIDs[*capability.OrdPackageID] {
+				errs = multierror.Append(errs, errors.Errorf("capability with id %q has a reference to unknown package %q", *capability.OrdID, *capability.OrdPackageID))
+				invalidCapabilitiesIndices = append(invalidCapabilitiesIndices, i)
+			}
+		}
+
 		doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
 		doc.EventResources = deleteInvalidInputObjects(invalidEventsIndices, doc.EventResources)
+		doc.Capabilities = deleteInvalidInputObjects(invalidCapabilitiesIndices, doc.Capabilities)
 		invalidApisIndices = nil
 		invalidEventsIndices = nil
+		invalidCapabilitiesIndices = nil
 	}
 
 	return errs.ErrorOrNil()
@@ -289,6 +302,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		APIIDs:              make(map[string]bool),
 		EventIDs:            make(map[string]bool),
 		VendorIDs:           make(map[string]bool),
+		CapabilityIDs:       make(map[string]bool),
 	}
 	for _, doc := range docs {
 		if doc.Perspective == perspectiveConstraint {
@@ -301,6 +315,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		invalidTombstonesIndices := make([]int, 0)
 		invalidApisIndices := make([]int, 0)
 		invalidEventsIndices := make([]int, 0)
+		invalidCapabilitiesIndices := make([]int, 0)
 
 		if err := validateDocumentInput(doc); err != nil {
 			errs = multierror.Append(errs, errors.Wrap(err, "error validating document"))
@@ -382,6 +397,23 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 			}
 		}
 
+		for i, capability := range doc.Capabilities {
+			if err := validateCapabilityInputWithSuppressedErrors(capability, resourcesFromDB.Capabilities, resourceHashes); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating capability with ord id %q", stringPtrToString(capability.OrdID)))
+			}
+			if err := validateCapabilityInput(capability); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "error validating capability with ord id %q", stringPtrToString(capability.OrdID)))
+				invalidCapabilitiesIndices = append(invalidCapabilitiesIndices, i)
+				continue
+			}
+			if capability.OrdID != nil {
+				if _, ok := resourceIDs.CapabilityIDs[*capability.OrdID]; ok && forbidDuplications {
+					errs = multierror.Append(errs, errors.Errorf("found duplicate capability with ord id %q", *capability.OrdID))
+				}
+				resourceIDs.CapabilityIDs[*capability.OrdID] = true
+			}
+		}
+
 		for i, vendor := range doc.Vendors {
 			if err := validateVendorInput(vendor); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating vendor with ord id %q", vendor.OrdID))
@@ -408,6 +440,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		doc.EventResources = deleteInvalidInputObjects(invalidEventsIndices, doc.EventResources)
 		doc.Vendors = deleteInvalidInputObjects(invalidVendorsIndices, doc.Vendors)
 		doc.Tombstones = deleteInvalidInputObjects(invalidTombstonesIndices, doc.Tombstones)
+		doc.Capabilities = deleteInvalidInputObjects(invalidCapabilitiesIndices, doc.Capabilities)
 	}
 
 	return ResourceIDs{
@@ -418,6 +451,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		VendorIDs:           resourceIDs.VendorIDs,
 		BundleIDs:           resourceIDs.BundleIDs,
 		PackagePolicyLevels: resourceIDs.PackagePolicyLevels,
+		CapabilityIDs:       resourceIDs.CapabilityIDs,
 	}, errs
 }
 
@@ -488,6 +522,18 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 				if !isAbsoluteURL(definition.URL) {
 					definition.URL = url + definition.URL
 				}
+			}
+		}
+
+		for _, capability := range doc.Capabilities {
+			for _, definition := range capability.CapabilityDefinitions {
+				if !isAbsoluteURL(definition.URL) {
+					definition.URL = url + definition.URL
+				}
+			}
+
+			if capability.Links, err = rewriteRelativeURIsInJSON(capability.Links, url, "url"); err != nil {
+				return err
 			}
 		}
 	}
@@ -562,6 +608,18 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 			}
 			if event.Labels, err = mergeORDLabels(referredPkg.Labels, event.Labels); err != nil {
 				return errors.Wrapf(err, "error while merging labels for event with ord id %q", *event.OrdID)
+			}
+		}
+		for _, capability := range doc.Capabilities {
+			referredPkg, ok := packages[*capability.OrdPackageID]
+			if !ok {
+				return errors.Errorf("capability with ord id %q has a reference to unknown package %q", *capability.OrdID, *capability.OrdPackageID)
+			}
+			if capability.Tags, err = mergeJSONArraysOfStrings(referredPkg.Tags, capability.Tags); err != nil {
+				return errors.Wrapf(err, "error while merging tags for capability with ord id %q", *capability.OrdID)
+			}
+			if capability.Labels, err = mergeORDLabels(referredPkg.Labels, capability.Labels); err != nil {
+				return errors.Wrapf(err, "error while merging labels for capability with ord id %q", *capability.OrdID)
 			}
 		}
 	}
