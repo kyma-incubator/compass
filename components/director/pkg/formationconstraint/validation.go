@@ -60,15 +60,18 @@ var JoinPointDetailsByLocation = map[JoinPointLocation]JoinPointDetails{
 	PostNotificationStatusReturned:               emptyNotificationStatusReturnedOperationDetails(),
 }
 
+// FormationConstraintInputWrapper is a wrapper structure of the graphql.FormationConstraintInput,
+// so we could extract the template validation in a separate package due to import cycle
 type FormationConstraintInputWrapper struct {
 	*graphql.FormationConstraintInput
 }
 
+// NewFormationConstraintInputWrapper creates a new FormationConstraintInputWrapper object
 func NewFormationConstraintInputWrapper(input *graphql.FormationConstraintInput) *FormationConstraintInputWrapper {
 	return &FormationConstraintInputWrapper{input}
 }
 
-// Validate validates FormationConstraintInput
+// Validate validates the input template as part of the graphql.FormationConstraintInput
 func (i FormationConstraintInputWrapper) Validate() error {
 	if i.ConstraintType != graphql.ConstraintTypeUI {
 		input := FormationConstraintInputByOperator[i.Operator]
