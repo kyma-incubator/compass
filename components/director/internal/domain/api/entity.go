@@ -48,6 +48,7 @@ type Entity struct {
 	DocumentationLabels                     sql.NullString `db:"documentation_labels"`
 	CorrelationIDs                          sql.NullString `db:"correlation_ids"`
 	Direction                               sql.NullString `db:"direction"`
+	LastUpdate                              sql.NullString `db:"last_update"`
 
 	*repo.BaseEntity
 	version.Version
