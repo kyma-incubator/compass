@@ -41,20 +41,28 @@ func (b *FAExpectationsBuilder) WithParticipant(newParticipantID string) *FAExpe
 		return b
 	}
 
-	// add records for assignments where the new participant is source and a participant that was already added to the expectations structure is target
-	for _, expectationsForPreviouslyAddedParticipantTarget := range b.expectations {
-		expectationsForPreviouslyAddedParticipantTarget[newParticipantID] = fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}
+	// add records for assignments where the new participant is target and a participant that was already added to the expectations structure is source
+	for _, expectationsForPreviouslyAddedParticipantAsSource := range b.expectations {
+		expectationsForPreviouslyAddedParticipantAsSource[newParticipantID] = fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}
 	}
 
 	currentParticipantIDs := b.getCurrentParticipantIDs()
+	// add expectations where the newly added participant is source
 	b.expectations[newParticipantID] = make(map[string]fixtures.AssignmentState, len(currentParticipantIDs)+1)
 	// add record for the loop assignment
 	b.expectations[newParticipantID][newParticipantID] = fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}
-	// add records for assignments where the new participant is target and the source is a participant that was already added to the expectations structure
+	// add records for assignments where the new participant is source and the target is a participant that was already added to the expectations structure
 	for _, previouslyAddedParticipantID := range currentParticipantIDs {
 		b.expectations[newParticipantID][previouslyAddedParticipantID] = fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}
 	}
 
+	return b
+}
+
+func (b *FAExpectationsBuilder) WithNotifications(notifications []*NotificationData) *FAExpectationsBuilder {
+	for _, notification := range notifications {
+		b.expectations[notification.SourceID][notification.TargetID] = notification.getAssignmentState()
+	}
 	return b
 }
 
@@ -82,11 +90,4 @@ func (n *NotificationData) getAssignmentState() fixtures.AssignmentState {
 	}
 
 	return as
-}
-
-func (b *FAExpectationsBuilder) WithNotifications(notifications []*NotificationData) *FAExpectationsBuilder {
-	for _, notification := range notifications {
-		b.expectations[notification.TargetID][notification.SourceID] = notification.getAssignmentState()
-	}
-	return b
 }

@@ -37,10 +37,10 @@ func (a *FormationAssignmentsAsserter) assertFormationAssignments(t *testing.T, 
 	assignments := assignmentsPage.Data
 	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
 	for _, assignment := range assignments {
-		targetAssignmentsExpectations, ok := expectedAssignments[assignment.Target]
-		require.Truef(t, ok, "Could not find expectations for assignment with source %q", assignment.Target)
+		sourceAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
+		require.Truef(t, ok, "Could not find expectations for assignment with source %q", assignment.Source)
 
-		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Source]
+		assignmentExpectation, ok := sourceAssignmentsExpectations[assignment.Target]
 		require.Truef(t, ok, "Could not find expectations for assignment with source %q and target %q", assignment.Source, assignment.Target)
 
 		require.Equal(t, assignmentExpectation.State, assignment.State)

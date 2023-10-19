@@ -654,6 +654,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 
 	requestWebhookMode := assignmentReqMappingClone.Request.Webhook.Mode
 	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
+		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Waiting for the receiver to report the status on the status API...", assignmentReqMappingClone.Request.Webhook.ID, graphql.WebhookModeAsyncCallback)
 		return nil
 	}
 

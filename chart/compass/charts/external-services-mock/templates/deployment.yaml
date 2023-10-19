@@ -204,7 +204,7 @@ spec:
               - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL
                 value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}"
               - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY
-                value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInSeconds  | quote}}
+                value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInMilliseconds  | quote}}
               - name : APP_IAS_ADAPTER_CONSUMER_APP_ID
                 value: {{ .Values.global.externalServicesMock.iasAdapter.consumerAppID }}
               - name : APP_IAS_ADAPTER_CONSUMER_APP_CLIENT_ID

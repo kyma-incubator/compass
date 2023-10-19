@@ -440,22 +440,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			destinationCredentialsConfig := "{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"}}}}"
 			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
-					app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil},
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
-				},
-				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: str.Ptr(destinationDetailsConfig)},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
-				},
-			}
-			assertFormationAssignmentsWithDestinationConfig(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID, app2.ID, app1.ID)
-			// The aggregated formation status is IN_PROGRESS because of the FAs, but the Formation state should be READY
-			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-			require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
-			require.Empty(t, formation.Error)
-
-			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {
 					app2.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr(destinationCredentialsConfig)},
 					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
 				},
@@ -554,7 +538,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			unassignDuration := time.Since(unassignStartTime)
 
 			// assert the intermediate FA state only if the unassign operation duration is within the fixed tenant mapping async delay
-			if unassignDuration < time.Second*time.Duration(conf.TenantMappingAsyncResponseDelay) {
+			if unassignDuration < time.Millisecond*time.Duration(conf.TenantMappingAsyncResponseDelay) {
 				expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 					app1.ID: {
 						app2.ID: fixtures.AssignmentState{State: "DELETING", Config: nil},

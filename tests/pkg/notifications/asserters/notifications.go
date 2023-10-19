@@ -3,9 +3,13 @@ package asserters
 import (
 	"context"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 	"io"
 	"net/http"
 	"testing"
@@ -26,11 +30,12 @@ type NotificationsAsserter struct {
 	region                             string
 	tenant                             string
 	tenantParentCustomer               string
+	config string
 	externalServicesMockMtlsSecuredURL string
 	client                             *http.Client
 }
 
-func NewNotificationsAsserter(expectedNotificationsCount int, op string, targetObjectID, sourceObjectID string, localTenantID string, appNamespace string, region string, tenant string, tenantParentCustomer string, externalServicesMockMtlsSecuredURL string, client *http.Client) *NotificationsAsserter {
+func NewNotificationsAsserter(expectedNotificationsCount int, op string, targetObjectID, sourceObjectID string, localTenantID string, appNamespace string, region string, tenant string, tenantParentCustomer string, config string, externalServicesMockMtlsSecuredURL string, client *http.Client) *NotificationsAsserter {
 	return &NotificationsAsserter{
 		expectedNotificationsCount:         expectedNotificationsCount,
 		op:                                 op,
@@ -41,6 +46,7 @@ func NewNotificationsAsserter(expectedNotificationsCount int, op string, targetO
 		region:                             region,
 		tenant:                             tenant,
 		tenantParentCustomer:               tenantParentCustomer,
+		config: config,
 		externalServicesMockMtlsSecuredURL: externalServicesMockMtlsSecuredURL,
 		client:                             client,
 	}
@@ -53,8 +59,10 @@ func (a *NotificationsAsserter) AssertExpectations(t *testing.T, ctx context.Con
 	assertNotificationsCount(t, body, a.targetObjectID, a.expectedNotificationsCount)
 
 	notificationsForTarget := gjson.GetBytes(body, a.targetObjectID)
+	spew.Dump(string(notificationsForTarget.String()))
 	assignNotificationAboutSource := notificationsForTarget.Array()[0]
-	assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t, assignNotificationAboutSource, assignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.tenant, a.tenantParentCustomer, nil)
+	err := verifyFormationAssignmentNotification(t, assignNotificationAboutSource, assignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.config, a.tenant, a.tenantParentCustomer, false)
+	require.NoError(t, err)
 }
 
 func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client, ExternalServicesMockMtlsSecuredURL string) []byte {
@@ -82,6 +90,7 @@ func assertNotificationsCount(t *testing.T, body []byte, objectID string, count 
 	}
 }
 
+// will be used one the test that depend on the items structure are adapted to the new test format
 func assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t *testing.T, notification gjson.Result, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID string, expectedConfig *string) {
 	require.Equal(t, op, notification.Get("Operation").String())
 	if op == unassignOperation {
@@ -103,4 +112,85 @@ func assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t 
 	if expectedConfig != nil {
 		require.Equal(t, *expectedConfig, notification.Get("RequestBody.config").String())
 	}
+}
+
+func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Result, op, formationID, expectedObjectID, expectedAppLocalTenantID, expectedObjectNamespace, expectedObjectRegion, expectedConfiguration, expectedTenant, expectedCustomerID string, shouldRemoveDestinationCertificateData bool) error {
+	actualOp := notification.Get("Operation").String()
+	if op != actualOp {
+		return errors.Errorf("Operation does not match - expected: %q, but got: %q", op, actualOp)
+	}
+
+	if op == unassignOperation {
+		if actualObjectIDExists := notification.Get("ApplicationID").Exists(); !actualObjectIDExists {
+			return errors.New("ObjectID does not exist")
+		}
+
+		actualObjectID := notification.Get("ApplicationID").String()
+		if expectedObjectID != actualObjectID {
+			return errors.Errorf("ObjectID does not match - expected: %q, but got: %q", expectedObjectID, actualObjectID)
+		}
+	}
+
+	actualFormationID := notification.Get("RequestBody.context.uclFormationId").String()
+	if formationID != actualFormationID {
+		return errors.Errorf("RequestBody.context.uclFormationId does not match - expected: %q, but got: %q", formationID, actualFormationID)
+	}
+
+	actualTenantID := notification.Get("RequestBody.context.globalAccountId").String()
+	if expectedTenant != actualTenantID {
+		return errors.Errorf("RequestBody.context.globalAccountId does not match - expected: %q, but got: %q", expectedTenant, actualTenantID)
+	}
+
+	actualCustomerID := notification.Get("RequestBody.context.crmId").String()
+	if expectedCustomerID != actualCustomerID {
+		return errors.Errorf("RequestBody.context.crmId does not match - expected: %q, but got: %q", expectedCustomerID, actualCustomerID)
+	}
+
+	actualAppTenantID := notification.Get("RequestBody.receiverTenant.applicationTenantId").String()
+	if expectedAppLocalTenantID != actualAppTenantID {
+		return errors.Errorf("RequestBody.receiverTenant.applicationTenantId does not match - expected: %q, but got: %q", expectedAppLocalTenantID, actualAppTenantID)
+	}
+
+	actualObjectRegion := notification.Get("RequestBody.receiverTenant.deploymentRegion").String()
+	if expectedObjectRegion != actualObjectRegion {
+		return errors.Errorf("RequestBody.receiverTenant.deploymentRegion does not match - expected: %q, but got: %q", expectedObjectRegion, actualObjectRegion)
+	}
+
+	actualObjectNamespace := notification.Get("RequestBody.receiverTenant.applicationNamespace").String()
+	if expectedObjectNamespace != actualObjectNamespace {
+		return errors.Errorf("RequestBody.receiverTenant.applicationNamespace does not match - expected: %q, but got: %q", expectedObjectNamespace, actualObjectNamespace)
+	}
+
+	if shouldRemoveDestinationCertificateData {
+		notificationReceiverCfg := notification.Get("RequestBody.receiverTenant.configuration").String()
+		notificationReceiverState := notification.Get("RequestBody.receiverTenant.state").String()
+		if notificationReceiverCfg == "" && notificationReceiverState == "INITIAL" {
+			return nil
+		}
+
+		modifiedNotification, err := sjson.Delete(notification.String(), "RequestBody.receiverTenant.configuration.credentials.inboundCommunication.samlAssertion.certificate")
+		if err != nil {
+			return err
+		}
+
+		modifiedNotification, err = sjson.Delete(modifiedNotification, "RequestBody.receiverTenant.configuration.credentials.inboundCommunication.clientCertificateAuthentication.certificate")
+		if err != nil {
+			return err
+		}
+
+		modifiedNotification, err = sjson.Delete(modifiedNotification, "RequestBody.receiverTenant.configuration.credentials.inboundCommunication.samlAssertion.assertionIssuer")
+		if err != nil {
+			return err
+		}
+
+		modifiedConfig := gjson.Get(modifiedNotification, "RequestBody.receiverTenant.configuration").String()
+		assert.JSONEq(t, expectedConfiguration, modifiedConfig, "RequestBody.receiverTenant.configuration does not match")
+	} else {
+		actualConfiguration := notification.Get("RequestBody.receiverTenant.configuration").String()
+		if expectedConfiguration != "" && expectedConfiguration != actualConfiguration {
+			return errors.Errorf("RequestBody.receiverTenant.configuration does not match - expected: %q, but got: %q", expectedConfiguration, actualConfiguration)
+		}
+	}
+
+	return nil
 }

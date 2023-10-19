@@ -35,18 +35,18 @@ func (a *FormationAssignmentsAsyncAsserter) AssertExpectations(t *testing.T, ctx
 }
 
 func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context, certSecuredGraphQLClient *graphql.Client, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
-	t.Logf("Sleeping for %d seconds while the async formation assignment status is proccessed...", a.delay)
-	time.Sleep(time.Second * time.Duration(a.delay))
+	t.Logf("Sleeping for %d milliseconds while the async formation assignment status is proccessed...", a.delay)
+	time.Sleep(time.Millisecond * time.Duration(a.delay))
 	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
 	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
 
 	assignments := assignmentsPage.Data
 	for _, assignment := range assignments {
-		targetAssignmentsExpectations, ok := expectedAssignments[assignment.Target]
-		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q and target %q", assignment.ID, assignment.Target)
+		targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
+		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q and source %q", assignment.ID, assignment.Source)
 
-		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Source]
+		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
 		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q, source %q and target %q", assignment.ID, assignment.Source, assignment.Target)
 		require.Equal(t, assignmentExpectation.State, assignment.State, "Assignment with ID: %q has different state than expected", assignment.ID)
 

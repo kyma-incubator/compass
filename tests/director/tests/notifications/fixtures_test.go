@@ -130,8 +130,8 @@ func validateDestinationCertData(t *testing.T, assignmentConfig *string, path st
 }
 
 func assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, asyncStatusAPIProcessingDelay int64) {
-	t.Logf("Sleeping for %d seconds while the async formation assignment status is proccessed...", conf.TenantMappingAsyncResponseDelay+asyncStatusAPIProcessingDelay)
-	time.Sleep(time.Second * time.Duration(conf.TenantMappingAsyncResponseDelay+asyncStatusAPIProcessingDelay))
+	t.Logf("Sleeping for %d milliseconds while the async formation assignment status is proccessed...", conf.TenantMappingAsyncResponseDelay+asyncStatusAPIProcessingDelay)
+	time.Sleep(time.Millisecond * time.Duration(conf.TenantMappingAsyncResponseDelay+asyncStatusAPIProcessingDelay))
 	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
 	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
@@ -551,8 +551,8 @@ func assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDelet
 	require.Equal(t, formationID, notificationForFormationDetails.Get("id").String())
 	require.Equal(t, formationName, notificationForFormationDetails.Get("name").String())
 
-	t.Logf("Sleeping for %d seconds while the async formation status is proccessed...", conf.TenantMappingAsyncResponseDelay+3)
-	time.Sleep(time.Second * time.Duration(conf.TenantMappingAsyncResponseDelay+3))
+	t.Logf("Sleeping for %d milliseconds while the async formation status is proccessed...", conf.TenantMappingAsyncResponseDelay+50)
+	time.Sleep(time.Millisecond * time.Duration(conf.TenantMappingAsyncResponseDelay+50))
 
 	t.Log("Assert formation lifecycle notifications are successfully processed...")
 	formationPage := fixtures.ListFormationsWithinTenant(t, ctx, tenantID, certSecuredGraphQLClient)

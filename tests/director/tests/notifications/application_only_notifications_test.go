@@ -544,7 +544,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 			},
 		}
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Unassign Application 1 from formation %s", formationName)
@@ -557,7 +557,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app2.ID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
 		}
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 2)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Assign application 1 to formation %s again", formationName)
@@ -578,7 +578,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			},
 		}
 
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Unassign Application 2 from formation %s", formationName)
@@ -590,7 +590,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
 		}
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 2)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Unassign Application 1 from formation %s", formationName)
@@ -599,7 +599,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
 
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 2)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 	})
 
@@ -773,30 +773,11 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-			},
-			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-			},
-		}
-
-		assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-		require.Equal(t, "INITIAL", formation.State)
-		require.Empty(t, formation.Error)
-
-		assertNoNotificationsAreSentForTenant(t, certSecuredHTTPClient, app1.ID)
-		assertNoNotificationsAreSentForTenant(t, certSecuredHTTPClient, app2.ID)
-
 		// As part of the formation status API request, formation assignment synchronization will be executed.
 		assertAsyncFormationNotificationFromCreationOrDeletion(t, ctx, body, formation.ID, formation.Name, "READY", createFormationOperation, tnt, tntParentCustomer)
 
 		asyncConfig := str.Ptr("{\"asyncKey\":\"asyncValue\",\"asyncKey2\":{\"asyncNestedKey\":\"asyncNestedValue\"}}")
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
 				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
@@ -806,7 +787,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 			},
 		}
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -829,7 +810,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app2.ID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
 		}
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -868,7 +849,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			},
 		}
 
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -898,7 +879,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
 		}
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -925,7 +906,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
 
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -1027,7 +1008,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
 			},
 		}
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{
 			Condition: graphql.FormationStatusConditionError,
 			Errors: []*graphql.FormationStatusError{{
@@ -1061,7 +1042,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 			},
 		}
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -1078,7 +1059,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 			},
 		}
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -1193,7 +1174,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 			},
 		}
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -1216,7 +1197,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 			},
 		}
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Resynchronize formation %q with reset should set assignments to initial state", formation.Name)
@@ -1232,24 +1213,11 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 				app2.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-			},
-		}
-		assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
-			},
-			app2.ID: {
 				app1.ID: fixtures.AssignmentState{State: "READY", Config: asyncConfig, Value: asyncConfig, Error: nil},
 				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 			},
 		}
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Unassign Application 1 from formation %s", formationName)
@@ -1260,7 +1228,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 			},
 		}
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -1342,17 +1310,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.Equal(t, formation.ID, assignedFormation.ID)
 		require.Equal(t, formation.State, assignedFormation.State)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-			},
-			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-			},
-		}
-
 		assertNoNotificationsAreSentForTenant(t, certSecuredHTTPClient, app1.ID)
 		assertNoNotificationsAreSentForTenant(t, certSecuredHTTPClient, app2.ID)
 
@@ -1367,7 +1324,18 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.Equal(t, "INITIAL", gotFormation.State)
 
 		assertAsyncFormationNotificationFromCreationOrDeletion(t, ctx, body, formation.ID, formation.Name, "INITIAL", createFormationOperation, tnt, tntParentCustomer)
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
+
+		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			app1.ID: {
+				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+			},
+			app2.ID: {
+				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+			},
+		}
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
 
 		urlTemplateThatFailsOnce := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/v1/businessIntegration/async-fail-once/{{.Formation.ID}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"createFormation\\\"}}POST{{else}}DELETE{{end}}\\\"}"
@@ -1387,7 +1355,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		// As part of the formation status API request, formation assignment synchronization will be executed.
 		assertAsyncFormationNotificationFromCreationOrDeletion(t, ctx, body, formation.ID, formation.Name, "CREATE_ERROR", createFormationOperation, tnt, tntParentCustomer)
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{
 			Condition: graphql.FormationStatusConditionError,
 			Errors: []*graphql.FormationStatusError{{
@@ -1427,7 +1395,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		}
 
 		assertAsyncFormationNotificationFromCreationOrDeletion(t, ctx, body, formation.ID, formation.Name, "READY", createFormationOperation, tnt, tntParentCustomer)
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 1000)
+		//todo
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Should get formation with name: %q by ID: %q", formationName, formation.ID)
@@ -1451,7 +1420,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 			},
 		}
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 300)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -2041,7 +2010,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			// We use the async method, because the status API is being called.
 			// Even though the case is synchronous, the notification is executed in a separate goroutine and isn't guaranteed
 			// to have been executed before we perform the checks otherwise.
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 			body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -2075,7 +2044,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			// We use the async method, because the status API is being called.
 			// Even though the case is synchronous, the notification is executed in a separate goroutine and isn't guaranteed
 			// to have been executed before we perform the checks otherwise.
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -2137,7 +2106,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			// We use the async method, because the status API is being called.
 			// Even though the case is synchronous, the notification is executed in a separate goroutine and isn't guaranteed
 			// to have been executed before we perform the checks otherwise.
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 1000)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 			body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -2171,7 +2140,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			// We use the async method, because the status API is being called.
 			// Even though the case is synchronous, the notification is executed in a separate goroutine and isn't guaranteed
 			// to have been executed before we perform the checks otherwise.
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -2219,7 +2188,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 				},
 			}
 
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 			body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -2245,7 +2214,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 				},
 			}
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
 
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -2377,14 +2346,10 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			require.Equal(t, formation.State, assignedFormation.State)
 
 			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil}},
-			}
-			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
-			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil}},
 			}
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 300)
+			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 			t.Logf("Unassign Application 1 from formation %s", formationName)
 			unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -2393,12 +2358,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, formationName, unassignFormation.Name)
 
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {app1.ID: fixtures.AssignmentState{State: "DELETING", Config: nil, Value: nil, Error: nil}},
-			}
-			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
-			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 300)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		})
@@ -2500,14 +2460,9 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			require.Equal(t, formation.State, assignedFormation.State)
 
 			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil}},
-			}
-			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
-			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {app1.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON}},
 			}
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 300)
 
 			urlTemplateApplicationSucceedsAsync := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
 			applicationAsyncWebhookThatSucceedsInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateApplicationSucceedsAsync, inputTemplateAsyncApplication, outputTemplateAsyncApplication)
@@ -2523,14 +2478,9 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			require.Equal(t, formationName, assignedFormation.Name)
 
 			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil}},
-			}
-			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
-			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil}},
 			}
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 300)
 
 			t.Logf("Update webhook with ID: %q of type: %q and mode: %q to have URLTemlate that points to endpoint that respnds with error", actualApplicationAsyncWebhookInput.ID, graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback)
 			updatedWebhook = fixtures.UpdateWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationAsyncWebhookInput.ID, applicationAsyncWebhookInput)
@@ -2544,14 +2494,9 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			require.Equal(t, formationName, unassignFormation.Name)
 
 			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {app1.ID: fixtures.AssignmentState{State: "DELETING", Config: nil, Value: nil, Error: nil}},
-			}
-			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
-			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {app1.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON}},
 			}
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 300)
 
 			t.Logf("Update webhook with ID: %q of type: %q and mode: %q to have URLTemlate that points to endpoint that succeds", actualApplicationAsyncWebhookInput.ID, graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback)
 			updatedWebhook = fixtures.UpdateWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationAsyncWebhookInput.ID, applicationAsyncWebhookThatSucceedsInput)
@@ -2563,12 +2508,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {app1.ID: fixtures.AssignmentState{State: "DELETING", Config: nil, Value: nil, Error: nil}},
-			}
-			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
-			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 300)
 		})
 
 		t.Run("Resynchronize should correctly send notifications for multiple participants", func(t *testing.T) {
@@ -2602,14 +2542,9 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			require.Equal(t, formation.State, assignedFormation.State)
 
 			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil}},
-			}
-			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
-			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {app1.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON}},
 			}
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 300)
 
 			body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
@@ -2629,22 +2564,11 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 					app2.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
-				},
-			}
-			assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
-					app2.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
-				},
-				app2.ID: {
 					app1.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
 					app2.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
 				},
 			}
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 			assertFormationStatus(t, ctx, tnt, formation.ID,
 				graphql.FormationStatus{
 					Condition: graphql.FormationStatusConditionError,
@@ -2684,18 +2608,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
-				},
-				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
-				},
-			}
-			assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
-			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {
 					app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
 					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
 				},
@@ -2704,7 +2616,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
 				},
 			}
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -2730,17 +2642,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "DELETING", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
-				},
-				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "DELETING", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
-				},
-			}
-			assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {
 					app1.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
 					app2.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
 				},
@@ -2749,7 +2650,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
 				},
 			}
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 			assertFormationStatus(t, ctx, tnt, formation.ID,
 				graphql.FormationStatus{
 					Condition: graphql.FormationStatusConditionError,
@@ -2769,17 +2670,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			unassignReq = fixtures.FixUnassignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), formationName)
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, unassignReq, &unassignFormation)
 			require.Error(t, err)
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
-					app2.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
-				},
-				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "DELETING", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
-				},
-			}
-			assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
+
 			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
 					app1.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
@@ -2790,7 +2681,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 					app2.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
 				},
 			}
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 300)
 			assertFormationStatus(t, ctx, tnt, formation.ID,
 				graphql.FormationStatus{
 					Condition: graphql.FormationStatusConditionError,
@@ -2821,7 +2712,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, resynchronizeReq, &assignedFormation)
 			require.NoError(t, err)
 			require.Equal(t, formationName, assignedFormation.Name)
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 2)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 300)
 
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 

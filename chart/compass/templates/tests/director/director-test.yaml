@@ -201,7 +201,7 @@ spec:
             - name: APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2
               value: {{ .Values.global.tests.externalCertConfiguration.issuerLocalityRegion2 }}
             - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY
-              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInSeconds | quote}}
+              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInMilliseconds | quote}}
             - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
               value: {{ .Values.global.tests.hydrator.certSubjectMappingResyncInterval | quote }}
             - name: APP_PROVIDER_CLIENT_ID
@@ -523,7 +523,7 @@ spec:
             - name: APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2
               value: {{ .Values.global.tests.externalCertConfiguration.issuerLocalityRegion2 }}
             - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY
-              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInSeconds | quote}}
+              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInMilliseconds | quote}}
             - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
               value: {{ .Values.global.tests.hydrator.certSubjectMappingResyncInterval | quote }}
             - name: APP_PROVIDER_CLIENT_ID
@@ -845,7 +845,7 @@ spec:
             - name: APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2
               value: {{ .Values.global.tests.externalCertConfiguration.issuerLocalityRegion2 }}
             - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY
-              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInSeconds | quote}}
+              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInMilliseconds | quote}}
             - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
               value: {{ .Values.global.tests.hydrator.certSubjectMappingResyncInterval | quote }}
             - name: APP_PROVIDER_CLIENT_ID
@@ -1167,7 +1167,7 @@ spec:
             - name: APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2
               value: {{ .Values.global.tests.externalCertConfiguration.issuerLocalityRegion2 }}
             - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY
-              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInSeconds | quote}}
+              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInMilliseconds | quote}}
             - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
               value: {{ .Values.global.tests.hydrator.certSubjectMappingResyncInterval | quote }}
             - name: APP_PROVIDER_CLIENT_ID
@@ -1489,7 +1489,7 @@ spec:
             - name: APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2
               value: {{ .Values.global.tests.externalCertConfiguration.issuerLocalityRegion2 }}
             - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY
-              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInSeconds | quote}}
+              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInMilliseconds | quote}}
             - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
               value: {{ .Values.global.tests.hydrator.certSubjectMappingResyncInterval | quote }}
             - name: APP_PROVIDER_CLIENT_ID
