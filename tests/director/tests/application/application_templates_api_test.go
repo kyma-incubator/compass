@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
@@ -43,6 +44,8 @@ func TestCreateApplicationTemplate(t *testing.T) {
 	tenantID := tenant.TestTenants.GetDefaultSubaccountTenantID()
 	t.Run("Success for global template", func(t *testing.T) {
 		// GIVEN
+		testStartTime := time.Now()
+
 		ctx := context.Background()
 		appTemplateName := fixtures.CreateAppTemplateName("app-template-name")
 		appTemplateInput := fixtures.FixApplicationTemplate(appTemplateName)
@@ -74,6 +77,9 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotEmpty(t, appTemplateOutput)
+		assert.True(t, time.Time(appTemplateOutput.CreatedAt).After(testStartTime))
+		assert.True(t, time.Time(appTemplateOutput.UpdatedAt).After(testStartTime))
+
 		assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 	})
 
@@ -491,6 +497,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	//THEN
 	t.Log("Check if application template was updated")
 	assertions.AssertUpdateApplicationTemplate(t, appTemplateInput, updateOutput)
+	assert.True(t, time.Time(updateOutput.UpdatedAt).After(time.Time(updateOutput.CreatedAt)))
 
 	example.SaveExample(t, updateAppTemplateRequest.Query(), "update application template")
 }
