@@ -228,6 +228,7 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, filter []*graphql.L
 
 // CreateApplicationTemplate missing godoc
 func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
+	log.C(ctx).Infof("Validating graphql input for Application Template with name %s", in.Name)
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
@@ -236,6 +237,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
+	log.C(ctx).Info("Enriching webhooks with tenant mapping webhooks")
 	webhooks, err := r.webhookSvc.EnrichWebhooksWithTenantMappingWebhooks(in.Webhooks)
 	if err != nil {
 		return nil, err
@@ -256,6 +258,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 
 	selfRegID := r.uidService.Generate()
 	convertedIn.ID = &selfRegID
+	log.C(ctx).Infof("Generated ID %s for Application Template with name %s", selfRegID, in.Name)
 
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
@@ -273,6 +276,8 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 			validate := func() error {
 				return validateAppTemplateForSelfReg(in.ApplicationInput)
 			}
+
+			log.C(ctx).Info("Executing self registration flow for Application Template")
 			labels, err = r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
 			if err != nil {
 				return nil, err
@@ -280,6 +285,12 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		}
 
 		labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
+	} else {
+		selfRegLabel := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
+		if _, distinguishLabelExists := labels[selfRegLabel]; distinguishLabelExists {
+			log.C(ctx).Errorf("Label %s is forbidden in a non-cert flow.", selfRegLabel)
+			return nil, errors.Errorf("label %s is forbidden when creating Application Template in a non-cert flow.", selfRegLabel)
+		}
 	}
 
 	tx, err := r.transact.Begin()
@@ -332,6 +343,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 
 	for _, wh := range convertedIn.Webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscoveryStatic {
+			log.C(ctx).Infof("Executing aggregation API call for Application Template with ID %s", id)
 			if err := r.ordClient.Aggregate(ctx, "", id); err != nil {
 				log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppTemplateID %q", id)
 			}
@@ -571,6 +583,7 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 
 	_, err = r.appTemplateSvc.GetLabel(ctx, id, r.selfRegManager.GetSelfRegDistinguishingLabelKey())
 	if err != nil {
+		fmt.Println("ERROR", err)
 		if !apperrors.IsNotFoundError(err) {
 			return nil, errors.Wrapf(err, "while getting self register label")
 		}
