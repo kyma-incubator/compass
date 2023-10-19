@@ -32,24 +32,24 @@ const (
 )
 
 var (
-	fixedTimestamp          = time.Now()
-	appID                   = "appID"
-	appTemplateVersionID    = "appTemplateVersionID"
-	shortDescription        = "A business partner is a person, an organization, or a group of persons or organizations in which a company has a business interest."
-	description             = "A workforce person is a natural person with a work agreement or relationship in form of a work assignment; it can be an employee or a contingent worker.\n"
-	systemInstanceAware     = false
-	policyLevel             = "custom"
-	customPolicyLevel       = "sap:core:v1"
-	sunsetDate              = "2022-01-08T15:47:04+00:00"
-	successors              = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1"]`
-	extensible              = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
-	tags                    = `["storage","high-availability"]`
-	resourceHash            = "123456"
+	fixedTimestamp         = time.Now()
+	appID                  = "appID"
+	appTemplateVersionID   = "appTemplateVersionID"
+	shortDescription       = "A business partner is a person, an organization, or a group of persons or organizations in which a company has a business interest."
+	description            = "A workforce person is a natural person with a work agreement or relationship in form of a work assignment; it can be an employee or a contingent worker.\n"
+	systemInstanceAware    = false
+	policyLevel            = "custom"
+	customPolicyLevel      = "sap:core:v1"
+	sunsetDate             = "2022-01-08T15:47:04+00:00"
+	successors             = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1"]`
+	extensible             = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
+	tags                   = `["storage","high-availability"]`
+	resourceHash           = "123456"
 	versionValue           = "v1.1"
 	versionDeprecated      = false
 	versionDeprecatedSince = "v1.0"
 	versionForRemoval      = false
-	changeLogEntries        = removeWhitespace(`[
+	changeLogEntries       = removeWhitespace(`[
         {
 		  "date": "2020-04-29",
 		  "description": "lorem ipsum dolor sit amet",
@@ -226,7 +226,7 @@ func fixEntityTypeRow(id string) []driver.Value {
 func fixEntityTypeCreateArgs(id string, entityType *model.EntityType) []driver.Value {
 	return []driver.Value{id, ready, fixedTimestamp, time.Time{}, time.Time{}, nil, appID, repo.NewValidNullableString(*entityType.ApplicationTemplateVersionID), entityType.OrdID, entityType.LocalID,
 		repo.NewNullableStringFromJSONRawMessage(entityType.CorrelationIDs), entityType.Level, entityType.Title, repo.NewNullableString(entityType.ShortDescription), repo.NewNullableString(entityType.Description), repo.NewNullableBool(entityType.SystemInstanceAware), repo.NewNullableStringFromJSONRawMessage(entityType.ChangeLogEntries), entityType.OrdPackageID, entityType.Visibility,
-		repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.Links)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.PartOfProducts)), repo.NewNullableString(entityType.PolicyLevel), repo.NewNullableString(entityType.CustomPolicyLevel), entityType.ReleaseStatus, repo.NewNullableString(entityType.SunsetDate), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.Successors)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.Extensible)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.Tags)), repo.NewNullableStringFromJSONRawMessage(entityType.Labels),
+		repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.Links)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.PartOfProducts)), repo.NewNullableString(entityType.PolicyLevel), repo.NewNullableString(entityType.CustomPolicyLevel), entityType.ReleaseStatus, repo.NewNullableString(entityType.SunsetDate), repo.NewNullableStringFromJSONRawMessage(entityType.Successors), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.Extensible)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(entityType.Tags)), repo.NewNullableStringFromJSONRawMessage(entityType.Labels),
 		repo.NewNullableStringFromJSONRawMessage(entityType.DocumentationLabels), repo.NewNullableString(entityType.ResourceHash), repo.NewNullableString(&entityType.Version.Value), repo.NewNullableBool(entityType.Version.Deprecated), repo.NewNullableString(entityType.Version.DeprecatedSince), repo.NewNullableBool(entityType.Version.ForRemoval)}
 }
 
