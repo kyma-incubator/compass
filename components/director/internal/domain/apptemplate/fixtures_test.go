@@ -126,6 +126,8 @@ func fixGQLAppTemplate(id, name string, webhooks []*graphql.Webhook) *graphql.Ap
 		Placeholders:         fixGQLPlaceholders(),
 		Webhooks:             gqlPtrsToWebhooks(webhooks),
 		AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
+		CreatedAt:            graphql.Timestamp(timestamp),
+		UpdatedAt:            graphql.Timestamp(timestamp),
 	}
 }
 

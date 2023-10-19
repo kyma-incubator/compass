@@ -64,6 +64,8 @@ func (c *converter) ToGraphQL(in *model.ApplicationTemplate) (*graphql.Applicati
 		ApplicationInput:     gqlAppInput,
 		Placeholders:         c.placeholdersToGraphql(in.Placeholders),
 		AccessLevel:          graphql.ApplicationTemplateAccessLevel(in.AccessLevel),
+		CreatedAt:            graphql.Timestamp(in.CreatedAt),
+		UpdatedAt:            graphql.Timestamp(in.UpdatedAt),
 	}, nil
 }
 
