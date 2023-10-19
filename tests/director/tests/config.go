@@ -72,4 +72,5 @@ type DirectorConfig struct {
 	CertSubjectMappingResyncInterval                   time.Duration `envconfig:"APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL"`
 	ApplicationTemplateProductLabel                    string        `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
 	DefaultTenantRegion                                string        `envconfig:"APP_DEFAULT_TENANT_REGION,default=eu-1"`
+	DirectorExternalCertURL                            string        `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_URL"`
 }
