@@ -16,7 +16,7 @@ import (
 
 func TestService_Create(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
+	ctx := tenant.SaveToContext(context.TODO(), tenantID, externalTenantID)
 	uidSvcFn := func() *automock.UIDService {
 		uidSvc := &automock.UIDService{}
 		uidSvc.On("Generate").Return(entityTypeID)
@@ -40,7 +40,7 @@ func TestService_Create(t *testing.T) {
 			InputEntityTypeInput: fixEntityTypeInputModel(),
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("Create", ctx, testTenant, mock.Anything).Return(nil).Once()
+				entityTypeRepo.On("Create", ctx, tenantID, mock.Anything).Return(nil).Once()
 				return entityTypeRepo
 			},
 			UIDServiceFn:   uidSvcFn,
@@ -66,11 +66,11 @@ func TestService_Create(t *testing.T) {
 			InputEntityTypeInput: fixEntityTypeInputModel(),
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("Create", ctx, testTenant, mock.Anything).Return(testError).Once()
+				entityTypeRepo.On("Create", ctx, tenantID, mock.Anything).Return(errTest).Once()
 				return entityTypeRepo
 			},
 			UIDServiceFn:  uidSvcFn,
-			ExpectedError: testError,
+			ExpectedError: errTest,
 		},
 		{
 			Name:                 "fail while creating entity type for ApplicationTemplateVersion",
@@ -79,11 +79,11 @@ func TestService_Create(t *testing.T) {
 			InputEntityTypeInput: fixEntityTypeInputModel(),
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("CreateGlobal", ctx, mock.Anything).Return(testError).Once()
+				entityTypeRepo.On("CreateGlobal", ctx, mock.Anything).Return(errTest).Once()
 				return entityTypeRepo
 			},
 			UIDServiceFn:  uidSvcFn,
-			ExpectedError: testError,
+			ExpectedError: errTest,
 		},
 	}
 
@@ -113,7 +113,7 @@ func TestService_Create(t *testing.T) {
 
 func TestService_Update(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
+	ctx := tenant.SaveToContext(context.TODO(), tenantID, externalTenantID)
 	testCases := []struct {
 		Name              string
 		InputResourceType resource.Type
@@ -130,8 +130,8 @@ func TestService_Update(t *testing.T) {
 			EntityTypeInput:   fixEntityTypeInputModel(),
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("GetByID", ctx, testTenant, entityTypeID).Return(fixEntityTypeModel(entityTypeID), nil).Once()
-				entityTypeRepo.On("Update", ctx, testTenant, mock.Anything).Return(nil).Once()
+				entityTypeRepo.On("GetByID", ctx, tenantID, entityTypeID).Return(fixEntityTypeModel(entityTypeID), nil).Once()
+				entityTypeRepo.On("Update", ctx, tenantID, mock.Anything).Return(nil).Once()
 				return entityTypeRepo
 			},
 			ExpectedOutput: entityTypeID,
@@ -156,10 +156,10 @@ func TestService_Update(t *testing.T) {
 			EntityTypeInput:   fixEntityTypeInputModel(),
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("GetByID", ctx, testTenant, entityTypeID).Return(nil, testError).Once()
+				entityTypeRepo.On("GetByID", ctx, tenantID, entityTypeID).Return(nil, errTest).Once()
 				return entityTypeRepo
 			},
-			ExpectedError: testError,
+			ExpectedError: errTest,
 		},
 		{
 			Name:              "fail while getting entity type by id for ApplicationTemplateVersion",
@@ -168,10 +168,10 @@ func TestService_Update(t *testing.T) {
 			EntityTypeInput:   fixEntityTypeInputModel(),
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("GetByIDGlobal", ctx, entityTypeID).Return(nil, testError).Once()
+				entityTypeRepo.On("GetByIDGlobal", ctx, entityTypeID).Return(nil, errTest).Once()
 				return entityTypeRepo
 			},
-			ExpectedError: testError,
+			ExpectedError: errTest,
 		},
 		{
 			Name:              "fail while updating entity type for Application",
@@ -180,12 +180,12 @@ func TestService_Update(t *testing.T) {
 			EntityTypeInput:   fixEntityTypeInputModel(),
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("GetByID", ctx, testTenant, entityTypeID).Return(fixEntityTypeModel(entityTypeID), nil).Once()
-				entityTypeRepo.On("Update", ctx, testTenant, mock.Anything).Return(testError).Once()
+				entityTypeRepo.On("GetByID", ctx, tenantID, entityTypeID).Return(fixEntityTypeModel(entityTypeID), nil).Once()
+				entityTypeRepo.On("Update", ctx, tenantID, mock.Anything).Return(errTest).Once()
 
 				return entityTypeRepo
 			},
-			ExpectedError: testError,
+			ExpectedError: errTest,
 		},
 		{
 			Name:              "fail while updating entity type for ApplicationTemplateVersion",
@@ -195,11 +195,11 @@ func TestService_Update(t *testing.T) {
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
 				entityTypeRepo.On("GetByIDGlobal", ctx, entityTypeID).Return(fixEntityTypeModel(entityTypeID), nil).Once()
-				entityTypeRepo.On("UpdateGlobal", ctx, mock.Anything).Return(testError).Once()
+				entityTypeRepo.On("UpdateGlobal", ctx, mock.Anything).Return(errTest).Once()
 
 				return entityTypeRepo
 			},
-			ExpectedError: testError,
+			ExpectedError: errTest,
 		},
 	}
 
@@ -226,7 +226,7 @@ func TestService_Update(t *testing.T) {
 
 func TestService_Delete(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
+	ctx := tenant.SaveToContext(context.TODO(), tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name              string
@@ -241,7 +241,7 @@ func TestService_Delete(t *testing.T) {
 			InputID:           entityTypeID,
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("Delete", ctx, testTenant, entityTypeID).Return(nil).Once()
+				entityTypeRepo.On("Delete", ctx, tenantID, entityTypeID).Return(nil).Once()
 				return entityTypeRepo
 			},
 		},
@@ -261,10 +261,10 @@ func TestService_Delete(t *testing.T) {
 			InputID:           entityTypeID,
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("Delete", ctx, testTenant, entityTypeID).Return(testError).Once()
+				entityTypeRepo.On("Delete", ctx, tenantID, entityTypeID).Return(errTest).Once()
 				return entityTypeRepo
 			},
-			ExpectedError: testError,
+			ExpectedError: errTest,
 		},
 		{
 			Name:              "fail while deleting entity type for ApplicationTemplateVersion",
@@ -272,10 +272,10 @@ func TestService_Delete(t *testing.T) {
 			InputID:           entityTypeID,
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("DeleteGlobal", ctx, entityTypeID).Return(testError).Once()
+				entityTypeRepo.On("DeleteGlobal", ctx, entityTypeID).Return(errTest).Once()
 				return entityTypeRepo
 			},
-			ExpectedError: testError,
+			ExpectedError: errTest,
 		},
 	}
 
@@ -302,7 +302,7 @@ func TestService_Delete(t *testing.T) {
 
 func TestService_Get(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
+	ctx := tenant.SaveToContext(context.TODO(), tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name             string
@@ -316,7 +316,7 @@ func TestService_Get(t *testing.T) {
 			InputID: entityTypeID,
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("GetByID", ctx, testTenant, entityTypeID).Return(fixEntityTypeModel(entityTypeID), nil).Once()
+				entityTypeRepo.On("GetByID", ctx, tenantID, entityTypeID).Return(fixEntityTypeModel(entityTypeID), nil).Once()
 				return entityTypeRepo
 			},
 			ExpectedOutput: fixEntityTypeModel(entityTypeID),
@@ -326,10 +326,10 @@ func TestService_Get(t *testing.T) {
 			InputID: entityTypeID,
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("GetByID", ctx, testTenant, entityTypeID).Return(nil, testError).Once()
+				entityTypeRepo.On("GetByID", ctx, tenantID, entityTypeID).Return(nil, errTest).Once()
 				return entityTypeRepo
 			},
-			ExpectedError: testError,
+			ExpectedError: errTest,
 		},
 	}
 
@@ -357,7 +357,7 @@ func TestService_Get(t *testing.T) {
 
 func TestService_Exists(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
+	ctx := tenant.SaveToContext(context.TODO(), tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name             string
@@ -371,7 +371,7 @@ func TestService_Exists(t *testing.T) {
 			InputID: entityTypeID,
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("Exists", ctx, testTenant, entityTypeID).Return(true, nil).Once()
+				entityTypeRepo.On("Exists", ctx, tenantID, entityTypeID).Return(true, nil).Once()
 				return entityTypeRepo
 			},
 			ExpectedOutput: true,
@@ -381,7 +381,7 @@ func TestService_Exists(t *testing.T) {
 			InputID: entityTypeID,
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("Exists", ctx, testTenant, entityTypeID).Return(false, nil).Once()
+				entityTypeRepo.On("Exists", ctx, tenantID, entityTypeID).Return(false, nil).Once()
 				return entityTypeRepo
 			},
 			ExpectedOutput: false,
@@ -391,10 +391,10 @@ func TestService_Exists(t *testing.T) {
 			InputID: entityTypeID,
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("Exists", ctx, testTenant, entityTypeID).Return(false, testError).Once()
+				entityTypeRepo.On("Exists", ctx, tenantID, entityTypeID).Return(false, errTest).Once()
 				return entityTypeRepo
 			},
-			ExpectedError: testError,
+			ExpectedError: errTest,
 		},
 	}
 
@@ -422,7 +422,7 @@ func TestService_Exists(t *testing.T) {
 
 func TestService_ListByApplicationID(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
+	ctx := tenant.SaveToContext(context.TODO(), tenantID, externalTenantID)
 	entityTypes := []*model.EntityType{fixEntityTypeModel(entityTypeID)}
 	applicationID := "application-id"
 	testCases := []struct {
@@ -437,7 +437,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 			InputID: applicationID,
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("ListByResourceID", ctx, testTenant, applicationID, resource.Application).Return(entityTypes, nil).Once()
+				entityTypeRepo.On("ListByResourceID", ctx, tenantID, applicationID, resource.Application).Return(entityTypes, nil).Once()
 				return entityTypeRepo
 			},
 			ExpectedOutput: entityTypes,
@@ -447,10 +447,10 @@ func TestService_ListByApplicationID(t *testing.T) {
 			InputID: applicationID,
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("ListByResourceID", ctx, testTenant, applicationID, resource.Application).Return(nil, testError).Once()
+				entityTypeRepo.On("ListByResourceID", ctx, tenantID, applicationID, resource.Application).Return(nil, errTest).Once()
 				return entityTypeRepo
 			},
-			ExpectedError: testError,
+			ExpectedError: errTest,
 		},
 	}
 
@@ -478,7 +478,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 
 func TestService_ListByApplicationTemplateVersionID(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
+	ctx := tenant.SaveToContext(context.TODO(), tenantID, externalTenantID)
 	entityTypes := []*model.EntityType{fixEntityTypeModel(entityTypeID)}
 	applicationTemplateVersionID := "application-template-version-id"
 	testCases := []struct {
@@ -503,10 +503,10 @@ func TestService_ListByApplicationTemplateVersionID(t *testing.T) {
 			InputID: applicationTemplateVersionID,
 			EntityTypeRepoFn: func() *automock.EntityTypeRepository {
 				entityTypeRepo := &automock.EntityTypeRepository{}
-				entityTypeRepo.On("ListByResourceID", ctx, "", applicationTemplateVersionID, resource.ApplicationTemplateVersion).Return(nil, testError).Once()
+				entityTypeRepo.On("ListByResourceID", ctx, "", applicationTemplateVersionID, resource.ApplicationTemplateVersion).Return(nil, errTest).Once()
 				return entityTypeRepo
 			},
-			ExpectedError: testError,
+			ExpectedError: errTest,
 		},
 	}
 

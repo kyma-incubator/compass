@@ -74,8 +74,6 @@ const (
 	capability2SpecID = "capability2SpecID"
 
 	cursor                    = "cursor"
-	policyLevel               = "sap:core:v1"
-	customPolicyLevel         = "sap:core:v1"
 	apiImplementationStandard = "cff:open-service-broker:v2"
 	correlationIDs            = `["foo.bar.baz:foo:123456","foo.bar.baz:bar:654321"]`
 	partners                  = `["microsoft:vendor:Microsoft:"]`
@@ -83,18 +81,29 @@ const (
 	externalClientCertSecretName = "resource-name1"
 	extSvcClientCertSecretName   = "resource-name2"
 
-	appTemplateVersionID    = "testAppTemplateVersionID"
 	appTemplateVersionValue = "2303"
 	appTemplateName         = "appTemplateName"
 
 	applicationTypeLabelValue = "customType"
+
+	entityTypeID     = "entity-type-id"
+	ready            = true
+	ordID            = "com.compass.v1"
+	level            = "aggregate"
+	title            = "BusinessPartner"
+	publicVisibility = "public"
+	products         = `["sap:product:S4HANA_OD:"]`
+	releaseStatus    = "active"
 )
 
 var (
-	appID              = "testApp"
-	appTemplateID      = "testAppTemplate"
-	uidSvc             = uid.NewService()
-	packageLinksFormat = removeWhitespace(`[
+	appID                = "testApp"
+	appTemplateVersionID = "testAppTemplateVersionID"
+	appTemplateID        = "testAppTemplate"
+	policyLevel          = "sap:core:v1"
+	customPolicyLevel    = "sap:core:v1"
+	uidSvc               = uid.NewService()
+	packageLinksFormat   = removeWhitespace(`[
         {
           "type": "terms-of-service",
           "url": "https://example.com/en/legal/terms-of-use.html"
@@ -252,13 +261,6 @@ var (
 		bundleORDID: fixBundlesWithHash()[0],
 	}
 
-	hashAPI1, _       = ord.HashObject(fixORDDocument().APIResources[0])
-	hashAPI2, _       = ord.HashObject(fixORDDocument().APIResources[1])
-	hashEvent1, _     = ord.HashObject(fixORDDocument().EventResources[0])
-	hashEvent2, _     = ord.HashObject(fixORDDocument().EventResources[1])
-	hashCapability, _ = ord.HashObject(fixORDDocument().Capabilities[0])
-	hashPackage, _    = ord.HashObject(fixORDDocument().Packages[0])
-
 	resourceHashes = fixResourceHashes()
 
 	credentialExchangeStrategyType           = "sap.ucl:tenant-mapping:v1"
@@ -269,17 +271,57 @@ var (
 			Version: credentialExchangeStrategyVersion,
 		},
 	}
+
+	fixedTimestamp          = time.Now()
+	shortDescription        = "A business partner is a person, an organization, or a group of persons or organizations in which a company has a business interest."
+	description             = "A workforce person is a natural person with a work agreement or relationship in form of a work assignment; it can be an employee or a contingent worker.\n"
+	systemInstanceAware     = false
+	sunsetDate              = "2022-01-08T15:47:04+00:00"
+	successors              = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1"]`
+	extensible              = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
+	resourceHash            = "123456"
+	version_value           = "v1.1"
+	version_deprecated      = false
+	version_deprecatedSince = "v1.0"
+	version_forRemoval      = false
+
+	documentationLabels = removeWhitespace(`{
+        "Some Aspect": ["Markdown Documentation [with links](#)", "With multiple values"]
+      }`)
 )
 
 func fixResourceHashes() map[string]uint64 {
-	return map[string]uint64{
-		api1ORDID:        hashAPI1,
-		api2ORDID:        hashAPI2,
-		event1ORDID:      hashEvent1,
-		event2ORDID:      hashEvent2,
-		capability1ORDID: hashCapability,
-		packageORDID:     hashPackage,
+	return fixResourceHashesForDocument(fixORDDocument())
+}
+
+func fixResourceHashesForDocument(doc *ord.Document) map[string]uint64 {
+	result := map[string]uint64{}
+	for _, resource := range doc.APIResources {
+		hash, _ := ord.HashObject(resource)
+		result[*resource.OrdID] = hash
 	}
+	for _, resource := range doc.EventResources {
+		hash, _ := ord.HashObject(resource)
+		result[*resource.OrdID] = hash
+	}
+	for _, resource := range doc.Capabilities {
+		hash, _ := ord.HashObject(resource)
+		result[*resource.OrdID] = hash
+	}
+	for _, resource := range doc.Packages {
+		hash, _ := ord.HashObject(resource)
+		result[resource.OrdID] = hash
+	}
+	for _, resource := range doc.EntityTypes {
+		hash, _ := ord.HashObject(resource)
+		result[resource.OrdID] = hash
+	}
+	for _, resource := range doc.ConsumptionBundles {
+		hash, _ := ord.HashObject(resource)
+		result[*resource.OrdID] = hash
+	}
+
+	return result
 }
 
 func fixWellKnownConfig() *ord.WellKnownConfig {
@@ -370,6 +412,14 @@ func sanitizeResources(doc *ord.Document) {
 	doc.EventResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	doc.EventResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	doc.EventResources[1].Labels = json.RawMessage(mergedLabels)
+
+	doc.EntityTypes[0].PolicyLevel = str.Ptr(policyLevel)
+	doc.EntityTypes[0].Tags = json.RawMessage(`["testTag","eventTestTag"]`)
+	doc.EntityTypes[0].Labels = json.RawMessage(mergedLabels)
+
+	doc.EntityTypes[1].PolicyLevel = str.Ptr(policyLevel)
+	doc.EntityTypes[1].Tags = json.RawMessage(`["testTag","eventTestTag"]`)
+	doc.EntityTypes[1].Labels = json.RawMessage(mergedLabels)
 
 	doc.Capabilities[0].Tags = json.RawMessage(`["testTag","capabilityTestTag"]`)
 	doc.Capabilities[0].Labels = json.RawMessage(mergedLabels)
@@ -714,8 +764,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Visibility:          "public",
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				PolicyLevel:         str.Ptr("custom"),
-				CustomPolicyLevel:   str.Ptr(customPolicyLevel),
+				PolicyLevel:         str.Ptr(policyLevel),
 				ReleaseStatus:       "active",
 				SunsetDate:          nil,
 				Successors:          nil,
@@ -1585,6 +1634,56 @@ func fixTombstones() []*model.Tombstone {
 			RemovalDate:   "2020-12-02T14:12:59Z",
 			Description:   str.Ptr("description"),
 		},
+	}
+}
+
+func fixEntityTypes() []*model.EntityType {
+	return []*model.EntityType{
+		{
+			BaseEntity: &model.BaseEntity{
+				ID:        entityTypeID,
+				Ready:     true,
+				CreatedAt: &fixedTimestamp,
+				UpdatedAt: &time.Time{},
+				DeletedAt: &time.Time{},
+				Error:     nil,
+			},
+			ApplicationID:                &appID,
+			ApplicationTemplateVersionID: &appTemplateVersionID,
+			OrdID:                        ordID,
+			LocalID:                      localID,
+			CorrelationIDs:               json.RawMessage(correlationIDs),
+			Level:                        level,
+			Title:                        title,
+			ShortDescription:             &shortDescription,
+			Description:                  &description,
+			SystemInstanceAware:          &systemInstanceAware,
+			ChangeLogEntries:             json.RawMessage(changeLogEntries),
+			OrdPackageID:                 packageID,
+			Visibility:                   publicVisibility,
+			Links:                        json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			PartOfProducts:               json.RawMessage(products),
+			PolicyLevel:                  &policyLevel,
+			CustomPolicyLevel:            &customPolicyLevel,
+			ReleaseStatus:                releaseStatus,
+			SunsetDate:                   &sunsetDate,
+			Successors:                   json.RawMessage(successors),
+			Extensible:                   json.RawMessage(extensible),
+			Tags:                         json.RawMessage(tags),
+			Labels:                       json.RawMessage(labels),
+			DocumentationLabels:          json.RawMessage(documentationLabels),
+			Version:                      fixVersionModel(version_value, version_deprecated, version_deprecatedSince, version_forRemoval),
+			ResourceHash:                 &resourceHash,
+		},
+	}
+}
+
+func fixVersionModel(value string, deprecated bool, deprecatedSince string, forRemoval bool) *model.Version {
+	return &model.Version{
+		Value:           value,
+		Deprecated:      &deprecated,
+		DeprecatedSince: &deprecatedSince,
+		ForRemoval:      &forRemoval,
 	}
 }
 

@@ -11,13 +11,13 @@ import (
 
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		entityTypeModel := fixEntityTypeModel(ID)
+		entityTypeModel := fixEntityTypeModel(entityTypeID)
 		require.NotNil(t, entityTypeModel)
 		conv := entitytype.NewConverter(version.NewConverter())
 
 		entity := conv.ToEntity(entityTypeModel)
 
-		assert.Equal(t, fixEntityTypeEntity(ID), entity)
+		assert.Equal(t, fixEntityTypeEntity(entityTypeID), entity)
 	})
 
 	t.Run("Returns nil if package model is nil", func(t *testing.T) {
@@ -31,12 +31,12 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 
 func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		entity := fixEntityTypeEntity(ID)
+		entity := fixEntityTypeEntity(entityTypeID)
 		conv := entitytype.NewConverter(version.NewConverter())
 
 		entityTypeModel := conv.FromEntity(entity)
 
-		assert.Equal(t, fixEntityTypeModel(ID), entityTypeModel)
+		assert.Equal(t, fixEntityTypeModel(entityTypeID), entityTypeModel)
 	})
 
 	t.Run("Returns nil if Entity is nil", func(t *testing.T) {

@@ -566,6 +566,15 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 			}
 		}
 
+		for _, entityType := range doc.EntityTypes {
+			if entityType.ChangeLogEntries, err = rewriteRelativeURIsInJSON(entityType.ChangeLogEntries, url, "url"); err != nil {
+				return err
+			}
+			if entityType.Links, err = rewriteRelativeURIsInJSON(entityType.Links, url, "url"); err != nil {
+				return err
+			}
+		}
+
 		for _, capability := range doc.Capabilities {
 			for _, definition := range capability.CapabilityDefinitions {
 				if !isAbsoluteURL(definition.URL) {

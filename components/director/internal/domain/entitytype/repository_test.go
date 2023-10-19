@@ -15,20 +15,20 @@ import (
 )
 
 func TestPgRepository_GetForApplication(t *testing.T) {
-	entityTypeModel := fixEntityTypeModel(ID)
-	entityTypeEntity := fixEntityTypeEntity(ID)
+	entityTypeModel := fixEntityTypeModel(entityTypeID)
+	entityTypeEntity := fixEntityTypeEntity(entityTypeID)
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get EntityType for Application",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE id = $1 AND app_id = $2 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $3))`),
-				Args:     []driver.Value{ID, appID, tenantID},
+				Query:    regexp.QuoteMeta(`SELECT entityTypeID, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE entityTypeID = $1 AND app_id = $2 AND (entityTypeID IN (SELECT entityTypeID FROM entity_types_tenants WHERE tenant_id = $3))`),
+				Args:     []driver.Value{entityTypeID, appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{
 						sqlmock.NewRows(fixEntityTypeColumns()).
-							AddRow(fixEntityTypeRow(ID)...),
+							AddRow(fixEntityTypeRow(entityTypeID)...),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -44,7 +44,7 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 		RepoConstructorFunc:       entitytype.NewRepository,
 		ExpectedModelEntity:       entityTypeModel,
 		ExpectedDBEntity:          entityTypeEntity,
-		MethodArgs:                []interface{}{tenantID, ID, appID},
+		MethodArgs:                []interface{}{tenantID, entityTypeID, appID},
 		DisableConverterErrorTest: true,
 		MethodName:                "GetByApplicationID",
 	}
@@ -53,20 +53,20 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 }
 
 func TestPgRepository_GetByID(t *testing.T) {
-	entityTypeModel := fixEntityTypeModel(ID)
-	entityTypeEntity := fixEntityTypeEntity(ID)
+	entityTypeModel := fixEntityTypeModel(entityTypeID)
+	entityTypeEntity := fixEntityTypeEntity(entityTypeID)
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get EntityType",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE id = $1 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $2))`),
-				Args:     []driver.Value{ID, tenantID},
+				Query:    regexp.QuoteMeta(`SELECT entityTypeID, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE entityTypeID = $1 AND (entityTypeID IN (SELECT entityTypeID FROM entity_types_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{entityTypeID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{
 						sqlmock.NewRows(fixEntityTypeColumns()).
-							AddRow(fixEntityTypeRow(ID)...),
+							AddRow(fixEntityTypeRow(entityTypeID)...),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -82,7 +82,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		RepoConstructorFunc:       entitytype.NewRepository,
 		ExpectedModelEntity:       entityTypeModel,
 		ExpectedDBEntity:          entityTypeEntity,
-		MethodArgs:                []interface{}{tenantID, ID},
+		MethodArgs:                []interface{}{tenantID, entityTypeID},
 		DisableConverterErrorTest: true,
 	}
 
@@ -90,20 +90,20 @@ func TestPgRepository_GetByID(t *testing.T) {
 }
 
 func TestPgRepository_GetByIDGlobal(t *testing.T) {
-	entityTypeModel := fixEntityTypeModel(ID)
-	entityTypeEntity := fixEntityTypeEntity(ID)
+	entityTypeModel := fixEntityTypeModel(entityTypeID)
+	entityTypeEntity := fixEntityTypeEntity(entityTypeID)
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get EntityType Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE id = $1`),
-				Args:     []driver.Value{ID},
+				Query:    regexp.QuoteMeta(`SELECT entityTypeID, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE entityTypeID = $1`),
+				Args:     []driver.Value{entityTypeID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{
 						sqlmock.NewRows(fixEntityTypeColumns()).
-							AddRow(fixEntityTypeRow(ID)...),
+							AddRow(fixEntityTypeRow(entityTypeID)...),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -119,7 +119,7 @@ func TestPgRepository_GetByIDGlobal(t *testing.T) {
 		RepoConstructorFunc:       entitytype.NewRepository,
 		ExpectedModelEntity:       entityTypeModel,
 		ExpectedDBEntity:          entityTypeEntity,
-		MethodArgs:                []interface{}{ID},
+		MethodArgs:                []interface{}{entityTypeID},
 		DisableConverterErrorTest: true,
 		MethodName:                "GetByIDGlobal",
 	}
@@ -139,7 +139,7 @@ func TestPgRepository_ListByResourceID(t *testing.T) {
 		Name: "List EntityTypes for AppID and TenantID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE app_id = $1 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $2)) FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT entityTypeID, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE app_id = $1 AND (entityTypeID IN (SELECT entityTypeID FROM entity_types_tenants WHERE tenant_id = $2)) FOR UPDATE`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -165,7 +165,7 @@ func TestPgRepository_ListByResourceID(t *testing.T) {
 		Name: "List EntityTypes for AppTemplateVersionID ",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE app_template_version_id = $1 FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT entityTypeID, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE app_template_version_id = $1 FOR UPDATE`),
 				Args:     []driver.Value{appTemplateVersionID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -203,7 +203,7 @@ func TestPgRepository_ListByApplicationIDPage(t *testing.T) {
 		Name: "List EntityTypes with paging",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE (app_id = $1 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $2)))`),
+				Query:    regexp.QuoteMeta(`SELECT entityTypeID, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE (app_id = $1 AND (entityTypeID IN (SELECT entityTypeID FROM entity_types_tenants WHERE tenant_id = $2)))`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -211,7 +211,7 @@ func TestPgRepository_ListByApplicationIDPage(t *testing.T) {
 				},
 			},
 			{
-				Query:    regexp.QuoteMeta(`SELECT COUNT(*) FROM public.entity_types WHERE (app_id = $1 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $2)))`),
+				Query:    regexp.QuoteMeta(`SELECT COUNT(*) FROM public.entity_types WHERE (app_id = $1 AND (entityTypeID IN (SELECT entityTypeID FROM entity_types_tenants WHERE tenant_id = $2)))`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -249,14 +249,14 @@ func TestPgRepository_ListByApplicationIDPage(t *testing.T) {
 func TestPgRepository_Create(t *testing.T) {
 	// GIVEN
 	var nilEntityTypeModel *model.EntityType
-	entityTypeModel := fixEntityTypeModel(ID)
-	entityTypeEntity := fixEntityTypeEntity(ID)
+	entityTypeModel := fixEntityTypeModel(entityTypeID)
+	entityTypeEntity := fixEntityTypeEntity(entityTypeID)
 
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Create EntityTypes",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND entityTypeID = $2 AND owner = $3"),
 				Args:     []driver.Value{tenantID, appID, true},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -268,7 +268,7 @@ func TestPgRepository_Create(t *testing.T) {
 			},
 			{
 				Query:       `^INSERT INTO public.entity_types \(.+\) VALUES \(.+\)$`,
-				Args:        fixEntityTypeCreateArgs(ID, entityTypeModel),
+				Args:        fixEntityTypeCreateArgs(entityTypeID, entityTypeModel),
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},
@@ -289,15 +289,15 @@ func TestPgRepository_Create(t *testing.T) {
 func TestPgRepository_CreateGlobal(t *testing.T) {
 	// GIVEN
 	var nilEntityTypeModel *model.EntityType
-	entityTypeModel := fixEntityTypeModel(ID)
-	entityTypeEntity := fixEntityTypeEntity(ID)
+	entityTypeModel := fixEntityTypeModel(entityTypeID)
+	entityTypeEntity := fixEntityTypeEntity(entityTypeID)
 
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Create EntityTypes Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:       `^INSERT INTO public.entity_types \(.+\) VALUES \(.+\)$`,
-				Args:        fixEntityTypeCreateArgs(ID, entityTypeModel),
+				Args:        fixEntityTypeCreateArgs(entityTypeID, entityTypeModel),
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},
@@ -317,10 +317,10 @@ func TestPgRepository_CreateGlobal(t *testing.T) {
 }
 
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(`UPDATE public.entity_types SET ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, ord_id = ?, local_id = ?, correlation_ids = ?, level = ?, title = ?, short_description = ?, description = ?, system_instance_aware = ?, changelog_entries = ?, package_id = ?, visibility = ?, links = ?, part_of_products = ?, policy_level = ?, custom_policy_level = ?, release_status = ?, sunset_date = ?, successors = ?, extensible = ?, tags = ?, labels = ?, documentation_labels = ?, resource_hash = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ? WHERE id = ? AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = ? AND owner = true))`)
+	updateQuery := regexp.QuoteMeta(`UPDATE public.entity_types SET ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, ord_id = ?, local_id = ?, correlation_ids = ?, level = ?, title = ?, short_description = ?, description = ?, system_instance_aware = ?, changelog_entries = ?, package_id = ?, visibility = ?, links = ?, part_of_products = ?, policy_level = ?, custom_policy_level = ?, release_status = ?, sunset_date = ?, successors = ?, extensible = ?, tags = ?, labels = ?, documentation_labels = ?, resource_hash = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ? WHERE entityTypeID = ? AND (entityTypeID IN (SELECT entityTypeID FROM entity_types_tenants WHERE tenant_id = ? AND owner = true))`)
 	var nilEntityTypeModel *model.EntityType
-	entityTypeModel := fixEntityTypeModel(ID)
-	entityTypeEntity := fixEntityTypeEntity(ID)
+	entityTypeModel := fixEntityTypeModel(entityTypeID)
+	entityTypeEntity := fixEntityTypeEntity(entityTypeID)
 	entityTypeEntity.UpdatedAt = &fixedTimestamp
 	entityTypeEntity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
 
@@ -329,7 +329,7 @@ func TestPgRepository_Update(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         updateQuery,
-				Args:          append(fixEntityTypeUpdateArgs(ID, entityTypeEntity), tenantID),
+				Args:          append(fixEntityTypeUpdateArgs(entityTypeID, entityTypeEntity), tenantID),
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -353,8 +353,8 @@ func TestPgRepository_Delete(t *testing.T) {
 		Name: "EntityType Delete",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`DELETE FROM public.entity_types WHERE id = $1 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $2 AND owner = true))`),
-				Args:          []driver.Value{ID, tenantID},
+				Query:         regexp.QuoteMeta(`DELETE FROM public.entity_types WHERE entityTypeID = $1 AND (entityTypeID IN (SELECT entityTypeID FROM entity_types_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{entityTypeID, tenantID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 2),
 			},
@@ -363,7 +363,7 @@ func TestPgRepository_Delete(t *testing.T) {
 			return &automock.EntityTypeConverter{}
 		},
 		RepoConstructorFunc: entitytype.NewRepository,
-		MethodArgs:          []interface{}{tenantID, ID},
+		MethodArgs:          []interface{}{tenantID, entityTypeID},
 	}
 
 	suite.Run(t)
@@ -374,8 +374,8 @@ func TestPgRepository_DeleteGlobal(t *testing.T) {
 		Name: "EntityType Delete Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`DELETE FROM public.entity_types WHERE id = $1`),
-				Args:          []driver.Value{ID},
+				Query:         regexp.QuoteMeta(`DELETE FROM public.entity_types WHERE entityTypeID = $1`),
+				Args:          []driver.Value{entityTypeID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 2),
 			},
@@ -384,7 +384,7 @@ func TestPgRepository_DeleteGlobal(t *testing.T) {
 			return &automock.EntityTypeConverter{}
 		},
 		RepoConstructorFunc: entitytype.NewRepository,
-		MethodArgs:          []interface{}{ID},
+		MethodArgs:          []interface{}{entityTypeID},
 		IsGlobal:            true,
 		MethodName:          "DeleteGlobal",
 	}
@@ -397,8 +397,8 @@ func TestRepository_Exists(t *testing.T) {
 		Name: "EntityType Exists",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.entity_types WHERE id = $1 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $2))`),
-				Args:     []driver.Value{ID, tenantID},
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.entity_types WHERE entityTypeID = $1 AND (entityTypeID IN (SELECT entityTypeID FROM entity_types_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{entityTypeID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
@@ -412,10 +412,10 @@ func TestRepository_Exists(t *testing.T) {
 			return &automock.EntityTypeConverter{}
 		},
 		RepoConstructorFunc: entitytype.NewRepository,
-		TargetID:            ID,
+		TargetID:            entityTypeID,
 		TenantID:            tenantID,
 		MethodName:          "Exists",
-		MethodArgs:          []interface{}{tenantID, ID},
+		MethodArgs:          []interface{}{tenantID, entityTypeID},
 	}
 
 	suite.Run(t)
@@ -423,15 +423,15 @@ func TestRepository_Exists(t *testing.T) {
 
 func TestPgRepository_UpdateGlobal(t *testing.T) {
 	var nilEntityTypeModel *model.EntityType
-	entityTypeModel := fixEntityTypeModel(ID)
-	entityTypeEntity := fixEntityTypeEntity(ID)
+	entityTypeModel := fixEntityTypeModel(entityTypeID)
+	entityTypeEntity := fixEntityTypeEntity(entityTypeID)
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update EntityType Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.entity_types SET ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, ord_id = ?, local_id = ?, correlation_ids = ?, level = ?, title = ?, short_description = ?, description = ?, system_instance_aware = ?, changelog_entries = ?, package_id = ?, visibility = ?, links = ?, part_of_products = ?, policy_level = ?, custom_policy_level = ?, release_status = ?, sunset_date = ?, successors = ?, extensible = ?, tags = ?, labels = ?, documentation_labels = ?, resource_hash = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ? WHERE id = ?`),
-				Args:          fixEntityTypeUpdateArgs(ID, entityTypeEntity),
+				Query:         regexp.QuoteMeta(`UPDATE public.entity_types SET ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, ord_id = ?, local_id = ?, correlation_ids = ?, level = ?, title = ?, short_description = ?, description = ?, system_instance_aware = ?, changelog_entries = ?, package_id = ?, visibility = ?, links = ?, part_of_products = ?, policy_level = ?, custom_policy_level = ?, release_status = ?, sunset_date = ?, successors = ?, extensible = ?, tags = ?, labels = ?, documentation_labels = ?, resource_hash = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ? WHERE entityTypeID = ?`),
+				Args:          fixEntityTypeUpdateArgs(entityTypeID, entityTypeEntity),
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},

@@ -16,25 +16,22 @@ import (
 )
 
 const (
-	ID                 = "ID"
-	ready              = true
-	tenantID           = "b91b59f7-2563-40b2-aba9-fef726037aa3"
-	ordID              = "com.compass.v1"
-	localID            = "BusinessPartner"
-	correlationIDs     = `["sap.s4:sot:BusinessPartner", "sap.s4:sot:CostCenter", "sap.s4:sot:WorkforcePerson"]`
-	level              = "aggregate"
-	title              = "BusinessPartner"
-	packageID          = "sap.xref:package:SomePackage:v1"
-	publicVisibility   = "public"
-	products           = `["sap:product:S4HANA_OD:"]`
-	releaseStatus      = "active"
-	testTenant         = "tnt"
-	testExternalTenant = "external-tnt"
-	entityTypeID       = "entity-type-id"
+	entityTypeID     = "entity-type-id"
+	ready            = true
+	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+	externalTenantID = "external-tnt"
+	ordID            = "com.compass.v1"
+	localID          = "BusinessPartner"
+	correlationIDs   = `["sap.s4:sot:BusinessPartner", "sap.s4:sot:CostCenter", "sap.s4:sot:WorkforcePerson"]`
+	level            = "aggregate"
+	title            = "BusinessPartner"
+	packageID        = "sap.xref:package:SomePackage:v1"
+	publicVisibility = "public"
+	products         = `["sap:product:S4HANA_OD:"]`
+	releaseStatus    = "active"
 )
 
 var (
-	testError               = errors.New("test error")
 	fixedTimestamp          = time.Now()
 	appID                   = "appID"
 	appTemplateVersionID    = "appTemplateVersionID"
