@@ -35,7 +35,7 @@ func NewEntityTypeProcessor(transact persistence.Transactioner, entityTypeSvc En
 }
 
 // Process re-syncs the entity types passed as an argument.
-func (ep *EntityTypeProcessor) Process(ctx context.Context, resourceType resource.Type, resourceID string, packagesFromDB []*model.Package, entityTypes []*model.EntityTypeInput, resourceHashes map[string]uint64) ([]*model.EntityType, error) {
+func (ep *EntityTypeProcessor) Process(ctx context.Context, resourceType resource.Type, resourceID string, entityTypes []*model.EntityTypeInput, resourceHashes map[string]uint64) ([]*model.EntityType, error) {
 	entityTypesFromDB, err := ep.listEntityTypesInTx(ctx, resourceType, resourceID)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (ep *EntityTypeProcessor) Process(ctx context.Context, resourceType resourc
 
 	for _, entityType := range entityTypes {
 		entityTypeHash := resourceHashes[entityType.OrdID]
-		err := ep.resyncEntityTypeInTx(ctx, resourceType, resourceID, entityTypesFromDB, packagesFromDB, entityType, entityTypeHash)
+		err := ep.resyncEntityTypeInTx(ctx, resourceType, resourceID, entityTypesFromDB, entityType, entityTypeHash)
 		if err != nil {
 			return nil, err
 		}
@@ -78,7 +78,7 @@ func (ep *EntityTypeProcessor) listEntityTypesInTx(ctx context.Context, resource
 	return entityTypesFromDB, tx.Commit()
 }
 
-func (ep *EntityTypeProcessor) resyncEntityTypeInTx(ctx context.Context, resourceType resource.Type, resourceID string, entityTypesFromDB []*model.EntityType, packagesFromDB []*model.Package, entityType *model.EntityTypeInput, entityTypeHash uint64) error {
+func (ep *EntityTypeProcessor) resyncEntityTypeInTx(ctx context.Context, resourceType resource.Type, resourceID string, entityTypesFromDB []*model.EntityType, entityType *model.EntityTypeInput, entityTypeHash uint64) error {
 	tx, err := ep.transact.Begin()
 	if err != nil {
 		return err
@@ -86,14 +86,14 @@ func (ep *EntityTypeProcessor) resyncEntityTypeInTx(ctx context.Context, resourc
 	defer ep.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	err = ep.resyncEntityType(ctx, resourceType, resourceID, entityTypesFromDB, packagesFromDB, *entityType, entityTypeHash)
+	err = ep.resyncEntityType(ctx, resourceType, resourceID, entityTypesFromDB, *entityType, entityTypeHash)
 	if err != nil {
 		return errors.Wrapf(err, "error while resyncing entity type with ORD ID %q", entityType.OrdID)
 	}
 	return tx.Commit()
 }
 
-func (ep *EntityTypeProcessor) resyncEntityType(ctx context.Context, resourceType resource.Type, resourceID string, entityTypesFromDB []*model.EntityType, packagesFromDB []*model.Package, entityType model.EntityTypeInput, entityTypeHash uint64) error {
+func (ep *EntityTypeProcessor) resyncEntityType(ctx context.Context, resourceType resource.Type, resourceID string, entityTypesFromDB []*model.EntityType, entityType model.EntityTypeInput, entityTypeHash uint64) error {
 	ctx = addFieldToLogger(ctx, "entity_type_ord_id", entityType.OrdID)
 	_, isEntityTypeFound := searchInSlice(len(entityTypesFromDB), func(i int) bool {
 		return equalStrings(&entityTypesFromDB[i].OrdID, &entityType.OrdID)

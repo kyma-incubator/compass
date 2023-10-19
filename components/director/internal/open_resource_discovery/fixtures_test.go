@@ -87,7 +87,6 @@ const (
 	applicationTypeLabelValue = "customType"
 
 	entityTypeID     = "entity-type-id"
-	ready            = true
 	ordID            = "com.compass.v1"
 	level            = "aggregate"
 	title            = "BusinessPartner"
@@ -280,10 +279,10 @@ var (
 	successors              = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1"]`
 	extensible              = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
 	resourceHash            = "123456"
-	version_value           = "v1.1"
-	version_deprecated      = false
-	version_deprecatedSince = "v1.0"
-	version_forRemoval      = false
+	versionValue           = "v1.1"
+	versionDeprecated      = false
+	versionDeprecatedSince = "v1.0"
+	versionForRemoval      = false
 
 	documentationLabels = removeWhitespace(`{
         "Some Aspect": ["Markdown Documentation [with links](#)", "With multiple values"]
@@ -1672,7 +1671,7 @@ func fixEntityTypes() []*model.EntityType {
 			Tags:                         json.RawMessage(tags),
 			Labels:                       json.RawMessage(labels),
 			DocumentationLabels:          json.RawMessage(documentationLabels),
-			Version:                      fixVersionModel(version_value, version_deprecated, version_deprecatedSince, version_forRemoval),
+			Version:                      fixVersionModel(versionValue, versionDeprecated, versionDeprecatedSince, versionForRemoval),
 			ResourceHash:                 &resourceHash,
 		},
 	}

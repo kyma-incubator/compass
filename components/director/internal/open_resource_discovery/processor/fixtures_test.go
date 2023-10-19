@@ -12,8 +12,6 @@ import (
 const (
 	ID1                = "ID1"
 	ID2                = "ID2"
-	ready              = true
-	tenantID           = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	ordID              = "com.compass.v1"
 	localID            = "BusinessPartner"
 	correlationIDs     = `["sap.s4:sot:BusinessPartner", "sap.s4:sot:CostCenter", "sap.s4:sot:WorkforcePerson"]`
@@ -23,8 +21,6 @@ const (
 	publicVisibility   = "public"
 	products           = `["sap:product:S4HANA_OD:"]`
 	releaseStatus      = "active"
-	testTenant         = "tnt"
-	testExternalTenant = "external-tnt"
 	entityTypeID       = "entity-type-id"
 )
 

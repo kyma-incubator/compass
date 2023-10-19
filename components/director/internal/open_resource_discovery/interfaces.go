@@ -186,7 +186,7 @@ type TombstoneProcessor interface {
 //
 //go:generate mockery --name=EntityTypeProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityTypeProcessor interface {
-	Process(ctx context.Context, resourceType resource.Type, resourceID string, packagesFromDB []*model.Package, entityTypes []*model.EntityTypeInput, resourceHashes map[string]uint64) ([]*model.EntityType, error)
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, entityTypes []*model.EntityTypeInput, resourceHashes map[string]uint64) ([]*model.EntityType, error)
 }
 
 // TenantService missing godoc

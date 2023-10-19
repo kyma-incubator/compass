@@ -412,7 +412,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		log.C(ctx).Infof("Finished processing events for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing entity types for %s with id: %q", resource.Type, resource.ID)
-		entityTypesFromDB, err := s.entityTypeProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.EntityTypes, resourceHashes)
+		entityTypesFromDB, err := s.entityTypeProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.EntityTypes, resourceHashes)
 		if err != nil {
 			return err
 		}

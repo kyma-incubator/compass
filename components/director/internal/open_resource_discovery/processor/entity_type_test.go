@@ -112,7 +112,7 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 			ExpectedOutput:      entityTypeModels,
 		},
 		{
-			Name: "Fails when listing entity types by applicaiton ID",
+			Name: "Fails when listing entity types by application ID",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatDoesntExpectCommit()
 			},
@@ -128,7 +128,7 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 			ExpectedErr:         errTest,
 		},
 		{
-			Name: "Fails when listing entity types by applicaiton template version ID",
+			Name: "Fails when listing entity types by application template version ID",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatDoesntExpectCommit()
 			},
@@ -212,7 +212,7 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 			entityTypeSvc := test.EntityTypeSvcFn()
 
 			entityTypeProcessor := processor.NewEntityTypeProcessor(tx, entityTypeSvc)
-			result, err := entityTypeProcessor.Process(context.TODO(), test.InputResource, test.InputResourceID, test.InputPackagesFromDB, test.InputEntityTypes, test.InputResourceHashes)
+			result, err := entityTypeProcessor.Process(context.TODO(), test.InputResource, test.InputResourceID, test.InputEntityTypes, test.InputResourceHashes)
 
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
