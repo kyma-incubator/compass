@@ -59,5 +59,4 @@ func TestConstraintOperators_RedirectNotification(t *testing.T) {
 			}
 		})
 	}
-
 }
