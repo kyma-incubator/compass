@@ -44,7 +44,9 @@ func TestCreateApplicationTemplate(t *testing.T) {
 	tenantID := tenant.TestTenants.GetDefaultSubaccountTenantID()
 	t.Run("Success for global template", func(t *testing.T) {
 		// GIVEN
-		testStartTime := time.Now()
+
+		// Our graphql Timestamp object parses data to RFC3339 which does not include milliseconds. This may cause the test to fail if it executes in less than a second
+		testStartTime := time.Now().Add(-1 * time.Minute)
 
 		ctx := context.Background()
 		appTemplateName := fixtures.CreateAppTemplateName("app-template-name")
@@ -497,7 +499,10 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	//THEN
 	t.Log("Check if application template was updated")
 	assertions.AssertUpdateApplicationTemplate(t, appTemplateInput, updateOutput)
-	assert.True(t, time.Time(updateOutput.UpdatedAt).After(time.Time(updateOutput.CreatedAt)))
+
+	// Our graphql Timestamp object parses data to RFC3339 which does not include milliseconds. This may cause the test
+	// to fail if it executes in less than a second. We add 1 second in order to insure a difference in the timestamps
+	assert.True(t, time.Time(updateOutput.UpdatedAt).Add(1*time.Second).After(time.Time(updateOutput.CreatedAt)))
 
 	example.SaveExample(t, updateAppTemplateRequest.Query(), "update application template")
 }
