@@ -5038,7 +5038,7 @@ func TestService_GetScenariosGlobal(t *testing.T) {
 			},
 			LabelRepositoryFn:  UnusedLabelRepository,
 			InputApplicationID: applicationID,
-			ExpectedErrMessage: "application with ID foo doesn't exist",
+			ExpectedErrMessage: fmt.Sprintf("application with ID %s doesn't exist", applicationID),
 		},
 	}
 
