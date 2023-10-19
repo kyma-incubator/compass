@@ -2,8 +2,6 @@ package apptemplate
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
@@ -61,15 +59,10 @@ func NewRepository(conv EntityConverter) *repository {
 func (r *repository) Create(ctx context.Context, item model.ApplicationTemplate) error {
 	log.C(ctx).Debugf("Converting Application Template with id %s to entity", item.ID)
 
-	fmt.Println("item")
-	fmt.Println(item.CreatedAt, item.UpdatedAt)
 	entity, err := r.conv.ToEntity(&item)
 	if err != nil {
 		return errors.Wrapf(err, "while converting Application Template with ID %s", item.ID)
 	}
-
-	fmt.Println("entity")
-	fmt.Println(entity.CreatedAt, entity.UpdatedAt)
 
 	log.C(ctx).Debugf("Persisting Application Template entity with id %s to db", item.ID)
 	return r.creator.Create(ctx, entity)
