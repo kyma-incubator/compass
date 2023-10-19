@@ -191,8 +191,8 @@ FROM entity_types et
                       apps_subaccounts.tenant_id,
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps
-              ON et.app_id = t_apps.id;
-
+              ON et.app_id = t_apps.id,
+              jsonb_to_record(et.extensible) actions(supported text, description text);
 
 CREATE INDEX entity_types_app_template_version_id ON entity_types (app_template_version_id);
 
