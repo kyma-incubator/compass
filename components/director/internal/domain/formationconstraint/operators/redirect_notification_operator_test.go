@@ -10,7 +10,6 @@ import (
 )
 
 func TestConstraintOperators_RedirectNotification(t *testing.T) {
-
 	testCases := []struct {
 		Name                  string
 		Input                 operators.OperatorInput
