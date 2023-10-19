@@ -217,6 +217,8 @@ func (c *converter) ToEntity(in *model.ApplicationTemplate) (*Entity, error) {
 		ApplicationInputJSON: in.ApplicationInputJSON,
 		PlaceholdersJSON:     placeholders,
 		AccessLevel:          string(in.AccessLevel),
+		CreatedAt:            in.CreatedAt,
+		UpdatedAt:            in.UpdatedAt,
 	}, nil
 }
 
@@ -239,6 +241,8 @@ func (c *converter) FromEntity(entity *Entity) (*model.ApplicationTemplate, erro
 		ApplicationInputJSON: entity.ApplicationInputJSON,
 		Placeholders:         placeholders,
 		AccessLevel:          model.ApplicationTemplateAccessLevel(entity.AccessLevel),
+		CreatedAt:            entity.CreatedAt,
+		UpdatedAt:            entity.UpdatedAt,
 	}, nil
 }
 
