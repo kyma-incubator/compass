@@ -43,7 +43,7 @@ func (e *ConstraintEngine) RedirectNotification(ctx context.Context, input Opera
 		return false, err
 	}
 
-	if !ri.Condition {
+	if !ri.ShouldRedirect {
 		log.C(ctx).Infof("The condition for the redirect notification operator is not satisfied. Returning...")
 		return true, nil
 	}

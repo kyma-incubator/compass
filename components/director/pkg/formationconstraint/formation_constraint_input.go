@@ -63,7 +63,7 @@ type ConfigMutatorInput struct {
 
 // RedirectNotificationInput is an input for RedirectNotification operator
 type RedirectNotificationInput struct {
-	Condition            bool                     `json:"condition"`
+	ShouldRedirect       bool                     `json:"should_redirect"`
 	URLTemplate          string                   `json:"url_template"`
 	URL                  string                   `json:"url"`
 	WebhookMemoryAddress uintptr                  `json:"webhook_memory_address"` // contains the memory address of the join point details' webhook in form of an integer
