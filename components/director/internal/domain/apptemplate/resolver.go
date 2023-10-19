@@ -583,7 +583,6 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 
 	_, err = r.appTemplateSvc.GetLabel(ctx, id, r.selfRegManager.GetSelfRegDistinguishingLabelKey())
 	if err != nil {
-		fmt.Println("ERROR", err)
 		if !apperrors.IsNotFoundError(err) {
 			return nil, errors.Wrapf(err, "while getting self register label")
 		}
