@@ -12,5 +12,5 @@ type ApplicationTemplate struct {
 	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
 	Labels               Labels                         `json:"labels"`
 	CreatedAt            Timestamp                      `json:"createdAt"`
-	UpdatedAt            Timestamp                      `json:"labels"`
+	UpdatedAt            Timestamp                      `json:"updatedAt"`
 }
