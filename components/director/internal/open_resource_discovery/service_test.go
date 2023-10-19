@@ -1109,7 +1109,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventUpdateForStaticDoc,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, sanitizedStaticDoc.EntityTypes, fixResourceHashesForDocument(fixORDStaticDocument())).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, sanitizedStaticDoc.EntityTypes, fixPackages(), fixResourceHashesForDocument(fixORDStaticDocument())).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: successfulCapabilityUpdateForStaticDoc,
@@ -1152,7 +1152,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventUpdate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixResourceHashesForDocument(fixORDDocument())).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), fixResourceHashesForDocument(fixORDDocument())).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:         successfulCapabilityUpdate,
@@ -1198,7 +1198,7 @@ func TestService_Processing(t *testing.T) {
 			},
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixResourceHashesForDocument(fixORDDocument())).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), fixResourceHashesForDocument(fixORDDocument())).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: func() *automock.CapabilityService {
@@ -1235,7 +1235,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:    successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixResourceHashesForDocument(fixORDDocument())).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), fixResourceHashesForDocument(fixORDDocument())).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:         successfulCapabilityCreate,
@@ -1264,7 +1264,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:   successfulEventCreateForProxy,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDocForProxy.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDocForProxy.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:         successfulCapabilityCreateForProxy,
@@ -1302,7 +1302,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventCreateForStaticDoc,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, sanitizedStaticDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, sanitizedStaticDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: successfulCapabilityCreateForStaticDoc,
@@ -1571,7 +1571,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventUpdate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:         successfulCapabilityUpdate,
@@ -1612,7 +1612,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:    successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:         successfulCapabilityCreate,
@@ -1647,7 +1647,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:    successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:         successfulCapabilityCreate,
@@ -2004,7 +2004,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventUpdate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:      successfulCapabilityUpdate,
@@ -2106,7 +2106,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:    successfulOneEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:      successfulCapabilityCreate,
@@ -2168,7 +2168,7 @@ func TestService_Processing(t *testing.T) {
 			},
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:      successfulCapabilityCreate,
@@ -2211,7 +2211,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:    successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: successfulCapabilityCreate,
@@ -2260,7 +2260,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:    successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: successfulCapabilityCreate,
@@ -3195,7 +3195,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:           successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:         successfulCapabilityCreate,
@@ -3254,7 +3254,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:           successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:         successfulCapabilityCreate,
@@ -3317,7 +3317,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:           successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:         successfulCapabilityCreate,
@@ -3834,7 +3834,7 @@ func TestService_Processing(t *testing.T) {
 			},
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: func() *automock.CapabilityService {
@@ -4374,7 +4374,7 @@ func TestService_Processing(t *testing.T) {
 			},
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: successfulCapabilityUpdate,
@@ -4436,7 +4436,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:     successfulEventUpdate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: func() *automock.CapabilityService {
@@ -4511,7 +4511,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventUpdate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: func() *automock.CapabilityService {
@@ -4555,7 +4555,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:     successfulEventUpdate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: func() *automock.CapabilityService {
@@ -4597,7 +4597,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:     successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: func() *automock.CapabilityService {
@@ -4674,7 +4674,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventUpdate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: func() *automock.CapabilityService {
@@ -4736,7 +4736,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventUpdate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: func() *automock.CapabilityService {
@@ -4798,7 +4798,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventUpdate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: func() *automock.CapabilityService {
@@ -4838,7 +4838,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:     successfulEventUpdate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: successfulCapabilityUpdate,
@@ -4884,7 +4884,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:         successfulCapabilityCreate,
@@ -4920,7 +4920,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: successfulCapabilityCreate,
@@ -4987,7 +4987,7 @@ func TestService_Processing(t *testing.T) {
 			},
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: successfulCapabilityCreate,
@@ -5038,7 +5038,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: func() *automock.CapabilityService {
@@ -5098,7 +5098,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: successfulCapabilityCreate,
@@ -5157,7 +5157,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: successfulCapabilityCreate,
@@ -5222,7 +5222,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: successfulCapabilityCreate,
@@ -5277,7 +5277,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:         successfulCapabilityCreate,
@@ -5319,7 +5319,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: successfulCapabilityCreate,
@@ -5391,7 +5391,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: successfulCapabilityCreate,
@@ -5467,7 +5467,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn: successfulCapabilityCreate,
@@ -5550,7 +5550,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventCreate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:      successfulCapabilityCreate,
@@ -5595,7 +5595,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventUpdate,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				enityTypeProcessor := &automock.EntityTypeProcessor{}
-				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, mock.Anything).Return(fixEntityTypes(), nil).Once()
+				enityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return enityTypeProcessor
 			},
 			capabilitySvcFn:      successfulCapabilityUpdate,

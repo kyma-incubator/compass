@@ -48,9 +48,9 @@ func NewService(entityTypeRepo EntityTypeRepository, uidService UIDService) *ser
 }
 
 // Create creates an Entity Type for a given resource.Type
-func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.EntityTypeInput, entityTypeHash uint64) (string, error) {
+func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID string, in model.EntityTypeInput, entityTypeHash uint64) (string, error) {
 	id := s.uidService.Generate()
-	entityType := in.ToEntityType(id, resourceType, resourceID, entityTypeHash)
+	entityType := in.ToEntityType(id, resourceType, resourceID, packageID, entityTypeHash)
 
 	if err := s.createEntityType(ctx, entityType, resourceType); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating an Entity Type with id %s and title %s for %s with id %s", id, entityType.Title, resourceType, resourceID)

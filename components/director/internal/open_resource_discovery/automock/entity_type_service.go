@@ -16,23 +16,23 @@ type EntityTypeService struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, resourceType, resourceID, in, entityTypeHash
-func (_m *EntityTypeService) Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.EntityTypeInput, entityTypeHash uint64) (string, error) {
-	ret := _m.Called(ctx, resourceType, resourceID, in, entityTypeHash)
+// Create provides a mock function with given fields: ctx, resourceType, resourceID, packageID, in, entityTypeHash
+func (_m *EntityTypeService) Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID string, in model.EntityTypeInput, entityTypeHash uint64) (string, error) {
+	ret := _m.Called(ctx, resourceType, resourceID, packageID, in, entityTypeHash)
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.EntityTypeInput, uint64) (string, error)); ok {
-		return rf(ctx, resourceType, resourceID, in, entityTypeHash)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.EntityTypeInput, uint64) (string, error)); ok {
+		return rf(ctx, resourceType, resourceID, packageID, in, entityTypeHash)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.EntityTypeInput, uint64) string); ok {
-		r0 = rf(ctx, resourceType, resourceID, in, entityTypeHash)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.EntityTypeInput, uint64) string); ok {
+		r0 = rf(ctx, resourceType, resourceID, packageID, in, entityTypeHash)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, model.EntityTypeInput, uint64) error); ok {
-		r1 = rf(ctx, resourceType, resourceID, in, entityTypeHash)
+	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, string, model.EntityTypeInput, uint64) error); ok {
+		r1 = rf(ctx, resourceType, resourceID, packageID, in, entityTypeHash)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -164,7 +164,7 @@ func fixEntityTypeModel(entityTypeID string) *model.EntityType {
 		Description:                  &description,
 		SystemInstanceAware:          &systemInstanceAware,
 		ChangeLogEntries:             json.RawMessage(changeLogEntries),
-		OrdPackageID:                 packageID,
+		PackageID:                    packageID,
 		Visibility:                   publicVisibility,
 		Links:                        json.RawMessage(links),
 		PartOfProducts:               json.RawMessage(products),
@@ -225,7 +225,7 @@ func fixEntityTypeRow(id string) []driver.Value {
 
 func fixEntityTypeCreateArgs(id string, entityType *model.EntityType) []driver.Value {
 	return []driver.Value{id, ready, fixedTimestamp, time.Time{}, time.Time{}, nil, appID, repo.NewValidNullableString(*entityType.ApplicationTemplateVersionID), entityType.OrdID, entityType.LocalID,
-		repo.NewNullableStringFromJSONRawMessage(entityType.CorrelationIDs), entityType.Level, entityType.Title, repo.NewNullableString(entityType.ShortDescription), repo.NewNullableString(entityType.Description), repo.NewNullableBool(entityType.SystemInstanceAware), repo.NewNullableStringFromJSONRawMessage(entityType.ChangeLogEntries), entityType.OrdPackageID, entityType.Visibility,
+		repo.NewNullableStringFromJSONRawMessage(entityType.CorrelationIDs), entityType.Level, entityType.Title, repo.NewNullableString(entityType.ShortDescription), repo.NewNullableString(entityType.Description), repo.NewNullableBool(entityType.SystemInstanceAware), repo.NewNullableStringFromJSONRawMessage(entityType.ChangeLogEntries), entityType.PackageID, entityType.Visibility,
 		repo.NewNullableStringFromJSONRawMessage(entityType.Links), repo.NewNullableStringFromJSONRawMessage(entityType.PartOfProducts), repo.NewNullableString(entityType.PolicyLevel), repo.NewNullableString(entityType.CustomPolicyLevel), entityType.ReleaseStatus, repo.NewNullableString(entityType.SunsetDate), repo.NewNullableStringFromJSONRawMessage(entityType.Successors), repo.NewNullableStringFromJSONRawMessage(entityType.Extensible), repo.NewNullableStringFromJSONRawMessage(entityType.Tags), repo.NewNullableStringFromJSONRawMessage(entityType.Labels),
 		repo.NewNullableStringFromJSONRawMessage(entityType.DocumentationLabels), repo.NewNullableString(entityType.ResourceHash), repo.NewNullableString(&entityType.Version.Value), repo.NewNullableBool(entityType.Version.Deprecated), repo.NewNullableString(entityType.Version.DeprecatedSince), repo.NewNullableBool(entityType.Version.ForRemoval)}
 }

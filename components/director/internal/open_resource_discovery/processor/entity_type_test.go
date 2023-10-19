@@ -212,7 +212,7 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 			entityTypeSvc := test.EntityTypeSvcFn()
 
 			entityTypeProcessor := processor.NewEntityTypeProcessor(tx, entityTypeSvc)
-			result, err := entityTypeProcessor.Process(context.TODO(), test.InputResource, test.InputResourceID, test.InputEntityTypes, test.InputResourceHashes)
+			result, err := entityTypeProcessor.Process(context.TODO(), test.InputResource, test.InputResourceID, test.InputEntityTypes, fixPackages(), test.InputResourceHashes)
 
 			if test.ExpectedErr != nil {
 				require.Error(t, err)

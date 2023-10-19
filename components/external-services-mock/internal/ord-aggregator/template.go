@@ -129,6 +129,7 @@ const ordDocument = `{
          "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
          "visibility":"public",
          "version":"1.1.2",
+         "releaseStatus":"active",
          "links":[
             {
                "description":"loremipsumdolornem",

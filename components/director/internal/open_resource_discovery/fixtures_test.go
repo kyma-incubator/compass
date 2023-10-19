@@ -271,14 +271,14 @@ var (
 		},
 	}
 
-	fixedTimestamp          = time.Now()
-	shortDescription        = "A business partner is a person, an organization, or a group of persons or organizations in which a company has a business interest."
-	description             = "A workforce person is a natural person with a work agreement or relationship in form of a work assignment; it can be an employee or a contingent worker.\n"
-	systemInstanceAware     = false
-	sunsetDate              = "2022-01-08T15:47:04+00:00"
-	successors              = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1"]`
-	extensible              = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
-	resourceHash            = "123456"
+	fixedTimestamp         = time.Now()
+	shortDescription       = "A business partner is a person, an organization, or a group of persons or organizations in which a company has a business interest."
+	description            = "A workforce person is a natural person with a work agreement or relationship in form of a work assignment; it can be an employee or a contingent worker.\n"
+	systemInstanceAware    = false
+	sunsetDate             = "2022-01-08T15:47:04+00:00"
+	successors             = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1"]`
+	extensible             = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
+	resourceHash           = "123456"
 	versionValue           = "v1.1"
 	versionDeprecated      = false
 	versionDeprecatedSince = "v1.0"
@@ -1658,7 +1658,7 @@ func fixEntityTypes() []*model.EntityType {
 			Description:                  &description,
 			SystemInstanceAware:          &systemInstanceAware,
 			ChangeLogEntries:             json.RawMessage(changeLogEntries),
-			OrdPackageID:                 packageID,
+			PackageID:                    packageID,
 			Visibility:                   publicVisibility,
 			Links:                        json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
 			PartOfProducts:               json.RawMessage(products),

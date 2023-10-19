@@ -94,7 +94,7 @@ func TestService_Create(t *testing.T) {
 			svc := entitytype.NewService(entityTypeRepo, idSvc)
 
 			// WHEN
-			result, err := svc.Create(ctx, testCase.InputResourceType, testCase.InputResourceID, testCase.InputEntityTypeInput, 123)
+			result, err := svc.Create(ctx, testCase.InputResourceType, testCase.InputResourceID, packageID, testCase.InputEntityTypeInput, 123)
 
 			// THEN
 			if testCase.ExpectedError != nil {

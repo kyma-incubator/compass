@@ -16,25 +16,25 @@ type EntityTypeProcessor struct {
 	mock.Mock
 }
 
-// Process provides a mock function with given fields: ctx, resourceType, resourceID, entityTypes, resourceHashes
-func (_m *EntityTypeProcessor) Process(ctx context.Context, resourceType resource.Type, resourceID string, entityTypes []*model.EntityTypeInput, resourceHashes map[string]uint64) ([]*model.EntityType, error) {
-	ret := _m.Called(ctx, resourceType, resourceID, entityTypes, resourceHashes)
+// Process provides a mock function with given fields: ctx, resourceType, resourceID, entityTypes, packagesFromDB, resourceHashes
+func (_m *EntityTypeProcessor) Process(ctx context.Context, resourceType resource.Type, resourceID string, entityTypes []*model.EntityTypeInput, packagesFromDB []*model.Package, resourceHashes map[string]uint64) ([]*model.EntityType, error) {
+	ret := _m.Called(ctx, resourceType, resourceID, entityTypes, packagesFromDB, resourceHashes)
 
 	var r0 []*model.EntityType
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, []*model.EntityTypeInput, map[string]uint64) ([]*model.EntityType, error)); ok {
-		return rf(ctx, resourceType, resourceID, entityTypes, resourceHashes)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, []*model.EntityTypeInput, []*model.Package, map[string]uint64) ([]*model.EntityType, error)); ok {
+		return rf(ctx, resourceType, resourceID, entityTypes, packagesFromDB, resourceHashes)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, []*model.EntityTypeInput, map[string]uint64) []*model.EntityType); ok {
-		r0 = rf(ctx, resourceType, resourceID, entityTypes, resourceHashes)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, []*model.EntityTypeInput, []*model.Package, map[string]uint64) []*model.EntityType); ok {
+		r0 = rf(ctx, resourceType, resourceID, entityTypes, packagesFromDB, resourceHashes)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.EntityType)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, []*model.EntityTypeInput, map[string]uint64) error); ok {
-		r1 = rf(ctx, resourceType, resourceID, entityTypes, resourceHashes)
+	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, []*model.EntityTypeInput, []*model.Package, map[string]uint64) error); ok {
+		r1 = rf(ctx, resourceType, resourceID, entityTypes, packagesFromDB, resourceHashes)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -23,7 +23,7 @@ type EntityType struct {
 	Description                  *string
 	SystemInstanceAware          *bool
 	ChangeLogEntries             json.RawMessage
-	OrdPackageID                 string
+	PackageID                    string
 	Visibility                   string
 	Links                        json.RawMessage
 	PartOfProducts               json.RawMessage
@@ -85,7 +85,7 @@ type EntityTypeInput struct {
 }
 
 // ToEntityType missing godoc
-func (i *EntityTypeInput) ToEntityType(id string, resourceType resource.Type, resourceID string, entityTypeHash uint64) *EntityType {
+func (i *EntityTypeInput) ToEntityType(id string, resourceType resource.Type, resourceID string, packageID string, entityTypeHash uint64) *EntityType {
 	if i == nil {
 		return nil
 	}
@@ -109,7 +109,7 @@ func (i *EntityTypeInput) ToEntityType(id string, resourceType resource.Type, re
 		Description:         i.Description,
 		SystemInstanceAware: i.SystemInstanceAware,
 		ChangeLogEntries:    i.ChangeLogEntries,
-		OrdPackageID:        i.OrdPackageID,
+		PackageID:           packageID,
 		Visibility:          i.Visibility,
 		Links:               i.Links,
 		PartOfProducts:      i.PartOfProducts,
@@ -150,7 +150,7 @@ func (entityType *EntityType) SetFromUpdateInput(update EntityTypeInput, entityT
 	entityType.Description = update.Description
 	entityType.SystemInstanceAware = update.SystemInstanceAware
 	entityType.ChangeLogEntries = update.ChangeLogEntries
-	entityType.OrdPackageID = update.OrdPackageID
+	entityType.PackageID = update.OrdPackageID
 	entityType.Visibility = update.Visibility
 	entityType.Links = update.Links
 	entityType.PartOfProducts = update.PartOfProducts
