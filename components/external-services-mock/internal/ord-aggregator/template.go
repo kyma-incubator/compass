@@ -119,7 +119,7 @@ const ordDocument = `{
    ],
    "entityTypes":[
       {
-         "ordId":"ns:package:ENTITYTYPE_ID{{ .randomSuffix }}:v1",
+         "ordId":"ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1",
          "vendor":"sap:vendor:SAP:",
          "localId":"BusinessPartner",
          "level":"aggregate",
