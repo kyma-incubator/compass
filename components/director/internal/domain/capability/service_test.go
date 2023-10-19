@@ -2,6 +2,9 @@ package capability_test
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/capability"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/capability/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -12,8 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestService_ListByApplicationID(t *testing.T) {
