@@ -143,7 +143,7 @@ DROP VIEW IF EXISTS tenants_entity_types;
 CREATE OR REPLACE VIEW tenants_entity_types
             (tenant_id, formation_id, id, ord_id, app_id, local_id, level, title, short_description, description, system_instance_aware, 
             changelog_entries, package_id, visibility, links, part_of_products, policy_level,
-            custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, 
+            custom_policy_level, release_status, sunset_date, successors, extensible_supported, extensible_description, tags, labels, 
             documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal)
 AS
 SELECT DISTINCT t_apps.tenant_id,
@@ -167,7 +167,8 @@ SELECT DISTINCT t_apps.tenant_id,
                 et.release_status,
                 et.sunset_date,
                 et.successors,
-                et.extensible,
+                actions.supported,
+                actions.description,
                 et.tags,
                 et.labels,
                 et.documentation_labels,
