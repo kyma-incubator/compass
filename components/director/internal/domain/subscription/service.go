@@ -221,7 +221,7 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 		return false, errors.Errorf("entity %s does not have access table", resource.Runtime)
 	}
 
-	if err := repo.UpsertTenantAccessRecursively(ctx, m2mTable, &repo.TenantAccess{
+	if err := repo.CreateTenantAccessRecursively(ctx, m2mTable, &repo.TenantAccess{
 		TenantID:   consumerInternalTenant,
 		ResourceID: runtime.ID,
 		Owner:      false,

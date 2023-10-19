@@ -143,7 +143,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3304"
+      version: "PR-3371"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -151,7 +151,7 @@ global:
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3366"
+      version: "PR-3380"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
@@ -163,7 +163,7 @@ global:
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3304"
+      version: "PR-3402"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
@@ -200,7 +200,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3304"
+      version: "PR-3371"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
