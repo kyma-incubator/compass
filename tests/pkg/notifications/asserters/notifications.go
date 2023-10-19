@@ -3,7 +3,6 @@ package asserters
 import (
 	"context"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -59,7 +58,6 @@ func (a *NotificationsAsserter) AssertExpectations(t *testing.T, ctx context.Con
 	assertNotificationsCount(t, body, a.targetObjectID, a.expectedNotificationsCount)
 
 	notificationsForTarget := gjson.GetBytes(body, a.targetObjectID)
-	spew.Dump(string(notificationsForTarget.String()))
 	assignNotificationAboutSource := notificationsForTarget.Array()[0]
 	err := verifyFormationAssignmentNotification(t, assignNotificationAboutSource, assignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.config, a.tenant, a.tenantParentCustomer, false)
 	require.NoError(t, err)

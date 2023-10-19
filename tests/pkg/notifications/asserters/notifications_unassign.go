@@ -2,7 +2,6 @@ package asserters
 
 import (
 	"context"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
@@ -47,7 +46,6 @@ func (a *UnassignNotificationsAsserter) AssertExpectations(t *testing.T, ctx con
 	body := getNotificationsFromExternalSvcMock(t, a.client, a.externalServicesMockMtlsSecuredURL)
 
 	notificationsForTarget := gjson.GetBytes(body, a.targetObjectID)
-	spew.Dump(string(notificationsForTarget.String()))
 	notificationsFoundCount := 0
 	for _, notification := range notificationsForTarget.Array() {
 		op := notification.Get("Operation").String()
