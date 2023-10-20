@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -109,7 +109,8 @@ const (
 	expectedNumberOfSystemInstancesInSubscription = 1
 	expectedNumberOfPackages                      = 7
 	expectedNumberOfPackagesInSubscription        = 1
-	expectedNumberOfEntityTypes                   = 1
+	expectedNumberOfEntityTypes                   = 7
+	expectedNumberOfEntityTypesInSubscription     = 1
 	expectedNumberOfBundles                       = 14
 	expectedNumberOfBundlesInSubscription         = 2
 	expectedNumberOfAPIs                          = 21
@@ -691,7 +692,7 @@ func TestORDAggregator(stdT *testing.T) {
 			}
 		}()
 		require.NoError(t, err)
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
 
@@ -856,6 +857,16 @@ func TestORDAggregator(stdT *testing.T) {
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEventsInSubscription, descriptionField)
 			t.Log("Successfully verified events")
 
+			// Verify entity types
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/entityTypes?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfEntityTypesInSubscription {
+				t.Log("Missing Entity Types...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfEntityTypesInSubscription)
+			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfEntityTypesInSubscription, expectedEntityTypeTitle, expectedEntityTypeDescription, descriptionField)
+			t.Log("Successfully verified EntityTypes")
+
 			// Verify defaultBundle for events
 			assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfEventsInSubscription, eventsDefaultBundleMap, ordAndInternalIDsMappingForBundles)
 			t.Log("Successfully verified defaultBundles for events")
@@ -925,6 +936,7 @@ func TestORDAggregator(stdT *testing.T) {
 		numberOfAPIs := 3
 		numberOfPublicAPIs := 1
 		numberOfEvents := 4
+		numberOfEntityTypes := 1
 		numberOfPublicEvents := 2
 		numberOfCapabilities := 1
 		numberOfPublicCapabilities := 1
@@ -996,6 +1008,9 @@ func TestORDAggregator(stdT *testing.T) {
 
 		capabilitiesMap := make(map[string]string)
 		capabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
+
+		entityTypesMap := make(map[string]string)
+		entityTypesMap[expectedEntityTypeTitle] = expectedEntityTypeDescription
 
 		publicCapabilitiesMap := make(map[string]string)
 		publicCapabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
@@ -1199,6 +1214,16 @@ func TestORDAggregator(stdT *testing.T) {
 
 			// verify apis and events visibility via Director's graphql
 			verifyEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, mergeMaps(apisMap, eventsMap), mergeMaps(publicApisMap, publicEventsMap), apisAndEventsNumber, app.ID)
+
+			// Verify entity types
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/entityTypes?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfEntityTypes {
+				t.Log("Missing Entity Types...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfEntityTypes)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, entityTypesMap, numberOfEntityTypes, descriptionField)
+			t.Log("Successfully verified EntityTypes")
 
 			// Verify capabilities
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/capabilities?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
