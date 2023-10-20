@@ -36,7 +36,7 @@ const (
 	// BundleOrdIDRegex represents the valid structure of the ordID of the ConsumptionBundle
 	BundleOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(consumptionBundle):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// TombstoneOrdIDRegex represents the valid structure of the ordID of the Tombstone
-	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource|capability):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*|)$"
+	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource|capability|integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*|)$"
 	// SystemInstanceBaseURLRegex represents the valid structure of the field
 	SystemInstanceBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?(\\/[a-zA-Z0-9-\\._~]+)*$"
 	// ConfigBaseURLRegex represents the valid structure of the field
@@ -51,6 +51,8 @@ const (
 	EventOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// CapabilityOrdIDRegex represents the valid structure of the ordID of the Capability
 	CapabilityOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(capability):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
+	// IntegrationDependencyOrdIDRegex represents the valid structure of the ordID of the Integration Dependency
+	IntegrationDependencyOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(integrationDependency):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
 	// CorrelationIDsRegex represents the valid structure of the field
 	CorrelationIDsRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
 	// LabelsKeyRegex represents the valid structure of the field
@@ -154,6 +156,13 @@ const (
 	CapabilityVisibilityPrivate = private
 	// CapabilityVisibilityInternal is one of the available Capability visibility options
 	CapabilityVisibilityInternal = internal
+
+	// IntegrationDependencyVisibilityPublic is one of the available Integration Dependency visibility options
+	IntegrationDependencyVisibilityPublic = public
+	// IntegrationDependencyVisibilityPrivate is one of the available Integration Dependency visibility options
+	IntegrationDependencyVisibilityPrivate = private
+	// IntegrationDependencyVisibilityInternal is one of the available Integration Dependency visibility options
+	IntegrationDependencyVisibilityInternal = internal
 
 	// APIImplementationStandardDocumentAPI is one of the available api implementation standard options
 	APIImplementationStandardDocumentAPI string = "sap:ord-document-api:v1"
@@ -670,6 +679,43 @@ func validateCapabilityInputWithSuppressedErrors(capability *model.CapabilityInp
 		})))
 }
 
+func validateIntegrationDependencyInput(integrationDependency *model.IntegrationDependencyInput) error {
+	return validation.ValidateStruct(integrationDependency,
+		validation.Field(&integrationDependency.OrdID, validation.Required, validation.Match(regexp.MustCompile(IntegrationDependencyOrdIDRegex))),
+		validation.Field(&integrationDependency.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
+		validation.Field(&integrationDependency.CorrelationIDs, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
+		validation.Field(&integrationDependency.Name, validation.Required, validation.NewStringRule(noNewLines, "title should not contain line breaks"), validation.Length(MinTitleLength, MaxTitleLength)),
+		validation.Field(&integrationDependency.ShortDescription, validation.Required, validation.NewStringRule(noNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256)),
+		validation.Field(&integrationDependency.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
+		validation.Field(&integrationDependency.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
+		validation.Field(&integrationDependency.LastUpdate, validation.When(integrationDependency.LastUpdate != nil, validation.By(isValidDate))),
+		validation.Field(&integrationDependency.Visibility, validation.Required, validation.In(IntegrationDependencyVisibilityPublic, IntegrationDependencyVisibilityInternal, IntegrationDependencyVisibilityPrivate)),
+		validation.Field(&integrationDependency.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
+		validation.Field(&integrationDependency.SunsetDate, validation.When(*integrationDependency.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(integrationDependency.SunsetDate != nil, validation.By(isValidDate))),
+		validation.Field(&integrationDependency.Successors, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(IntegrationDependencyOrdIDRegex))
+		})),
+		validation.Field(&integrationDependency.Mandatory, validation.Required),
+		validation.Field(&integrationDependency.Aspects),
+		validation.Field(&integrationDependency.RelatedIntegrationDependencies),
+		validation.Field(&integrationDependency.Links, validation.By(validateORDLinks)),
+		validation.Field(&integrationDependency.Tags, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
+		validation.Field(&integrationDependency.Labels, validation.By(validateORDLabels)),
+		validation.Field(&integrationDependency.DocumentationLabels, validation.By(validateDocumentationLabels)))
+}
+
+// fields with validation errors will lead to persisting of the IntegrationDependency resource
+func validateIntegrationDependencyInputWithSuppressedErrors(integrationDependency *model.IntegrationDependencyInput, integrationDependenciesFromDB map[string]*model.IntegrationDependency, integrationDependencyHashes map[string]uint64) error {
+	return validation.ValidateStruct(integrationDependency,
+		validation.Field(&integrationDependency.VersionInput.Value, validation.By(func(value interface{}) error {
+			return validateIntegrationDependencyVersionInput(value, *integrationDependency, integrationDependenciesFromDB, integrationDependencyHashes)
+		})))
+}
+
 func validateProductInput(product *model.ProductInput) error {
 	productOrdIDNamespace := strings.Split(product.OrdID, ":")[0]
 
@@ -1160,6 +1206,26 @@ func validateCapabilityVersionInput(value interface{}, capability model.Capabili
 	return checkHashEquality(capabilityFromDB.Version.Value, capability.VersionInput.Value, hashDB, hashDoc)
 }
 
+func validateIntegrationDependencyVersionInput(value interface{}, integrationDependency model.IntegrationDependencyInput, integrationDependenciesFromDB map[string]*model.IntegrationDependency, integrationDependencyHashes map[string]uint64) error {
+	if value == nil {
+		return nil
+	}
+
+	if len(integrationDependenciesFromDB) == 0 {
+		return nil
+	}
+
+	integrationDependencyFromDB, ok := integrationDependenciesFromDB[str.PtrStrToStr(integrationDependency.OrdID)]
+	if !ok || isResourceHashMissing(integrationDependencyFromDB.ResourceHash) {
+		return nil
+	}
+
+	hashDB := str.PtrStrToStr(integrationDependencyFromDB.ResourceHash)
+	hashDoc := strconv.FormatUint(integrationDependencyHashes[str.PtrStrToStr(integrationDependency.OrdID)], 10)
+
+	return checkHashEquality(integrationDependencyFromDB.Version.Value, integrationDependency.VersionInput.Value, hashDB, hashDoc)
+}
+
 func normalizeAPIDefinition(api *model.APIDefinitionInput) (model.APIDefinitionInput, error) {
 	bytes, err := json.Marshal(api)
 	if err != nil {
@@ -1200,6 +1266,20 @@ func normalizeCapability(capability *model.CapabilityInput) (model.CapabilityInp
 	}
 
 	return normalizedCapability, nil
+}
+
+func normalizeIntegrationDependency(integrationDependency *model.IntegrationDependencyInput) (model.IntegrationDependencyInput, error) {
+	bytes, err := json.Marshal(integrationDependency)
+	if err != nil {
+		return model.IntegrationDependencyInput{}, errors.Wrapf(err, "error while marshalling integration dependency with ID %s", str.PtrStrToStr(integrationDependency.OrdID))
+	}
+
+	var normalizedIntegrationDependency model.IntegrationDependencyInput
+	if err := json.Unmarshal(bytes, &normalizedIntegrationDependency); err != nil {
+		return model.IntegrationDependencyInput{}, errors.Wrapf(err, "error while unmarshalling integration dependency with ID %s", str.PtrStrToStr(integrationDependency.OrdID))
+	}
+
+	return normalizedIntegrationDependency, nil
 }
 
 func normalizePackage(pkg *model.PackageInput) (model.PackageInput, error) {

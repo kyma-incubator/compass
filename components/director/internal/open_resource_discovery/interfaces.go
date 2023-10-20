@@ -86,6 +86,22 @@ type CapabilityService interface {
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
 }
 
+// IntegrationDependencyService is responsible for the service-layer IntegrationDependency operations.
+//
+//go:generate mockery --name=IntegrationDependencyService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type IntegrationDependencyService interface {
+	ListByApplicationID(ctx context.Context, appID string) ([]*model.IntegrationDependency, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.IntegrationDependency, error)
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
+}
+
+// IntegrationDependencyProcessor is responsible for processing of integration dependency entities.
+//
+//go:generate mockery --name=IntegrationDependencyProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type IntegrationDependencyProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, packagesFromDB []*model.Package, integrationDependencies []*model.IntegrationDependencyInput, resourceHashes map[string]uint64) ([]*model.IntegrationDependency, error)
+}
+
 // SpecService is responsible for the service-layer Specification operations.
 //
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string

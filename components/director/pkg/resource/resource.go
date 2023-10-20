@@ -72,6 +72,8 @@ const (
 	EventDefinition Type = "eventDefinition"
 	// Capability type represents capability resource.
 	Capability Type = "capability"
+	// IntegrationDependency type represents integration dependency resource.
+	IntegrationDependency Type = "integrationDependency"
 	// AutomaticScenarioAssigment type represents ASA resource.
 	AutomaticScenarioAssigment Type = "automaticScenarioAssigment"
 	// CertSubjectMapping type represents certificate subject mapping resource

@@ -88,24 +88,26 @@ type Service struct {
 
 	transact persistence.Transactioner
 
-	appSvc                ApplicationService
-	webhookSvc            WebhookService
-	bundleSvc             BundleService
-	bundleReferenceSvc    BundleReferenceService
-	apiSvc                APIService
-	eventSvc              EventService
-	capabilitySvc         CapabilityService
-	specSvc               SpecService
-	fetchReqSvc           FetchRequestService
-	packageSvc            PackageService
-	productSvc            ProductService
-	vendorSvc             VendorService
-	tombstoneProcessor    TombstoneProcessor
-	tenantSvc             TenantService
-	appTemplateVersionSvc ApplicationTemplateVersionService
-	appTemplateSvc        ApplicationTemplateService
-	labelSvc              LabelService
-	opSvc                 operationsmanager.OperationService
+	appSvc                         ApplicationService
+	webhookSvc                     WebhookService
+	bundleSvc                      BundleService
+	bundleReferenceSvc             BundleReferenceService
+	apiSvc                         APIService
+	eventSvc                       EventService
+	capabilitySvc                  CapabilityService
+	integrationDependencySvc       IntegrationDependencyService
+	integrationDependencyProcessor IntegrationDependencyProcessor
+	specSvc                        SpecService
+	fetchReqSvc                    FetchRequestService
+	packageSvc                     PackageService
+	productSvc                     ProductService
+	vendorSvc                      VendorService
+	tombstoneProcessor             TombstoneProcessor
+	tenantSvc                      TenantService
+	appTemplateVersionSvc          ApplicationTemplateVersionService
+	appTemplateSvc                 ApplicationTemplateService
+	labelSvc                       LabelService
+	opSvc                          operationsmanager.OperationService
 
 	ordWebhookMapping []application.ORDWebhookMapping
 
@@ -116,33 +118,35 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, capabilitySvc CapabilityService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, capabilitySvc CapabilityService, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
-		config:                config,
-		metricsCfg:            metricsCfg,
-		transact:              transact,
-		appSvc:                appSvc,
-		webhookSvc:            webhookSvc,
-		bundleSvc:             bundleSvc,
-		bundleReferenceSvc:    bundleReferenceSvc,
-		apiSvc:                apiSvc,
-		eventSvc:              eventSvc,
-		capabilitySvc:         capabilitySvc,
-		specSvc:               specSvc,
-		fetchReqSvc:           fetchReqSvc,
-		packageSvc:            packageSvc,
-		productSvc:            productSvc,
-		vendorSvc:             vendorSvc,
-		tombstoneProcessor:    tombstoneProcessor,
-		tenantSvc:             tenantSvc,
-		globalRegistrySvc:     globalRegistrySvc,
-		ordClient:             client,
-		webhookConverter:      webhookConverter,
-		appTemplateVersionSvc: appTemplateVersionSvc,
-		appTemplateSvc:        appTemplateSvc,
-		labelSvc:              labelService,
-		ordWebhookMapping:     ordWebhookMapping,
-		opSvc:                 opSvc,
+		config:                         config,
+		metricsCfg:                     metricsCfg,
+		transact:                       transact,
+		appSvc:                         appSvc,
+		webhookSvc:                     webhookSvc,
+		bundleSvc:                      bundleSvc,
+		bundleReferenceSvc:             bundleReferenceSvc,
+		apiSvc:                         apiSvc,
+		eventSvc:                       eventSvc,
+		capabilitySvc:                  capabilitySvc,
+		integrationDependencySvc:       integrationDependencySvc,
+		integrationDependencyProcessor: integrationDependencyProcessor,
+		specSvc:                        specSvc,
+		fetchReqSvc:                    fetchReqSvc,
+		packageSvc:                     packageSvc,
+		productSvc:                     productSvc,
+		vendorSvc:                      vendorSvc,
+		tombstoneProcessor:             tombstoneProcessor,
+		tenantSvc:                      tenantSvc,
+		globalRegistrySvc:              globalRegistrySvc,
+		ordClient:                      client,
+		webhookConverter:               webhookConverter,
+		appTemplateVersionSvc:          appTemplateVersionSvc,
+		appTemplateSvc:                 appTemplateSvc,
+		labelSvc:                       labelService,
+		ordWebhookMapping:              ordWebhookMapping,
+		opSvc:                          opSvc,
 	}
 }
 
@@ -400,13 +404,18 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 			return err
 		}
 
+		integrationDependenciesFromDB, err := s.integrationDependencyProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.IntegrationDependencies, resourceHashes)
+		if err != nil {
+			return err
+		}
+
 		tombstonesFromDB, err := s.tombstoneProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Tombstones)
 		if err != nil {
 			return err
 		}
 
 		fetchRequests := appendFetchRequests(apiFetchRequests, eventFetchRequests, capabilitiesFetchRequests)
-		fetchRequests, err = s.deleteTombstonedResources(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, capabilitiesFromDB, tombstonesFromDB, fetchRequests)
+		fetchRequests, err = s.deleteTombstonedResources(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, capabilitiesFromDB, integrationDependenciesFromDB, tombstonesFromDB, fetchRequests)
 		if err != nil {
 			return err
 		}
@@ -549,7 +558,7 @@ func (s *Service) processFetchRequestResultGlobal(ctx context.Context, result *f
 	return s.fetchReqSvc.UpdateGlobal(ctx, result.fetchRequest)
 }
 
-func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType directorresource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, capabilitiesFromDB []*model.Capability, tombstonesFromDB []*model.Tombstone, fetchRequests []*ordFetchRequest) ([]*ordFetchRequest, error) {
+func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType directorresource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, capabilitiesFromDB []*model.Capability, integrationDependenciesFromDB []*model.IntegrationDependency, tombstonesFromDB []*model.Tombstone, fetchRequests []*ordFetchRequest) ([]*ordFetchRequest, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -585,6 +594,13 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType di
 			return equalStrings(capabilitiesFromDB[i].OrdID, &ts.OrdID)
 		}); found {
 			if err := s.capabilitySvc.Delete(ctx, resourceType, capabilitiesFromDB[i].ID); err != nil {
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+			}
+		}
+		if i, found := searchInSlice(len(integrationDependenciesFromDB), func(i int) bool {
+			return equalStrings(integrationDependenciesFromDB[i].OrdID, &ts.OrdID)
+		}); found {
+			if err := s.integrationDependencySvc.Delete(ctx, resourceType, integrationDependenciesFromDB[i].ID); err != nil {
 				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
@@ -1675,6 +1691,31 @@ func (s *Service) fetchCapabilitiesFromDB(ctx context.Context, resourceType dire
 	return capabilitiesDataFromDB, nil
 }
 
+func (s *Service) fetchIntegrationDependenciesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.IntegrationDependency, error) {
+	var (
+		integrationDependenciesFromDB []*model.IntegrationDependency
+		err                           error
+	)
+
+	if resourceType == directorresource.ApplicationTemplateVersion {
+		integrationDependenciesFromDB, err = s.integrationDependencySvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+	} else {
+		integrationDependenciesFromDB, err = s.integrationDependencySvc.ListByApplicationID(ctx, resourceID)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	integrationDependenciesDataFromDB := make(map[string]*model.IntegrationDependency, len(integrationDependenciesFromDB))
+
+	for _, integrationDependency := range integrationDependenciesFromDB {
+		integrationDependencyOrdID := str.PtrStrToStr(integrationDependency.OrdID)
+		integrationDependenciesDataFromDB[integrationDependencyOrdID] = integrationDependency
+	}
+
+	return integrationDependenciesDataFromDB, nil
+}
+
 func (s *Service) fetchPackagesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Package, error) {
 	var (
 		packagesFromDB []*model.Package
@@ -1784,6 +1825,7 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 	packageDataFromDB := make(map[string]*model.Package)
 	bundleDataFromDB := make(map[string]*model.Bundle)
 	capabilitiesDataFromDB := make(map[string]*model.Capability)
+	integrationDependenciesFromDB := make(map[string]*model.IntegrationDependency)
 
 	for resourceID, resourceType := range resourceIDs {
 		apiData, err := s.fetchAPIDefFromDB(ctx, resourceType, resourceID)
@@ -1811,6 +1853,11 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching capabilities for %s with id %s", resourceType, resourceID)
 		}
 
+		integrationDependencyData, err := s.fetchIntegrationDependenciesFromDB(ctx, resourceType, resourceID)
+		if err != nil {
+			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching integration dependencies for %s with id %s", resourceType, resourceID)
+		}
+
 		if err = mergo.Merge(&apiDataFromDB, apiData); err != nil {
 			return ResourcesFromDB{}, err
 		}
@@ -1826,14 +1873,18 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 		if err = mergo.Merge(&capabilitiesDataFromDB, capabilityData); err != nil {
 			return ResourcesFromDB{}, err
 		}
+		if err = mergo.Merge(&integrationDependenciesFromDB, integrationDependencyData); err != nil {
+			return ResourcesFromDB{}, err
+		}
 	}
 
 	return ResourcesFromDB{
-		APIs:         apiDataFromDB,
-		Events:       eventDataFromDB,
-		Packages:     packageDataFromDB,
-		Bundles:      bundleDataFromDB,
-		Capabilities: capabilitiesDataFromDB,
+		APIs:                    apiDataFromDB,
+		Events:                  eventDataFromDB,
+		Packages:                packageDataFromDB,
+		Bundles:                 bundleDataFromDB,
+		Capabilities:            capabilitiesDataFromDB,
+		IntegrationDependencies: integrationDependenciesFromDB,
 	}, tx.Commit()
 }
 
@@ -2178,6 +2229,20 @@ func hashResources(docs Documents) (map[string]uint64, error) {
 			}
 
 			resourceHashes[str.PtrStrToStr(capabilityInput.OrdID)] = hash
+		}
+
+		for _, integrationDependencyInput := range doc.IntegrationDependencies {
+			normalizedIntegrationDependencies, err := normalizeIntegrationDependency(integrationDependencyInput)
+			if err != nil {
+				return nil, err
+			}
+
+			hash, err := HashObject(normalizedIntegrationDependencies)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while hashing integration dependency with ORD ID: %s", str.PtrStrToStr(normalizedIntegrationDependencies.OrdID))
+			}
+
+			resourceHashes[str.PtrStrToStr(integrationDependencyInput.OrdID)] = hash
 		}
 
 		for _, packageInput := range doc.Packages {
