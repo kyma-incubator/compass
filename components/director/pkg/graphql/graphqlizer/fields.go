@@ -150,6 +150,8 @@ func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
 		webhooks {%s}
 		labels
 		accessLevel
+		createdAt
+		updatedAt
 	`, fp.ForPlaceholders(), fp.ForWebhooks())
 }
 

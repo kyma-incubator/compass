@@ -2,7 +2,6 @@ package apptemplate
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
@@ -18,9 +17,9 @@ import (
 const tableName string = `public.app_templates`
 
 var (
-	updatableTableColumns = []string{"name", "description", "application_namespace", "application_input", "placeholders", "access_level"}
+	updatableTableColumns = []string{"name", "description", "application_namespace", "application_input", "placeholders", "access_level", "updated_at"}
 	idTableColumns        = []string{"id"}
-	tableColumns          = append(idTableColumns, updatableTableColumns...)
+	tableColumns          = append(idTableColumns, "name", "description", "application_namespace", "application_input", "placeholders", "access_level", "created_at", "updated_at")
 )
 
 // EntityConverter missing godoc
@@ -59,6 +58,7 @@ func NewRepository(conv EntityConverter) *repository {
 // Create missing godoc
 func (r *repository) Create(ctx context.Context, item model.ApplicationTemplate) error {
 	log.C(ctx).Debugf("Converting Application Template with id %s to entity", item.ID)
+
 	entity, err := r.conv.ToEntity(&item)
 	if err != nil {
 		return errors.Wrapf(err, "while converting Application Template with ID %s", item.ID)

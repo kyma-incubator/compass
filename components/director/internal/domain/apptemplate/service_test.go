@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
@@ -60,6 +60,7 @@ func TestService_Create(t *testing.T) {
 		WebhookRepoFn     func() *automock.WebhookRepository
 		LabelUpsertSvcFn  func() *automock.LabelUpsertService
 		LabelRepoFn       func() *automock.LabelRepository
+		TimeSvcFn         func() *automock.TimeService
 		ExpectedError     error
 		ExpectedOutput    string
 	}{
@@ -301,7 +302,12 @@ func TestService_Create(t *testing.T) {
 			labelUpsertSvc := testCase.LabelUpsertSvcFn()
 			labelRepo := testCase.LabelRepoFn()
 			idSvc := uidSvcFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, idSvc, labelUpsertSvc, labelRepo, nil)
+			timeSvc := TimeService()
+			if testCase.TimeSvcFn != nil {
+				timeSvc = testCase.TimeSvcFn()
+			}
+
+			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, idSvc, labelUpsertSvc, labelRepo, nil, timeSvc)
 
 			// WHEN
 			result, err := svc.Create(ctx, *testCase.Input())
@@ -390,7 +396,9 @@ func TestService_CreateWithLabels(t *testing.T) {
 			webhookRepo := testCase.WebhookRepoFn()
 			labelUpsertSvc := testCase.LabelUpsertSvcFn()
 			idSvc := uidSvcFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, idSvc, labelUpsertSvc, nil, nil)
+			timeSvc := TimeService()
+
+			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, idSvc, labelUpsertSvc, nil, nil, timeSvc)
 
 			defer mock.AssertExpectationsForObjects(t, appTemplateRepo, labelUpsertSvc, idSvc)
 
@@ -448,7 +456,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil, nil)
+			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.Get(ctx, testID)
@@ -558,7 +566,7 @@ func TestService_ListLabels(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
 			labelRepo := testCase.LabelRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, labelRepo, nil)
+			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, labelRepo, nil, nil)
 
 			// WHEN
 			result, err := svc.ListLabels(ctx, testID)
@@ -657,7 +665,7 @@ func TestService_GetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
 			labelRepo := testCase.LabelRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, labelRepo, nil)
+			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, labelRepo, nil, nil)
 
 			// WHEN
 			result, err := svc.GetLabel(ctx, testID, testCase.Key)
@@ -712,7 +720,7 @@ func TestService_ListByName(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil, nil)
+			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.ListByName(ctx, testName)
@@ -767,7 +775,7 @@ func TestService_ListByFilters(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil, nil)
+			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.ListByFilters(ctx, filters)
@@ -873,7 +881,7 @@ func TestService_GetByNameAndRegion(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
 			labelRepo := testCase.LabelRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, labelRepo, nil)
+			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, labelRepo, nil, nil)
 
 			// WHEN
 			result, err := svc.GetByNameAndRegion(ctx, testName, testCase.Region)
@@ -929,7 +937,7 @@ func TestService_GetByFilters(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil, nil)
+			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.GetByFilters(ctx, filters)
@@ -986,7 +994,7 @@ func TestService_Exists(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil, nil)
+			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.Exists(ctx, testID)
@@ -1073,7 +1081,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil, nil)
+			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.List(ctx, labelFilters, testCase.InputPageSize, testCursor)
@@ -1102,6 +1110,10 @@ func TestService_Update(t *testing.T) {
 	modelAppTemplateWithNewName := fixModelAppTemplateWithAppInputJSON(testID, updatedAppTemplateTestName, appInputJSONWithNewAppType, []*model.Webhook{})
 	modelAppTemplateOtherSystemType := fixModelAppTemplateWithAppInputJSON(testID, testNameOtherSystemType, appInputJSON, nil)
 	modelAppTemplateWithLabels := fixModelAppTemplateWithAppInputJSONAndLabels(testID, testName, appInputJSON, []*model.Webhook{}, newTestLabels)
+
+	modelAppTemplateWithLabels.CreatedAt = time.Time{}
+	modelAppTemplateWithNewName.CreatedAt = time.Time{}
+
 	modelAppTemplateUpdateInput := fixModelAppTemplateUpdateInputWithLabels(testName, appInputJSON, newTestLabels)
 
 	modelApplicationFromTemplate := fixModelApplication(testAppID, testAppName)
@@ -1115,6 +1127,7 @@ func TestService_Update(t *testing.T) {
 		LabelUpsertSvcFn  func() *automock.LabelUpsertService
 		LabelRepoFn       func() *automock.LabelRepository
 		AppRepoFn         func() *automock.ApplicationRepository
+		TimeSvcFn         func() *automock.TimeService
 		ExpectedError     error
 	}{
 		{
@@ -1326,6 +1339,7 @@ func TestService_Update(t *testing.T) {
 				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(nil, testError).Once()
 				return appTemplateRepo
 			},
+			TimeSvcFn:        UnusedTimeService,
 			WebhookRepoFn:    UnusedWebhookRepo,
 			LabelUpsertSvcFn: UnusedLabelUpsertSvc,
 			LabelRepoFn:      UnusedLabelRepo,
@@ -1343,6 +1357,7 @@ func TestService_Update(t *testing.T) {
 				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
 				return appTemplateRepo
 			},
+			TimeSvcFn:        UnusedTimeService,
 			WebhookRepoFn:    UnusedWebhookRepo,
 			LabelUpsertSvcFn: UnusedLabelUpsertSvc,
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -1359,6 +1374,7 @@ func TestService_Update(t *testing.T) {
 				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":123,"test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
 				return fixModelAppTemplateUpdateInput(testName, appInputJSON)
 			},
+			TimeSvcFn: UnusedTimeService,
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
@@ -1380,6 +1396,7 @@ func TestService_Update(t *testing.T) {
 				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"random-text","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
 				return fixModelAppTemplateUpdateInput(testName, appInputJSON)
 			},
+			TimeSvcFn: UnusedTimeService,
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
@@ -1406,6 +1423,7 @@ func TestService_Update(t *testing.T) {
 				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"random-text","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
 
 				modelOtherSystemTypeUpdate := fixModelAppTemplateWithAppInputJSONAndLabels(testID, testNameOtherSystemType, appInputJSON, []*model.Webhook{}, newTestLabels)
+				modelOtherSystemTypeUpdate.CreatedAt = time.Time{}
 				appTemplateRepo.On("Get", ctx, modelAppTemplateOtherSystemType.ID).Return(modelAppTemplateOtherSystemType, nil).Once()
 				appTemplateRepo.On("Update", ctx, *modelOtherSystemTypeUpdate).Return(nil).Once()
 				return appTemplateRepo
@@ -1435,6 +1453,7 @@ func TestService_Update(t *testing.T) {
 			Input: func() *model.ApplicationTemplateUpdateInput {
 				return fixModelAppTemplateUpdateInput(testName+"test", appInputJSON)
 			},
+			TimeSvcFn: UnusedTimeService,
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
@@ -1455,6 +1474,7 @@ func TestService_Update(t *testing.T) {
 			Input: func() *model.ApplicationTemplateUpdateInput {
 				return fixModelAppTemplateUpdateInput(testName+"test", appInputJSONString)
 			},
+			TimeSvcFn: UnusedTimeService,
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("ListByName", ctx, testName+"test").Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
@@ -1477,6 +1497,7 @@ func TestService_Update(t *testing.T) {
 			Input: func() *model.ApplicationTemplateUpdateInput {
 				return fixModelAppTemplateUpdateInput(testName+"test", appInputJSONString)
 			},
+			TimeSvcFn: UnusedTimeService,
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("ListByName", ctx, testName+"test").Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
@@ -1554,7 +1575,12 @@ func TestService_Update(t *testing.T) {
 			labelRepo := testCase.LabelRepoFn()
 			labelUpsertService := testCase.LabelUpsertSvcFn()
 			appRepo := testCase.AppRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, labelUpsertService, labelRepo, appRepo)
+			timeSvc := TimeService()
+			if testCase.TimeSvcFn != nil {
+				timeSvc = testCase.TimeSvcFn()
+			}
+
+			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, labelUpsertService, labelRepo, appRepo, timeSvc)
 
 			// WHEN
 			err := svc.Update(ctx, testID, *testCase.Input())
@@ -1567,10 +1593,7 @@ func TestService_Update(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			appTemplateRepo.AssertExpectations(t)
-			labelRepo.AssertExpectations(t)
-			labelUpsertService.AssertExpectations(t)
-			appRepo.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, appTemplateRepo, labelRepo, labelUpsertService, appRepo, timeSvc)
 		})
 	}
 }
@@ -1610,7 +1633,7 @@ func TestService_Delete(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil, nil)
+			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.Delete(ctx, testID)
@@ -1630,7 +1653,7 @@ func TestService_Delete(t *testing.T) {
 
 func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 	// GIVEN
-	svc := apptemplate.NewService(nil, nil, nil, nil, nil, nil)
+	svc := apptemplate.NewService(nil, nil, nil, nil, nil, nil, nil)
 	placeholderNotOptional := false
 	placeholderIsOptional := true
 
@@ -1808,4 +1831,14 @@ func UnusedAppTemplateRepo() *automock.ApplicationTemplateRepository {
 
 func UnusedAppRepo() *automock.ApplicationRepository {
 	return &automock.ApplicationRepository{}
+}
+
+func UnusedTimeService() *automock.TimeService {
+	return &automock.TimeService{}
+}
+
+func TimeService() *automock.TimeService {
+	svc := &automock.TimeService{}
+	svc.On("Now").Return(timestamp).Once()
+	return svc
 }
