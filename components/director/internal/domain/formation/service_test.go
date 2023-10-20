@@ -2645,23 +2645,23 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 	webhookModeAsyncCallback := graphql.WebhookModeAsyncCallback
 	notificationsForAssignments := []*webhookclient.FormationAssignmentNotificationRequest{
 		{
-			Webhook: graphql.Webhook{
+			Webhook: &graphql.Webhook{
 				ID: WebhookID,
 			},
 		},
 		{
-			Webhook: graphql.Webhook{
+			Webhook: &graphql.Webhook{
 				ID: Webhook2ID,
 			},
 		},
 		{
-			Webhook: graphql.Webhook{
+			Webhook: &graphql.Webhook{
 				ID:   Webhook3ID,
 				Mode: &webhookModeAsyncCallback,
 			},
 		},
 		{
-			Webhook: graphql.Webhook{
+			Webhook: &graphql.Webhook{
 				ID: Webhook4ID,
 			},
 		},

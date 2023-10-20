@@ -4,11 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	directortime "github.com/kyma-incubator/compass/components/director/pkg/time"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	directortime "github.com/kyma-incubator/compass/components/director/pkg/time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
 
