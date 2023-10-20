@@ -274,7 +274,7 @@ var (
         }
       ]`
 
-	invalidAPIResourceLinksDueToMissingType = `[
+	invalidResourceLinksDueToMissingType = `[
         {
           "url": "https://example.com/shell/discover"
         },
@@ -283,39 +283,39 @@ var (
           "url": "%s/shell/discover/relative"
         }
       ]`
-	invalidAPIResourceLinksDueToWrongType = `[
+	invalidResourceLinksDueToWrongType = `[
         {
           "type": "wrongType",
           "url": "https://example.com/shell/discover"
         }
       ]`
-	invalidAPIResourceLinksDueToMissingCustomValueOfType = `[
+	invalidResourceLinksDueToMissingCustomValueOfType = `[
         {
           "type": "console",
           "customType": "foo",
           "url": "https://example.com/shell/discover"
         }
       ]`
-	invalidAPIResourceLinksCustomFieldDueWrongFormat = `[
+	invalidResourceLinksCustomFieldDueWrongFormat = `[
 		{
 		  "type": "custom",
 		  "customType": "%^&wrong:{}",
 		  "url": "https://example.com/shell/discover"
 		}
 	  ]`
-	validAPIResourceLinksCustomField = `[
+	validResourceLinksCustomField = `[
 		{
 		  "type": "custom",
 		  "customType": "name.sap.com:spec.id:v1",
 		  "url": "https://example.com/shell/discover"
 		}
 	  ]`
-	invalidAPIResourceLinksDueToMissingURL = `[
+	invalidResourceLinksDueToMissingURL = `[
         {
           "type": "console"
         }
       ]`
-	invalidAPIResourceLinksDueToWrongURL = `[
+	invalidResourceLinksDueToWrongURL = `[
         {
           "type": "console",
           "url": "wrongURL"
@@ -3078,7 +3078,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `type` field for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksDueToMissingType)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidResourceLinksDueToMissingType)
 
 				return []*ord.Document{doc}
 			},
@@ -3086,7 +3086,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `type` field for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksDueToWrongType)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidResourceLinksDueToWrongType)
 
 				return []*ord.Document{doc}
 			},
@@ -3094,7 +3094,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid field `customType` when field `type` is not `custom` for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksDueToMissingCustomValueOfType)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidResourceLinksDueToMissingCustomValueOfType)
 
 				return []*ord.Document{doc}
 			},
@@ -3102,7 +3102,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid field `customType` with format is wrong for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksCustomFieldDueWrongFormat)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidResourceLinksCustomFieldDueWrongFormat)
 
 				return []*ord.Document{doc}
 			},
@@ -3110,7 +3110,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Valid field `customType` for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(validAPIResourceLinksCustomField)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(validResourceLinksCustomField)
 
 				return []*ord.Document{doc}
 			},
@@ -3119,7 +3119,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `url` field for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksDueToMissingURL)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidResourceLinksDueToMissingURL)
 
 				return []*ord.Document{doc}
 			},
@@ -3127,7 +3127,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `url` field for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksDueToWrongURL)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidResourceLinksDueToWrongURL)
 
 				return []*ord.Document{doc}
 			},
@@ -4094,6 +4094,23 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].LastUpdate = str.Ptr("string value")
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid format of `deprecationDate` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[1].DeprecationDate = str.Ptr("0000-00-00T09:35:30+0000")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `deprecationDate` field value for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[1].DeprecationDate = str.Ptr("string value")
 
 				return []*ord.Document{doc}
 			},
@@ -5188,6 +5205,88 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			},
 			ExpectedToBeValid: true,
 		}, {
+			Name: "Missing `type` field for `eventResourceLinks` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(invalidResourceLinksDueToMissingType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `type` field for `eventResourceLinks` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(invalidResourceLinksDueToWrongType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `customType` when field `type` is not `custom` for `eventResourceLink` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(invalidResourceLinksDueToMissingCustomValueOfType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `customType` with format is wrong for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(invalidResourceLinksCustomFieldDueWrongFormat)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `customType` field for `eventResourceLinks` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(validResourceLinksCustomField)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Missing `url` field for `eventResourceLinks` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(invalidResourceLinksDueToMissingURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `url` field for `eventResourceLinks` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(invalidResourceLinksDueToWrongURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `eventResourceLinks` field when it is invalid JSON for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `eventResourceLinks` field when it isn't a JSON array for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `eventResourceLinks` field when it is an empty JSON array for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
 			Name: "Invalid element of `partOfProducts` array field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -5995,6 +6094,23 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].LastUpdate = str.Ptr("string value")
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid format of `deprecationDate` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[1].DeprecationDate = str.Ptr("0000-00-00T09:35:30+0000")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `deprecationDate` field value for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[1].DeprecationDate = str.Ptr("string value")
 
 				return []*ord.Document{doc}
 			},

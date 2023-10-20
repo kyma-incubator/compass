@@ -203,7 +203,7 @@ var (
         }
       ]`)
 
-	apiResourceLinksFormat = removeWhitespace(`[
+	resourceLinksFormat = removeWhitespace(`[
         {
           "type": "console",
           "url": "https://example.com/shell/discover"
@@ -452,7 +452,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Tags:                                    json.RawMessage(`["apiTestTag"]`),
 				Countries:                               json.RawMessage(`["BG","US"]`),
 				Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
-				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, providedBaseURL)),
+				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(resourceLinksFormat, providedBaseURL)),
 				ReleaseStatus:                           str.Ptr("active"),
 				SunsetDate:                              nil,
 				Successors:                              nil,
@@ -527,7 +527,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Tags:                                    json.RawMessage(`["ZGWSAMPLE"]`),
 				Countries:                               json.RawMessage(`["BR"]`),
 				Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
-				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, providedBaseURL)),
+				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(resourceLinksFormat, providedBaseURL)),
 				ReleaseStatus:                           str.Ptr("deprecated"),
 				SunsetDate:                              str.Ptr("2020-12-08T15:47:04+0000"),
 				Successors:                              json.RawMessage(fmt.Sprintf(`["%s"]`, api1ORDID)),
@@ -544,6 +544,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				CustomImplementationStandard:            nil,
 				CustomImplementationStandardDescription: nil,
 				LastUpdate:                              str.Ptr("2022-01-26T15:47:04+00:00"),
+				DeprecationDate:                         str.Ptr("2020-11-08T15:47:04+0000"),
 				ResourceDefinitions: []*model.APIResourceDefinition{
 					{
 						Type:      "edmx",
@@ -587,6 +588,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				SystemInstanceAware:                     &boolPtr,
 				ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 				Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				EventResourceLinks:                      json.RawMessage(fmt.Sprintf(resourceLinksFormat, providedBaseURL)),
 				Tags:                                    json.RawMessage(`["eventTestTag"]`),
 				Countries:                               json.RawMessage(`["BG","US"]`),
 				ReleaseStatus:                           str.Ptr("active"),
@@ -635,6 +637,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				SystemInstanceAware: &boolPtr,
 				ChangeLogEntries:    json.RawMessage(changeLogEntries),
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				EventResourceLinks:  json.RawMessage(fmt.Sprintf(resourceLinksFormat, providedBaseURL)),
 				Tags:                json.RawMessage(`["eventTestTag2"]`),
 				Countries:           json.RawMessage(`["BR"]`),
 				ReleaseStatus:       str.Ptr("deprecated"),
@@ -649,6 +652,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
 				LastUpdate:          str.Ptr("2022-01-26T15:47:04+00:00"),
+				DeprecationDate:     str.Ptr("2020-11-08T15:47:04+0000"),
 				ResourceDefinitions: []*model.EventResourceDefinition{
 					{
 						Type:      "asyncapi-v2",
@@ -1161,7 +1165,7 @@ func fixAPIs() []*model.APIDefinition {
 			Tags:                                    json.RawMessage(`["testTag","apiTestTag"]`),
 			Countries:                               json.RawMessage(`["BG","EN","US"]`),
 			Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
-			APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseURL)),
+			APIResourceLinks:                        json.RawMessage(fmt.Sprintf(resourceLinksFormat, baseURL)),
 			ReleaseStatus:                           str.Ptr("active"),
 			ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 			Labels:                                  json.RawMessage(mergedLabels),
@@ -1195,7 +1199,7 @@ func fixAPIs() []*model.APIDefinition {
 			Tags:                                    json.RawMessage(`["testTag","ZGWSAMPLE"]`),
 			Countries:                               json.RawMessage(`["BG","EN","BR"]`),
 			Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
-			APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseURL)),
+			APIResourceLinks:                        json.RawMessage(fmt.Sprintf(resourceLinksFormat, baseURL)),
 			ReleaseStatus:                           str.Ptr("deprecated"),
 			SunsetDate:                              str.Ptr("2020-12-08T15:47:04+0000"),
 			Successors:                              json.RawMessage(fmt.Sprintf(`["%s"]`, api1ORDID)),
