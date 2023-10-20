@@ -410,6 +410,9 @@ var (
 	invalidExtensibleDueToCorrectSupportedButInvalidDescriptionLength = `{"supported":"%s", "description": "%s"}`
 
 	invalidDescriptionFieldWithExceedingMaxLength = strings.Repeat("a", maxDescriptionLength+1)
+
+	invalidSuccessorsElement          = `["foo.bar.baz:123456", "invalidValue"]`
+	invalidSuccessorsNonStringElement = `["foo.bar.baz:123456", 992]`
 )
 
 func TestConfig_ValidateConfig(t *testing.T) {
@@ -3222,6 +3225,47 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			},
 			ExpectedToBeValid: true,
 		}, {
+			Name: "Invalid value for `correlationIds` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it is invalid JSON for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CorrelationIDs = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CorrelationIDs = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `correlationIds` field when the JSON array is empty for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CorrelationIDs = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `correlationIds` field when it contains non string value for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsNonStringElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Missing `releaseStatus` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -3252,6 +3296,47 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
 				doc.APIResources[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
 				doc.APIResources[0].Successors = json.RawMessage(fmt.Sprintf(`["%s"]`, api2ORDID))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid value for `successors` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Successors = json.RawMessage(invalidSuccessorsElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` field when it is invalid JSON for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Successors = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Successors = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `successors` field when the JSON array is empty for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Successors = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `successors` field when it contains non string value for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Successors = json.RawMessage(invalidSuccessorsNonStringElement)
 
 				return []*ord.Document{doc}
 			},
@@ -5799,6 +5884,47 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Invalid value for `correlationIds` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it is invalid JSON for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].CorrelationIDs = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it isn't a JSON array for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].CorrelationIDs = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `correlationIds` field when the JSON array is empty for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].CorrelationIDs = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `correlationIds` field when it contains non string value for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsNonStringElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Missing `releaseStatus` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -5830,6 +5956,47 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc.EventResources[0].ReleaseStatus = str.Ptr("deprecated")
 				doc.EventResources[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
 				doc.EventResources[0].Successors = json.RawMessage(fmt.Sprintf(`["%s"]`, event2ORDID))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid value for `successors` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Successors = json.RawMessage(invalidSuccessorsElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` field when it is invalid JSON for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Successors = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` field when it isn't a JSON array for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Successors = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `successors` field when the JSON array is empty for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Successors = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `successors` field when it contains non string value for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Successors = json.RawMessage(invalidSuccessorsNonStringElement)
 
 				return []*ord.Document{doc}
 			},
@@ -6302,7 +6469,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid value for `correlationIds` field for API",
+			Name: "Invalid value for `correlationIds` field for Product",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Products[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsElement)
@@ -6310,7 +6477,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid `correlationIds` field when it is invalid JSON for API",
+			Name: "Invalid `correlationIds` field when it is invalid JSON for Product",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Products[0].CorrelationIDs = json.RawMessage(invalidJSON)
@@ -6318,7 +6485,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid `correlationIds` field when it isn't a JSON array for API",
+			Name: "Invalid `correlationIds` field when it isn't a JSON array for Product",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Products[0].CorrelationIDs = json.RawMessage("{}")
@@ -6326,7 +6493,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Valid `correlationIds` field when the JSON array is empty for API",
+			Name: "Valid `correlationIds` field when the JSON array is empty for Product",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Products[0].CorrelationIDs = json.RawMessage("[]")
@@ -6335,7 +6502,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 			},
 			ExpectedToBeValid: true,
 		}, {
-			Name: "Invalid `correlationIds` field when it contains non string value for API",
+			Name: "Invalid `correlationIds` field when it contains non string value for Product",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Products[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsNonStringElement)
