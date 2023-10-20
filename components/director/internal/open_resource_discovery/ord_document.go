@@ -173,13 +173,15 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 	}
 
 	resourceIDs := ResourceIDs{
-		PackageIDs:          make(map[string]bool),
-		PackagePolicyLevels: make(map[string]string),
-		BundleIDs:           make(map[string]bool),
-		ProductIDs:          make(map[string]bool),
-		APIIDs:              make(map[string]bool),
-		EventIDs:            make(map[string]bool),
-		VendorIDs:           make(map[string]bool),
+		PackageIDs:               make(map[string]bool),
+		PackagePolicyLevels:      make(map[string]string),
+		BundleIDs:                make(map[string]bool),
+		ProductIDs:               make(map[string]bool),
+		APIIDs:                   make(map[string]bool),
+		EventIDs:                 make(map[string]bool),
+		VendorIDs:                make(map[string]bool),
+		CapabilityIDs:            make(map[string]bool),
+		IntegrationDependencyIDs: make(map[string]bool),
 	}
 
 	for _, doc := range docs {
@@ -473,17 +475,19 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		doc.Vendors = deleteInvalidInputObjects(invalidVendorsIndices, doc.Vendors)
 		doc.Tombstones = deleteInvalidInputObjects(invalidTombstonesIndices, doc.Tombstones)
 		doc.Capabilities = deleteInvalidInputObjects(invalidCapabilitiesIndices, doc.Capabilities)
+		doc.IntegrationDependencies = deleteInvalidInputObjects(invalidIntegrationDependenciesIndices, doc.IntegrationDependencies)
 	}
 
 	return ResourceIDs{
-		PackageIDs:          resourceIDs.PackageIDs,
-		ProductIDs:          resourceIDs.ProductIDs,
-		APIIDs:              resourceIDs.APIIDs,
-		EventIDs:            resourceIDs.EventIDs,
-		VendorIDs:           resourceIDs.VendorIDs,
-		BundleIDs:           resourceIDs.BundleIDs,
-		PackagePolicyLevels: resourceIDs.PackagePolicyLevels,
-		CapabilityIDs:       resourceIDs.CapabilityIDs,
+		PackageIDs:               resourceIDs.PackageIDs,
+		ProductIDs:               resourceIDs.ProductIDs,
+		APIIDs:                   resourceIDs.APIIDs,
+		EventIDs:                 resourceIDs.EventIDs,
+		VendorIDs:                resourceIDs.VendorIDs,
+		BundleIDs:                resourceIDs.BundleIDs,
+		PackagePolicyLevels:      resourceIDs.PackagePolicyLevels,
+		CapabilityIDs:            resourceIDs.CapabilityIDs,
+		IntegrationDependencyIDs: resourceIDs.IntegrationDependencyIDs,
 	}, errs
 }
 

@@ -25,6 +25,7 @@ type Entity struct {
 	CustomPolicyLevel                       sql.NullString `db:"custom_policy_level"`
 	ChangeLogEntries                        sql.NullString `db:"changelog_entries"`
 	Links                                   sql.NullString `db:"links"`
+	EventResourceLinks                      sql.NullString `db:"event_resource_links"`
 	Tags                                    sql.NullString `db:"tags"`
 	Countries                               sql.NullString `db:"countries"`
 	ReleaseStatus                           sql.NullString `db:"release_status"`
@@ -44,6 +45,7 @@ type Entity struct {
 	DocumentationLabels                     sql.NullString `db:"documentation_labels"`
 	CorrelationIDs                          sql.NullString `db:"correlation_ids"`
 	LastUpdate                              sql.NullString `db:"last_update"`
+	DeprecationDate                         sql.NullString `db:"deprecation_date"`
 	version.Version
 
 	*repo.BaseEntity

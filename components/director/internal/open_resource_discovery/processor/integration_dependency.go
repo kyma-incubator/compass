@@ -14,7 +14,7 @@ import (
 //go:generate mockery --name=IntegrationDependencyService --ouidut=automock --ouidkg=automock --case=underscore --disable-version-string
 type IntegrationDependencyService interface {
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.IntegrationDependency, error)
-	ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.IntegrationDependency, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.IntegrationDependency, error)
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) error
 	Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) error
 }

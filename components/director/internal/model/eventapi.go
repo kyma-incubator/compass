@@ -31,6 +31,7 @@ type EventDefinition struct {
 	CustomPolicyLevel                       *string
 	ChangeLogEntries                        json.RawMessage
 	Links                                   json.RawMessage
+	EventResourceLinks                      json.RawMessage
 	Tags                                    json.RawMessage
 	Countries                               json.RawMessage
 	ReleaseStatus                           *string
@@ -51,6 +52,7 @@ type EventDefinition struct {
 	DocumentationLabels                     json.RawMessage
 	CorrelationIDs                          json.RawMessage
 	LastUpdate                              *string
+	DeprecationDate                         *string
 	*BaseEntity
 }
 
@@ -83,6 +85,7 @@ type EventDefinitionInput struct {
 	CustomPolicyLevel                       *string                       `json:"customPolicyLevel"`
 	ChangeLogEntries                        json.RawMessage               `json:"changelogEntries"`
 	Links                                   json.RawMessage               `json:"links"`
+	EventResourceLinks                      json.RawMessage               `json:"eventResourceLinks"`
 	Tags                                    json.RawMessage               `json:"tags"`
 	Countries                               json.RawMessage               `json:"countries"`
 	ReleaseStatus                           *string                       `json:"releaseStatus"`
@@ -104,8 +107,8 @@ type EventDefinitionInput struct {
 	DocumentationLabels                     json.RawMessage               `json:"documentationLabels"`
 	CorrelationIDs                          json.RawMessage               `json:"correlationIds,omitempty"`
 	LastUpdate                              *string                       `json:"lastUpdate"`
-
-	*VersionInput `hash:"ignore"`
+	DeprecationDate                         *string                       `json:"deprecationDate"`
+	*VersionInput                           `hash:"ignore"`
 }
 
 // EventResourceDefinition missing godoc
@@ -176,6 +179,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id string, resourceType resourc
 		Tags:                                    e.Tags,
 		Countries:                               e.Countries,
 		Links:                                   e.Links,
+		EventResourceLinks:                      e.EventResourceLinks,
 		ReleaseStatus:                           e.ReleaseStatus,
 		SunsetDate:                              e.SunsetDate,
 		Successors:                              e.Successors,
@@ -194,6 +198,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id string, resourceType resourc
 		DocumentationLabels:                     e.DocumentationLabels,
 		CorrelationIDs:                          e.CorrelationIDs,
 		LastUpdate:                              e.LastUpdate,
+		DeprecationDate:                         e.DeprecationDate,
 		ResourceHash:                            hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,
