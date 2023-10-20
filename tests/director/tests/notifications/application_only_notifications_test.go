@@ -2857,7 +2857,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			Operator:        formationconstraintpkg.RedirectNotificationOperator,
 			ResourceType:    graphql.ResourceTypeApplication,
 			ResourceSubtype: applicationType2,
-			InputTemplate:   fmt.Sprintf("{\\\"condition\\\": {{ if contains .FormationAssignment.Value \\\"redirectProperties\\\" }}true{{else}}false{{end}},\\\"url_template\\\": \\\"%s\\\",\\\"url\\\": \\\"%s\\\",{{ if .Webhook }}\\\"webhook_memory_address\\\":{{ .Webhook.GetAddress }},{{ end }}\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}", redirectURLTemplate, redirectURL),
+			InputTemplate:   fmt.Sprintf("{\\\"should_redirect\\\": {{ if contains .FormationAssignment.Value \\\"redirectProperties\\\" }}true{{else}}false{{end}},\\\"url_template\\\": \\\"%s\\\",\\\"url\\\": \\\"%s\\\",{{ if .Webhook }}\\\"webhook_memory_address\\\":{{ .Webhook.GetAddress }},{{ end }}\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}", redirectURLTemplate, redirectURL),
 			ConstraintScope: graphql.ConstraintScopeFormationType,
 		}
 
