@@ -858,7 +858,7 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified events")
 
 			// Verify entity types
-			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/entityTypes?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/entityTypes?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfEntityTypesInSubscription {
 				t.Log("Missing Entity Types...will try again")
 				return false
