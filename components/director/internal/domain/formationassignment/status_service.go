@@ -3,6 +3,8 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"strconv"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -60,6 +62,9 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 	}
 
 	if err = fau.repo.Update(ctx, fa); err != nil {
+		if apperrors.IsUnauthorizedError(err) {
+			return apperrors.NewNotFoundError(resource.FormationAssignment, id)
+		}
 		return errors.Wrapf(err, "while updating formation assignment with ID: %q", id)
 	}
 
@@ -116,6 +121,9 @@ func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.C
 	fa.Value = nil
 	// update the fa and do not delete it as it is needed for the destination creator operator constraint
 	if err := fau.repo.Update(ctx, fa); err != nil {
+		if apperrors.IsUnauthorizedError(err) {
+			return apperrors.NewNotFoundError(resource.FormationAssignment, id)
+		}
 		return errors.Wrapf(err, "while updating formation asssignment with ID: %s to: %q state", id, model.ReadyAssignmentState)
 	}
 
@@ -129,6 +137,9 @@ func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.C
 	}
 
 	if err = fau.repo.Delete(ctx, id, tenantID); err != nil {
+		if apperrors.IsUnauthorizedError(err) {
+			return apperrors.NewNotFoundError(resource.FormationAssignment, id)
+		}
 		return errors.Wrapf(err, "while deleting formation assignment with ID: %q", id)
 	}
 
