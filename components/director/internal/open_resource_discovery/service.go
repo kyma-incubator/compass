@@ -1714,6 +1714,30 @@ func (s *Service) fetchCapabilitiesFromDB(ctx context.Context, resourceType dire
 	return capabilitiesDataFromDB, nil
 }
 
+func (s *Service) fetchEntityTypesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.EntityType, error) {
+	var (
+		entityTypesFromDB []*model.EntityType
+		err               error
+	)
+
+	if resourceType == directorresource.ApplicationTemplateVersion {
+		entityTypesFromDB, err = s.entityTypeSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+	} else {
+		entityTypesFromDB, err = s.entityTypeSvc.ListByApplicationID(ctx, resourceID)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	entityTypesDataFromDB := make(map[string]*model.EntityType, len(entityTypesFromDB))
+
+	for _, entityType := range entityTypesFromDB {
+		entityTypesDataFromDB[entityType.OrdID] = entityType
+	}
+
+	return entityTypesDataFromDB, nil
+}
+
 func (s *Service) fetchPackagesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Package, error) {
 	var (
 		packagesFromDB []*model.Package
@@ -1823,6 +1847,7 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 	packageDataFromDB := make(map[string]*model.Package)
 	bundleDataFromDB := make(map[string]*model.Bundle)
 	capabilitiesDataFromDB := make(map[string]*model.Capability)
+	entityTypesDataFromDB := make(map[string]*model.EntityType)
 
 	for resourceID, resourceType := range resourceIDs {
 		apiData, err := s.fetchAPIDefFromDB(ctx, resourceType, resourceID)
@@ -1850,6 +1875,11 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching capabilities for %s with id %s", resourceType, resourceID)
 		}
 
+		entityTypeData, err := s.fetchEntityTypesFromDB(ctx, resourceType, resourceID)
+		if err != nil {
+			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching entity types for %s with id %s", resourceType, resourceID)
+		}
+
 		if err = mergo.Merge(&apiDataFromDB, apiData); err != nil {
 			return ResourcesFromDB{}, err
 		}
@@ -1865,6 +1895,9 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 		if err = mergo.Merge(&capabilitiesDataFromDB, capabilityData); err != nil {
 			return ResourcesFromDB{}, err
 		}
+		if err = mergo.Merge(&entityTypesDataFromDB, entityTypeData); err != nil {
+			return ResourcesFromDB{}, err
+		}
 	}
 
 	return ResourcesFromDB{
@@ -1873,6 +1906,7 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 		Packages:     packageDataFromDB,
 		Bundles:      bundleDataFromDB,
 		Capabilities: capabilitiesDataFromDB,
+		EntityTypes:  entityTypesDataFromDB,
 	}, tx.Commit()
 }
 
