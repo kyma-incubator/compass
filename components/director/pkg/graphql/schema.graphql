@@ -1019,6 +1019,8 @@ type ApplicationTemplate {
 	labels(key: String): Labels
 	accessLevel: ApplicationTemplateAccessLevel!
 	applicationNamespace: String
+	createdAt: Timestamp!
+	updatedAt: Timestamp!
 }
 
 type ApplicationTemplatePage implements Pageable {

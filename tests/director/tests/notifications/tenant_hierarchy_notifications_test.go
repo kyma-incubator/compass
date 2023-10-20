@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -178,11 +177,10 @@ func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
-		expectedConfig := str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
 				app1.ID:          fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
 			},
 			runtimeContextID: {
 				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},

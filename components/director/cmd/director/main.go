@@ -112,6 +112,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/scenario"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
+	directortime "github.com/kyma-incubator/compass/components/director/pkg/time"
 	"github.com/kyma-incubator/compass/components/operations-controller/client"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -822,6 +823,7 @@ func runtimeCtxSvc(transact persistence.Transactioner, cfg config, securedHTTPCl
 }
 
 func appTemplateSvc() claims.ApplicationTemplateService {
+	timeSvc := directortime.NewService()
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	versionConverter := version.NewConverter()
@@ -846,7 +848,7 @@ func appTemplateSvc() claims.ApplicationTemplateService {
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	appRepo := application.NewRepository(appConverter)
 
-	return apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, appRepo)
+	return apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, appRepo, timeSvc)
 }
 
 func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client, certCache certloader.Cache, ordWebhookMapping []application.ORDWebhookMapping) claims.ApplicationService {

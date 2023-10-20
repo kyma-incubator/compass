@@ -2,6 +2,7 @@ package apptemplate
 
 import (
 	"database/sql"
+	"time"
 )
 
 // Entity missing godoc
@@ -13,6 +14,8 @@ type Entity struct {
 	ApplicationInputJSON string         `db:"application_input"`
 	PlaceholdersJSON     sql.NullString `db:"placeholders"`
 	AccessLevel          string         `db:"access_level"`
+	CreatedAt            time.Time      `db:"created_at"`
+	UpdatedAt            time.Time      `db:"updated_at"`
 }
 
 // EntityCollection missing godoc

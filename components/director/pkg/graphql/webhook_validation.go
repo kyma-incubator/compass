@@ -3,6 +3,7 @@ package graphql
 import (
 	"encoding/json"
 	"net/url"
+	"unsafe"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -217,6 +218,12 @@ func (i WebhookInput) Validate() error {
 	}
 
 	return nil
+}
+
+// GetAddress returns the memory address of the Webhook in the form of an uninterpreted type(integer number)
+// Currently, it's used in some formation constraints input templates, so we could propagate the memory address to the formation constraints operators and later on to modify/update it.
+func (w *Webhook) GetAddress() uintptr {
+	return uintptr(unsafe.Pointer(w))
 }
 
 func isOutTemplateMandatory(webhookType WebhookType) bool {

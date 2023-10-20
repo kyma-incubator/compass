@@ -60,3 +60,15 @@ type ConfigMutatorInput struct {
 	JoinPointDetailsReverseFAMemoryAddress uintptr                  `json:"details_reverse_formation_assignment_memory_address"` // contains the memory address of the join point details' reverse formation assignment in form of an integer
 	Location                               JoinPointLocation        `json:"join_point_location"`
 }
+
+// RedirectNotificationInput is an input for RedirectNotification operator
+type RedirectNotificationInput struct {
+	ShouldRedirect       bool                     `json:"should_redirect"`
+	URLTemplate          string                   `json:"url_template"`
+	URL                  string                   `json:"url"`
+	WebhookMemoryAddress uintptr                  `json:"webhook_memory_address"` // contains the memory address of the join point details' webhook in form of an integer
+	Operation            model.FormationOperation `json:"operation"`
+	ResourceType         model.ResourceType       `json:"resource_type"`
+	ResourceSubtype      string                   `json:"resource_subtype"`
+	Location             JoinPointLocation        `json:"join_point_location"`
+}
