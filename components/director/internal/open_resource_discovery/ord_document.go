@@ -433,7 +433,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 			if err := validateIntegrationDependencyInputWithSuppressedErrors(integrationDependency, resourcesFromDB.IntegrationDependencies, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating integration dependency with ord id %q", stringPtrToString(integrationDependency.OrdID)))
 			}
-			if err := validateIntegrationDependencyInput(integrationDependency); err != nil {
+			if err := validateIntegrationDependencyInput(integrationDependency, doc.PolicyLevel); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating integration dependency with ord id %q", stringPtrToString(integrationDependency.OrdID)))
 				invalidIntegrationDependenciesIndices = append(invalidIntegrationDependenciesIndices, i)
 				continue
@@ -568,6 +568,12 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 				return err
 			}
 		}
+
+		for _, integrationDependency := range doc.IntegrationDependencies {
+			if integrationDependency.Links, err = rewriteRelativeURIsInJSON(integrationDependency.Links, url, "url"); err != nil {
+				return err
+			}
+		}
 	}
 
 	// Package properties inheritance
@@ -652,6 +658,18 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 			}
 			if capability.Labels, err = mergeORDLabels(referredPkg.Labels, capability.Labels); err != nil {
 				return errors.Wrapf(err, "error while merging labels for capability with ord id %q", *capability.OrdID)
+			}
+		}
+		for _, integrationDependency := range doc.IntegrationDependencies {
+			referredPkg, ok := packages[*integrationDependency.OrdPackageID]
+			if !ok {
+				return errors.Errorf("integration dependency with ord id %q has a reference to unknown package %q", *integrationDependency.OrdID, *integrationDependency.OrdPackageID)
+			}
+			if integrationDependency.Tags, err = mergeJSONArraysOfStrings(referredPkg.Tags, integrationDependency.Tags); err != nil {
+				return errors.Wrapf(err, "error while merging tags for integration dependency with ord id %q", *integrationDependency.OrdID)
+			}
+			if integrationDependency.Labels, err = mergeORDLabels(referredPkg.Labels, integrationDependency.Labels); err != nil {
+				return errors.Wrapf(err, "error while merging labels for integration dependency with ord id %q", *integrationDependency.OrdID)
 			}
 		}
 	}
