@@ -3,6 +3,8 @@ package formationconstraint
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -131,6 +133,11 @@ func (r *Resolver) CreateFormationConstraint(ctx context.Context, in graphql.For
 		return nil, err
 	}
 
+	inputWrapper := formationconstraint.NewFormationConstraintInputWrapper(&in)
+	if err = inputWrapper.Validate(); err != nil {
+		return nil, err
+	}
+
 	id, err := r.svc.Create(ctx, r.converter.FromInputGraphQL(&in))
 	if err != nil {
 		return nil, err
@@ -215,6 +222,11 @@ func (r *Resolver) UpdateFormationConstraint(ctx context.Context, id string, in 
 	}
 
 	if err = updatedConstraintInput.Validate(); err != nil {
+		return nil, err
+	}
+
+	inputWrapper := formationconstraint.NewFormationConstraintInputWrapper(updatedConstraintInput)
+	if err = inputWrapper.Validate(); err != nil {
 		return nil, err
 	}
 

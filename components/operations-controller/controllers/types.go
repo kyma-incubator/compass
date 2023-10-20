@@ -32,6 +32,7 @@ import (
 )
 
 // StatusManager defines an abstraction for managing the status of a given kubernetes resource
+//
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . StatusManager
 type StatusManager interface {
 	Initialize(ctx context.Context, operation *v1alpha1.Operation) error
@@ -42,6 +43,7 @@ type StatusManager interface {
 }
 
 // KubernetesClient is a defines a Kubernetes client capable of retrieving and deleting resources as well as updating their status
+//
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . KubernetesClient
 type KubernetesClient interface {
 	Get(ctx context.Context, key client.ObjectKey) (*v1alpha1.Operation, error)
@@ -50,6 +52,7 @@ type KubernetesClient interface {
 
 // DirectorClient defines a Director client which is capable of fetching an application
 // and notifying Director for operation state changes
+//
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . DirectorClient
 type DirectorClient interface {
 	typesbroker.ApplicationLister
@@ -57,6 +60,7 @@ type DirectorClient interface {
 }
 
 // WebhookClient defines a general purpose Webhook executor client
+//
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . WebhookClient
 type WebhookClient interface {
 	Do(ctx context.Context, request webhookclient.WebhookRequest) (*webhookdir.Response, error)

@@ -22,8 +22,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"text/template"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -164,7 +165,7 @@ func (rd *ResponseObject) ParseStatusTemplate(tmpl *string) (*ResponseStatus, er
 }
 
 func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
-	t, err := template.New("").Funcs(template.FuncMap{"Join": joinStrings}).Option("missingkey=zero").Parse(*tmpl)
+	t, err := template.New("").Funcs(templatehelper.GetFuncMap()).Option("missingkey=zero").Parse(*tmpl)
 	if err != nil {
 		return err
 	}
@@ -182,13 +183,6 @@ func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 	}
 
 	return nil
-}
-
-func joinStrings(elems []string) string {
-	if len(elems) == 0 {
-		return ""
-	}
-	return `"` + strings.Join(elems, `", "`) + `"`
 }
 
 func isAllowedHTTPMethod(method string) bool {

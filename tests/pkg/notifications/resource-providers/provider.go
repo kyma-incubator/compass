@@ -2,8 +2,9 @@ package resource_providers
 
 import (
 	"context"
-	gcli "github.com/machinebox/graphql"
 	"testing"
+
+	gcli "github.com/machinebox/graphql"
 )
 
 type Provider interface {

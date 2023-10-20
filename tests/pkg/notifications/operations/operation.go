@@ -2,8 +2,9 @@ package operations
 
 import (
 	"context"
-	gcli "github.com/machinebox/graphql"
 	"testing"
+
+	gcli "github.com/machinebox/graphql"
 )
 
 type Operation interface {

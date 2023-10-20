@@ -1366,7 +1366,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, persist, transact, formationRepo, formationTemplateRepo)
 
 			// GIVEN
-			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, nil, nil, nil, nil, nil, nil, formationRepo, formationTemplateRepo, nil, tCase.globalSubaccountIDLabelKey, "") // todo::: adjust uclCertOUSubaccountID value
+			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, nil, nil, nil, nil, nil, nil, formationRepo, formationTemplateRepo, nil, tCase.globalSubaccountIDLabelKey, "")
 			formationAuthMiddleware := fmAuthenticator.FormationHandler()
 			rw := httptest.NewRecorder()
 

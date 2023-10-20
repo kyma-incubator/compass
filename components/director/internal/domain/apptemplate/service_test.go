@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 

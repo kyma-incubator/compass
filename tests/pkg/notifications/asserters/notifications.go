@@ -3,12 +3,13 @@ package asserters
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
-	"github.com/stretchr/testify/require"
-	"github.com/tidwall/gjson"
 	"io"
 	"net/http"
 	"testing"
+
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
+	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 const (
