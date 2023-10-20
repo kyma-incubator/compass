@@ -136,13 +136,13 @@ github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-2023101
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20231017062655-ff258cdc2e36/go.mod h1:8IlbNb12LtSQXpXQGweb66RHX+p0GmdZmRdvdnXzy54=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20231017062655-ff258cdc2e36 h1:spA1MeQcIT+qH41LFneZFmVnsGTdZr2ivW1ZUO9m35I=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20231017062655-ff258cdc2e36/go.mod h1:47kLUWcWfsljUrQK2DAXApTSj8avBCJoMMFbnIqdDIA=
-github.com/kyma-incubator/compass/components/director v0.0.0-20231017062655-ff258cdc2e36 h1:LB24hvi/UmQCPE0rWqiIldqyt+ItF4Fz4A0BN9tVz7A=
-github.com/kyma-incubator/compass/components/director v0.0.0-20231017062655-ff258cdc2e36/go.mod h1:+rHsXL2sz2trMWGtCybFsnhpL0nzp98afSX053su7Tk=
+github.com/kyma-incubator/compass/components/director v0.0.0-20231019133631-0b1baf8ec2dc h1:fHu6dbY+Jhq5/Ke2jA1QAvTkWKEW2IAav9aqtNkpqOg=
+github.com/kyma-incubator/compass/components/director v0.0.0-20231019133631-0b1baf8ec2dc/go.mod h1:Tvkyjzjaexy+F0ULFRUD+jUtapLmTbRH8rC4qP5x7sI=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231017062655-ff258cdc2e36 h1:VBSCqdWKkQGv+1GgQj/DRuHB4eVcC361i4pYisdFv9s=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231017062655-ff258cdc2e36/go.mod h1:LZ1tUJmgc/o9z1XlvlsmzaX9IL1XKUW7OnkUUJ16JN0=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20231017062655-ff258cdc2e36 h1:DcX9EKFl7h92cLCFQDJyS0D7rGfeTcAuNirPwlLRJMA=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20231017062655-ff258cdc2e36/go.mod h1:xjrh1umg5m3L+2hV/RpqXs9jDalS/PiMd51xze3+a+Q=
-github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231005103340-fffd3ee4e20f h1:nBT7clPZu8+/iJZfdG3rM8fvnC1ynbPrvouVJVn6INY=
+github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231017062655-ff258cdc2e36 h1:P0F4mBks0sRUDoTz7viXKd0ybfijqyC3T2cw1s+pbA4=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231017062655-ff258cdc2e36 h1:c8aD6+RYFyGjWHmDFrEf7KvKERCsrRZ5VZiB9MROKTU=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231017062655-ff258cdc2e36/go.mod h1:4VF/t5LwMPlfL28wC9lF/Qy8T5xGI/nUahyHApJDrWA=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231017062655-ff258cdc2e36 h1:5vgZxz+nEbJjMHk4ZVtWh2+A8MCa67DKbTgOEC/OWs8=
