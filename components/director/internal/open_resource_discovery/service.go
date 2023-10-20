@@ -369,60 +369,80 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 			}
 		}
 
+		log.C(ctx).Infof("Starting processing vendors for %s with id: %q", resource.Type, resource.ID)
 		vendorsFromDB, err := s.processVendors(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Vendors)
 		if err != nil {
 			return err
 		}
+		log.C(ctx).Infof("Finished processing vendors for %s with id: %q", resource.Type, resource.ID)
 
+		log.C(ctx).Infof("Starting processing products for %s with id: %q", resource.Type, resource.ID)
 		productsFromDB, err := s.processProducts(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Products)
 		if err != nil {
 			return err
 		}
+		log.C(ctx).Infof("Finished processing products for %s with id: %q", resource.Type, resource.ID)
 
+		log.C(ctx).Infof("Starting processing packages for %s with id: %q", resource.Type, resource.ID)
 		packagesFromDB, err := s.processPackages(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Packages, resourceHashes)
 		if err != nil {
 			return err
 		}
+		log.C(ctx).Infof("Finished processing packages for %s with id: %q", resource.Type, resource.ID)
 
+		log.C(ctx).Infof("Starting processing bundles for %s with id: %q", resource.Type, resource.ID)
 		bundlesFromDB, err := s.processBundles(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.ConsumptionBundles, resourceHashes)
 		if err != nil {
 			return err
 		}
+		log.C(ctx).Infof("Finished processing bundles for %s with id: %q", resource.Type, resource.ID)
 
+		log.C(ctx).Infof("Starting processing apis for %s with id: %q", resource.Type, resource.ID)
 		apisFromDB, apiFetchRequests, err := s.processAPIs(ctx, resourceToAggregate.Type, resourceToAggregate.ID, bundlesFromDB, packagesFromDB, doc.APIResources, resourceHashes)
 		if err != nil {
 			return err
 		}
+		log.C(ctx).Infof("Finished processing apis for %s with id: %q", resource.Type, resource.ID)
 
+		log.C(ctx).Infof("Starting processing events for %s with id: %q", resource.Type, resource.ID)
 		eventsFromDB, eventFetchRequests, err := s.processEvents(ctx, resourceToAggregate.Type, resourceToAggregate.ID, bundlesFromDB, packagesFromDB, doc.EventResources, resourceHashes)
 		if err != nil {
 			return err
 		}
+		log.C(ctx).Infof("Finished processing events for %s with id: %q", resource.Type, resource.ID)
 
+		log.C(ctx).Infof("Starting processing capabilities for %s with id: %q", resource.Type, resource.ID)
 		capabilitiesFromDB, capabilitiesFetchRequests, err := s.processCapabilities(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.Capabilities, resourceHashes)
 		if err != nil {
 			return err
 		}
+		log.C(ctx).Infof("Finished processing capabilities for %s with id: %q", resource.Type, resource.ID)
 
 		integrationDependenciesFromDB, err := s.integrationDependencyProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.IntegrationDependencies, resourceHashes)
 		if err != nil {
 			return err
 		}
 
+		log.C(ctx).Infof("Starting processing tombstones for %s with id: %q", resource.Type, resource.ID)
 		tombstonesFromDB, err := s.tombstoneProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Tombstones)
 		if err != nil {
 			return err
 		}
+		log.C(ctx).Infof("Finished processing tombstones for %s with id: %q", resource.Type, resource.ID)
 
 		fetchRequests := appendFetchRequests(apiFetchRequests, eventFetchRequests, capabilitiesFetchRequests)
+		log.C(ctx).Infof("Starting deleting tombstoned resources for %s with id: %q", resource.Type, resource.ID)
 		fetchRequests, err = s.deleteTombstonedResources(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, capabilitiesFromDB, integrationDependenciesFromDB, tombstonesFromDB, fetchRequests)
 		if err != nil {
 			return err
 		}
+		log.C(ctx).Infof("Finished deleting tombstoned resources for %s with id: %q", resource.Type, resource.ID)
 
+		log.C(ctx).Infof("Starting processing specs for %s with id: %q", resource.Type, resource.ID)
 		if err := s.processSpecs(ctx, resourceToAggregate.Type, fetchRequests, ordRequestObject); err != nil {
 			return err
 		}
+		log.C(ctx).Infof("Finished processing specs for %s with id: %q", resource.Type, resource.ID)
 	}
 
 	return nil

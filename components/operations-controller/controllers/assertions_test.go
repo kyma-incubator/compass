@@ -162,7 +162,7 @@ func assertWebhookDoInvocation(t *testing.T, webhookClient *controllersfakes.Fak
 	_, actualRequest := webhookClient.DoArgsForCall(invocation)
 	expectedRequestObject, err := operation.RequestObject()
 	require.NoError(t, err)
-	expectedRequest := webhookclient.NewRequest(*webhookEntity, expectedRequestObject, operation.Spec.CorrelationID)
+	expectedRequest := webhookclient.NewRequest(webhookEntity, expectedRequestObject, operation.Spec.CorrelationID)
 	require.Equal(t, expectedRequest, actualRequest)
 }
 
@@ -175,7 +175,7 @@ func assertWebhookPollInvocation(t *testing.T, webhookClient *controllersfakes.F
 	_, actualRequest := webhookClient.PollArgsForCall(invocation)
 	expectedRequestObject, err := operation.RequestObject()
 	require.NoError(t, err)
-	expectedRequest := webhookclient.NewPollRequest(*webhookEntity, expectedRequestObject, operation.Spec.CorrelationID, mockedLocationURL)
+	expectedRequest := webhookclient.NewPollRequest(webhookEntity, expectedRequestObject, operation.Spec.CorrelationID, mockedLocationURL)
 	require.Equal(t, expectedRequest, actualRequest)
 }
 

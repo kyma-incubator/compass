@@ -2,11 +2,12 @@ package operations
 
 import (
 	"context"
+	"net/http"
+	"testing"
+
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"testing"
 )
 
 type CleanupNotificationsOperation struct {

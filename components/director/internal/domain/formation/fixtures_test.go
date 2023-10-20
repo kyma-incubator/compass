@@ -148,7 +148,7 @@ var (
 
 	// Formation assignment notification variables
 	runtimeCtxNotificationWithAppTemplate = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeContextRuntimeID),
+		Webhook: fixRuntimeWebhookGQLModel(WebhookID, RuntimeContextRuntimeID),
 		Object: &webhook.FormationConfigurationChangeInput{
 			Operation:   model.AssignFormation,
 			FormationID: fixUUID(),
@@ -175,7 +175,7 @@ var (
 	}
 
 	runtimeCtxNotificationWithoutAppTemplate = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeContextRuntimeID),
+		Webhook: fixRuntimeWebhookGQLModel(WebhookID, RuntimeContextRuntimeID),
 		Object: &webhook.FormationConfigurationChangeInput{
 			Operation:           model.AssignFormation,
 			FormationID:         fixUUID(),
@@ -199,7 +199,7 @@ var (
 	}
 
 	appNotificationWithRtmCtxAndTemplate = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
+		Webhook: fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
 		Object: &webhook.FormationConfigurationChangeInput{
 			Operation:   model.AssignFormation,
 			FormationID: fixUUID(),
@@ -226,7 +226,7 @@ var (
 	}
 
 	appNotificationWithRtmCtxWithoutTemplate = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: *fixApplicationWebhookGQLModel(Webhook2ID, Application2ID),
+		Webhook: fixApplicationWebhookGQLModel(Webhook2ID, Application2ID),
 		Object: &webhook.FormationConfigurationChangeInput{
 			Operation:           model.AssignFormation,
 			FormationID:         fixUUID(),
@@ -250,7 +250,7 @@ var (
 	}
 
 	runtimeNotificationWithAppTemplate = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+		Webhook: fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 		Object: &webhook.FormationConfigurationChangeInput{
 			Operation:   model.AssignFormation,
 			FormationID: fixUUID(),
@@ -274,7 +274,7 @@ var (
 	}
 
 	runtimeNotificationWithoutAppTemplate = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+		Webhook: fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 		Object: &webhook.FormationConfigurationChangeInput{
 			Operation:           model.AssignFormation,
 			FormationID:         fixUUID(),
@@ -374,7 +374,7 @@ var (
 	listeningApplications = []*model.Application{{BaseEntity: &model.BaseEntity{ID: Application2ID}}, {ApplicationTemplateID: str.Ptr(ApplicationTemplateID), BaseEntity: &model.BaseEntity{ID: ApplicationID}}}
 
 	applicationNotificationWithAppTemplate = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
+		Webhook: fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
 		Object: &webhook.FormationConfigurationChangeInput{
 			Operation:   model.AssignFormation,
 			FormationID: fixUUID(),
@@ -399,7 +399,7 @@ var (
 	}
 
 	applicationNotificationWithoutAppTemplate = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: *fixApplicationWebhookGQLModel(Webhook2ID, Application2ID),
+		Webhook: fixApplicationWebhookGQLModel(Webhook2ID, Application2ID),
 		Object: &webhook.FormationConfigurationChangeInput{
 			Operation:           model.AssignFormation,
 			FormationID:         fixUUID(),
@@ -420,7 +420,7 @@ var (
 	}
 
 	runtimeNotificationWithRtmCtxAndAppTemplate = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: *fixRuntimeWebhookGQLModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID),
+		Webhook: fixRuntimeWebhookGQLModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID),
 		Object: &webhook.FormationConfigurationChangeInput{
 			Operation:   model.AssignFormation,
 			FormationID: fixUUID(),
@@ -447,7 +447,7 @@ var (
 	}
 
 	appNotificationWithRtmCtxRtmIDAndTemplate = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
+		Webhook: fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
 		Object: &webhook.FormationConfigurationChangeInput{
 			Operation:   model.AssignFormation,
 			FormationID: fixUUID(),
@@ -474,7 +474,7 @@ var (
 	}
 
 	appToAppNotificationWithoutSourceTemplateWithTargetTemplate = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp1, ApplicationID),
+		Webhook: fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp1, ApplicationID),
 		Object: &webhook.ApplicationTenantMappingInput{
 			Operation:                 model.AssignFormation,
 			FormationID:               fixUUID(),
@@ -499,7 +499,7 @@ var (
 	}
 
 	appToAppNotificationWithSourceAndTargetTemplates = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp2, Application2ID),
+		Webhook: fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp2, Application2ID),
 		Object: &webhook.ApplicationTenantMappingInput{
 			Operation:   model.AssignFormation,
 			FormationID: fixUUID(),
@@ -526,7 +526,7 @@ var (
 	}
 
 	appToAppNotificationWithSourceAndTargetTemplatesSwaped = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp2, Application2ID),
+		Webhook: fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp2, Application2ID),
 		Object: &webhook.ApplicationTenantMappingInput{
 			Operation:   model.AssignFormation,
 			FormationID: fixUUID(),
@@ -553,7 +553,7 @@ var (
 	}
 
 	appToAppNotificationWithSourceTemplateWithoutTargetTemplate = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp2, Application2ID),
+		Webhook: fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp2, Application2ID),
 		Object: &webhook.ApplicationTenantMappingInput{
 			Operation:   model.AssignFormation,
 			FormationID: fixUUID(),
@@ -1200,8 +1200,8 @@ func fixApplicationTenantMappingWebhookGQLModel(webhookID, appID string) *graphq
 	}
 }
 
-func fixFormationLifecycleWebhookGQLModel(webhookID, formationTemplateID string, mode graphql.WebhookMode) graphql.Webhook {
-	return graphql.Webhook{
+func fixFormationLifecycleWebhookGQLModel(webhookID, formationTemplateID string, mode graphql.WebhookMode) *graphql.Webhook {
+	return &graphql.Webhook{
 		ID:                  webhookID,
 		Type:                graphql.WebhookTypeFormationLifecycle,
 		FormationTemplateID: &formationTemplateID,
@@ -1209,7 +1209,7 @@ func fixFormationLifecycleWebhookGQLModel(webhookID, formationTemplateID string,
 	}
 }
 
-func fixFormationLifecycleWebhookGQLModelAsync(webhookID, formationTemplateID string) graphql.Webhook {
+func fixFormationLifecycleWebhookGQLModelAsync(webhookID, formationTemplateID string) *graphql.Webhook {
 	return fixFormationLifecycleWebhookGQLModel(webhookID, formationTemplateID, graphql.WebhookModeAsyncCallback)
 }
 

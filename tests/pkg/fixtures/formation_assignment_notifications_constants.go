@@ -15,6 +15,7 @@ var (
 	StatusAPIAsyncConfigJSON      = str.Ptr("{\"asyncKey\":\"asyncValue\",\"asyncKey2\":{\"asyncNestedKey\":\"asyncNestedValue\"}}")
 	StatusAPIResetConfigJSON      = str.Ptr("{\"resetKey\":\"resetValue\",\"resetKey2\":{\"resetKey\":\"resetValue2\"}}")
 	StatusAPISyncErrorMessageJSON = str.Ptr("{\"error\":{\"message\":\"failed to parse request\",\"errorCode\":2}}")
+	RedirectConfigJSON            = str.Ptr("{\"redirectProperties\":[{\"redirectPropertyName\":\"redirectName\",\"redirectPropertyID\":\"redirectID\"}]}")
 	StatusAPISyncError            = &graphql.FormationStatusError{
 		Message:   StatusAPISyncErrorMessage,
 		ErrorCode: 2,

@@ -225,6 +225,22 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
 		},
 		{
+			name:       "Error when getting formation assignment globally due to formation assignment not found",
+			transactFn: txGen.ThatDoesntExpectCommit,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, testFormationAssignmentID)).Once()
+				return faSvc
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				State:         model.ReadyAssignmentState,
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusNotFound,
+			expectedErrOutput:  "Formation assignment with ID",
+		},
+		{
 			name: "Error when getting formation by formation ID fail",
 			transactFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatDoesntExpectCommit()
@@ -246,6 +262,29 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusInternalServerError,
 			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
+		},
+		{
+			name: "Error when getting formation by formation ID fail due to formation not found",
+			transactFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatDoesntExpectCommit()
+			},
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOp, nil).Once()
+				return faSvc
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(nil, apperrors.NewNotFoundError(resource.Formations, testFormationID)).Once()
+				return formationSvc
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				State:         model.ReadyAssignmentState,
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusNotFound,
+			expectedErrOutput:  "Formation with ID",
 		},
 		{
 			name: "Error when the retrieved formation is not in READY state",

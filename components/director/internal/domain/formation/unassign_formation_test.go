@@ -53,12 +53,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 
 	requests := []*webhookclient.FormationAssignmentNotificationRequest{
 		{
-			Webhook:       graphql.Webhook{},
+			Webhook:       &graphql.Webhook{},
 			Object:        nil,
 			CorrelationID: "123",
 		},
 		{
-			Webhook:       graphql.Webhook{},
+			Webhook:       &graphql.Webhook{},
 			Object:        nil,
 			CorrelationID: "456",
 		},

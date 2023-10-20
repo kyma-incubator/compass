@@ -125,7 +125,7 @@ type ConstraintEngine struct {
 
 // NewConstraintEngine returns new ConstraintEngine
 func NewConstraintEngine(transact persistence.Transactioner, constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc destinationService, destinationCreatorSvc destinationCreatorService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, formationAssignmentRepo formationAssignmentRepository, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
-	c := &ConstraintEngine{
+	ce := &ConstraintEngine{
 		transact:                transact,
 		constraintSvc:           constraintSvc,
 		tenantSvc:               tenantSvc,
@@ -146,19 +146,21 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 			DoNotGenerateFormationAssignmentNotificationForLoopsOperator: NewDoNotGenerateFormationAssignmentNotificationForLoopsInput,
 			DestinationCreatorOperator:                                   NewDestinationCreatorInput,
 			ConfigMutatorOperator:                                        NewConfigMutatorInput,
+			RedirectNotificationOperator:                                 NewRedirectNotificationInput,
 		},
 		runtimeTypeLabelKey:     runtimeTypeLabelKey,
 		applicationTypeLabelKey: applicationTypeLabelKey,
 	}
-	c.operators = map[OperatorName]OperatorFunc{
-		IsNotAssignedToAnyFormationOfTypeOperator:                    c.IsNotAssignedToAnyFormationOfType,
-		DoesNotContainResourceOfSubtypeOperator:                      c.DoesNotContainResourceOfSubtype,
-		DoNotGenerateFormationAssignmentNotificationOperator:         c.DoNotGenerateFormationAssignmentNotification,
-		DoNotGenerateFormationAssignmentNotificationForLoopsOperator: c.DoNotGenerateFormationAssignmentNotificationForLoops,
-		DestinationCreatorOperator:                                   c.DestinationCreator,
-		ConfigMutatorOperator:                                        c.MutateConfig,
+	ce.operators = map[OperatorName]OperatorFunc{
+		IsNotAssignedToAnyFormationOfTypeOperator:                    ce.IsNotAssignedToAnyFormationOfType,
+		DoesNotContainResourceOfSubtypeOperator:                      ce.DoesNotContainResourceOfSubtype,
+		DoNotGenerateFormationAssignmentNotificationOperator:         ce.DoNotGenerateFormationAssignmentNotification,
+		DoNotGenerateFormationAssignmentNotificationForLoopsOperator: ce.DoNotGenerateFormationAssignmentNotificationForLoops,
+		DestinationCreatorOperator:                                   ce.DestinationCreator,
+		ConfigMutatorOperator:                                        ce.MutateConfig,
+		RedirectNotificationOperator:                                 ce.RedirectNotification,
 	}
-	return c
+	return ce
 }
 
 // EnforceConstraints finds all the applicable constraints based on JoinPointLocation and JoinPointDetails. Checks for each constraint if it is satisfied.

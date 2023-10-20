@@ -1,8 +1,9 @@
 package context_keys
 
 const (
-	FormationIDKey         = "formationID"
-	FormationNameKey       = "formationName"
-	FormationTemplateIDKey = "formationTemplateID"
-	ApplicationID          = "applicationID"
+	FormationIDKey           = "formationIDKey"
+	FormationNameKey         = "formationNameKey"
+	FormationTemplateIDKey   = "formationTemplateIDKey"
+	FormationTemplateNameKey = "formationTemplateNameKey"
+	ApplicationID            = "applicationID"
 )

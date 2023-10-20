@@ -30,8 +30,9 @@ var (
 	externalTnt   = "externalTenant"
 	ctxWithTenant = tenant.SaveToContext(emptyCtx, TestTenantID, externalTnt)
 
-	testErr       = errors.New("Test Error")
-	notFoundError = apperrors.NewNotFoundError(resource.FormationAssignment, TestID)
+	testErr           = errors.New("Test Error")
+	unauthorizedError = apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
+	notFoundError     = apperrors.NewNotFoundError(resource.FormationAssignment, TestID)
 
 	faInput = fixFormationAssignmentModelInput(TestConfigValueRawJSON)
 	fa      = fixFormationAssignmentModelWithFormationID(TestFormationID)
@@ -1092,6 +1093,18 @@ func TestService_Update(t *testing.T) {
 			},
 			ExpectedErrorMsg: testErr.Error(),
 		},
+		{
+			Name:                "Not found error when updating formation assignment fails with unauthorized error",
+			Context:             ctxWithTenant,
+			FormationAssignment: fa,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, faModel).Return(unauthorizedError).Once()
+				return repo
+			},
+			ExpectedErrorMsg: notFoundError.Error(),
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -1148,6 +1161,16 @@ func TestService_Delete(t *testing.T) {
 				return repo
 			},
 			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name:    "Not found error when deleting formation assignment due to unauthorized error",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(unauthorizedError).Once()
+				return repo
+			},
+			ExpectedErrorMsg: notFoundError.Error(),
 		},
 	}
 
@@ -2040,7 +2063,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			FormationAssignments: []*model.FormationAssignment{sourseNotMatchedAssignment, sourseNotMatchedAssignmentReverse},
 			Requests: []*webhookclient.FormationAssignmentNotificationRequest{
 				{
-					Webhook: graphql.Webhook{
+					Webhook: &graphql.Webhook{
 						ApplicationID: &appID,
 					},
 					Object: sourceNotMatchTemplateInput},
@@ -2204,7 +2227,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 	}
 
 	reqWebhook := &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: graphql.Webhook{
+		Webhook: &graphql.Webhook{
 			ID: TestWebhookID,
 		},
 		Object:        input,
@@ -2213,7 +2236,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 
 	whMode := graphql.WebhookModeAsyncCallback
 	reqWebhookWithAsyncCallbackMode := &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: graphql.Webhook{
+		Webhook: &graphql.Webhook{
 			ID:   TestWebhookID,
 			Mode: &whMode,
 			Type: graphql.WebhookTypeConfigurationChanged,
@@ -2700,7 +2723,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 
 	t.Run("success when propagating config to reverse assignment", func(t *testing.T) {
 		mappingRequest := &webhookclient.FormationAssignmentNotificationRequest{
-			Webhook: graphql.Webhook{
+			Webhook: &graphql.Webhook{
 				ID: TestWebhookID,
 			},
 		}
@@ -2709,7 +2732,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		mappingRequest.Object = inputMock
 
 		reverseMappingRequest := &webhookclient.FormationAssignmentNotificationRequest{
-			Webhook: graphql.Webhook{
+			Webhook: &graphql.Webhook{
 				ID: TestReverseWebhookID,
 			},
 		}
@@ -2801,7 +2824,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 	})
 	t.Run("error when updating to database in recursion call", func(t *testing.T) {
 		mappingRequest := &webhookclient.FormationAssignmentNotificationRequest{
-			Webhook: graphql.Webhook{
+			Webhook: &graphql.Webhook{
 				ID: TestWebhookID,
 			},
 		}
@@ -2810,7 +2833,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		mappingRequest.Object = inputMock
 
 		reverseMappingRequest := &webhookclient.FormationAssignmentNotificationRequest{
-			Webhook: graphql.Webhook{
+			Webhook: &graphql.Webhook{
 				ID: TestReverseWebhookID,
 			},
 		}
@@ -2897,7 +2920,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 	})
 	t.Run("success when reaching the maximum depth limit with two config pending assignments that return unfinished configurations", func(t *testing.T) {
 		mappingRequest := &webhookclient.FormationAssignmentNotificationRequest{
-			Webhook: graphql.Webhook{
+			Webhook: &graphql.Webhook{
 				ID: TestWebhookID,
 			},
 		}
@@ -2906,7 +2929,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		mappingRequest.Object = inputMock
 
 		reverseMappingRequest := &webhookclient.FormationAssignmentNotificationRequest{
-			Webhook: graphql.Webhook{
+			Webhook: &graphql.Webhook{
 				ID: TestReverseWebhookID,
 			},
 		}
@@ -3033,13 +3056,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 	mode := graphql.WebhookModeAsyncCallback
 
 	req := &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook:       graphql.Webhook{},
+		Webhook:       &graphql.Webhook{},
 		Object:        nil,
 		CorrelationID: "",
 	}
 
 	callbackReq := &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook: graphql.Webhook{
+		Webhook: &graphql.Webhook{
 			Mode: &mode,
 		},
 		Object:        nil,

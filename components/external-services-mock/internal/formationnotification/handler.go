@@ -176,6 +176,7 @@ type Response struct {
 	Operation     Operation
 	ApplicationID *string
 	RequestBody   json.RawMessage
+	RequestPath   string
 }
 
 // NewHandler creates a new Handler
@@ -283,6 +284,46 @@ func (h *Handler) RespondWithIncompleteAndDestinationDetails(writer http.Respons
 			return
 		}
 
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
+	}
+
+	h.syncFAResponse(ctx, writer, r, responseFunc)
+}
+
+// RespondWithIncompleteAndRedirectDetails handles synchronous formation assignment notification requests for Assign and Unassign operation
+// that returns a random configuration later which will be used to redirect the notification based on some property of it in case of Assign request.
+// And in case of Unassign operation, we only return ready state
+func (h *Handler) RespondWithIncompleteAndRedirectDetails(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	if r.Method == http.MethodDelete {
+		log.C(ctx).Infof("Handling unassign redirect notification, returning only READY state")
+		responseFunc := func([]byte) {
+			httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
+		}
+		h.syncFAResponse(ctx, writer, r, responseFunc)
+		return
+	}
+
+	responseFunc := func(bodyBytes []byte) {
+		if config := gjson.Get(string(bodyBytes), "receiverTenant.configuration").String(); config == "" {
+			response := "{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"redirectProperties\":[{\"redirectPropertyName\":\"redirectName\",\"redirectPropertyID\":\"redirectID\"}]}}"
+			log.C(ctx).Infof("Responding with CONFIG_PENDING state and custom redirect configuration")
+			httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage(response))
+			return
+		}
+
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
+	}
+
+	h.syncFAResponse(ctx, writer, r, responseFunc)
+}
+
+// RedirectNotificationHandler handle the requests in case of a redirect operator is invoked
+// and return only READY state with no configuration
+func (h *Handler) RedirectNotificationHandler(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	responseFunc := func([]byte) {
 		httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
 	}
 
@@ -412,6 +453,7 @@ func (h *Handler) syncFAResponse(ctx context.Context, writer http.ResponseWriter
 		mappings = append(h.Mappings[id], Response{
 			Operation:   Assign,
 			RequestBody: bodyBytes,
+			RequestPath: r.URL.Path,
 		})
 	}
 
@@ -427,6 +469,7 @@ func (h *Handler) syncFAResponse(ctx context.Context, writer http.ResponseWriter
 			Operation:     Unassign,
 			ApplicationID: &applicationId,
 			RequestBody:   bodyBytes,
+			RequestPath:   r.URL.Path,
 		})
 	}
 
@@ -443,8 +486,42 @@ type AsyncFAResponseFn func(client *http.Client, correlationID, formationID, for
 // AsyncNoopFAResponseFn is an empty implementation of the AsyncFAResponseFn function
 var AsyncNoopFAResponseFn = func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {}
 
-// Async handles asynchronous formation assignment notification requests for Assign operation
+// Async handles asynchronous formation assignment notification requests for Assign operation using the new receiverTenant/assignedTenant request body format
 func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	correlationID := correlation.CorrelationIDFromContext(ctx)
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
+		return
+	}
+
+	isInitialReq, statusCode, err := isInitialNotificationRequest(ctx, bodyBytes)
+	if err != nil {
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, statusCode)
+		return
+	}
+
+	if isInitialReq {
+		writer.WriteHeader(statusCode)
+		return
+	}
+
+	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
+		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
+		if err != nil {
+			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
+		}
+	}
+	r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+	h.asyncFAResponse(ctx, writer, r, Assign, `{"asyncKey": "asyncValue", "asyncKey2": {"asyncNestedKey": "asyncNestedValue"}}`, responseFunc)
+}
+
+// AsyncOld handles asynchronous formation assignment notification requests for Assign operation using old request body format
+// Should minimize/restrict the usage of this one and migrate to the new handler and request body format
+func (h *Handler) AsyncOld(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
@@ -467,17 +544,14 @@ func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	assignedTenantState := gjson.GetBytes(bodyBytes, "assignedTenant.state").String()
-	if assignedTenantState == "" {
-		err := errors.New("The assigned tenant state in the request body cannot be empty")
-		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
+	isInitialReq, statusCode, err := isInitialNotificationRequest(ctx, bodyBytes)
+	if err != nil {
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, statusCode)
 		return
 	}
 
-	assignedTenantConfig := gjson.GetBytes(bodyBytes, "assignedTenant.configuration").String()
-	if assignedTenantState == string(InitialAssignmentState) && assignedTenantConfig == "" || assignedTenantConfig == "\"\"" {
-		log.C(ctx).Infof("Initial notification request is received with empty config in the assigned tenant. Returning 202 Accepted with noop response func")
-		writer.WriteHeader(http.StatusAccepted)
+	if isInitialReq {
+		writer.WriteHeader(statusCode)
 		return
 	}
 
@@ -662,6 +736,7 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 	response := Response{
 		Operation:   operation,
 		RequestBody: bodyBytes,
+		RequestPath: r.URL.Path,
 	}
 	if r.Method == http.MethodDelete {
 		applicationId, ok := routeVars[ApplicationIDParam]
@@ -697,6 +772,21 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 	go responseFunc(certAuthorizedHTTPClient, correlationID, formationID, formationAssignmentID, config)
 
 	writer.WriteHeader(http.StatusAccepted)
+}
+
+func isInitialNotificationRequest(ctx context.Context, bodyBytes []byte) (bool, int, error) {
+	assignedTenantState := gjson.GetBytes(bodyBytes, "assignedTenant.state").String()
+	if assignedTenantState == "" {
+		return false, http.StatusBadRequest, errors.New("The assigned tenant state in the request body cannot be empty")
+	}
+
+	assignedTenantConfig := gjson.GetBytes(bodyBytes, "assignedTenant.configuration").String()
+	if assignedTenantState == string(InitialAssignmentState) && (assignedTenantConfig == "" || assignedTenantConfig == "\"\"") {
+		log.C(ctx).Infof("Initial notification request is received with empty config in the assigned tenant. Returning 202 Accepted with noop response func")
+		return true, http.StatusAccepted, nil
+	}
+
+	return false, http.StatusAccepted, nil
 }
 
 func retrieveFormationID(ctx context.Context, bodyBytes []byte) (string, error) {

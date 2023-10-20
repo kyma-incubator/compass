@@ -2,10 +2,11 @@ package asserters
 
 import (
 	"context"
-	"github.com/stretchr/testify/require"
-	"github.com/tidwall/gjson"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 type NotificationsCountAsserter struct {

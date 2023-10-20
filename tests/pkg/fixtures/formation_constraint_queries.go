@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"context"
+	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -10,7 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func CreateFormationConstraint(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationConstraintInput) *graphql.FormationConstraint {
+func CreateFormationConstraint(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationConstraintInput) *graphql.FormationConstraint {
+	t.Logf("Creating formation constraint with name: %s", in.Name)
 	formationConstraintInputGQLString, err := testctx.Tc.Graphqlizer.FormationConstraintInputToGQL(in)
 	require.NoError(t, err)
 	createRequest := FixCreateFormationConstraintRequest(formationConstraintInputGQLString)
