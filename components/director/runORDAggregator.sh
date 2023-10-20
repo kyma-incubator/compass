@@ -11,6 +11,12 @@ NC='\033[0m' # No Color
 set -e
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+ORD_DATA_CREATION=true
+ORD_DATA_CLEANUP=true
+APP_TEMPLATE_NAME="SAP local ord aggregator template"
+APP_NAME="ord-test-app"
+APP_TEMPLATE_ID=""
+APP_ID=""
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -19,6 +25,14 @@ do
     key="$1"
 
     case ${key} in
+        --skip-data-cleanup)
+            ORD_DATA_CLEANUP=false
+            shift
+        ;;
+        --skip-data-creation)
+            ORD_DATA_CREATION=false
+            shift
+        ;;
         --debug)
             DEBUG=true
             DEBUG_PORT=40001
@@ -71,36 +85,77 @@ function cleanup() {
        rm  $GOPATH/src/github.com/kyma-incubator/compass/components/director/ordAggregator
     fi
     rm -fr $GOPATH/src/github.com/kyma-incubator/compass/components/director/run
+    rm -fr ${ROOT_PATH}/../../open-resource-discovery-reference-application
+
+    if [[ ${ORD_DATA_CLEANUP} == true ]]; then
+        if [[ -z $APP_ID ]]; then
+          echo -e "${RED} APP_ID variable is null ${NC}"
+          return 1
+        fi
+
+        if [[ -z $APP_TEMPLATE_ID ]]; then
+          echo -e "${RED} APP_TEMPLATE_ID variable is null ${NC}"
+          return 1
+        fi
+
+        . ${ROOT_PATH}/hack/jwt_generator.sh
+        DIRECTOR_TOKEN="$(get_token | tr -d '\n')"
+
+        echo -e "${YELLOW} Cleaning up Application with ID ${APP_ID} ${NC}"
+        DELETE_APP="mutation { result: unregisterApplication(id:\"${APP_ID}\") { id } }"
+        execute_gql_query "${APP_DIRECTOR_GRAPHQL_URL}" "${DIRECTOR_TOKEN}" "${DELETE_APP}"
+
+        echo -e "\n${YELLOW} Cleaning up Application Template with ID ${APP_TEMPLATE_ID} ${NC}"
+        DELETE_APP_TEMPLATE="mutation { result: deleteApplicationTemplate(id:\"${APP_TEMPLATE_ID}\") { id }"
+        execute_gql_query "${APP_DIRECTOR_GRAPHQL_URL}" "${DIRECTOR_TOKEN}" "${DELETE_APP_TEMPLATE}"
+
+    fi
 }
 
-mkdir $GOPATH/src/github.com/kyma-incubator/compass/components/director/run
+function setup() {
+    mkdir $GOPATH/src/github.com/kyma-incubator/compass/components/director/run
+
+    cd ${ROOT_PATH}/../../
+    git clone https://github.tools.sap/CentralEngineering/open-resource-discovery-reference-application
+    cd open-resource-discovery-reference-application
+    npm set @sap:registry=http://nexus.wdf.sap.corp:8081/nexus/content/groups/build.milestones.npm/
+
+    cat > ./src/config.ts << EOF
+export const port = process.env.PORT || 8080
+export const localUrl = \`http://localhost:\${port}\`
+export const publicUrl = \`http://localhost:\${port}\`
+EOF
+
+    npm install
+    npm run build
+    npm start > /dev/null &
+
+    cd ${ROOT_PATH}
+}
+
+function execute_gql_query(){
+    local URL=${1}
+    local DIRECTOR_TOKEN=${2}
+    local MUTATION=${3:-""}
+
+    if [ "" != "${MUTATION}" ]; then
+        local GQL_QUERY='{ "query": "'${MUTATION}'" }'
+    fi
+    curl --request POST --url "${URL}" --header "Content-Type: application/json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" -d "${GQL_QUERY}"
+}
 
 trap cleanup EXIT
 
+setup
+
 echo -e "${GREEN}Starting application${NC}"
 
+export APP_DIRECTOR_GRAPHQL_URL="http://localhost:3000/graphql"
 export APP_DB_USER=${DB_USER}
 export APP_DB_PASSWORD=${DB_PWD}
 export APP_DB_HOST=${DB_HOST}
 export APP_DB_PORT=${DB_PORT}
 export APP_DB_NAME=${DB_NAME}
-#export APP_DIRECTOR_GRAPHQL_URL="http://localhost:3000/graphql"
-#export APP_DIRECTOR_SKIP_SSL_VALIDATION="true"
-#export APP_DIRECTOR_REQUEST_TIMEOUT="30s"
-#export APP_SYSTEM_INFORMATION_PARALLELLISM="1"
-#export APP_SYSTEM_INFORMATION_QUEUE_SIZE="1"
-#export APP_ENABLE_SYSTEM_DELETION="false"
-#export APP_OPERATIONAL_MODE="DISCOVER_SYSTEMS"
-#export APP_SYSTEM_INFORMATION_FETCH_TIMEOUT="30s"
-#export APP_SYSTEM_INFORMATION_PAGE_SIZE="200"
-#export APP_SYSTEM_INFORMATION_PAGE_SKIP_PARAM='$skip'
-#export APP_SYSTEM_INFORMATION_PAGE_SIZE_PARAM='$top'
-#export APP_OAUTH_TENANT_HEADER_NAME="x-zid"
-#export APP_OAUTH_SCOPES_CLAIM="uaa.resource"
-#export APP_OAUTH_TOKEN_PATH="/oauth/token"
-#export APP_OAUTH_TOKEN_ENDPOINT_PROTOCOL="https"
-#export APP_OAUTH_TOKEN_REQUEST_TIMEOUT="30s"
-#export APP_OAUTH_SKIP_SSL_VALIDATION="false"
 export APP_DB_SSL="disable"
 export APP_LOG_FORMAT="json"
 export APP_DB_MAX_OPEN_CONNECTIONS="5"
@@ -143,15 +198,11 @@ echo '{"ASYNC_CALLBACK": {}}' >> $GOPATH/src/github.com/kyma-incubator/compass/c
 
 # Fetch needed artifacts from stage cluster
 kubectl config use-context ${STAGE_CONTEXT}
-#kubectl get configmap compass-system-fetcher-templates-config -n compass-system -o json | jq -r '.data."app-templates.json"' | jq -r '.' > ${APP_TEMPLATES_FILE_LOCATION}/app-templates.json
 kubectl get configmap compass-director-config -n compass-system -o json | jq -r '.data."config.yaml"' > ${APP_CONFIGURATION_FILE}
-#export APP_OAUTH_CLIENT_ID=$(kubectl get secret xsuaa-instance -n compass-system -o json | jq -r '.data."x509.credentials.clientid"' | base64 --decode)
-#export APP_OAUTH_TOKEN_BASE_URL=$(kubectl get secret xsuaa-instance -n compass-system -o json | jq -r '.data."x509.credentials.certurl"' | base64 --decode)
 export APP_EXTERNAL_CLIENT_CERT_VALUE=$(kubectl get secret -n compass-system ${CLIENT_CERT_SECRET_NAME} -o json | jq -r '.data."tls.crt"' | base64 --decode)
 export APP_EXTERNAL_CLIENT_KEY_VALUE=$(kubectl get secret -n compass-system ${CLIENT_CERT_SECRET_NAME} -o json | jq -r '.data."tls.key"' | base64 --decode)
 export APP_EXT_SVC_CLIENT_CERT_VALUE=$(kubectl get secret -n compass-system ${EXT_SVC_CERT_SECRET_NAME} -o json | jq -r '.data."tls.crt"' | base64 --decode)
 export APP_EXT_SVC_CLIENT_KEY_VALUE=$(kubectl get secret -n compass-system ${EXT_SVC_CERT_SECRET_NAME} -o json | jq -r '.data."tls.key"' | base64 --decode)
-
 ENV_VARS=$(kubectl get pod -n compass-system $(kubectl get pods -n compass-system  | grep "ord-aggregator" | awk '{print $1}' | head -1) -o=jsonpath='{.spec.containers[?(@.name=="ord-aggregator")]}' | jq -r '.env')
 
 # Adjust artifacts inside local cluster
@@ -162,6 +213,31 @@ kubectl create secret generic "$EXT_SVC_CERT_SECRET_NAME"-stage --from-literal="
 export APP_GLOBAL_REGISTRY_URL="$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_GLOBAL_REGISTRY_URL") | .value' )"
 
 . ${ROOT_PATH}/hack/jwt_generator.sh
+
+# Create Application Template and Application with ORD webhook if needed
+if [[  ${ORD_DATA_CREATION} == true ]]; then
+    echo -e "${GREEN}Creating tenant${NC}"
+    DIRECTOR_TOKEN="$(get_token | tr -d '\n')"
+
+    CREATE_APP_TEMPLATE_MUTATION="mutation { result: createApplicationTemplate( in: { name: \\\"${APP_TEMPLATE_NAME}\\\" description: \\\"app-template-desc\\\" applicationInput: { name: \\\"{{name}}\\\", providerName: \\\"compass-tests\\\", description: \\\"test {{name}}\\\", webhooks: [{ type: OPEN_RESOURCE_DISCOVERY, url: \\\"http://localhost:8080/.well-known/open-resource-discovery\\\" }] healthCheckURL: \\\"http://url.valid\\\" } placeholders: [ { name: \\\"name\\\" description: \\\"app\\\" jsonPath: \\\"new-placeholder-name-json-path\\\" } ] accessLevel: GLOBAL } ) { id } }"
+    CREATE_APP_TEMPLATE_RESULT="$(execute_gql_query "${APP_DIRECTOR_GRAPHQL_URL}" "${DIRECTOR_TOKEN}" "${CREATE_APP_TEMPLATE_MUTATION}")"
+    echo -e "${GREEN}Application Template created: ${NC}"
+    echo "${CREATE_APP_TEMPLATE_RESULT}"
+
+    APP_TEMPLATE_ID=$(echo "${CREATE_APP_TEMPLATE_RESULT}" | jq '.data.result.id')
+
+    CREATE_APP_MUTATION="mutation { result: registerApplicationFromTemplate( in: { templateName: \\\"${APP_TEMPLATE_NAME}\\\" values: [ { placeholder: \\\"name\\\", value: \\\"${APP_NAME}\\\" } ] } ) { id } }"
+    CREATE_APP_RESULT="$(execute_gql_query "${APP_DIRECTOR_GRAPHQL_URL}" "${DIRECTOR_TOKEN}" "${CREATE_APP_MUTATION}")"
+    echo -e "${GREEN}Application created: ${NC}"
+    echo "${CREATE_APP_RESULT}"
+
+    APP_ID=$(echo "${CREATE_APP_RESULT}" | jq '.data.result.id')
+else
+    echo -e "${GREEN}Tenant creation skipped${NC}"
+fi
+
+echo ${APP_TEMPLATE_ID}
+echo ${APP_ID}
 
 # Start Debug or Run mode
 if [[  ${DEBUG} == true ]]; then
