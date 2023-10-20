@@ -295,7 +295,7 @@ func main() {
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
 	tombstoneProcessor := processor.NewTombstoneProcessor(transact, tombstoneSvc)
 	entityTypeProcessor := processor.NewEntityTypeProcessor(transact, entityTypeSvc)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
 	appTemplateVersionSvc := apptemplateversion.NewService(appTemplateVersionRepo, appTemplateSvc, uidSvc, timeSvc)
 
 	opRepo := operation.NewRepository(operation.NewConverter())
