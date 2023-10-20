@@ -2,9 +2,10 @@ package resource_providers
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	gcli "github.com/machinebox/graphql"
-	"testing"
 )
 
 type FormationProvider struct {

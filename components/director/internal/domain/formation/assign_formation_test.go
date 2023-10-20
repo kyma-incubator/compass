@@ -56,7 +56,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		ApplicationTypes: []string{applicationType},
 	}
 	notifications := []*webhookclient.FormationAssignmentNotificationRequest{{
-		Webhook: graphql.Webhook{
+		Webhook: &graphql.Webhook{
 			ID: "wid1",
 		},
 	}}

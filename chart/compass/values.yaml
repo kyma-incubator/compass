@@ -159,7 +159,7 @@ global:
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3404"
+      version: "PR-3331"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
@@ -171,7 +171,7 @@ global:
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3404"
+      version: "PR-3331"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
@@ -512,7 +512,7 @@ global:
     host: compass-hydrator.compass-system.svc.cluster.local
     port: 3000
     prefix: /hydrators
-    certSubjectMappingResyncInterval: "10s"
+    certSubjectMappingResyncInterval: "3s"
     subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount", "global", "organization", "folder", "resource-group"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}]'
     certificateDataHeader: "Certificate-Data"
     consumerClaimsKeys:
@@ -1196,7 +1196,7 @@ global:
       ouCertSubaccountID: "bad76f69-e5c2-4d55-bca5-240944824b83"
       issuerLocalityRegion2: "local"
     hydrator:
-      certSubjectMappingResyncInterval: "10s"
+      certSubjectMappingResyncInterval: "3s"
     director:
       skipPattern: ""
       externalCertIntSystemCN: "integration-system-test"

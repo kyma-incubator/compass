@@ -6,6 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	fm "github.com/kyma-incubator/compass/components/director/internal/formationmapping"
@@ -158,6 +161,22 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusInternalServerError,
 			expectedErrOutput:  "An unexpected error occurred while processing the request",
+		},
+		{
+			name:       "Authorization fail: error when getting formation assignment globally fails due to formation assignment not found",
+			transactFn: txGen.ThatDoesntExpectCommit,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, testFormationAssignmentID))
+				return faSvc
+			},
+			contextFn: func() context.Context {
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusNotFound,
+			expectedErrOutput:  "Formation assignment with ID",
 		},
 		{
 			name:       "Authorization fail: error when tenant loading from context fails",
@@ -1268,6 +1287,22 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 			expectedErrOutput:  "An unexpected error occurred while processing the request",
 		},
 		{
+			name:       "Authorization fail: error when getting formation fails due to formation not found",
+			transactFn: txGen.ThatDoesntExpectCommit,
+			formationRepoFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationID).Return(nil, apperrors.NewNotFoundError(resource.Formations, testFormationID)).Once()
+				return formationRepo
+			},
+			contextFn: func() context.Context {
+				c := fixGetConsumer(consumerID, consumer.ExternalCertificate)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusNotFound,
+			expectedErrOutput:  "Formation with ID",
+		},
+		{
 			name:       "Authorization fail: error when getting formation template fails",
 			transactFn: txGen.ThatDoesntExpectCommit,
 			formationRepoFn: func() *automock.FormationRepository {
@@ -1331,7 +1366,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, persist, transact, formationRepo, formationTemplateRepo)
 
 			// GIVEN
-			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, nil, nil, nil, nil, nil, nil, formationRepo, formationTemplateRepo, nil, tCase.globalSubaccountIDLabelKey, "") // todo::: adjust uclCertOUSubaccountID value
+			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, nil, nil, nil, nil, nil, nil, formationRepo, formationTemplateRepo, nil, tCase.globalSubaccountIDLabelKey, "")
 			formationAuthMiddleware := fmAuthenticator.FormationHandler()
 			rw := httptest.NewRecorder()
 

@@ -206,7 +206,7 @@ func UnregisterApplicationExpectError(t require.TestingT, ctx context.Context, g
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &app)
 	require.Error(t, err)
 	for _, expectedErrorPart := range expectedErrorParts {
-	require.Contains(t, err.Error(), expectedErrorPart)
+		require.Contains(t, err.Error(), expectedErrorPart)
 	}
 }
 

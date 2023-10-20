@@ -2,11 +2,12 @@ package operators_test
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/stretchr/testify/mock"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"github.com/stretchr/testify/assert"

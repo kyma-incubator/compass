@@ -156,8 +156,8 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 	}
 
 	return &webhookclient.FormationAssignmentNotificationRequestExt{
-		Operation:                              operation,
 		FormationAssignmentNotificationRequest: faRequestMapping.Request,
+		Operation:                              operation,
 		FormationAssignment:                    faRequestMapping.FormationAssignment,
 		ReverseFormationAssignment:             reverseFa,
 		Formation:                              formation,

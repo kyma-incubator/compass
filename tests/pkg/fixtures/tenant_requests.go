@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/stretchr/testify/require"
