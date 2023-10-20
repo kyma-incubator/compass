@@ -11,4 +11,6 @@ type ApplicationTemplate struct {
 	Placeholders         []*PlaceholderDefinition       `json:"placeholders"`
 	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
 	Labels               Labels                         `json:"labels"`
+	CreatedAt            Timestamp                      `json:"createdAt"`
+	UpdatedAt            Timestamp                      `json:"updatedAt"`
 }
