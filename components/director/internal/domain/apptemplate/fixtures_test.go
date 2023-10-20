@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 
@@ -52,8 +53,9 @@ var (
 	testProviderName               = "provider-display-name"
 	testURL                        = "http://valid.url"
 	testError                      = errors.New("test error")
-	testTableColumns               = []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level"}
+	testTableColumns               = []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level", "created_at", "updated_at"}
 	newTestLabels                  = map[string]interface{}{"label1": "test"}
+	timestamp                      = time.Now()
 )
 
 func fixModelApplicationTemplate(id, name string, webhooks []*model.Webhook) *model.ApplicationTemplate {
@@ -67,6 +69,8 @@ func fixModelApplicationTemplate(id, name string, webhooks []*model.Webhook) *mo
 		Placeholders:         fixModelPlaceholders(),
 		Webhooks:             modelPtrsToWebhooks(webhooks),
 		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
+		CreatedAt:            timestamp,
+		UpdatedAt:            timestamp,
 	}
 
 	return &out
@@ -122,6 +126,8 @@ func fixGQLAppTemplate(id, name string, webhooks []*graphql.Webhook) *graphql.Ap
 		Placeholders:         fixGQLPlaceholders(),
 		Webhooks:             gqlPtrsToWebhooks(webhooks),
 		AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
+		CreatedAt:            graphql.Timestamp(timestamp),
+		UpdatedAt:            graphql.Timestamp(timestamp),
 	}
 }
 
@@ -380,6 +386,8 @@ func fixEntityApplicationTemplate(t *testing.T, id, name string) *apptemplate.En
 		ApplicationInputJSON: marshalledAppInput,
 		PlaceholdersJSON:     repo.NewValidNullableString(string(marshalledPlaceholders)),
 		AccessLevel:          string(model.GlobalApplicationTemplateAccessLevel),
+		CreatedAt:            timestamp,
+		UpdatedAt:            timestamp,
 	}
 }
 
@@ -567,13 +575,13 @@ func fixModelApplicationFromTemplateInputWithPlaceholderPayload(name string) mod
 }
 
 func fixAppTemplateCreateArgs(entity apptemplate.Entity) []driver.Value {
-	return []driver.Value{entity.ID, entity.Name, entity.Description, entity.ApplicationNamespace, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel}
+	return []driver.Value{entity.ID, entity.Name, entity.Description, entity.ApplicationNamespace, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel, entity.CreatedAt, entity.UpdatedAt}
 }
 
 func fixSQLRows(entities []apptemplate.Entity) *sqlmock.Rows {
 	out := sqlmock.NewRows(testTableColumns)
 	for _, entity := range entities {
-		out.AddRow(entity.ID, entity.Name, entity.Description, entity.ApplicationNamespace, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel)
+		out.AddRow(entity.ID, entity.Name, entity.Description, entity.ApplicationNamespace, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel, entity.CreatedAt, entity.UpdatedAt)
 	}
 	return out
 }
@@ -657,7 +665,7 @@ func gqlPtrsToWebhooks(in []*graphql.Webhook) (webhookPtrs []graphql.Webhook) {
 }
 
 func fixColumns() []string {
-	return []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level"}
+	return []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level", "created_at", "updated_at"}
 }
 
 func fixEnrichedTenantMappedWebhooks() []*graphql.WebhookInput {
