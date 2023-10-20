@@ -182,6 +182,42 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		require.Contains(t, err.Error(), fmt.Sprintf("Cannot have more than one application template with labels %q: %q and %q: %q", conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey, conf.SubscriptionConfig.SelfRegRegion))
 		require.Empty(t, output2.ID)
 	})
+
+	t.Run("Error for self register when not using the certificate flow", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		tenantId := tenant.TestTenants.GetDefaultTenantID()
+		name := "app-template-name-invalid-flow"
+
+		t.Log("Creating integration system")
+		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, name)
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys)
+		require.NoError(t, err)
+		require.NotEmpty(t, intSys.ID)
+
+		intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys.ID)
+		require.NotEmpty(t, intSysAuth)
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+		intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+		require.True(t, ok)
+
+		t.Log("Issuing a Hydra token with Client Credentials")
+		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+		appTemplateName := fixtures.CreateAppTemplateName(name)
+		appTemplateInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
+
+		// WHEN
+		t.Log("Creating application template")
+		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, appTemplateInput)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTemplate)
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("label %s is forbidden when creating Application Template in a non-cert flow", conf.SubscriptionConfig.SelfRegDistinguishLabelKey))
+	})
 }
 
 func TestCreateApplicationTemplate_ValidApplicationTypeLabel(t *testing.T) {
