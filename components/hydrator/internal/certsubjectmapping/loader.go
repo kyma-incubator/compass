@@ -125,7 +125,7 @@ func (cl *certSubjectMappingLoader) loadCertSubjectMappings(ctx context.Context,
 	for hasNextPage == true {
 		csmGQLPage, err := cl.directorClient.ListCertificateSubjectMappings(ctx, after)
 		if err != nil {
-			return nil, errors.Wrap(err, "while listing certificate subject mappings from DB")
+			return mappings, errors.Wrap(err, "while listing certificate subject mappings from DB")
 		}
 		csmTotalCount = csmGQLPage.TotalCount
 		mappings = append(mappings, convertGQLCertSubjectMappings(csmGQLPage.Data)...)
