@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -219,6 +220,33 @@ func emptyNotificationStatusReturnedOperationDetails() *formationconstraint.Noti
 			Value: json.RawMessage("\"\""),
 			Error: json.RawMessage("\"\""),
 		},
+		FormationAssignmentTemplateInput: &webhook.ApplicationTenantMappingInput{
+			Operation:   model.AssignFormation,
+			FormationID: "",
+			Formation: &model.Formation{
+				ID:                  "",
+				FormationTemplateID: "",
+				Name:                "",
+			},
+			SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixLabels(),
+			},
+			SourceApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(),
+				Labels:      fixLabels(),
+			},
+			TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixLabels(),
+			},
+			TargetApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(),
+				Labels:      fixLabels(),
+			},
+			Assignment:        nil,
+			ReverseAssignment: nil,
+		},
 		ReverseFormationAssignment: &model.FormationAssignment{
 			Value: json.RawMessage("\"\""),
 			Error: json.RawMessage("\"\""),
@@ -227,5 +255,45 @@ func emptyNotificationStatusReturnedOperationDetails() *formationconstraint.Noti
 			Error: json.RawMessage("\"\""),
 		},
 		FormationTemplate: &model.FormationTemplate{},
+	}
+}
+
+func fixApplicationModel() *model.Application {
+	return &model.Application{
+		ProviderName:          str.Ptr(""),
+		ApplicationTemplateID: str.Ptr(""),
+		Name:                  "",
+		Description:           str.Ptr(""),
+		Status: &model.ApplicationStatus{
+			Condition: model.ApplicationStatusConditionInitial,
+			Timestamp: time.Time{},
+		},
+		HealthCheckURL:      str.Ptr(""),
+		BaseURL:             str.Ptr(""),
+		OrdLabels:           json.RawMessage("[]"),
+		CorrelationIDs:      json.RawMessage("[]"),
+		SystemStatus:        str.Ptr(""),
+		DocumentationLabels: json.RawMessage("[]"),
+		BaseEntity: &model.BaseEntity{
+			ID:        "",
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: &time.Time{},
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+		},
+	}
+}
+
+func fixLabels() map[string]string {
+	return map[string]string{"foo": "bar"}
+}
+
+func fixApplicationTemplateModel() *model.ApplicationTemplate {
+	return &model.ApplicationTemplate{
+		ID:                   "",
+		Name:                 "",
+		Description:          str.Ptr(""),
+		ApplicationInputJSON: `{}`,
 	}
 }

@@ -157,6 +157,7 @@ type NotificationStatusReturnedOperationDetails struct {
 	LastFormationAssignmentState         string
 	LastFormationAssignmentConfiguration string
 	Tenant                               string
+	FormationAssignmentTemplateInput     webhook.FormationAssignmentTemplateInput
 	Operation                            model.FormationOperation
 	FormationAssignment                  *model.FormationAssignment
 	ReverseFormationAssignment           *model.FormationAssignment

@@ -125,12 +125,18 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 		log.C(ctx).Debugf("Reverse assignment with source %q and target %q in formation with ID %q is not found.", fa.Target, fa.Source, formation.ID)
 	}
 
+	notification, err := fan.GenerateFormationAssignmentNotification(ctx, fa, operation)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while generating notification for formation assignment with ID: %q and target type: %q and target ID: %q that is used by formation constraint operators", fa.ID, fa.TargetType, fa.Target)
+	}
+
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
 		ResourceType:                         targetType,
 		ResourceSubtype:                      targetSubtype,
 		LastFormationAssignmentState:         lastFormationAssignmentState,
 		LastFormationAssignmentConfiguration: lastFormationAssignmentConfiguration,
 		Tenant:                               tenantID,
+		FormationAssignmentTemplateInput:     notification.Object,
 		Operation:                            operation,
 		FormationAssignment:                  fa,
 		ReverseFormationAssignment:           reverseFa,
