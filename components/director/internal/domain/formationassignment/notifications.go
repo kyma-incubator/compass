@@ -2,7 +2,6 @@ package formationassignment
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
@@ -130,13 +129,18 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 		return nil, errors.Wrapf(err, "while generating notification for formation assignment with ID: %q and target type: %q and target ID: %q that is used by formation constraint operators", fa.ID, fa.TargetType, fa.Target)
 	}
 
+	var formationAssignmentTemplateInput webhook.FormationAssignmentTemplateInput
+	if notification != nil {
+		formationAssignmentTemplateInput = notification.Object
+	}
+
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
 		ResourceType:                         targetType,
 		ResourceSubtype:                      targetSubtype,
 		LastFormationAssignmentState:         lastFormationAssignmentState,
 		LastFormationAssignmentConfiguration: lastFormationAssignmentConfiguration,
 		Tenant:                               tenantID,
-		FormationAssignmentTemplateInput:     notification.Object,
+		FormationAssignmentTemplateInput:     formationAssignmentTemplateInput,
 		Operation:                            operation,
 		FormationAssignment:                  fa,
 		ReverseFormationAssignment:           reverseFa,
