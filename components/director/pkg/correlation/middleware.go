@@ -18,7 +18,8 @@ package correlation
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
@@ -70,13 +71,13 @@ func HeadersForRequest(request *http.Request) Headers {
 	for _, headerKey := range headerKeys {
 		headerValue := request.Header.Get(headerKey)
 		if headerValue != "" {
-			log.C(request.Context()).Infof("Header from request. key %s value %s \n", headerKey, headerValue)
+			spew.Dump(fmt.Sprintf("Header from request. key %s value %s \n", headerKey, headerValue))
 			reqHeaders[headerKey] = headerValue
 			continue
 		}
 
 		if headerValue, ok := headersFromCtx[headerKey]; ok {
-			log.C(request.Context()).Infof("Header from context. key %s value %s \n", headerKey, headerValue)
+			spew.Dump(fmt.Sprintf("Header from context. key %s value %s \n", headerKey, headerValue))
 			request.Header.Set(headerKey, headerValue)
 			reqHeaders[headerKey] = headerValue
 		}
@@ -93,7 +94,7 @@ func HeadersForRequest(request *http.Request) Headers {
 
 	if _, ok := reqHeaders[RequestIDHeaderKey]; !ok {
 		newRequestID := uuid.New().String()
-		log.C(request.Context()).Infof("Missing x-request-id header. Regenerating the id. New id %s \n", newRequestID)
+		spew.Dump(fmt.Sprintf("Missing x-request-id header. Regenerating the id. New id %s \n", newRequestID))
 		reqHeaders[RequestIDHeaderKey] = newRequestID
 		request.Header.Set(RequestIDHeaderKey, newRequestID)
 	}
