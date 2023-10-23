@@ -40,14 +40,13 @@ func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchrono
 	time.Sleep(time.Millisecond * time.Duration(a.delay))
 	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
-	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
-
 	assignments := assignmentsPage.Data
+	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
 	for _, assignment := range assignments {
-		targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
+		sourceAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
 		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q and source %q", assignment.ID, assignment.Source)
 
-		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
+		assignmentExpectation, ok := sourceAssignmentsExpectations[assignment.Target]
 		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q, source %q and target %q", assignment.ID, assignment.Source, assignment.Target)
 		require.Equal(t, assignmentExpectation.State, assignment.State, "Assignment with ID: %q has different state than expected", assignment.ID)
 
