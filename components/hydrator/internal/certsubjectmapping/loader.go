@@ -37,6 +37,7 @@ type certSubjectMappingLoader struct {
 }
 
 var CertSubjectMappingLoaderCorrelationID = "cert-subject-mapping-loader-correlation-id"
+var CertSubjectMappingRetryInterval = 1
 
 func NewCertSubjectMappingLoader(certSubjectMappingCache *certSubjectMappingCache, certSubjectMappingCfg Config, directorClient DirectorClient) Loader {
 	return &certSubjectMappingLoader{
@@ -76,10 +77,20 @@ func (cl *certSubjectMappingLoader) Run(ctx context.Context, certSubjectMappings
 	entry := log.C(ctx)
 	entry = entry.WithField(log.FieldRequestID, CertSubjectMappingLoaderCorrelationID)
 	ctx = log.ContextWithLogger(ctx, entry)
-
+	retryCount := 3
 	t := time.NewTicker(cl.certSubjectMappingCfg.ResyncInterval)
 	for {
-		mappings, err := cl.loadCertSubjectMappings(ctx, certSubjectMappingsFromEnv)
+		var mappings []SubjectConsumerTypeMapping
+		var err error
+		for i := 1; i <= retryCount; i++ {
+			mappings, err = cl.loadCertSubjectMappings(ctx, certSubjectMappingsFromEnv)
+			if err != nil {
+				log.C(ctx).WithError(err).Errorf("Certificate subject mapping resync failed with error (try=%d): %v", i, err)
+				time.Sleep(time.Second * time.Duration(CertSubjectMappingRetryInterval*i))
+				continue
+			}
+			break
+		}
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("Certificate subject mapping resync failed with error: %v", err)
 		} else {
@@ -102,6 +113,14 @@ func (cl *certSubjectMappingLoader) loadCertSubjectMappings(ctx context.Context,
 	mappings := make([]SubjectConsumerTypeMapping, 0)
 	hasNextPage := true
 	csmTotalCount := 0
+	log.C(ctx).Infof("Getting certificate subject mapping(s) from environment.")
+	mappingsFromEnv, err := unmarshalMappings(certSubjectMappingsFromEnv)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting certificate subject mappings from environment")
+	}
+	log.C(ctx).Infof("Certificate subject mapping(s) count from environment: %d", len(mappingsFromEnv))
+
+	mappings = append(mappings, mappingsFromEnv...)
 	log.C(ctx).Info("Listing certificate subject mapping from DB...")
 	for hasNextPage == true {
 		csmGQLPage, err := cl.directorClient.ListCertificateSubjectMappings(ctx, after)
@@ -113,15 +132,7 @@ func (cl *certSubjectMappingLoader) loadCertSubjectMappings(ctx context.Context,
 		hasNextPage = csmGQLPage.PageInfo.HasNextPage
 		after = string(csmGQLPage.PageInfo.EndCursor)
 	}
-	log.C(ctx).Infof("Certificate subject mapping(s) count from DB: %d", csmTotalCount)
-
-	mappingsFromEnv, err := unmarshalMappings(certSubjectMappingsFromEnv)
-	if err != nil {
-		return nil, errors.Wrap(err, "while getting certificate subject mappings from environment")
-	}
-	log.C(ctx).Infof("Certificate subject mapping(s) count from environment: %d", len(mappingsFromEnv))
-
-	mappings = append(mappings, mappingsFromEnv...)
+	log.C(ctx).Infof("Certificate subject mapping(s) count from DB: %d", csmTotalCount-len(mappingsFromEnv))
 
 	return mappings, nil
 }
