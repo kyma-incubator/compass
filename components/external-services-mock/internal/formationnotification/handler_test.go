@@ -25,6 +25,7 @@ var (
 
 func TestHandler_Patch(t *testing.T) {
 	apiPath := fmt.Sprintf("/formation-callback/%s", testTenantID)
+	assignMappingsWithoutConfig[testTenantID][0].RequestPath = apiPath
 
 	testCases := []struct {
 		Name                 string
@@ -139,6 +140,8 @@ func TestHandler_PatchWithState(t *testing.T) {
 
 func TestHandler_RespondWithIncomplete(t *testing.T) {
 	apiPath := fmt.Sprintf("/formation-callback/configuration/%s", testTenantID)
+	assignMappingsWithoutConfig[testTenantID][0].RequestPath = apiPath
+	assignMappingsWithConfig[testTenantID][0].RequestPath = apiPath
 
 	testCases := []struct {
 		Name                 string
@@ -203,6 +206,8 @@ func TestHandler_RespondWithIncomplete(t *testing.T) {
 
 func TestHandler_RespondWithIncompleteAndDestinationDetails(t *testing.T) {
 	apiPath := fmt.Sprintf("/formation-callback/destinations/configuration/%s", testTenantID)
+	assignMappingsWithDestDetailsNoConfig[testTenantID][0].RequestPath = apiPath
+	assignMappingsWithDestDetails[testTenantID][0].RequestPath = apiPath
 
 	testCases := []struct {
 		Name                 string
@@ -267,6 +272,7 @@ func TestHandler_RespondWithIncompleteAndDestinationDetails(t *testing.T) {
 
 func TestHandler_Delete(t *testing.T) {
 	apiPath := fmt.Sprintf("/formation-callback/%s/%s", testTenantID, appID)
+	unassignMappings[testTenantID][0].RequestPath = apiPath
 
 	testCases := []struct {
 		Name                 string
@@ -338,6 +344,7 @@ func TestHandler_Delete(t *testing.T) {
 
 func TestHandler_DestinationDelete(t *testing.T) {
 	apiPath := fmt.Sprintf("/formation-callback/destinations/configuration/%s/%s", testTenantID, appID)
+	unassignMappings[testTenantID][0].RequestPath = apiPath
 
 	testCases := []struct {
 		Name                 string
@@ -409,6 +416,7 @@ func TestHandler_DestinationDelete(t *testing.T) {
 
 func TestHandler_DeleteWithState(t *testing.T) {
 	apiPath := fmt.Sprintf("/formation-callback/%s/%s", testTenantID, appID)
+	unassignMappings[testTenantID][0].RequestPath = apiPath
 
 	testCases := []struct {
 		Name                 string
@@ -523,6 +531,8 @@ func TestCleanup(t *testing.T) {
 
 func TestHandler_FailOnceResponse(t *testing.T) {
 	apiPath := fmt.Sprintf("/formation-callback/fail-once/%s", testTenantID)
+	assignMappingsWithoutConfig[testTenantID][0].RequestPath = apiPath
+	unassignMappings[testTenantID][0].RequestPath = apiPath
 
 	testCases := []struct {
 		Name                 string
@@ -832,6 +842,45 @@ func TestHandler_FailOnceFormation(t *testing.T) {
 			require.Equal(t, testCase.ExpectedMappings, handler.Mappings)
 		})
 	}
+}
+
+func TestKymaBasicEmptyCredentials(t *testing.T) {
+	t.Run("When method is PATCH", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodPatch, url, nil)
+		require.NoError(t, err)
+
+		h := formationnotification.NewHandler(formationnotification.Configuration{})
+		r := httptest.NewRecorder()
+
+		//WHEN
+		h.KymaEmptyCredentials(r, req)
+		resp := r.Result()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		//THEN
+		require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+		expectedBody := []byte("{\"state\":\"READY\",\"configuration\":\"\"}\n")
+		require.Equal(t, expectedBody, body)
+	})
+	t.Run("When method is DELETE", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodDelete, url, nil)
+		require.NoError(t, err)
+
+		h := formationnotification.NewHandler(formationnotification.Configuration{})
+		r := httptest.NewRecorder()
+
+		//WHEN
+		h.KymaEmptyCredentials(r, req)
+		resp := r.Result()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		//THEN
+		require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+	})
 }
 
 func TestKymaBasicCredentials(t *testing.T) {

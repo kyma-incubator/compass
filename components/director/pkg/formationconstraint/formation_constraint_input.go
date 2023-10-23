@@ -44,4 +44,31 @@ type DestinationCreatorInput struct {
 	JoinPointDetailsFAMemoryAddress        uintptr                  `json:"details_formation_assignment_memory_address"`         // contains the memory address of the join point details' formation assignment in form of an integer
 	JoinPointDetailsReverseFAMemoryAddress uintptr                  `json:"details_reverse_formation_assignment_memory_address"` // contains the memory address of the join point details' reverse formation assignment in form of an integer
 	Location                               JoinPointLocation        `json:"join_point_location"`
+	SkipSubaccountValidation               bool                     `json:"skip_subaccount_validation"`
+}
+
+// ConfigMutatorInput input for ConfigMutator operator
+type ConfigMutatorInput struct {
+	State                                  *string                  `json:"state"`
+	Tenant                                 string                   `json:"tenant"`
+	OnlyForSourceSubtypes                  []string                 `json:"only_for_source_subtypes"`
+	ModifiedConfiguration                  *string                  `json:"modified_configuration"`
+	Operation                              model.FormationOperation `json:"operation"`
+	ResourceType                           model.ResourceType       `json:"resource_type"`
+	ResourceSubtype                        string                   `json:"resource_subtype"`
+	JoinPointDetailsFAMemoryAddress        uintptr                  `json:"details_formation_assignment_memory_address"`         // contains the memory address of the join point details' formation assignment in form of an integer
+	JoinPointDetailsReverseFAMemoryAddress uintptr                  `json:"details_reverse_formation_assignment_memory_address"` // contains the memory address of the join point details' reverse formation assignment in form of an integer
+	Location                               JoinPointLocation        `json:"join_point_location"`
+}
+
+// RedirectNotificationInput is an input for RedirectNotification operator
+type RedirectNotificationInput struct {
+	ShouldRedirect       bool                     `json:"should_redirect"`
+	URLTemplate          string                   `json:"url_template"`
+	URL                  string                   `json:"url"`
+	WebhookMemoryAddress uintptr                  `json:"webhook_memory_address"` // contains the memory address of the join point details' webhook in form of an integer
+	Operation            model.FormationOperation `json:"operation"`
+	ResourceType         model.ResourceType       `json:"resource_type"`
+	ResourceSubtype      string                   `json:"resource_subtype"`
+	Location             JoinPointLocation        `json:"join_point_location"`
 }

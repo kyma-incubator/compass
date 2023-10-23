@@ -20,12 +20,15 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
@@ -38,7 +41,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
@@ -232,7 +234,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			},
 		}
 
-		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		deps, err := json.Marshal([]string{selfRegLabelValue})
+		require.NoError(stdT, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
 		defer func() {
@@ -296,8 +300,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		subdomain := conf.DestinationConsumerSubdomain
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, "")
+		subdomain := conf.DestinationConsumerSubdomainMtls
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
@@ -403,7 +407,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 	t.Run("ConsumerProvider flow with application template as provider", func(stdT *testing.T) {
 		// Create Application Template
-		appTemplateName := createAppTemplateName("provider-app-template")
+		appTemplateName := fixtures.CreateAppTemplateName("provider-app-template")
 		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabelAndSubdomainRegion(appTemplateName)
 		for i := range appTemplateInput.Placeholders {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
@@ -483,7 +487,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			},
 		}
 
-		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		deps, err := json.Marshal([]string{selfRegLabelValue})
+		require.NoError(stdT, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
 		defer func() {
@@ -564,8 +570,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		subdomain := conf.DestinationConsumerSubdomain
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, "")
+		subdomain := conf.DestinationConsumerSubdomainMtls
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
@@ -640,6 +646,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.ElementsMatch(stdT, []string{destination.Name, destinationSecond.Name}, []string{destinationsFromResponse[0].Get("sensitiveData.destinationConfiguration.Name").String(), destinationsFromResponse[1].Get("sensitiveData.destinationConfiguration.Name").String()})
 		stdT.Log("Successfully fetched system with bundles and destinations")
 
+		unassignFromFormation(stdT, ctx, providerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
@@ -747,7 +754,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			},
 		}
 
-		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		deps, err := json.Marshal([]string{selfRegLabelValue})
+		require.NoError(stdT, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
 		defer func() {
@@ -815,8 +824,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		subdomain := conf.DestinationConsumerSubdomain
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, "")
+		subdomain := conf.DestinationConsumerSubdomainMtls
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
@@ -938,10 +947,6 @@ func executeGQLRequest(t *testing.T, ctx context.Context, gqlRequest *gcli.Reque
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, gqlRequest, &formation)
 	require.NoError(t, err)
 	require.Equal(t, formationName, formation.Name)
-}
-
-func createAppTemplateName(name string) string {
-	return fmt.Sprintf("SAP %s", name)
 }
 
 func fixAppTemplateInputWithDefaultDistinguishLabelAndSubdomainRegion(name string) graphql.ApplicationTemplateInput {

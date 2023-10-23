@@ -19,6 +19,10 @@ func (_m *EventAPIClient) FetchTenantEventsPage(ctx context.Context, eventsType 
 	ret := _m.Called(ctx, eventsType, additionalQueryParams)
 
 	var r0 *resync.EventsPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resync.EventsType, resync.QueryParams) (*resync.EventsPage, error)); ok {
+		return rf(ctx, eventsType, additionalQueryParams)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resync.EventsType, resync.QueryParams) *resync.EventsPage); ok {
 		r0 = rf(ctx, eventsType, additionalQueryParams)
 	} else {
@@ -27,7 +31,6 @@ func (_m *EventAPIClient) FetchTenantEventsPage(ctx context.Context, eventsType 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resync.EventsType, resync.QueryParams) error); ok {
 		r1 = rf(ctx, eventsType, additionalQueryParams)
 	} else {
@@ -37,13 +40,12 @@ func (_m *EventAPIClient) FetchTenantEventsPage(ctx context.Context, eventsType 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewEventAPIClient interface {
+// NewEventAPIClient creates a new instance of EventAPIClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEventAPIClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEventAPIClient creates a new instance of EventAPIClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEventAPIClient(t mockConstructorTestingTNewEventAPIClient) *EventAPIClient {
+}) *EventAPIClient {
 	mock := &EventAPIClient{}
 	mock.Mock.Test(t)
 

@@ -22,6 +22,7 @@ graphql:
     integrationSystems: ["integration_system:read"]
     viewer: []
     tenants: ["tenant:read"]
+    rootTenant: ["tenant:read"]
     automaticScenarioAssignments: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentForScenario: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentsForSelector: ["automatic_scenario_assignment:read"]

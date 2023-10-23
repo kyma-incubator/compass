@@ -159,6 +159,21 @@ func FixTenantsPageSearchRequest(searchTerm string, first int) *gcli.Request {
 				}`, searchTerm, first, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.OmitForTenant([]string{"labels", "initialized"}))))
 }
 
+func FixRootTenantRequest(externalTenant string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+                result: rootTenant(externalTenant: "%s") {
+                  id
+                  internalID
+                  initialized
+                  parentID
+                  provider
+                  type
+                  name
+                }
+              }`, externalTenant))
+}
+
 func FixTenantRequest(externalID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {

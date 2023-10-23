@@ -131,15 +131,15 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3404"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3404"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3404"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
@@ -147,39 +147,43 @@ global:
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3404"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3380"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3404"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3331"
       name: compass-instance-creator
+    default_tenant_mapping_handler:
+      dir: dev/incubator/
+      version: "PR-3404"
+      name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3404"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3331"
       name: compass-operations-controller
     ord_service:
-      dir: prod/incubator/
-      version: "v20230825-ec91cb4d"
+      dir: dev/incubator/
+      version: "PR-103"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3406"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3404"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -188,7 +192,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3331"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -196,7 +200,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3397"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -431,7 +435,8 @@ global:
       clientCertKey: client-cert
       clientKeyKey: client-key
   log:
-    format: "json"
+    format: "text"
+    formatJson: "json"
   tenantConfig:
     useDefaultTenants: true
     dbPool:
@@ -507,7 +512,7 @@ global:
     host: compass-hydrator.compass-system.svc.cluster.local
     port: 3000
     prefix: /hydrators
-    certSubjectMappingResyncInterval: "10s"
+    certSubjectMappingResyncInterval: "3s"
     subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount", "global", "organization", "folder", "resource-group"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}]'
     certificateDataHeader: "Certificate-Data"
     consumerClaimsKeys:
@@ -592,6 +597,14 @@ global:
         appNameMapping: '{{ printf "\"%s\":\"app_name\"" .Values.global.instanceCreator.appNamePath }}'
         certificateMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.instanceCreator.certificatePath .Values.global.connector.caCertificate }}'
         certificateKeyMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.instanceCreator.certificateKeyPath .Values.global.connector.caKey }}'
+  defaultTenantMappingHandler:
+    port: 8080
+    apiRootPath: "/default-tenant-mapping-handler"
+    apiTenantMappingsEndpoint: "/v1/tenantMappings/{tenant-id}"
+    tenantInfo:
+      requestTimeout: 30s
+    authentication:
+      jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
   operations_controller:
     enabled: true
   connectivity_adapter:
@@ -946,10 +959,10 @@ global:
   ordAggregator:
     port: 3000
     prefix: /ord-aggregator
+    aggregateEndpoint: /aggregate
     name: ord-aggregator
-    job:
-      schedulePeriod: 60m
-      isSchedulable: true
+    client:
+      timeout: "30s"
     lease:
       lockname: aggregatorlease
     authentication:
@@ -964,14 +977,18 @@ global:
       maxOpenConnections: 2
       maxIdleConnections: 2
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
-    maxParallelWebhookProcessors: 4
     maxParallelDocumentsPerApplication: 10
     maxParallelSpecificationProcessors: 100
-    ordWebhookPartialProcessURL: ""
-    ordWebhookPartialProcessMaxDays: 0
-    ordWebhookPartialProcessing: false
     containerName: "ord-aggregator"
     tenantMappingConfiguration: '{}'
+    parallelOperationProcessors: 10
+    priorityQueueLimit: 10
+    rescheduleJobInterval: 24h
+    reschedulePeriod: 168h
+    rescheduleHangedJobInterval: 1h
+    rescheduleHangedPeriod: 1h
+    maintainOperationsJobInterval: 60m
+    operationProcessorsQuietPeriod: 5s
   systemFetcher:
     enabled: false
     name: "system-fetcher"
@@ -1179,7 +1196,7 @@ global:
       ouCertSubaccountID: "bad76f69-e5c2-4d55-bca5-240944824b83"
       issuerLocalityRegion2: "local"
     hydrator:
-      certSubjectMappingResyncInterval: "10s"
+      certSubjectMappingResyncInterval: "3s"
     director:
       skipPattern: ""
       externalCertIntSystemCN: "integration-system-test"
@@ -1203,7 +1220,8 @@ global:
       region: "eu-1"
       region2: "eu-2"
     destination:
-      consumerSubdomain: "compass-external-services-mock-sap-mtls"
+      consumerSubdomain: "compass-external-services-mock"
+      consumerSubdomainMtls: "compass-external-services-mock-sap-mtls"
       instanceID: "37d7d783-d9ad-47de-b6c8-b05a4cb961ca" # randomly generated UUID
       claims:
         subaccountIDKey: "subaccountid"
@@ -1224,6 +1242,15 @@ global:
         providerSubaccountIDRegion2: "731b7bc4-5472-41d2-a447-e4c0f45de739" # TestProviderSubaccountRegion2 from our testing tenants
         consumerAccountIDTenantHierarchy: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants; more info in 'TestFormationNotificationsTenantHierarchy'
         consumerSubaccountIDTenantHierarchy: "3cfcdd62-320d-403b-b66a-4ee3cdd06947" # TestIntegrationSystemManagedSubaccount from our testing tenants; more info in 'TestFormationNotificationsTenantHierarchy'
+      destinationOauthSecret:
+        manage: false
+        name: provider-destination-instance-tests
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
+        oauthTokenPath: "/secured/oauth/token"
+        serviceUrlKey: uri
+        dependencyKey: dependency
       oauthSecret:
         manage: false
         name: compass-subscription-secret

@@ -14,6 +14,10 @@ func (_m *ApplicationHideCfgProvider) GetApplicationHideSelectors() (map[string]
 	ret := _m.Called()
 
 	var r0 map[string][]string
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (map[string][]string, error)); ok {
+		return rf()
+	}
 	if rf, ok := ret.Get(0).(func() map[string][]string); ok {
 		r0 = rf()
 	} else {
@@ -22,7 +26,6 @@ func (_m *ApplicationHideCfgProvider) GetApplicationHideSelectors() (map[string]
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func() error); ok {
 		r1 = rf()
 	} else {
@@ -32,13 +35,12 @@ func (_m *ApplicationHideCfgProvider) GetApplicationHideSelectors() (map[string]
 	return r0, r1
 }
 
-type mockConstructorTestingTNewApplicationHideCfgProvider interface {
+// NewApplicationHideCfgProvider creates a new instance of ApplicationHideCfgProvider. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplicationHideCfgProvider(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplicationHideCfgProvider creates a new instance of ApplicationHideCfgProvider. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationHideCfgProvider(t mockConstructorTestingTNewApplicationHideCfgProvider) *ApplicationHideCfgProvider {
+}) *ApplicationHideCfgProvider {
 	mock := &ApplicationHideCfgProvider{}
 	mock.Mock.Test(t)
 

@@ -17,37 +17,40 @@ import (
 
 // EventDefinition missing godoc
 type EventDefinition struct {
-	ApplicationID                *string
-	ApplicationTemplateVersionID *string
-	PackageID                    *string
-	Name                         string
-	Description                  *string
-	Group                        *string
-	OrdID                        *string
-	LocalTenantID                *string
-	ShortDescription             *string
-	SystemInstanceAware          *bool
-	PolicyLevel                  *string
-	CustomPolicyLevel            *string
-	ChangeLogEntries             json.RawMessage
-	Links                        json.RawMessage
-	Tags                         json.RawMessage
-	Countries                    json.RawMessage
-	ReleaseStatus                *string
-	SunsetDate                   *string
-	Successors                   json.RawMessage
-	Labels                       json.RawMessage
-	Visibility                   *string
-	Disabled                     *bool
-	PartOfProducts               json.RawMessage
-	LineOfBusiness               json.RawMessage
-	Industry                     json.RawMessage
-	Extensible                   json.RawMessage
-	ResourceHash                 *string
-	Version                      *Version
-	Hierarchy                    json.RawMessage
-	DocumentationLabels          json.RawMessage
-	CorrelationIDs               json.RawMessage
+	ApplicationID                           *string
+	ApplicationTemplateVersionID            *string
+	PackageID                               *string
+	Name                                    string
+	Description                             *string
+	Group                                   *string
+	OrdID                                   *string
+	LocalTenantID                           *string
+	ShortDescription                        *string
+	SystemInstanceAware                     *bool
+	PolicyLevel                             *string
+	CustomPolicyLevel                       *string
+	ChangeLogEntries                        json.RawMessage
+	Links                                   json.RawMessage
+	Tags                                    json.RawMessage
+	Countries                               json.RawMessage
+	ReleaseStatus                           *string
+	SunsetDate                              *string
+	Successors                              json.RawMessage
+	Labels                                  json.RawMessage
+	Visibility                              *string
+	Disabled                                *bool
+	PartOfProducts                          json.RawMessage
+	LineOfBusiness                          json.RawMessage
+	Industry                                json.RawMessage
+	ImplementationStandard                  *string
+	CustomImplementationStandard            *string
+	CustomImplementationStandardDescription *string
+	Extensible                              json.RawMessage
+	ResourceHash                            *string
+	Version                                 *Version
+	DocumentationLabels                     json.RawMessage
+	CorrelationIDs                          json.RawMessage
+	LastUpdate                              *string
 	*BaseEntity
 }
 
@@ -68,36 +71,39 @@ func (EventDefinitionPage) IsPageable() {}
 
 // EventDefinitionInput missing godoc
 type EventDefinitionInput struct {
-	OrdPackageID             *string                       `json:"partOfPackage"`
-	Name                     string                        `json:"title"`
-	Description              *string                       `json:"description"`
-	Group                    *string                       `json:",omitempty"`
-	OrdID                    *string                       `json:"ordId"`
-	LocalTenantID            *string                       `json:"localTenantId"`
-	ShortDescription         *string                       `json:"shortDescription"`
-	SystemInstanceAware      *bool                         `json:"systemInstanceAware"`
-	PolicyLevel              *string                       `json:"policyLevel"`
-	CustomPolicyLevel        *string                       `json:"customPolicyLevel"`
-	ChangeLogEntries         json.RawMessage               `json:"changelogEntries"`
-	Links                    json.RawMessage               `json:"links"`
-	Tags                     json.RawMessage               `json:"tags"`
-	Countries                json.RawMessage               `json:"countries"`
-	ReleaseStatus            *string                       `json:"releaseStatus"`
-	SunsetDate               *string                       `json:"sunsetDate"`
-	Successors               json.RawMessage               `json:"successors,omitempty"`
-	Labels                   json.RawMessage               `json:"labels"`
-	Visibility               *string                       `json:"visibility"`
-	Disabled                 *bool                         `json:"disabled"`
-	PartOfProducts           json.RawMessage               `json:"partOfProducts"`
-	LineOfBusiness           json.RawMessage               `json:"lineOfBusiness"`
-	Industry                 json.RawMessage               `json:"industry"`
-	Extensible               json.RawMessage               `json:"extensible"`
-	ResourceDefinitions      []*EventResourceDefinition    `json:"resourceDefinitions"`
-	PartOfConsumptionBundles []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
-	DefaultConsumptionBundle *string                       `json:"defaultConsumptionBundle"`
-	Hierarchy                json.RawMessage               `json:"hierarchy"`
-	DocumentationLabels      json.RawMessage               `json:"documentationLabels"`
-	CorrelationIDs           json.RawMessage               `json:"correlationIds,omitempty"`
+	OrdPackageID                            *string                       `json:"partOfPackage"`
+	Name                                    string                        `json:"title"`
+	Description                             *string                       `json:"description"`
+	Group                                   *string                       `json:",omitempty"`
+	OrdID                                   *string                       `json:"ordId"`
+	LocalTenantID                           *string                       `json:"localTenantId"`
+	ShortDescription                        *string                       `json:"shortDescription"`
+	SystemInstanceAware                     *bool                         `json:"systemInstanceAware"`
+	PolicyLevel                             *string                       `json:"policyLevel"`
+	CustomPolicyLevel                       *string                       `json:"customPolicyLevel"`
+	ChangeLogEntries                        json.RawMessage               `json:"changelogEntries"`
+	Links                                   json.RawMessage               `json:"links"`
+	Tags                                    json.RawMessage               `json:"tags"`
+	Countries                               json.RawMessage               `json:"countries"`
+	ReleaseStatus                           *string                       `json:"releaseStatus"`
+	SunsetDate                              *string                       `json:"sunsetDate"`
+	Successors                              json.RawMessage               `json:"successors,omitempty"`
+	Labels                                  json.RawMessage               `json:"labels"`
+	Visibility                              *string                       `json:"visibility"`
+	Disabled                                *bool                         `json:"disabled"`
+	PartOfProducts                          json.RawMessage               `json:"partOfProducts"`
+	LineOfBusiness                          json.RawMessage               `json:"lineOfBusiness"`
+	Industry                                json.RawMessage               `json:"industry"`
+	ImplementationStandard                  *string                       `json:"implementationStandard"`
+	CustomImplementationStandard            *string                       `json:"customImplementationStandard"`
+	CustomImplementationStandardDescription *string                       `json:"customImplementationStandardDescription"`
+	Extensible                              json.RawMessage               `json:"extensible"`
+	ResourceDefinitions                     []*EventResourceDefinition    `json:"resourceDefinitions"`
+	PartOfConsumptionBundles                []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
+	DefaultConsumptionBundle                *string                       `json:"defaultConsumptionBundle"`
+	DocumentationLabels                     json.RawMessage               `json:"documentationLabels"`
+	CorrelationIDs                          json.RawMessage               `json:"correlationIds,omitempty"`
+	LastUpdate                              *string                       `json:"lastUpdate"`
 
 	*VersionInput `hash:"ignore"`
 }
@@ -157,35 +163,38 @@ func (e *EventDefinitionInput) ToEventDefinition(id string, resourceType resourc
 	}
 
 	event := &EventDefinition{
-		PackageID:           packageID,
-		Name:                e.Name,
-		Description:         e.Description,
-		Group:               e.Group,
-		OrdID:               e.OrdID,
-		LocalTenantID:       e.LocalTenantID,
-		ShortDescription:    e.ShortDescription,
-		SystemInstanceAware: e.SystemInstanceAware,
-		PolicyLevel:         e.PolicyLevel,
-		CustomPolicyLevel:   e.CustomPolicyLevel,
-		Tags:                e.Tags,
-		Countries:           e.Countries,
-		Links:               e.Links,
-		ReleaseStatus:       e.ReleaseStatus,
-		SunsetDate:          e.SunsetDate,
-		Successors:          e.Successors,
-		ChangeLogEntries:    e.ChangeLogEntries,
-		Labels:              e.Labels,
-		Visibility:          e.Visibility,
-		Disabled:            e.Disabled,
-		PartOfProducts:      e.PartOfProducts,
-		LineOfBusiness:      e.LineOfBusiness,
-		Industry:            e.Industry,
-		Version:             e.VersionInput.ToVersion(),
-		Extensible:          e.Extensible,
-		Hierarchy:           e.Hierarchy,
-		DocumentationLabels: e.DocumentationLabels,
-		CorrelationIDs:      e.CorrelationIDs,
-		ResourceHash:        hash,
+		PackageID:                               packageID,
+		Name:                                    e.Name,
+		Description:                             e.Description,
+		Group:                                   e.Group,
+		OrdID:                                   e.OrdID,
+		LocalTenantID:                           e.LocalTenantID,
+		ShortDescription:                        e.ShortDescription,
+		SystemInstanceAware:                     e.SystemInstanceAware,
+		PolicyLevel:                             e.PolicyLevel,
+		CustomPolicyLevel:                       e.CustomPolicyLevel,
+		Tags:                                    e.Tags,
+		Countries:                               e.Countries,
+		Links:                                   e.Links,
+		ReleaseStatus:                           e.ReleaseStatus,
+		SunsetDate:                              e.SunsetDate,
+		Successors:                              e.Successors,
+		ChangeLogEntries:                        e.ChangeLogEntries,
+		Labels:                                  e.Labels,
+		Visibility:                              e.Visibility,
+		Disabled:                                e.Disabled,
+		PartOfProducts:                          e.PartOfProducts,
+		LineOfBusiness:                          e.LineOfBusiness,
+		Industry:                                e.Industry,
+		ImplementationStandard:                  e.ImplementationStandard,
+		CustomImplementationStandard:            e.CustomImplementationStandard,
+		CustomImplementationStandardDescription: e.CustomImplementationStandardDescription,
+		Version:                                 e.VersionInput.ToVersion(),
+		Extensible:                              e.Extensible,
+		DocumentationLabels:                     e.DocumentationLabels,
+		CorrelationIDs:                          e.CorrelationIDs,
+		LastUpdate:                              e.LastUpdate,
+		ResourceHash:                            hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,
 			Ready: true,

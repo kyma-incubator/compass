@@ -78,13 +78,12 @@ func (_m *VersionConverter) ToGraphQL(in *model.Version) *graphql.Version {
 	return r0
 }
 
-type mockConstructorTestingTNewVersionConverter interface {
+// NewVersionConverter creates a new instance of VersionConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewVersionConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewVersionConverter creates a new instance of VersionConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewVersionConverter(t mockConstructorTestingTNewVersionConverter) *VersionConverter {
+}) *VersionConverter {
 	mock := &VersionConverter{}
 	mock.Mock.Test(t)
 

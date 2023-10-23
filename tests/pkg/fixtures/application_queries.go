@@ -186,8 +186,28 @@ func CleanupApplication(t require.TestingT, ctx context.Context, gqlClient *gcli
 		}
 		return nil
 	}
-	err := retry.Do(deleteApplicationFunc, retry.Attempts(retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
+	err := retry.Do(deleteApplicationFunc,
+		retry.Attempts(retryAttempts),
+		retry.Delay(retryDelayMilliseconds*time.Millisecond),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "connection reset by peer")
+		}))
 	require.NoError(t, err)
+}
+
+func UnregisterApplicationExpectError(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, app *graphql.ApplicationExt, expectedErrorParts []string) {
+	if app == nil || app.Application.BaseEntity == nil || app.ID == "" {
+		return
+	}
+	deleteRequest := FixUnregisterApplicationRequest(app.ID)
+
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &app)
+	require.Error(t, err)
+	for _, expectedErrorPart := range expectedErrorParts {
+		require.Contains(t, err.Error(), expectedErrorPart)
+	}
 }
 
 func DeleteApplicationLabel(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id, labelKey string) {

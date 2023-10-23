@@ -86,8 +86,13 @@ echo "Helm install ORY components..."
 RELEASE_NS=ory
 RELEASE_NAME=ory-stack
 
-CLOUD_PERSISTENCE=$(yq ".global.ory.hydra.persistence.gcloud.enabled" ${OVERRIDE_TEMP_ORY})
+# As of Kyma 2.6.3 we need to specify which namespaces should enable istio injection
+kubectl create ns $RELEASE_NS --dry-run=client -o yaml | kubectl apply -f -
+kubectl label ns $RELEASE_NS istio-injection=enabled --overwrite
+# As of Kubernetes 1.25 we need to replace PodSecurityPolicies; we chose the Pod Security Standards
+kubectl label ns $RELEASE_NS pod-security.kubernetes.io/enforce=baseline --overwrite
 
+CLOUD_PERSISTENCE=$(yq ".global.ory.hydra.persistence.gcloud.enabled" ${OVERRIDE_TEMP_ORY})
 # The System secret and cookie secret, needed by Hydra, are created by the Secret component of the Helm chart
 # Rotating the secrets has to be done manually; the rotation of the Hydra Secrets should be done following this guide: https://www.ory.sh/docs/hydra/self-hosted/secrets-key-rotation
 # Hydra requires data persistence, locally the postgres DB of compass is used.

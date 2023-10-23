@@ -27,47 +27,47 @@ func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 	}{
 		{
 			Name:     "Success",
-			Location: location,
+			Location: preAssignFormationLocation,
 			Details:  &details,
 			OperatorFunc: func(ctx context.Context, input operators.OperatorInput) (bool, error) {
 				return true, nil
 			},
 			FormationConstraintService: func() *automock.FormationConstraintSvc {
 				svc := &automock.FormationConstraintSvc{}
-				svc.On("ListMatchingConstraints", ctx, formationTemplateID, location, details.GetMatchingDetails()).Return([]*model.FormationConstraint{formationConstraintModel}, nil).Once()
+				svc.On("ListMatchingConstraints", ctx, formationTemplateID, preAssignFormationLocation, details.GetMatchingDetails()).Return([]*model.FormationConstraint{formationConstraintModel}, nil).Once()
 				return svc
 			},
 			ExpectedErrorMsg: "",
 		},
 		{
 			Name:     "Error while listing matching constraints",
-			Location: location,
+			Location: preAssignFormationLocation,
 			Details:  &details,
 			FormationConstraintService: func() *automock.FormationConstraintSvc {
 				svc := &automock.FormationConstraintSvc{}
-				svc.On("ListMatchingConstraints", ctx, formationTemplateID, location, details.GetMatchingDetails()).Return(nil, testErr).Once()
+				svc.On("ListMatchingConstraints", ctx, formationTemplateID, preAssignFormationLocation, details.GetMatchingDetails()).Return(nil, testErr).Once()
 				return svc
 			},
 			ExpectedErrorMsg: "While listing matching constraints for target operation",
 		},
 		{
 			Name:     "Error when operator not found",
-			Location: location,
+			Location: preAssignFormationLocation,
 			Details:  &details,
 			FormationConstraintService: func() *automock.FormationConstraintSvc {
 				svc := &automock.FormationConstraintSvc{}
-				svc.On("ListMatchingConstraints", ctx, formationTemplateID, location, details.GetMatchingDetails()).Return([]*model.FormationConstraint{formationConstraintUnsupportedOperatorModel}, nil).Once()
+				svc.On("ListMatchingConstraints", ctx, formationTemplateID, preAssignFormationLocation, details.GetMatchingDetails()).Return([]*model.FormationConstraint{formationConstraintUnsupportedOperatorModel}, nil).Once()
 				return svc
 			},
 			ExpectedErrorMsg: "Operator \"unsupported\" not found",
 		},
 		{
 			Name:     "Error when operator input builder not found",
-			Location: location,
+			Location: preAssignFormationLocation,
 			Details:  &details,
 			FormationConstraintService: func() *automock.FormationConstraintSvc {
 				svc := &automock.FormationConstraintSvc{}
-				svc.On("ListMatchingConstraints", ctx, formationTemplateID, location, details.GetMatchingDetails()).Return([]*model.FormationConstraint{formationConstraintModel}, nil).Once()
+				svc.On("ListMatchingConstraints", ctx, formationTemplateID, preAssignFormationLocation, details.GetMatchingDetails()).Return([]*model.FormationConstraint{formationConstraintModel}, nil).Once()
 				return svc
 			},
 			OperatorFunc: func(ctx context.Context, input operators.OperatorInput) (bool, error) {
@@ -78,11 +78,11 @@ func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 		},
 		{
 			Name:     "Error when executing operator",
-			Location: location,
+			Location: preAssignFormationLocation,
 			Details:  &details,
 			FormationConstraintService: func() *automock.FormationConstraintSvc {
 				svc := &automock.FormationConstraintSvc{}
-				svc.On("ListMatchingConstraints", ctx, formationTemplateID, location, details.GetMatchingDetails()).Return([]*model.FormationConstraint{formationConstraintModel}, nil).Once()
+				svc.On("ListMatchingConstraints", ctx, formationTemplateID, preAssignFormationLocation, details.GetMatchingDetails()).Return([]*model.FormationConstraint{formationConstraintModel}, nil).Once()
 				return svc
 			},
 			OperatorFunc: func(ctx context.Context, input operators.OperatorInput) (bool, error) {
@@ -92,11 +92,11 @@ func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 		},
 		{
 			Name:     "Error when operator is not satisfied",
-			Location: location,
+			Location: preAssignFormationLocation,
 			Details:  &details,
 			FormationConstraintService: func() *automock.FormationConstraintSvc {
 				svc := &automock.FormationConstraintSvc{}
-				svc.On("ListMatchingConstraints", ctx, formationTemplateID, location, details.GetMatchingDetails()).Return([]*model.FormationConstraint{formationConstraintModel}, nil).Once()
+				svc.On("ListMatchingConstraints", ctx, formationTemplateID, preAssignFormationLocation, details.GetMatchingDetails()).Return([]*model.FormationConstraint{formationConstraintModel}, nil).Once()
 				return svc
 			},
 			OperatorFunc: func(ctx context.Context, input operators.OperatorInput) (bool, error) {
@@ -106,11 +106,11 @@ func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 		},
 		{
 			Name:     "Error while parsing input template",
-			Location: location,
+			Location: preAssignFormationLocation,
 			Details:  &details,
 			FormationConstraintService: func() *automock.FormationConstraintSvc {
 				svc := &automock.FormationConstraintSvc{}
-				svc.On("ListMatchingConstraints", ctx, formationTemplateID, location, details.GetMatchingDetails()).Return([]*model.FormationConstraint{{Operator: operatorName, InputTemplate: "{invalid template"}}, nil).Once()
+				svc.On("ListMatchingConstraints", ctx, formationTemplateID, preAssignFormationLocation, details.GetMatchingDetails()).Return([]*model.FormationConstraint{{Operator: operatorName, InputTemplate: "{invalid template"}}, nil).Once()
 				return svc
 			},
 			OperatorFunc: func(ctx context.Context, input operators.OperatorInput) (bool, error) {

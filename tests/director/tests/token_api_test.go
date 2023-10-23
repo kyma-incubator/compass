@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//This test also test runtime/application auths custom resolver
-//TODO: Currently we don't save OneTimeToken mutations in examples, because those tests are turn off in gen_examples.sh,
+// This test also test runtime/application auths custom resolver
+// TODO: Currently we don't save OneTimeToken mutations in examples, because those tests are turn off in gen_examples.sh,
 // because we need connector up and running, which requires k8s cluster running.
 func TestTokenGeneration(t *testing.T) {
 	t.Run("Generate one time token for Runtime", func(t *testing.T) {
@@ -24,7 +24,7 @@ func TestTokenGeneration(t *testing.T) {
 
 		tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-		input := fixRuntimeInput("test")
+		input := fixtures.FixRuntimeRegisterInputWithoutLabels("test")
 
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)

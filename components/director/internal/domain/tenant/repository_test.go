@@ -1544,6 +1544,91 @@ func TestPgRepository_GetCustomerIDParentRecursively(t *testing.T) {
 	})
 }
 
+func TestPgRepository_GetParentRecursivelyByExternalTenant(t *testing.T) {
+	dbQuery := `WITH RECURSIVE parents AS
+                   (SELECT t1.id, t1.external_name, t1.external_tenant, t1.provider_name, t1.status, t1.parent, t1.type
+                    FROM business_tenant_mappings t1
+                    WHERE external_tenant = $1
+                    UNION ALL
+                    SELECT t2.id, t2.external_name, t2.external_tenant, t2.provider_name, t2.status, t2.parent, t2.type
+                    FROM business_tenant_mappings t2
+                             INNER JOIN parents p on p.parent = t2.id)
+			SELECT id, external_name, external_tenant, provider_name, status, parent, type FROM parents WHERE parent is null`
+
+	tenantMappingModel := &model.BusinessTenantMapping{
+		ID:             testID,
+		Name:           testName,
+		ExternalTenant: testExternal,
+		Parent:         "",
+		Type:           tenantEntity.Account,
+		Provider:       testProvider,
+		Status:         tenantEntity.Active,
+	}
+	tenantMappingEntity := &tenantEntity.Entity{
+		ID:             testID,
+		Name:           testName,
+		ExternalTenant: testExternal,
+		Parent:         sql.NullString{String: "", Valid: true},
+		Type:           tenantEntity.Account,
+		ProviderName:   testProvider,
+		Status:         tenantEntity.Active,
+	}
+
+	t.Run("Success when parent and type are returned", func(t *testing.T) {
+		// GIVEN
+
+		db, dbMock := testdb.MockDatabase(t)
+
+		rowsToReturn := sqlmock.NewRows([]string{"id", "external_name", "external_tenant", "provider_name", "status", "parent", "type"}).AddRow(testID, testName, testExternal, testProvider, tenantEntity.Active, "", tenantEntity.TypeToStr(tenantEntity.Account))
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
+			WithArgs(testExternal).
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", tenantMappingEntity).Return(tenantMappingModel).Once()
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		parentTenant, err := tenantMappingRepo.GetParentRecursivelyByExternalTenant(ctx, testExternal)
+
+		// THEN
+		require.NoError(t, err)
+		require.Equal(t, parentTenant, tenantMappingModel)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error when executing db query", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
+			WithArgs(testExternal).WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(nil)
+
+		// WHEN
+		parentTenant, err := tenantMappingRepo.GetParentRecursivelyByExternalTenant(ctx, testExternal)
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
+		require.Empty(t, parentTenant)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error if missing persistence context", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+		tenantMappingRepo := tenant.NewRepository(nil)
+		// WHEN
+		_, err := tenantMappingRepo.GetParentRecursivelyByExternalTenant(ctx, testExternal)
+		// THEN
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
+	})
+}
+
 const selectTenantsQuery = `(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`
 
 func mockDBSuccess(t *testing.T, runtimeID string) (*sqlx.DB, testdb.DBMock) {

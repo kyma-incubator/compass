@@ -154,7 +154,7 @@ func (u *upserter) upsertTenantAccess(ctx context.Context, resourceType resource
 		return errors.Errorf("entity %s does not have access table", resourceType)
 	}
 
-	return UpsertTenantAccessRecursively(ctx, m2mTable, &TenantAccess{
+	return CreateTenantAccessRecursively(ctx, m2mTable, &TenantAccess{
 		TenantID:   tenant,
 		ResourceID: resourceID,
 		Owner:      true,

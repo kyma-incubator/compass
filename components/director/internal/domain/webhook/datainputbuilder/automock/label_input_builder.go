@@ -20,6 +20,10 @@ func (_m *LabelInputBuilder) GetLabelsForObject(ctx context.Context, tenant stri
 	ret := _m.Called(ctx, tenant, objectID, objectType)
 
 	var r0 map[string]string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.LabelableObject) (map[string]string, error)); ok {
+		return rf(ctx, tenant, objectID, objectType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.LabelableObject) map[string]string); ok {
 		r0 = rf(ctx, tenant, objectID, objectType)
 	} else {
@@ -28,7 +32,6 @@ func (_m *LabelInputBuilder) GetLabelsForObject(ctx context.Context, tenant stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, model.LabelableObject) error); ok {
 		r1 = rf(ctx, tenant, objectID, objectType)
 	} else {
@@ -43,6 +46,10 @@ func (_m *LabelInputBuilder) GetLabelsForObjects(ctx context.Context, tenant str
 	ret := _m.Called(ctx, tenant, objectIDs, objectType)
 
 	var r0 map[string]map[string]string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, model.LabelableObject) (map[string]map[string]string, error)); ok {
+		return rf(ctx, tenant, objectIDs, objectType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, model.LabelableObject) map[string]map[string]string); ok {
 		r0 = rf(ctx, tenant, objectIDs, objectType)
 	} else {
@@ -51,7 +58,6 @@ func (_m *LabelInputBuilder) GetLabelsForObjects(ctx context.Context, tenant str
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, model.LabelableObject) error); ok {
 		r1 = rf(ctx, tenant, objectIDs, objectType)
 	} else {
@@ -61,13 +67,12 @@ func (_m *LabelInputBuilder) GetLabelsForObjects(ctx context.Context, tenant str
 	return r0, r1
 }
 
-type mockConstructorTestingTNewLabelInputBuilder interface {
+// NewLabelInputBuilder creates a new instance of LabelInputBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewLabelInputBuilder(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewLabelInputBuilder creates a new instance of LabelInputBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewLabelInputBuilder(t mockConstructorTestingTNewLabelInputBuilder) *LabelInputBuilder {
+}) *LabelInputBuilder {
 	mock := &LabelInputBuilder{}
 	mock.Mock.Test(t)
 

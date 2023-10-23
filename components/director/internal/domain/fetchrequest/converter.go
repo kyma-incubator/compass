@@ -14,6 +14,7 @@ import (
 )
 
 // AuthConverter missing godoc
+//
 //go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AuthConverter interface {
 	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
@@ -95,6 +96,8 @@ func (c *converter) ToEntity(in *model.FetchRequest) (*Entity, error) {
 	case model.APISpecFetchRequestReference:
 		fallthrough
 	case model.EventSpecFetchRequestReference:
+		specID = refID
+	case model.CapabilitySpecFetchRequestReference:
 		specID = refID
 	case model.DocumentFetchRequestReference:
 		documentID = refID

@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
@@ -20,13 +23,13 @@ var (
 
 	subject            = "C=DE, L=E2E-test, O=E2E-Org, OU=TestRegion, OU=E2E-Org-Unit, OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10, CN=E2E-test-compass"
 	subjectTwo         = "C=DE, L=E2E-test, O=E2E-Org, OU=TestRegion, OU=E2E-Org-Unit, OU=3c0fe289-bb13-4814-ac49-ac88c4a76b10, CN=E2E-test-compass"
-	sortedSubject      = "CN=E2E-test-compass, OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10, OU=E2E-Org-Unit, OU=TestRegion, O=E2E-Org, L=E2E-test, C=DE"
+	sortedSubject      = certs.SortSubject(subject)
 	consumerType       = "Integration System"                   // should be a valid consumer type
 	internalConsumerID = "e01a1918-5ee9-40c4-8ec7-e407264d43d2" // randomly chosen
 	tenantAccessLevels = []string{"account", "global"}          // should be a valid tenant access level
 
 	updatedSubject            = "C=DE, L=E2E-test-updated, O=E2E-Org, OU=TestRegion-updated, OU=E2E-Org-Unit-updated, OU=8e255922-6a2e-4677-a1a4-246ffcb391df, CN=E2E-test-cmp-updated"
-	sortedUpdatedSubject      = "CN=E2E-test-cmp-updated, OU=8e255922-6a2e-4677-a1a4-246ffcb391df, OU=E2E-Org-Unit-updated, OU=TestRegion-updated, O=E2E-Org, L=E2E-test-updated, C=DE"
+	sortedUpdatedSubject      = certs.SortSubject(updatedSubject)
 	updatedConsumerType       = "Runtime"                              // should be a valid consumer type
 	updatedInternalConsumerID = "d5644469-7605-48a7-9f18-f5dee8805904" // randomly chosen
 	updatedTntAccessLevels    = []string{"customer"}                   // should be a valid tenant access level
@@ -38,7 +41,7 @@ func TestCreateCertSubjectMapping(t *testing.T) {
 	require.NoError(t, err)
 
 	certSubjectMappingReq := fixtures.FixCreateCertificateSubjectMappingRequest(csmGQLInput)
-	saveExample(t, certSubjectMappingReq.Query(), "create certificate subject mapping")
+	example.SaveExample(t, certSubjectMappingReq.Query(), "create certificate subject mapping")
 	csm := graphql.CertificateSubjectMapping{}
 
 	t.Logf("Creating certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", subject, consumerType, tenantAccessLevels)
@@ -61,7 +64,7 @@ func TestDeleteCertSubjectMapping(t *testing.T) {
 	csmCreate = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
 
 	deleteCertSubjectMappingReq := fixtures.FixDeleteCertificateSubjectMappingRequest(csmCreate.ID)
-	saveExample(t, deleteCertSubjectMappingReq.Query(), "delete certificate subject mapping")
+	example.SaveExample(t, deleteCertSubjectMappingReq.Query(), "delete certificate subject mapping")
 	csmDelete := graphql.CertificateSubjectMapping{}
 
 	t.Logf("Deleting certificate subject mapping with ID: %s, subject: %s, consumer type: %s and tenant access levels: %s", csmCreate.ID, subject, consumerType, tenantAccessLevels)
@@ -86,7 +89,7 @@ func TestUpdateCertSubjectMapping(t *testing.T) {
 	require.NoError(t, err)
 
 	updateCertSubjectMappingReq := fixtures.FixUpdateCertificateSubjectMappingRequest(csmCreate.ID, csmUpdatedGQLInput)
-	saveExample(t, updateCertSubjectMappingReq.Query(), "update certificate subject mapping")
+	example.SaveExample(t, updateCertSubjectMappingReq.Query(), "update certificate subject mapping")
 	csmUpdated := graphql.CertificateSubjectMapping{}
 
 	t.Logf("Updating certificate subject mapping with ID: %s with new subject: %s and new consumer type: %s", csmCreate.ID, updatedSubject, updatedConsumerType)
@@ -107,7 +110,7 @@ func TestQuerySingleCertSubjectMapping(t *testing.T) {
 	csmCreate = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
 
 	queryCertSubjectMappingReq := fixtures.FixQueryCertificateSubjectMappingRequest(csmCreate.ID)
-	saveExample(t, queryCertSubjectMappingReq.Query(), "query certificate subject mapping")
+	example.SaveExample(t, queryCertSubjectMappingReq.Query(), "query certificate subject mapping")
 	csm := graphql.CertificateSubjectMapping{}
 
 	t.Logf("Query certificate subject mapping by ID: %s", csmCreate.ID)
@@ -122,7 +125,7 @@ func TestQuerySingleCertSubjectMapping(t *testing.T) {
 func TestQueryCertSubjectMappings(t *testing.T) {
 	first := 100
 	queryCertSubjectMappingsWithPaginationReq := fixtures.FixQueryCertificateSubjectMappingsRequestWithPageSize(first)
-	saveExample(t, queryCertSubjectMappingsWithPaginationReq.Query(), "query certificate subject mappings")
+	example.SaveExample(t, queryCertSubjectMappingsWithPaginationReq.Query(), "query certificate subject mappings")
 	currentCertSubjectMappings := graphql.CertificateSubjectMappingPage{}
 
 	t.Log("Getting current certificate subject mappings...")

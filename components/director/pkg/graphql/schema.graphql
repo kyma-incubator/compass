@@ -246,6 +246,7 @@ enum WebhookType {
 	REGISTER_APPLICATION
 	UNREGISTER_APPLICATION
 	OPEN_RESOURCE_DISCOVERY
+	OPEN_RESOURCE_DISCOVERY_STATIC
 	FORMATION_LIFECYCLE
 }
 
@@ -708,6 +709,7 @@ input FetchRequestInput {
 
 input FormationConstraintInput {
 	name: String!
+	description: String
 	constraintType: ConstraintType!
 	targetOperation: TargetOperation!
 	operator: String!
@@ -715,10 +717,13 @@ input FormationConstraintInput {
 	resourceSubtype: String!
 	inputTemplate: String!
 	constraintScope: ConstraintScope!
+	priority: Int
 }
 
 input FormationConstraintUpdateInput {
 	inputTemplate: String!
+	priority: Int
+	description: String
 }
 
 input FormationInput {
@@ -1014,6 +1019,8 @@ type ApplicationTemplate {
 	labels(key: String): Labels
 	accessLevel: ApplicationTemplateAccessLevel!
 	applicationNamespace: String
+	createdAt: Timestamp!
+	updatedAt: Timestamp!
 }
 
 type ApplicationTemplatePage implements Pageable {
@@ -1265,6 +1272,7 @@ type FormationAssignmentPage implements Pageable {
 type FormationConstraint {
 	id: ID!
 	name: String!
+	description: String!
 	constraintType: String!
 	targetOperation: String!
 	operator: String!
@@ -1272,6 +1280,8 @@ type FormationConstraint {
 	resourceSubtype: String!
 	inputTemplate: String!
 	constraintScope: String!
+	priority: Int!
+	createdAt: Timestamp!
 }
 
 type FormationError {
@@ -1622,6 +1632,7 @@ type Query {
 	tenantByExternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenants")
 	tenantByInternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenantByInternalID")
 	tenantByLowestOwnerForResource(id: ID!, resource: String!): String! @hasScopes(path: "graphql.query.tenantByLowestOwnerForResource")
+	rootTenant(externalTenant: String!): Tenant! @hasScopes(path: "graphql.query.rootTenant")
 	"""
 	**Examples**
 	- [query automatic scenario assignment for scenario](examples/query-automatic-scenario-assignment-for-scenario/query-automatic-scenario-assignment-for-scenario.graphql)

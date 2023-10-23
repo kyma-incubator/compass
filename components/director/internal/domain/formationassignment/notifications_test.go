@@ -90,7 +90,7 @@ var (
 
 	testAppTenantMappingWebhookInput            = fixAppTenantMappingWebhookInput(TestFormationID, testAppWithLabels, testAppWithLabels, testAppTemplateWithLabels, testAppTemplateWithLabels, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceAppAndTargetApp), fixConvertFAFromModel(faWithSourceAppAndTargetAppReverse))
 	testAppNotificationReqWithTenantMappingType = &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook:       *testGqlAppWebhook,
+		Webhook:       testGqlAppWebhook,
 		Object:        testAppTenantMappingWebhookInput,
 		CorrelationID: "",
 	}
@@ -102,6 +102,9 @@ var (
 	}
 	applicationTypeLabel = &model.Label{Value: appSubtype}
 	runtimeTypeLabel     = &model.Label{Value: rtmSubtype}
+
+	lastFormationAssignmentState         = configPendingState
+	lastFormationAssignmentConfiguration = "{}"
 )
 
 func Test_GenerateFormationAssignmentNotification(t *testing.T) {
@@ -138,35 +141,35 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 
 	testAppTenantMappingWebhookInputWithTenantPath := fixAppTenantMappingWebhookInput(TestFormationID, testAppWithLabels, testAppWithLabels, testAppTemplateWithLabels, testAppTemplateWithLabels, testCustomerTenantContextWithPath, fixConvertFAFromModel(faWithSourceAppAndTargetApp), fixConvertFAFromModel(faWithSourceAppAndTargetAppReverse))
 	testAppNotificationReqWithTenantMappingTypeWithTenantPath := &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook:       *testGqlAppWebhook,
+		Webhook:       testGqlAppWebhook,
 		Object:        testAppTenantMappingWebhookInputWithTenantPath,
 		CorrelationID: "",
 	}
 
 	testFormationConfigurationChangeInputWithSourceRuntimeAndTargetApp := fixFormationConfigurationChangeInput(TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, testRuntimeCtxWithLabels, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceRuntimeAndTargetApp), fixConvertFAFromModel(faWithSourceRuntimeAndTargetAppReverse))
 	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceRuntimeAndTargetApp := &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook:       *testGqlAppWebhook,
+		Webhook:       testGqlAppWebhook,
 		Object:        testFormationConfigurationChangeInputWithSourceRuntimeAndTargetApp,
 		CorrelationID: "",
 	}
 
 	testFormationConfigurationChangeInputWithSourceRtmCtxAndTargetApp := fixFormationConfigurationChangeInput(TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, testRuntimeCtxWithLabels, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceRuntimeCtxAndTargetApp), fixConvertFAFromModel(faWithSourceRuntimeCtxAndTargetAppReverse))
 	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceRtmCtxAndTargetApp := &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook:       *testGqlAppWebhook,
+		Webhook:       testGqlAppWebhook,
 		Object:        testFormationConfigurationChangeInputWithSourceRtmCtxAndTargetApp,
 		CorrelationID: "",
 	}
 
 	testFormationConfigurationChangeInputWithSourceAppAndTargetRuntime := fixFormationConfigurationChangeInput(TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, nil, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceAppAndTargetRuntime), fixConvertFAFromModel(faWithSourceAppAndTargetRuntimeReverse))
 	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceAppAndTargetRuntime := &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook:       *testGqlRuntimeWebhook,
+		Webhook:       testGqlRuntimeWebhook,
 		Object:        testFormationConfigurationChangeInputWithSourceAppAndTargetRuntime,
 		CorrelationID: "",
 	}
 
 	testFormationConfigurationChangeInputWithSourceAppAndTargetRtmCtx := fixFormationConfigurationChangeInput(TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, testRuntimeCtxWithLabels, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceAppCtxAndTargetRtmCtx), fixConvertFAFromModel(faWithSourceAppCtxAndTargetRtmCtxReverse))
 	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceAppAndTargetRtmCtx := &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook:       *testGqlRuntimeWebhook,
+		Webhook:       testGqlRuntimeWebhook,
 		Object:        testFormationConfigurationChangeInputWithSourceAppAndTargetRtmCtx,
 		CorrelationID: "",
 	}
@@ -1934,7 +1937,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 		ObjectType: model.RuntimeLabelableObject,
 	}
 
-	expectedDetailsForApp := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, reverseFaWithTargetTypeApplication, formationconstraint.JoinPointLocation{})
+	expectedDetailsForApp := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, reverseFaWithTargetTypeApplication, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID)
 
 	testCases := []struct {
 		name                    string
@@ -1984,7 +1987,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				lblSvc.On("GetLabel", emptyCtx, TestTenantID, runtimeLabelInput).Return(runtimeTypeLabel, nil).Once()
 				return lblSvc
 			},
-			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeResourceType, rtmSubtype, faWithTargetTypeRuntime, reverseFaWithTargetTypeRuntime, formationconstraint.JoinPointLocation{}),
+			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeResourceType, rtmSubtype, faWithTargetTypeRuntime, reverseFaWithTargetTypeRuntime, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID),
 		},
 		{
 			name:                "Success for FA with target type runtime context",
@@ -2009,7 +2012,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				rtmCtxRepo.On("GetByID", emptyCtx, TestTenantID, TestTarget).Return(&model.RuntimeContext{RuntimeID: TestTarget}, nil).Once()
 				return rtmCtxRepo
 			},
-			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeContextResourceType, rtmSubtype, faWithTargetTypeRuntimeCtx, reverseFaWithTargetTypeRuntimeCtx, formationconstraint.JoinPointLocation{}),
+			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeContextResourceType, rtmSubtype, faWithTargetTypeRuntimeCtx, reverseFaWithTargetTypeRuntimeCtx, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID),
 		},
 		{
 			name:                "Success for application when there is no reverse fa",
@@ -2029,7 +2032,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				lblSvc.On("GetLabel", emptyCtx, TestTenantID, applicationLabelInput).Return(applicationTypeLabel, nil).Once()
 				return lblSvc
 			},
-			expectedDetails: fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, nil, formationconstraint.JoinPointLocation{}),
+			expectedDetails: fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, nil, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID),
 		},
 		{
 			name:                "Error when can't get reverse fa",
@@ -2143,7 +2146,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 			faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(faRepo, nil, nil, nil, nil, formationRepo, nil, rtmCtxSvc, labelSvc, rtmTypeLabelKey, appTypeLabelKey)
 
 			// WHEN
-			notificationReq, err := faNotificationSvc.PrepareDetailsForNotificationStatusReturned(emptyCtx, TestTenantID, tCase.formationAssignment, model.AssignFormation)
+			notificationReq, err := faNotificationSvc.PrepareDetailsForNotificationStatusReturned(emptyCtx, TestTenantID, tCase.formationAssignment, model.AssignFormation, lastFormationAssignmentState, lastFormationAssignmentConfiguration)
 
 			// THEN
 			if tCase.expectedErrMsg != "" {

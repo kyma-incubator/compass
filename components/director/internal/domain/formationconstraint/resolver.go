@@ -3,6 +3,8 @@ package formationconstraint
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -131,6 +133,11 @@ func (r *Resolver) CreateFormationConstraint(ctx context.Context, in graphql.For
 		return nil, err
 	}
 
+	inputWrapper := formationconstraint.NewFormationConstraintInputWrapper(&in)
+	if err = inputWrapper.Validate(); err != nil {
+		return nil, err
+	}
+
 	id, err := r.svc.Create(ctx, r.converter.FromInputGraphQL(&in))
 	if err != nil {
 		return nil, err
@@ -193,8 +200,17 @@ func (r *Resolver) UpdateFormationConstraint(ctx context.Context, id string, in 
 	}
 
 	// constraintType and targetOperation are needed for the template validation
+	priority := currentConstraint.Priority
+	if in.Priority != nil {
+		priority = *in.Priority
+	}
+	description := &currentConstraint.Description
+	if in.Description != nil {
+		description = in.Description
+	}
 	updatedConstraintInput := &graphql.FormationConstraintInput{
 		Name:            currentConstraint.Name,
+		Description:     description,
 		ConstraintType:  graphql.ConstraintType(currentConstraint.ConstraintType),
 		TargetOperation: graphql.TargetOperation(currentConstraint.TargetOperation),
 		Operator:        currentConstraint.Operator,
@@ -202,9 +218,15 @@ func (r *Resolver) UpdateFormationConstraint(ctx context.Context, id string, in 
 		ResourceSubtype: currentConstraint.ResourceSubtype,
 		InputTemplate:   in.InputTemplate,
 		ConstraintScope: graphql.ConstraintScope(currentConstraint.ConstraintScope),
+		Priority:        &priority,
 	}
 
 	if err = updatedConstraintInput.Validate(); err != nil {
+		return nil, err
+	}
+
+	inputWrapper := formationconstraint.NewFormationConstraintInputWrapper(updatedConstraintInput)
+	if err = inputWrapper.Validate(); err != nil {
 		return nil, err
 	}
 

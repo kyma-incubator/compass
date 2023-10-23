@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -29,6 +31,8 @@ const (
 	FormationIDParam = "ucl-formation-id"
 	// FormationAssignmentIDParam is formation assignment URL path parameter placeholder
 	FormationAssignmentIDParam = "ucl-assignment-id"
+	// ClientIDFromCertificateHeader contains the name of the header containing the client id from the certificate
+	ClientIDFromCertificateHeader = "Client-Id-From-Certificate"
 )
 
 // FormationAssignmentService is responsible for the service-layer FormationAssignment operations
@@ -41,6 +45,7 @@ type FormationAssignmentService interface {
 	Delete(ctx context.Context, id string) error
 	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
 	SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState) error
+	Update(ctx context.Context, id string, fa *model.FormationAssignment) error
 }
 
 //go:generate mockery --exported --name=formationAssignmentStatusService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -149,6 +154,7 @@ type Authenticator struct {
 	formationTemplateRepo      FormationTemplateRepository
 	tenantRepo                 TenantRepository
 	globalSubaccountIDLabelKey string
+	uclCertOUSubaccountID      string
 }
 
 // NewFormationMappingAuthenticator creates a new Authenticator
@@ -164,6 +170,7 @@ func NewFormationMappingAuthenticator(
 	formationTemplateRepo FormationTemplateRepository,
 	tenantRepo TenantRepository,
 	globalSubaccountIDLabelKey string,
+	uclCertOUSubaccountID string,
 ) *Authenticator {
 	return &Authenticator{
 		transact:                   transact,
@@ -177,6 +184,7 @@ func NewFormationMappingAuthenticator(
 		formationTemplateRepo:      formationTemplateRepo,
 		tenantRepo:                 tenantRepo,
 		globalSubaccountIDLabelKey: globalSubaccountIDLabelKey,
+		uclCertOUSubaccountID:      uclCertOUSubaccountID,
 	}
 }
 
@@ -202,10 +210,20 @@ func (a *Authenticator) FormationAssignmentHandler() func(next http.Handler) htt
 				return
 			}
 
-			isAuthorized, statusCode, err := a.isFormationAssignmentAuthorized(ctx, formationAssignmentID, formationID)
+			clientID := r.Header.Get(ClientIDFromCertificateHeader)
+			if clientID == "" {
+				log.C(ctx).Errorf("Failed to find client ID from header: %s", ClientIDFromCertificateHeader)
+				respondWithError(ctx, w, http.StatusBadRequest, errors.New("tenant not found in the request"))
+			}
+
+			isAuthorized, statusCode, err := a.isFormationAssignmentAuthorized(ctx, formationAssignmentID, formationID, clientID)
 			if err != nil {
 				log.C(ctx).Error(err.Error())
-				respondWithError(ctx, w, statusCode, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
+				errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
+				if statusCode == http.StatusNotFound && apperrors.IsNotFoundError(err) {
+					errResp = errors.Errorf("Formation assignment with ID %q for formation %q was not found. X-Request-Id: %s", formationAssignmentID, formationID, correlationID)
+				}
+				respondWithError(ctx, w, statusCode, errResp)
 				return
 			}
 
@@ -243,7 +261,11 @@ func (a *Authenticator) FormationHandler() func(next http.Handler) http.Handler 
 			isAuthorized, statusCode, err := a.isFormationAuthorized(ctx, formationID)
 			if err != nil {
 				log.C(ctx).Error(err.Error())
-				respondWithError(ctx, w, statusCode, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
+				errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
+				if statusCode == http.StatusNotFound && apperrors.IsNotFoundError(err) {
+					errResp = errors.Errorf("Formation with ID %q was not found. X-Request-Id: %s", formationID, correlationID)
+				}
+				respondWithError(ctx, w, statusCode, errResp)
 				return
 			}
 
@@ -275,6 +297,9 @@ func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID s
 
 	f, err := a.formationRepo.GetGlobalByID(ctx, formationID)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return false, http.StatusNotFound, errors.Wrapf(err, "while getting formation with ID: %q globally", formationID)
+		}
 		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation with ID: %q globally", formationID)
 	}
 
@@ -300,7 +325,7 @@ func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID s
 }
 
 // isFormationAssignmentAuthorized verify through custom logic the caller is authorized to update the formation assignment status
-func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, formationAssignmentID, formationID string) (bool, int, error) {
+func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, formationAssignmentID, formationID, clientID string) (bool, int, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
 		return false, http.StatusInternalServerError, errors.Wrap(err, "while fetching consumer info from context")
@@ -315,8 +340,20 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 	defer a.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	if a.uclCertOUSubaccountID == clientID {
+		if err := tx.Commit(); err != nil {
+			return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")
+		}
+
+		log.C(ctx).Infof("The caller with ID: %s is UCL and is allowed to update formation assignments", clientID)
+		return true, http.StatusOK, nil
+	}
+
 	fa, err := a.faService.GetGlobalByIDAndFormationID(ctx, formationAssignmentID, formationID)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return false, http.StatusNotFound, err
+		}
 		return false, http.StatusInternalServerError, err
 	}
 

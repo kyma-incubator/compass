@@ -430,6 +430,11 @@ func IsNewInvalidOperationError(err error) bool {
 	return ErrorCode(err) == InvalidOperation
 }
 
+// IsUnauthorizedError missing godoc
+func IsUnauthorizedError(err error) bool {
+	return ErrorCode(err) == Unauthorized
+}
+
 // IsNotFoundError missing godoc
 func IsNotFoundError(err error) bool {
 	return ErrorCode(err) == NotFound

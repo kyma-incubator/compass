@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -57,10 +59,12 @@ type repository struct {
 
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
+	creator := repo.NewCreator(tableName, webhookColumns)
+	creator.SetParentAccessVerifier(label.NewDefaultParentAccessVerifier().Verify)
 	return &repository{
 		singleGetter:           repo.NewSingleGetter(tableName, webhookColumns),
 		singleGetterGlobal:     repo.NewSingleGetterGlobal(resource.Webhook, tableName, webhookColumns),
-		creator:                repo.NewCreator(tableName, webhookColumns),
+		creator:                creator,
 		globalCreator:          repo.NewCreatorGlobal(resource.Webhook, tableName, webhookColumns),
 		webhookUpdater:         repo.NewUpdater(tableName, updatableColumns, []string{"id"}),
 		updaterGlobal:          repo.NewUpdaterGlobal(resource.Webhook, tableName, updatableColumns, []string{"id", "app_template_id"}),
@@ -242,6 +246,31 @@ func (r *repository) GetByIDAndWebhookType(ctx context.Context, tenant, objectID
 		if err := r.singleGetter.Get(ctx, objectType.GetResourceType(), tenant, conditions, repo.NoOrderBy, &entity); err != nil {
 			return nil, err
 		}
+	}
+
+	m, err := r.conv.FromEntity(&entity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting from entity to model")
+	}
+	return m, nil
+}
+
+// GetByIDAndWebhookTypeGlobal returns a webhook given an objectID, objectType and webhookType.
+// Global getter is used for all object types.
+func (r *repository) GetByIDAndWebhookTypeGlobal(ctx context.Context, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) {
+	var entity Entity
+	refColumn, err := getReferenceColumnForListByReferenceObjectType(objectType)
+	if err != nil {
+		return nil, err
+	}
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(refColumn, objectID),
+		repo.NewEqualCondition("type", webhookType),
+	}
+
+	if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
 	}
 
 	m, err := r.conv.FromEntity(&entity)

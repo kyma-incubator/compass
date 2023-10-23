@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
@@ -128,10 +129,11 @@ type Resolver struct {
 	uidService              UIDService
 	appTemplateProductLabel string
 	certSubjectMappingSvc   CertSubjectMappingService
+	ordClient               *apiclient.ORDClient
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string, ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig) *Resolver {
 	return &Resolver{
 		transact:                transact,
 		appSvc:                  appSvc,
@@ -144,6 +146,7 @@ func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, 
 		uidService:              uidService,
 		appTemplateProductLabel: appTemplateProductLabel,
 		certSubjectMappingSvc:   certSubjectMappingSvc,
+		ordClient:               apiclient.NewORDClient(ordAggregatorClientConfig),
 	}
 }
 
@@ -327,6 +330,15 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, errors.Wrapf(err, "while converting Application Template with id %s to GraphQL", id)
 	}
 
+	for _, wh := range convertedIn.Webhooks {
+		if wh.Type == model.WebhookTypeOpenResourceDiscoveryStatic {
+			if err := r.ordClient.Aggregate(ctx, "", id); err != nil {
+				log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppTemplateID %q", id)
+			}
+			break
+		}
+	}
+
 	return gqlAppTemplate, nil
 }
 
@@ -454,6 +466,15 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	}
 
 	gqlApp := r.appConverter.ToGraphQL(app)
+
+	if err := r.ordClient.Aggregate(ctx, app.ID, appTemplate.ID); err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppID %q and AppTemplateID %q", app.ID, id)
+	}
+
+	if err := r.ordClient.Aggregate(ctx, app.ID, ""); err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppID %q", app.ID)
+	}
+
 	return gqlApp, nil
 }
 

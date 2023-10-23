@@ -3,9 +3,9 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"strconv"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -41,13 +41,18 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	if exists, err := fau.repo.Exists(ctx, id, tenantID); err != nil {
+	faFromDB, err := fau.repo.Get(ctx, id, tenantID)
+	if err != nil {
 		return errors.Wrapf(err, "while ensuring formation assignment with ID: %q exists", id)
-	} else if !exists {
-		return apperrors.NewNotFoundError(resource.FormationAssignment, id)
 	}
 
-	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, operation)
+	var lastFormationAssignmentState string
+	if faFromDB.Value == nil {
+		lastFormationAssignmentState = ""
+	} else {
+		lastFormationAssignmentState = strconv.Quote(string(faFromDB.Value))
+	}
+	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, operation, faFromDB.State, lastFormationAssignmentState)
 	if err != nil {
 		return errors.Wrap(err, "while preparing details for NotificationStatusReturned")
 	}
@@ -57,6 +62,9 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 	}
 
 	if err = fau.repo.Update(ctx, fa); err != nil {
+		if apperrors.IsUnauthorizedError(err) {
+			return apperrors.NewNotFoundError(resource.FormationAssignment, id)
+		}
 		return errors.Wrapf(err, "while updating formation assignment with ID: %q", id)
 	}
 
@@ -101,14 +109,25 @@ func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.C
 	if err != nil {
 		return errors.Wrapf(err, "while getting formation assignment with id %q for tenant with id %q", id, tenantID)
 	}
+	faStateFromDB := fa.State
+	var faValueFromDB string
+	if fa.Value == nil {
+		faValueFromDB = ""
+	} else {
+		faValueFromDB = strconv.Quote(string(fa.Value))
+	}
 
 	fa.State = string(model.ReadyAssignmentState)
 	fa.Value = nil
+	// update the fa and do not delete it as it is needed for the destination creator operator constraint
 	if err := fau.repo.Update(ctx, fa); err != nil {
+		if apperrors.IsUnauthorizedError(err) {
+			return apperrors.NewNotFoundError(resource.FormationAssignment, id)
+		}
 		return errors.Wrapf(err, "while updating formation asssignment with ID: %s to: %q state", id, model.ReadyAssignmentState)
 	}
 
-	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, model.UnassignFormation)
+	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, model.UnassignFormation, faStateFromDB, faValueFromDB)
 	if err != nil {
 		return errors.Wrap(err, "while preparing details for NotificationStatusReturned")
 	}
@@ -118,6 +137,9 @@ func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.C
 	}
 
 	if err = fau.repo.Delete(ctx, id, tenantID); err != nil {
+		if apperrors.IsUnauthorizedError(err) {
+			return apperrors.NewNotFoundError(resource.FormationAssignment, id)
+		}
 		return errors.Wrapf(err, "while deleting formation assignment with ID: %q", id)
 	}
 

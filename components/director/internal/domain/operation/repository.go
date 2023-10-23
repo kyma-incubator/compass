@@ -2,6 +2,7 @@ package operation
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -30,6 +31,7 @@ type EntityConverter interface {
 }
 
 type pgRepository struct {
+	globalLister                  repo.ListerGlobal
 	globalCreator                 repo.CreatorGlobal
 	globalDeleter                 repo.DeleterGlobal
 	globalUpdater                 repo.UpdaterGlobal
@@ -42,6 +44,7 @@ type pgRepository struct {
 // NewRepository creates new operation repository
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
+		globalLister:                  repo.NewListerGlobal(resource.Operation, operationTable, operationColumns),
 		globalCreator:                 repo.NewCreatorGlobal(resource.Operation, operationTable, operationColumns),
 		globalDeleter:                 repo.NewDeleterGlobal(resource.Operation, operationTable),
 		globalUpdater:                 repo.NewUpdaterGlobal(resource.Operation, operationTable, updatableTableColumns, idTableColumns),
@@ -50,6 +53,19 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		scheduledOperationsViewLister: repo.NewListerGlobal(resource.Operation, scheduledOperationsView, operationColumns),
 		conv:                          conv,
 	}
+}
+
+// ListAllByType lists all operations with given type
+func (r *pgRepository) ListAllByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error) {
+	var entities EntityCollection
+
+	err := r.globalLister.ListGlobal(ctx, &entities, repo.Conditions{repo.NewEqualCondition("op_type", opType)}...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
 }
 
 // Create creates operation entity
@@ -88,6 +104,20 @@ func (r *pgRepository) Get(ctx context.Context, id string) (*model.Operation, er
 	return r.conv.FromEntity(&entity), nil
 }
 
+// GetByDataAndType retrieves an operation by data and type
+func (r *pgRepository) GetByDataAndType(ctx context.Context, data interface{}, opType model.OperationType) (*model.Operation, error) {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+	var entity Entity
+	if err := r.globalSingleGetter.GetGlobal(ctx, repo.Conditions{repo.NewJSONCondition("data", string(dataBytes)), repo.NewEqualCondition("op_type", opType)}, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&entity), nil
+}
+
 // Delete deletes an operation by id
 func (r *pgRepository) Delete(ctx context.Context, id string) error {
 	return r.globalDeleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
@@ -95,6 +125,9 @@ func (r *pgRepository) Delete(ctx context.Context, id string) error {
 
 // DeleteMultiple deletes all operations by given list of ids
 func (r *pgRepository) DeleteMultiple(ctx context.Context, ids []string) error {
+	if len(ids) == 0 {
+		return nil
+	}
 	return r.globalDeleter.DeleteManyGlobal(ctx, repo.Conditions{repo.NewInConditionForStringValues("id", ids)})
 }
 

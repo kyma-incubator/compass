@@ -24,6 +24,8 @@ import (
 	"net/url"
 	"text/template"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
@@ -163,7 +165,7 @@ func (rd *ResponseObject) ParseStatusTemplate(tmpl *string) (*ResponseStatus, er
 }
 
 func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
-	t, err := template.New("").Option("missingkey=zero").Parse(*tmpl)
+	t, err := template.New("").Funcs(templatehelper.GetFuncMap()).Option("missingkey=zero").Parse(*tmpl)
 	if err != nil {
 		return err
 	}

@@ -21,13 +21,16 @@ func (_m *PackageService) Create(ctx context.Context, resourceType resource.Type
 	ret := _m.Called(ctx, resourceType, resourceID, in, pkgHash)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.PackageInput, uint64) (string, error)); ok {
+		return rf(ctx, resourceType, resourceID, in, pkgHash)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.PackageInput, uint64) string); ok {
 		r0 = rf(ctx, resourceType, resourceID, in, pkgHash)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, model.PackageInput, uint64) error); ok {
 		r1 = rf(ctx, resourceType, resourceID, in, pkgHash)
 	} else {
@@ -56,6 +59,10 @@ func (_m *PackageService) ListByApplicationID(ctx context.Context, appID string)
 	ret := _m.Called(ctx, appID)
 
 	var r0 []*model.Package
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Package, error)); ok {
+		return rf(ctx, appID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Package); ok {
 		r0 = rf(ctx, appID)
 	} else {
@@ -64,7 +71,6 @@ func (_m *PackageService) ListByApplicationID(ctx context.Context, appID string)
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appID)
 	} else {
@@ -79,6 +85,10 @@ func (_m *PackageService) ListByApplicationTemplateVersionID(ctx context.Context
 	ret := _m.Called(ctx, appTemplateVersionID)
 
 	var r0 []*model.Package
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Package, error)); ok {
+		return rf(ctx, appTemplateVersionID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Package); ok {
 		r0 = rf(ctx, appTemplateVersionID)
 	} else {
@@ -87,7 +97,6 @@ func (_m *PackageService) ListByApplicationTemplateVersionID(ctx context.Context
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appTemplateVersionID)
 	} else {
@@ -111,13 +120,12 @@ func (_m *PackageService) Update(ctx context.Context, resourceType resource.Type
 	return r0
 }
 
-type mockConstructorTestingTNewPackageService interface {
+// NewPackageService creates a new instance of PackageService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewPackageService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewPackageService creates a new instance of PackageService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewPackageService(t mockConstructorTestingTNewPackageService) *PackageService {
+}) *PackageService {
 	mock := &PackageService{}
 	mock.Mock.Test(t)
 

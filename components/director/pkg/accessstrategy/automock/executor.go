@@ -21,6 +21,10 @@ func (_m *Executor) Execute(ctx context.Context, client *http.Client, url string
 	ret := _m.Called(ctx, client, url, tnt, additionalHeaders)
 
 	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *http.Client, string, string, *sync.Map) (*http.Response, error)); ok {
+		return rf(ctx, client, url, tnt, additionalHeaders)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *http.Client, string, string, *sync.Map) *http.Response); ok {
 		r0 = rf(ctx, client, url, tnt, additionalHeaders)
 	} else {
@@ -29,7 +33,6 @@ func (_m *Executor) Execute(ctx context.Context, client *http.Client, url string
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *http.Client, string, string, *sync.Map) error); ok {
 		r1 = rf(ctx, client, url, tnt, additionalHeaders)
 	} else {
@@ -39,13 +42,12 @@ func (_m *Executor) Execute(ctx context.Context, client *http.Client, url string
 	return r0, r1
 }
 
-type mockConstructorTestingTNewExecutor interface {
+// NewExecutor creates a new instance of Executor. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewExecutor(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewExecutor creates a new instance of Executor. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewExecutor(t mockConstructorTestingTNewExecutor) *Executor {
+}) *Executor {
 	mock := &Executor{}
 	mock.Mock.Test(t)
 

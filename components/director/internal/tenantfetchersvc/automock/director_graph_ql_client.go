@@ -84,13 +84,12 @@ func (_m *DirectorGraphQLClient) WriteTenants(_a0 context.Context, _a1 []graphql
 	return r0
 }
 
-type mockConstructorTestingTNewDirectorGraphQLClient interface {
+// NewDirectorGraphQLClient creates a new instance of DirectorGraphQLClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDirectorGraphQLClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDirectorGraphQLClient creates a new instance of DirectorGraphQLClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDirectorGraphQLClient(t mockConstructorTestingTNewDirectorGraphQLClient) *DirectorGraphQLClient {
+}) *DirectorGraphQLClient {
 	mock := &DirectorGraphQLClient{}
 	mock.Mock.Test(t)
 

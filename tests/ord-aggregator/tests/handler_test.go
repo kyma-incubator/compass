@@ -4,12 +4,16 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
@@ -19,7 +23,6 @@ import (
 
 	"golang.org/x/oauth2/clientcredentials"
 
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
@@ -32,7 +35,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
@@ -46,10 +48,12 @@ const (
 	shortDescriptionField = "shortDescription"
 	apisField             = "apis"
 	eventsField           = "events"
+	capabilitiesField     = "capabilities"
 	publicAPIsField       = "publicAPIs"
 	publicEventsField     = "publicEvents"
 
 	expectedSpecType                         = "openapi-v3"
+	expectedCapabilitySpecType               = "sap.mdo:mdi-capability-definition:v1"
 	expectedSpecFormat                       = "application/json"
 	expectedSystemInstanceName               = "test-app"
 	expectedSecondSystemInstanceName         = "second-test-app"
@@ -93,6 +97,9 @@ const (
 	thirdEventDescription                    = "Test description internal"
 	fourthEventTitle                         = "EVENT TITLE PRIVATE"
 	fourthEventDescription                   = "Test description private"
+	expectedCapabilityTitle                  = "CAPABILITY TITLE"
+	expectedCapabilityDescription            = "Optional, longer description"
+	expectedCapabilityNumberOfSpecs          = 1
 	expectedTombstoneOrdIDRegex              = "ns:apiResource:API_ID2(.+):v1"
 	expectedVendorTitle                      = "SAP SE"
 
@@ -106,11 +113,14 @@ const (
 	expectedNumberOfAPIsInSubscription            = 3
 	expectedNumberOfEvents                        = 28
 	expectedNumberOfEventsInSubscription          = 4
+	expectedNumberOfCapabilities                  = 7
+	expectedNumberOfCapabilitiesInSubscription    = 1
 	expectedNumberOfTombstones                    = 7
 	expectedNumberOfTombstonesInSubscription      = 1
 
-	expectedNumberOfPublicAPIs   = 7
-	expectedNumberOfPublicEvents = 14
+	expectedNumberOfPublicAPIs         = 7
+	expectedNumberOfPublicEvents       = 14
+	expectedNumberOfPublicCapabilities = 7
 
 	expectedNumberOfAPIsInFirstBundle    = 2
 	expectedNumberOfAPIsInSecondBundle   = 2
@@ -122,14 +132,15 @@ const (
 	expectedNumberOfPublicEventsInFirstBundle  = 2
 	expectedNumberOfPublicEventsInSecondBundle = 2
 
-	testTimeoutAdditionalBuffer = 7 * time.Minute
-
 	firstCorrelationID  = "sap.s4:communicationScenario:SAP_COM_0001"
 	secondCorrelationID = "sap.s4:communicationScenario:SAP_COM_0002"
 
 	documentationLabelKey         = "Documentation label key"
 	documentationLabelFirstValue  = "Markdown Documentation with links"
 	documentationLabelSecondValue = "With multiple values"
+
+	apiResourceDefinitionsFieldName        = "resourceDefinitions"
+	capabilityResourceDefinitionsFieldName = "definitions"
 )
 
 var (
@@ -212,6 +223,15 @@ func TestORDAggregator(stdT *testing.T) {
 
 		eventsDefaultBundleMap := make(map[string]string)
 		eventsDefaultBundleMap[firstEventTitle] = firstBundleOrdIDRegex
+
+		capabilitiesMap := make(map[string]string)
+		capabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
+
+		publicCapabilitiesMap := make(map[string]string)
+		publicCapabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
+
+		capabilitySpecsMap := make(map[string]int)
+		capabilitySpecsMap[expectedCapabilityTitle] = expectedCapabilityNumberOfSpecs
 
 		apisAndEventsNumber := make(map[string]int)
 		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
@@ -333,132 +353,183 @@ func TestORDAggregator(stdT *testing.T) {
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &seventhApp)
 		require.NoError(t, err)
 
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		}
-		ordAggrClient := &http.Client{
-			Transport: httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(tr), util.AuthorizationHeader),
-			Timeout:   time.Duration(1) * time.Minute,
-		}
+		defaultTestTimeout := 5 * time.Minute
+		defaultCheckInterval := defaultTestTimeout / 20
 
-		jsonBody := fmt.Sprintf(`{"applicationIDs":["%s","%s","%s","%s","%s","%s","%s"]}`, app.ID, secondApp.ID, thirdApp.ID, fourthApp.ID, fifthApp.ID, sixthApp.ID, seventhApp.ID)
-		req, err := http.NewRequest(http.MethodPost, testConfig.ORDAggregatorURL+"/aggregate", bytes.NewBuffer([]byte(jsonBody)))
-		require.NoError(t, err)
+		err = verifyORDDocument(defaultCheckInterval, defaultTestTimeout, func() bool {
 
-		req.Header.Add(tenantHeader, testConfig.DefaultTestTenant)
-		resp, err := ordAggrClient.Do(req)
-		require.NoError(t, err)
+			var respBody string
 
-		defer func() {
-			if err := resp.Body.Close(); err != nil {
-				t.Logf("Could not close response body %s", err)
+			// Verify system instances
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/systemInstances?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfSystemInstances {
+				t.Log("Missing System Instances...will try again")
+				return false
 			}
-		}()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, systemInstancesMap, expectedNumberOfSystemInstances, descriptionField)
 
-		var respBody string
-
-		// Verify system instances
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/systemInstances?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedNumberOfSystemInstances, "Missing System Instances")
-		assertions.AssertMultipleEntitiesFromORDService(t, respBody, systemInstancesMap, expectedNumberOfSystemInstances, descriptionField)
-
-		// Verify packages
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedNumberOfPackages, "Missing Packages")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfPackages)
-		assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
-		t.Log("Successfully verified packages")
-
-		// Verify bundles
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedNumberOfBundles, "Missing Bundles")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfBundles)
-		assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, expectedNumberOfBundles, descriptionField)
-		assertions.AssertBundleCorrelationIds(t, respBody, bundlesCorrelationIDs, expectedNumberOfBundles)
-		ordAndInternalIDsMappingForBundles := storeMappingBetweenORDAndInternalBundleID(t, respBody, expectedNumberOfBundles)
-		t.Log("Successfully verified bundles")
-
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData)
-		t.Log("Successfully verified relation between apis and bundles")
-
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=events&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData)
-		t.Log("Successfully verified relation between events and bundles")
-
-		// Verify products
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedTotalNumberOfProducts, "Missing Products")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfProducts)
-		assertions.AssertProducts(t, respBody, productsMap, expectedTotalNumberOfProducts, shortDescriptionField)
-		t.Log("Successfully verified products")
-
-		// Verify apis
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedNumberOfAPIs, "Missing APIs")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfAPIs)
-		// In the document there are actually 4 APIs but there is a tombstone for one of them so in the end there will be 3 APIs
-		assertions.AssertMultipleEntitiesFromORDService(t, respBody, apisMap, expectedNumberOfAPIs, descriptionField)
-		t.Log("Successfully verified apis")
-
-		// Verify defaultBundle for apis
-		assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfAPIs, apisDefaultBundleMap, ordAndInternalIDsMappingForBundles)
-		t.Log("Successfully verified defaultBundles for apis")
-
-		// Verify the api spec
-		specs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfAPIs, apiSpecsMap)
-		t.Log("Successfully verified specs for apis")
-
-		var specURL string
-		for _, s := range specs {
-			specType := s.Get("type").String()
-			specFormat := s.Get("mediaType").String()
-			if specType == expectedSpecType && specFormat == expectedSpecFormat {
-				specURL = s.Get("url").String()
-				break
+			// Verify packages
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfPackages {
+				t.Log("Missing Packages...will try again")
+				return false
 			}
-		}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfPackages)
+			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
+			t.Log("Successfully verified packages")
 
-		respBody = makeRequestWithHeaders(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(respBody) > 0 && strings.Contains(respBody, "swagger"), "Spec %s not successfully fetched", specURL)
-		t.Log("Successfully verified api spec")
+			// Verify bundles
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfBundles {
+				t.Log("Missing Bundles...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfBundles)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, expectedNumberOfBundles, descriptionField)
+			assertions.AssertBundleCorrelationIds(t, respBody, bundlesCorrelationIDs, expectedNumberOfBundles)
+			ordAndInternalIDsMappingForBundles := storeMappingBetweenORDAndInternalBundleID(t, respBody, expectedNumberOfBundles)
+			t.Log("Successfully verified bundles")
 
-		// verify public apis via ORD Service
-		verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicApisMap, apisField, expectedNumberOfPublicAPIs)
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", apisField)
+				return false
+			}
+			t.Log("Successfully verified relation between apis and bundles")
 
-		// Verify events
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedNumberOfEvents, "Missing Events")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfEvents)
-		assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEvents, descriptionField)
-		t.Log("Successfully verified events")
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=events&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", eventsField)
+				return false
+			}
+			t.Log("Successfully verified relation between events and bundles")
 
-		// Verify defaultBundle for events
-		assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfEvents, eventsDefaultBundleMap, ordAndInternalIDsMappingForBundles)
-		t.Log("Successfully verified defaultBundles for events")
+			// Verify products
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedTotalNumberOfProducts {
+				t.Log("Missing Products...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfProducts)
+			assertions.AssertProducts(t, respBody, productsMap, expectedTotalNumberOfProducts, shortDescriptionField)
+			t.Log("Successfully verified products")
 
-		// verify public events via ORD Service
-		verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicEventsMap, eventsField, expectedNumberOfPublicEvents)
+			// Verify apis
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAPIs {
+				t.Log("Missing APIs...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfAPIs)
+			// In the document there are actually 4 APIs but there is a tombstone for one of them so in the end there will be 3 APIs
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, apisMap, expectedNumberOfAPIs, descriptionField)
+			t.Log("Successfully verified apis")
 
-		// verify apis and events visibility via Director's graphql
-		verifyEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, mergeMaps(apisMap, eventsMap), mergeMaps(publicApisMap, publicEventsMap), apisAndEventsNumber, app.ID)
+			assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfAPIs, apisDefaultBundleMap, ordAndInternalIDsMappingForBundles)
+			t.Log("Successfully verified defaultBundles for apis")
 
-		// Verify tombstones
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedNumberOfTombstones, "Missing Tombstones")
-		assertions.AssertTombstoneFromORDService(t, respBody, expectedNumberOfTombstones, expectedTombstoneOrdIDRegex)
-		t.Log("Successfully verified tombstones")
+			// Verify the api spec
+			specs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfAPIs, apiSpecsMap, apiResourceDefinitionsFieldName)
+			t.Log("Successfully verified specs for apis")
 
-		// Verify vendors
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/vendors?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedTotalNumberOfVendors, "Missing Vendors")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfVendors)
-		assertions.AssertVendorFromORDService(t, respBody, expectedTotalNumberOfVendors, expectedNumberOfVendors, expectedVendorTitle)
-		t.Log("Successfully verified vendors")
+			var specURL string
+			for _, s := range specs {
+				specType := s.Get("type").String()
+				specFormat := s.Get("mediaType").String()
+				if specType == expectedSpecType && specFormat == expectedSpecFormat {
+					specURL = s.Get("url").String()
+					break
+				}
+			}
 
+			respBody = makeRequestWithHeaders(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(respBody) == 0 || !strings.Contains(respBody, "swagger") {
+				t.Logf("Spec %s not successfully fetched... will try again", specURL)
+				return false
+			}
+			t.Log("Successfully verified api spec")
+
+			// verify public apis via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicApisMap, apisField, expectedNumberOfPublicAPIs)
+
+			// Verify events
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfEvents {
+				t.Log("Missing Events...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfEvents)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEvents, descriptionField)
+			t.Log("Successfully verified events")
+
+			// Verify defaultBundle for events
+			assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfEvents, eventsDefaultBundleMap, ordAndInternalIDsMappingForBundles)
+			t.Log("Successfully verified defaultBundles for events")
+
+			// verify public events via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicEventsMap, eventsField, expectedNumberOfPublicEvents)
+
+			// verify apis and events visibility via Director's graphql
+			verifyEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, mergeMaps(apisMap, eventsMap), mergeMaps(publicApisMap, publicEventsMap), apisAndEventsNumber, app.ID)
+
+			// Verify capabilities
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/capabilities?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfCapabilities {
+				t.Log("Missing Capabilities...will try again")
+				return false
+			}
+
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfCapabilities)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, capabilitiesMap, expectedNumberOfCapabilities, descriptionField)
+			t.Log("Successfully verified capabilities")
+
+			// Verify the capability spec
+			capabilitySpecs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfCapabilities, capabilitySpecsMap, capabilityResourceDefinitionsFieldName)
+			t.Log("Successfully verified specs for capabilities")
+
+			var capabilitySpecURL string
+			for _, s := range capabilitySpecs {
+				specType := s.Get("type").String()
+				specFormat := s.Get("mediaType").String()
+				if specType == expectedCapabilitySpecType && specFormat == expectedSpecFormat {
+					capabilitySpecURL = s.Get("url").String()
+					break
+				}
+			}
+
+			respBody = makeRequestWithHeaders(t, httpClient, capabilitySpecURL, map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(respBody) == 0 || !strings.Contains(respBody, "swagger") {
+				t.Logf("Spec %s not successfully fetched... will try again", specURL)
+				return false
+			}
+			t.Log("Successfully verified capability spec")
+
+			// verify public capabilities via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicCapabilitiesMap, capabilitiesField, expectedNumberOfPublicCapabilities)
+
+			// Verify tombstones
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfTombstones {
+				t.Log("Missing Tombstones...will try again")
+				return false
+			}
+			assertions.AssertTombstoneFromORDService(t, respBody, expectedNumberOfTombstones, expectedTombstoneOrdIDRegex)
+			t.Log("Successfully verified tombstones")
+
+			// Verify vendors
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/vendors?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedTotalNumberOfVendors {
+				t.Log("Missing Vendors...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfVendors)
+			assertions.AssertVendorFromORDService(t, respBody, expectedTotalNumberOfVendors, expectedNumberOfVendors, expectedVendorTitle)
+			t.Log("Successfully verified vendors")
+
+			return true
+		})
+		require.NoError(t, err)
 		t.Log("Successfully verified all ORD documents")
 	})
 	t.Run("Verifying ORD Document for subscribed tenant", func(t *testing.T) {
@@ -492,6 +563,15 @@ func TestORDAggregator(stdT *testing.T) {
 
 		eventsDefaultBundleMap := make(map[string]string)
 		eventsDefaultBundleMap[firstEventTitle] = firstBundleOrdIDRegex
+
+		capabilitiesMap := make(map[string]string)
+		capabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
+
+		publicCapabilitiesMap := make(map[string]string)
+		publicCapabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
+
+		capabilitySpecsMap := make(map[string]int)
+		capabilitySpecsMap[expectedCapabilityTitle] = expectedCapabilityNumberOfSpecs
 
 		apisAndEventsNumber := make(map[string]int)
 		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
@@ -529,7 +609,7 @@ func TestORDAggregator(stdT *testing.T) {
 		productsMap[firstProductTitle] = firstProductShortDescription
 		productsMap[secondProductTitle] = secondProductShortDescription
 
-		appTemplateName := createAppTemplateName("ORD-aggregator-test-app-template")
+		appTemplateName := fixtures.CreateAppTemplateName("ORD-aggregator-test-app-template")
 		appTemplateInput := fixAppTemplateInputWitSelfRegLabel(appTemplateName, testConfig.ExternalServicesMockUnsecuredMultiTenantURL)
 		placeholderName := "name"
 		placeholderDisplayName := "display-name"
@@ -561,7 +641,9 @@ func TestORDAggregator(stdT *testing.T) {
 			},
 		}
 
-		depConfigureReq, err := http.NewRequest(http.MethodPost, testConfig.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		deps, err := json.Marshal([]string{selfRegLabelValue})
+		require.NoError(t, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, testConfig.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
 		defer func() {
@@ -650,127 +732,175 @@ func TestORDAggregator(stdT *testing.T) {
 		require.Len(t, actualAppPage.Data, 1)
 		require.Equal(t, appTemplate.ID, *actualAppPage.Data[0].ApplicationTemplateID)
 
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		}
-		ordAggrClient := &http.Client{
-			Transport: httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(tr), util.AuthorizationHeader),
-			Timeout:   time.Duration(1) * time.Minute,
-		}
+		defaultTestTimeout := 5 * time.Minute
+		defaultCheckInterval := defaultTestTimeout / 20
 
-		jsonBody := fmt.Sprintf(`{"applicationTemplateIDs":["%s"]}`, appTemplate.ID)
-		req, err := http.NewRequest(http.MethodPost, testConfig.ORDAggregatorURL+"/aggregate", bytes.NewBuffer([]byte(jsonBody)))
-		require.NoError(t, err)
+		err = verifyORDDocument(defaultCheckInterval, defaultTestTimeout, func() bool {
+			var respBody string
 
-		req.Header.Add(tenantHeader, testConfig.TestConsumerSubaccountID)
-		resp, err = ordAggrClient.Do(req)
-		defer func() {
-			if err := resp.Body.Close(); err != nil {
-				t.Logf("Could not close response body %s", err)
+			// Verify system instances
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/systemInstances?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfSystemInstancesInSubscription {
+				t.Log("Missing System Instances...will try again")
+				return false
 			}
-		}()
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, resp.StatusCode)
 
-		var respBody string
-
-		// Verify system instances
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/systemInstances?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedNumberOfSystemInstancesInSubscription, "Missing System Instances")
-
-		// Verify packages
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedNumberOfPackagesInSubscription, "Missing Packages")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfSystemInstancesInSubscription)
-		assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfSystemInstancesInSubscription, expectedPackageTitle, expectedPackageDescription, descriptionField)
-		t.Log("Successfully verified packages")
-
-		// Verify bundles
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedNumberOfBundlesInSubscription, "Missing Bundles")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfBundlesInSubscription)
-		assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, expectedNumberOfBundlesInSubscription, descriptionField)
-		assertions.AssertBundleCorrelationIds(t, respBody, bundlesCorrelationIDs, expectedNumberOfBundlesInSubscription)
-		ordAndInternalIDsMappingForBundles := storeMappingBetweenORDAndInternalBundleID(t, respBody, expectedNumberOfBundlesInSubscription)
-		t.Log("Successfully verified bundles")
-
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
-		assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData)
-		t.Log("Successfully verified relation between apis and bundles")
-
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=events&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
-		assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData)
-		t.Log("Successfully verified relation between events and bundles")
-
-		globalProductsNumber, globalVendorsNumber := getGlobalResourcesNumber(ctx, t, unsecuredHttpClient)
-		t.Logf("Global products number: %d, Global vendors number: %d", globalProductsNumber, globalVendorsNumber)
-
-		expectedTotalNumberOfProducts := expectedNumberOfProductsInSubscription + globalProductsNumber
-		expectedTotalNumberOfVendors := expectedNumberOfVendorsInSubscription + globalVendorsNumber
-
-		// Verify products
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedTotalNumberOfProducts, "Missing Products")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfProducts)
-		assertions.AssertProducts(t, respBody, productsMap, expectedTotalNumberOfProducts, shortDescriptionField)
-		t.Log("Successfully verified products")
-
-		// Verify apis
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedNumberOfAPIsInSubscription, "Missing APIs")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfAPIsInSubscription)
-		// In the document there are actually 4 APIs but there is a tombstone for one of them so in the end there will be 3 APIs
-		assertions.AssertMultipleEntitiesFromORDService(t, respBody, apisMap, expectedNumberOfAPIsInSubscription, descriptionField)
-		t.Log("Successfully verified apis")
-
-		// Verify defaultBundle for apis
-		assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfAPIsInSubscription, apisDefaultBundleMap, ordAndInternalIDsMappingForBundles)
-		t.Log("Successfully verified defaultBundles for apis")
-
-		// Verify the api spec
-		specs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfAPIsInSubscription, apiSpecsMap)
-		t.Log("Successfully verified specs for apis")
-
-		var specURL string
-		for _, s := range specs {
-			specType := s.Get("type").String()
-			specFormat := s.Get("mediaType").String()
-			if specType == expectedSpecType && specFormat == expectedSpecFormat {
-				specURL = s.Get("url").String()
-				break
+			// Verify packages
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfPackagesInSubscription {
+				t.Log("Missing Packages...will try again")
+				return false
 			}
-		}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfSystemInstancesInSubscription)
+			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfSystemInstancesInSubscription, expectedPackageTitle, expectedPackageDescription, descriptionField)
+			t.Log("Successfully verified packages")
 
-		respBody = makeRequestWithHeaders(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
-		require.True(t, len(respBody) != 0 && strings.Contains(respBody, "swagger"), "Spec %s not successfully fetched... will try again", specURL)
-		t.Log("Successfully verified api spec")
+			// Verify bundles
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfBundlesInSubscription {
+				t.Log("Missing Bundles...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfBundlesInSubscription)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, expectedNumberOfBundlesInSubscription, descriptionField)
+			assertions.AssertBundleCorrelationIds(t, respBody, bundlesCorrelationIDs, expectedNumberOfBundlesInSubscription)
+			ordAndInternalIDsMappingForBundles := storeMappingBetweenORDAndInternalBundleID(t, respBody, expectedNumberOfBundlesInSubscription)
+			t.Log("Successfully verified bundles")
 
-		// Verify events
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedNumberOfEventsInSubscription, "Missing Events")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfEventsInSubscription)
-		assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEventsInSubscription, descriptionField)
-		t.Log("Successfully verified events")
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", apisField)
+				return false
+			}
+			t.Log("Successfully verified relation between apis and bundles")
 
-		// Verify defaultBundle for events
-		assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfEventsInSubscription, eventsDefaultBundleMap, ordAndInternalIDsMappingForBundles)
-		t.Log("Successfully verified defaultBundles for events")
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=events&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", eventsField)
+				return false
+			}
+			t.Log("Successfully verified relation between events and bundles")
 
-		// Verify tombstones
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedNumberOfTombstonesInSubscription, "Missing Tombstones")
-		assertions.AssertTombstoneFromORDService(t, respBody, expectedNumberOfTombstonesInSubscription, expectedTombstoneOrdIDRegex)
-		t.Log("Successfully verified tombstones")
+			globalProductsNumber, globalVendorsNumber := getGlobalResourcesNumber(ctx, t, unsecuredHttpClient)
+			t.Logf("Global products number: %d, Global vendors number: %d", globalProductsNumber, globalVendorsNumber)
 
-		// Verify vendors
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/vendors?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedTotalNumberOfVendors, "Missing Vendors")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfVendors)
-		assertions.AssertVendorFromORDService(t, respBody, expectedTotalNumberOfVendors, expectedNumberOfVendorsInSubscription, expectedVendorTitle)
-		t.Log("Successfully verified vendors")
+			expectedTotalNumberOfProducts := expectedNumberOfProductsInSubscription + globalProductsNumber
+			expectedTotalNumberOfVendors := expectedNumberOfVendorsInSubscription + globalVendorsNumber
 
+			// Verify products
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedTotalNumberOfProducts {
+				t.Log("Missing Products...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfProducts)
+			assertions.AssertProducts(t, respBody, productsMap, expectedTotalNumberOfProducts, shortDescriptionField)
+			t.Log("Successfully verified products")
+
+			// Verify apis
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAPIsInSubscription {
+				t.Log("Missing APIs...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfAPIsInSubscription)
+			// In the document there are actually 4 APIs but there is a tombstone for one of them so in the end there will be 3 APIs
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, apisMap, expectedNumberOfAPIsInSubscription, descriptionField)
+			t.Log("Successfully verified apis")
+
+			// Verify defaultBundle for apis
+			assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfAPIsInSubscription, apisDefaultBundleMap, ordAndInternalIDsMappingForBundles)
+			t.Log("Successfully verified defaultBundles for apis")
+
+			// Verify the api spec
+			specs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfAPIsInSubscription, apiSpecsMap, apiResourceDefinitionsFieldName)
+			t.Log("Successfully verified specs for apis")
+
+			var specURL string
+			for _, s := range specs {
+				specType := s.Get("type").String()
+				specFormat := s.Get("mediaType").String()
+				if specType == expectedSpecType && specFormat == expectedSpecFormat {
+					specURL = s.Get("url").String()
+					break
+				}
+			}
+
+			respBody = makeRequestWithHeaders(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(respBody) == 0 || !strings.Contains(respBody, "swagger") {
+				t.Logf("Spec %s not successfully fetched... will try again", specURL)
+				return false
+			}
+			t.Log("Successfully verified api spec")
+
+			// Verify events
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfEventsInSubscription {
+				t.Log("Missing Events...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfEventsInSubscription)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEventsInSubscription, descriptionField)
+			t.Log("Successfully verified events")
+
+			// Verify defaultBundle for events
+			assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfEventsInSubscription, eventsDefaultBundleMap, ordAndInternalIDsMappingForBundles)
+			t.Log("Successfully verified defaultBundles for events")
+
+			// Verify capabilities
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/capabilities?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfCapabilitiesInSubscription {
+				t.Log("Missing Capabilities...will try again")
+				return false
+			}
+
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfCapabilitiesInSubscription)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, capabilitiesMap, expectedNumberOfCapabilitiesInSubscription, descriptionField)
+			t.Log("Successfully verified capabilities")
+
+			// Verify the capability spec
+			capabilitySpecs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfCapabilitiesInSubscription, capabilitySpecsMap, capabilityResourceDefinitionsFieldName)
+			t.Log("Successfully verified specs for capabilities")
+
+			var capabilitySpecURL string
+			for _, s := range capabilitySpecs {
+				specType := s.Get("type").String()
+				specFormat := s.Get("mediaType").String()
+				if specType == expectedCapabilitySpecType && specFormat == expectedSpecFormat {
+					capabilitySpecURL = s.Get("url").String()
+					break
+				}
+			}
+
+			respBody = makeRequestWithHeaders(t, httpClient, capabilitySpecURL, map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(respBody) == 0 || !strings.Contains(respBody, "swagger") {
+				t.Logf("Spec %s not successfully fetched... will try again", specURL)
+				return false
+			}
+			t.Log("Successfully verified capability spec")
+
+			// Verify tombstones
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfTombstonesInSubscription {
+				t.Log("Missing Tombstones...will try again")
+				return false
+			}
+			assertions.AssertTombstoneFromORDService(t, respBody, expectedNumberOfTombstonesInSubscription, expectedTombstoneOrdIDRegex)
+			t.Log("Successfully verified tombstones")
+
+			// Verify vendors
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/vendors?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedTotalNumberOfVendors {
+				t.Log("Missing Vendors...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfVendors)
+			assertions.AssertVendorFromORDService(t, respBody, expectedTotalNumberOfVendors, expectedNumberOfVendorsInSubscription, expectedVendorTitle)
+			t.Log("Successfully verified vendors")
+
+			return true
+		})
+		require.NoError(t, err)
 		t.Log("Successfully verified all ORD documents")
 	})
 	t.Run("Verify ORD document that is accessible through a proxy", func(t *testing.T) {
@@ -783,6 +913,8 @@ func TestORDAggregator(stdT *testing.T) {
 		numberOfPublicAPIs := 1
 		numberOfEvents := 4
 		numberOfPublicEvents := 2
+		numberOfCapabilities := 1
+		numberOfPublicCapabilities := 1
 		numberOfTombstones := 1
 
 		ctx := context.Background()
@@ -798,14 +930,14 @@ func TestORDAggregator(stdT *testing.T) {
 		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSystemCredentials.ID)
 
 		// Create Application Template
-		appTemplateInput := fixAppTemplateInput(testConfig.ProxyApplicationTemplateName, testConfig.ExternalServicesMockUnsecuredMultiTenantURL)
+		appTemplateInput := fixtures.FixApplicationTemplate(testConfig.ProxyApplicationTemplateName)
 
 		appTemplate, err := fixtures.CreateApplicationTemplateFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, "", appTemplate)
 		require.NoError(t, err)
 		require.NotEmpty(t, appTemplate)
 
-		// Create Application
+		// Create Application from Template
 		app := fixtures.RegisterApplicationFromTemplate(t, ctx, certSecuredGraphQLClient, testConfig.ProxyApplicationTemplateName, expectedSystemInstanceName, expectedSystemInstanceName, testConfig.DefaultTestTenant)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
 
@@ -849,6 +981,15 @@ func TestORDAggregator(stdT *testing.T) {
 		eventsDefaultBundleMap := make(map[string]string)
 		eventsDefaultBundleMap[firstEventTitle] = firstBundleOrdIDRegex
 
+		capabilitiesMap := make(map[string]string)
+		capabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
+
+		publicCapabilitiesMap := make(map[string]string)
+		publicCapabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
+
+		capabilitySpecsMap := make(map[string]int)
+		capabilitySpecsMap[expectedCapabilityTitle] = expectedCapabilityNumberOfSpecs
+
 		apisAndEventsNumber := make(map[string]int)
 		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
 		apisAndEventsNumber[publicAPIsField] = expectedNumberOfPublicAPIsInFirstBundle + expectedNumberOfPublicAPIsInSecondBundle
@@ -884,32 +1025,6 @@ func TestORDAggregator(stdT *testing.T) {
 		productsMap := make(map[string]string)
 		productsMap[firstProductTitle] = firstProductShortDescription
 		productsMap[secondProductTitle] = secondProductShortDescription
-
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		}
-		ordAggrClient := &http.Client{
-			Transport: httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(tr), util.AuthorizationHeader),
-			Timeout:   time.Duration(1) * time.Minute,
-		}
-
-		jsonBody := fmt.Sprintf(`{"applicationIDs":["%s"]}`, app.ID)
-		req, err := http.NewRequest(http.MethodPost, testConfig.ORDAggregatorURL+"/aggregate", bytes.NewBuffer([]byte(jsonBody)))
-		require.NoError(t, err)
-
-		req.Header.Add(tenantHeader, testConfig.DefaultTestTenant)
-		resp, err := ordAggrClient.Do(req)
-		require.NoError(t, err)
-
-		defer func() {
-			if err := resp.Body.Close(); err != nil {
-				t.Logf("Could not close response body %s", err)
-			}
-		}()
-
-		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		unsecuredHttpClient := http.DefaultClient
 		unsecuredHttpClient.Transport = &http.Transport{
@@ -954,108 +1069,200 @@ func TestORDAggregator(stdT *testing.T) {
 		expectedTotalNumberOfProducts := numberOfProducts + globalProductsNumber
 		expectedTotalNumberOfVendors := numberOfVendors + globalVendorsNumber
 
-		var respBody string
+		defaultTestTimeout := 5 * time.Minute
+		defaultCheckInterval := defaultTestTimeout / 20
 
-		// Verify system instances
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/systemInstances?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= numberOfSystemInstances, "Missing System Instances")
-		assertions.AssertMultipleEntitiesFromORDService(t, respBody, systemInstancesMap, numberOfSystemInstances, descriptionField)
+		err = verifyORDDocument(defaultCheckInterval, defaultTestTimeout, func() bool {
+			var respBody string
 
-		// Verify packages
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= 1, "Missing Packages")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfPackages)
-		assertions.AssertSingleEntityFromORDService(t, respBody, numberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
-		t.Log("Successfully verified packages")
-
-		// Verify bundles
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= numberOfBundles, "Missing Bundles")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, 2)
-		assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, numberOfBundles, descriptionField)
-		assertions.AssertBundleCorrelationIds(t, respBody, bundlesCorrelationIDs, numberOfBundles)
-		ordAndInternalIDsMappingForBundles := storeMappingBetweenORDAndInternalBundleID(t, respBody, 2)
-		t.Log("Successfully verified bundles")
-
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData)
-		t.Log("Successfully verified relation between apis and bundles")
-
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=events&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData)
-		t.Log("Successfully verified relation between events and bundles")
-
-		// Verify products
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedTotalNumberOfProducts, "Missing Products")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfProducts)
-		assertions.AssertProducts(t, respBody, productsMap, expectedTotalNumberOfProducts, shortDescriptionField)
-		t.Log("Successfully verified products")
-
-		// Verify apis
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= 3, "Missing APIs")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfAPIs)
-		assertions.AssertMultipleEntitiesFromORDService(t, respBody, apisMap, numberOfAPIs, descriptionField)
-		t.Log("Successfully verified apis")
-
-		// Verify defaultBundle for apis
-		assertions.AssertDefaultBundleID(t, respBody, numberOfAPIs, apisDefaultBundleMap, ordAndInternalIDsMappingForBundles)
-		t.Log("Successfully verified defaultBundles for apis")
-
-		// Verify the api spec
-		specs := assertions.AssertSpecsFromORDService(t, respBody, numberOfAPIs, apiSpecsMap)
-		t.Log("Successfully verified specs for apis")
-
-		var specURL string
-		for _, s := range specs {
-			specType := s.Get("type").String()
-			specFormat := s.Get("mediaType").String()
-			if specType == expectedSpecType && specFormat == expectedSpecFormat {
-				specURL = s.Get("url").String()
-				break
+			// Verify system instances
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/systemInstances?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfSystemInstances {
+				t.Log("Missing System Instances...will try again")
+				return false
 			}
-		}
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, systemInstancesMap, numberOfSystemInstances, descriptionField)
 
-		respBody = makeRequestWithHeaders(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(respBody) > 0 && strings.Contains(respBody, "swagger"), "Spec %s not successfully fetched", specURL)
-		t.Log("Successfully verified api spec")
+			// Verify packages
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < 1 {
+				t.Log("Missing Packages...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfPackages)
+			assertions.AssertSingleEntityFromORDService(t, respBody, numberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
+			t.Log("Successfully verified packages")
 
-		// verify public apis via ORD Service
-		verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicApisMap, apisField, numberOfPublicAPIs)
+			// Verify bundles
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfBundles {
+				t.Log("Missing Bundles...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, 2)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, numberOfBundles, descriptionField)
+			assertions.AssertBundleCorrelationIds(t, respBody, bundlesCorrelationIDs, numberOfBundles)
+			ordAndInternalIDsMappingForBundles := storeMappingBetweenORDAndInternalBundleID(t, respBody, 2)
+			t.Log("Successfully verified bundles")
 
-		// Verify events
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= numberOfEvents, "Missing Events")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfEvents)
-		assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, numberOfEvents, descriptionField)
-		t.Log("Successfully verified events")
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", apisField)
+				return false
+			}
+			t.Log("Successfully verified relation between apis and bundles")
 
-		// Verify defaultBundle for events
-		assertions.AssertDefaultBundleID(t, respBody, numberOfEvents, eventsDefaultBundleMap, ordAndInternalIDsMappingForBundles)
-		t.Log("Successfully verified defaultBundles for events")
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=events&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if !assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData) {
+				t.Logf("Relation between bundles and %s does not match..will try again", eventsField)
+				return false
+			}
+			t.Log("Successfully verified relation between events and bundles")
 
-		// verify public events via ORD Service
-		verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicEventsMap, eventsField, numberOfPublicEvents)
+			// Verify products
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedTotalNumberOfProducts {
+				t.Log("Missing Products...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfProducts)
+			assertions.AssertProducts(t, respBody, productsMap, expectedTotalNumberOfProducts, shortDescriptionField)
+			t.Log("Successfully verified products")
 
-		// verify apis and events visibility via Director's graphql
-		verifyEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, mergeMaps(apisMap, eventsMap), mergeMaps(publicApisMap, publicEventsMap), apisAndEventsNumber, app.ID)
+			// Verify apis
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < 3 {
+				t.Log("Missing APIs...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfAPIs)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, apisMap, numberOfAPIs, descriptionField)
+			t.Log("Successfully verified apis")
 
-		// Verify tombstones
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= numberOfTombstones, "Missing Tombstones")
-		assertions.AssertTombstoneFromORDService(t, respBody, numberOfTombstones, expectedTombstoneOrdIDRegex)
-		t.Log("Successfully verified tombstones")
+			// Verify defaultBundle for apis
+			assertions.AssertDefaultBundleID(t, respBody, numberOfAPIs, apisDefaultBundleMap, ordAndInternalIDsMappingForBundles)
+			t.Log("Successfully verified defaultBundles for apis")
 
-		// Verify vendors
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/vendors?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedTotalNumberOfVendors, "Missing Vendors")
-		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfVendors)
-		assertions.AssertVendorFromORDService(t, respBody, expectedTotalNumberOfVendors, numberOfVendors, expectedVendorTitle)
-		t.Log("Successfully verified vendors")
+			// Verify the api spec
+			specs := assertions.AssertSpecsFromORDService(t, respBody, numberOfAPIs, apiSpecsMap, apiResourceDefinitionsFieldName)
+			t.Log("Successfully verified specs for apis")
 
+			var specURL string
+			for _, s := range specs {
+				specType := s.Get("type").String()
+				specFormat := s.Get("mediaType").String()
+				if specType == expectedSpecType && specFormat == expectedSpecFormat {
+					specURL = s.Get("url").String()
+					break
+				}
+			}
+
+			respBody = makeRequestWithHeaders(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(respBody) == 0 || !strings.Contains(respBody, "swagger") {
+				t.Logf("Spec %s not successfully fetched... will try again", specURL)
+				return false
+			}
+			t.Log("Successfully verified api spec")
+
+			// verify public apis via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicApisMap, apisField, numberOfPublicAPIs)
+
+			// Verify events
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfEvents {
+				t.Log("Missing Events...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfEvents)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, numberOfEvents, descriptionField)
+			t.Log("Successfully verified events")
+
+			// Verify defaultBundle for events
+			assertions.AssertDefaultBundleID(t, respBody, numberOfEvents, eventsDefaultBundleMap, ordAndInternalIDsMappingForBundles)
+			t.Log("Successfully verified defaultBundles for events")
+
+			// verify public events via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicEventsMap, eventsField, numberOfPublicEvents)
+
+			// verify apis and events visibility via Director's graphql
+			verifyEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, mergeMaps(apisMap, eventsMap), mergeMaps(publicApisMap, publicEventsMap), apisAndEventsNumber, app.ID)
+
+			// Verify capabilities
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/capabilities?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfCapabilities {
+				t.Log("Missing Capabilities...will try again")
+				return false
+			}
+
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfCapabilities)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, capabilitiesMap, numberOfCapabilities, descriptionField)
+			t.Log("Successfully verified capabilities")
+
+			// Verify the capability spec
+			capabilitySpecs := assertions.AssertSpecsFromORDService(t, respBody, numberOfCapabilities, capabilitySpecsMap, capabilityResourceDefinitionsFieldName)
+			t.Log("Successfully verified specs for capabilities")
+
+			var capabilitySpecURL string
+			for _, s := range capabilitySpecs {
+				specType := s.Get("type").String()
+				specFormat := s.Get("mediaType").String()
+				if specType == expectedCapabilitySpecType && specFormat == expectedSpecFormat {
+					capabilitySpecURL = s.Get("url").String()
+					break
+				}
+			}
+
+			respBody = makeRequestWithHeaders(t, httpClient, capabilitySpecURL, map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(respBody) == 0 || !strings.Contains(respBody, "swagger") {
+				t.Logf("Spec %s not successfully fetched... will try again", specURL)
+				return false
+			}
+			t.Log("Successfully verified capability spec")
+
+			// verify public capabilities via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicCapabilitiesMap, capabilitiesField, numberOfPublicCapabilities)
+
+			// Verify tombstones
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfTombstones {
+				t.Log("Missing Tombstones...will try again")
+				return false
+			}
+			assertions.AssertTombstoneFromORDService(t, respBody, numberOfTombstones, expectedTombstoneOrdIDRegex)
+			t.Log("Successfully verified tombstones")
+
+			// Verify vendors
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/vendors?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedTotalNumberOfVendors {
+				t.Log("Missing Vendors...will try again")
+				return false
+			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfVendors)
+			assertions.AssertVendorFromORDService(t, respBody, expectedTotalNumberOfVendors, numberOfVendors, expectedVendorTitle)
+			t.Log("Successfully verified vendors")
+
+			return true
+		})
+		require.NoError(t, err)
 		t.Log("Successfully verified all ORD documents")
 	})
+}
+
+func verifyORDDocument(interval time.Duration, timeout time.Duration, conditionalFunc func() bool) error {
+	done := time.After(timeout)
+	ticker := time.Tick(interval)
+
+	for {
+		if conditionalFunc() {
+			return nil
+		}
+
+		select {
+		case <-done:
+			return errors.New("timeout waiting for entities to be present in DB")
+		case <-ticker:
+		}
+	}
 }
 
 func makeRequestWithHeaders(t *testing.T, httpClient *http.Client, url string, headers map[string][]string) string {
@@ -1153,14 +1360,8 @@ func mergeMaps(first, second map[string]string) map[string]string {
 	return first
 }
 
-func createAppTemplateName(name string) string {
-	return fmt.Sprintf("SAP %s", name)
-}
-
 func fixAppTemplateInput(name, webhookURL string) directorSchema.ApplicationTemplateInput {
-	input := fixtures.FixApplicationTemplateWithORDWebhook(name, webhookURL)
-
-	return input
+	return fixtures.FixApplicationTemplateWithORDWebhook(name, webhookURL)
 }
 
 func fixAppTemplateInputWitSelfRegLabel(name, webhookURL string) directorSchema.ApplicationTemplateInput {

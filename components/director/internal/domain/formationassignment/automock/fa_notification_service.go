@@ -25,6 +25,10 @@ func (_m *FaNotificationService) GenerateFormationAssignmentNotificationExt(ctx 
 	ret := _m.Called(ctx, faRequestMapping, reverseFaRequestMapping, operation)
 
 	var r0 *webhookclient.FormationAssignmentNotificationRequestExt
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.FormationAssignmentRequestMapping, *formationassignment.FormationAssignmentRequestMapping, model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)); ok {
+		return rf(ctx, faRequestMapping, reverseFaRequestMapping, operation)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.FormationAssignmentRequestMapping, *formationassignment.FormationAssignmentRequestMapping, model.FormationOperation) *webhookclient.FormationAssignmentNotificationRequestExt); ok {
 		r0 = rf(ctx, faRequestMapping, reverseFaRequestMapping, operation)
 	} else {
@@ -33,7 +37,6 @@ func (_m *FaNotificationService) GenerateFormationAssignmentNotificationExt(ctx 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *formationassignment.FormationAssignmentRequestMapping, *formationassignment.FormationAssignmentRequestMapping, model.FormationOperation) error); ok {
 		r1 = rf(ctx, faRequestMapping, reverseFaRequestMapping, operation)
 	} else {
@@ -43,22 +46,25 @@ func (_m *FaNotificationService) GenerateFormationAssignmentNotificationExt(ctx 
 	return r0, r1
 }
 
-// PrepareDetailsForNotificationStatusReturned provides a mock function with given fields: ctx, tenantID, fa, operation
-func (_m *FaNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
-	ret := _m.Called(ctx, tenantID, fa, operation)
+// PrepareDetailsForNotificationStatusReturned provides a mock function with given fields: ctx, tenantID, fa, operation, lastFormationAssignmentState, lastFormationAssignmentConfiguration
+func (_m *FaNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState string, lastFormationAssignmentConfiguration string) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
+	ret := _m.Called(ctx, tenantID, fa, operation, lastFormationAssignmentState, lastFormationAssignmentConfiguration)
 
 	var r0 *formationconstraint.NotificationStatusReturnedOperationDetails
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignment, model.FormationOperation) *formationconstraint.NotificationStatusReturnedOperationDetails); ok {
-		r0 = rf(ctx, tenantID, fa, operation)
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignment, model.FormationOperation, string, string) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)); ok {
+		return rf(ctx, tenantID, fa, operation, lastFormationAssignmentState, lastFormationAssignmentConfiguration)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignment, model.FormationOperation, string, string) *formationconstraint.NotificationStatusReturnedOperationDetails); ok {
+		r0 = rf(ctx, tenantID, fa, operation, lastFormationAssignmentState, lastFormationAssignmentConfiguration)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*formationconstraint.NotificationStatusReturnedOperationDetails)
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *model.FormationAssignment, model.FormationOperation) error); ok {
-		r1 = rf(ctx, tenantID, fa, operation)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *model.FormationAssignment, model.FormationOperation, string, string) error); ok {
+		r1 = rf(ctx, tenantID, fa, operation, lastFormationAssignmentState, lastFormationAssignmentConfiguration)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -66,13 +72,12 @@ func (_m *FaNotificationService) PrepareDetailsForNotificationStatusReturned(ctx
 	return r0, r1
 }
 
-type mockConstructorTestingTNewFaNotificationService interface {
+// NewFaNotificationService creates a new instance of FaNotificationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFaNotificationService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFaNotificationService creates a new instance of FaNotificationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFaNotificationService(t mockConstructorTestingTNewFaNotificationService) *FaNotificationService {
+}) *FaNotificationService {
 	mock := &FaNotificationService{}
 	mock.Mock.Test(t)
 

@@ -87,8 +87,8 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 }
 
 // MultipleToGraphQL converts the provided service-layer representations of an APIDefinition to the graphql-layer ones.
-func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error) {
-	if len(in) != len(specs) || len(in) != len(bundleRefs) || len(bundleRefs) != len(specs) {
+func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error) {
+	if len(in) != len(bundleRefs) {
 		return nil, errors.New("different apis, specs and bundleRefs count provided")
 	}
 
@@ -98,7 +98,7 @@ func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.
 			continue
 		}
 
-		api, err := c.ToGraphQL(a, specs[i], bundleRefs[i])
+		api, err := c.ToGraphQL(a, nil, bundleRefs[i])
 		if err != nil {
 			return nil, err
 		}
@@ -184,10 +184,11 @@ func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
 		Version:                                 c.version.FromEntity(entity.Version),
 		Extensible:                              repo.JSONRawMessageFromNullableString(entity.Extensible),
 		ResourceHash:                            repo.StringPtrFromNullableString(entity.ResourceHash),
-		Hierarchy:                               repo.JSONRawMessageFromNullableString(entity.Hierarchy),
 		SupportedUseCases:                       repo.JSONRawMessageFromNullableString(entity.SupportedUseCases),
 		DocumentationLabels:                     repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 		CorrelationIDs:                          repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
+		Direction:                               repo.StringPtrFromNullableString(entity.Direction),
+		LastUpdate:                              repo.StringPtrFromNullableString(entity.LastUpdate),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -241,10 +242,11 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
 		Version:                                 c.convertVersionToEntity(apiModel.Version),
 		Extensible:                              repo.NewNullableStringFromJSONRawMessage(apiModel.Extensible),
 		ResourceHash:                            repo.NewNullableString(apiModel.ResourceHash),
-		Hierarchy:                               repo.NewNullableStringFromJSONRawMessage(apiModel.Hierarchy),
 		DocumentationLabels:                     repo.NewNullableStringFromJSONRawMessage(apiModel.DocumentationLabels),
 		SupportedUseCases:                       repo.NewNullableStringFromJSONRawMessage(apiModel.SupportedUseCases),
 		CorrelationIDs:                          repo.NewNullableStringFromJSONRawMessage(apiModel.CorrelationIDs),
+		Direction:                               repo.NewNullableString(apiModel.Direction),
+		LastUpdate:                              repo.NewNullableString(apiModel.LastUpdate),
 		BaseEntity: &repo.BaseEntity{
 			ID:        apiModel.ID,
 			Ready:     apiModel.Ready,

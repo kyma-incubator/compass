@@ -58,12 +58,16 @@ components/director/internal/domain/formationtemplateconstraintreferences @kyma-
 /installation/scripts/prow @kyma-incubator/team-raptor @kyma-incubator/team-falcon
 /tests/connectivity-adapter @kyma-incubator/team-falcon
 /tests/connector @kyma-incubator/team-raptor
+/tests/director/tests/formation @kyma-incubator/team-raptor
+/tests/director/tests/notifications @kyma-incubator/team-raptor
+/tests/director/tests/runtime @kyma-incubator/team-raptor
 /tests/gateway @kyma-incubator/team-raptor
 /tests/istio @kyma-incubator/team-raptor
 /tests/ns-adapter @kyma-incubator/team-falcon
 /tests/ord-aggregator @kyma-incubator/team-falcon
 /tests/ord-service @kyma-incubator/team-raptor
 /tests/pairing-adapter @kyma-incubator/team-falcon
+/tests/pkg/notifications @kyma-incubator/team-raptor
 /tests/system-fetcher @kyma-incubator/team-falcon
 /tests/tenant-fetcher @kyma-incubator/team-dragon @kyma-incubator/team-falcon
 

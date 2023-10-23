@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 
@@ -34,16 +35,16 @@ type automaticScenarioAssignmentService interface {
 
 //go:generate mockery --exported --name=destinationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationService interface {
-	CreateDesignTimeDestinations(ctx context.Context, destinationsDetails []Destination, formationAssignment *model.FormationAssignment) error
-	CreateBasicCredentialDestinations(ctx context.Context, destinationsDetails []Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error
-	CreateSAMLAssertionDestination(ctx context.Context, destinationsDetails []Destination, samlAssertionAuthCredentials *SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error
-	CreateClientCertificateAuthenticationDestination(ctx context.Context, destinationsDetails []Destination, clientCertAuthCredentials *ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error
-	DeleteDestinations(ctx context.Context, formationAssignment *model.FormationAssignment) error
+	CreateDesignTimeDestinations(ctx context.Context, destinationsDetails []Destination, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error
+	CreateBasicCredentialDestinations(ctx context.Context, destinationsDetails []Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
+	CreateSAMLAssertionDestination(ctx context.Context, destinationsDetails []Destination, samlAssertionAuthCredentials *SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
+	CreateClientCertificateAuthenticationDestination(ctx context.Context, destinationsDetails []Destination, clientCertAuthCredentials *ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
+	DeleteDestinations(ctx context.Context, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error
 }
 
 //go:generate mockery --exported --name=destinationCreatorService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationCreatorService interface {
-	CreateCertificate(ctx context.Context, destinationsDetails []Destination, destinationAuthType destinationcreatorpkg.AuthType, formationAssignment *model.FormationAssignment, depth uint8) (*CertificateData, error)
+	CreateCertificate(ctx context.Context, destinationsDetails []Destination, destinationAuthType destinationcreatorpkg.AuthType, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) (*CertificateData, error)
 	EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *CertificateData) (json.RawMessage, error)
 	EnrichAssignmentConfigWithSAMLCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *CertificateData) (json.RawMessage, error)
 }
@@ -83,6 +84,7 @@ type formationTemplateRepo interface {
 }
 
 // FormationAssignmentRepository represents the Formation Assignment repository layer
+//
 //go:generate mockery --name=formationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentRepository interface {
 	Update(ctx context.Context, model *model.FormationAssignment) error
@@ -123,7 +125,7 @@ type ConstraintEngine struct {
 
 // NewConstraintEngine returns new ConstraintEngine
 func NewConstraintEngine(transact persistence.Transactioner, constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc destinationService, destinationCreatorSvc destinationCreatorService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, formationAssignmentRepo formationAssignmentRepository, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
-	c := &ConstraintEngine{
+	ce := &ConstraintEngine{
 		transact:                transact,
 		constraintSvc:           constraintSvc,
 		tenantSvc:               tenantSvc,
@@ -138,21 +140,27 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 		formationTemplateRepo:   formationTemplateRepo,
 		formationAssignmentRepo: formationAssignmentRepo,
 		operatorInputConstructors: map[OperatorName]OperatorInputConstructor{
-			IsNotAssignedToAnyFormationOfTypeOperator:            NewIsNotAssignedToAnyFormationOfTypeInput,
-			DoesNotContainResourceOfSubtypeOperator:              NewDoesNotContainResourceOfSubtypeInput,
-			DoNotGenerateFormationAssignmentNotificationOperator: NewDoNotGenerateFormationAssignmentNotificationInput,
-			DestinationCreatorOperator:                           NewDestinationCreatorInput,
+			IsNotAssignedToAnyFormationOfTypeOperator:                    NewIsNotAssignedToAnyFormationOfTypeInput,
+			DoesNotContainResourceOfSubtypeOperator:                      NewDoesNotContainResourceOfSubtypeInput,
+			DoNotGenerateFormationAssignmentNotificationOperator:         NewDoNotGenerateFormationAssignmentNotificationInput,
+			DoNotGenerateFormationAssignmentNotificationForLoopsOperator: NewDoNotGenerateFormationAssignmentNotificationForLoopsInput,
+			DestinationCreatorOperator:                                   NewDestinationCreatorInput,
+			ConfigMutatorOperator:                                        NewConfigMutatorInput,
+			RedirectNotificationOperator:                                 NewRedirectNotificationInput,
 		},
 		runtimeTypeLabelKey:     runtimeTypeLabelKey,
 		applicationTypeLabelKey: applicationTypeLabelKey,
 	}
-	c.operators = map[OperatorName]OperatorFunc{
-		IsNotAssignedToAnyFormationOfTypeOperator:            c.IsNotAssignedToAnyFormationOfType,
-		DoesNotContainResourceOfSubtypeOperator:              c.DoesNotContainResourceOfSubtype,
-		DoNotGenerateFormationAssignmentNotificationOperator: c.DoNotGenerateFormationAssignmentNotification,
-		DestinationCreatorOperator:                           c.DestinationCreator,
+	ce.operators = map[OperatorName]OperatorFunc{
+		IsNotAssignedToAnyFormationOfTypeOperator:                    ce.IsNotAssignedToAnyFormationOfType,
+		DoesNotContainResourceOfSubtypeOperator:                      ce.DoesNotContainResourceOfSubtype,
+		DoNotGenerateFormationAssignmentNotificationOperator:         ce.DoNotGenerateFormationAssignmentNotification,
+		DoNotGenerateFormationAssignmentNotificationForLoopsOperator: ce.DoNotGenerateFormationAssignmentNotificationForLoops,
+		DestinationCreatorOperator:                                   ce.DestinationCreator,
+		ConfigMutatorOperator:                                        ce.MutateConfig,
+		RedirectNotificationOperator:                                 ce.RedirectNotification,
 	}
-	return c
+	return ce
 }
 
 // EnforceConstraints finds all the applicable constraints based on JoinPointLocation and JoinPointDetails. Checks for each constraint if it is satisfied.
@@ -166,6 +174,11 @@ func (e *ConstraintEngine) EnforceConstraints(ctx context.Context, location form
 	if err != nil {
 		return errors.Wrapf(err, "While listing matching constraints for target operation %q, constraint type %q, resource type %q and resource subtype %q", location.OperationName, location.ConstraintType, matchingDetails.ResourceType, matchingDetails.ResourceSubtype)
 	}
+
+	sort.Slice(constraints, func(i, j int) bool {
+		return constraints[i].Priority > constraints[j].Priority ||
+			(constraints[i].Priority == constraints[j].Priority && constraints[i].CreatedAt.Before(*constraints[j].CreatedAt))
+	})
 
 	matchedConstraintsNames := make([]string, 0, len(constraints))
 	for _, c := range constraints {

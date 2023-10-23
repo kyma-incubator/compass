@@ -19,13 +19,16 @@ func (_m *WebhookService) Create(ctx context.Context, owningResourceID string, i
 	ret := _m.Called(ctx, owningResourceID, in, objectType)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookInput, model.WebhookReferenceObjectType) (string, error)); ok {
+		return rf(ctx, owningResourceID, in, objectType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookInput, model.WebhookReferenceObjectType) string); ok {
 		r0 = rf(ctx, owningResourceID, in, objectType)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.WebhookInput, model.WebhookReferenceObjectType) error); ok {
 		r1 = rf(ctx, owningResourceID, in, objectType)
 	} else {
@@ -40,6 +43,10 @@ func (_m *WebhookService) ListForRuntime(ctx context.Context, runtimeID string) 
 	ret := _m.Called(ctx, runtimeID)
 
 	var r0 []*model.Webhook
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Webhook, error)); ok {
+		return rf(ctx, runtimeID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Webhook); ok {
 		r0 = rf(ctx, runtimeID)
 	} else {
@@ -48,7 +55,6 @@ func (_m *WebhookService) ListForRuntime(ctx context.Context, runtimeID string) 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, runtimeID)
 	} else {
@@ -58,13 +64,12 @@ func (_m *WebhookService) ListForRuntime(ctx context.Context, runtimeID string) 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewWebhookService interface {
+// NewWebhookService creates a new instance of WebhookService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewWebhookService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewWebhookService creates a new instance of WebhookService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewWebhookService(t mockConstructorTestingTNewWebhookService) *WebhookService {
+}) *WebhookService {
 	mock := &WebhookService{}
 	mock.Mock.Test(t)
 

@@ -2,6 +2,7 @@ package operation_test
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -385,6 +386,66 @@ func TestService_Get(t *testing.T) {
 	}
 }
 
+func TestService_GetByDataAndType(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name           string
+		RepositoryFn   func() *automock.OperationRepository
+		Input          string
+		ExpectedErr    error
+		ExpectedOutput *model.Operation
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("GetByDataAndType", ctx, fixOperationDataAsString(applicationID, applicationTemplateID), model.OperationTypeOrdAggregation).Return(opModel, nil).Once()
+				return repo
+			},
+			Input:          fixOperationDataAsString(applicationID, applicationTemplateID),
+			ExpectedOutput: opModel,
+		},
+		{
+			Name: "Error while getting operation",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("GetByDataAndType", ctx, fixOperationDataAsString(applicationID, applicationTemplateID), model.OperationTypeOrdAggregation).Return(nil, testErr).Once()
+				return repo
+			},
+			Input:       fixOperationDataAsString(applicationID, applicationTemplateID),
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := operation.NewService(repo, nil)
+
+			// WHEN
+			op, err := svc.GetByDataAndType(ctx, testCase.Input, model.OperationTypeOrdAggregation)
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.Equal(t, testCase.ExpectedOutput, op)
+				assert.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
 func TestService_ListPriorityQueue(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
@@ -647,6 +708,7 @@ func TestService_MarkAsCompleted(t *testing.T) {
 				repo.On("Update", ctx, mock.AnythingOfType("*model.Operation")).Return(nil).Run(func(args mock.Arguments) {
 					arg := args.Get(1).(*model.Operation)
 					assert.Equal(t, model.OperationStatusCompleted, arg.Status)
+					assert.Equal(t, json.RawMessage("{}"), arg.Error)
 				})
 				return repo
 			},
@@ -770,6 +832,67 @@ func TestService_MarkAsFailed(t *testing.T) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			} else {
+				assert.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
+func TestService_ListAllByType(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	operationModels := []*model.Operation{opModel}
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name           string
+		RepositoryFn   func() *automock.OperationRepository
+		OpType         model.OperationType
+		ExpectedErr    error
+		ExpectedOutput []*model.Operation
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("ListAllByType", ctx, model.OperationTypeOrdAggregation).Return(operationModels, nil).Once()
+				return repo
+			},
+			OpType:         model.OperationTypeOrdAggregation,
+			ExpectedOutput: operationModels,
+		},
+		{
+			Name: "Error while listing by type",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("ListAllByType", ctx, model.OperationTypeOrdAggregation).Return(nil, testErr).Once()
+				return repo
+			},
+			OpType:      model.OperationTypeOrdAggregation,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := operation.NewService(repo, nil)
+
+			// WHEN
+			op, err := svc.ListAllByType(ctx, testCase.OpType)
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.Equal(t, testCase.ExpectedOutput, op)
 				assert.Nil(t, err)
 			}
 

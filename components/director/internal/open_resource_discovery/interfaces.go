@@ -15,6 +15,7 @@ import (
 //
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
+	GetByIDAndWebhookTypeGlobal(ctx context.Context, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error)
 	ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error)
 	ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error)
 	ListForApplicationGlobal(ctx context.Context, applicationID string) ([]*model.Webhook, error)
@@ -29,6 +30,7 @@ type WebhookService interface {
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
+	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
 }
@@ -71,6 +73,17 @@ type EventService interface {
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.EventDefinition, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.EventDefinition, error)
+}
+
+// CapabilityService is responsible for the service-layer Capability operations.
+//
+//go:generate mockery --name=CapabilityService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type CapabilityService interface {
+	ListByApplicationID(ctx context.Context, appID string) ([]*model.Capability, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Capability, error)
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.CapabilityInput, spec []*model.SpecInput, capabilityHash uint64) (string, error)
+	Update(ctx context.Context, resourceType resource.Type, id string, in model.CapabilityInput, capabilityHash uint64) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 }
 
 // SpecService is responsible for the service-layer Specification operations.
@@ -151,14 +164,11 @@ type GlobalVendorService interface {
 	ListGlobal(ctx context.Context) ([]*model.Vendor, error)
 }
 
-// TombstoneService is responsible for the service-layer Tombstone operations.
+// TombstoneProcessor is responsible for processing of tombstone entities.
 //
-//go:generate mockery --name=TombstoneService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type TombstoneService interface {
-	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.TombstoneInput) (string, error)
-	Update(ctx context.Context, resourceType resource.Type, id string, in model.TombstoneInput) error
-	ListByApplicationID(ctx context.Context, appID string) ([]*model.Tombstone, error)
-	ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Tombstone, error)
+//go:generate mockery --name=TombstoneProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TombstoneProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error)
 }
 
 // TenantService missing godoc

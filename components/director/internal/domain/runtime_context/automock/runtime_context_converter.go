@@ -58,13 +58,12 @@ func (_m *RuntimeContextConverter) ToGraphQL(in *model.RuntimeContext) *graphql.
 	return r0
 }
 
-type mockConstructorTestingTNewRuntimeContextConverter interface {
+// NewRuntimeContextConverter creates a new instance of RuntimeContextConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeContextConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeContextConverter creates a new instance of RuntimeContextConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeContextConverter(t mockConstructorTestingTNewRuntimeContextConverter) *RuntimeContextConverter {
+}) *RuntimeContextConverter {
 	mock := &RuntimeContextConverter{}
 	mock.Mock.Test(t)
 

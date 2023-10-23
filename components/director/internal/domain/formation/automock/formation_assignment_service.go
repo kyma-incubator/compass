@@ -26,13 +26,16 @@ func (_m *FormationAssignmentService) CleanupFormationAssignment(ctx context.Con
 	ret := _m.Called(ctx, mappingPair)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error)); ok {
+		return rf(ctx, mappingPair)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) bool); ok {
 		r0 = rf(ctx, mappingPair)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) error); ok {
 		r1 = rf(ctx, mappingPair)
 	} else {
@@ -75,6 +78,10 @@ func (_m *FormationAssignmentService) GenerateAssignments(ctx context.Context, t
 	ret := _m.Called(ctx, tnt, objectID, objectType, _a4)
 
 	var r0 []*model.FormationAssignmentInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, *model.Formation) ([]*model.FormationAssignmentInput, error)); ok {
+		return rf(ctx, tnt, objectID, objectType, _a4)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, *model.Formation) []*model.FormationAssignmentInput); ok {
 		r0 = rf(ctx, tnt, objectID, objectType, _a4)
 	} else {
@@ -83,7 +90,6 @@ func (_m *FormationAssignmentService) GenerateAssignments(ctx context.Context, t
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, *model.Formation) error); ok {
 		r1 = rf(ctx, tnt, objectID, objectType, _a4)
 	} else {
@@ -98,6 +104,10 @@ func (_m *FormationAssignmentService) GetAssignmentsForFormation(ctx context.Con
 	ret := _m.Called(ctx, tenantID, formationID)
 
 	var r0 []*model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]*model.FormationAssignment, error)); ok {
+		return rf(ctx, tenantID, formationID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.FormationAssignment); ok {
 		r0 = rf(ctx, tenantID, formationID)
 	} else {
@@ -106,7 +116,6 @@ func (_m *FormationAssignmentService) GetAssignmentsForFormation(ctx context.Con
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenantID, formationID)
 	} else {
@@ -121,6 +130,10 @@ func (_m *FormationAssignmentService) GetAssignmentsForFormationWithStates(ctx c
 	ret := _m.Called(ctx, tenantID, formationID, states)
 
 	var r0 []*model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []string) ([]*model.FormationAssignment, error)); ok {
+		return rf(ctx, tenantID, formationID, states)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, []string) []*model.FormationAssignment); ok {
 		r0 = rf(ctx, tenantID, formationID, states)
 	} else {
@@ -129,7 +142,6 @@ func (_m *FormationAssignmentService) GetAssignmentsForFormationWithStates(ctx c
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, []string) error); ok {
 		r1 = rf(ctx, tenantID, formationID, states)
 	} else {
@@ -144,6 +156,10 @@ func (_m *FormationAssignmentService) GetForFormation(ctx context.Context, id st
 	ret := _m.Called(ctx, id, formationID)
 
 	var r0 *model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.FormationAssignment, error)); ok {
+		return rf(ctx, id, formationID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.FormationAssignment); ok {
 		r0 = rf(ctx, id, formationID)
 	} else {
@@ -152,7 +168,6 @@ func (_m *FormationAssignmentService) GetForFormation(ctx context.Context, id st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, id, formationID)
 	} else {
@@ -167,6 +182,10 @@ func (_m *FormationAssignmentService) GetReverseBySourceAndTarget(ctx context.Co
 	ret := _m.Called(ctx, formationID, sourceID, targetID)
 
 	var r0 *model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.FormationAssignment, error)); ok {
+		return rf(ctx, formationID, sourceID, targetID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.FormationAssignment); ok {
 		r0 = rf(ctx, formationID, sourceID, targetID)
 	} else {
@@ -175,7 +194,6 @@ func (_m *FormationAssignmentService) GetReverseBySourceAndTarget(ctx context.Co
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, formationID, sourceID, targetID)
 	} else {
@@ -190,6 +208,10 @@ func (_m *FormationAssignmentService) ListByFormationIDs(ctx context.Context, fo
 	ret := _m.Called(ctx, formationIDs, pageSize, cursor)
 
 	var r0 []*model.FormationAssignmentPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) ([]*model.FormationAssignmentPage, error)); ok {
+		return rf(ctx, formationIDs, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) []*model.FormationAssignmentPage); ok {
 		r0 = rf(ctx, formationIDs, pageSize, cursor)
 	} else {
@@ -198,7 +220,6 @@ func (_m *FormationAssignmentService) ListByFormationIDs(ctx context.Context, fo
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string, int, string) error); ok {
 		r1 = rf(ctx, formationIDs, pageSize, cursor)
 	} else {
@@ -213,6 +234,10 @@ func (_m *FormationAssignmentService) ListByFormationIDsNoPaging(ctx context.Con
 	ret := _m.Called(ctx, formationIDs)
 
 	var r0 [][]*model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([][]*model.FormationAssignment, error)); ok {
+		return rf(ctx, formationIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string) [][]*model.FormationAssignment); ok {
 		r0 = rf(ctx, formationIDs)
 	} else {
@@ -221,7 +246,6 @@ func (_m *FormationAssignmentService) ListByFormationIDsNoPaging(ctx context.Con
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
 		r1 = rf(ctx, formationIDs)
 	} else {
@@ -236,6 +260,10 @@ func (_m *FormationAssignmentService) ListFormationAssignmentsForObjectID(ctx co
 	ret := _m.Called(ctx, formationID, objectID)
 
 	var r0 []*model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]*model.FormationAssignment, error)); ok {
+		return rf(ctx, formationID, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.FormationAssignment); ok {
 		r0 = rf(ctx, formationID, objectID)
 	} else {
@@ -244,7 +272,6 @@ func (_m *FormationAssignmentService) ListFormationAssignmentsForObjectID(ctx co
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, formationID, objectID)
 	} else {
@@ -259,6 +286,10 @@ func (_m *FormationAssignmentService) PersistAssignments(ctx context.Context, tn
 	ret := _m.Called(ctx, tnt, assignments)
 
 	var r0 []*model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*model.FormationAssignmentInput) ([]*model.FormationAssignment, error)); ok {
+		return rf(ctx, tnt, assignments)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*model.FormationAssignmentInput) []*model.FormationAssignment); ok {
 		r0 = rf(ctx, tnt, assignments)
 	} else {
@@ -267,7 +298,6 @@ func (_m *FormationAssignmentService) PersistAssignments(ctx context.Context, tn
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []*model.FormationAssignmentInput) error); ok {
 		r1 = rf(ctx, tnt, assignments)
 	} else {
@@ -282,15 +312,39 @@ func (_m *FormationAssignmentService) ProcessFormationAssignmentPair(ctx context
 	ret := _m.Called(ctx, mappingPair)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error)); ok {
+		return rf(ctx, mappingPair)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) bool); ok {
 		r0 = rf(ctx, mappingPair)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) error); ok {
 		r1 = rf(ctx, mappingPair)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ProcessFormationAssignmentPairWithReset provides a mock function with given fields: ctx, mappingPair, reset
+func (_m *FormationAssignmentService) ProcessFormationAssignmentPairWithReset(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation, reset bool) (bool, error) {
+	ret := _m.Called(ctx, mappingPair, reset)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation, bool) bool); ok {
+		r0 = rf(ctx, mappingPair, reset)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation, bool) error); ok {
+		r1 = rf(ctx, mappingPair, reset)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -326,13 +380,12 @@ func (_m *FormationAssignmentService) Update(ctx context.Context, id string, fa 
 	return r0
 }
 
-type mockConstructorTestingTNewFormationAssignmentService interface {
+// NewFormationAssignmentService creates a new instance of FormationAssignmentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationAssignmentService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationAssignmentService creates a new instance of FormationAssignmentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationAssignmentService(t mockConstructorTestingTNewFormationAssignmentService) *FormationAssignmentService {
+}) *FormationAssignmentService {
 	mock := &FormationAssignmentService{}
 	mock.Mock.Test(t)
 

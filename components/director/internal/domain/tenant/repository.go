@@ -446,7 +446,7 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
 	return dest.TenantID, nil
 }
 
-// GetCustomerIDParentRecursively gets the top parent external ID (customer_id) for a given tenant
+// GetCustomerIDParentRecursively gets the top parent external ID (customer_id) for a given tenant ID (internal id)
 func (r *pgRepository) GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error) {
 	recursiveQuery := `WITH RECURSIVE parents AS
                    (SELECT t1.id, t1.parent, t1.external_tenant, t1.type
@@ -483,6 +483,34 @@ func (r *pgRepository) GetCustomerIDParentRecursively(ctx context.Context, tenan
 	}
 
 	return dest.ExternalCustomerTenant, nil
+}
+
+// GetParentRecursivelyByExternalTenant gets the top parent for a given external tenant
+func (r *pgRepository) GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
+	recursiveQuery := `WITH RECURSIVE parents AS
+                   (SELECT t1.id, t1.external_name, t1.external_tenant, t1.provider_name, t1.status, t1.parent, t1.type
+                    FROM business_tenant_mappings t1
+                    WHERE external_tenant = $1
+                    UNION ALL
+                    SELECT t2.id, t2.external_name, t2.external_tenant, t2.provider_name, t2.status, t2.parent, t2.type
+                    FROM business_tenant_mappings t2
+                             INNER JOIN parents p on p.parent = t2.id)
+			SELECT id, external_name, external_tenant, provider_name, status, parent, type FROM parents WHERE parent is null`
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Debugf("Executing DB query: %s", recursiveQuery)
+
+	var entity tenant.Entity
+
+	if err := persist.GetContext(ctx, &entity, recursiveQuery, externalTenant); err != nil {
+		return nil, persistence.MapSQLError(ctx, err, resource.Tenant, resource.Get, "while getting parent external customer ID for external tenant: %q", externalTenant)
+	}
+
+	return r.conv.FromEntity(&entity), nil
 }
 
 func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx context.Context, selfRegDistinguishLabel string) ([]*model.BusinessTenantMapping, error) {

@@ -94,7 +94,7 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 }
 
 // PrepareDetailsForNotificationStatusReturned creates NotificationStatusReturnedOperationDetails by given tenantID, formation assignment and formation operation
-func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
+func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
 	var targetType model.ResourceType
 	switch fa.TargetType {
 	case model.FormationAssignmentTypeApplication:
@@ -126,12 +126,15 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 	}
 
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		ResourceType:               targetType,
-		ResourceSubtype:            targetSubtype,
-		Operation:                  operation,
-		FormationAssignment:        fa,
-		ReverseFormationAssignment: reverseFa,
-		Formation:                  formation,
+		ResourceType:                         targetType,
+		ResourceSubtype:                      targetSubtype,
+		LastFormationAssignmentState:         lastFormationAssignmentState,
+		LastFormationAssignmentConfiguration: lastFormationAssignmentConfiguration,
+		Tenant:                               tenantID,
+		Operation:                            operation,
+		FormationAssignment:                  fa,
+		ReverseFormationAssignment:           reverseFa,
+		Formation:                            formation,
 	}, nil
 }
 
@@ -153,8 +156,8 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 	}
 
 	return &webhookclient.FormationAssignmentNotificationRequestExt{
-		Operation:                              operation,
 		FormationAssignmentNotificationRequest: faRequestMapping.Request,
+		Operation:                              operation,
 		FormationAssignment:                    faRequestMapping.FormationAssignment,
 		ReverseFormationAssignment:             reverseFa,
 		Formation:                              formation,
