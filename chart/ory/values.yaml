@@ -203,7 +203,7 @@ oathkeeper:
             # jwks_url: file:///from/this/absolute/location.json
             # jwks_url: file://../from/this/relative/location.json
             # Sets the time-to-live of the ID token. Defaults to one minute. Valid time units are: s (second), m (minute), h (hour).
-            ttl: 60s
+            ttl: 60m
         header:
           config:
             headers:
