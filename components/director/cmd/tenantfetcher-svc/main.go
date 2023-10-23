@@ -140,6 +140,8 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, sy
 	)
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
+	// Here the request header is taken from the original request and attached to the context
+	// Inforrect correlation ID
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
 		cfg.TenantsRootAPI+healthzEndpoint, cfg.TenantsRootAPI+readyzEndpoint))
 

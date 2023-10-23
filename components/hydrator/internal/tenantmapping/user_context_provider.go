@@ -64,8 +64,10 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
+	// Correct correlation id here -> send request to the tenant fetcher
 	tenantMapping, region, err := getTenantWithRegion(ctx, m.directorClient, externalTenantID)
 	if err != nil {
+		// Correct correlation id here -> request finished
 		if directorErrors.IsGQLNotFoundError(err) {
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 

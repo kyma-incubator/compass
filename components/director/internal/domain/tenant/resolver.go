@@ -130,6 +130,7 @@ func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tena
 	if err != nil && apperrors.IsNotFoundError(err) {
 		tx, err = r.fetchTenant(tx, externalID)
 		if err != nil {
+			// director -> Correct correlation ID
 			log.C(ctx).Error(err)
 			return nil, apperrors.NewNotFoundError(resource.Tenant, externalID)
 		}
