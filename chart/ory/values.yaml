@@ -258,8 +258,8 @@ oathkeeper:
         memory: 128Mi
     autoscaling:
       enabled: true
-      maxReplicas: "1"
-      minReplicas: "1"
+      maxReplicas: 3
+      minReplicas: 1
       targetMemory:
         type: Utilization
         averageUtilization: 75
@@ -297,6 +297,3 @@ gcloud-sqlproxy:
   extraArgs:
     log_debug_stdout: true
     term_timeout: 30s
-  # TODO!!! See if this can be removed as we have automigrate as job now
-  podAnnotations:
-    sidecar.istio.io/inject: "false"

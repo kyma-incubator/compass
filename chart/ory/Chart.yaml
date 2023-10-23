@@ -10,7 +10,6 @@ dependencies:
     condition: global.ory.hydra.persistence.gcloud.enabled
   - name: oathkeeper
     version: 0.35.0
-  # Hydra has no custom implementation, however, our Kubernetes servers are behind on new versions.
-  # More specifically, the open source Hydra uses HPA with autoscaling/v2
   - name: hydra
     version: 0.35.0
+    repository: https://k8s.ory.sh/helm/charts
