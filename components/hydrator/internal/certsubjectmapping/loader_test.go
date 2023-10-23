@@ -82,18 +82,6 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			eventualTickInterval:            100 * time.Millisecond,
 			expectedCertSubjectMappingCount: 2,
 		},
-		//{
-		//	name:                  "Successfully resync certificate subject mappings multiple times",
-		//	certSubjectMappingCfg: cfg,
-		//	directorClientFn: func() *automock.DirectorClient {
-		//		directorClient := &automock.DirectorClient{}
-		//		directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil).Once()
-		//		directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil).Once()
-		//		return directorClient
-		//	},
-		//	eventualTickInterval:            120 * time.Millisecond,
-		//	expectedCertSubjectMappingCount: 2,
-		//},
 		{
 			name:                  "Successfully resync certificate subject mappings with paging",
 			certSubjectMappingCfg: cfg,
@@ -103,7 +91,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), endCursor).Return(certSubjcetMappingPageWithoutNextPage, nil).Twice()
 				return directorClient
 			},
-			eventualTickInterval:            100 * time.Millisecond,
+			eventualTickInterval:            250 * time.Millisecond,
 			expectedCertSubjectMappingCount: 4,
 		},
 		{
@@ -115,7 +103,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil).Times(3)
 				return directorClient
 			},
-			eventualTickInterval:            240 * time.Millisecond,
+			eventualTickInterval:            250 * time.Millisecond,
 			expectedCertSubjectMappingCount: 2,
 		},
 	}
