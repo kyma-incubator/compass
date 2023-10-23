@@ -49,20 +49,39 @@ istio:
       enabled: false
     ingressGateways:
       enabled: true
+      config:
+        hpaSpec:
+          metrics:
+            - type: Resource
+              resource:
+                name: cpu
+                target:
+                  type: Utilization
+                  averageUtilization: 80
+            - type: Resource
+              resource:
+                name: memory
+                target:
+                  type: Utilization
+                  averageUtilization: 80
     pilot:
       config:
         hpaSpec:
           maxReplicas: 5
-          metrics:
-            - resource:
-                name: cpu
-                targetAverageUtilization: 80
-              type: Resource
-            - resource:
-                name: memory
-                targetAverageUtilization: 80
-              type: Resource
           minReplicas: 1
+          metrics:
+            - type: Resource
+              resource:
+                name: cpu
+                target:
+                  type: Utilization
+                  averageUtilization: 80
+            - type: Resource
+              resource:
+                name: memory
+                target:
+                  type: Utilization
+                  averageUtilization: 80
         resources:
           limits:
             cpu: 2000m
@@ -81,6 +100,7 @@ istio:
       enabled: true
   helmValues:
     global:
+      autoscalingv2API: true
       proxy:
         resources:
           limits:
