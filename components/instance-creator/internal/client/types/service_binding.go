@@ -20,7 +20,7 @@ const (
 type ServiceKeyReqBody struct {
 	Name         string          `json:"name"`
 	ServiceKeyID string          `json:"service_instance_id"`
-	Parameters   json.RawMessage `json:"parameters,omitempty"` // todo::: differs from service to service. Most probably the necessary data will be provided as arbitrary json in the TN notification body?
+	Parameters   json.RawMessage `json:"parameters,omitempty"` // TODO:: differs from service to service. Most probably the necessary data will be provided as arbitrary json in the TN notification body?
 }
 
 // GetResourceName gets the ServiceKey name from the request body

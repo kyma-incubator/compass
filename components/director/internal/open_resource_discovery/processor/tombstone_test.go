@@ -2,6 +2,8 @@ package processor_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor/automock"
@@ -11,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestTombstoneProcessor_Process(t *testing.T) {

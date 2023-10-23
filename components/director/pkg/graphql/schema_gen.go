@@ -150,11 +150,13 @@ type ComplexityRoot struct {
 		AccessLevel          func(childComplexity int) int
 		ApplicationInput     func(childComplexity int) int
 		ApplicationNamespace func(childComplexity int) int
+		CreatedAt            func(childComplexity int) int
 		Description          func(childComplexity int) int
 		ID                   func(childComplexity int) int
 		Labels               func(childComplexity int, key *string) int
 		Name                 func(childComplexity int) int
 		Placeholders         func(childComplexity int) int
+		UpdatedAt            func(childComplexity int) int
 		Webhooks             func(childComplexity int) int
 	}
 
@@ -1438,6 +1440,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ApplicationTemplate.ApplicationNamespace(childComplexity), true
 
+	case "ApplicationTemplate.createdAt":
+		if e.complexity.ApplicationTemplate.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.ApplicationTemplate.CreatedAt(childComplexity), true
+
 	case "ApplicationTemplate.description":
 		if e.complexity.ApplicationTemplate.Description == nil {
 			break
@@ -1477,6 +1486,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ApplicationTemplate.Placeholders(childComplexity), true
+
+	case "ApplicationTemplate.updatedAt":
+		if e.complexity.ApplicationTemplate.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.ApplicationTemplate.UpdatedAt(childComplexity), true
 
 	case "ApplicationTemplate.webhooks":
 		if e.complexity.ApplicationTemplate.Webhooks == nil {
@@ -6214,6 +6230,8 @@ type ApplicationTemplate {
 	labels(key: String): Labels
 	accessLevel: ApplicationTemplateAccessLevel!
 	applicationNamespace: String
+	createdAt: Timestamp!
+	updatedAt: Timestamp!
 }
 
 type ApplicationTemplatePage implements Pageable {
@@ -13025,6 +13043,74 @@ func (ec *executionContext) _ApplicationTemplate_applicationNamespace(ctx contex
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ApplicationTemplate_createdAt(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ApplicationTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Timestamp)
+	fc.Result = res
+	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ApplicationTemplate_updatedAt(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ApplicationTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Timestamp)
+	fc.Result = res
+	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationTemplatePage_data(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplatePage) (ret graphql.Marshaler) {
@@ -35192,6 +35278,16 @@ func (ec *executionContext) _ApplicationTemplate(ctx context.Context, sel ast.Se
 			}
 		case "applicationNamespace":
 			out.Values[i] = ec._ApplicationTemplate_applicationNamespace(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._ApplicationTemplate_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "updatedAt":
+			out.Values[i] = ec._ApplicationTemplate_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

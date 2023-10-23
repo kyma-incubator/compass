@@ -4,11 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/capability"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/capability"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
@@ -289,7 +291,7 @@ func main() {
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
 	tombstoneProcessor := processor.NewTombstoneProcessor(transact, tombstoneSvc)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
 	appTemplateVersionSvc := apptemplateversion.NewService(appTemplateVersionRepo, appTemplateSvc, uidSvc, timeSvc)
 
 	opRepo := operation.NewRepository(operation.NewConverter())

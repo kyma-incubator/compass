@@ -5,12 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
 	"time"
+
+	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 
 	directordestinationcreator "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -42,6 +44,7 @@ const (
 	readyAssignmentState         = "READY"
 	initialAssignmentState       = "INITIAL"
 	configPendingAssignmentState = "CONFIG_PENDING"
+	deletingAssignmentState      = "DELETING"
 )
 
 var (
@@ -65,8 +68,18 @@ func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, for
 		require.Truef(t, ok, "Could not find expectations for assignment with source %q and target %q", assignment.Source, assignment.Target)
 
 		require.Equal(t, assignmentExpectation.State, assignment.State)
-		require.Equal(t, str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration))
-		require.Equal(t, str.PtrStrToStr(assignmentExpectation.Value), str.PtrStrToStr(assignment.Value))
+		expectedAssignmentConfigStr := str.PtrStrToStr(assignmentExpectation.Config)
+		assignmentConfiguration := str.PtrStrToStr(assignment.Configuration)
+		if expectedAssignmentConfigStr != "" && expectedAssignmentConfigStr != "\"\"" && assignmentConfiguration != "" && assignmentConfiguration != "\"\"" {
+			require.JSONEq(t, expectedAssignmentConfigStr, assignmentConfiguration)
+		} else {
+			require.Equal(t, expectedAssignmentConfigStr, assignmentConfiguration)
+		}
+		if str.PtrStrToStr(assignmentExpectation.Value) != "" && str.PtrStrToStr(assignmentExpectation.Value) != "\"\"" && str.PtrStrToStr(assignment.Value) != "" && str.PtrStrToStr(assignment.Value) != "\"\"" {
+			require.JSONEq(t, str.PtrStrToStr(assignmentExpectation.Value), str.PtrStrToStr(assignment.Value))
+		} else {
+			require.Equal(t, expectedAssignmentConfigStr, assignmentConfiguration)
+		}
 		require.Equal(t, str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error))
 	}
 }
@@ -251,40 +264,36 @@ func attachDestinationCreatorConstraints(t *testing.T, ctx context.Context, form
 		Name:            "e2e-destination-creator-notification-status-returned",
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationNotificationStatusReturned,
-		Operator:        graphql.DestinationCreator,
+		Operator:        formationconstraintpkg.DestinationCreator,
 		ResourceType:    statusReturnedConstraintResourceType,
 		ResourceSubtype: "ANY",
 		InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
-	t.Logf("Create formation constraint with name: %s", firstConstraintInput.Name)
 	firstConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraintInput)
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint.ID)
 	require.NotEmpty(t, firstConstraint.ID)
 
-	t.Logf("Attaching constraint with name: %q to formation template with name: %q", firstConstraint.Name, formationTemplate.Name)
-	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, formationTemplate.ID)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, firstConstraint.Name, formationTemplate.ID, formationTemplate.Name)
 
 	// second constraint
 	secondConstraintInput := graphql.FormationConstraintInput{
 		Name:            "e2e-destination-creator-send-notification",
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationSendNotification,
-		Operator:        graphql.DestinationCreator,
+		Operator:        formationconstraintpkg.DestinationCreator,
 		ResourceType:    sendNotificationConstraintResourceType,
 		ResourceSubtype: "ANY",
 		InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
-	t.Logf("Create formation constraint with name: %s", secondConstraintInput.Name)
 	secondConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraintInput)
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraint.ID)
 	require.NotEmpty(t, secondConstraint.ID)
 
-	t.Logf("Attaching constraint with name: %q to formation template with name: %q", secondConstraint.Name, formationTemplate.Name)
-	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, formationTemplate.ID)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, secondConstraint.Name, formationTemplate.ID, formationTemplate.Name)
 }
 
 func assertTrustDetailsForTargetAndNoTrustDetailsForSource(t *testing.T, assignNotificationAboutApp2 gjson.Result, expectedSubjectOne, expectedSubjectSecond string) {
@@ -456,7 +465,7 @@ func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) []by
 		}
 	}()
 	require.NoError(t, err)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusOK, string(body)))
 	return body

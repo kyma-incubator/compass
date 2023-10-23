@@ -2,12 +2,13 @@ package operations
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
-	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	gcli "github.com/machinebox/graphql"
-	"testing"
 )
 
 type AddConstraintOperation struct {
@@ -76,6 +77,7 @@ func (o *AddConstraintOperation) WithAsserters(asserters ...asserters.Asserter) 
 
 func (o *AddConstraintOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
 	formationTemplateID := ctx.Value(context_keys.FormationTemplateIDKey).(string)
+	formationTemplateName := ctx.Value(context_keys.FormationTemplateNameKey).(string)
 
 	in := graphql.FormationConstraintInput{
 		Name:            o.name,
@@ -89,9 +91,9 @@ func (o *AddConstraintOperation) Execute(t *testing.T, ctx context.Context, gqlC
 	}
 
 	constraint := fixtures.CreateFormationConstraint(t, ctx, gqlClient, in)
+	t.Logf("Created formation constraint with name: %s and type: %s for operation: %s", constraint.Name, constraint.ConstraintType, constraint.TargetOperation)
 	o.constraintID = constraint.ID
-	fixtures.AttachConstraintToFormationTemplate(t, ctx, gqlClient, constraint.ID, formationTemplateID)
-	t.Logf("Created formation constraint with name: %s with type: %s for operation: %s", constraint.Name, constraint.ConstraintType, constraint.TargetOperation)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, gqlClient, constraint.ID, constraint.Name, formationTemplateID, formationTemplateName)
 	for _, asserter := range o.asserters {
 		asserter.AssertExpectations(t, ctx)
 	}

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	directortime "github.com/kyma-incubator/compass/components/director/pkg/time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
@@ -224,6 +226,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	bundleInstanceAuthRepo := bundleinstanceauth.NewRepository(bundleInstanceAuthConv)
 	certSubjectMappingRepo := certsubjectmapping.NewRepository(certSubjectMappingConv)
 
+	timeSvc := directortime.NewService()
 	uidSvc := uid.NewService()
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	tenantBusinessTypeSvc := tenantbusinesstype.NewService(tenantBusinessTypeRepo, uidSvc)
@@ -241,7 +244,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient, extSvcMtlsClient)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
 	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
 	certSubjectInputBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)
