@@ -756,9 +756,11 @@ func (s *Service) sanitizeDestinationSubaccountIDs(ctx context.Context, destinat
 // if the URL in the destination details contains schema and host(+ optionally path) it will be used as destination URL
 // if the destination details' URL contains only a path, it will be concatenated either to the URL in the credentials(if provided) or to the base URL of the system
 func (s *Service) calculateDestinationURL(ctx context.Context, destinationDetailsURL, authCredsURL string, destAuthType destinationcreatorpkg.AuthType, assignmentTenantID, assignmentTargetID string) (string, error) {
-	finalURL := ""
-	urlHasOnlyPath := false
-	urlPath := ""
+	var (
+		finalURL       string
+		urlPath        string
+		urlHasOnlyPath bool
+	)
 
 	if destinationDetailsURL != "" {
 		u, err := url.Parse(destinationDetailsURL)
@@ -788,7 +790,7 @@ func (s *Service) calculateDestinationURL(ctx context.Context, destinationDetail
 		finalURL = authCredsURL
 		if urlHasOnlyPath {
 			log.C(ctx).Infof("Appending the following path: %s to the URL", urlPath)
-			finalURL = finalURL + urlPath
+			finalURL += urlPath
 		}
 		log.C(ctx).Infof("The final destination URL is: %s", finalURL)
 		return finalURL, nil
@@ -807,7 +809,7 @@ func (s *Service) calculateDestinationURL(ctx context.Context, destinationDetail
 			finalURL = *app.BaseURL
 			if urlHasOnlyPath {
 				log.C(ctx).Infof("Appending the following path: %s to the URL", urlPath)
-				finalURL = finalURL + urlPath
+				finalURL += urlPath
 			}
 			log.C(ctx).Infof("The final destination URL is: %s", finalURL)
 			return finalURL, nil
@@ -992,7 +994,7 @@ func enrichDestinationAdditionalPropertiesWithCorrelationIDs(
 	correlationIDs []string,
 	destinationAdditionalProperties json.RawMessage,
 ) (json.RawMessage, error) {
-	if len(correlationIDs) <= 0 {
+	if len(correlationIDs) == 0 {
 		return destinationAdditionalProperties, nil
 	}
 
