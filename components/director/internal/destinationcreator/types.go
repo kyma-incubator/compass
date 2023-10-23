@@ -165,6 +165,10 @@ func (d *destinationDetailsAdditionalPropertiesValidator) Validate(value interfa
 		return errors.Errorf("Invalid type: %T, expected: %T", value, json.RawMessage{})
 	}
 
+	if len(j) == 0 {
+		return nil
+	}
+
 	if valid := json.Valid(j); !valid {
 		return errors.New("The additional properties json is not valid")
 	}
