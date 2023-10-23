@@ -27,6 +27,7 @@ CREATE TABLE entity_types
     visibility                  VARCHAR(256) NOT NULL,
     links                       JSONB,
     part_of_products            JSONB,
+    last_update                 VARCHAR(256),
     policy_level                policy_level,
     custom_policy_level         VARCHAR(256),
     release_status              release_status,
@@ -137,7 +138,7 @@ DROP VIEW IF EXISTS tenants_entity_types;
 
 CREATE OR REPLACE VIEW tenants_entity_types
             (tenant_id, formation_id, id, ord_id, app_id, local_id, level, title, short_description, description, system_instance_aware, 
-            changelog_entries, package_id, visibility, links, part_of_products, policy_level,
+            changelog_entries, package_id, visibility, links, part_of_products, last_update, policy_level,
             custom_policy_level, release_status, sunset_date, successors, extensible_supported, extensible_description, tags, labels, 
             documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal)
 AS
@@ -157,6 +158,7 @@ SELECT DISTINCT t_apps.tenant_id,
                 et.visibility,
                 et.links, 
                 et.part_of_products,
+                et.last_update,
                 et.policy_level,
                 et.custom_policy_level,
                 et.release_status,

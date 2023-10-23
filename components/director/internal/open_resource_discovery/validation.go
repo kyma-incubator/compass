@@ -661,6 +661,7 @@ func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *
 		validation.Field(&entityType.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),
+		validation.Field(&entityType.LastUpdate, validation.When(entityType.LastUpdate != nil, validation.By(isValidDate))),
 		validation.Field(&entityType.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom, PolicyLevelNone), validation.When(entityType.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
 		validation.Field(&entityType.CustomPolicyLevel, validation.When(entityType.PolicyLevel != nil && *entityType.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 		validation.Field(&entityType.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),

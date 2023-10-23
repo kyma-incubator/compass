@@ -26,6 +26,7 @@ type Entity struct {
 	Visibility                   string         `db:"visibility"`
 	Links                        sql.NullString `db:"links"`
 	PartOfProducts               sql.NullString `db:"part_of_products"`
+	LastUpdate                   sql.NullString `db:"last_update"`
 	PolicyLevel                  sql.NullString `db:"policy_level"`
 	CustomPolicyLevel            sql.NullString `db:"custom_policy_level"`
 	ReleaseStatus                string         `db:"release_status"`

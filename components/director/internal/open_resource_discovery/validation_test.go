@@ -6551,6 +6551,14 @@ func TestDocuments_ValidateEntityType(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Invalid `lastUpdate` field for Entity Type",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EntityTypes[0].LastUpdate = str.Ptr("wrong date format")
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Missing `successors` field when `releaseStatus` field has value `deprecated` for Entity Type",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()

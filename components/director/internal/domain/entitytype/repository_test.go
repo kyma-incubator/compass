@@ -22,7 +22,7 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 		Name: "Get EntityType for Application",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE id = $1 AND app_id = $2 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $3))`),
+				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, last_update, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE id = $1 AND app_id = $2 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{entityTypeID, appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -60,7 +60,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		Name: "Get EntityType",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE id = $1 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, last_update, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE id = $1 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{entityTypeID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -97,7 +97,7 @@ func TestPgRepository_GetByIDGlobal(t *testing.T) {
 		Name: "Get EntityType Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, last_update, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE id = $1`),
 				Args:     []driver.Value{entityTypeID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -139,7 +139,7 @@ func TestPgRepository_ListByResourceID(t *testing.T) {
 		Name: "List EntityTypes for AppID and TenantID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE app_id = $1 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $2)) FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, last_update, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE app_id = $1 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $2)) FOR UPDATE`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -165,7 +165,7 @@ func TestPgRepository_ListByResourceID(t *testing.T) {
 		Name: "List EntityTypes for AppTemplateVersionID ",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE app_template_version_id = $1 FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, last_update, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE app_template_version_id = $1 FOR UPDATE`),
 				Args:     []driver.Value{appTemplateVersionID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -203,7 +203,7 @@ func TestPgRepository_ListByApplicationIDPage(t *testing.T) {
 		Name: "List EntityTypes with paging",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE (app_id = $1 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $2)))`),
+				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, app_id, app_template_version_id, ord_id, local_id, correlation_ids, level, title, short_description, description, system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, last_update, policy_level, custom_policy_level, release_status, sunset_date, successors, extensible, tags, labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal FROM public.entity_types WHERE (app_id = $1 AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = $2)))`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -317,7 +317,7 @@ func TestPgRepository_CreateGlobal(t *testing.T) {
 }
 
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(`UPDATE public.entity_types SET ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, ord_id = ?, local_id = ?, correlation_ids = ?, level = ?, title = ?, short_description = ?, description = ?, system_instance_aware = ?, changelog_entries = ?, package_id = ?, visibility = ?, links = ?, part_of_products = ?, policy_level = ?, custom_policy_level = ?, release_status = ?, sunset_date = ?, successors = ?, extensible = ?, tags = ?, labels = ?, documentation_labels = ?, resource_hash = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ? WHERE id = ? AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = ? AND owner = true))`)
+	updateQuery := regexp.QuoteMeta(`UPDATE public.entity_types SET ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, ord_id = ?, local_id = ?, correlation_ids = ?, level = ?, title = ?, short_description = ?, description = ?, system_instance_aware = ?, changelog_entries = ?, package_id = ?, visibility = ?, links = ?, part_of_products = ?, last_update = ?, policy_level = ?, custom_policy_level = ?, release_status = ?, sunset_date = ?, successors = ?, extensible = ?, tags = ?, labels = ?, documentation_labels = ?, resource_hash = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ? WHERE id = ? AND (id IN (SELECT id FROM entity_types_tenants WHERE tenant_id = ? AND owner = true))`)
 	var nilEntityTypeModel *model.EntityType
 	entityTypeModel := fixEntityTypeModel(entityTypeID)
 	entityTypeEntity := fixEntityTypeEntity(entityTypeID)
@@ -430,7 +430,7 @@ func TestPgRepository_UpdateGlobal(t *testing.T) {
 		Name: "Update EntityType Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.entity_types SET ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, ord_id = ?, local_id = ?, correlation_ids = ?, level = ?, title = ?, short_description = ?, description = ?, system_instance_aware = ?, changelog_entries = ?, package_id = ?, visibility = ?, links = ?, part_of_products = ?, policy_level = ?, custom_policy_level = ?, release_status = ?, sunset_date = ?, successors = ?, extensible = ?, tags = ?, labels = ?, documentation_labels = ?, resource_hash = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ? WHERE id = ?`),
+				Query:         regexp.QuoteMeta(`UPDATE public.entity_types SET ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, ord_id = ?, local_id = ?, correlation_ids = ?, level = ?, title = ?, short_description = ?, description = ?, system_instance_aware = ?, changelog_entries = ?, package_id = ?, visibility = ?, links = ?, part_of_products = ?, last_update = ?, policy_level = ?, custom_policy_level = ?, release_status = ?, sunset_date = ?, successors = ?, extensible = ?, tags = ?, labels = ?, documentation_labels = ?, resource_hash = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ? WHERE id = ?`),
 				Args:          fixEntityTypeUpdateArgs(entityTypeID, entityTypeEntity),
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),

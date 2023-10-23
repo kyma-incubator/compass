@@ -27,6 +27,7 @@ type EntityType struct {
 	Visibility                   string
 	Links                        json.RawMessage
 	PartOfProducts               json.RawMessage
+	LastUpdate                   *string
 	PolicyLevel                  *string
 	CustomPolicyLevel            *string
 	ReleaseStatus                string
@@ -71,6 +72,7 @@ type EntityTypeInput struct {
 	Visibility          string          `json:"visibility"`
 	Links               json.RawMessage `json:"links,omitempty"`
 	PartOfProducts      json.RawMessage `json:"partOfProducts,omitempty"`
+	LastUpdate          *string         `json:"lastUpdate,omitempty"`
 	PolicyLevel         *string         `json:"policyLevel,omitempty"`
 	CustomPolicyLevel   *string         `json:"customPolicyLevel,omitempty"`
 	ReleaseStatus       string          `json:"releaseStatus"`
@@ -113,6 +115,7 @@ func (i *EntityTypeInput) ToEntityType(id string, resourceType resource.Type, re
 		Visibility:          i.Visibility,
 		Links:               i.Links,
 		PartOfProducts:      i.PartOfProducts,
+		LastUpdate:          i.LastUpdate,
 		PolicyLevel:         i.PolicyLevel,
 		CustomPolicyLevel:   i.CustomPolicyLevel,
 		ReleaseStatus:       i.ReleaseStatus,
@@ -154,6 +157,7 @@ func (entityType *EntityType) SetFromUpdateInput(update EntityTypeInput, entityT
 	entityType.Visibility = update.Visibility
 	entityType.Links = update.Links
 	entityType.PartOfProducts = update.PartOfProducts
+	entityType.LastUpdate = update.LastUpdate
 	entityType.PolicyLevel = update.PolicyLevel
 	entityType.CustomPolicyLevel = update.CustomPolicyLevel
 	entityType.ReleaseStatus = update.ReleaseStatus

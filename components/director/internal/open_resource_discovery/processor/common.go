@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
