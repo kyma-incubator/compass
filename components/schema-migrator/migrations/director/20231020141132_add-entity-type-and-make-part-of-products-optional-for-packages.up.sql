@@ -4,13 +4,16 @@ CREATE TABLE entity_types
 (
     id                          UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     ready                       BOOLEAN DEFAULT TRUE,
+        CONSTRAINT entitytype_id_ready_unique UNIQUE (id, ready),
     created_at                  TIMESTAMP,
     updated_at                  TIMESTAMP,
     deleted_at                  TIMESTAMP, 
     error                       JSONB, 
-    app_id                      UUID,
-    app_template_version_id     UUID,
     ord_id                      VARCHAR(256) NOT NULL,
+    app_id                      UUID,
+        CONSTRAINT entitytype_ord_id_unique UNIQUE (app_id, ord_id),
+    app_template_version_id     UUID,
+        CONSTRAINT entitytype_app_template_version_id_ord_id_unique UNIQUE (app_template_version_id, ord_id),
     local_id                    VARCHAR(256) NOT NULL,
     correlation_ids             JSONB,
     level                       VARCHAR(256) NOT NULL,
@@ -83,6 +86,7 @@ FROM entity_types,
      jsonb_array_elements_text(entity_types.part_of_products) AS elements
          JOIN products p ON elements.value = p.ord_id WHERE p.app_id = entity_types.app_id OR p.app_id IS NULL;
 
+
 DROP VIEW IF EXISTS entity_type_successors;
 
 CREATE VIEW entity_type_successors AS
@@ -90,16 +94,6 @@ SELECT id             AS entity_type_id,
        elements.value AS value
 FROM entity_types,
      jsonb_array_elements_text(entity_types.successors) AS elements;
-
-
-DROP VIEW IF EXISTS entity_type_extensible;
-
-CREATE VIEW entity_type_extensible AS
-SELECT id                  AS entity_type_id,
-       actions.supported   AS supported,
-       actions.description AS description
-FROM entity_types,
-     jsonb_to_record(entity_types.extensible) AS actions(supported TEXT, description TEXT);
 
 
 DROP VIEW IF EXISTS ord_tags_entity_types;
@@ -196,6 +190,7 @@ FROM entity_types et
               ON et.app_id = t_apps.id,
               jsonb_to_record(et.extensible) actions(supported text, description text);
 
+CREATE INDEX entity_types_app_id ON entity_types (app_id);
 CREATE INDEX entity_types_app_template_version_id ON entity_types (app_template_version_id);
 
 
