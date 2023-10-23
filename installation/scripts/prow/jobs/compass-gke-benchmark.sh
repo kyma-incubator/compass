@@ -203,9 +203,6 @@ function installCompassOld() {
   STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
   echo "DB installation status ${STATUS}"
 
-  echo 'Installing Ory'
-  installOry
-
   echo 'Installing Compass'
   bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s --sql-helm-backend
 }
@@ -233,15 +230,6 @@ function installCompassNew() {
   bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
   STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
   echo "DB installation status ${STATUS}"
-
-  # TODO!!!: This has to be removed whenever PR 3290 reaches the main branch
-  # The old Ory installation created a secret named 'ory-hydra-credentials', which helps us identify an old installation
-  # The release is uninstalled as we now have a Secret with 'pre-install' Helm hooks, which does not run on updates and breaks the deployment
-  if [ "$(kubectl get secret ory-hydra-credentials -n ory)" ]; then
-    helm uninstall ory-stack -n ory
-  fi
-  echo 'Installing Ory'
-  installOry
   
   echo 'Installing Compass'
   bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s --sql-helm-backend
