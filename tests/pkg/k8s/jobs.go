@@ -10,7 +10,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/batch/v1"
-	"k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,8 +41,8 @@ func CreateJobByCronJob(t *testing.T, ctx context.Context, k8sClient *kubernetes
 	CreateJobByGivenJobDefinition(t, ctx, k8sClient, jobName, namespace, job)
 }
 
-func GetCronJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, cronJobName, namespace string) *v1beta1.CronJob {
-	cronjob, err := k8sClient.BatchV1beta1().CronJobs(namespace).Get(ctx, cronJobName, metav1.GetOptions{})
+func GetCronJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, cronJobName, namespace string) *v1.CronJob {
+	cronjob, err := k8sClient.BatchV1().CronJobs(namespace).Get(ctx, cronJobName, metav1.GetOptions{})
 	require.NoError(t, err)
 	t.Logf("Got the cronjob %q from %q namespace", cronJobName, namespace)
 	return cronjob
