@@ -20,7 +20,7 @@ const (
 type ServiceInstanceReqBody struct {
 	Name          string          `json:"name"`
 	ServicePlanID string          `json:"service_plan_id"`
-	Parameters    json.RawMessage `json:"parameters,omitempty"` // todo::: differs from service to service. Most probably the necessary data will be provided as arbitrary json in the TM notification body?
+	Parameters    json.RawMessage `json:"parameters,omitempty"` // TODO:: differs from service to service. Most probably the necessary data will be provided as arbitrary json in the TM notification body?
 }
 
 // GetResourceName gets the ServiceInstance name from the request body

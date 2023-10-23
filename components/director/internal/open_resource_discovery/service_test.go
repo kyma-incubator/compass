@@ -5044,13 +5044,13 @@ func TestService_Processing(t *testing.T) {
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
 			webhookConvFn: successfulWebhookConversion, bundleSvcFn: func() *automock.BundleService {
-			bundlesSvc := &automock.BundleService{}
-			bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Twice()
-			bundlesSvc.On("CreateBundle", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.ConsumptionBundles[0], mock.Anything).Return("", nil).Once()
-			bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
-			bundlesSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, bundleID).Return(testErr).Once()
-			return bundlesSvc
-		},
+				bundlesSvc := &automock.BundleService{}
+				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Twice()
+				bundlesSvc.On("CreateBundle", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.ConsumptionBundles[0], mock.Anything).Return("", nil).Once()
+				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
+				bundlesSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, bundleID).Return(testErr).Once()
+				return bundlesSvc
+			},
 			apiSvcFn:        successfulAPICreate,
 			eventSvcFn:      successfulEventCreate,
 			capabilitySvcFn: successfulCapabilityCreate,
