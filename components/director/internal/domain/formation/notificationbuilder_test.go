@@ -182,7 +182,7 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 			},
 			webhookConverterFn: func() *automock.WebhookConverter {
 				webhookConv := &automock.WebhookConverter{}
-				webhookConv.On("ToGraphQL", formationLifecycleSyncWebhook).Return(&formationLifecycleGQLWebhook, nil).Once()
+				webhookConv.On("ToGraphQL", formationLifecycleSyncWebhook).Return(formationLifecycleGQLWebhook, nil).Once()
 				return webhookConv
 			},
 			formationTemplateWebhooks:         formationLifecycleSyncWebhooks,
@@ -232,7 +232,7 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 			},
 			webhookConverterFn: func() *automock.WebhookConverter {
 				webhookConv := &automock.WebhookConverter{}
-				webhookConv.On("ToGraphQL", formationLifecycleSyncWebhook).Return(&formationLifecycleGQLWebhook, nil).Once()
+				webhookConv.On("ToGraphQL", formationLifecycleSyncWebhook).Return(formationLifecycleGQLWebhook, nil).Once()
 				return webhookConv
 			},
 			formationTemplateWebhooks: formationLifecycleSyncWebhooks,

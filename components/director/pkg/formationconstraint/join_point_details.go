@@ -2,6 +2,7 @@ package formationconstraint
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 )
 
@@ -133,7 +134,7 @@ type SendNotificationOperationDetails struct {
 	ResourceSubtype            string
 	Location                   JoinPointLocation
 	Operation                  model.FormationOperation
-	Webhook                    *model.Webhook
+	Webhook                    *graphql.Webhook
 	CorrelationID              string
 	TemplateInput              webhook.TemplateInput
 	FormationAssignment        *model.FormationAssignment

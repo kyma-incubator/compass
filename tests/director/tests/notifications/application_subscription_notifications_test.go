@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+
 	directordestinationcreator "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -245,14 +247,13 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			expectedConfig := str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")
 			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
 					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: expectedConfig, Value: expectedConfig, Error: nil},
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
 					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 				},
 			}
@@ -344,40 +345,36 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				Name:            "e2e-destination-creator-notification-status-returned",
 				ConstraintType:  graphql.ConstraintTypePre,
 				TargetOperation: graphql.TargetOperationNotificationStatusReturned,
-				Operator:        graphql.DestinationCreator,
+				Operator:        formationconstraintpkg.DestinationCreator,
 				ResourceType:    graphql.ResourceTypeApplication,
 				ResourceSubtype: applicationType1,
 				InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
 				ConstraintScope: graphql.ConstraintScopeFormationType,
 			}
 
-			t.Logf("Create formation constraint with name: %s", firstConstraintInput.Name)
 			firstConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraintInput)
 			defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint.ID)
 			require.NotEmpty(t, firstConstraint.ID)
 
-			t.Logf("Attaching constraint with name: %q to formation template with name: %q", firstConstraint.Name, ft.Name)
-			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, ft.ID)
+			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, firstConstraint.Name, ft.ID, ft.Name)
 
 			// second constraint
 			secondConstraintInput := graphql.FormationConstraintInput{
 				Name:            "e2e-destination-creator-send-notification",
 				ConstraintType:  graphql.ConstraintTypePre,
 				TargetOperation: graphql.TargetOperationSendNotification,
-				Operator:        graphql.DestinationCreator,
+				Operator:        formationconstraintpkg.DestinationCreator,
 				ResourceType:    graphql.ResourceTypeApplication,
 				ResourceSubtype: applicationType1,
 				InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
 				ConstraintScope: graphql.ConstraintScopeFormationType,
 			}
 
-			t.Logf("Create formation constraint with name: %s", secondConstraintInput.Name)
 			secondConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraintInput)
 			defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraint.ID)
 			require.NotEmpty(t, secondConstraint.ID)
 
-			t.Logf("Attaching constraint with name: %q to formation template with name: %q", secondConstraint.Name, ft.Name)
-			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, ft.ID)
+			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, secondConstraint.Name, ft.ID, ft.Name)
 
 			// create formation
 			t.Logf("Creating formation with name: %q from template with name: %q", formationName, providerFormationTmplName)
@@ -579,13 +576,13 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			notificationsForApp1 := gjson.GetBytes(body, subscriptionConsumerTenantID)
 			unassignNotificationForApp1 := notificationsForApp1.Array()[0]
 			validateFormationNameInAssignmentNotification(t, unassignNotificationForApp1, formationName)
-			assertFormationAssignmentsNotification(t, unassignNotificationForApp1, unassignOperation, formation.ID, app2.ID, app1.ID, readyAssignmentState, readyAssignmentState, subscriptionConsumerTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
+			assertFormationAssignmentsNotification(t, unassignNotificationForApp1, unassignOperation, formation.ID, app2.ID, app1.ID, deletingAssignmentState, deletingAssignmentState, subscriptionConsumerTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 			assertNotificationsCountForTenant(t, body, localTenantID2, 1)
 			notificationsForApp2 := gjson.GetBytes(body, localTenantID2)
 			unassignNotificationForApp2 := notificationsForApp2.Array()[0]
 			validateFormationNameInAssignmentNotification(t, unassignNotificationForApp2, formationName)
-			assertFormationAssignmentsNotification(t, unassignNotificationForApp2, unassignOperation, formation.ID, app1.ID, app2.ID, readyAssignmentState, readyAssignmentState, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
+			assertFormationAssignmentsNotification(t, unassignNotificationForApp2, unassignOperation, formation.ID, app1.ID, app2.ID, deletingAssignmentState, deletingAssignmentState, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 			t.Logf("Unassign Application 2 from formation %s", formationName)
 			unassignReq = fixtures.FixUnassignFormationRequest(app2.ID, graphql.FormationObjectTypeApplication.String(), formationName)

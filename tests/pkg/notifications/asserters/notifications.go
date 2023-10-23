@@ -3,15 +3,16 @@ package asserters
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"io"
 	"net/http"
 	"testing"
+
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
+	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 const (
@@ -29,7 +30,7 @@ type NotificationsAsserter struct {
 	region                             string
 	tenant                             string
 	tenantParentCustomer               string
-	config string
+	config                             string
 	externalServicesMockMtlsSecuredURL string
 	client                             *http.Client
 }
@@ -45,7 +46,7 @@ func NewNotificationsAsserter(expectedNotificationsCount int, op string, targetO
 		region:                             region,
 		tenant:                             tenant,
 		tenantParentCustomer:               tenantParentCustomer,
-		config: config,
+		config:                             config,
 		externalServicesMockMtlsSecuredURL: externalServicesMockMtlsSecuredURL,
 		client:                             client,
 	}

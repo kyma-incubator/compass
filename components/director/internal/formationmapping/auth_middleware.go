@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -217,7 +219,11 @@ func (a *Authenticator) FormationAssignmentHandler() func(next http.Handler) htt
 			isAuthorized, statusCode, err := a.isFormationAssignmentAuthorized(ctx, formationAssignmentID, formationID, clientID)
 			if err != nil {
 				log.C(ctx).Error(err.Error())
-				respondWithError(ctx, w, statusCode, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
+				errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
+				if statusCode == http.StatusNotFound && apperrors.IsNotFoundError(err) {
+					errResp = errors.Errorf("Formation assignment with ID %q for formation %q was not found. X-Request-Id: %s", formationAssignmentID, formationID, correlationID)
+				}
+				respondWithError(ctx, w, statusCode, errResp)
 				return
 			}
 
@@ -255,7 +261,11 @@ func (a *Authenticator) FormationHandler() func(next http.Handler) http.Handler 
 			isAuthorized, statusCode, err := a.isFormationAuthorized(ctx, formationID)
 			if err != nil {
 				log.C(ctx).Error(err.Error())
-				respondWithError(ctx, w, statusCode, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
+				errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
+				if statusCode == http.StatusNotFound && apperrors.IsNotFoundError(err) {
+					errResp = errors.Errorf("Formation with ID %q was not found. X-Request-Id: %s", formationID, correlationID)
+				}
+				respondWithError(ctx, w, statusCode, errResp)
 				return
 			}
 
@@ -287,6 +297,9 @@ func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID s
 
 	f, err := a.formationRepo.GetGlobalByID(ctx, formationID)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return false, http.StatusNotFound, errors.Wrapf(err, "while getting formation with ID: %q globally", formationID)
+		}
 		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation with ID: %q globally", formationID)
 	}
 
@@ -338,6 +351,9 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 
 	fa, err := a.faService.GetGlobalByIDAndFormationID(ctx, formationAssignmentID, formationID)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return false, http.StatusNotFound, err
+		}
 		return false, http.StatusInternalServerError, err
 	}
 

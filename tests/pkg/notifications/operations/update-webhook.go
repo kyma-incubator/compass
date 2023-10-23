@@ -2,12 +2,13 @@ package operations
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 type UpdateWebhookOperation struct {
