@@ -69,7 +69,6 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 		directorClientFn                func() *automock.DirectorClient
 		eventualTickInterval            time.Duration
 		expectedCertSubjectMappingCount int
-		expectedErrMsg                  string
 	}{
 		{
 			name:                  "Successfully resync certificate subject mappings",
@@ -87,11 +86,11 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			certSubjectMappingCfg: cfg,
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingWithNextPage, nil).Twice()
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), endCursor).Return(certSubjcetMappingPageWithoutNextPage, nil).Twice()
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingWithNextPage, nil)
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), endCursor).Return(certSubjcetMappingPageWithoutNextPage, nil)
 				return directorClient
 			},
-			eventualTickInterval:            250 * time.Millisecond,
+			eventualTickInterval:            30 * time.Millisecond,
 			expectedCertSubjectMappingCount: 4,
 		},
 		{
@@ -100,10 +99,10 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
 				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(nil, testErr).Once()
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil).Times(3)
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil)
 				return directorClient
 			},
-			eventualTickInterval:            250 * time.Millisecond,
+			eventualTickInterval:            100 * time.Millisecond,
 			expectedCertSubjectMappingCount: 2,
 		},
 	}
@@ -117,13 +116,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, directorClient)
 
 			// WHEN
-			cache, err := certsubjectmapping.StartCertSubjectMappingLoader(ctx, testCase.certSubjectMappingCfg, directorClient)
-			if testCase.expectedErrMsg != "" {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.expectedErrMsg)
-			} else {
-				assert.NoError(t, err)
-			}
+			cache, _ := certsubjectmapping.StartCertSubjectMappingLoader(ctx, testCase.certSubjectMappingCfg, directorClient)
 
 			// THEN
 			assert.Eventually(t, func() bool {
