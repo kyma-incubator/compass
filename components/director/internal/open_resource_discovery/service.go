@@ -94,15 +94,17 @@ type Service struct {
 	bundleReferenceSvc             BundleReferenceService
 	apiSvc                         APIService
 	eventSvc                       EventService
+	entityTypeSvc         		   EntityTypeService
 	capabilitySvc                  CapabilityService
 	integrationDependencySvc       IntegrationDependencyService
-	integrationDependencyProcessor IntegrationDependencyProcessor
 	specSvc                        SpecService
 	fetchReqSvc                    FetchRequestService
 	packageSvc                     PackageService
 	productSvc                     ProductService
 	vendorSvc                      VendorService
 	tombstoneProcessor             TombstoneProcessor
+	entityTypeProcessor   	       EntityTypeProcessor
+	integrationDependencyProcessor IntegrationDependencyProcessor
 	tenantSvc                      TenantService
 	appTemplateVersionSvc          ApplicationTemplateVersionService
 	appTemplateSvc                 ApplicationTemplateService
@@ -118,7 +120,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, capabilitySvc CapabilityService, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
 		config:                         config,
 		metricsCfg:                     metricsCfg,
@@ -129,6 +131,8 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		bundleReferenceSvc:             bundleReferenceSvc,
 		apiSvc:                         apiSvc,
 		eventSvc:                       eventSvc,
+		entityTypeSvc:         			entityTypeSvc,
+		entityTypeProcessor:   			entityTypeProcessor,
 		capabilitySvc:                  capabilitySvc,
 		integrationDependencySvc:       integrationDependencySvc,
 		integrationDependencyProcessor: integrationDependencyProcessor,
@@ -411,6 +415,13 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		}
 		log.C(ctx).Infof("Finished processing events for %s with id: %q", resource.Type, resource.ID)
 
+		log.C(ctx).Infof("Starting processing entity types for %s with id: %q", resource.Type, resource.ID)
+		entityTypesFromDB, err := s.entityTypeProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.EntityTypes, packagesFromDB, resourceHashes)
+		if err != nil {
+			return err
+		}
+		log.C(ctx).Infof("Finished processing entity types for %s with id: %q", resource.Type, resource.ID)
+
 		log.C(ctx).Infof("Starting processing capabilities for %s with id: %q", resource.Type, resource.ID)
 		capabilitiesFromDB, capabilitiesFetchRequests, err := s.processCapabilities(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.Capabilities, resourceHashes)
 		if err != nil {
@@ -434,7 +445,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 
 		fetchRequests := appendFetchRequests(apiFetchRequests, eventFetchRequests, capabilitiesFetchRequests)
 		log.C(ctx).Infof("Starting deleting tombstoned resources for %s with id: %q", resource.Type, resource.ID)
-		fetchRequests, err = s.deleteTombstonedResources(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, capabilitiesFromDB, integrationDependenciesFromDB, tombstonesFromDB, fetchRequests)
+		fetchRequests, err = s.deleteTombstonedResources(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, tombstonesFromDB, fetchRequests)
 		if err != nil {
 			return err
 		}
@@ -580,7 +591,7 @@ func (s *Service) processFetchRequestResultGlobal(ctx context.Context, result *f
 	return s.fetchReqSvc.UpdateGlobal(ctx, result.fetchRequest)
 }
 
-func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType directorresource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, capabilitiesFromDB []*model.Capability, integrationDependenciesFromDB []*model.IntegrationDependency, tombstonesFromDB []*model.Tombstone, fetchRequests []*ordFetchRequest) ([]*ordFetchRequest, error) {
+func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType directorresource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, entityTypesFromDB []*model.EntityType, capabilitiesFromDB []*model.Capability, integrationDependenciesFromDB []*model.IntegrationDependency, tombstonesFromDB []*model.Tombstone, fetchRequests []*ordFetchRequest) ([]*ordFetchRequest, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -609,6 +620,13 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType di
 			return equalStrings(eventsFromDB[i].OrdID, &ts.OrdID)
 		}); found {
 			if err := s.eventSvc.Delete(ctx, resourceType, eventsFromDB[i].ID); err != nil {
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+			}
+		}
+		if i, found := searchInSlice(len(entityTypesFromDB), func(i int) bool {
+			return equalStrings(&entityTypesFromDB[i].OrdID, &ts.OrdID)
+		}); found {
+			if err := s.entityTypeSvc.Delete(ctx, resourceType, eventsFromDB[i].ID); err != nil {
 				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
@@ -1738,6 +1756,30 @@ func (s *Service) fetchIntegrationDependenciesFromDB(ctx context.Context, resour
 	return integrationDependenciesDataFromDB, nil
 }
 
+func (s *Service) fetchEntityTypesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.EntityType, error) {
+	var (
+		entityTypesFromDB []*model.EntityType
+		err               error
+	)
+
+	if resourceType == directorresource.ApplicationTemplateVersion {
+		entityTypesFromDB, err = s.entityTypeSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+	} else {
+		entityTypesFromDB, err = s.entityTypeSvc.ListByApplicationID(ctx, resourceID)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	entityTypesDataFromDB := make(map[string]*model.EntityType, len(entityTypesFromDB))
+
+	for _, entityType := range entityTypesFromDB {
+		entityTypesDataFromDB[entityType.OrdID] = entityType
+	}
+
+	return entityTypesDataFromDB, nil
+}
+
 func (s *Service) fetchPackagesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Package, error) {
 	var (
 		packagesFromDB []*model.Package
@@ -1848,6 +1890,7 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 	bundleDataFromDB := make(map[string]*model.Bundle)
 	capabilitiesDataFromDB := make(map[string]*model.Capability)
 	integrationDependenciesFromDB := make(map[string]*model.IntegrationDependency)
+	entityTypesDataFromDB := make(map[string]*model.EntityType)
 
 	for resourceID, resourceType := range resourceIDs {
 		apiData, err := s.fetchAPIDefFromDB(ctx, resourceType, resourceID)
@@ -1880,6 +1923,11 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching integration dependencies for %s with id %s", resourceType, resourceID)
 		}
 
+		entityTypeData, err := s.fetchEntityTypesFromDB(ctx, resourceType, resourceID)
+		if err != nil {
+			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching entity types for %s with id %s", resourceType, resourceID)
+		}
+
 		if err = mergo.Merge(&apiDataFromDB, apiData); err != nil {
 			return ResourcesFromDB{}, err
 		}
@@ -1898,6 +1946,9 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 		if err = mergo.Merge(&integrationDependenciesFromDB, integrationDependencyData); err != nil {
 			return ResourcesFromDB{}, err
 		}
+		if err = mergo.Merge(&entityTypesDataFromDB, entityTypeData); err != nil {
+			return ResourcesFromDB{}, err
+		}
 	}
 
 	return ResourcesFromDB{
@@ -1907,6 +1958,7 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 		Bundles:                 bundleDataFromDB,
 		Capabilities:            capabilitiesDataFromDB,
 		IntegrationDependencies: integrationDependenciesFromDB,
+		EntityTypes:  			 entityTypesDataFromDB,
 	}, tx.Commit()
 }
 
@@ -2239,12 +2291,25 @@ func hashResources(docs Documents) (map[string]uint64, error) {
 			resourceHashes[str.PtrStrToStr(eventInput.OrdID)] = hash
 		}
 
+		for _, entityTypeInput := range doc.EntityTypes {
+			normalizedEntityType, err := normalizeEntityType(entityTypeInput)
+			if err != nil {
+				return nil, err
+			}
+
+			hash, err := HashObject(normalizedEntityType)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while hashing entity type with ORD ID: %s", normalizedEntityType.OrdID)
+			}
+
+			resourceHashes[entityTypeInput.OrdID] = hash
+		}
+
 		for _, capabilityInput := range doc.Capabilities {
 			normalizedCapabilities, err := normalizeCapability(capabilityInput)
 			if err != nil {
 				return nil, err
 			}
-
 			hash, err := HashObject(normalizedCapabilities)
 			if err != nil {
 				return nil, errors.Wrapf(err, "while hashing capability with ORD ID: %s", str.PtrStrToStr(normalizedCapabilities.OrdID))

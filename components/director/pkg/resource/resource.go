@@ -56,6 +56,8 @@ const (
 	CapabilitySpecFetchRequest Type = "capabilitySpecFetchRequest"
 	// Specification type represents generic specification resource. This resource does not assume the referenced resource type of the Spec.
 	Specification Type = "specification"
+	// EntityType type represents Entity Type resource.
+	EntityType Type = "entityType"
 	// APISpecification type represents API specification resource.
 	APISpecification Type = "apiSpecification"
 	// EventSpecification type represents Event specification resource.
@@ -143,6 +145,7 @@ var tenantAccessTable = map[Type]string{
 	BundleInstanceAuth:         "bundle_instance_auths_tenants",
 	API:                        "api_definitions_tenants",
 	EventDefinition:            "event_api_definitions_tenants",
+	EntityType:                 "entity_types_tenants",
 	Capability:                 "capabilities_tenants",
 	IntegrationDependency:      "integration_dependencies_tenants",
 	Webhook:                    "webhooks_tenants",

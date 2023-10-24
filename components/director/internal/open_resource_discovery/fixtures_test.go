@@ -21,48 +21,50 @@ import (
 )
 
 const (
-	absoluteDocURL              = "http://config.com/open-resource-discovery/v1/documents/example1"
-	ordDocURI                   = "/open-resource-discovery/v1/documents/example1"
-	proxyURL                    = "http://proxy.com:8080"
-	baseURL                     = "http://test.com:8080"
-	baseURL2                    = "http://second.com"
-	customWebhookConfigURL      = "http://custom.com/config/endpoint"
-	packageORDID                = "ns:package:PACKAGE_ID:v1"
-	productORDID                = "sap:product:id:"
-	globalProductORDID          = "sap:product:SAPCloudPlatform:"
-	product2ORDID               = "ns:product:id2:"
-	bundleORDID                 = "ns:consumptionBundle:BUNDLE_ID:v1"
-	secondBundleORDID           = "ns:consumptionBundle:BUNDLE_ID:v2"
-	vendorORDID                 = "sap:vendor:SAP:"
-	vendor2ORDID                = "partner:vendor:SAP:"
-	api1ORDID                   = "ns:apiResource:API_ID:v2"
-	api2ORDID                   = "ns:apiResource:API_ID2:v1"
-	event1ORDID                 = "ns:eventResource:EVENT_ID:v1"
-	event2ORDID                 = "ns2:eventResource:EVENT_ID:v1"
-	capability1ORDID            = "sap.foo.bar:capability:fieldExtensibility:v1"
-	capability2ORDID            = "sap2.foo.bar:capability:fieldExtensibility:v1"
+	absoluteDocURL         = "http://config.com/open-resource-discovery/v1/documents/example1"
+	ordDocURI              = "/open-resource-discovery/v1/documents/example1"
+	proxyURL               = "http://proxy.com:8080"
+	baseURL                = "http://test.com:8080"
+	baseURL2               = "http://second.com"
+	customWebhookConfigURL = "http://custom.com/config/endpoint"
+	packageORDID           = "ns:package:PACKAGE_ID:v1"
+	productORDID           = "sap:product:id:"
+	globalProductORDID     = "sap:product:SAPCloudPlatform:"
+	product2ORDID          = "ns:product:id2:"
+	bundleORDID            = "ns:consumptionBundle:BUNDLE_ID:v1"
+	secondBundleORDID      = "ns:consumptionBundle:BUNDLE_ID:v2"
+	vendorORDID            = "sap:vendor:SAP:"
+	vendor2ORDID           = "partner:vendor:SAP:"
+	api1ORDID              = "ns:apiResource:API_ID:v2"
+	api2ORDID              = "ns:apiResource:API_ID2:v1"
+	event1ORDID            = "ns:eventResource:EVENT_ID:v1"
+	event2ORDID            = "ns2:eventResource:EVENT_ID:v1"
+	entityType1ORDID       = "ns:entityType:ENTITYTYPE_ID:v1"
+	entityType2ORDID       = "ns2:entityType:ENTITYTYPE_ID:v1"
+	capability1ORDID       = "sap.foo.bar:capability:fieldExtensibility:v1"
+	capability2ORDID       = "sap2.foo.bar:capability:fieldExtensibility:v1"
 	integrationDependency1ORDID = "sap.foo.bar:integrationDependency:CustomerOrder:v1"
 	integrationDependency2ORDID = "sap2.foo.bar:integrationDependency:CustomerOrder:v1"
-
-	whID                     = "testWh"
-	tenantID                 = "testTenant"
-	externalTenantID         = "externalTestTenant"
-	packageID                = "testPkg"
-	vendorID                 = "testVendor"
-	vendorID2                = "testVendor2"
-	productID                = "testProduct"
-	bundleID                 = "testBndl"
-	api1ID                   = "testAPI1"
-	api2ID                   = "testAPI2"
-	event1ID                 = "testEvent1"
-	event2ID                 = "testEvent2"
-	capability1ID            = "testCapability1"
-	capability2ID            = "testCapability2"
+	whID             = "testWh"
+	tenantID         = "testTenant"
+	externalTenantID = "externalTestTenant"
+	packageID        = "testPkg"
+	vendorID         = "testVendor"
+	vendorID2        = "testVendor2"
+	productID        = "testProduct"
+	bundleID         = "testBndl"
+	api1ID           = "testAPI1"
+	api2ID           = "testAPI2"
+	event1ID         = "testEvent1"
+	event2ID         = "testEvent2"
+	capability1ID    = "testCapability1"
+	capability2ID    = "testCapability2"
 	integrationDependency1ID = "testIntegrationDependency1"
 	integrationDependency2ID = "testIntegrationDependency2"
-	tombstoneID              = "testTs"
-	localTenantID            = "localTenantID"
-	webhookID                = "webhookID"
+	tombstoneID      = "testTs"
+	localTenantID    = "localTenantID"
+	webhookID        = "webhookID"
+	localID          = "localID"
 
 	api1spec1ID       = "api1spec1ID"
 	api1spec2ID       = "api1spec2ID"
@@ -75,7 +77,6 @@ const (
 	capability2SpecID = "capability2SpecID"
 
 	cursor                    = "cursor"
-	policyLevel               = "sap:core:v1"
 	apiImplementationStandard = "cff:open-service-broker:v2"
 	correlationIDs            = `["foo.bar.baz:foo:123456","foo.bar.baz:bar:654321"]`
 	partners                  = `["microsoft:vendor:Microsoft:"]`
@@ -83,18 +84,28 @@ const (
 	externalClientCertSecretName = "resource-name1"
 	extSvcClientCertSecretName   = "resource-name2"
 
-	appTemplateVersionID    = "testAppTemplateVersionID"
 	appTemplateVersionValue = "2303"
 	appTemplateName         = "appTemplateName"
 
 	applicationTypeLabelValue = "customType"
+
+	entityTypeID     = "entity-type-id"
+	ordID            = "com.compass.v1"
+	level            = "aggregate"
+	title            = "BusinessPartner"
+	publicVisibility = "public"
+	products         = `["sap:product:S4HANA_OD:"]`
+	releaseStatus    = "active"
 )
 
 var (
-	appID              = "testApp"
-	appTemplateID      = "testAppTemplate"
-	uidSvc             = uid.NewService()
-	packageLinksFormat = removeWhitespace(`[
+	appID                = "testApp"
+	appTemplateVersionID = "testAppTemplateVersionID"
+	appTemplateID        = "testAppTemplate"
+	policyLevel          = "sap:core:v1"
+	customPolicyLevel    = "sap:core:v1"
+	uidSvc               = uid.NewService()
+	packageLinksFormat   = removeWhitespace(`[
         {
           "type": "terms-of-service",
           "url": "https://example.com/en/legal/terms-of-use.html"
@@ -278,20 +289,61 @@ var (
 			Version: credentialExchangeStrategyVersion,
 		},
 	}
+
+	fixedTimestamp         = time.Now()
+	shortDescription       = "A business partner is a person, an organization, or a group of persons or organizations in which a company has a business interest."
+	description            = "A workforce person is a natural person with a work agreement or relationship in form of a work assignment; it can be an employee or a contingent worker.\n"
+	systemInstanceAware    = false
+	sunsetDate             = "2022-01-08T15:47:04+00:00"
+	successors             = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1"]`
+	extensible             = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
+	resourceHash           = "123456"
+	versionValue           = "v1.1"
+	versionDeprecated      = false
+	versionDeprecatedSince = "v1.0"
+	versionForRemoval      = false
+
+	documentationLabels = removeWhitespace(`{
+        "Some Aspect": ["Markdown Documentation [with links](#)", "With multiple values"]
+      }`)
 )
 
 func fixResourceHashes() map[string]uint64 {
-	return map[string]uint64{
-		api1ORDID:                   hashAPI1,
-		api2ORDID:                   hashAPI2,
-		event1ORDID:                 hashEvent1,
-		event2ORDID:                 hashEvent2,
-		capability1ORDID:            hashCapability1,
-		capability2ORDID:            hashCapability2,
-		integrationDependency1ORDID: hashIntegrationDependency1,
-		integrationDependency2ORDID: hashIntegrationDependency2,
-		packageORDID:                hashPackage,
+	return fixResourceHashesForDocument(fixORDDocument())
+}
+
+func fixResourceHashesForDocument(doc *ord.Document) map[string]uint64 {
+	result := map[string]uint64{}
+	for _, resource := range doc.APIResources {
+		hash, _ := ord.HashObject(resource)
+		result[*resource.OrdID] = hash
 	}
+	for _, resource := range doc.EventResources {
+		hash, _ := ord.HashObject(resource)
+		result[*resource.OrdID] = hash
+	}
+	for _, resource := range doc.Capabilities {
+		hash, _ := ord.HashObject(resource)
+		result[*resource.OrdID] = hash
+	}
+	for _, resource := range doc.IntegrationDependencies {
+		hash, _ := ord.HashObject(resource)
+		result[*resource.OrdID] = hash
+	}
+	for _, resource := range doc.Packages {
+		hash, _ := ord.HashObject(resource)
+		result[resource.OrdID] = hash
+	}
+	for _, resource := range doc.EntityTypes {
+		hash, _ := ord.HashObject(resource)
+		result[resource.OrdID] = hash
+	}
+	for _, resource := range doc.ConsumptionBundles {
+		hash, _ := ord.HashObject(resource)
+		result[*resource.OrdID] = hash
+	}
+
+	return result
 }
 
 func fixWellKnownConfig() *ord.WellKnownConfig {
@@ -382,6 +434,14 @@ func sanitizeResources(doc *ord.Document) {
 	doc.EventResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	doc.EventResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	doc.EventResources[1].Labels = json.RawMessage(mergedLabels)
+
+	doc.EntityTypes[0].PolicyLevel = str.Ptr(policyLevel)
+	doc.EntityTypes[0].Tags = json.RawMessage(`["testTag","eventTestTag"]`)
+	doc.EntityTypes[0].Labels = json.RawMessage(mergedLabels)
+
+	doc.EntityTypes[1].PolicyLevel = str.Ptr(policyLevel)
+	doc.EntityTypes[1].Tags = json.RawMessage(`["testTag","eventTestTag"]`)
+	doc.EntityTypes[1].Labels = json.RawMessage(mergedLabels)
 
 	doc.Capabilities[0].Tags = json.RawMessage(`["testTag","capabilityTestTag"]`)
 	doc.Capabilities[0].Labels = json.RawMessage(mergedLabels)
@@ -691,6 +751,58 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						BundleOrdID: bundleORDID,
 					},
 				},
+				VersionInput: &model.VersionInput{
+					Value: "1.1.0",
+				},
+			},
+		},
+		EntityTypes: []*model.EntityTypeInput{
+			{
+				OrdID:               entityType1ORDID,
+				LocalID:             localID,
+				Level:               "aggregate",
+				Title:               "Business Partner",
+				ShortDescription:    str.Ptr("short desc"),
+				Description:         str.Ptr("long desc"),
+				SystemInstanceAware: &boolPtr,
+				ChangeLogEntries:    json.RawMessage(changeLogEntries),
+				OrdPackageID:        packageORDID,
+				Visibility:          "public",
+				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+				PolicyLevel:         str.Ptr(policyLevel),
+				ReleaseStatus:       "active",
+				SunsetDate:          nil,
+				Successors:          nil,
+				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
+				Tags:                json.RawMessage(`["eventTestTag"]`),
+				Labels:              json.RawMessage(labels),
+				DocumentationLabels: json.RawMessage(documentLabels),
+				VersionInput: &model.VersionInput{
+					Value: "2.1.2",
+				},
+			},
+			{
+				OrdID:               entityType2ORDID,
+				LocalID:             localID,
+				Level:               "aggregate",
+				Title:               "Workforce Person",
+				ShortDescription:    str.Ptr("short desc"),
+				Description:         str.Ptr("long desc"),
+				SystemInstanceAware: &boolPtr,
+				ChangeLogEntries:    json.RawMessage(changeLogEntries),
+				OrdPackageID:        packageORDID,
+				Visibility:          "public",
+				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+				PolicyLevel:         str.Ptr(policyLevel),
+				ReleaseStatus:       "active",
+				SunsetDate:          nil,
+				Successors:          nil,
+				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
+				Tags:                json.RawMessage(`["eventTestTag"]`),
+				Labels:              json.RawMessage(labels),
+				DocumentationLabels: json.RawMessage(documentLabels),
 				VersionInput: &model.VersionInput{
 					Value: "1.1.0",
 				},
@@ -1656,6 +1768,56 @@ func fixIntegrationDependencies() []*model.IntegrationDependency {
 				Ready: true,
 			},
 		},
+	}
+}
+
+func fixEntityTypes() []*model.EntityType {
+	return []*model.EntityType{
+		{
+			BaseEntity: &model.BaseEntity{
+				ID:        entityTypeID,
+				Ready:     true,
+				CreatedAt: &fixedTimestamp,
+				UpdatedAt: &time.Time{},
+				DeletedAt: &time.Time{},
+				Error:     nil,
+			},
+			ApplicationID:                &appID,
+			ApplicationTemplateVersionID: &appTemplateVersionID,
+			OrdID:                        ordID,
+			LocalID:                      localID,
+			CorrelationIDs:               json.RawMessage(correlationIDs),
+			Level:                        level,
+			Title:                        title,
+			ShortDescription:             &shortDescription,
+			Description:                  &description,
+			SystemInstanceAware:          &systemInstanceAware,
+			ChangeLogEntries:             json.RawMessage(changeLogEntries),
+			PackageID:                    packageID,
+			Visibility:                   publicVisibility,
+			Links:                        json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			PartOfProducts:               json.RawMessage(products),
+			PolicyLevel:                  &policyLevel,
+			CustomPolicyLevel:            &customPolicyLevel,
+			ReleaseStatus:                releaseStatus,
+			SunsetDate:                   &sunsetDate,
+			Successors:                   json.RawMessage(successors),
+			Extensible:                   json.RawMessage(extensible),
+			Tags:                         json.RawMessage(tags),
+			Labels:                       json.RawMessage(labels),
+			DocumentationLabels:          json.RawMessage(documentationLabels),
+			Version:                      fixVersionModel(versionValue, versionDeprecated, versionDeprecatedSince, versionForRemoval),
+			ResourceHash:                 &resourceHash,
+		},
+	}
+}
+
+func fixVersionModel(value string, deprecated bool, deprecatedSince string, forRemoval bool) *model.Version {
+	return &model.Version{
+		Value:           value,
+		Deprecated:      &deprecated,
+		DeprecatedSince: &deprecatedSince,
+		ForRemoval:      &forRemoval,
 	}
 }
 
