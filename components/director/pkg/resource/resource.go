@@ -144,6 +144,7 @@ var tenantAccessTable = map[Type]string{
 	API:                        "api_definitions_tenants",
 	EventDefinition:            "event_api_definitions_tenants",
 	Capability:                 "capabilities_tenants",
+	IntegrationDependency:      "integration_dependencies_tenants",
 	Webhook:                    "webhooks_tenants",
 	AppWebhook:                 "application_webhooks_tenants",
 	RuntimeWebhook:             "runtime_webhooks_tenants",

@@ -81,10 +81,14 @@ const (
 	// IntegrationDependencySuccessorsRegex represents the valid structure of the Integration Dependency successors array items
 	IntegrationDependencySuccessorsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 
+	// TODO ^([a-z0-9A-Z]+(?:[.][a-z0-9A-Z]+)*)\.(v0|v[1-9][0-9]*)$
+
 	// AspectApiResourceRegex represents the valid structure of the apiResource items in Integration Dependency Aspect
 	AspectApiResourceRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(apiResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// AspectEventResourceRegex represents the valid structure of the eventResource items in Integration Dependency Aspect
 	AspectEventResourceRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+	// EventResourceEventTypeRegex represents the valid structure of the event type items in event resource subset
+	EventResourceEventTypeRegex = "^([a-z0-9A-Z]+(?:[.][a-z0-9A-Z]+)*)\\.(v0|v[1-9][0-9]*)$"
 
 	// MinDescriptionLength represents the minimal accepted length of the Description field
 	MinDescriptionLength = 1
@@ -1196,6 +1200,7 @@ func validateAspectEventResourceSubset(value interface{}) error {
 	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"eventType": {
 			validation.Required,
+			validation.Match(regexp.MustCompile(EventResourceEventTypeRegex)),
 		},
 	})
 }
