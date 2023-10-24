@@ -6,7 +6,7 @@ home: https://kyma-project.io
 icon: https://github.com/kyma-project/kyma/blob/main/logo.png?raw=true
 dependencies:
   - name: oathkeeper
-    version: 0.35.0
+    version: 0.36.0
   - name: hydra
-    version: 0.35.0
+    version: 0.36.0
     repository: https://k8s.ory.sh/helm/charts

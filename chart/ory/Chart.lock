@@ -1,9 +1,9 @@
 dependencies:
 - name: oathkeeper
   repository: ""
-  version: 0.35.0
+  version: 0.36.0
 - name: hydra
   repository: https://k8s.ory.sh/helm/charts
-  version: 0.35.0
-digest: sha256:fd45af3bf78a808c2956493569530b7e29c86159694575869668a99220e5709a
-generated: "2023-10-23T19:01:09.377068+03:00"
+  version: 0.36.0
+digest: sha256:2629c9a6c7bc0fd49a1ada80584cab4ba92709ebb5568053c03d09c2d8ef4fa3
+generated: "2023-10-24T16:49:55.565066+03:00"
