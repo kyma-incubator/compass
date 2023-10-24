@@ -1026,7 +1026,7 @@ func TestService_Processing(t *testing.T) {
 
 	successfulClientFetchForStaticDoc := func() *automock.Client {
 		client := &automock.Client{}
-		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testStaticWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{fixORDStaticDocumentWithBaseURL(baseURL)}, baseURL, nil)
+		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testStaticWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{fixORDStaticDocument()}, baseURL, nil)
 		return client
 	}
 
@@ -1129,7 +1129,7 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencySvcFn: successfulIntegrationDependencyFetchForAppTemplateVersion,
 			integrationDependencyProcessorFn: func() *automock.IntegrationDependencyProcessor {
 				integrationDependencyProcessor := &automock.IntegrationDependencyProcessor{}
-				integrationDependencyProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, fixORDStaticDocument().IntegrationDependencies).Return(fixIntegrationDependencies(), nil).Once()
+				integrationDependencyProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, fixPackages(), sanitizedStaticDoc.IntegrationDependencies, resourceHashes).Return(fixIntegrationDependencies(), nil).Once()
 				return integrationDependencyProcessor
 			},
 			specSvcFn:    successfulSpecRecreateAndUpdateForStaticDoc,

@@ -551,6 +551,9 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 			if event.ChangeLogEntries, err = rewriteRelativeURIsInJSON(event.ChangeLogEntries, url, "url"); err != nil {
 				return err
 			}
+			if event.EventResourceLinks, err = rewriteRelativeURIsInJSON(event.EventResourceLinks, url, "url"); err != nil {
+				return err
+			}
 			if event.Links, err = rewriteRelativeURIsInJSON(event.Links, url, "url"); err != nil {
 				return err
 			}

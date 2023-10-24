@@ -738,7 +738,7 @@ func validateIntegrationDependencyInput(integrationDependency *model.Integration
 		validation.Field(&integrationDependency.Successors, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(IntegrationDependencySuccessorsRegex))
 		})),
-		validation.Field(&integrationDependency.Mandatory, validation.Required),
+		validation.Field(&integrationDependency.Mandatory, validation.By(validateIntegrationDependencyMandatory)),
 		validation.Field(&integrationDependency.Aspects, validation.By(validateIntegrationDependencyAspects)),
 		validation.Field(&integrationDependency.RelatedIntegrationDependencies, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(IntegrationDependencyOrdIDRegex))
@@ -1137,6 +1137,18 @@ func validateCapabilityDefinitions(value interface{}, capability model.Capabilit
 	mdiCapabilitySpecTypeExists := capabilityDefinitionTypes[model.CapabilitySpecTypeMDICapabilityDefinitionV1]
 	if capability.Type != CapabilityTypeMDICapabilityV1 && mdiCapabilitySpecTypeExists {
 		return errors.New("when capability definition type is `sap.mdo:mdi-capability-definition:v1`, capability type should be `sap.mdo:mdi-capability:v1`")
+	}
+
+	return nil
+}
+
+func validateIntegrationDependencyMandatory(value interface{}) error {
+	if value == nil {
+		return errors.New("integration dependency mandatory field is required")
+	}
+	_, ok := value.(bool)
+	if !ok {
+		return errors.New("integration dependency mandatory field is not a boolean")
 	}
 
 	return nil
