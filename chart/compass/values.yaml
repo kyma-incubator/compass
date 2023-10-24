@@ -146,8 +146,8 @@ global:
       version: "v20231020-caab0aa8"
       name: compass-director
     hydrator:
-      dir: prod/incubator/
-      version: "v20231012-eb47a901"
+      dir: dev/incubator/
+      version: "PR-3415"
       name: compass-hydrator
     ias_adapter:
       dir: prod/incubator/
