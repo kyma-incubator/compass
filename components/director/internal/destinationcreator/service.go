@@ -278,7 +278,7 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 		destReqBody.Audience = *app.BaseURL
 	}
 
-	if err := destReqBody.Validate(s.config); err != nil {
+	if err := destReqBody.Validate(); err != nil {
 		return errors.Wrapf(err, "while validating SAML assertion destination request body")
 	}
 
@@ -364,7 +364,7 @@ func (s *Service) CreateClientCertificateDestination(ctx context.Context, destin
 		return errors.Errorf("The provided authentication type: %s in the destination details is invalid. It should be %s", destinationDetails.Authentication, destinationcreatorpkg.AuthTypeClientCertificate)
 	}
 
-	if err := destReqBody.Validate(s.config); err != nil {
+	if err := destReqBody.Validate(); err != nil {
 		return errors.Wrapf(err, "while validating client certificate destination request body")
 	}
 
@@ -683,7 +683,7 @@ func (s *Service) PrepareBasicRequestBody(
 		return nil, errors.Errorf("The provided authentication type: %s in the destination details is invalid. It should be %s", destinationDetails.Authentication, destinationcreatorpkg.AuthTypeBasic)
 	}
 
-	if err := reqBody.Validate(s.config); err != nil {
+	if err := reqBody.Validate(); err != nil {
 		return nil, errors.Wrapf(err, "while validating basic destination request body")
 	}
 
