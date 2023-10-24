@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/capability"
-
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
