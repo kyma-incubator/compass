@@ -509,7 +509,7 @@ func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 	}
 
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
-		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
+		time.Sleep(time.Millisecond * time.Duration(h.config.TenantMappingAsyncResponseDelay))
 		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
