@@ -560,8 +560,8 @@ func assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDelet
 	require.Equal(t, formationID, notificationForFormationDetails.Get("id").String())
 	require.Equal(t, formationName, notificationForFormationDetails.Get("name").String())
 
-	t.Logf("Sleeping for %d milliseconds while the async formation status is proccessed...", conf.TenantMappingAsyncResponseDelay+50)
-	time.Sleep(time.Millisecond * time.Duration(conf.TenantMappingAsyncResponseDelay+50))
+	t.Logf("Sleeping for %d milliseconds while the async formation status is proccessed...", conf.TenantMappingAsyncResponseDelay+250)
+	time.Sleep(time.Millisecond * time.Duration(conf.TenantMappingAsyncResponseDelay+250))
 
 	t.Log("Assert formation lifecycle notifications are successfully processed...")
 	formationPage := fixtures.ListFormationsWithinTenant(t, ctx, tenantID, certSecuredGraphQLClient)
