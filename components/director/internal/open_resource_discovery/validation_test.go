@@ -1307,6 +1307,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Valid `partOfProducts` field when the JSON array is empty",
 			DocumentProvider: func() []*ord.Document {

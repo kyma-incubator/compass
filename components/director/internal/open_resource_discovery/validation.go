@@ -316,7 +316,7 @@ func validatePackageInput(pkg *model.PackageInput, docPolicyLevel *string) error
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, pkg.PolicyLevel, PolicyLevelSap), validation.In(SapVendor)),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, pkg.PolicyLevel, PolicyLevelSapPartner), validation.NotIn(SapVendor)),
 			validation.Match(regexp.MustCompile(VendorOrdIDRegex)), validation.Length(1, 256)),
-		validation.Field(&pkg.PartOfProducts, validation.Required, validation.By(func(value interface{}) error {
+		validation.Field(&pkg.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),
 		validation.Field(&pkg.Tags, validation.By(func(value interface{}) error {
