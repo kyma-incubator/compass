@@ -646,6 +646,9 @@ func validateCapabilityInput(capability *model.CapabilityInput) error {
 		validation.Field(&capability.Tags, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
+		validation.Field(&capability.RelatedEntityTypes, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EntityTypeOrdIDRegex))
+		})),
 		validation.Field(&capability.Links, validation.By(validateORDLinks)),
 		validation.Field(&capability.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&capability.Labels, validation.By(validateORDLabels)),

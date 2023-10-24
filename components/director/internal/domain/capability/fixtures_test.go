@@ -102,6 +102,7 @@ func fixFullCapabilityModel(capabilityID, name string) (model.Capability, model.
 		ShortDescription:    str.Ptr("shortDescription"),
 		SystemInstanceAware: &boolVar,
 		Tags:                json.RawMessage("[]"),
+		RelatedEntityTypes:  json.RawMessage("[]"),
 		Links:               json.RawMessage("[]"),
 		ReleaseStatus:       str.Ptr("releaseStatus"),
 		Labels:              json.RawMessage("[]"),
@@ -156,6 +157,7 @@ func fixFullEntityCapability(capabilityID, name string) capability.Entity {
 		ShortDescription:    repo.NewValidNullableString("shortDescription"),
 		SystemInstanceAware: repo.NewValidNullableBool(false),
 		Tags:                repo.NewValidNullableString("[]"),
+		RelatedEntityTypes:  repo.NewValidNullableString("[]"),
 		Links:               repo.NewValidNullableString("[]"),
 		ReleaseStatus:       repo.NewValidNullableString("releaseStatus"),
 		Labels:              repo.NewValidNullableString("[]"),
@@ -184,14 +186,14 @@ func fixFullEntityCapability(capabilityID, name string) capability.Entity {
 func fixCapabilityColumns() []string {
 	return []string{
 		"id", "app_id", "app_template_version_id", "package_id", "name", "description", "ord_id", "type", "custom_type", "local_tenant_id",
-		"short_description", "system_instance_aware", "tags", "links", "release_status", "labels", "visibility",
+		"short_description", "system_instance_aware", "tags", "related_entity_types", "links", "release_status", "labels", "visibility",
 		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "resource_hash", "documentation_labels", "correlation_ids", "last_update"}
 }
 
 func fixCapabilityRow(id, name string) []driver.Value {
 	boolVar := false
 	return []driver.Value{id, appID, repo.NewValidNullableString(""), packageID, name, "desc_" + name, ordID, CapabilityTypeMDICapabilityDefinitionV1, nil, localTenantID,
-		"shortDescription", &boolVar, repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus",
+		"shortDescription", &boolVar, repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus",
 		repo.NewValidNullableString("[]"), publicVisibility, "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(resourceHash),
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString(lastUpdateTimestamp)}
 }
@@ -199,7 +201,7 @@ func fixCapabilityRow(id, name string) []driver.Value {
 func fixCapabilityRowForAppTemplateVersion(id, name string) []driver.Value {
 	boolVar := false
 	return []driver.Value{id, repo.NewValidNullableString(""), appTemplateVersionID, packageID, name, "desc_" + name, ordID, CapabilityTypeMDICapabilityDefinitionV1, nil, localTenantID,
-		"shortDescription", &boolVar, repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus",
+		"shortDescription", &boolVar, repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus",
 		repo.NewValidNullableString("[]"), publicVisibility, "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(resourceHash),
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString(lastUpdateTimestamp)}
 }
@@ -207,7 +209,7 @@ func fixCapabilityRowForAppTemplateVersion(id, name string) []driver.Value {
 func fixCapabilityCreateArgs(id string, capability *model.Capability) []driver.Value {
 	return []driver.Value{id, appID, repo.NewValidNullableString(""), packageID, capability.Name, capability.Description,
 		capability.OrdID, capability.Type, capability.CustomType, capability.LocalTenantID, capability.ShortDescription, capability.SystemInstanceAware, repo.NewNullableStringFromJSONRawMessage(capability.Tags),
-		repo.NewNullableStringFromJSONRawMessage(capability.Links), capability.ReleaseStatus, repo.NewNullableStringFromJSONRawMessage(capability.Labels), capability.Visibility,
+		repo.NewNullableStringFromJSONRawMessage(capability.RelatedEntityTypes), repo.NewNullableStringFromJSONRawMessage(capability.Links), capability.ReleaseStatus, repo.NewNullableStringFromJSONRawMessage(capability.Labels), capability.Visibility,
 		capability.Version.Value, capability.Version.Deprecated, capability.Version.DeprecatedSince, capability.Version.ForRemoval, capability.Ready, capability.CreatedAt, capability.UpdatedAt, capability.DeletedAt, capability.Error, capability.ResourceHash, repo.NewNullableStringFromJSONRawMessage(capability.DocumentationLabels),
 		repo.NewNullableStringFromJSONRawMessage(capability.CorrelationIDs), capability.LastUpdate}
 }

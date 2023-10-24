@@ -27,7 +27,7 @@ func TestPgRepository_ListByResourceID(t *testing.T) {
 		Name: "List Capabilities",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, ord_id, type, custom_type, local_tenant_id, short_description, system_instance_aware, tags, links, release_status, labels, visibility, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, resource_hash, documentation_labels, correlation_ids, last_update FROM "public"."capabilities" WHERE app_id = $1 AND (id IN (SELECT id FROM capabilities_tenants WHERE tenant_id = $2)) FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, ord_id, type, custom_type, local_tenant_id, short_description, system_instance_aware, tags, related_entity_types, links, release_status, labels, visibility, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, resource_hash, documentation_labels, correlation_ids, last_update FROM "public"."capabilities" WHERE app_id = $1 AND (id IN (SELECT id FROM capabilities_tenants WHERE tenant_id = $2)) FOR UPDATE`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -53,7 +53,7 @@ func TestPgRepository_ListByResourceID(t *testing.T) {
 		Name: "List Capabilities",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, ord_id, type, custom_type, local_tenant_id, short_description, system_instance_aware, tags, links, release_status, labels, visibility, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, resource_hash, documentation_labels, correlation_ids, last_update FROM "public"."capabilities" WHERE app_template_version_id = $1 FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, ord_id, type, custom_type, local_tenant_id, short_description, system_instance_aware, tags, related_entity_types, links, release_status, labels, visibility, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, resource_hash, documentation_labels, correlation_ids, last_update FROM "public"."capabilities" WHERE app_template_version_id = $1 FOR UPDATE`),
 				Args:     []driver.Value{appTemplateVersionID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -87,7 +87,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		Name: "Get Capability",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, ord_id, type, custom_type, local_tenant_id, short_description, system_instance_aware, tags, links, release_status, labels, visibility, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, resource_hash, documentation_labels, correlation_ids, last_update FROM "public"."capabilities" WHERE id = $1 AND (id IN (SELECT id FROM capabilities_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, ord_id, type, custom_type, local_tenant_id, short_description, system_instance_aware, tags, related_entity_types, links, release_status, labels, visibility, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, resource_hash, documentation_labels, correlation_ids, last_update FROM "public"."capabilities" WHERE id = $1 AND (id IN (SELECT id FROM capabilities_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{capabilityID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -119,7 +119,7 @@ func TestPgRepository_GetByIDGlobal(t *testing.T) {
 		Name: "Get Capability Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, ord_id, type, custom_type, local_tenant_id, short_description, system_instance_aware, tags, links, release_status, labels, visibility, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, resource_hash, documentation_labels, correlation_ids, last_update FROM "public"."capabilities" WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, ord_id, type, custom_type, local_tenant_id, short_description, system_instance_aware, tags, related_entity_types, links, release_status, labels, visibility, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, resource_hash, documentation_labels, correlation_ids, last_update FROM "public"."capabilities" WHERE id = $1`),
 				Args:     []driver.Value{capabilityID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -214,7 +214,7 @@ func TestPgRepository_CreateGlobal(t *testing.T) {
 
 func TestPgRepository_Update(t *testing.T) {
 	updateQuery := regexp.QuoteMeta(`UPDATE "public"."capabilities" SET package_id = ?, name = ?, description = ?, ord_id = ?, type = ?, custom_type = ?, local_tenant_id = ?,
-		short_description = ?, system_instance_aware = ?, tags = ?, links = ?, release_status = ?, labels = ?, visibility = ?,
+		short_description = ?, system_instance_aware = ?, tags = ?, related_entity_types = ?, links = ?, release_status = ?, labels = ?, visibility = ?,
 		version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ?, ready = ?, created_at = ?,
 		updated_at = ?, deleted_at = ?, error = ?, resource_hash = ?, documentation_labels = ?, correlation_ids = ?, last_update = ?
 		WHERE id = ? AND (id IN (SELECT id FROM capabilities_tenants WHERE tenant_id = ? AND owner = true))`)
@@ -232,7 +232,7 @@ func TestPgRepository_Update(t *testing.T) {
 				Query: updateQuery,
 				Args: []driver.Value{entity.PackageID, entity.Name, entity.Description,
 					entity.OrdID, entity.Type, entity.CustomType, entity.LocalTenantID, entity.ShortDescription, entity.SystemInstanceAware, entity.Tags,
-					entity.Links, entity.ReleaseStatus, entity.Labels, entity.Visibility,
+					entity.RelatedEntityTypes, entity.Links, entity.ReleaseStatus, entity.Labels, entity.Visibility,
 					entity.Version.Value, entity.Version.Deprecated,
 					entity.Version.DeprecatedSince, entity.Version.ForRemoval, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt,
 					entity.Error, entity.ResourceHash, entity.DocumentationLabels, entity.CorrelationIDs, entity.LastUpdate, entity.ID, tenantID},
@@ -256,7 +256,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 func TestPgRepository_UpdateGlobal(t *testing.T) {
 	updateQuery := regexp.QuoteMeta(`UPDATE "public"."capabilities" SET package_id = ?, name = ?, description = ?, ord_id = ?, type = ?, custom_type = ?, local_tenant_id = ?,
-		short_description = ?, system_instance_aware = ?, tags = ?, links = ?, release_status = ?, labels = ?, visibility = ?,
+		short_description = ?, system_instance_aware = ?, tags = ?, related_entity_types = ?, links = ?, release_status = ?, labels = ?, visibility = ?,
 		version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ?, ready = ?, created_at = ?,
 		updated_at = ?, deleted_at = ?, error = ?, resource_hash = ?, documentation_labels = ?, correlation_ids = ?, last_update = ?
 		WHERE id = ?`)
@@ -274,7 +274,7 @@ func TestPgRepository_UpdateGlobal(t *testing.T) {
 				Query: updateQuery,
 				Args: []driver.Value{entity.PackageID, entity.Name, entity.Description,
 					entity.OrdID, entity.Type, entity.CustomType, entity.LocalTenantID, entity.ShortDescription, entity.SystemInstanceAware, entity.Tags,
-					entity.Links, entity.ReleaseStatus, entity.Labels, entity.Visibility,
+					entity.RelatedEntityTypes, entity.Links, entity.ReleaseStatus, entity.Labels, entity.Visibility,
 					entity.Version.Value, entity.Version.Deprecated,
 					entity.Version.DeprecatedSince, entity.Version.ForRemoval, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt,
 					entity.Error, entity.ResourceHash, entity.DocumentationLabels, entity.CorrelationIDs, entity.LastUpdate, entity.ID},

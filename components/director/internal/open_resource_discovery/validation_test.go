@@ -165,6 +165,10 @@ var (
 
 	invalidTagsValueIntegerElement = `["storage", 992]`
 
+	invalidRelatedEntityTypesValue = `["invalid!@#"]`
+
+	invalidRelatedEntityTypesValueIntegerElement = `["some-value", 992]`
+
 	invalidSupportedUseCasesValue = `["some-value"]`
 
 	validSupportedUseCasesValue = `["mass-extraction"]`
@@ -4347,6 +4351,47 @@ func TestDocument_ValidateCapability(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Capabilities[0].Tags = json.RawMessage(invalidTagsValueIntegerElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid value for `related_entity_types` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].RelatedEntityTypes = json.RawMessage(invalidRelatedEntityTypesValue)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `related_entity_types` field when it is invalid JSON for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].RelatedEntityTypes = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `related_entity_types` field when it isn't a JSON array for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].RelatedEntityTypes = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `related_entity_types` field when the JSON array is empty for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].RelatedEntityTypes = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `related_entity_types` field when it contains non string value for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].RelatedEntityTypes = json.RawMessage(invalidRelatedEntityTypesValueIntegerElement)
 
 				return []*ord.Document{doc}
 			},
