@@ -21,44 +21,48 @@ import (
 )
 
 const (
-	absoluteDocURL         = "http://config.com/open-resource-discovery/v1/documents/example1"
-	ordDocURI              = "/open-resource-discovery/v1/documents/example1"
-	proxyURL               = "http://proxy.com:8080"
-	baseURL                = "http://test.com:8080"
-	baseURL2               = "http://second.com"
-	customWebhookConfigURL = "http://custom.com/config/endpoint"
-	packageORDID           = "ns:package:PACKAGE_ID:v1"
-	productORDID           = "sap:product:id:"
-	globalProductORDID     = "sap:product:SAPCloudPlatform:"
-	product2ORDID          = "ns:product:id2:"
-	bundleORDID            = "ns:consumptionBundle:BUNDLE_ID:v1"
-	secondBundleORDID      = "ns:consumptionBundle:BUNDLE_ID:v2"
-	vendorORDID            = "sap:vendor:SAP:"
-	vendor2ORDID           = "partner:vendor:SAP:"
-	api1ORDID              = "ns:apiResource:API_ID:v2"
-	api2ORDID              = "ns:apiResource:API_ID2:v1"
-	event1ORDID            = "ns:eventResource:EVENT_ID:v1"
-	event2ORDID            = "ns2:eventResource:EVENT_ID:v1"
-	capability1ORDID       = "sap.foo.bar:capability:fieldExtensibility:v1"
-	capability2ORDID       = "sap2.foo.bar:capability:fieldExtensibility:v1"
+	absoluteDocURL              = "http://config.com/open-resource-discovery/v1/documents/example1"
+	ordDocURI                   = "/open-resource-discovery/v1/documents/example1"
+	proxyURL                    = "http://proxy.com:8080"
+	baseURL                     = "http://test.com:8080"
+	baseURL2                    = "http://second.com"
+	customWebhookConfigURL      = "http://custom.com/config/endpoint"
+	packageORDID                = "ns:package:PACKAGE_ID:v1"
+	productORDID                = "sap:product:id:"
+	globalProductORDID          = "sap:product:SAPCloudPlatform:"
+	product2ORDID               = "ns:product:id2:"
+	bundleORDID                 = "ns:consumptionBundle:BUNDLE_ID:v1"
+	secondBundleORDID           = "ns:consumptionBundle:BUNDLE_ID:v2"
+	vendorORDID                 = "sap:vendor:SAP:"
+	vendor2ORDID                = "partner:vendor:SAP:"
+	api1ORDID                   = "ns:apiResource:API_ID:v2"
+	api2ORDID                   = "ns:apiResource:API_ID2:v1"
+	event1ORDID                 = "ns:eventResource:EVENT_ID:v1"
+	event2ORDID                 = "ns2:eventResource:EVENT_ID:v1"
+	capability1ORDID            = "sap.foo.bar:capability:fieldExtensibility:v1"
+	capability2ORDID            = "sap2.foo.bar:capability:fieldExtensibility:v1"
+	integrationDependency1ORDID = "sap.foo.bar:integrationDependency:CustomerOrder:v1"
+	integrationDependency2ORDID = "sap2.foo.bar:integrationDependency:CustomerOrder:v1"
 
-	whID             = "testWh"
-	tenantID         = "testTenant"
-	externalTenantID = "externalTestTenant"
-	packageID        = "testPkg"
-	vendorID         = "testVendor"
-	vendorID2        = "testVendor2"
-	productID        = "testProduct"
-	bundleID         = "testBndl"
-	api1ID           = "testAPI1"
-	api2ID           = "testAPI2"
-	event1ID         = "testEvent1"
-	event2ID         = "testEvent2"
-	capability1ID    = "testCapability1"
-	capability2ID    = "testCapability2"
-	tombstoneID      = "testTs"
-	localTenantID    = "localTenantID"
-	webhookID        = "webhookID"
+	whID                     = "testWh"
+	tenantID                 = "testTenant"
+	externalTenantID         = "externalTestTenant"
+	packageID                = "testPkg"
+	vendorID                 = "testVendor"
+	vendorID2                = "testVendor2"
+	productID                = "testProduct"
+	bundleID                 = "testBndl"
+	api1ID                   = "testAPI1"
+	api2ID                   = "testAPI2"
+	event1ID                 = "testEvent1"
+	event2ID                 = "testEvent2"
+	capability1ID            = "testCapability1"
+	capability2ID            = "testCapability2"
+	integrationDependency1ID = "testIntegrationDependency1"
+	integrationDependency2ID = "testIntegrationDependency2"
+	tombstoneID              = "testTs"
+	localTenantID            = "localTenantID"
+	webhookID                = "webhookID"
 
 	api1spec1ID       = "api1spec1ID"
 	api1spec2ID       = "api1spec2ID"
@@ -238,6 +242,12 @@ var (
 
 	capabilitiesFromDB = map[string]*model.Capability{
 		capability1ORDID: fixCapabilitiesWithHash()[0],
+		capability2ORDID: fixCapabilitiesWithHash()[1],
+	}
+
+	integrationDependenciesFromDB = map[string]*model.IntegrationDependency{
+		integrationDependency1ORDID: fixIntegrationDependenciesWithHash()[0],
+		integrationDependency2ORDID: fixIntegrationDependenciesWithHash()[1],
 	}
 
 	pkgsFromDB = map[string]*model.Package{
@@ -248,12 +258,15 @@ var (
 		bundleORDID: fixBundlesWithHash()[0],
 	}
 
-	hashAPI1, _       = ord.HashObject(fixORDDocument().APIResources[0])
-	hashAPI2, _       = ord.HashObject(fixORDDocument().APIResources[1])
-	hashEvent1, _     = ord.HashObject(fixORDDocument().EventResources[0])
-	hashEvent2, _     = ord.HashObject(fixORDDocument().EventResources[1])
-	hashCapability, _ = ord.HashObject(fixORDDocument().Capabilities[0])
-	hashPackage, _    = ord.HashObject(fixORDDocument().Packages[0])
+	hashAPI1, _                   = ord.HashObject(fixORDDocument().APIResources[0])
+	hashAPI2, _                   = ord.HashObject(fixORDDocument().APIResources[1])
+	hashEvent1, _                 = ord.HashObject(fixORDDocument().EventResources[0])
+	hashEvent2, _                 = ord.HashObject(fixORDDocument().EventResources[1])
+	hashCapability1, _            = ord.HashObject(fixORDDocument().Capabilities[0])
+	hashCapability2, _            = ord.HashObject(fixORDDocument().Capabilities[1])
+	hashIntegrationDependency1, _ = ord.HashObject(fixORDDocument().IntegrationDependencies[0])
+	hashIntegrationDependency2, _ = ord.HashObject(fixORDDocument().IntegrationDependencies[1])
+	hashPackage, _                = ord.HashObject(fixORDDocument().Packages[0])
 
 	resourceHashes = fixResourceHashes()
 
@@ -269,12 +282,15 @@ var (
 
 func fixResourceHashes() map[string]uint64 {
 	return map[string]uint64{
-		api1ORDID:        hashAPI1,
-		api2ORDID:        hashAPI2,
-		event1ORDID:      hashEvent1,
-		event2ORDID:      hashEvent2,
-		capability1ORDID: hashCapability,
-		packageORDID:     hashPackage,
+		api1ORDID:                   hashAPI1,
+		api2ORDID:                   hashAPI2,
+		event1ORDID:                 hashEvent1,
+		event2ORDID:                 hashEvent2,
+		capability1ORDID:            hashCapability1,
+		capability2ORDID:            hashCapability2,
+		integrationDependency1ORDID: hashIntegrationDependency1,
+		integrationDependency2ORDID: hashIntegrationDependency2,
+		packageORDID:                hashPackage,
 	}
 }
 
@@ -371,6 +387,11 @@ func sanitizeResources(doc *ord.Document) {
 	doc.Capabilities[0].Labels = json.RawMessage(mergedLabels)
 	doc.Capabilities[1].Tags = json.RawMessage(`["testTag","capabilityTestTag"]`)
 	doc.Capabilities[1].Labels = json.RawMessage(mergedLabels)
+
+	doc.IntegrationDependencies[0].Tags = json.RawMessage(`["testTag","integrationDependencyTestTag"]`)
+	doc.IntegrationDependencies[0].Labels = json.RawMessage(mergedLabels)
+	doc.IntegrationDependencies[1].Tags = json.RawMessage(`["testTag","integrationDependencyTestTag"]`)
+	doc.IntegrationDependencies[1].Labels = json.RawMessage(mergedLabels)
 }
 
 func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
@@ -681,7 +702,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				LocalTenantID:       str.Ptr(localTenantID),
 				OrdPackageID:        str.Ptr(packageORDID),
 				Name:                "Capability Title",
-				Description:         str.Ptr("CapabilityDescription"),
+				Description:         str.Ptr("Capability Description"),
 				Type:                "sap.mdo:mdi-capability:v1",
 				CustomType:          nil,
 				ShortDescription:    str.Ptr("Capability short description"),
@@ -714,7 +735,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				LocalTenantID:       str.Ptr(localTenantID),
 				OrdPackageID:        str.Ptr(packageORDID),
 				Name:                "Capability Title 2",
-				Description:         str.Ptr("CapabilityDescription"),
+				Description:         str.Ptr("Capability Description"),
 				Type:                "sap.mdo:mdi-capability:v1",
 				CustomType:          nil,
 				ShortDescription:    str.Ptr("Capability short description"),
@@ -737,6 +758,46 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						},
 					},
 				},
+				DocumentationLabels: json.RawMessage(documentLabels),
+				VersionInput: &model.VersionInput{
+					Value: "1.1.1",
+				},
+			},
+		},
+		IntegrationDependencies: []*model.IntegrationDependencyInput{
+			{
+				OrdID:               str.Ptr(integrationDependency1ORDID),
+				LocalTenantID:       str.Ptr(localTenantID),
+				OrdPackageID:        str.Ptr(packageORDID),
+				Name:                "Integration Dependency Title",
+				Description:         str.Ptr("Integration Dependency Description"),
+				ShortDescription:    str.Ptr("Integration Dependency short description"),
+				Tags:                json.RawMessage(`["integrationDependencyTestTag"]`),
+				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				Mandatory:           true,
+				ReleaseStatus:       str.Ptr("active"),
+				Labels:              json.RawMessage(labels),
+				Visibility:          "public",
+				DocumentationLabels: json.RawMessage(documentLabels),
+				VersionInput: &model.VersionInput{
+					Value: "2.1.2",
+				},
+				LastUpdate: str.Ptr("2023-01-26T15:47:04+00:00"),
+			},
+			{
+				OrdID:               str.Ptr(integrationDependency2ORDID),
+				LocalTenantID:       str.Ptr(localTenantID),
+				OrdPackageID:        str.Ptr(packageORDID),
+				Name:                "Integration Dependency Title 2",
+				Description:         str.Ptr("Integration Dependency Description"),
+				ShortDescription:    str.Ptr("Integration Dependency short description"),
+				Tags:                json.RawMessage(`["integrationDependencyTestTag"]`),
+				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				Mandatory:           false,
+				ReleaseStatus:       str.Ptr("active"),
+				Labels:              json.RawMessage(labels),
+				Visibility:          "public",
+				LastUpdate:          str.Ptr("2022-01-26T15:47:04+00:00"),
 				DocumentationLabels: json.RawMessage(documentLabels),
 				VersionInput: &model.VersionInput{
 					Value: "1.1.1",
@@ -1125,6 +1186,18 @@ func fixCapabilitiesWithHash() []*model.Capability {
 	}
 
 	return capabilities
+}
+
+func fixIntegrationDependenciesWithHash() []*model.IntegrationDependency {
+	integrationDependencies := fixIntegrationDependencies()
+
+	for idx, integrationDependency := range integrationDependencies {
+		ordID := str.PtrStrToStr(integrationDependency.OrdID)
+		hash := str.Ptr(strconv.FormatUint(resourceHashes[ordID], 10))
+		integrationDependency.ResourceHash = hash
+		integrationDependency.Version.Value = fixORDDocument().IntegrationDependencies[idx].VersionInput.Value
+	}
+	return integrationDependencies
 }
 
 func fixPackagesWithHash() []*model.Package {
@@ -1531,6 +1604,57 @@ func fixTombstones() []*model.Tombstone {
 			ApplicationID: &appID,
 			RemovalDate:   "2020-12-02T14:12:59Z",
 			Description:   str.Ptr("description"),
+		},
+	}
+}
+
+func fixIntegrationDependencies() []*model.IntegrationDependency {
+	return []*model.IntegrationDependency{
+		{
+			ApplicationID:    &appID,
+			PackageID:        str.Ptr(packageORDID),
+			Name:             "Integration Dependency Title",
+			Description:      str.Ptr("Integration Dependency Description"),
+			OrdID:            str.Ptr(integrationDependency1ORDID),
+			LocalTenantID:    nil,
+			ShortDescription: str.Ptr("Integration Dependency short description"),
+			Tags:             json.RawMessage(`["testTag","capabilityTestTag"]`),
+			Links:            json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			ReleaseStatus:    str.Ptr("active"),
+			Labels:           json.RawMessage(mergedLabels),
+			Visibility:       "public",
+			LastUpdate:       str.Ptr("2023-01-25T15:47:04+00:00"),
+			Version: &model.Version{
+				Value: "2.1.3",
+			},
+			DocumentationLabels: json.RawMessage(documentLabels),
+			BaseEntity: &model.BaseEntity{
+				ID:    integrationDependency1ID,
+				Ready: true,
+			},
+		},
+		{
+			ApplicationID:    &appID,
+			PackageID:        str.Ptr(packageORDID),
+			Name:             "Integration Dependency 2",
+			Description:      str.Ptr("Integration Dependency Description"),
+			OrdID:            str.Ptr(integrationDependency2ORDID),
+			LocalTenantID:    nil,
+			ShortDescription: str.Ptr("Integration Dependency short description"),
+			Tags:             json.RawMessage(`["testTag","capabilityTestTag"]`),
+			Links:            json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			ReleaseStatus:    str.Ptr("active"),
+			Labels:           json.RawMessage(mergedLabels),
+			Visibility:       "public",
+			LastUpdate:       str.Ptr("2022-01-25T15:47:04+00:00"),
+			Version: &model.Version{
+				Value: "1.1.0",
+			},
+			DocumentationLabels: json.RawMessage(documentLabels),
+			BaseEntity: &model.BaseEntity{
+				ID:    integrationDependency2ID,
+				Ready: true,
+			},
 		},
 	}
 }

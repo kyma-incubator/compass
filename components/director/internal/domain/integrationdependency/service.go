@@ -76,17 +76,17 @@ func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTem
 }
 
 // Create creates integration dependency for an application with given id.
-func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) error {
+func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) (string, error) {
 	id := s.uidService.Generate()
 	integrationDependency := in.ToIntegrationDependency(id, resourceType, resourceID, packageID, integrationDependencyHash)
 
 	if err := s.createIntegrationDependency(ctx, resourceType, integrationDependency); err != nil {
-		return err
+		return "", errors.Wrapf(err, "error occurred while creating an Integration Dependency with id %s for %s with id %s", id, resourceType, resourceID)
 	}
 
 	log.C(ctx).Debugf("Successfully created a Integration Dependency with id %s for %s with id %s", id, resourceType, resourceID)
 
-	return nil
+	return id, nil
 }
 
 // Update updates existing Integration Dependency.

@@ -11,11 +11,11 @@ import (
 
 // IntegrationDependencyService is responsible for the service-layer Integration Dependency operations.
 //
-//go:generate mockery --name=IntegrationDependencyService --ouidut=automock --ouidkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=IntegrationDependencyService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationDependencyService interface {
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.IntegrationDependency, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.IntegrationDependency, error)
-	Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) error
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) (string, error)
 	Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) error
 }
 
@@ -85,7 +85,7 @@ func (id *IntegrationDependencyProcessor) resyncIntegrationDependencyInTx(ctx co
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if err := id.resyncIntegrationDependency(ctx, resourceType, resourceID, integrationDependenciesFromDB, packagesFromDB, *integrationDependency, integrationDependencyHash); err != nil {
-		return errors.Wrapf(err, "error while resyncing integration dependency for resource with ORD ID %q", integrationDependency.OrdID)
+		return errors.Wrapf(err, "error while resyncing integration dependency for resource with ORD ID %q", *integrationDependency.OrdID)
 	}
 	return tx.Commit()
 }
@@ -104,7 +104,7 @@ func (id *IntegrationDependencyProcessor) resyncIntegrationDependency(ctx contex
 	}
 
 	if !isIntegrationDependencyFound {
-		err := id.integrationDependencySvc.Create(ctx, resourceType, resourceID, packageID, integrationDependency, integrationDependencyHash)
+		_, err := id.integrationDependencySvc.Create(ctx, resourceType, resourceID, packageID, integrationDependency, integrationDependencyHash)
 		if err != nil {
 			return err
 		}

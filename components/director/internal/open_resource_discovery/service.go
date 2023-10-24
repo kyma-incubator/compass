@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"github.com/davecgh/go-spew/spew"
 	"strconv"
 	"strings"
 	"sync"
@@ -398,6 +399,8 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		log.C(ctx).Infof("Finished processing bundles for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing apis for %s with id: %q", resource.Type, resource.ID)
+		spew.Dump("Api resource 1 in doc: ", doc.APIResources[0].APIResourceLinks)
+		spew.Dump("Api resource 2 in doc: ", doc.APIResources[1].APIResourceLinks)
 		apisFromDB, apiFetchRequests, err := s.processAPIs(ctx, resourceToAggregate.Type, resourceToAggregate.ID, bundlesFromDB, packagesFromDB, doc.APIResources, resourceHashes)
 		if err != nil {
 			return err
@@ -405,6 +408,8 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		log.C(ctx).Infof("Finished processing apis for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing events for %s with id: %q", resource.Type, resource.ID)
+		spew.Dump("Event resource 1 in doc: ", doc.EventResources[0].EventResourceLinks)
+		spew.Dump("Event resource 2 in doc: ", doc.EventResources[1].EventResourceLinks)
 		eventsFromDB, eventFetchRequests, err := s.processEvents(ctx, resourceToAggregate.Type, resourceToAggregate.ID, bundlesFromDB, packagesFromDB, doc.EventResources, resourceHashes)
 		if err != nil {
 			return err
@@ -418,10 +423,12 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		}
 		log.C(ctx).Infof("Finished processing capabilities for %s with id: %q", resource.Type, resource.ID)
 
+		log.C(ctx).Infof("Starting processing integration dependencies for %s with id: %q", resource.Type, resource.ID)
 		integrationDependenciesFromDB, err := s.integrationDependencyProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.IntegrationDependencies, resourceHashes)
 		if err != nil {
 			return err
 		}
+		log.C(ctx).Infof("Finished processing integration dependencies for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing tombstones for %s with id: %q", resource.Type, resource.ID)
 		tombstonesFromDB, err := s.tombstoneProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Tombstones)
