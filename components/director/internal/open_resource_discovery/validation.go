@@ -35,8 +35,10 @@ const (
 	ProductOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(product):([a-zA-Z0-9._\\-]+):()$"
 	// BundleOrdIDRegex represents the valid structure of the ordID of the ConsumptionBundle
 	BundleOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(consumptionBundle):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+	// EntityTypeOrdIDRegex represents the valid structure of the ordID of the EntityType
+	EntityTypeOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(entityType):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// TombstoneOrdIDRegex represents the valid structure of the ordID of the Tombstone
-	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource|capability):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*|)?$"
+	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource|entityType|capability):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*|)?$"
 	// SystemInstanceBaseURLRegex represents the valid structure of the field
 	SystemInstanceBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?(\\/[a-zA-Z0-9-\\._~]+)*$"
 	// ConfigBaseURLRegex represents the valid structure of the field
@@ -88,6 +90,10 @@ const (
 	MinTitleLength = 1
 	// MaxTitleLength represents the maximal accepted length of the Title field
 	MaxTitleLength = 255
+	// MinLevelLength represents the minimal accepted length of the Level field
+	MinLevelLength = 1
+	// MaxLevelLength represents the maximal accepted length of the Level field
+	MaxLevelLength = 255
 	// MaxTitleLengthSAPCorePolicy represents the maximal accepted length of the Title field due to sap core policy
 	MaxTitleLengthSAPCorePolicy = 120
 )
@@ -626,6 +632,54 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 	)
 }
 
+func validateEntityTypeInputWithSuppressedErrors(entityType *model.EntityTypeInput, entityTypesFromDB map[string]*model.EntityType, entityTypeHashes map[string]uint64) error {
+	return validation.ValidateStruct(entityType,
+		validation.Field(&entityType.VersionInput.Value, validation.By(func(value interface{}) error {
+			return validateEntityTypeVersionInput(value, *entityType, entityTypesFromDB, entityTypeHashes)
+		})))
+}
+
+func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *string) error {
+	return validation.ValidateStruct(entityType,
+		validation.Field(&entityType.OrdID, validation.Required, validation.Match(regexp.MustCompile(EntityTypeOrdIDRegex))),
+		validation.Field(&entityType.LocalID, validation.Required, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
+		validation.Field(&entityType.CorrelationIDs, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
+		validation.Field(&entityType.Level, validation.Required, validation.Length(MinLevelLength, MaxLevelLength)),
+		validation.Field(&entityType.Title, validation.Required, validation.NewStringRule(noNewLines, "title should not contain line breaks"),
+			validation.Length(MinTitleLength, MaxTitleLength)),
+		validation.Field(&entityType.ShortDescription, validation.Required, validation.NewStringRule(noNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
+			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinTitleLength, MaxTitleLength))),
+		validation.Field(&entityType.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength),
+			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap) && entityType.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(entityType.ShortDescription)))),
+		validation.Field(&entityType.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
+		validation.Field(&entityType.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
+		validation.Field(&entityType.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
+		validation.Field(&entityType.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
+		validation.Field(&entityType.Links, validation.By(validateORDLinks)),
+		validation.Field(&entityType.PartOfProducts, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
+		})),
+		validation.Field(&entityType.LastUpdate, validation.When(entityType.LastUpdate != nil, validation.By(isValidDate))),
+		validation.Field(&entityType.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom, PolicyLevelNone), validation.When(entityType.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
+		validation.Field(&entityType.CustomPolicyLevel, validation.When(entityType.PolicyLevel != nil && *entityType.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
+		validation.Field(&entityType.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
+		validation.Field(&entityType.SunsetDate, validation.When(entityType.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(entityType.SunsetDate != nil, validation.By(isValidDate))),
+		validation.Field(&entityType.Successors, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EntityTypeOrdIDRegex))
+		})),
+		validation.Field(&entityType.Extensible, validation.By(func(value interface{}) error {
+			return validateExtensibleField(value, docPolicyLevel)
+		})),
+		validation.Field(&entityType.Tags, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
+		validation.Field(&entityType.Labels, validation.By(validateORDLabels)),
+		validation.Field(&entityType.DocumentationLabels, validation.By(validateDocumentationLabels)),
+	)
+}
+
 func validateEventInputWithSuppressedErrors(event *model.EventDefinitionInput, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
 	return validation.ValidateStruct(event,
 		validation.Field(&event.VersionInput.Value, validation.By(func(value interface{}) error {
@@ -1123,6 +1177,26 @@ func validateEventDefinitionVersionInput(value interface{}, event model.EventDef
 	return checkHashEquality(eventFromDB.Version.Value, event.VersionInput.Value, hashDB, hashDoc)
 }
 
+func validateEntityTypeVersionInput(value interface{}, entityType model.EntityTypeInput, entityTypesFromDB map[string]*model.EntityType, entityTypeHashes map[string]uint64) error {
+	if value == nil {
+		return nil
+	}
+
+	if len(entityTypesFromDB) == 0 {
+		return nil
+	}
+
+	eventFromDB, ok := entityTypesFromDB[entityType.OrdID]
+	if !ok || isResourceHashMissing(eventFromDB.ResourceHash) {
+		return nil
+	}
+
+	hashDB := str.PtrStrToStr(eventFromDB.ResourceHash)
+	hashDoc := strconv.FormatUint(entityTypeHashes[entityType.OrdID], 10)
+
+	return checkHashEquality(eventFromDB.Version.Value, entityType.VersionInput.Value, hashDB, hashDoc)
+}
+
 func validateAPIDefinitionVersionInput(value interface{}, api model.APIDefinitionInput, apisFromDB map[string]*model.APIDefinition, apiHashes map[string]uint64) error {
 	if value == nil {
 		return nil
@@ -1189,6 +1263,20 @@ func normalizeEventDefinition(event *model.EventDefinitionInput) (model.EventDef
 	}
 
 	return normalizedEventDefinition, nil
+}
+
+func normalizeEntityType(entityType *model.EntityTypeInput) (model.EntityTypeInput, error) {
+	bytes, err := json.Marshal(entityType)
+	if err != nil {
+		return model.EntityTypeInput{}, errors.Wrapf(err, "error while marshalling entity type with ID %s", entityType.OrdID)
+	}
+
+	var normalizedEntityType model.EntityTypeInput
+	if err := json.Unmarshal(bytes, &normalizedEntityType); err != nil {
+		return model.EntityTypeInput{}, errors.Wrapf(err, "error while unmarshalling entity type with ID %s", entityType.OrdID)
+	}
+
+	return normalizedEntityType, nil
 }
 
 func normalizeCapability(capability *model.CapabilityInput) (model.CapabilityInput, error) {

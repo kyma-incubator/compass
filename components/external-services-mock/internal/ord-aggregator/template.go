@@ -117,6 +117,57 @@ const ordDocument = `{
 		 {{ .additionalProperties }}	 
       }
    ],
+   "entityTypes":[
+      {
+         "ordId":"ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1",
+         "vendor":"sap:vendor:SAP:",
+         "localId":"BusinessPartner",
+         "level":"aggregate",
+         "title":"ENTITYTYPE 1 TITLE",
+         "shortDescription":"short desc",
+         "description":"lorem ipsum dolor set",
+         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "visibility":"public",
+         "version":"1.1.2",
+         "releaseStatus":"active",
+         "links":[
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle1",
+               "url":"https://example.com/2018/04/11/testing/"
+            },
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle2",
+               "url":"/testing/relative"
+            }
+         ],
+         "tags":[
+            "testTag"
+         ],
+         "labels":{
+            "label-key-1":[
+               "label-val"
+            ],
+            "pkg-label":[
+               "label-val"
+            ]
+         },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
+         "policyLevel":"sap:core:v1",
+         "customPolicyLevel":null,
+         "partOfProducts":[
+            "sap:product:id{{ .randomSuffix }}:",
+            "sap:product:SAPCloudPlatform:"
+         ]
+		 {{ .additionalProperties }}	 
+      }
+   ],
    "consumptionBundles":[
       {
          "title":"BUNDLE TITLE",
