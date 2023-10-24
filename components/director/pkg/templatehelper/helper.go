@@ -61,13 +61,7 @@ func copyFromJSON(input json.RawMessage, path string) string {
 }
 
 func updateAndCopy(input json.RawMessage, path string, entries []string) string {
-	jsonstring := string(input)
-	var content string
-	if path == "." || path == "" {
-		content = jsonstring
-	} else {
-		content = gjson.Get(jsonstring, path).String()
-	}
+	content := copyFromJSON(input, path)
 	var err error
 	for _, entry := range entries {
 		key := gjson.Get(entry, "key").String()

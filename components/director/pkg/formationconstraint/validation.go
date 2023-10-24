@@ -201,13 +201,8 @@ func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturn
 			Error: json.RawMessage("\"\""),
 		},
 		FormationAssignmentTemplateInput: &webhook.ApplicationTenantMappingInput{
-			Operation:   model.AssignFormation,
-			FormationID: "",
-			Formation: &model.Formation{
-				ID:                  "",
-				FormationTemplateID: "",
-				Name:                "",
-			},
+			Operation: model.AssignFormation,
+			Formation: &model.Formation{},
 			SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 				ApplicationTemplate: fixApplicationTemplateModel(),
 				Labels:              fixLabels(),
@@ -242,7 +237,6 @@ func fixApplicationModel() *model.Application {
 	return &model.Application{
 		ProviderName:          str.Ptr(""),
 		ApplicationTemplateID: str.Ptr(""),
-		Name:                  "",
 		Description:           str.Ptr(""),
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusConditionInitial,
@@ -255,7 +249,6 @@ func fixApplicationModel() *model.Application {
 		SystemStatus:        str.Ptr(""),
 		DocumentationLabels: json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
-			ID:        "",
 			Ready:     true,
 			Error:     nil,
 			CreatedAt: &time.Time{},
@@ -271,8 +264,6 @@ func fixLabels() map[string]string {
 
 func fixApplicationTemplateModel() *model.ApplicationTemplate {
 	return &model.ApplicationTemplate{
-		ID:                   "",
-		Name:                 "",
 		Description:          str.Ptr(""),
 		ApplicationInputJSON: `{}`,
 	}
