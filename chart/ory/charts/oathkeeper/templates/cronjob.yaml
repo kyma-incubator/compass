@@ -35,7 +35,9 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ---
 # Rotate the Oathkeeper JWKS for security measures
-# The new JWKS is used to sign the new tokens, the old one is kept to validate old tokens
+# The new JWKS is used to sign the new tokens, the old JWKS is kept to validate old tokens
+# This approach was needed as the rotation of JWKS invalidates old tokens, tokens which are kept in the cache of the Oathkeeper
+# https://github.com/ory/oathkeeper/issues/763 & https://github.com/kyma-project/kyma/issues/11550
 apiVersion: batch/v1
 kind: CronJob
 metadata:

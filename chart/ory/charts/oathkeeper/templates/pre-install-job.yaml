@@ -46,6 +46,7 @@ roleRef:
   name: ory-oathkeeper-pre-install-job-role
   apiGroup: rbac.authorization.k8s.io
 ---
+# Create the JWKS Secret needed to run Oathkeeper
 apiVersion: batch/v1
 kind: Job
 metadata:
