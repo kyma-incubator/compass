@@ -100,7 +100,7 @@ func (cl *certSubjectMappingLoader) InitialiseCertSubjectMappings(ctx context.Co
 		}
 		return nil
 	},
-		retry.Attempts(0), // we want the default value here
+		retry.Attempts(0), // we want to try until the call succeeds; if it keeps failing and failing, the pod will be stuck, and we leave the decision when to terminate it to kubernetes
 		retry.Delay(CertSubjectMappingRetryInterval),
 		retry.DelayType(retry.BackOffDelay),
 		retry.OnRetry(func(n uint, err error) {
