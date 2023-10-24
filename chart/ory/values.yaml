@@ -10,8 +10,8 @@ global:
       maester:
         mode: sidecar
     hydra:
+      # Values used by `install-ory.sh`; if switched to true will not configure the DSN with the local database
       persistence:
-        enabled: true
         gcloud:
           enabled: false
   containerRegistry:
@@ -280,20 +280,3 @@ oathkeeper:
         requests:
           cpu: 50m
           memory: 64Mi
-
-# Remote persistance settings
-gcloud-sqlproxy:
-  containerSecurityContext:
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-      - ALL
-    privileged: false
-    runAsGroup: 65532
-    runAsNonRoot: true
-    runAsUser: 65532
-  rbac:
-    create: true
-  extraArgs:
-    log_debug_stdout: true
-    term_timeout: 30s

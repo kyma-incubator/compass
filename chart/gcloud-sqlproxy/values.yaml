@@ -65,7 +65,7 @@ cloudsql:
     port: 5432
 
 rbac:
-  create: false
+  create: true
 
 serviceAccount:
   # Specifies whether a ServiceAccount should be created
@@ -185,9 +185,15 @@ podSecurityContext: {}
 #   fsGroup: 1000
 
 ## Configure Container Security Context
-containerSecurityContext: {}
-#   allowPrivilegeEscalation: false
-
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  privileged: false
+  runAsGroup: 65532
+  runAsNonRoot: true
+  runAsUser: 65532
 
 ## Configure Pod Priority
 priorityClassName: ""
@@ -221,8 +227,9 @@ podDisruptionBudget: |
 
 ## Additional container arguments
 ## Uncomment the term_timeout line for the proxy to wait your chosen time before terminating connections
-extraArgs: {}
-#  admin-port: 8091
+extraArgs:
+  log_debug_stdout: true
+  term_timeout: 30s
 
 ## Additional container flags (single-hypen '-' arguments)
 ## Uncomment the log_debug_stdout line if you don't want connection-related messages to log as errors
