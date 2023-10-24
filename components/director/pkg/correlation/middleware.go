@@ -92,7 +92,7 @@ func HeadersForRequest(request *http.Request) Headers {
 
 	if _, ok := reqHeaders[RequestIDHeaderKey]; !ok {
 		newRequestID := uuid.New().String()
-		logrus.Errorf("Missing x-request-id header. Regenerating the id. New id %s \n", newRequestID)
+		logrus.Errorf("Missing x-request-id header. Regenerating the id. New id %s uri: %s \n", newRequestID, request.RequestURI)
 		reqHeaders[RequestIDHeaderKey] = newRequestID
 		request.Header.Set(RequestIDHeaderKey, newRequestID)
 	}
