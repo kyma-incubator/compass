@@ -219,6 +219,8 @@ func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturn
 				Application: fixApplicationModel(),
 				Labels:      fixLabels(),
 			},
+			// The assignment and reverse assignment are present on top level in the joinPointDetails and should be used from there.
+			// Here they are intentionally set to nil so that if a template that uses them will fail to register.
 			Assignment:        nil,
 			ReverseAssignment: nil,
 		},
