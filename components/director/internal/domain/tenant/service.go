@@ -21,6 +21,8 @@ const (
 	RegionLabelKey = "region"
 	// LicenseTypeLabelKey is the key of the tenant label for licensetype.
 	LicenseTypeLabelKey = "licensetype"
+	// CustomerIDLabelKey is the key of the SAP-managed customer subaccounts
+	CustomerIDLabelKey = "customerId"
 )
 
 // TenantMappingRepository is responsible for the repo-layer tenant operations.
@@ -342,18 +344,24 @@ func (s *labeledService) UpsertSingle(ctx context.Context, tenantInput model.Bus
 func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) error) (string, error) {
 	id := s.uidService.Generate()
 	tenant := *tenantInput.ToBusinessTenantMapping(id)
-	subdomains, regions := tenantLocality([]model.BusinessTenantMappingInput{tenantInput})
-
+	tenantList := []model.BusinessTenantMappingInput{tenantInput}
+	subdomains, regions := tenantLocality(tenantList)
+	customerIDs := tenantCustomerIDs(tenantList)
 	subdomain := ""
 	region := ""
+	customerID := ""
+
 	if s, ok := subdomains[tenant.ExternalTenant]; ok {
 		subdomain = s
 	}
 	if r, ok := regions[tenant.ExternalTenant]; ok {
 		region = r
 	}
+	if id, ok := customerIDs[tenant.ExternalTenant]; ok {
+		customerID = id
+	}
 
-	tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, upsertFunc)
+	tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, customerID, upsertFunc)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
 	}
@@ -364,18 +372,25 @@ func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.Bus
 func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) error) ([]string, error) {
 	tenants := s.MultipleToTenantMapping(tenantInputs)
 	subdomains, regions := tenantLocality(tenantInputs)
+	customerIDs := tenantCustomerIDs(tenantInputs)
+
 	tenantIDs := make([]string, 0, len(tenants))
 
 	for tenantIdx, tenant := range tenants {
 		subdomain := ""
 		region := ""
+		customerID := ""
 		if s, ok := subdomains[tenant.ExternalTenant]; ok {
 			subdomain = s
 		}
 		if r, ok := regions[tenant.ExternalTenant]; ok {
 			region = r
 		}
-		tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, upsertFunc)
+		if id, ok := customerIDs[tenant.ExternalTenant]; ok {
+			customerID = id
+		}
+
+		tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, customerID, upsertFunc)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
 		}
@@ -393,7 +408,7 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 	return tenantIDs, nil
 }
 
-func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region string, action func(context.Context, model.BusinessTenantMapping) error) (string, error) {
+func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region, customerID string, action func(context.Context, model.BusinessTenantMapping) error) (string, error) {
 	if err := action(ctx, tenant); err != nil {
 		return "", err
 	}
@@ -403,25 +418,25 @@ func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.Bus
 		return "", errors.Wrapf(err, "while retrieving the internal tenant ID of tenant with external ID %s", tenant.ExternalTenant)
 	}
 
-	return tenantFromDB.ID, s.upsertLabels(ctx, tenantFromDB.ID, subdomain, region, str.PtrStrToStr(tenant.LicenseType))
+	return tenantFromDB.ID, s.upsertLabels(ctx, tenantFromDB.ID, subdomain, region, str.PtrStrToStr(tenant.LicenseType), customerID)
 }
 
-func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region, licenseType string) error {
-	if len(subdomain) > 0 {
-		if err := s.upsertLabel(ctx, tenantID, SubdomainLabelKey, subdomain); err != nil {
-			return errors.Wrapf(err, "while setting subdomain label for tenant with ID %s", tenantID)
+func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region, licenseType, customerID string) error {
+	labelMappings := map[string]string{
+		SubdomainLabelKey:   subdomain,
+		RegionLabelKey:      region,
+		LicenseTypeLabelKey: licenseType,
+		CustomerIDLabelKey:  customerID,
+	}
+
+	for labelKey, labelValue := range labelMappings {
+		if len(labelValue) > 0 {
+			if err := s.upsertLabel(ctx, tenantID, labelKey, labelValue); err != nil {
+				return errors.Wrapf(err, "while setting %q label for tenant with ID %s", labelKey, tenantID)
+			}
 		}
 	}
-	if len(region) > 0 {
-		if err := s.upsertLabel(ctx, tenantID, RegionLabelKey, region); err != nil {
-			return errors.Wrapf(err, "while setting subdomain label for tenant with ID %s", tenantID)
-		}
-	}
-	if len(licenseType) > 0 {
-		if err := s.upsertLabel(ctx, tenantID, LicenseTypeLabelKey, licenseType); err != nil {
-			return errors.Wrapf(err, "while setting licenseType label for tenant with ID %s", tenantID)
-		}
-	}
+
 	return nil
 }
 
@@ -438,6 +453,17 @@ func tenantLocality(tenants []model.BusinessTenantMappingInput) (map[string]stri
 	}
 
 	return subdomains, regions
+}
+
+func tenantCustomerIDs(tenants []model.BusinessTenantMappingInput) map[string]string {
+	customerIDs := make(map[string]string)
+	for _, t := range tenants {
+		if t.CustomerID != nil {
+			customerIDs[t.ExternalTenant] = str.PtrStrToStr(t.CustomerID)
+		}
+	}
+
+	return customerIDs
 }
 
 // DeleteMany removes all tenants with the provided external tenant ids from the Compass storage.

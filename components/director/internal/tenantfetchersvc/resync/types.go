@@ -11,6 +11,7 @@ type TenantFieldMapping struct {
 	CustomerIDField        string `envconfig:"MAPPING_FIELD_CUSTOMER_ID" default:"customerId"`
 	SubdomainField         string `envconfig:"MAPPING_FIELD_SUBDOMAIN" default:"subdomain"`
 	DetailsField           string `envconfig:"MAPPING_FIELD_DETAILS" default:"details"`
+	LabelsField            string `envconfig:"MAPPING_FIELD_LABELS" default:"labels"`
 
 	DiscriminatorField string `envconfig:"MAPPING_FIELD_DISCRIMINATOR"`
 	DiscriminatorValue string `envconfig:"MAPPING_VALUE_DISCRIMINATOR"`
