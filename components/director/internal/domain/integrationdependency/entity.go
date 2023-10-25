@@ -24,7 +24,6 @@ type Entity struct {
 	SunsetDate                     sql.NullString `db:"sunset_date"`
 	Successors                     sql.NullString `db:"successors"`
 	Mandatory                      bool           `db:"mandatory"`
-	Aspects                        sql.NullString `db:"aspects"`
 	RelatedIntegrationDependencies sql.NullString `db:"related_integration_dependencies"`
 	Links                          sql.NullString `db:"links"`
 	Tags                           sql.NullString `db:"tags"`

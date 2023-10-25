@@ -19,17 +19,28 @@ type IntegrationDependencyService interface {
 	Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) error
 }
 
+// AspectService is responsible for the service-layer Aspect operations.
+//
+//go:generate mockery --name=AspectService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type AspectService interface {
+	Create(ctx context.Context, integrationDependencyId string, in model.AspectInput) (string, error)
+	Delete(ctx context.Context, id string) error
+	DeleteByIntegrationDependencyID(ctx context.Context, integrationDependencyID string) error
+}
+
 // IntegrationDependencyProcessor defines Integration Dependency processor
 type IntegrationDependencyProcessor struct {
 	transact                 persistence.Transactioner
 	integrationDependencySvc IntegrationDependencyService
+	aspectSvc                AspectService
 }
 
 // NewIntegrationDependencyProcessor creates new instance of IntegrationDependencyProcessor
-func NewIntegrationDependencyProcessor(transact persistence.Transactioner, integrationDependencySvc IntegrationDependencyService) *IntegrationDependencyProcessor {
+func NewIntegrationDependencyProcessor(transact persistence.Transactioner, integrationDependencySvc IntegrationDependencyService, aspectSvc AspectService) *IntegrationDependencyProcessor {
 	return &IntegrationDependencyProcessor{
 		transact:                 transact,
 		integrationDependencySvc: integrationDependencySvc,
+		aspectSvc:                aspectSvc,
 	}
 }
 
@@ -104,7 +115,12 @@ func (id *IntegrationDependencyProcessor) resyncIntegrationDependency(ctx contex
 	}
 
 	if !isIntegrationDependencyFound {
-		_, err := id.integrationDependencySvc.Create(ctx, resourceType, resourceID, packageID, integrationDependency, integrationDependencyHash)
+		integrationDependencyId, err := id.integrationDependencySvc.Create(ctx, resourceType, resourceID, packageID, integrationDependency, integrationDependencyHash)
+		if err != nil {
+			return err
+		}
+
+		err = id.createAspects(ctx, integrationDependencyId, integrationDependency.Aspects)
 		if err != nil {
 			return err
 		}
@@ -112,5 +128,29 @@ func (id *IntegrationDependencyProcessor) resyncIntegrationDependency(ctx contex
 		return nil
 	}
 
-	return id.integrationDependencySvc.Update(ctx, resourceType, resourceID, integrationDependenciesFromDB[i].ID, integrationDependency, integrationDependencyHash)
+	err := id.integrationDependencySvc.Update(ctx, resourceType, resourceID, integrationDependenciesFromDB[i].ID, integrationDependency, integrationDependencyHash)
+	if err != nil {
+		return err
+	}
+
+	return id.resyncAspects(ctx, integrationDependenciesFromDB[i].ID, integrationDependency.Aspects)
+}
+
+func (id *IntegrationDependencyProcessor) createAspects(ctx context.Context, integrationDependencyId string, aspects []*model.AspectInput) error {
+	for _, aspect := range aspects {
+		_, err := id.aspectSvc.Create(ctx, integrationDependencyId, *aspect)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (id *IntegrationDependencyProcessor) resyncAspects(ctx context.Context, integrationDependencyId string, aspects []*model.AspectInput) error {
+	if err := id.aspectSvc.DeleteByIntegrationDependencyID(ctx, integrationDependencyId); err != nil {
+		return err
+	}
+
+	return id.createAspects(ctx, integrationDependencyId, aspects)
 }

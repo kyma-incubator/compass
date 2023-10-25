@@ -83,8 +83,6 @@ const (
 	// IntegrationDependencySuccessorsRegex represents the valid structure of the Integration Dependency successors array items
 	IntegrationDependencySuccessorsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 
-	// TODO ^([a-z0-9A-Z]+(?:[.][a-z0-9A-Z]+)*)\.(v0|v[1-9][0-9]*)$
-
 	// AspectApiResourceRegex represents the valid structure of the apiResource items in Integration Dependency Aspect
 	AspectApiResourceRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(apiResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// AspectEventResourceRegex represents the valid structure of the eventResource items in Integration Dependency Aspect

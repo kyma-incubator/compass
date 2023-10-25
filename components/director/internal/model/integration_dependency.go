@@ -25,7 +25,6 @@ type IntegrationDependency struct {
 	SunsetDate                     *string
 	Successors                     json.RawMessage
 	Mandatory                      bool
-	Aspects                        json.RawMessage
 	RelatedIntegrationDependencies json.RawMessage
 	Links                          json.RawMessage
 	Tags                           json.RawMessage
@@ -55,7 +54,7 @@ type IntegrationDependencyInput struct {
 	SunsetDate                     *string         `json:"sunsetDate"`
 	Successors                     json.RawMessage `json:"successors,omitempty"`
 	Mandatory                      bool            `json:"mandatory"`
-	Aspects                        json.RawMessage `json:"aspects"`
+	Aspects                        []*AspectInput  `json:"aspects"`
 	RelatedIntegrationDependencies json.RawMessage `json:"relatedIntegrationDependencies"`
 	Links                          json.RawMessage `json:"links"`
 	Tags                           json.RawMessage `json:"tags"`
@@ -90,7 +89,6 @@ func (i *IntegrationDependencyInput) ToIntegrationDependency(id string, resource
 		SunsetDate:                     i.SunsetDate,
 		Successors:                     i.Successors,
 		Mandatory:                      i.Mandatory,
-		Aspects:                        i.Aspects,
 		RelatedIntegrationDependencies: i.RelatedIntegrationDependencies,
 		Links:                          i.Links,
 		Tags:                           i.Tags,
