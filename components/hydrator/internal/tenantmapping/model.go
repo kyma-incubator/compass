@@ -13,23 +13,8 @@ const (
 	scopesPerConsumerTypePrefix = "scopesPerConsumerType"
 )
 
-// TenantContext missing godoc
-type TenantContext struct {
-	ExternalTenantID string
-	TenantID         string
-}
-
-// NewTenantContext missing godoc
-func NewTenantContext(externalTenantID, tenantID string) TenantContext {
-	return TenantContext{
-		ExternalTenantID: externalTenantID,
-		TenantID:         tenantID,
-	}
-}
-
 // ObjectContext missing godoc
 type ObjectContext struct {
-	//TenantContext
 	KeysExtra
 	Tenant              *graphql.Tenant
 	Scopes              string
