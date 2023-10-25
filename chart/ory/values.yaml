@@ -284,3 +284,13 @@ oathkeeper:
         requests:
           cpu: 50m
           memory: 64Mi
+
+# Remote persistance settings
+gcloud-sqlproxy:
+  rbac:
+    create: true
+  extraArgs:
+    log_debug_stdout: true
+    term_timeout: 30s
+  podAnnotations:
+    sidecar.istio.io/inject: "false"
