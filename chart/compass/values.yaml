@@ -192,7 +192,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3413"
+      version: "PR-3420"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -783,8 +783,8 @@ global:
     auth:
       allowedConnectSrc: "https://*.ondemand.com"
       secretName: "cockpit-auth-secret"
-      idpHost: ""
-      clientID: ""
+      idpHost: "https://as5rzk3dn.accounts400.ondemand.com"
+      clientID: "996db76f-1660-4c53-8a12-8117b343ccca"
       scopes: "openid profile email"
       path: "/oauth2/certs"
   destinationFetcher:
