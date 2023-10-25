@@ -2006,7 +2006,7 @@ func TestService_Processing(t *testing.T) {
 			appSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), appID).Return(fixApplications()[0], nil).Twice()
-				appSvc.On("Update", txtest.CtxWithDBMatcher(), appID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr("ordLocalID")}).Return(nil).Once()
+				appSvc.On("Update", txtest.CtxWithDBMatcher(), appID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr("ordLocalTenantID")}).Return(nil).Once()
 				return appSvc
 			},
 			tenantSvcFn:    successfulTenantSvc,
@@ -2041,7 +2041,7 @@ func TestService_Processing(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
-				doc.DescribedSystemInstance.LocalTenantID = str.Ptr("ordLocalID")
+				doc.DescribedSystemInstance.LocalTenantID = str.Ptr("ordLocalTenantID")
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
@@ -2064,7 +2064,7 @@ func TestService_Processing(t *testing.T) {
 			appSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), appID).Return(fixApplications()[0], nil).Twice()
-				appSvc.On("Update", txtest.CtxWithDBMatcher(), appID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr("ordLocalID")}).Return(testErr).Once()
+				appSvc.On("Update", txtest.CtxWithDBMatcher(), appID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr("ordLocalTenantID")}).Return(testErr).Once()
 				return appSvc
 			},
 			tenantSvcFn:  successfulTenantSvc,
@@ -2100,7 +2100,7 @@ func TestService_Processing(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
-				doc.DescribedSystemInstance.LocalTenantID = str.Ptr("ordLocalID")
+				doc.DescribedSystemInstance.LocalTenantID = str.Ptr("ordLocalTenantID")
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},

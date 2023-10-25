@@ -642,7 +642,7 @@ func validateEntityTypeInputWithSuppressedErrors(entityType *model.EntityTypeInp
 func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *string) error {
 	return validation.ValidateStruct(entityType,
 		validation.Field(&entityType.OrdID, validation.Required, validation.Match(regexp.MustCompile(EntityTypeOrdIDRegex))),
-		validation.Field(&entityType.LocalID, validation.Required, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
+		validation.Field(&entityType.LocalTenantID, validation.Required, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
 		validation.Field(&entityType.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),

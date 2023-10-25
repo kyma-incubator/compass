@@ -336,9 +336,9 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		return errors.Wrap(err, "while sanitizing ORD documents")
 	}
 
-	ordLocalID := s.getUniqueLocalTenantID(documents)
-	if ordLocalID != "" && resource.LocalTenantID == nil {
-		if err := s.appSvc.Update(ctx, resource.ID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr(ordLocalID)}); err != nil {
+	ordLocalTenantID := s.getUniqueLocalTenantID(documents)
+	if ordLocalTenantID != "" && resource.LocalTenantID == nil {
+		if err := s.appSvc.Update(ctx, resource.ID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr(ordLocalTenantID)}); err != nil {
 			return err
 		}
 	}

@@ -20,7 +20,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		assert.Equal(t, fixEntityTypeEntity(entityTypeID), entity)
 	})
 
-	t.Run("Returns nil if package model is nil", func(t *testing.T) {
+	t.Run("Returns nil if entity type model is nil", func(t *testing.T) {
 		conv := entitytype.NewConverter(version.NewConverter())
 
 		entityTypeEntity := conv.ToEntity(nil)

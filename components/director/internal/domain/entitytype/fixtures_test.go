@@ -21,7 +21,7 @@ const (
 	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	externalTenantID = "external-tnt"
 	ordID            = "com.compass.v1"
-	localID          = "BusinessPartner"
+	localTenantID          = "BusinessPartner"
 	correlationIDs   = `["sap.s4:sot:BusinessPartner", "sap.s4:sot:CostCenter", "sap.s4:sot:WorkforcePerson"]`
 	level            = "aggregate"
 	title            = "BusinessPartner"
@@ -118,7 +118,7 @@ func fixEntityTypeEntity(entityTypeID string) *entitytype.Entity {
 		ApplicationID:                repo.NewValidNullableString(appID),
 		ApplicationTemplateVersionID: repo.NewValidNullableString(appTemplateVersionID),
 		OrdID:                        ordID,
-		LocalID:                      localID,
+		LocalTenantID:                localTenantID,
 		CorrelationIDs:               repo.NewValidNullableString(correlationIDs),
 		Level:                        level,
 		Title:                        title,
@@ -158,7 +158,7 @@ func fixEntityTypeModel(entityTypeID string) *model.EntityType {
 		ApplicationID:                &appID,
 		ApplicationTemplateVersionID: &appTemplateVersionID,
 		OrdID:                        ordID,
-		LocalID:                      localID,
+		LocalTenantID:                localTenantID,
 		CorrelationIDs:               json.RawMessage(correlationIDs),
 		Level:                        level,
 		Title:                        title,
@@ -188,7 +188,7 @@ func fixEntityTypeModel(entityTypeID string) *model.EntityType {
 func fixEntityTypeInputModel() model.EntityTypeInput {
 	return model.EntityTypeInput{
 		OrdID:               ordID,
-		LocalID:             localID,
+		LocalTenantID:       localTenantID,
 		CorrelationIDs:      json.RawMessage(correlationIDs),
 		Level:               level,
 		Title:               title,
@@ -214,28 +214,28 @@ func fixEntityTypeInputModel() model.EntityTypeInput {
 }
 
 func fixEntityTypeColumns() []string {
-	return []string{"id", "ready", "created_at", "updated_at", "deleted_at", "error", "app_id", "app_template_version_id", "ord_id", "local_id",
+	return []string{"id", "ready", "created_at", "updated_at", "deleted_at", "error", "app_id", "app_template_version_id", "ord_id", "local_tenant_id",
 		"correlation_ids", "level", "title", "short_description", "description", "system_instance_aware", "changelog_entries", "package_id", "visibility",
 		"links", "part_of_products", "last_update", "policy_level", "custom_policy_level", "release_status", "sunset_date", "successors", "extensible", "tags", "labels",
 		"documentation_labels", "resource_hash", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
 }
 
 func fixEntityTypeRow(id string) []driver.Value {
-	return []driver.Value{id, ready, fixedTimestamp, time.Time{}, time.Time{}, nil, appID, repo.NewValidNullableString(appTemplateVersionID), ordID, localID,
+	return []driver.Value{id, ready, fixedTimestamp, time.Time{}, time.Time{}, nil, appID, repo.NewValidNullableString(appTemplateVersionID), ordID, localTenantID,
 		repo.NewNullableStringFromJSONRawMessage(json.RawMessage(correlationIDs)), level, title, repo.NewNullableString(&shortDescription), repo.NewNullableString(&description), repo.NewNullableBool(&systemInstanceAware), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(changeLogEntries)), packageID, publicVisibility,
 		repo.NewNullableStringFromJSONRawMessage(json.RawMessage(links)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(products)), repo.NewNullableString(&lastUpdate), repo.NewNullableString(&policyLevel), repo.NewNullableString(&customPolicyLevel), releaseStatus, repo.NewNullableString(&sunsetDate), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(successors)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(extensible)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(tags)), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(labels)),
 		repo.NewNullableStringFromJSONRawMessage(json.RawMessage(documentationLabels)), repo.NewNullableString(&resourceHash), repo.NewNullableString(&versionValue), repo.NewNullableBool(&versionDeprecated), repo.NewNullableString(&versionDeprecatedSince), repo.NewNullableBool(&versionForRemoval)}
 }
 
 func fixEntityTypeCreateArgs(id string, entityType *model.EntityType) []driver.Value {
-	return []driver.Value{id, ready, fixedTimestamp, time.Time{}, time.Time{}, nil, appID, repo.NewValidNullableString(*entityType.ApplicationTemplateVersionID), entityType.OrdID, entityType.LocalID,
+	return []driver.Value{id, ready, fixedTimestamp, time.Time{}, time.Time{}, nil, appID, repo.NewValidNullableString(*entityType.ApplicationTemplateVersionID), entityType.OrdID, entityType.LocalTenantID,
 		repo.NewNullableStringFromJSONRawMessage(entityType.CorrelationIDs), entityType.Level, entityType.Title, repo.NewNullableString(entityType.ShortDescription), repo.NewNullableString(entityType.Description), repo.NewNullableBool(entityType.SystemInstanceAware), repo.NewNullableStringFromJSONRawMessage(entityType.ChangeLogEntries), entityType.PackageID, entityType.Visibility,
 		repo.NewNullableStringFromJSONRawMessage(entityType.Links), repo.NewNullableStringFromJSONRawMessage(entityType.PartOfProducts), repo.NewNullableString(entityType.LastUpdate), repo.NewNullableString(entityType.PolicyLevel), repo.NewNullableString(entityType.CustomPolicyLevel), entityType.ReleaseStatus, repo.NewNullableString(entityType.SunsetDate), repo.NewNullableStringFromJSONRawMessage(entityType.Successors), repo.NewNullableStringFromJSONRawMessage(entityType.Extensible), repo.NewNullableStringFromJSONRawMessage(entityType.Tags), repo.NewNullableStringFromJSONRawMessage(entityType.Labels),
 		repo.NewNullableStringFromJSONRawMessage(entityType.DocumentationLabels), repo.NewNullableString(entityType.ResourceHash), repo.NewNullableString(&entityType.Version.Value), repo.NewNullableBool(entityType.Version.Deprecated), repo.NewNullableString(entityType.Version.DeprecatedSince), repo.NewNullableBool(entityType.Version.ForRemoval)}
 }
 
 func fixEntityTypeUpdateArgs(id string, entityType *entitytype.Entity) []driver.Value {
-	return []driver.Value{entityType.Ready, entityType.CreatedAt, entityType.UpdatedAt, entityType.DeletedAt, entityType.Error, entityType.OrdID, entityType.LocalID,
+	return []driver.Value{entityType.Ready, entityType.CreatedAt, entityType.UpdatedAt, entityType.DeletedAt, entityType.Error, entityType.OrdID, entityType.LocalTenantID,
 		entityType.CorrelationIDs, entityType.Level, entityType.Title, entityType.ShortDescription, entityType.Description, entityType.SystemInstanceAware, entityType.ChangeLogEntries, entityType.PackageID, entityType.Visibility,
 		entityType.Links, entityType.PartOfProducts, entityType.LastUpdate, entityType.PolicyLevel, entityType.CustomPolicyLevel, entityType.ReleaseStatus, entityType.SunsetDate, entityType.Successors, entityType.Extensible, entityType.Tags, entityType.Labels,
 		entityType.DocumentationLabels, entityType.ResourceHash, entityType.Version.Value, entityType.Version.Deprecated, entityType.Version.DeprecatedSince, entityType.Version.ForRemoval, entityType.ID}

@@ -19,11 +19,11 @@ const (
 )
 
 var (
-	entityTypeColumns = []string{"id", "ready", "created_at", "updated_at", "deleted_at", "error", "app_id", "app_template_version_id", "ord_id", "local_id",
+	entityTypeColumns = []string{"id", "ready", "created_at", "updated_at", "deleted_at", "error", "app_id", "app_template_version_id", "ord_id", "local_tenant_id",
 		"correlation_ids", "level", "title", "short_description", "description", "system_instance_aware", "changelog_entries", "package_id", "visibility",
 		"links", "part_of_products", "last_update", "policy_level", "custom_policy_level", "release_status", "sunset_date", "successors", "extensible", "tags", "labels",
 		"documentation_labels", "resource_hash", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
-	updatableColumns = []string{"ready", "created_at", "updated_at", "deleted_at", "error", "ord_id", "local_id",
+	updatableColumns = []string{"ready", "created_at", "updated_at", "deleted_at", "error", "ord_id", "local_tenant_id",
 		"correlation_ids", "level", "title", "short_description", "description", "system_instance_aware", "changelog_entries", "package_id", "visibility",
 		"links", "part_of_products", "last_update", "policy_level", "custom_policy_level", "release_status", "sunset_date", "successors", "extensible", "tags", "labels",
 		"documentation_labels", "resource_hash", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}

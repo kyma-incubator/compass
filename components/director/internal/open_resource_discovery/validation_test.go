@@ -22,7 +22,6 @@ const (
 	invalidShortDescriptionLength = 257 // max allowed: 256
 	invalidTitleLength            = 256 // max allowed: 255
 	invalidLocalTenantIDLength    = 256 //max allowed: 255
-	invalidLocalIDLength          = 256 //max allowed: 255
 	maxDescriptionLength          = 5000
 	invalidVersion                = "invalidVersion"
 	invalidPolicyLevel            = "invalidPolicyLevel"
@@ -6129,7 +6128,7 @@ func TestDocuments_ValidateEntityType(t *testing.T) {
 			Name: "Exceeded length of `localID` field for Entity Type",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EntityTypes[0].LocalID = strings.Repeat("a", invalidLocalIDLength)
+				doc.EntityTypes[0].LocalTenantID = strings.Repeat("a", invalidLocalTenantIDLength)
 
 				return []*ord.Document{doc}
 			},
@@ -6137,7 +6136,7 @@ func TestDocuments_ValidateEntityType(t *testing.T) {
 			Name: "Invalid empty `localID` field for Entity Type",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EntityTypes[0].LocalID = ""
+				doc.EntityTypes[0].LocalTenantID = ""
 
 				return []*ord.Document{doc}
 			},

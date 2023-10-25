@@ -15,7 +15,7 @@ const (
 	ID1            = "ID1"
 	ID2            = "ID2"
 	ordID          = "com.compass.v1"
-	localID        = "BusinessPartner"
+	localTenantID  = "BusinessPartner"
 	correlationIDs = `["sap.s4:sot:BusinessPartner", "sap.s4:sot:CostCenter", "sap.s4:sot:WorkforcePerson"]`
 	level          = "aggregate"
 	title          = "BusinessPartner"
@@ -138,7 +138,7 @@ func fixEntityTypeModel(entityTypeID string) *model.EntityType {
 		ApplicationID:                &appID,
 		ApplicationTemplateVersionID: &appTemplateVersionID,
 		OrdID:                        ordID,
-		LocalID:                      localID,
+		LocalTenantID:                localTenantID,
 		CorrelationIDs:               json.RawMessage(correlationIDs),
 		Level:                        level,
 		Title:                        title,
@@ -167,7 +167,7 @@ func fixEntityTypeModel(entityTypeID string) *model.EntityType {
 func fixEntityTypeInputModel() *model.EntityTypeInput {
 	return &model.EntityTypeInput{
 		OrdID:               ordID,
-		LocalID:             localID,
+		LocalTenantID:       localTenantID,
 		CorrelationIDs:      json.RawMessage(correlationIDs),
 		Level:               level,
 		Title:               title,

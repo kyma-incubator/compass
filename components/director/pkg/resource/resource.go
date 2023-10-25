@@ -58,6 +58,8 @@ const (
 	Specification Type = "specification"
 	// EntityType type represents Entity Type resource.
 	EntityType Type = "entityType"
+	// EntityTypeMapping type represents Entity Type Mapping resource.
+	EntityTypeMapping Type = "entityTypeMapping"
 	// APISpecification type represents API specification resource.
 	APISpecification Type = "apiSpecification"
 	// EventSpecification type represents Event specification resource.

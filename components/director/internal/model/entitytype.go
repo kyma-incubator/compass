@@ -15,7 +15,7 @@ type EntityType struct {
 	ApplicationID                *string
 	ApplicationTemplateVersionID *string
 	OrdID                        string
-	LocalID                      string
+	LocalTenantID                string
 	CorrelationIDs               json.RawMessage
 	Level                        string
 	Title                        string
@@ -60,7 +60,7 @@ func (EntityTypePage) IsPageable() {}
 // EntityTypeInput missing godoc
 type EntityTypeInput struct {
 	OrdID               string          `json:"ordId"`
-	LocalID             string          `json:"localId"`
+	LocalTenantID       string          `json:"localTenantId"`
 	CorrelationIDs      json.RawMessage `json:"correlationIds,omitempty"`
 	Level               string          `json:"level"`
 	Title               string          `json:"title"`
@@ -103,7 +103,7 @@ func (i *EntityTypeInput) ToEntityType(id string, resourceType resource.Type, re
 			Ready: true,
 		},
 		OrdID:               i.OrdID,
-		LocalID:             i.LocalID,
+		LocalTenantID:       i.LocalTenantID,
 		CorrelationIDs:      i.CorrelationIDs,
 		Level:               i.Level,
 		Title:               i.Title,
@@ -145,7 +145,7 @@ func (entityType *EntityType) SetFromUpdateInput(update EntityTypeInput, entityT
 		hash = str.Ptr(strconv.FormatUint(entityTypeHash, 10))
 	}
 	entityType.OrdID = update.OrdID
-	entityType.LocalID = update.LocalID
+	entityType.LocalTenantID = update.LocalTenantID
 	entityType.CorrelationIDs = update.CorrelationIDs
 	entityType.Level = update.Level
 	entityType.Title = update.Title

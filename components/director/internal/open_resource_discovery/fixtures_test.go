@@ -61,7 +61,6 @@ const (
 	tombstoneID      = "testTs"
 	localTenantID    = "localTenantID"
 	webhookID        = "webhookID"
-	localID          = "localID"
 
 	api1spec1ID       = "api1spec1ID"
 	api1spec2ID       = "api1spec2ID"
@@ -727,7 +726,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		EntityTypes: []*model.EntityTypeInput{
 			{
 				OrdID:               entityType1ORDID,
-				LocalID:             localID,
+				LocalTenantID:       localTenantID,
 				Level:               "aggregate",
 				Title:               "Business Partner",
 				ShortDescription:    str.Ptr("short desc"),
@@ -752,7 +751,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 			},
 			{
 				OrdID:               entityType2ORDID,
-				LocalID:             localID,
+				LocalTenantID:       localTenantID,
 				Level:               "aggregate",
 				Title:               "Workforce Person",
 				ShortDescription:    str.Ptr("short desc"),
@@ -1654,7 +1653,7 @@ func fixEntityTypes() []*model.EntityType {
 			ApplicationID:                &appID,
 			ApplicationTemplateVersionID: &appTemplateVersionID,
 			OrdID:                        ordID,
-			LocalID:                      localID,
+			LocalTenantID:                localTenantID,
 			CorrelationIDs:               json.RawMessage(correlationIDs),
 			Level:                        level,
 			Title:                        title,

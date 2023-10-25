@@ -105,7 +105,7 @@ FROM specifications spec
               ON spec.api_def_id = t_api_event_capability_def.id OR spec.event_def_id = t_api_event_capability_def.id or spec.capability_def_id = t_api_event_capability_def.id;
 
 
-CREATE TABLE entity_type_mapings
+CREATE TABLE entity_type_mappings
 (
     id                          UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     ready                       BOOLEAN DEFAULT TRUE,
@@ -122,8 +122,8 @@ CREATE TABLE entity_type_mapings
     entity_type_targets         JSONB
 );
 
-CREATE INDEX entity_type_mapings_api_definition_id ON entity_type_mapings (api_definition_id);
-CREATE INDEX entity_type_mapings_event_definition_id ON entity_type_mapings (event_definition_id);
+CREATE INDEX entity_type_mappings_api_definition_id ON entity_type_mappings (api_definition_id);
+CREATE INDEX entity_type_mappings_event_definition_id ON entity_type_mappings (event_definition_id);
 
 DROP VIEW IF EXISTS api_model_selectors_entity_type_mappings;
 
@@ -132,9 +132,8 @@ SELECT id                      AS entity_type_mapping_id,
        entries.type            AS type,
        entries."entitySetName" AS entity_set_name,
        entries."jsonPointer"   AS json_pointer
-FROM entity_type_mapings,
-     jsonb_to_recordset(entity_type_mapings.api_model_selectors) AS entries(type TEXT, "entitySetName" TEXT, "jsonPointer" TEXT);
-
+FROM entity_type_mappings,
+     jsonb_to_recordset(entity_type_mappings.api_model_selectors) AS entries(type TEXT, "entitySetName" TEXT, "jsonPointer" TEXT);
 
 DROP VIEW IF EXISTS entity_type_targets_entity_type_mappings;
 
@@ -142,8 +141,96 @@ CREATE VIEW entity_type_targets_entity_type_mappings AS
 SELECT id                      AS entity_type_mapping_id,
        entries."ordId"         AS ord_id,
        entries."correlationId" AS correlation_id
-FROM entity_type_mapings,
-     jsonb_to_recordset(entity_type_mapings.entity_type_targets) AS entries("ordId" TEXT, "correlationId" TEXT);
+FROM entity_type_mappings,
+     jsonb_to_recordset(entity_type_mappings.entity_type_targets) AS entries("ordId" TEXT, "correlationId" TEXT);
 
+DROP VIEW IF EXISTS tenants_entity_type_mappings;
+
+CREATE OR REPLACE VIEW tenants_entity_type_mappings
+            (tenant_id, formation_id, id, api_definition_id, event_definition_id)
+AS
+SELECT DISTINCT t_apps.tenant_id,
+                t_apps.formation_id,
+                etm.id,
+                etm.api_definition_id,
+                etm.event_definition_id
+FROM entity_type_mappings etm
+         JOIN (SELECT a1.id,
+                      a1.tenant_id AS tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM apps_subaccounts) t_apps, 
+              ON et.app_id = t_apps.id
+// TODO - tenants_entity_type_mappings not finished
+
+
+DROP VIEW IF EXISTS tenants_entity_types;
+
+ALTER TABLE entity_types RENAME COLUMN  local_id to local_tenant_id;
+
+CREATE OR REPLACE VIEW tenants_entity_types
+            (tenant_id, formation_id, id, ord_id, app_id, local_tenant_id, level, title, short_description, description, system_instance_aware, 
+            changelog_entries, package_id, visibility, links, part_of_products, last_update, policy_level,
+            custom_policy_level, release_status, sunset_date, successors, extensible_supported, extensible_description, tags, labels, 
+            documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal)
+AS
+SELECT DISTINCT t_apps.tenant_id,
+                t_apps.formation_id,
+                et.id,
+                et.ord_id,
+                et.app_id,
+                et.local_tenant_id,
+                et.level,
+                et.title,
+                et.short_description,
+                et.description,
+                et.system_instance_aware,
+                et.changelog_entries,
+                et.package_id,
+                et.visibility,
+                et.links, 
+                et.part_of_products,
+                et.last_update,
+                et.policy_level,
+                et.custom_policy_level,
+                et.release_status,
+                et.sunset_date,
+                et.successors,
+                actions.supported,
+                actions.description,
+                et.tags,
+                et.labels,
+                et.documentation_labels,
+                et.resource_hash,
+                et.version_value,
+                et.version_deprecated,
+                et.version_deprecated_since,
+                et.version_for_removal
+FROM entity_types et
+         JOIN (SELECT a1.id,
+                      a1.tenant_id AS tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM apps_subaccounts) t_apps
+              ON et.app_id = t_apps.id,
+              jsonb_to_record(et.extensible) actions(supported text, description text);
 
 COMMIT;
