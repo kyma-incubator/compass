@@ -31,15 +31,17 @@ var (
 	basicDestDetails          = fixBasicDestinationDetails()
 	samlAssertionDestsDetails = fixSAMLAssertionDestinationsDetails()
 
-	basicAuthCreds         = fixBasicAuthCreds(basicDestURL, basicDestUser, basicDestPassword)
-	samlAssertionAuthCreds = fixSAMLAssertionAuthCreds(basicDestURL)
+	basicAuthCreds                   = fixBasicAuthCreds(basicDestURL, basicDestUser, basicDestPassword)
+	samlAssertionAuthCreds           = fixSAMLAssertionAuthCreds(samlAssertionDestURL)
+	samlAssertionAuthCredsWithoutURL = &operators.SAMLAssertionAuthentication{}
 
 	createResp                   = fixHTTPResponse(http.StatusCreated, "")
 	createRespWithConflict       = fixHTTPResponse(http.StatusConflict, "")
 	deleteResp                   = fixHTTPResponse(http.StatusNoContent, "")
 	respWithUnexpectedStatusCode = fixHTTPResponse(http.StatusOK, "test-body")
 
-	correlationIDs = []string{"correlation-id-1", "correlation-id-2"}
+	testCorrelationIDs  = []string{"correlation-id-1", "correlation-id-2"}
+	emptyCorrelationIDs []string
 )
 
 func Test_CreateDesignTimeDestinations(t *testing.T) {
@@ -332,10 +334,20 @@ func Test_CreateBasicDestinations(t *testing.T) {
 	basicDestDetailsWithInvalidAuth := fixBasicDestinationDetails()
 	basicDestDetailsWithInvalidAuth.Authentication = invalidDestAuthType
 
+	basicDestDetailsWithInvalidBaseURL := fixBasicDestinationDetails()
+	basicDestDetailsWithInvalidBaseURL.URL = ":wrong"
+
+	basicDestDetailsWithURLOnlyWithScheme := fixBasicDestinationDetails()
+	basicDestDetailsWithURLOnlyWithScheme.URL = "https://"
+
+	basicDestDetailsWithURLOnlyWithPath := fixBasicDestinationDetails()
+	basicDestDetailsWithURLOnlyWithPath.URL = "/test/path"
+
 	testCases := []struct {
 		name                string
 		destinationDetails  operators.Destination
 		formationAssignment *model.FormationAssignment
+		correlationIDs      []string
 		httpClient          func() *automock.HttpClient
 		labelRepoFn         func() *automock.LabelRepository
 		tenantRepoFn        func() *automock.TenantRepository
@@ -345,6 +357,28 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			name:                "Success",
 			destinationDetails:  basicDestDetails,
 			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createResp, nil).Once()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+		},
+		{
+			name:                "Success with empty correlation IDs",
+			destinationDetails:  basicDestDetails,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      emptyCorrelationIDs,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
 				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createResp, nil).Once()
@@ -365,6 +399,7 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			name:                "Error while getting region and get external tenant fail",
 			destinationDetails:  basicDestDetails,
 			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
 			tenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(nil, testErr).Once()
@@ -376,6 +411,7 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			name:                "Error while building url and region is empty",
 			destinationDetails:  basicDestDetails,
 			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(lblWithEmptyValue, nil).Once()
@@ -389,9 +425,63 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			expectedErrMessage: "The provided region and/or subaccount for the URL couldn't be empty",
 		},
 		{
+			name:                "Error while calculating url and parse url fail",
+			destinationDetails:  basicDestDetailsWithInvalidBaseURL,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: "missing protocol scheme",
+		},
+		{
+			name:                "Error while calculating url when it has only scheme",
+			destinationDetails:  basicDestDetailsWithURLOnlyWithScheme,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: "The provided URL in the destination details has only scheme",
+		},
+		{
+			name:                "Success while calculating url and it has only path",
+			destinationDetails:  basicDestDetailsWithURLOnlyWithPath,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createResp, nil).Once()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+		},
+		{
 			name:                "Error when preparing basic request body fail",
 			destinationDetails:  basicDestDetailsWithInvalidAuth,
 			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
@@ -408,6 +498,7 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			name:                "Error when executing remote basic destination request fail",
 			destinationDetails:  basicDestDetails,
 			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
 				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(nil, testErr).Once()
@@ -429,6 +520,7 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			name:                "Success while executing remote basic destination request and the status code is conflict",
 			destinationDetails:  basicDestDetails,
 			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
 				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createRespWithConflict, nil).Once()
@@ -452,6 +544,7 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			name:                "Error while executing remote basic destination request and maximum depth is reached",
 			destinationDetails:  basicDestDetails,
 			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
 				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createRespWithConflict, nil).Times(3)
@@ -475,6 +568,7 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			name:                "Error while executing remote basic destination request in case of conflict and delete destination fail",
 			destinationDetails:  basicDestDetails,
 			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
 				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createRespWithConflict, nil).Once()
@@ -516,7 +610,7 @@ func Test_CreateBasicDestinations(t *testing.T) {
 
 			svc := destinationcreator.NewService(httpClient, destConfig, nil, nil, nil, labelRepo, tenantRepo)
 
-			err := svc.CreateBasicCredentialDestinations(emptyCtx, testCase.destinationDetails, basicAuthCreds, testCase.formationAssignment, correlationIDs, 0, false)
+			err := svc.CreateBasicCredentialDestinations(emptyCtx, testCase.destinationDetails, basicAuthCreds, testCase.formationAssignment, testCase.correlationIDs, 0, false)
 			if testCase.expectedErrMessage != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.expectedErrMessage)
@@ -536,10 +630,16 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 	samlAssertionDestDetailsWithInvalidAuth := fixSAMLAssertionDestinationDetails()
 	samlAssertionDestDetailsWithInvalidAuth.Authentication = invalidDestAuthType
 
+	samlAssertionDestDetailsOnlyWithPath := fixSAMLAssertionDestinationDetails()
+	samlAssertionDestDetailsOnlyWithPath.URL = "/test/path"
+
+	samlAssertionDestDetailsWithoutURL := fixSAMLAssertionDestinationDetails()
+	samlAssertionDestDetailsWithoutURL.URL = ""
+
 	testCases := []struct {
 		name                   string
 		destinationDetails     operators.Destination
-		samlAssertionAuthCreds operators.SAMLAssertionAuthentication
+		samlAssertionAuthCreds *operators.SAMLAssertionAuthentication
 		formationAssignment    *model.FormationAssignment
 		httpClient             func() *automock.HttpClient
 		appRepoFn              func() *automock.ApplicationRepository
@@ -635,6 +735,55 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 				return tenantRepo
 			},
 			expectedErrMessage: fmt.Sprintf("while getting application with ID: %q: %s", testSourceID, testErr.Error()),
+		},
+		{
+			name:                   "Error when calculating url using base URL of the system and it's empty",
+			destinationDetails:     samlAssertionDestDetailsOnlyWithPath,
+			samlAssertionAuthCreds: samlAssertionAuthCredsWithoutURL,
+			formationAssignment:    faWithSourceAppAndTargetApp,
+			appRepoFn: func() *automock.ApplicationRepository {
+				appRepo := &automock.ApplicationRepository{}
+				appRepo.On("GetByID", emptyCtx, testTenantID, testTargetID).Return(testAppWithEmptyBaseURL, nil).Once()
+				return appRepo
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: fmt.Sprintf("The base URL of application with ID: %s cannot be empty", appID),
+		},
+		{
+			name:                   "Success when calculating url using base URL of the system with destination details containing only path",
+			destinationDetails:     samlAssertionDestDetailsOnlyWithPath,
+			samlAssertionAuthCreds: samlAssertionAuthCredsWithoutURL,
+			formationAssignment:    faWithSourceAppAndTargetApp,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createResp, nil).Once()
+				return client
+			},
+			appRepoFn: func() *automock.ApplicationRepository {
+				appRepo := &automock.ApplicationRepository{}
+				appRepo.On("GetByID", emptyCtx, testTenantID, testTargetID).Return(testApp, nil).Once()
+				appRepo.On("GetByID", emptyCtx, testTenantID, testSourceID).Return(testApp, nil).Once()
+				return appRepo
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
 		},
 		{
 			name:                "Error when validating saml assertion request body",
@@ -771,6 +920,11 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
+			samlAuthCreds := samlAssertionAuthCreds
+			if testCase.samlAssertionAuthCreds != nil {
+				samlAuthCreds = testCase.samlAssertionAuthCreds
+			}
+
 			httpClient := fixUnusedHTTPClient()
 			if testCase.httpClient != nil {
 				httpClient = testCase.httpClient()
@@ -794,7 +948,7 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 
 			svc := destinationcreator.NewService(httpClient, destConfig, appRepo, nil, nil, labelRepo, tenantRepo)
 
-			err := svc.CreateSAMLAssertionDestination(emptyCtx, testCase.destinationDetails, samlAssertionAuthCreds, testCase.formationAssignment, correlationIDs, 0, false)
+			err := svc.CreateSAMLAssertionDestination(emptyCtx, testCase.destinationDetails, samlAuthCreds, testCase.formationAssignment, testCorrelationIDs, 0, false)
 			if testCase.expectedErrMessage != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.expectedErrMessage)
@@ -1016,7 +1170,7 @@ func Test_CreateClientCertificateDestination(t *testing.T) {
 
 			svc := destinationcreator.NewService(httpClient, destConfig, nil, nil, nil, labelRepo, tenantRepo)
 
-			err := svc.CreateClientCertificateDestination(emptyCtx, testCase.destinationDetails, clientCertAuthTypeCreds, testCase.formationAssignment, correlationIDs, 0, false)
+			err := svc.CreateClientCertificateDestination(emptyCtx, testCase.destinationDetails, clientCertAuthTypeCreds, testCase.formationAssignment, testCorrelationIDs, 0, false)
 			if testCase.expectedErrMessage != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.expectedErrMessage)
@@ -2207,7 +2361,7 @@ func Test_PrepareBasicRequestBody(t *testing.T) {
 
 			svc := destinationcreator.NewService(nil, destConfig, appRepo, nil, nil, nil, nil)
 
-			basicReqBody, err := svc.PrepareBasicRequestBody(emptyCtx, testCase.destinationDetails, testCase.basicAuthCreds, testCase.formationAssignment, correlationIDs)
+			basicReqBody, err := svc.PrepareBasicRequestBody(emptyCtx, testCase.destinationDetails, testCase.basicAuthCreds, testCase.formationAssignment, testCorrelationIDs)
 			if testCase.expectedErrMessage != "" {
 				require.Empty(t, basicReqBody)
 				require.Error(t, err)

@@ -2,9 +2,10 @@ package director
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	authConv "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
