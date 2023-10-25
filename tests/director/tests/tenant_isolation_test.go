@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"github.com/davecgh/go-spew/spew"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/director/tests/example"
@@ -221,7 +220,6 @@ func TestSubstituteCaller(t *testing.T) {
 	require.NotEmpty(t, actualApp.ID)
 
 	anotherTenantsApps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetIDByName(t, tenant.TestTenantSubstitutionAccount))
-	spew.Dump(anotherTenantsApps)
 	assert.Empty(t, anotherTenantsApps.Data)
 
 	anotherTenantsApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetIDByName(t, tenant.TestTenantSubstitutionSubaccount))
