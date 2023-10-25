@@ -21,7 +21,6 @@ const (
 	integrationDependencyID2   = "integration-dependency-id2"
 	integrationDependencyORDID = "ord:integrationDependency"
 	packageORDID               = "ns:package:PACKAGE_ID:v1"
-	packageID                  = "package-id"
 )
 
 func TestIntegrationDependencyProcessor_Process(t *testing.T) {

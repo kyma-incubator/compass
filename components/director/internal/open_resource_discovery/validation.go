@@ -712,6 +712,7 @@ func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *
 		validation.Field(&entityType.CustomPolicyLevel, validation.When(entityType.PolicyLevel != nil && *entityType.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 		validation.Field(&entityType.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&entityType.SunsetDate, validation.When(entityType.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(entityType.SunsetDate != nil, validation.By(isValidDate))),
+		validation.Field(&entityType.DeprecationDate, validation.NilOrNotEmpty, validation.When(entityType.DeprecationDate != nil, validation.By(isValidDate))),
 		validation.Field(&entityType.Successors, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EntityTypeOrdIDRegex))
 		})),

@@ -21,50 +21,51 @@ import (
 )
 
 const (
-	absoluteDocURL         = "http://config.com/open-resource-discovery/v1/documents/example1"
-	ordDocURI              = "/open-resource-discovery/v1/documents/example1"
-	proxyURL               = "http://proxy.com:8080"
-	baseURL                = "http://test.com:8080"
-	baseURL2               = "http://second.com"
-	customWebhookConfigURL = "http://custom.com/config/endpoint"
-	packageORDID           = "ns:package:PACKAGE_ID:v1"
-	productORDID           = "sap:product:id:"
-	globalProductORDID     = "sap:product:SAPCloudPlatform:"
-	product2ORDID          = "ns:product:id2:"
-	bundleORDID            = "ns:consumptionBundle:BUNDLE_ID:v1"
-	secondBundleORDID      = "ns:consumptionBundle:BUNDLE_ID:v2"
-	vendorORDID            = "sap:vendor:SAP:"
-	vendor2ORDID           = "partner:vendor:SAP:"
-	api1ORDID              = "ns:apiResource:API_ID:v2"
-	api2ORDID              = "ns:apiResource:API_ID2:v1"
-	event1ORDID            = "ns:eventResource:EVENT_ID:v1"
-	event2ORDID            = "ns2:eventResource:EVENT_ID:v1"
-	entityType1ORDID       = "ns:entityType:ENTITYTYPE_ID:v1"
-	entityType2ORDID       = "ns2:entityType:ENTITYTYPE_ID:v1"
-	capability1ORDID       = "sap.foo.bar:capability:fieldExtensibility:v1"
-	capability2ORDID       = "sap2.foo.bar:capability:fieldExtensibility:v1"
+	absoluteDocURL              = "http://config.com/open-resource-discovery/v1/documents/example1"
+	ordDocURI                   = "/open-resource-discovery/v1/documents/example1"
+	proxyURL                    = "http://proxy.com:8080"
+	baseURL                     = "http://test.com:8080"
+	baseURL2                    = "http://second.com"
+	customWebhookConfigURL      = "http://custom.com/config/endpoint"
+	packageORDID                = "ns:package:PACKAGE_ID:v1"
+	productORDID                = "sap:product:id:"
+	globalProductORDID          = "sap:product:SAPCloudPlatform:"
+	product2ORDID               = "ns:product:id2:"
+	bundleORDID                 = "ns:consumptionBundle:BUNDLE_ID:v1"
+	secondBundleORDID           = "ns:consumptionBundle:BUNDLE_ID:v2"
+	vendorORDID                 = "sap:vendor:SAP:"
+	vendor2ORDID                = "partner:vendor:SAP:"
+	api1ORDID                   = "ns:apiResource:API_ID:v2"
+	api2ORDID                   = "ns:apiResource:API_ID2:v1"
+	event1ORDID                 = "ns:eventResource:EVENT_ID:v1"
+	event2ORDID                 = "ns2:eventResource:EVENT_ID:v1"
+	entityType1ORDID            = "ns:entityType:ENTITYTYPE_ID:v1"
+	entityType2ORDID            = "ns2:entityType:ENTITYTYPE_ID:v1"
+	capability1ORDID            = "sap.foo.bar:capability:fieldExtensibility:v1"
+	capability2ORDID            = "sap2.foo.bar:capability:fieldExtensibility:v1"
 	integrationDependency1ORDID = "sap.foo.bar:integrationDependency:CustomerOrder:v1"
 	integrationDependency2ORDID = "sap2.foo.bar:integrationDependency:CustomerOrder:v1"
-	whID             = "testWh"
-	tenantID         = "testTenant"
-	externalTenantID = "externalTestTenant"
-	packageID        = "testPkg"
-	vendorID         = "testVendor"
-	vendorID2        = "testVendor2"
-	productID        = "testProduct"
-	bundleID         = "testBndl"
-	api1ID           = "testAPI1"
-	api2ID           = "testAPI2"
-	event1ID         = "testEvent1"
-	event2ID         = "testEvent2"
-	capability1ID    = "testCapability1"
-	capability2ID    = "testCapability2"
+
+	whID                     = "testWh"
+	tenantID                 = "testTenant"
+	externalTenantID         = "externalTestTenant"
+	packageID                = "testPkg"
+	vendorID                 = "testVendor"
+	vendorID2                = "testVendor2"
+	productID                = "testProduct"
+	bundleID                 = "testBndl"
+	api1ID                   = "testAPI1"
+	api2ID                   = "testAPI2"
+	event1ID                 = "testEvent1"
+	event2ID                 = "testEvent2"
+	capability1ID            = "testCapability1"
+	capability2ID            = "testCapability2"
 	integrationDependency1ID = "testIntegrationDependency1"
 	integrationDependency2ID = "testIntegrationDependency2"
-	tombstoneID      = "testTs"
-	localTenantID    = "localTenantID"
-	webhookID        = "webhookID"
-	localID          = "localID"
+	tombstoneID              = "testTs"
+	localTenantID            = "localTenantID"
+	webhookID                = "webhookID"
+	localID                  = "localID"
 
 	api1spec1ID       = "api1spec1ID"
 	api1spec2ID       = "api1spec2ID"
@@ -268,16 +269,6 @@ var (
 	bndlsFromDB = map[string]*model.Bundle{
 		bundleORDID: fixBundlesWithHash()[0],
 	}
-
-	hashAPI1, _                   = ord.HashObject(fixORDDocument().APIResources[0])
-	hashAPI2, _                   = ord.HashObject(fixORDDocument().APIResources[1])
-	hashEvent1, _                 = ord.HashObject(fixORDDocument().EventResources[0])
-	hashEvent2, _                 = ord.HashObject(fixORDDocument().EventResources[1])
-	hashCapability1, _            = ord.HashObject(fixORDDocument().Capabilities[0])
-	hashCapability2, _            = ord.HashObject(fixORDDocument().Capabilities[1])
-	hashIntegrationDependency1, _ = ord.HashObject(fixORDDocument().IntegrationDependencies[0])
-	hashIntegrationDependency2, _ = ord.HashObject(fixORDDocument().IntegrationDependencies[1])
-	hashPackage, _                = ord.HashObject(fixORDDocument().Packages[0])
 
 	resourceHashes = fixResourceHashes()
 
@@ -773,6 +764,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				PolicyLevel:         str.Ptr(policyLevel),
 				ReleaseStatus:       "active",
 				SunsetDate:          nil,
+				DeprecationDate:     nil,
 				Successors:          nil,
 				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
 				Tags:                json.RawMessage(`["eventTestTag"]`),
@@ -798,6 +790,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				PolicyLevel:         str.Ptr(policyLevel),
 				ReleaseStatus:       "active",
 				SunsetDate:          nil,
+				DeprecationDate:     nil,
 				Successors:          nil,
 				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
 				Tags:                json.RawMessage(`["eventTestTag"]`),
@@ -1732,6 +1725,7 @@ func fixIntegrationDependencies() []*model.IntegrationDependency {
 			ShortDescription: str.Ptr("Integration Dependency short description"),
 			Tags:             json.RawMessage(`["testTag","integrationDependencyTestTag"]`),
 			Links:            json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			Mandatory:        true,
 			ReleaseStatus:    str.Ptr("active"),
 			Labels:           json.RawMessage(mergedLabels),
 			Visibility:       "public",
@@ -1748,13 +1742,14 @@ func fixIntegrationDependencies() []*model.IntegrationDependency {
 		{
 			ApplicationID:    &appID,
 			PackageID:        str.Ptr(packageORDID),
-			Name:             "Integration Dependency 2",
+			Name:             "Integration Dependency Title 2",
 			Description:      str.Ptr("Integration Dependency Description"),
 			OrdID:            str.Ptr(integrationDependency2ORDID),
 			LocalTenantID:    nil,
 			ShortDescription: str.Ptr("Integration Dependency short description"),
 			Tags:             json.RawMessage(`["testTag","integrationDependencyTestTag"]`),
 			Links:            json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			Mandatory:        false,
 			ReleaseStatus:    str.Ptr("active"),
 			Labels:           json.RawMessage(mergedLabels),
 			Visibility:       "public",
