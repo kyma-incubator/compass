@@ -78,7 +78,7 @@ type Document struct {
 	Products                []*model.ProductInput               `json:"products"`
 	APIResources            []*model.APIDefinitionInput         `json:"apiResources"`
 	EventResources          []*model.EventDefinitionInput       `json:"eventResources"`
-	EntityTypes        		[]*model.EntityTypeInput      `json:"entityTypes"`
+	EntityTypes             []*model.EntityTypeInput            `json:"entityTypes"`
 	Tombstones              []*model.TombstoneInput             `json:"tombstones"`
 	Vendors                 []*model.VendorInput                `json:"vendors"`
 	Capabilities            []*model.CapabilityInput            `json:"capabilities"`
@@ -120,7 +120,7 @@ type Documents []*Document
 type ResourcesFromDB struct {
 	APIs                    map[string]*model.APIDefinition
 	Events                  map[string]*model.EventDefinition
-	EntityTypes  			map[string]*model.EntityType
+	EntityTypes             map[string]*model.EntityType
 	Packages                map[string]*model.Package
 	Bundles                 map[string]*model.Bundle
 	Capabilities            map[string]*model.Capability
@@ -135,7 +135,7 @@ type ResourceIDs struct {
 	ProductIDs               map[string]bool
 	APIIDs                   map[string]bool
 	EventIDs                 map[string]bool
-	EntityTypeIDs       	 map[string]bool
+	EntityTypeIDs            map[string]bool
 	VendorIDs                map[string]bool
 	CapabilityIDs            map[string]bool
 	IntegrationDependencyIDs map[string]bool
@@ -182,7 +182,7 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 		ProductIDs:               make(map[string]bool),
 		APIIDs:                   make(map[string]bool),
 		EventIDs:                 make(map[string]bool),
-		EntityTypeIDs:       	  make(map[string]bool),
+		EntityTypeIDs:            make(map[string]bool),
 		VendorIDs:                make(map[string]bool),
 		CapabilityIDs:            make(map[string]bool),
 		IntegrationDependencyIDs: make(map[string]bool),
@@ -336,7 +336,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		ProductIDs:               make(map[string]bool),
 		APIIDs:                   make(map[string]bool),
 		EventIDs:                 make(map[string]bool),
-		EntityTypeIDs:       	  make(map[string]bool),
+		EntityTypeIDs:            make(map[string]bool),
 		VendorIDs:                make(map[string]bool),
 		CapabilityIDs:            make(map[string]bool),
 		IntegrationDependencyIDs: make(map[string]bool),
@@ -523,7 +523,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		ProductIDs:               resourceIDs.ProductIDs,
 		APIIDs:                   resourceIDs.APIIDs,
 		EventIDs:                 resourceIDs.EventIDs,
-		EntityTypeIDs:       	  resourceIDs.EntityTypeIDs,
+		EntityTypeIDs:            resourceIDs.EntityTypeIDs,
 		VendorIDs:                resourceIDs.VendorIDs,
 		BundleIDs:                resourceIDs.BundleIDs,
 		PackagePolicyLevels:      resourceIDs.PackagePolicyLevels,

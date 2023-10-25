@@ -3,6 +3,7 @@ package ord
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/common"
 	"regexp"
 	"strconv"
 	"strings"
@@ -83,13 +84,6 @@ const (
 	// IntegrationDependencySuccessorsRegex represents the valid structure of the Integration Dependency successors array items
 	IntegrationDependencySuccessorsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 
-	// AspectApiResourceRegex represents the valid structure of the apiResource items in Integration Dependency Aspect
-	AspectApiResourceRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(apiResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
-	// AspectEventResourceRegex represents the valid structure of the eventResource items in Integration Dependency Aspect
-	AspectEventResourceRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
-	// EventResourceEventTypeRegex represents the valid structure of the event type items in event resource subset
-	EventResourceEventTypeRegex = "^([a-z0-9A-Z]+(?:[.][a-z0-9A-Z]+)*)\\.(v0|v[1-9][0-9]*)$"
-
 	// MinDescriptionLength represents the minimal accepted length of the Description field
 	MinDescriptionLength = 1
 	// MaxDescriptionLength represents the maximal accepted length of the Description field
@@ -124,6 +118,9 @@ const (
 	MinResourceLinkCustomTypeLength = 1
 	// MaxResourceLinkCustomTypeLength represents the maximal accepted length of the custom type field in a resource link
 	MaxResourceLinkCustomTypeLength = 255
+
+	// IntegrationDependencyMsg represents the resource name for Integration Dependency used in error message
+	IntegrationDependencyMsg string = "integration dependency"
 )
 
 const (
@@ -290,11 +287,11 @@ var (
 )
 
 var shortDescriptionRules = []validation.Rule{
-	validation.Required, validation.RuneLength(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+	validation.Required, validation.RuneLength(1, 256), validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"),
 }
 
 var optionalShortDescriptionRules = []validation.Rule{
-	validation.NilOrNotEmpty, validation.RuneLength(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+	validation.NilOrNotEmpty, validation.RuneLength(1, 256), validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"),
 }
 
 // ORDDocumentValidationError contains the validation errors when aggregating ord documents
@@ -340,10 +337,10 @@ func validateDocumentInput(doc *Document) error {
 func validatePackageInput(pkg *model.PackageInput, docPolicyLevel *string) error {
 	return validation.ValidateStruct(pkg,
 		validation.Field(&pkg.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&pkg.Title, validation.Required, validation.NewStringRule(noNewLines, "title should not contain line breaks"),
+		validation.Field(&pkg.Title, validation.Required, validation.NewStringRule(common.NoNewLines, "title should not contain line breaks"),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, pkg.PolicyLevel, PolicyLevelSap), validation.Length(MinTitleLength, MaxTitleLengthSAPCorePolicy), validation.By(validateTitleDoesNotContainsTerms)),
 			validation.Length(MinTitleLength, MaxTitleLength)),
-		validation.Field(&pkg.ShortDescription, validation.Required, validation.NewStringRule(noNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
+		validation.Field(&pkg.ShortDescription, validation.Required, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, pkg.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinTitleLength, MaxTitleLength), validation.By(validateShortDescriptionDoesNotStartWithResourceName(pkg.Title)))),
 		validation.Field(&pkg.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, pkg.PolicyLevel, PolicyLevelSap) && pkg.ShortDescription != "", validation.By(validateDescriptionDoesNotContainShortDescription(&pkg.ShortDescription)))),
@@ -477,7 +474,7 @@ func validateBundleInput(bndl *model.BundleCreateInput, credentialExchangeStrate
 		validation.Field(&bndl.Links, validation.By(validateORDLinks)),
 		validation.Field(&bndl.Labels, validation.By(validateORDLabels)),
 		validation.Field(&bndl.CredentialExchangeStrategies, validation.By(func(value interface{}) error {
-			return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
+			return common.ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
 				"type": {
 					validation.Required,
 					validation.In(custom),
@@ -508,10 +505,10 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 	return validation.ValidateStruct(api,
 		validation.Field(&api.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(APIOrdIDRegex))),
 		validation.Field(&api.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
-		validation.Field(&api.Name, validation.Required, validation.NewStringRule(noNewLines, "title should not contain line breaks"),
+		validation.Field(&api.Name, validation.Required, validation.NewStringRule(common.NoNewLines, "title should not contain line breaks"),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, api.PolicyLevel, PolicyLevelSap), validation.Length(MinTitleLength, MaxTitleLengthSAPCorePolicy), validation.By(validateTitleDoesNotContainsTerms)),
 			validation.Length(MinTitleLength, MaxTitleLength)),
-		validation.Field(&api.ShortDescription, validation.Required, validation.NewStringRule(noNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
+		validation.Field(&api.ShortDescription, validation.Required, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, api.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinTitleLength, MaxTitleLength), validation.By(validateShortDescriptionDoesNotStartWithResourceName(api.Name)))),
 		validation.Field(&api.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, api.PolicyLevel, PolicyLevelSap) && api.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(api.ShortDescription)))),
@@ -602,10 +599,10 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 	return validation.ValidateStruct(event,
 		validation.Field(&event.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(EventOrdIDRegex))),
 		validation.Field(&event.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
-		validation.Field(&event.Name, validation.Required, validation.NewStringRule(noNewLines, "title should not contain line breaks"),
+		validation.Field(&event.Name, validation.Required, validation.NewStringRule(common.NoNewLines, "title should not contain line breaks"),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, event.PolicyLevel, PolicyLevelSap), validation.Length(MinTitleLength, MaxTitleLengthSAPCorePolicy), validation.By(validateTitleDoesNotContainsTerms)),
 			validation.Length(MinTitleLength, MaxTitleLength)),
-		validation.Field(&event.ShortDescription, validation.Required, validation.NewStringRule(noNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
+		validation.Field(&event.ShortDescription, validation.Required, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, event.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinTitleLength, MaxTitleLength), validation.By(validateShortDescriptionDoesNotStartWithResourceName(event.Name)))),
 		validation.Field(&event.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, event.PolicyLevel, PolicyLevelSap) && event.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(event.ShortDescription)))),
@@ -691,9 +688,9 @@ func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
 		validation.Field(&entityType.Level, validation.Required, validation.Length(MinLevelLength, MaxLevelLength)),
-		validation.Field(&entityType.Title, validation.Required, validation.NewStringRule(noNewLines, "title should not contain line breaks"),
+		validation.Field(&entityType.Title, validation.Required, validation.NewStringRule(common.NoNewLines, "title should not contain line breaks"),
 			validation.Length(MinTitleLength, MaxTitleLength)),
-		validation.Field(&entityType.ShortDescription, validation.Required, validation.NewStringRule(noNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
+		validation.Field(&entityType.ShortDescription, validation.Required, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinTitleLength, MaxTitleLength))),
 		validation.Field(&entityType.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap) && entityType.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(entityType.ShortDescription)))),
@@ -776,10 +773,10 @@ func validateIntegrationDependencyInput(integrationDependency *model.Integration
 		validation.Field(&integrationDependency.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
-		validation.Field(&integrationDependency.Name, validation.Required, validation.NewStringRule(noNewLines, "title should not contain line breaks"),
+		validation.Field(&integrationDependency.Name, validation.Required, validation.NewStringRule(common.NoNewLines, "title should not contain line breaks"),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, nil, PolicyLevelSap), validation.Length(MinTitleLength, MaxTitleLengthSAPCorePolicy), validation.By(validateTitleDoesNotContainsTerms)),
 			validation.Length(MinTitleLength, MaxTitleLength)),
-		validation.Field(&integrationDependency.ShortDescription, validation.NewStringRule(noNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
+		validation.Field(&integrationDependency.ShortDescription, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, nil, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinTitleLength, MaxTitleLength), validation.By(validateShortDescriptionDoesNotStartWithResourceName(integrationDependency.Name)))),
 		validation.Field(&integrationDependency.Description, validation.Length(MinDescriptionLength, MaxDescriptionLength),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, nil, PolicyLevelSap) && integrationDependency.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(integrationDependency.ShortDescription)))),
@@ -791,8 +788,10 @@ func validateIntegrationDependencyInput(integrationDependency *model.Integration
 		validation.Field(&integrationDependency.Successors, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(IntegrationDependencySuccessorsRegex))
 		})),
-		validation.Field(&integrationDependency.Mandatory, validation.By(validateIntegrationDependencyMandatory)),
-		validation.Field(&integrationDependency.Aspects, validation.By(validateIntegrationDependencyAspects)),
+		validation.Field(&integrationDependency.Mandatory, validation.By(func(value interface{}) error {
+			return common.ValidateFieldMandatory(value, IntegrationDependencyMsg)
+		})),
+		validation.Field(&integrationDependency.Aspects),
 		validation.Field(&integrationDependency.RelatedIntegrationDependencies, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(IntegrationDependencyOrdIDRegex))
 		})),
@@ -995,7 +994,7 @@ func validateLinks(arr interface{}) error {
 }
 
 func validateORDChangeLogEntries(value interface{}) error {
-	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
+	return common.ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"version": {
 			validation.Required,
 			validation.Match(regexp.MustCompile(SemVerRegex)),
@@ -1033,7 +1032,7 @@ func validateORDLinks(value interface{}) error {
 			validation.Length(MinDescriptionLength, MaxDescriptionLength),
 		},
 	}
-	if err := validateJSONArrayOfObjects(value, elementFieldRules); err != nil {
+	if err := common.ValidateJSONArrayOfObjects(value, elementFieldRules); err != nil {
 		return err
 	}
 	if err := validateLinks(value); err != nil {
@@ -1043,7 +1042,7 @@ func validateORDLinks(value interface{}) error {
 }
 
 func validatePackageLinks(value interface{}) error {
-	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
+	return common.ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"type": {
 			validation.Required,
 			validation.In("terms-of-service", "license", "client-registration", "payment", "sandbox", "service-level-agreement", "support", "custom"),
@@ -1065,7 +1064,7 @@ func validatePackageLinks(value interface{}) error {
 }
 
 func validateResourceLinks(value interface{}) error {
-	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
+	return common.ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"type": {
 			validation.Required,
 			validation.In("api-documentation", "authentication", "client-registration", "console", "payment", "service-level-agreement", "support", "custom"),
@@ -1193,81 +1192,6 @@ func validateCapabilityDefinitions(value interface{}, capability model.Capabilit
 	}
 
 	return nil
-}
-
-func validateIntegrationDependencyMandatory(value interface{}) error {
-	if value == nil {
-		return errors.New("integration dependency mandatory field is required")
-	}
-	_, ok := value.(bool)
-	if !ok {
-		return errors.New("integration dependency mandatory field is not a boolean")
-	}
-
-	return nil
-}
-
-func validateIntegrationDependencyAspects(value interface{}) error {
-	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
-		"title": {
-			validation.Required,
-			validation.NewStringRule(noNewLines, "title should not contain line breaks"),
-			validation.Length(MinTitleLength, MaxTitleLength),
-		},
-		"description": {
-			validation.Length(MinDescriptionLength, MaxDescriptionLength),
-		},
-		"mandatory": {
-			validation.Required,
-		},
-		"supportMultipleProviders": {
-			validation.Empty,
-		},
-		"apiResources": {
-			validation.By(validateAspectApiResources),
-		},
-		"eventResources": {
-			validation.By(validateAspectEventResources),
-		},
-	})
-}
-
-func validateAspectApiResources(value interface{}) error {
-	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
-		"ordId": {
-			validation.Required,
-			validation.Length(MinOrdIDLength, MaxOrdIDLength),
-			validation.Match(regexp.MustCompile(AspectApiResourceRegex)),
-		},
-		"minVersion": {
-			validation.Empty,
-		},
-	})
-}
-
-func validateAspectEventResources(value interface{}) error {
-	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
-		"ordId": {
-			validation.Required,
-			validation.Length(MinOrdIDLength, MaxOrdIDLength),
-			validation.Match(regexp.MustCompile(AspectEventResourceRegex)),
-		},
-		"minVersion": {
-			validation.Empty,
-		},
-		"subset": {
-			validation.By(validateAspectEventResourceSubset),
-		},
-	})
-}
-
-func validateAspectEventResourceSubset(value interface{}) error {
-	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
-		"eventType": {
-			validation.Required,
-			validation.Match(regexp.MustCompile(EventResourceEventTypeRegex)),
-		},
-	})
 }
 
 func validatePackageVersionInput(value interface{}, pkg model.PackageInput, pkgsFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
@@ -1520,10 +1444,6 @@ func isResourceHashMissing(hash *string) bool {
 	return hashStr == ""
 }
 
-func noNewLines(s string) bool {
-	return !strings.Contains(s, "\\n")
-}
-
 func validateWhenPolicyLevelIsSAP(docPolicyLevel *string, resourcePolicyLevel *string, validationFunc func() error) error {
 	policyLevel := str.PtrStrToStr(docPolicyLevel)
 	if resourcePolicyLevel != nil {
@@ -1610,49 +1530,6 @@ func validateJSONArrayOfStringsMatchPattern(arr interface{}, regexPattern *regex
 			return errors.Errorf("elements should match %q", regexPattern.String())
 		}
 	}
-	return nil
-}
-
-func validateJSONArrayOfObjects(arr interface{}, elementFieldRules map[string][]validation.Rule, crossFieldRules ...func(gjson.Result) error) error {
-	if arr == nil {
-		return nil
-	}
-
-	jsonArr, ok := arr.(json.RawMessage)
-	if !ok {
-		return errors.New("should be json")
-	}
-
-	if len(jsonArr) == 0 {
-		return nil
-	}
-
-	if !gjson.ValidBytes(jsonArr) {
-		return errors.New("should be valid json")
-	}
-
-	parsedArr := gjson.ParseBytes(jsonArr)
-	if !parsedArr.IsArray() {
-		return errors.New("should be json array")
-	}
-
-	if len(parsedArr.Array()) == 0 {
-		return nil
-	}
-
-	for _, el := range parsedArr.Array() {
-		for field, rules := range elementFieldRules {
-			if err := validation.Validate(el.Get(field).Value(), rules...); err != nil {
-				return errors.Wrapf(err, "error validating field %s", field)
-			}
-			for _, f := range crossFieldRules {
-				if err := f(el); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
 	return nil
 }
 
