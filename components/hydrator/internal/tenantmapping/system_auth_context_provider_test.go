@@ -58,8 +58,8 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
-		require.Equal(t, "", objCtx.ExternalTenantID)
+		require.Equal(t, expectedTenantID.String(), objCtx.Tenant.InternalID)
+		require.Equal(t, "", objCtx.Tenant.ID)
 		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
 		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
 		require.Equal(t, "Application", string(objCtx.ConsumerType))
@@ -109,8 +109,8 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
-		require.Equal(t, expectedExternalTenantID, objCtx.ExternalTenantID)
+		require.Equal(t, expectedTenantID.String(), objCtx.Tenant.InternalID)
+		require.Equal(t, expectedExternalTenantID, objCtx.Tenant.ID)
 		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
 		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
 		require.Equal(t, "Application", string(objCtx.ConsumerType))
@@ -158,8 +158,8 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
-		require.Equal(t, expectedExternalTenantID, objCtx.ExternalTenantID)
+		require.Equal(t, expectedTenantID.String(), objCtx.Tenant.InternalID)
+		require.Equal(t, expectedExternalTenantID, objCtx.Tenant.ID)
 		require.Equal(t, expectedScopes, objCtx.Scopes)
 		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
 		require.Equal(t, "Integration System", string(objCtx.ConsumerType))
@@ -196,8 +196,8 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
-		require.Equal(t, "", objCtx.ExternalTenantID)
+		require.Equal(t, expectedTenantID.String(), objCtx.Tenant.InternalID)
+		require.Equal(t, "", objCtx.Tenant.ID)
 		require.Equal(t, expectedScopes, objCtx.Scopes)
 		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
 		require.Equal(t, "Application", string(objCtx.ConsumerType))
@@ -266,8 +266,8 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
-		require.Equal(t, "", objCtx.ExternalTenantID)
+		require.Equal(t, expectedTenantID.String(), objCtx.Tenant.InternalID)
+		require.Equal(t, "", objCtx.Tenant.ID)
 		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
 		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
 		require.Equal(t, "Application", string(objCtx.ConsumerType))
@@ -372,8 +372,8 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.NoError(t, err)
-		require.Equal(t, "", objCtx.TenantID)
-		require.Equal(t, expectedExternalTenantID, objCtx.ExternalTenantID)
+		require.Equal(t, "", objCtx.Tenant.InternalID)
+		require.Equal(t, expectedExternalTenantID, objCtx.Tenant.ID)
 		require.Equal(t, expectedScopes, objCtx.Scopes)
 		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
 		require.Equal(t, "Integration System", string(objCtx.ConsumerType))
@@ -457,8 +457,8 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.NoError(t, err)
-		require.Equal(t, "", objCtx.TenantID)
-		require.Equal(t, expectedExternalTenantID, objCtx.ExternalTenantID)
+		require.Equal(t, "", objCtx.Tenant.InternalID)
+		require.Equal(t, expectedExternalTenantID, objCtx.Tenant.ID)
 		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
 		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
 		require.Equal(t, "Application", string(objCtx.ConsumerType))
@@ -581,7 +581,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
-		require.Equal(t, objCtx.TenantID, "")
+		require.Equal(t, objCtx.Tenant.InternalID, "")
 		require.Nil(t, err)
 		mock.AssertExpectationsForObjects(t, directorClientMock)
 	})

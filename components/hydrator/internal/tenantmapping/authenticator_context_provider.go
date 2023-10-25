@@ -18,6 +18,7 @@ package tenantmapping
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
@@ -97,12 +98,12 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, mergeWithOtherScopes, authDetails.Region, clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.AuthenticatorObjectContextProvider), nil
+			return NewObjectContext(&graphql.Tenant{ID: externalTenantID}, m.tenantKeys, scopes, mergeWithOtherScopes, authDetails.Region, clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.AuthenticatorObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), m.tenantKeys, scopes, mergeWithOtherScopes, authDetails.Region, clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.AuthenticatorObjectContextProvider)
+	objCtx := NewObjectContext(tenantMapping, m.tenantKeys, scopes, mergeWithOtherScopes, authDetails.Region, clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.AuthenticatorObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
 
 	return objCtx, nil

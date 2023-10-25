@@ -2,7 +2,8 @@ package main
 
 import (
 	"context"
-
+	"encoding/json"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -11,6 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
+	"os"
 
 	"github.com/kyma-incubator/compass/components/director/internal/externaltenant"
 )
@@ -18,6 +20,7 @@ import (
 type jobConfig struct {
 	Database            persistence.DatabaseConfig
 	Log                 log.Config
+	TenantLabelsPath    string `envconfig:"APP_TENANT_LABELS_PATH"`
 	DefaultTenantRegion string `envconfig:"APP_DEFAULT_TENANT_REGION,default=eu-1"`
 }
 
@@ -63,6 +66,20 @@ func main() {
 	_, err = tenantSvc.CreateManyIfNotExists(ctx, tenants...)
 	exitOnError(err, "error while creating tenants")
 
+	tenantLabelsFromEnv, err := os.ReadFile(cfg.TenantLabelsPath)
+	exitOnError(err, fmt.Sprintf("while reading tenant labels from file %s", cfg.TenantLabelsPath))
+
+	var tenantLabels []tenantLabel
+	if err := json.Unmarshal(tenantLabelsFromEnv, &tenantLabels); err != nil {
+		exitOnError(err, fmt.Sprintf("while unmarshalling tenant labels from file %s", cfg.TenantLabelsPath))
+	}
+	for _, tntLbl := range tenantLabels {
+		internalID, err := tenantSvc.GetInternalTenant(ctx, tntLbl.tenantID)
+		exitOnError(err, fmt.Sprintf("while getting internal ID for %s", tntLbl.tenantID))
+		err = tenantSvc.UpsertLabel(ctx, internalID, tntLbl.key, tntLbl.value)
+		exitOnError(err, fmt.Sprintf("while upserting label with key %s and value %s for tenant with extenal ID %s and internal ID %s", tntLbl.key, tntLbl.value, tntLbl.tenantID, internalID))
+	}
+
 	err = tx.Commit()
 	exitOnError(err, "error while committing the transaction")
 
@@ -74,4 +91,10 @@ func exitOnError(err error, context string) {
 		wrappedError := errors.Wrap(err, context)
 		log.D().Fatal(wrappedError)
 	}
+}
+
+type tenantLabel struct {
+	key      string `json:"key"`
+	value    string `json:"value"`
+	tenantID string `json:"tenantID"`
 }
