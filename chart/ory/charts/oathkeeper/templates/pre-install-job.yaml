@@ -6,7 +6,7 @@ metadata:
   name: ory-oathkeeper-pre-install-service-account
   namespace: {{ .Release.Namespace }}
   annotations:
-    "helm.sh/hook": pre-install
+    helm.sh/hook: "pre-install, pre-upgrade"
     "helm.sh/hook-weight": "0"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 ---
@@ -16,8 +16,8 @@ metadata:
   namespace: {{.Release.Namespace}}
   name: ory-oathkeeper-pre-install-job-role
   annotations:
-    "helm.sh/hook": pre-install
-    "helm.sh/hook-weight": "0"
+    helm.sh/hook: "pre-install, pre-upgrade"
+    "helm.sh/hook-weight": "1"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 rules:
   - apiGroups: [ "" ]
@@ -34,8 +34,8 @@ metadata:
   name: ory-oathkeeper-pre-install-job-role-binding
   namespace: {{.Release.Namespace}}
   annotations:
-    "helm.sh/hook": pre-install
-    "helm.sh/hook-weight": "0"
+    helm.sh/hook: "pre-install, pre-upgrade"
+    "helm.sh/hook-weight": "2"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 subjects:
   - kind: ServiceAccount
@@ -53,8 +53,8 @@ metadata:
   name: {{ include "oathkeeper.fullname" . }}-pre-install-secret
   namespace: {{ .Release.Namespace }}
   annotations:
-    "helm.sh/hook": pre-install
-    "helm.sh/hook-weight": "0"
+    helm.sh/hook: "pre-install, pre-upgrade"
+    "helm.sh/hook-weight": "3"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   template:
@@ -86,9 +86,15 @@ spec:
           - -c
           - |
             set -e
-            kubectl create secret generic {{ include "oathkeeper.secretname" . }} \
-            --from-file={{ .Values.secret.mountPath }}/jwks.json \
-            -n {{ .Release.Namespace }} -o yaml --dry-run=client | kubectl apply -f -
+
+            if [ ! "$(kubectl get secret {{ include "oathkeeper.secretname" . }} -n {{ .Release.Namespace }})" ]; then
+              echo "Creating JWKS Secret for Oathkeeper..."
+              kubectl create secret generic {{ include "oathkeeper.secretname" . }} \
+                --from-file={{ .Values.secret.mountPath }}/jwks.json \
+                -n {{ .Release.Namespace }} -o yaml --dry-run=client | kubectl apply -f -
+            else
+              echo "Secret exists, skipping creation..."
+            fi
         securityContext:
           {{- toYaml .Values.deployment.securityContext.anonymous | nindent 10 }}
         volumeMounts:

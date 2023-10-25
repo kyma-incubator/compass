@@ -1,9 +1,12 @@
 dependencies:
+- name: gcloud-sqlproxy
+  repository: ""
+  version: 0.22.6
 - name: oathkeeper
   repository: ""
   version: 0.36.0
 - name: hydra
   repository: https://k8s.ory.sh/helm/charts
   version: 0.36.0
-digest: sha256:2629c9a6c7bc0fd49a1ada80584cab4ba92709ebb5568053c03d09c2d8ef4fa3
-generated: "2023-10-24T16:49:55.565066+03:00"
+digest: sha256:1e50f32f0d136247629009e4dd113b57816d2402f8936e2402bfdc992d8c7c2f
+generated: "2023-10-25T11:58:02.44485+03:00"
