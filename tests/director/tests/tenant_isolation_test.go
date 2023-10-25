@@ -216,6 +216,7 @@ func TestSubstituteCaller(t *testing.T) {
 	substitutionTenant := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
 	actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "e2e-tenant-access", substitutionTenant)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 
