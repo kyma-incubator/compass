@@ -1,5 +1,12 @@
 BEGIN;
 
+DROP VIEW IF EXISTS entity_type_targets_entity_type_mappings;
+DROP VIEW IF EXISTS api_model_selectors_entity_type_mappings;
+
+DROP INDEX IF EXISTS entity_type_mapings_api_definition_id;
+DROP INDEX IF EXISTS entity_type_mapings_event_definition_id;
+DROP TABLE entity_type_mapings;
+
 DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_capabilities;
 

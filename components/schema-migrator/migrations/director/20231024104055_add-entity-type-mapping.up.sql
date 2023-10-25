@@ -105,4 +105,45 @@ FROM specifications spec
               ON spec.api_def_id = t_api_event_capability_def.id OR spec.event_def_id = t_api_event_capability_def.id or spec.capability_def_id = t_api_event_capability_def.id;
 
 
+CREATE TABLE entity_type_mapings
+(
+    id                          UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    ready                       BOOLEAN DEFAULT TRUE,
+        CONSTRAINT entitytypemaping_id_ready_unique UNIQUE (id, ready),
+    api_definition_id             UUID,
+        CONSTRAINT entity_type_maping_api_definition_id_fk FOREIGN KEY (api_definition_id) REFERENCES api_definitions (id) ON DELETE CASCADE,
+    event_definition_id           UUID,
+        CONSTRAINT entity_type_maping_event_definition_id_fk FOREIGN KEY (event_definition_id) REFERENCES event_api_definitions (id) ON DELETE CASCADE,
+    created_at                  TIMESTAMP,
+    updated_at                  TIMESTAMP,
+    deleted_at                  TIMESTAMP,
+    error                       JSONB,
+    api_model_selectors         JSONB,
+    entity_type_targets         JSONB
+);
+
+CREATE INDEX entity_type_mapings_api_definition_id ON entity_type_mapings (api_definition_id);
+CREATE INDEX entity_type_mapings_event_definition_id ON entity_type_mapings (event_definition_id);
+
+DROP VIEW IF EXISTS api_model_selectors_entity_type_mappings;
+
+CREATE VIEW api_model_selectors_entity_type_mappings AS
+SELECT id                      AS entity_type_mapping_id,
+       entries.type            AS type,
+       entries."entitySetName" AS entity_set_name,
+       entries."jsonPointer"   AS json_pointer
+FROM entity_type_mapings,
+     jsonb_to_recordset(entity_type_mapings.api_model_selectors) AS entries(type TEXT, "entitySetName" TEXT, "jsonPointer" TEXT);
+
+
+DROP VIEW IF EXISTS entity_type_targets_entity_type_mappings;
+
+CREATE VIEW entity_type_targets_entity_type_mappings AS
+SELECT id                      AS entity_type_mapping_id,
+       entries."ordId"         AS ord_id,
+       entries."correlationId" AS correlation_id
+FROM entity_type_mapings,
+     jsonb_to_recordset(entity_type_mapings.entity_type_targets) AS entries("ordId" TEXT, "correlationId" TEXT);
+
+
 COMMIT;
