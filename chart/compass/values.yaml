@@ -155,11 +155,11 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3413"
+      version: "PR-3419"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3414"
+      version: "PR-3419"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
@@ -212,7 +212,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3413"
+      version: "PR-3419"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false

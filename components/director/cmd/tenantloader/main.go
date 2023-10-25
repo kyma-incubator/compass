@@ -74,10 +74,10 @@ func main() {
 		exitOnError(err, fmt.Sprintf("while unmarshalling tenant labels from file %s", cfg.TenantLabelsPath))
 	}
 	for _, tntLbl := range tenantLabels {
-		internalID, err := tenantSvc.GetInternalTenant(ctx, tntLbl.tenantID)
-		exitOnError(err, fmt.Sprintf("while getting internal ID for %s", tntLbl.tenantID))
-		err = tenantSvc.UpsertLabel(ctx, internalID, tntLbl.key, tntLbl.value)
-		exitOnError(err, fmt.Sprintf("while upserting label with key %s and value %s for tenant with extenal ID %s and internal ID %s", tntLbl.key, tntLbl.value, tntLbl.tenantID, internalID))
+		internalID, err := tenantSvc.GetInternalTenant(ctx, tntLbl.TenantID)
+		exitOnError(err, fmt.Sprintf("while getting internal ID for %s", tntLbl.TenantID))
+		err = tenantSvc.UpsertLabel(ctx, internalID, tntLbl.Key, tntLbl.Value)
+		exitOnError(err, fmt.Sprintf("while upserting label with key %s and value %s for tenant with extenal ID %s and internal ID %s", tntLbl.Key, tntLbl.Value, tntLbl.TenantID, internalID))
 	}
 
 	err = tx.Commit()
@@ -94,7 +94,7 @@ func exitOnError(err error, context string) {
 }
 
 type tenantLabel struct {
-	key      string `json:"key"`
-	value    string `json:"value"`
-	tenantID string `json:"tenantID"`
+	Key      string `json:"key"`
+	Value    string `json:"value"`
+	TenantID string `json:"tenantID"`
 }
