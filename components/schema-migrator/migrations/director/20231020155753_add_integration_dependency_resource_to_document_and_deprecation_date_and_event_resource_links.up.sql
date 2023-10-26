@@ -4,15 +4,19 @@ BEGIN;
 DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_apis;
 DROP VIEW IF EXISTS tenants_events;
+DROP VIEW IF EXISTS tenants_entity_types;
 
--- Alter table api_definitions - add column deprecation_date
+-- Alter table api_definitions - add column `deprecation_date`
 ALTER TABLE api_definitions
     ADD COLUMN deprecation_date VARCHAR(256);
--- Alter table event_api_definitions - add column deprecation_date
+-- Alter table event_api_definitions - add column `deprecation_date`
 ALTER TABLE event_api_definitions
     ADD COLUMN deprecation_date VARCHAR(256);
+-- Alter table entity_types - add column `deprecation_date`
+ALTER TABLE entity_types
+    ADD COLUMN deprecation_date VARCHAR(256);
 
--- Recreate views for tenant_apis and tenant_events with added `deprecation_date` column
+-- Recreate views for tenants_apis, tenants_events and tenants_entity_types with added `deprecation_date` column
 CREATE OR REPLACE VIEW tenants_apis
             (tenant_id, formation_id, id, app_id, name, description, group_name, default_auth, version_value,
              version_deprecated, version_deprecated_since, version_for_removal, ord_id, local_tenant_id,
@@ -165,6 +169,62 @@ FROM event_api_definitions events
      -- breaking down the extensible field; the new fields will be extensible_supported and extensible_description
      jsonb_to_record(events.extensible) actions(supported text, description text);
 
+CREATE OR REPLACE VIEW tenants_entity_types
+            (tenant_id, formation_id, id, ord_id, app_id, local_id, level, title, short_description, description, system_instance_aware,
+            changelog_entries, package_id, visibility, links, part_of_products, last_update, policy_level,
+            custom_policy_level, release_status, sunset_date, successors, extensible_supported, extensible_description, tags, labels,
+            documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal, deprecation_date)
+AS
+SELECT DISTINCT t_apps.tenant_id,
+                t_apps.formation_id,
+                et.id,
+                et.ord_id,
+                et.app_id,
+                et.local_id,
+                et.level,
+                et.title,
+                et.short_description,
+                et.description,
+                et.system_instance_aware,
+                et.changelog_entries,
+                et.package_id,
+                et.visibility,
+                et.links,
+                et.part_of_products,
+                et.last_update,
+                et.policy_level,
+                et.custom_policy_level,
+                et.release_status,
+                et.sunset_date,
+                et.successors,
+                actions.supported,
+                actions.description,
+                et.tags,
+                et.labels,
+                et.documentation_labels,
+                et.resource_hash,
+                et.version_value,
+                et.version_deprecated,
+                et.version_deprecated_since,
+                et.version_for_removal,
+                et.deprecation_date
+FROM entity_types et
+         JOIN (SELECT a1.id,
+                      a1.tenant_id AS tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM apps_subaccounts) t_apps
+              ON et.app_id = t_apps.id,
+     jsonb_to_record(et.extensible) actions(supported text, description text);
 
 -- Recreate view tenants_specifications
 CREATE OR REPLACE VIEW tenants_specifications
@@ -224,7 +284,6 @@ CREATE TABLE integration_dependencies
     sunset_date VARCHAR(256),
     successors JSONB,
     mandatory BOOLEAN NOT NULL,
-    aspects JSONB,
     related_integration_dependencies BOOLEAN,
     links JSONB,
     tags JSONB,
@@ -245,6 +304,30 @@ CREATE TABLE integration_dependencies
 
 -- Create index for integration_dependencies table
 CREATE INDEX IF NOT EXISTS integration_dependencies_app_id ON integration_dependencies (app_id);
+
+-- Create aspects table
+CREATE TABLE aspects (
+    id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    integration_dependency_id UUID NOT NULL,
+        CONSTRAINT aspects_integration_dependency_id_fkey FOREIGN KEY (integration_dependency_id) REFERENCES integration_dependencies (id) ON DELETE CASCADE,
+    name VARCHAR(256) NOT NULL,
+    description TEXT,
+    mandatory BOOLEAN NOT NULL,
+    support_multiple_providers BOOLEAN,
+    api_resources JSONB,
+    event_resources JSONB,
+    ready BOOLEAN DEFAULT TRUE,
+        CONSTRAINT aspect_id_ready_unique UNIQUE (id, ready),
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP,
+    deleted_at TIMESTAMP,
+    error JSONB
+);
+
+-- Create index for aspects table
+CREATE INDEX IF NOT EXISTS aspects_integration_dependency_id ON aspects (integration_dependency_id);
+
+-- tenants_aspects view ?
 
 -- Create views
 CREATE VIEW correlation_ids_integration_dependencies AS
@@ -295,7 +378,7 @@ FROM integration_dependencies,
 -- Create view tenants_integration_dependencies
 CREATE VIEW tenants_integration_dependencies
             (tenant_id, formation_id, id, app_id, ord_id, local_tenant_id, correlation_ids, name, short_description, description, package_id,
-            last_update, visibility, release_status, sunset_date, successors, mandatory, aspects, related_integration_dependencies, links, tags,
+            last_update, visibility, release_status, sunset_date, successors, mandatory, related_integration_dependencies, links, tags,
             labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at,
             updated_at, deleted_at, error)
 AS
@@ -316,7 +399,6 @@ SELECT DISTINCT t_apps.id,
                 i.sunset_date,
                 i.successors,
                 i.mandatory,
-                i.aspects,
                 i.related_integration_dependencies,
                 i.links,
                 i.tags,

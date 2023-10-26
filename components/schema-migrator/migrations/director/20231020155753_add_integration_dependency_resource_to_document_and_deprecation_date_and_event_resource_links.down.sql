@@ -14,21 +14,29 @@ DROP VIEW IF EXISTS integration_dependencies_tenants;
 DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_apis;
 DROP VIEW IF EXISTS tenants_events;
+DROP VIEW IF EXISTS tenants_entity_types;
 
+-- Drop index for aspects table
+DROP INDEX IF EXISTS aspects_integration_dependency_id;
 -- Drop index for integration_dependencies table
 DROP INDEX IF EXISTS integration_dependencies_app_id;
 
+-- Drop table aspects
+DROP TABLE IF EXISTS aspects;
 -- Drop table integration_dependencies
 DROP TABLE IF EXISTS integration_dependencies;
 
--- Alter tables - remove `deprecation_date` from API and Event
+-- Alter tables - remove `deprecation_date` from API, Event and Entity Type
 ALTER TABLE api_definitions
     DROP COLUMN deprecation_date;
 
 ALTER TABLE event_api_definitions
     DROP COLUMN deprecation_date;
 
--- Recreate views for tenant_apis and tenant_events with removed `deprecation_date` column
+ALTER TABLE entity_types
+    DROP COLUMN deprecation_date;
+
+-- Recreate views for tenant`_apis, tenant`_events and tenant`_entity_types with removed `deprecation_date` column
 CREATE OR REPLACE VIEW tenants_apis
             (tenant_id, formation_id, id, app_id, name, description, group_name, default_auth, version_value,
              version_deprecated, version_deprecated_since, version_for_removal, ord_id, local_tenant_id,
@@ -179,6 +187,62 @@ FROM event_api_definitions events
      -- breaking down the extensible field; the new fields will be extensible_supported and extensible_description
      jsonb_to_record(events.extensible) actions(supported text, description text);
 
+
+CREATE OR REPLACE VIEW tenants_entity_types
+            (tenant_id, formation_id, id, ord_id, app_id, local_id, level, title, short_description, description, system_instance_aware,
+            changelog_entries, package_id, visibility, links, part_of_products, last_update, policy_level,
+            custom_policy_level, release_status, sunset_date, successors, extensible_supported, extensible_description, tags, labels,
+            documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal)
+AS
+SELECT DISTINCT t_apps.tenant_id,
+                t_apps.formation_id,
+                et.id,
+                et.ord_id,
+                et.app_id,
+                et.local_id,
+                et.level,
+                et.title,
+                et.short_description,
+                et.description,
+                et.system_instance_aware,
+                et.changelog_entries,
+                et.package_id,
+                et.visibility,
+                et.links,
+                et.part_of_products,
+                et.last_update,
+                et.policy_level,
+                et.custom_policy_level,
+                et.release_status,
+                et.sunset_date,
+                et.successors,
+                actions.supported,
+                actions.description,
+                et.tags,
+                et.labels,
+                et.documentation_labels,
+                et.resource_hash,
+                et.version_value,
+                et.version_deprecated,
+                et.version_deprecated_since,
+                et.version_for_removal
+FROM entity_types et
+         JOIN (SELECT a1.id,
+                      a1.tenant_id AS tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM apps_subaccounts) t_apps
+              ON et.app_id = t_apps.id,
+     jsonb_to_record(et.extensible) actions(supported text, description text);
 
 -- Recreate view tenants_specifications
 CREATE OR REPLACE VIEW tenants_specifications
