@@ -2,6 +2,7 @@ package templatehelper
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"text/template"
@@ -23,6 +24,7 @@ func GetFuncMap() template.FuncMap {
 	fm["copy"] = copyFromJSON
 	fm["updateAndCopy"] = updateAndCopy
 	fm["mkslice"] = mkslice
+	fm["stringify"] = stringify
 
 	return fm
 }
@@ -47,12 +49,7 @@ func joinStrings(elems []string) string {
 	return `"` + strings.Join(elems, `", "`) + `"`
 }
 
-// copyFromJSON copies the value that is found under "path" in "jsonString" and returns it
-func copyFromJSON(jsonstring, path string) string {
-	return gjson.Get(jsonstring, path).String()
-}
-
-func updateAndCopy(input json.RawMessage, path string, entries []string) string {
+func copyFromJSON(input json.RawMessage, path string) string {
 	jsonstring := string(input)
 	var content string
 	if path == "." || path == "" {
@@ -60,6 +57,11 @@ func updateAndCopy(input json.RawMessage, path string, entries []string) string 
 	} else {
 		content = gjson.Get(jsonstring, path).String()
 	}
+	return content
+}
+
+func updateAndCopy(input json.RawMessage, path string, entries []string) string {
+	content := copyFromJSON(input, path)
 	var err error
 	for _, entry := range entries {
 		key := gjson.Get(entry, "key").String()
@@ -79,4 +81,21 @@ func updateAndCopy(input json.RawMessage, path string, entries []string) string 
 
 func mkslice(args ...string) []string {
 	return args
+}
+
+func stringify(v interface{}) string {
+	switch v := v.(type) {
+	case string:
+		return v
+	case *string:
+		return *v
+	case []byte:
+		return string(v)
+	case error:
+		return v.Error()
+	case fmt.Stringer:
+		return v.String()
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }
