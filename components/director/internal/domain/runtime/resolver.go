@@ -128,7 +128,7 @@ type SubscriptionService interface {
 //
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
-	FetchOnDemand(tenant, parentTenant string) error
+	FetchOnDemand(ctx context.Context, tenant, parentTenant string) error
 }
 
 // RuntimeContextService missing godoc
@@ -337,7 +337,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 		if err != nil {
 			return nil, err
 		}
-		if err := r.fetcher.FetchOnDemand(sa, parentTenant); err != nil {
+		if err := r.fetcher.FetchOnDemand(ctx, sa, parentTenant); err != nil {
 			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", sa)
 		}
 	}
