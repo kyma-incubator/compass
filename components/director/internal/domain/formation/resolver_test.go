@@ -288,7 +288,7 @@ func TestAssignFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(modelFormation)
 		mockConverter.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil)
 
-		fetcherSvc.On("FetchOnDemand", "", tnt).Return(nil)
+		fetcherSvc.On("FetchOnDemand", contextThatHasTenant(tnt), "", tnt).Return(nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc)
@@ -309,9 +309,9 @@ func TestAssignFormation(t *testing.T) {
 		mockConverter := &automock.Converter{}
 		fetcherSvc := &automock.TenantFetcher{}
 
-		fetcherSvc.On("FetchOnDemand", "", tnt).Return(testErr)
-
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+		fetcherSvc.On("FetchOnDemand", ctx, "", tnt).Return(testErr)
+
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc)
 
 		// WHEN
@@ -338,11 +338,11 @@ func TestAssignFormation(t *testing.T) {
 	t.Run("returns error when can not start db transaction", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatFailsOnBegin()
+		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 
 		fetcherSvc := &automock.TenantFetcher{}
-		fetcherSvc.On("FetchOnDemand", "", tnt).Return(nil)
+		fetcherSvc.On("FetchOnDemand", ctx, "", tnt).Return(nil)
 
-		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, nil, nil, nil, nil, fetcherSvc)
 
 		// WHEN
@@ -363,10 +363,11 @@ func TestAssignFormation(t *testing.T) {
 		mockConverter := &automock.Converter{}
 		mockConverter.On("FromGraphQL", formationInput).Return(modelFormation)
 
-		fetcherSvc := &automock.TenantFetcher{}
-		fetcherSvc.On("FetchOnDemand", "", tnt).Return(nil)
-
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+
+		fetcherSvc := &automock.TenantFetcher{}
+		fetcherSvc.On("FetchOnDemand", ctx, "", tnt).Return(nil)
+
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc)
 
 		// WHEN
@@ -387,10 +388,11 @@ func TestAssignFormation(t *testing.T) {
 		mockConverter := &automock.Converter{}
 		mockConverter.On("FromGraphQL", formationInput).Return(modelFormation)
 
-		fetcherSvc := &automock.TenantFetcher{}
-		fetcherSvc.On("FetchOnDemand", "", tnt).Return(nil)
-
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+
+		fetcherSvc := &automock.TenantFetcher{}
+		fetcherSvc.On("FetchOnDemand", ctx, "", tnt).Return(nil)
+
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc)
 
 		// WHEN
@@ -595,7 +597,7 @@ func TestFormation(t *testing.T) {
 				service := &automock.Service{}
 				service.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(formationModel, nil).Once()
 				return service
-			}, ConverterFn: unusedConverter,
+			}, ConverterFn:    unusedConverter,
 			InputID:           FormationID,
 			ExpectedFormation: nil,
 			ExpectedError:     testErr,
@@ -709,7 +711,7 @@ func TestFormationByName(t *testing.T) {
 				service := &automock.Service{}
 				service.On("GetFormationByName", txtest.CtxWithDBMatcher(), testFormationName, tnt).Return(formationModel, nil).Once()
 				return service
-			}, ConverterFn: unusedConverter,
+			}, ConverterFn:    unusedConverter,
 			InputName:         testFormationName,
 			ExpectedFormation: nil,
 			ExpectedError:     testErr,

@@ -229,7 +229,7 @@ func TestResolver_Tenant(t *testing.T) {
 			},
 			TenantFetcher: func() *automock.Fetcher {
 				fetcher := &automock.Fetcher{}
-				fetcher.On("FetchOnDemand", testExternal, "").Return(nil)
+				fetcher.On("FetchOnDemand", txtest.CtxWithDBMatcher(), testExternal, "").Return(nil)
 				return fetcher
 			},
 			IDInput:        testExternal,
@@ -268,7 +268,7 @@ func TestResolver_Tenant(t *testing.T) {
 			TenantConvFn: unusedTenantConverter,
 			TenantFetcher: func() *automock.Fetcher {
 				fetcher := &automock.Fetcher{}
-				fetcher.On("FetchOnDemand", testExternal, "").Return(tenantNotFoundError)
+				fetcher.On("FetchOnDemand", txtest.CtxWithDBMatcher(), testExternal, "").Return(tenantNotFoundError)
 				return fetcher
 			},
 			IDInput:        testExternal,
