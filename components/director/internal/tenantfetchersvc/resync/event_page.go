@@ -74,6 +74,8 @@ func (ep EventsPage) getEventsDetails(ctx context.Context) [][]byte {
 				allDetails[key] = result.String()
 			case gjson.Number:
 				allDetails[key] = result.Float()
+			case gjson.JSON:
+				allDetails[key] = result.Value()
 			case gjson.True:
 				allDetails[key] = true
 			case gjson.False:

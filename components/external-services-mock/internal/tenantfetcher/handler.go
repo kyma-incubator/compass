@@ -125,9 +125,9 @@ func (s *Handler) getMockEventForSubaccount(tenantOnDemandID string) []byte {
 				"subdomain": "%s",
 				"licenseType": "%s",
 				"parentGuid": "%s",
-				"region": "%s"
+				"region": "%s",
 				"labels": {
-					"customerId": [%s]
+					"customerId": ["%s"]
 				}
            	},
 			"globalAccountGUID": "%s",
