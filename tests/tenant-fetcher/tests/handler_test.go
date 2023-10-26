@@ -872,15 +872,9 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 	setMockTenantEvents(t, genMockPage(createEvent, 1), subaccountCreateSubPath)
 	defer cleanupMockEvents(t, subaccountCreateSubPath)
 
-	fmt.Println("ALEX createEvent: ", createEvent)
-
 	require.Eventually(t, func() bool {
 		subaccount1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
 		if subaccount1 != nil {
-			fmt.Println("subaccount1.Labels ", len(subaccount1.Labels))
-			for s, i := range subaccount1.Labels {
-				fmt.Println(s, i)
-			}
 			t.Logf("Waiting for subaccount %s to be deleted", subaccountExternalTenants[0])
 			return false
 		}
