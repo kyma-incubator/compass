@@ -91,7 +91,6 @@ const (
 	applicationTypeLabelValue = "customType"
 
 	entityTypeID     = "entity-type-id"
-	ordID            = "com.compass.v1"
 	level            = "aggregate"
 	title            = "BusinessPartner"
 	publicVisibility = "public"
@@ -1779,7 +1778,7 @@ func fixEntityTypes() []*model.EntityType {
 			},
 			ApplicationID:                &appID,
 			ApplicationTemplateVersionID: &appTemplateVersionID,
-			OrdID:                        ordID,
+			OrdID:                        entityType1ORDID,
 			LocalID:                      localID,
 			CorrelationIDs:               json.RawMessage(correlationIDs),
 			Level:                        level,

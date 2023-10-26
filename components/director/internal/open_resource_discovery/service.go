@@ -94,7 +94,7 @@ type Service struct {
 	bundleReferenceSvc             BundleReferenceService
 	apiSvc                         APIService
 	eventSvc                       EventService
-	entityTypeSvc         		   EntityTypeService
+	entityTypeSvc                  EntityTypeService
 	capabilitySvc                  CapabilityService
 	integrationDependencySvc       IntegrationDependencyService
 	specSvc                        SpecService
@@ -103,7 +103,7 @@ type Service struct {
 	productSvc                     ProductService
 	vendorSvc                      VendorService
 	tombstoneProcessor             TombstoneProcessor
-	entityTypeProcessor   	       EntityTypeProcessor
+	entityTypeProcessor            EntityTypeProcessor
 	integrationDependencyProcessor IntegrationDependencyProcessor
 	tenantSvc                      TenantService
 	appTemplateVersionSvc          ApplicationTemplateVersionService
@@ -131,8 +131,8 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		bundleReferenceSvc:             bundleReferenceSvc,
 		apiSvc:                         apiSvc,
 		eventSvc:                       eventSvc,
-		entityTypeSvc:         			entityTypeSvc,
-		entityTypeProcessor:   			entityTypeProcessor,
+		entityTypeSvc:                  entityTypeSvc,
+		entityTypeProcessor:            entityTypeProcessor,
 		capabilitySvc:                  capabilitySvc,
 		integrationDependencySvc:       integrationDependencySvc,
 		integrationDependencyProcessor: integrationDependencyProcessor,
@@ -626,7 +626,7 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType di
 		if i, found := searchInSlice(len(entityTypesFromDB), func(i int) bool {
 			return equalStrings(&entityTypesFromDB[i].OrdID, &ts.OrdID)
 		}); found {
-			if err := s.entityTypeSvc.Delete(ctx, resourceType, eventsFromDB[i].ID); err != nil {
+			if err := s.entityTypeSvc.Delete(ctx, resourceType, entityTypesFromDB[i].ID); err != nil {
 				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
@@ -1958,7 +1958,7 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 		Bundles:                 bundleDataFromDB,
 		Capabilities:            capabilitiesDataFromDB,
 		IntegrationDependencies: integrationDependenciesFromDB,
-		EntityTypes:  			 entityTypesDataFromDB,
+		EntityTypes:             entityTypesDataFromDB,
 	}, tx.Commit()
 }
 

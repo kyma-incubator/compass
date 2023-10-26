@@ -42,24 +42,24 @@ func (*IntegrationDependency) GetType() resource.Type {
 // IntegrationDependencyInput missing godoc
 type IntegrationDependencyInput struct {
 	OrdID                          *string         `json:"ordId"`
-	LocalTenantID                  *string         `json:"localTenantId"`
+	LocalTenantID                  *string         `json:"localTenantId,omitempty"`
 	CorrelationIDs                 json.RawMessage `json:"correlationIds,omitempty"`
 	Name                           string          `json:"title"`
-	ShortDescription               *string         `json:"shortDescription"`
-	Description                    *string         `json:"description"`
+	ShortDescription               *string         `json:"shortDescription,omitempty"`
+	Description                    *string         `json:"description,omitempty"`
 	OrdPackageID                   *string         `json:"partOfPackage"`
-	LastUpdate                     *string         `json:"lastUpdate"`
+	LastUpdate                     *string         `json:"lastUpdate,omitempty"`
 	Visibility                     string          `json:"visibility"`
 	ReleaseStatus                  *string         `json:"releaseStatus"`
-	SunsetDate                     *string         `json:"sunsetDate"`
+	SunsetDate                     *string         `json:"sunsetDate,omitempty"`
 	Successors                     json.RawMessage `json:"successors,omitempty"`
 	Mandatory                      bool            `json:"mandatory"`
-	Aspects                        []*AspectInput  `json:"aspects"`
-	RelatedIntegrationDependencies json.RawMessage `json:"relatedIntegrationDependencies"`
-	Links                          json.RawMessage `json:"links"`
-	Tags                           json.RawMessage `json:"tags"`
-	Labels                         json.RawMessage `json:"labels"`
-	DocumentationLabels            json.RawMessage `json:"documentationLabels"`
+	Aspects                        []*AspectInput  `json:"aspects,omitempty"`
+	RelatedIntegrationDependencies json.RawMessage `json:"relatedIntegrationDependencies,omitempty"`
+	Links                          json.RawMessage `json:"links,omitempty"`
+	Tags                           json.RawMessage `json:"tags,omitempty"`
+	Labels                         json.RawMessage `json:"labels,omitempty"`
+	DocumentationLabels            json.RawMessage `json:"documentationLabels,omitempty"`
 	*VersionInput                  `hash:"ignore"`
 }
 
