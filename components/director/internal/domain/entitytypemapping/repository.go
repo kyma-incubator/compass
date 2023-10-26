@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	entityTypeMappingTable  = `public.entity_type_mapings`
+	entityTypeMappingTable  = `public.entity_type_mappings`
 	apiDefinitionIDColumn   = "api_definition_id"
 	eventDefinitionIDColumn = "event_definition_id"
 	idColumn                = "id"

@@ -144,9 +144,9 @@ SELECT id                      AS entity_type_mapping_id,
 FROM entity_type_mappings,
      jsonb_to_recordset(entity_type_mappings.entity_type_targets) AS entries("ordId" TEXT, "correlationId" TEXT);
 
-DROP VIEW IF EXISTS tenants_entity_type_mappings;
+DROP VIEW IF EXISTS entity_type_mappings_tenants;
 
-CREATE OR REPLACE VIEW tenants_entity_type_mappings
+CREATE OR REPLACE VIEW entity_type_mappings_tenants
             (tenant_id, id, api_definition_id, event_definition_id)
 AS
 SELECT DISTINCT t_api_event_def.tenant_id,

@@ -16,6 +16,8 @@ import (
 
 const (
 	entityTypeMappingID = "entity-type-mapping-id"
+	tenantID            = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+	externalTenantID    = "external-tnt"
 	ready               = true
 )
 
@@ -89,10 +91,7 @@ func fixEntityTypeMappingInputModel() model.EntityTypeMappingInput {
 }
 
 func fixEntityTypeMappingColumns() []string {
-	return []string{"id", "ready", "created_at", "updated_at", "deleted_at", "error", "app_id", "app_template_version_id", "ord_id", "local_tenant_id",
-		"correlation_ids", "level", "title", "short_description", "description", "system_instance_aware", "changelog_entries", "package_id", "visibility",
-		"links", "part_of_products", "last_update", "policy_level", "custom_policy_level", "release_status", "sunset_date", "successors", "extensible", "tags", "labels",
-		"documentation_labels", "resource_hash", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+	return []string{"id", "ready", "created_at", "updated_at", "deleted_at", "error", "api_definition_id", "event_definition_id", "api_model_selectors", "entity_type_targets"}
 }
 
 func fixEntityTypeMappingRow(id string) []driver.Value {
@@ -101,11 +100,11 @@ func fixEntityTypeMappingRow(id string) []driver.Value {
 }
 
 func fixEntityTypeMappingCreateArgs(id string, entityTypeMapping *model.EntityTypeMapping) []driver.Value {
-	return []driver.Value{id, ready, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(*entityTypeMapping.APIDefinitionID), repo.NewValidNullableString(*entityTypeMapping.EventDefinitionID),
+	return []driver.Value{id, ready, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewNullableString(entityTypeMapping.APIDefinitionID), repo.NewNullableString(entityTypeMapping.EventDefinitionID),
 		repo.NewNullableStringFromJSONRawMessage(entityTypeMapping.APIModelSelectors), repo.NewNullableStringFromJSONRawMessage(entityTypeMapping.EntityTypeTargets)}
 }
 
 func fixEntityTypeMappingUpdateArgs(id string, entityTypeMapping *entitytypemapping.Entity) []driver.Value {
 	return []driver.Value{entityTypeMapping.Ready, entityTypeMapping.CreatedAt, entityTypeMapping.UpdatedAt, entityTypeMapping.DeletedAt, entityTypeMapping.Error,
-		entityTypeMapping.APIDefinitionID, entityTypeMapping.EntityTypeTargets, entityTypeMapping.ID}
+		entityTypeMapping.APIDefinitionID, entityTypeMapping.EventDefinitionID, entityTypeMapping.APIModelSelectors, entityTypeMapping.EntityTypeTargets, entityTypeMapping.ID}
 }
