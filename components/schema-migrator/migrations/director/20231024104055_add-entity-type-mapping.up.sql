@@ -147,30 +147,21 @@ FROM entity_type_mappings,
 DROP VIEW IF EXISTS tenants_entity_type_mappings;
 
 CREATE OR REPLACE VIEW tenants_entity_type_mappings
-            (tenant_id, formation_id, id, api_definition_id, event_definition_id)
+            (tenant_id, id, api_definition_id, event_definition_id)
 AS
-SELECT DISTINCT t_apps.tenant_id,
-                t_apps.formation_id,
+SELECT DISTINCT t_api_event_def.tenant_id,
                 etm.id,
                 etm.api_definition_id,
                 etm.event_definition_id
 FROM entity_type_mappings etm
-         JOIN (SELECT a1.id,
-                      a1.tenant_id AS tenant_id,
-                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
-               FROM tenant_applications a1
+         JOIN (SELECT a.id,
+                      a.tenant_id
+               FROM tenants_apis a
                UNION ALL
-               SELECT apps_subaccounts.id,
-                      apps_subaccounts.tenant_id,
-                      apps_subaccounts.formation_id
-               FROM apps_subaccounts
-               UNION ALL
-               SELECT apps_subaccounts.id,
-                      apps_subaccounts.tenant_id,
-                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
-               FROM apps_subaccounts) t_apps, 
-              ON et.app_id = t_apps.id
-// TODO - tenants_entity_type_mappings not finished
+               SELECT e.id,
+                      e.tenant_id
+               FROM tenants_events e) t_api_event_def
+              ON etm.api_definition_id = t_api_event_def.id OR etm.event_definition_id = t_api_event_def.id;
 
 
 DROP VIEW IF EXISTS tenants_entity_types;
