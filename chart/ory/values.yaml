@@ -234,7 +234,7 @@ oathkeeper:
   deployment:
     # The Service account created by the Oathkeeper maester is used
     serviceAccount:
-      create: false
+      create: true
     automountServiceAccountToken: true
     livenessProbe:
       initialDelaySeconds: 15
