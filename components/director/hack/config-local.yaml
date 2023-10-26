@@ -1,7 +1,11 @@
 graphql:
   query:
+    apisForApplication: ["application:read"]
+    eventsForApplication: ["application:read"]
     applications: ["application:read"]
     application: ["application:read"]
+    applicationBySystemNumber: ["application:read"]
+    applicationByLocalTenantIDAndAppTemplateID: ["application:read"]
     applicationsForRuntime: ["application:read"]
     applicationTemplates: ["application_template:read"]
     applicationTemplate: ["application_template:read"]
@@ -18,12 +22,14 @@ graphql:
     integrationSystems: ["integration_system:read"]
     viewer: []
     tenants: ["tenant:read"]
+    rootTenant: ["tenant:read"]
     automaticScenarioAssignments: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentForScenario: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentsForSelector: ["automatic_scenario_assignment:read"]
     systemAuth: ["runtime.auths:read", "application.auths:read", "integration_system.auths:read"]
     formationTemplate: [ "formation_template:read" ]
     formationTemplates: [ "formation_template:read" ]
+    formationTemplatesByName: [ "formation_template:read" ]
     formation: ["formation:read"]
     formations: ["formation:read"]
     formationConstraint: ["formation_constraint:read"]
@@ -54,11 +60,15 @@ graphql:
     updateWebhook: ["webhook:write"]
     deleteWebhook: ["webhook:write"]
     addAPIDefinitionToBundle: ["application:write"]
+    addAPIDefinitionToApplication: ["application:write"]
     updateAPIDefinition: ["application:write"]
+    updateAPIDefinitionForApplication: ["application:write"]
     deleteAPIDefinition: ["application:write"]
     refetchAPISpec: ["application:write"]
     addEventDefinitionToBundle: ["application:write"]
+    addEventDefinitionToApplication: ["application:write"]
     updateEventDefinition: ["application:write"]
+    updateEventDefinitionForApplication: [ "application:write" ]
     deleteEventDefinition: ["application:write"]
     refetchEventAPISpec: ["application:write"]
     addDocumentToBundle: ["application:write"]
@@ -88,6 +98,8 @@ graphql:
     requestBundleInstanceAuthDeletion: ["runtime:write"]
     setBundleInstanceAuth: ["application:write"]
     deleteBundleInstanceAuth: ["application:write"]
+    createBundleInstanceAuth: ["bundle_instance_auth:write"]
+    updateBundleInstanceAuth: ["bundle_instance_auth:write"]
     addBundle: ["application:write"]
     updateBundle: ["application:write"]
     deleteBundle: ["application:write"]
@@ -107,6 +119,8 @@ graphql:
     createCertificateSubjectMapping: [ "certificate_subject_mapping:write" ]
     updateCertificateSubjectMapping: [ "certificate_subject_mapping:write" ]
     deleteCertificateSubjectMapping: [ "certificate_subject_mapping:write" ]
+    addTenantAccess: [ "tenant_access:write" ]
+    removeTenantAccess: [ "tenant_access:write" ]
 
   field:
     fetch_request:
@@ -116,6 +130,7 @@ graphql:
     application:
       auths: ["application.auths:read"]
       webhooks: ["application.webhooks:read"]
+      application_template: [ "application.application_template:read"]
     application_template:
       webhooks: ["application_template.webhooks:read"]
     bundle:
@@ -139,6 +154,10 @@ graphql:
   input:
     application:
       localTenantID: [ "application.local_tenant_id:write" ]
+    application_template:
+      labels: [ "application_template.labels:write" ]
+    formation:
+      state: [ "formation.state:write" ]
 
 # Scopes assigned for every new Client Credentials by given object type (Runtime / Application / Integration System)
 clientCredentialsRegistrationScopes:
@@ -155,6 +174,7 @@ clientCredentialsRegistrationScopes:
     - "application:write"
     - "application.auths:read"
     - "application.webhooks:read"
+    - "application.application_template:read"
     - "bundle.instance_auths:read"
     - "webhook:write"
   integration_system:
@@ -195,7 +215,9 @@ clientCredentialsRegistrationScopes:
     - "automatic_scenario_assignment:read"
     - "application.auths:read"
     - "application.webhooks:read"
+    - "application.application_template:read"
     - "application_template.webhooks:read"
+    - "application_template.labels:write"
     - "bundle.instance_auths:read"
     - "document.fetch_request:read"
     - "event_spec.fetch_request:read"
@@ -216,6 +238,7 @@ clientCredentialsRegistrationScopes:
     - "formation_constraint:write"
     - "certificate_subject_mapping:read"
     - "certificate_subject_mapping:write"
+    - "formation.state:write"
 applicationHideSelectors:
   applicationHideSelectorKey:
     - "applicationHideSelectorValue"

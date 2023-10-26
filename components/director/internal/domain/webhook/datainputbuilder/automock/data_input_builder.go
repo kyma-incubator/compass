@@ -20,6 +20,11 @@ func (_m *DataInputBuilder) PrepareApplicationAndAppTemplateWithLabels(ctx conte
 	ret := _m.Called(ctx, tenant, appID)
 
 	var r0 *webhook.ApplicationWithLabels
+	var r1 *webhook.ApplicationTemplateWithLabels
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*webhook.ApplicationWithLabels, *webhook.ApplicationTemplateWithLabels, error)); ok {
+		return rf(ctx, tenant, appID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *webhook.ApplicationWithLabels); ok {
 		r0 = rf(ctx, tenant, appID)
 	} else {
@@ -28,7 +33,6 @@ func (_m *DataInputBuilder) PrepareApplicationAndAppTemplateWithLabels(ctx conte
 		}
 	}
 
-	var r1 *webhook.ApplicationTemplateWithLabels
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) *webhook.ApplicationTemplateWithLabels); ok {
 		r1 = rf(ctx, tenant, appID)
 	} else {
@@ -37,7 +41,6 @@ func (_m *DataInputBuilder) PrepareApplicationAndAppTemplateWithLabels(ctx conte
 		}
 	}
 
-	var r2 error
 	if rf, ok := ret.Get(2).(func(context.Context, string, string) error); ok {
 		r2 = rf(ctx, tenant, appID)
 	} else {
@@ -52,6 +55,11 @@ func (_m *DataInputBuilder) PrepareApplicationMappingsInFormation(ctx context.Co
 	ret := _m.Called(ctx, tenant, scenario)
 
 	var r0 map[string]*webhook.ApplicationWithLabels
+	var r1 map[string]*webhook.ApplicationTemplateWithLabels
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (map[string]*webhook.ApplicationWithLabels, map[string]*webhook.ApplicationTemplateWithLabels, error)); ok {
+		return rf(ctx, tenant, scenario)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) map[string]*webhook.ApplicationWithLabels); ok {
 		r0 = rf(ctx, tenant, scenario)
 	} else {
@@ -60,7 +68,6 @@ func (_m *DataInputBuilder) PrepareApplicationMappingsInFormation(ctx context.Co
 		}
 	}
 
-	var r1 map[string]*webhook.ApplicationTemplateWithLabels
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) map[string]*webhook.ApplicationTemplateWithLabels); ok {
 		r1 = rf(ctx, tenant, scenario)
 	} else {
@@ -69,7 +76,6 @@ func (_m *DataInputBuilder) PrepareApplicationMappingsInFormation(ctx context.Co
 		}
 	}
 
-	var r2 error
 	if rf, ok := ret.Get(2).(func(context.Context, string, string) error); ok {
 		r2 = rf(ctx, tenant, scenario)
 	} else {
@@ -84,6 +90,11 @@ func (_m *DataInputBuilder) PrepareRuntimeAndRuntimeContextWithLabels(ctx contex
 	ret := _m.Called(ctx, tenant, runtimeID)
 
 	var r0 *webhook.RuntimeWithLabels
+	var r1 *webhook.RuntimeContextWithLabels
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*webhook.RuntimeWithLabels, *webhook.RuntimeContextWithLabels, error)); ok {
+		return rf(ctx, tenant, runtimeID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *webhook.RuntimeWithLabels); ok {
 		r0 = rf(ctx, tenant, runtimeID)
 	} else {
@@ -92,7 +103,6 @@ func (_m *DataInputBuilder) PrepareRuntimeAndRuntimeContextWithLabels(ctx contex
 		}
 	}
 
-	var r1 *webhook.RuntimeContextWithLabels
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) *webhook.RuntimeContextWithLabels); ok {
 		r1 = rf(ctx, tenant, runtimeID)
 	} else {
@@ -101,7 +111,6 @@ func (_m *DataInputBuilder) PrepareRuntimeAndRuntimeContextWithLabels(ctx contex
 		}
 	}
 
-	var r2 error
 	if rf, ok := ret.Get(2).(func(context.Context, string, string) error); ok {
 		r2 = rf(ctx, tenant, runtimeID)
 	} else {
@@ -116,6 +125,10 @@ func (_m *DataInputBuilder) PrepareRuntimeContextWithLabels(ctx context.Context,
 	ret := _m.Called(ctx, tenant, runtimeCtxID)
 
 	var r0 *webhook.RuntimeContextWithLabels
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*webhook.RuntimeContextWithLabels, error)); ok {
+		return rf(ctx, tenant, runtimeCtxID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *webhook.RuntimeContextWithLabels); ok {
 		r0 = rf(ctx, tenant, runtimeCtxID)
 	} else {
@@ -124,7 +137,6 @@ func (_m *DataInputBuilder) PrepareRuntimeContextWithLabels(ctx context.Context,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, runtimeCtxID)
 	} else {
@@ -139,6 +151,10 @@ func (_m *DataInputBuilder) PrepareRuntimeWithLabels(ctx context.Context, tenant
 	ret := _m.Called(ctx, tenant, runtimeID)
 
 	var r0 *webhook.RuntimeWithLabels
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*webhook.RuntimeWithLabels, error)); ok {
+		return rf(ctx, tenant, runtimeID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *webhook.RuntimeWithLabels); ok {
 		r0 = rf(ctx, tenant, runtimeID)
 	} else {
@@ -147,7 +163,6 @@ func (_m *DataInputBuilder) PrepareRuntimeWithLabels(ctx context.Context, tenant
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, runtimeID)
 	} else {
@@ -157,11 +172,16 @@ func (_m *DataInputBuilder) PrepareRuntimeWithLabels(ctx context.Context, tenant
 	return r0, r1
 }
 
-// PrepareRuntimesAndRuntimeContextsMappings provides a mock function with given fields: ctx, tenant, scenario
+// PrepareRuntimesAndRuntimeContextsMappingsInFormation provides a mock function with given fields: ctx, tenant, scenario
 func (_m *DataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFormation(ctx context.Context, tenant string, scenario string) (map[string]*webhook.RuntimeWithLabels, map[string]*webhook.RuntimeContextWithLabels, error) {
 	ret := _m.Called(ctx, tenant, scenario)
 
 	var r0 map[string]*webhook.RuntimeWithLabels
+	var r1 map[string]*webhook.RuntimeContextWithLabels
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (map[string]*webhook.RuntimeWithLabels, map[string]*webhook.RuntimeContextWithLabels, error)); ok {
+		return rf(ctx, tenant, scenario)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) map[string]*webhook.RuntimeWithLabels); ok {
 		r0 = rf(ctx, tenant, scenario)
 	} else {
@@ -170,7 +190,6 @@ func (_m *DataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFormation
 		}
 	}
 
-	var r1 map[string]*webhook.RuntimeContextWithLabels
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) map[string]*webhook.RuntimeContextWithLabels); ok {
 		r1 = rf(ctx, tenant, scenario)
 	} else {
@@ -179,7 +198,6 @@ func (_m *DataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFormation
 		}
 	}
 
-	var r2 error
 	if rf, ok := ret.Get(2).(func(context.Context, string, string) error); ok {
 		r2 = rf(ctx, tenant, scenario)
 	} else {
@@ -189,13 +207,12 @@ func (_m *DataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFormation
 	return r0, r1, r2
 }
 
-type NewDataInputBuilderT interface {
+// NewDataInputBuilder creates a new instance of DataInputBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDataInputBuilder(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDataInputBuilder creates a new instance of DataInputBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDataInputBuilder(t NewDataInputBuilderT) *DataInputBuilder {
+}) *DataInputBuilder {
 	mock := &DataInputBuilder{}
 	mock.Mock.Test(t)
 

@@ -29,18 +29,21 @@ import (
 )
 
 // EventingService missing godoc
+//
 //go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventingService interface {
 	GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*model.RuntimeEventingConfiguration, error)
 }
 
 // OAuth20Service missing godoc
+//
 //go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OAuth20Service interface {
 	DeleteMultipleClientCredentials(ctx context.Context, auths []pkgmodel.SystemAuth) error
 }
 
 // RuntimeService missing godoc
+//
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeRegisterInput, id string, mandatoryLabels map[string]interface{}) error
@@ -58,6 +61,7 @@ type RuntimeService interface {
 }
 
 // ScenarioAssignmentService missing godoc
+//
 //go:generate mockery --name=ScenarioAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ScenarioAssignmentService interface {
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
@@ -72,6 +76,7 @@ type formationService interface {
 }
 
 // RuntimeConverter missing godoc
+//
 //go:generate mockery --name=RuntimeConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeConverter interface {
 	ToGraphQL(in *model.Runtime) *graphql.Runtime
@@ -81,18 +86,21 @@ type RuntimeConverter interface {
 }
 
 // SystemAuthConverter missing godoc
+//
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthConverter interface {
 	ToGraphQL(in *pkgmodel.SystemAuth) (graphql.SystemAuth, error)
 }
 
 // SystemAuthService missing godoc
+//
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string) ([]pkgmodel.SystemAuth, error)
 }
 
 // BundleInstanceAuthService missing godoc
+//
 //go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleInstanceAuthService interface {
 	ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error)
@@ -100,6 +108,7 @@ type BundleInstanceAuthService interface {
 }
 
 // SelfRegisterManager missing godoc
+//
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SelfRegisterManager interface {
 	PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string, validate func() error) (map[string]interface{}, error)
@@ -108,19 +117,22 @@ type SelfRegisterManager interface {
 }
 
 // SubscriptionService is responsible for service layer operations for subscribing a tenant to a runtime
+//
 //go:generate mockery --name=SubscriptionService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SubscriptionService interface {
-	SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName string) (bool, error)
-	UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region string) (bool, error)
+	SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID string) (bool, error)
+	UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID string) (bool, error)
 }
 
 // TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
+//
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
-	FetchOnDemand(tenant, parentTenant string) error
+	FetchOnDemand(ctx context.Context, tenant, parentTenant string) error
 }
 
 // RuntimeContextService missing godoc
+//
 //go:generate mockery --name=RuntimeContextService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeContextService interface {
 	GetForRuntime(ctx context.Context, id, runtimeID string) (*model.RuntimeContext, error)
@@ -130,6 +142,7 @@ type RuntimeContextService interface {
 }
 
 // RuntimeContextConverter missing godoc
+//
 //go:generate mockery --name=RuntimeContextConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeContextConverter interface {
 	ToGraphQL(in *model.RuntimeContext) *graphql.RuntimeContext
@@ -137,6 +150,7 @@ type RuntimeContextConverter interface {
 }
 
 // WebhookService missing godoc
+//
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
 	ListForRuntime(ctx context.Context, runtimeID string) ([]*model.Webhook, error)
@@ -144,6 +158,7 @@ type WebhookService interface {
 }
 
 // WebhookConverter missing godoc
+//
 //go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookConverter interface {
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
@@ -322,7 +337,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 		if err != nil {
 			return nil, err
 		}
-		if err := r.fetcher.FetchOnDemand(sa, parentTenant); err != nil {
+		if err := r.fetcher.FetchOnDemand(ctx, sa, parentTenant); err != nil {
 			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", sa)
 		}
 	}
@@ -353,6 +368,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 		return nil, err
 	}
 
+	log.C(ctx).Debugf("Creating a Runtime with name %q and id %q", in.Name, id)
 	if err = r.runtimeService.CreateWithMandatoryLabels(ctx, convertedIn, id, selfRegLabels); err != nil {
 		return nil, err
 	}
@@ -381,6 +397,7 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	log.C(ctx).Debugf("Updating a Runtime with id %q", id)
 	err = r.runtimeService.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
@@ -478,6 +495,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 
 	deletedRuntime := r.converter.ToGraphQL(runtime)
 
+	log.C(ctx).Debugf("Deleting a Runtime with id %q", id)
 	if err = r.runtimeService.Delete(ctx, id); err != nil {
 		return nil, err
 	}

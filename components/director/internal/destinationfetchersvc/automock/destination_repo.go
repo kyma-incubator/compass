@@ -43,13 +43,12 @@ func (_m *DestinationRepo) Upsert(ctx context.Context, in model.DestinationInput
 	return r0
 }
 
-type mockConstructorTestingTNewDestinationRepo interface {
+// NewDestinationRepo creates a new instance of DestinationRepo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDestinationRepo(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDestinationRepo creates a new instance of DestinationRepo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDestinationRepo(t mockConstructorTestingTNewDestinationRepo) *DestinationRepo {
+}) *DestinationRepo {
 	mock := &DestinationRepo{}
 	mock.Mock.Test(t)
 

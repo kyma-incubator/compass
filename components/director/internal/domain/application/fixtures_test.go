@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -26,10 +28,12 @@ var (
 	providerName       = "provider name"
 	fixedTimestamp     = time.Now()
 	legacyConnectorURL = "url.com"
-	systemNumber       = "123"
-	localTenantID      = "1337"
+	systemNumber       = "system-number-123"
+	localTenantID      = "local-tenant-id-123"
+	appTemplateID      = "app-template-id-123"
 	appName            = "appName"
 	appNamespace       = "appNamespace"
+	tbtID              = "tbtID"
 )
 
 func stringPtr(s string) *string {
@@ -84,7 +88,7 @@ func fixModelApplicationWithAllUpdatableFields(id, name, description, url string
 		Description:          &description,
 		HealthCheckURL:       &url,
 		ProviderName:         &providerName,
-		BaseEntity:           &model.BaseEntity{ID: id},
+		BaseEntity:           &model.BaseEntity{ID: id, UpdatedAt: &conditionTimestamp},
 		BaseURL:              baseURL,
 		ApplicationNamespace: applicationNamespace,
 	}
@@ -104,6 +108,28 @@ func fixGQLApplication(id, name, description string) *graphql.Application {
 	}
 }
 
+func fixGQLApplicationWithTenantBusinessType(id, name, description string) *graphql.Application {
+	return &graphql.Application{
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
+		Status: &graphql.ApplicationStatus{
+			Condition: graphql.ApplicationStatusConditionInitial,
+		},
+		Name:                 name,
+		Description:          &description,
+		TenantBusinessTypeID: &tbtID,
+	}
+}
+
+func fixGQLTenantBusinessType(id, name, code string) *graphql.TenantBusinessType {
+	return &graphql.TenantBusinessType{
+		ID:   id,
+		Name: name,
+		Code: code,
+	}
+}
+
 func fixDetailedModelApplication(t *testing.T, id, tenant, name, description string) *model.Application {
 	appStatusTimestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
@@ -120,11 +146,13 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		SystemNumber:         &systemNumber,
 		LocalTenantID:        &localTenantID,
 		IntegrationSystemID:  &intSysID,
+		TenantBusinessTypeID: &tbtID,
 		BaseURL:              str.Ptr("base_url"),
 		ApplicationNamespace: &appNamespace,
 		OrdLabels:            json.RawMessage("[]"),
 		CorrelationIDs:       json.RawMessage("[]"),
 		SystemStatus:         str.Ptr("reachable"),
+		Tags:                 json.RawMessage("[]"),
 		DocumentationLabels:  json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
 			ID:        id,
@@ -152,6 +180,7 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		Description:          &description,
 		HealthCheckURL:       &testURL,
 		IntegrationSystemID:  &intSysID,
+		TenantBusinessTypeID: &tbtID,
 		ProviderName:         str.Ptr("provider name"),
 		BaseURL:              str.Ptr("base_url"),
 		ApplicationNamespace: &appNamespace,
@@ -186,6 +215,8 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		OrdLabels:            repo.NewValidNullableString("[]"),
 		CorrelationIDs:       repo.NewValidNullableString("[]"),
 		SystemStatus:         repo.NewValidNullableString("reachable"),
+		TenantBusinessTypeID: repo.NewValidNullableString(tbtID),
+		Tags:                 repo.NewValidNullableString("[]"),
 		DocumentationLabels:  repo.NewValidNullableString("[]"),
 		BaseEntity: &repo.BaseEntity{
 			ID:        id,
@@ -251,6 +282,44 @@ func fixModelApplicationUpdateInput(name, description, healthCheckURL, baseURL s
 func fixModelApplicationUpdateInputStatus(statusCondition model.ApplicationStatusCondition) model.ApplicationUpdateInput {
 	return model.ApplicationUpdateInput{
 		StatusCondition: &statusCondition,
+	}
+}
+
+func fixGQLApplicationJSONInput(name, description string) graphql.ApplicationJSONInput {
+	labels := graphql.Labels{
+		"test": []string{"val", "val2"},
+	}
+	kind := "test"
+	desc := "Sample"
+	return graphql.ApplicationJSONInput{
+		Name:                name,
+		Description:         &description,
+		Labels:              labels,
+		HealthCheckURL:      &testURL,
+		IntegrationSystemID: &intSysID,
+		LocalTenantID:       &localTenantID,
+		ProviderName:        &providerName,
+		Webhooks: []*graphql.WebhookInput{
+			{URL: stringPtr("webhook1.foo.bar")},
+			{URL: stringPtr("webhook2.foo.bar")},
+		},
+		Bundles: []*graphql.BundleCreateInput{
+			{
+				Name: "foo",
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{Name: "api1", TargetURL: "foo.bar"},
+					{Name: "api2", TargetURL: "foo.bar2"},
+				},
+				EventDefinitions: []*graphql.EventDefinitionInput{
+					{Name: "event1", Description: &desc},
+					{Name: "event2", Description: &desc},
+				},
+				Documents: []*graphql.DocumentInput{
+					{DisplayName: "doc1", Kind: &kind},
+					{DisplayName: "doc2", Kind: &kind},
+				},
+			},
+		},
 	}
 }
 
@@ -351,9 +420,9 @@ func fixGQLApplicationEventingConfiguration(url string) *graphql.ApplicationEven
 	}
 }
 
-func fixModelBundle(id, tenantID, appID, name, description string) *model.Bundle {
+func fixModelBundle(id, appID, name, description string) *model.Bundle {
 	return &model.Bundle{
-		ApplicationID:                  appID,
+		ApplicationID:                  &appID,
 		Name:                           name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: nil,
@@ -362,7 +431,7 @@ func fixModelBundle(id, tenantID, appID, name, description string) *model.Bundle
 	}
 }
 
-func fixGQLBundle(id, appID, name, description string) *graphql.Bundle {
+func fixGQLBundle(id, name, description string) *graphql.Bundle {
 	return &graphql.Bundle{
 		BaseEntity: &graphql.BaseEntity{
 			ID: id,
@@ -398,13 +467,91 @@ func fixBundlePage(bundles []*model.Bundle) *model.BundlePage {
 	}
 }
 
+func fixModelAPIDef(id, appID, name, description string) *model.APIDefinition {
+	return &model.APIDefinition{
+		ApplicationID: &appID,
+		Name:          name,
+		Description:   &description,
+		BaseEntity:    &model.BaseEntity{ID: id},
+	}
+}
+
+func fixGQLAPIDefWithSpec(id, name, description string) *graphql.APIDefinition {
+	data := graphql.CLOB("spec_data")
+	return &graphql.APIDefinition{
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
+		Spec: &graphql.APISpec{
+			ID:     id,
+			Type:   graphql.APISpecTypeOdata,
+			Format: graphql.SpecFormatJSON,
+			Data:   &data,
+		},
+		Name:        name,
+		Description: &description,
+	}
+}
+
+func fixModelAPISpecWithID(id, apiID string) *model.Spec {
+	var specData = "specData"
+	var apiType = model.APISpecTypeOdata
+	return &model.Spec{
+		ID:         id,
+		ObjectType: model.APISpecReference,
+		ObjectID:   apiID,
+		APIType:    &apiType,
+		Format:     model.SpecFormatXML,
+		Data:       &specData,
+	}
+}
+
+func fixModelEventDef(id, appID, name, description string) *model.EventDefinition {
+	return &model.EventDefinition{
+		ApplicationID: &appID,
+		Name:          name,
+		Description:   &description,
+		BaseEntity:    &model.BaseEntity{ID: id},
+	}
+}
+
+func fixModelEventSpecWithID(id, eventID string) *model.Spec {
+	var specData = "specData"
+	var eventType = model.EventSpecTypeAsyncAPI
+	return &model.Spec{
+		ID:         id,
+		ObjectType: model.EventSpecReference,
+		ObjectID:   eventID,
+		EventType:  &eventType,
+		Format:     model.SpecFormatXML,
+		Data:       &specData,
+	}
+}
+
+func fixGQLEventDefWithSpec(id, name, description string) *graphql.EventDefinition {
+	data := graphql.CLOB("spec_data")
+	return &graphql.EventDefinition{
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
+		Spec: &graphql.EventSpec{
+			ID:     id,
+			Type:   graphql.EventSpecTypeAsyncAPI,
+			Format: graphql.SpecFormatJSON,
+			Data:   &data,
+		},
+		Name:        name,
+		Description: &description,
+	}
+}
+
 func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
 	t := graphql.Timestamp(time)
 	return &t
 }
 
 func fixAppColumns() []string {
-	return []string{"id", "app_template_id", "system_number", "local_tenant_id", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "application_namespace", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
+	return []string{"id", "app_template_id", "system_number", "local_tenant_id", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "application_namespace", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "tags", "documentation_labels", "tenant_business_type_id"}
 }
 
 func fixApplicationLabels(appID, labelKey1, labelKey2 string, labelValue1 []interface{}, labelValue2 string) map[string]*model.Label {
@@ -438,4 +585,62 @@ func fixModelApplicationTemplate(id, name string) *model.ApplicationTemplate {
 		Description: &desc,
 		AccessLevel: model.GlobalApplicationTemplateAccessLevel,
 	}
+}
+
+func fixModelTenantBusinessType(id, code, name string) *model.TenantBusinessType {
+	return &model.TenantBusinessType{
+		ID:   id,
+		Code: code,
+		Name: name,
+	}
+}
+
+func fixGQLApplicationTemplate(id, name string) *graphql.ApplicationTemplate {
+	desc := "Description for template"
+	return &graphql.ApplicationTemplate{
+		ID:          id,
+		Name:        name,
+		Description: &desc,
+		AccessLevel: graphql.ApplicationTemplateAccessLevel(model.GlobalApplicationTemplateAccessLevel),
+	}
+}
+
+func fixGQLApplicationWithAppTemplate(id, name, description, appTemplateID string) *graphql.Application {
+	return &graphql.Application{
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
+		Status: &graphql.ApplicationStatus{
+			Condition: graphql.ApplicationStatusConditionInitial,
+		},
+		Name:                  name,
+		Description:           &description,
+		ApplicationNamespace:  &appNamespace,
+		ApplicationTemplateID: str.Ptr(appTemplateID),
+	}
+}
+
+func fixUnusedEventDefinitionService() *automock.EventDefinitionService {
+	svc := &automock.EventDefinitionService{}
+	return svc
+}
+
+func fixUnusedAPIDefinitionService() *automock.APIDefinitionService {
+	svc := &automock.APIDefinitionService{}
+	return svc
+}
+
+func fixUnusedSpecService() *automock.SpecService {
+	svc := &automock.SpecService{}
+	return svc
+}
+
+func fixUnusedAPIDefinitionConverted() *automock.APIDefinitionConverter {
+	conv := &automock.APIDefinitionConverter{}
+	return conv
+}
+
+func fixUnusedEventDefinitionConverted() *automock.EventDefinitionConverter {
+	conv := &automock.EventDefinitionConverter{}
+	return conv
 }

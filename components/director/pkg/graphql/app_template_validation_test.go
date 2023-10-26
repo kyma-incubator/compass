@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// ApplicationTemaplteInput
+// ApplicationTemplateInput
 
 func TestApplicationTemplateInput_Validate_Rule_ValidPlaceholders(t *testing.T) {
 	testPlaceholderName := "test"
@@ -126,7 +126,7 @@ func TestApplicationTemplateInput_Validate_Description(t *testing.T) {
 		Valid bool
 	}{
 		{
-			Name: "Valid",
+			Name:  "Valid",
 			Value: str.Ptr("valid	valid"),
 			Valid: true,
 		},
@@ -362,7 +362,7 @@ func TestApplicationTemplateInput_Validate_Webhooks(t *testing.T) {
 	}
 }
 
-// ApplicationTemaplteInput
+// ApplicationTemplateUpdateInput
 
 func TestApplicationTemplateUpdateInput_Validate_Rule_ValidPlaceholders(t *testing.T) {
 	testPlaceholderName := "test"
@@ -476,7 +476,7 @@ func TestApplicationTemplateUpdateInput_Validate_Description(t *testing.T) {
 		Valid bool
 	}{
 		{
-			Name: "Valid",
+			Name:  "Valid",
 			Value: str.Ptr("valid	valid"),
 			Valid: true,
 		},
@@ -716,7 +716,7 @@ func TestPlaceholderDefinitionInput_Validate_Description(t *testing.T) {
 		Valid bool
 	}{
 		{
-			Name: "Valid",
+			Name:  "Valid",
 			Value: str.Ptr("valid	valid"),
 			Valid: true,
 		},
@@ -1038,7 +1038,7 @@ func TestTemplateValueInput_Validate_Description(t *testing.T) {
 func fixValidApplicationTemplateInput() graphql.ApplicationTemplateInput {
 	return graphql.ApplicationTemplateInput{
 		Name: "valid",
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name: "valid",
 		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
@@ -1048,7 +1048,7 @@ func fixValidApplicationTemplateInput() graphql.ApplicationTemplateInput {
 func fixValidApplicationTemplateUpdateInput() graphql.ApplicationTemplateUpdateInput {
 	return graphql.ApplicationTemplateUpdateInput{
 		Name: "valid",
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name: "valid",
 		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,

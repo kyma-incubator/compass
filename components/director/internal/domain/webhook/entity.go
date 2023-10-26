@@ -19,6 +19,7 @@ type Entity struct {
 	Type                  string         `db:"type"`
 	Mode                  sql.NullString `db:"mode"`
 	URL                   sql.NullString `db:"url"`
+	ProxyURL              sql.NullString `db:"proxy_url"`
 	Auth                  sql.NullString `db:"auth"`
 	RetryInterval         sql.NullInt32  `db:"retry_interval"`
 	Timeout               sql.NullInt32  `db:"timeout"`
@@ -43,6 +44,8 @@ func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
 		return resource.Application, e.ApplicationID.String
 	} else if e.FormationTemplateID.Valid {
 		return resource.FormationTemplate, e.FormationTemplateID.String
+	} else if e.ApplicationTemplateID.Valid {
+		return resource.ApplicationTemplate, e.ApplicationTemplateID.String
 	}
 	return "", ""
 }

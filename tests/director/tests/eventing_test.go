@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -20,6 +22,8 @@ import (
 
 const runtimeEventURLFormat = "https://%s"
 const appEventURLFormat = "https://%s/%s/v1/events"
+const eventingCategory = "eventing"
+const IsNormalizedLabel = "isNormalized"
 
 func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventingAssigned(t *testing.T) {
 	// GIVEN
@@ -33,7 +37,7 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 	runtime2EventingURL := "https://eventing.runtime2.local"
 
 	appName := "app-test-eventing"
-	applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppType(appName, "", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"))
+	applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppType(appName, "", conf.ApplicationTypeLabelKey, fixtures.CreateAppTemplateName("Cloud for Customer"))
 	application, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantId, applicationInput)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
@@ -45,18 +49,20 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 
-	input1 := fixRuntimeInput("runtime-1-eventing")
-	runtime1 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input1, conf.GatewayOauth)
+	input1 := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-1-eventing")
+	var runtime1 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime1)
+	runtime1 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input1, conf.GatewayOauth)
 
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime1.ID, tenantId)
 	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime1.ID, tenantId)
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, IsNormalizedLabel, "false")
 
-	input2 := fixRuntimeInput("runtime-2-eventing")
-	runtime2 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input2, conf.GatewayOauth)
+	input2 := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-2-eventing")
+	var runtime2 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime2)
+	runtime2 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input2, conf.GatewayOauth)
 
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime2.ID, tenantId)
 	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime2.ID, tenantId)
@@ -78,10 +84,11 @@ func TestGetEventingConfigurationForRuntime(t *testing.T) {
 	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtimeEventingURL := "http://eventing.runtime.local"
 
-	input := fixRuntimeInput("runtime-eventing")
+	input := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-eventing")
 
-	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, runtimeEventingURLLabelKey, runtimeEventingURL)
 
@@ -105,7 +112,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	runtime2EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime2Eventing)
 
 	appName := "app-test-eventing"
-	applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppType(appName, "", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"))
+	applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppType(appName, "", conf.ApplicationTypeLabelKey, fixtures.CreateAppTemplateName("Cloud for Customer"))
 	application, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantId, applicationInput)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
@@ -117,9 +124,10 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 
-	input1 := fixRuntimeInput("runtime-1-eventing")
-	runtime1 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input1, conf.GatewayOauth)
+	input1 := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-1-eventing")
+	var runtime1 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime1)
+	runtime1 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input1, conf.GatewayOauth)
 
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime1.ID, tenantId)
 	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime1.ID, tenantId)
@@ -127,10 +135,11 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, IsNormalizedLabel, "false")
 
-	input2 := fixRuntimeInput("runtime-2-eventing")
+	input2 := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-2-eventing")
 
-	runtime2 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input2, conf.GatewayOauth)
+	var runtime2 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime2)
+	runtime2 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input2, conf.GatewayOauth)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime2.ID)
 
@@ -151,7 +160,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	// THEN
 	defaultAppNameNormalizer := &normalizer.DefaultNormalizator{}
 	normalizedAppName := defaultAppNameNormalizer.Normalize(appName)
-	saveExampleInCustomDir(t, request.Query(), eventingCategory, "set default eventing for application")
+	example.SaveExampleInCustomDir(t, request.Query(), eventingCategory, "set default eventing for application")
 	require.NoError(t, err)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, normalizedAppName), actualEventingCfg.DefaultURL)
 
@@ -170,10 +179,11 @@ func TestEmptyEventConfigurationForApp(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	input1 := fixRuntimeInput("runtime-1-eventing")
+	input1 := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-1-eventing")
 
-	runtime1 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input1, conf.GatewayOauth)
+	var runtime1 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime1)
+	runtime1 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input1, conf.GatewayOauth)
 
 	//WHEN
 	app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, tenantId, application.ID)
@@ -195,7 +205,7 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	runtime2EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime2Eventing)
 
 	appName := "app-test-eventing"
-	applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppType(appName, "", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"))
+	applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppType(appName, "", conf.ApplicationTypeLabelKey, fixtures.CreateAppTemplateName("Cloud for Customer"))
 	application, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantId, applicationInput)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
@@ -207,9 +217,10 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 
-	input1 := fixRuntimeInput("runtime-1-eventing")
-	runtime1 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input1, conf.GatewayOauth)
+	input1 := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-1-eventing")
+	var runtime1 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime1)
+	runtime1 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input1, conf.GatewayOauth)
 
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime1.ID, tenantId)
 	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime1.ID, tenantId)
@@ -217,9 +228,10 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, IsNormalizedLabel, "false")
 
-	input2 := fixRuntimeInput("runtime-2-eventing")
-	runtime2 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input2, conf.GatewayOauth)
+	input2 := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-2-eventing")
+	var runtime2 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime2)
+	runtime2 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input2, conf.GatewayOauth)
 
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime2.ID, tenantId)
 	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime2.ID, tenantId)
@@ -241,7 +253,7 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &actualEventingCfg)
 
 	// THEN
-	saveExampleInCustomDir(t, request.Query(), eventingCategory, "delete default eventing for application")
+	example.SaveExampleInCustomDir(t, request.Query(), eventingCategory, "delete default eventing for application")
 	require.NoError(t, err)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, appName), actualEventingCfg.DefaultURL)
 

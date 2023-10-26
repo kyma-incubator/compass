@@ -16,7 +16,7 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "true"
-        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-ord-service-tests-app
     spec:
@@ -64,6 +64,8 @@ spec:
               value: {{ .Values.global.tests.subscription.subscriptionURL }}
             - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
               value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
             - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL
               valueFrom:
                 secretKeyRef:
@@ -95,6 +97,16 @@ spec:
               value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTIONS_LABEL_KEY
+              value: {{ .Values.global.tests.subscription.labelKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_STANDARD_FLOW
+              value: {{ .Values.global.tests.subscription.standardFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_DIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.directDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_INDIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
+              value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
             - name: APP_TF_CONFIG_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_TF_CONFIG_ROOT_API
@@ -129,8 +141,14 @@ spec:
               value: {{ .Values.global.destinationFetcher.request.requestTimeout }}
             - name: APP_ENDPOINT_TENANT_DESTINATIONS
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
-            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
-              value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
+            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATIONS
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationsEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationCertificatesEndpoint }}"
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS
+              value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
             - name: TEST_EXTERNAL_CERT_CN
               value: {{ .Values.global.externalCertConfiguration.commonName }}
             - name: TEST_EXTERNAL_CERT_SUBJECT

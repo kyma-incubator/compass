@@ -24,7 +24,9 @@ type Entity struct {
 	OrdLabels             sql.NullString `db:"labels"`
 	CorrelationIDs        sql.NullString `db:"correlation_ids"`
 	SystemStatus          sql.NullString `db:"system_status"`
+	TenantBusinessTypeID  sql.NullString `db:"tenant_business_type_id"`
 
+	Tags                sql.NullString `db:"tags"`
 	DocumentationLabels sql.NullString `db:"documentation_labels"`
 	*repo.BaseEntity
 }

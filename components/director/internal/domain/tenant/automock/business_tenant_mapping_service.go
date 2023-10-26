@@ -16,6 +16,20 @@ type BusinessTenantMappingService struct {
 	mock.Mock
 }
 
+// CreateTenantAccessForResourceRecursively provides a mock function with given fields: ctx, tenantAccess
+func (_m *BusinessTenantMappingService) CreateTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error {
+	ret := _m.Called(ctx, tenantAccess)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.TenantAccess) error); ok {
+		r0 = rf(ctx, tenantAccess)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteMany provides a mock function with given fields: ctx, tenantInputs
 func (_m *BusinessTenantMappingService) DeleteMany(ctx context.Context, tenantInputs []string) error {
 	ret := _m.Called(ctx, tenantInputs)
@@ -30,20 +44,113 @@ func (_m *BusinessTenantMappingService) DeleteMany(ctx context.Context, tenantIn
 	return r0
 }
 
+// DeleteTenantAccessForResourceRecursively provides a mock function with given fields: ctx, tenantAccess
+func (_m *BusinessTenantMappingService) DeleteTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error {
+	ret := _m.Called(ctx, tenantAccess)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.TenantAccess) error); ok {
+		r0 = rf(ctx, tenantAccess)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// GetInternalTenant provides a mock function with given fields: ctx, externalTenant
+func (_m *BusinessTenantMappingService) GetInternalTenant(ctx context.Context, externalTenant string) (string, error) {
+	ret := _m.Called(ctx, externalTenant)
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, externalTenant)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, externalTenant)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, externalTenant)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetLowestOwnerForResource provides a mock function with given fields: ctx, resourceType, objectID
 func (_m *BusinessTenantMappingService) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
 	ret := _m.Called(ctx, resourceType, objectID)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string) (string, error)); ok {
+		return rf(ctx, resourceType, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string) string); ok {
 		r0 = rf(ctx, resourceType, objectID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string) error); ok {
 		r1 = rf(ctx, resourceType, objectID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetParentRecursivelyByExternalTenant provides a mock function with given fields: ctx, externalTenant
+func (_m *BusinessTenantMappingService) GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, externalTenant)
+
+	var r0 *model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, externalTenant)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
+		r0 = rf(ctx, externalTenant)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.BusinessTenantMapping)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, externalTenant)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTenantAccessForResource provides a mock function with given fields: ctx, tenantID, resourceID, resourceType
+func (_m *BusinessTenantMappingService) GetTenantAccessForResource(ctx context.Context, tenantID string, resourceID string, resourceType resource.Type) (*model.TenantAccess, error) {
+	ret := _m.Called(ctx, tenantID, resourceID, resourceType)
+
+	var r0 *model.TenantAccess
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, resource.Type) (*model.TenantAccess, error)); ok {
+		return rf(ctx, tenantID, resourceID, resourceType)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, resource.Type) *model.TenantAccess); ok {
+		r0 = rf(ctx, tenantID, resourceID, resourceType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.TenantAccess)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, resource.Type) error); ok {
+		r1 = rf(ctx, tenantID, resourceID, resourceType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -56,6 +163,10 @@ func (_m *BusinessTenantMappingService) GetTenantByExternalID(ctx context.Contex
 	ret := _m.Called(ctx, externalID)
 
 	var r0 *model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, externalID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, externalID)
 	} else {
@@ -64,7 +175,6 @@ func (_m *BusinessTenantMappingService) GetTenantByExternalID(ctx context.Contex
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, externalID)
 	} else {
@@ -79,6 +189,10 @@ func (_m *BusinessTenantMappingService) GetTenantByID(ctx context.Context, id st
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -87,7 +201,6 @@ func (_m *BusinessTenantMappingService) GetTenantByID(ctx context.Context, id st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -102,6 +215,10 @@ func (_m *BusinessTenantMappingService) List(ctx context.Context) ([]*model.Busi
 	ret := _m.Called(ctx)
 
 	var r0 []*model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []*model.BusinessTenantMapping); ok {
 		r0 = rf(ctx)
 	} else {
@@ -110,7 +227,6 @@ func (_m *BusinessTenantMappingService) List(ctx context.Context) ([]*model.Busi
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -125,6 +241,10 @@ func (_m *BusinessTenantMappingService) ListLabels(ctx context.Context, tenantID
 	ret := _m.Called(ctx, tenantID)
 
 	var r0 map[string]*model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (map[string]*model.Label, error)); ok {
+		return rf(ctx, tenantID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) map[string]*model.Label); ok {
 		r0 = rf(ctx, tenantID)
 	} else {
@@ -133,7 +253,6 @@ func (_m *BusinessTenantMappingService) ListLabels(ctx context.Context, tenantID
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, tenantID)
 	} else {
@@ -148,6 +267,10 @@ func (_m *BusinessTenantMappingService) ListPageBySearchTerm(ctx context.Context
 	ret := _m.Called(ctx, searchTerm, pageSize, cursor)
 
 	var r0 *model.BusinessTenantMappingPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) (*model.BusinessTenantMappingPage, error)); ok {
+		return rf(ctx, searchTerm, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.BusinessTenantMappingPage); ok {
 		r0 = rf(ctx, searchTerm, pageSize, cursor)
 	} else {
@@ -156,7 +279,6 @@ func (_m *BusinessTenantMappingService) ListPageBySearchTerm(ctx context.Context
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
 		r1 = rf(ctx, searchTerm, pageSize, cursor)
 	} else {
@@ -192,6 +314,10 @@ func (_m *BusinessTenantMappingService) UpsertMany(ctx context.Context, tenantIn
 	ret := _m.Called(_ca...)
 
 	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ...model.BusinessTenantMappingInput) ([]string, error)); ok {
+		return rf(ctx, tenantInputs...)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, ...model.BusinessTenantMappingInput) []string); ok {
 		r0 = rf(ctx, tenantInputs...)
 	} else {
@@ -200,7 +326,6 @@ func (_m *BusinessTenantMappingService) UpsertMany(ctx context.Context, tenantIn
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, ...model.BusinessTenantMappingInput) error); ok {
 		r1 = rf(ctx, tenantInputs...)
 	} else {
@@ -215,13 +340,16 @@ func (_m *BusinessTenantMappingService) UpsertSingle(ctx context.Context, tenant
 	ret := _m.Called(ctx, tenantInput)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMappingInput) (string, error)); ok {
+		return rf(ctx, tenantInput)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMappingInput) string); ok {
 		r0 = rf(ctx, tenantInput)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.BusinessTenantMappingInput) error); ok {
 		r1 = rf(ctx, tenantInput)
 	} else {
@@ -231,13 +359,12 @@ func (_m *BusinessTenantMappingService) UpsertSingle(ctx context.Context, tenant
 	return r0, r1
 }
 
-type mockConstructorTestingTNewBusinessTenantMappingService interface {
+// NewBusinessTenantMappingService creates a new instance of BusinessTenantMappingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewBusinessTenantMappingService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewBusinessTenantMappingService creates a new instance of BusinessTenantMappingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBusinessTenantMappingService(t mockConstructorTestingTNewBusinessTenantMappingService) *BusinessTenantMappingService {
+}) *BusinessTenantMappingService {
 	mock := &BusinessTenantMappingService{}
 	mock.Mock.Test(t)
 

@@ -41,13 +41,12 @@ func (_m *EntityConverter) ToEntity(assignment model.AutomaticScenarioAssignment
 	return r0
 }
 
-type NewEntityConverterT interface {
+// NewEntityConverter creates a new instance of EntityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEntityConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEntityConverter creates a new instance of EntityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEntityConverter(t NewEntityConverterT) *EntityConverter {
+}) *EntityConverter {
 	mock := &EntityConverter{}
 	mock.Mock.Test(t)
 

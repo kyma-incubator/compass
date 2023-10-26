@@ -1,7 +1,7 @@
 APP_NAME = compass-e2e-tests
 APP_PATH = tests
 LOCAL_PREFIX = k3d-kyma-registry:5001
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
+BUILDPACK = europe-docker.pkg.dev/kyma-project/prod/test-infra/buildpack-golang:v20230323-a1ac96db
 SCRIPTS_DIR = $(realpath $(shell pwd)/..)/scripts
 INSTALLATION_SCRIPTS_DIR = $(realpath $(shell pwd)/..)/installation/scripts
 CHARTS_DIR = $(realpath $(shell pwd)/..)/chart

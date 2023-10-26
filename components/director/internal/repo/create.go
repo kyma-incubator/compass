@@ -20,6 +20,7 @@ import (
 // Creator is an interface for creating entities with externally managed tenant accesses (m2m table or view)
 type Creator interface {
 	Create(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error
+	SetParentAccessVerifier(func(ctx context.Context, parentResourceType resource.Type, parentID string) error)
 }
 
 // CreatorGlobal is an interface for creating global entities without tenant or entities with tenant embedded in them.
@@ -28,10 +29,11 @@ type CreatorGlobal interface {
 }
 
 type universalCreator struct {
-	tableName          string
-	columns            []string
-	matcherColumns     []string
-	ownerCheckRequired bool
+	tableName           string
+	columns             []string
+	matcherColumns      []string
+	ownerCheckRequired  bool
+	checkParentAccessFn func(ctx context.Context, parentResourceType resource.Type, parentID string) error
 }
 
 // NewCreator is a constructor for Creator about entities with externally managed tenant accesses (m2m table or view)
@@ -101,6 +103,10 @@ func (c *universalCreator) Create(ctx context.Context, resourceType resource.Typ
 	return c.createChildEntity(ctx, tenant, dbEntity, resourceType)
 }
 
+func (c *universalCreator) SetParentAccessVerifier(parentAccess func(ctx context.Context, parentResourceType resource.Type, parentID string) error) {
+	c.checkParentAccessFn = parentAccess
+}
+
 func (c *universalCreator) createTopLevelEntity(ctx context.Context, id string, tenant string, dbEntity interface{}, resourceType resource.Type) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
@@ -162,7 +168,7 @@ func (c *universalCreator) createChildEntity(ctx context.Context, tenant string,
 
 	insertStmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
 
-	log.C(ctx).Debugf("Executing DB query: %s", insertStmt)
+	log.C(ctx).Infof("Executing DB query: %s", insertStmt)
 	_, err = persist.NamedExecContext(ctx, insertStmt, dbEntity)
 
 	return persistence.MapSQLError(ctx, err, resourceType, resource.Create, "while inserting row to '%s' table", c.tableName)
@@ -171,6 +177,7 @@ func (c *universalCreator) createChildEntity(ctx context.Context, tenant string,
 func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string, dbEntity interface{}, resourceType resource.Type) error {
 	var parentID string
 	var parentResourceType resource.Type
+
 	if childEntity, ok := dbEntity.(ChildEntity); ok {
 		parentResourceType, parentID = childEntity.GetParent(resourceType)
 	}
@@ -179,13 +186,23 @@ func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string,
 		return errors.Errorf("unknown parent for entity type %s", resourceType)
 	}
 
+	if _, ok := parentResourceType.IgnoredTenantAccessTable(); ok {
+		log.C(ctx).Debugf("parent entity %s does not need a tenant access table", parentResourceType)
+		return nil
+	}
+
 	tenantAccessResourceType := resource.TenantAccess
 	parentAccessTable, ok := parentResourceType.TenantAccessTable()
 	if !ok {
-		log.C(ctx).Debugf("parent entity %s does not have access table. Will check if it has table with embedded tenant...", parentResourceType)
+		log.C(ctx).Infof("parent entity %s does not have access table. Will check if it has table with embedded tenant...", parentResourceType)
 		var ok bool
 		parentAccessTable, ok = parentResourceType.EmbeddedTenantTable()
 		if !ok {
+			log.C(ctx).Infof("Parent entity %s does not have access table or table with embedded tenant.", parentResourceType)
+			if c.checkParentAccessFn != nil {
+				log.C(ctx).Info("Executing additional parent access validation...")
+				return c.checkParentAccessFn(ctx, parentResourceType, parentID)
+			}
 			return errors.Errorf("parent entity %s does not have access table or table with embedded tenant", parentResourceType)
 		}
 		tenantAccessResourceType = parentResourceType

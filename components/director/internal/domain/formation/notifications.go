@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -38,9 +41,12 @@ type notificationsGenerator interface {
 var emptyFormationAssignment = &webhookdir.FormationAssignment{Value: "\"\""}
 
 type notificationsService struct {
-	tenantRepository       tenantRepository
-	webhookClient          webhookClient
-	notificationsGenerator notificationsGenerator
+	tenantRepository            tenantRepository
+	webhookClient               webhookClient
+	notificationsGenerator      notificationsGenerator
+	constraintEngine            constraintEngine
+	webhookConverter            webhookConverter
+	formationTemplateRepository FormationTemplateRepository
 }
 
 // NewNotificationService creates notifications service for formation assignment and unassignment
@@ -48,11 +54,17 @@ func NewNotificationService(
 	tenantRepository tenantRepository,
 	webhookClient webhookClient,
 	notificationsGenerator notificationsGenerator,
+	constraintEngine constraintEngine,
+	webhookConverter webhookConverter,
+	formationTemplateRepository FormationTemplateRepository,
 ) *notificationsService {
 	return &notificationsService{
-		tenantRepository:       tenantRepository,
-		webhookClient:          webhookClient,
-		notificationsGenerator: notificationsGenerator,
+		tenantRepository:            tenantRepository,
+		webhookClient:               webhookClient,
+		notificationsGenerator:      notificationsGenerator,
+		constraintEngine:            constraintEngine,
+		webhookConverter:            webhookConverter,
+		formationTemplateRepository: formationTemplateRepository,
 	}
 }
 
@@ -120,13 +132,63 @@ func (ns *notificationsService) GenerateFormationNotifications(ctx context.Conte
 	return ns.notificationsGenerator.GenerateFormationLifecycleNotifications(ctx, formationTemplateWebhooks, tenantID, formation, formationTemplateName, formationTemplateID, formationOperation, customerTenantContext)
 }
 
-func (ns *notificationsService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookRequest) (*webhookdir.Response, error) {
+func (ns *notificationsService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhookdir.Response, error) {
+	joinPointDetails, err := ns.prepareDetailsForSendNotification(webhookNotificationReq)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while preparing details for send notification")
+	}
+	joinPointDetails.Location = formationconstraint.PreSendNotification
+	if err = ns.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreSendNotification, joinPointDetails, webhookNotificationReq.GetFormation().FormationTemplateID); err != nil {
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.SendNotificationOperation, model.PreOperation)
+	}
+
 	resp, err := ns.webhookClient.Do(ctx, webhookNotificationReq)
 	if err != nil && resp != nil && resp.Error != nil && *resp.Error != "" {
 		return resp, nil
+	} else if err != nil {
+		return resp, err
+	}
+
+	joinPointDetails.Location = formationconstraint.PostSendNotification
+	if err = ns.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostSendNotification, joinPointDetails, webhookNotificationReq.GetFormation().FormationTemplateID); err != nil {
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.SendNotificationOperation, model.PostOperation)
 	}
 
 	return resp, err
+}
+
+func (ns *notificationsService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, formation *model.Formation, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
+	template, err := ns.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation template by ID: %q: %v", formation.FormationTemplateID, err)
+		return nil, errors.Wrapf(err, "An error occurred while getting formation template by ID: %q", formation.FormationTemplateID)
+	}
+
+	return &formationconstraint.NotificationStatusReturnedOperationDetails{
+		ResourceType:      model.FormationResourceType,
+		ResourceSubtype:   template.Name,
+		Operation:         operation,
+		Formation:         formation,
+		FormationTemplate: template,
+	}, nil
+}
+
+func (ns *notificationsService) prepareDetailsForSendNotification(webhookNotificationReq webhookclient.WebhookExtRequest) (*formationconstraint.SendNotificationOperationDetails, error) {
+	webhookGql := webhookNotificationReq.GetWebhook()
+
+	joinPointDetails := &formationconstraint.SendNotificationOperationDetails{
+		ResourceType:               webhookNotificationReq.GetObjectType(),
+		ResourceSubtype:            webhookNotificationReq.GetObjectSubtype(),
+		Operation:                  webhookNotificationReq.GetOperation(),
+		Webhook:                    webhookGql,
+		CorrelationID:              webhookNotificationReq.GetCorrelationID(),
+		TemplateInput:              webhookNotificationReq.GetObject(),
+		FormationAssignment:        webhookNotificationReq.GetFormationAssignment(),
+		ReverseFormationAssignment: webhookNotificationReq.GetReverseFormationAssignment(),
+		Formation:                  webhookNotificationReq.GetFormation(),
+	}
+
+	return joinPointDetails, nil
 }
 
 func (ns *notificationsService) extractCustomerTenantContext(ctx context.Context, internalTenantID string) (*webhookdir.CustomerTenantContext, error) {

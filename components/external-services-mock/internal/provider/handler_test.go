@@ -2,6 +2,7 @@ package provider
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,7 +12,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var url = "https://target-url.com"
+var (
+	url                  = "https://target-url.com"
+	depConfApiPath       = "/v1/dependencies/configure"
+	dependencies         = []string{"dependency-name"}
+	multipleDependencies = []string{"dependency-name", "second-dependency"}
+)
 
 func TestHandler_OnSubscription(t *testing.T) {
 	apiPath := fmt.Sprintf("/tenants/v1/regional/%s/callback/%s", "region", "tenantID")
@@ -47,7 +53,7 @@ func TestHandler_OnSubscription(t *testing.T) {
 			//GIVEN
 			onSubReq, err := http.NewRequest(testCase.RequestMethod, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
-			h := NewHandler()
+			h := NewHandler("")
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -65,13 +71,10 @@ func TestHandler_OnSubscription(t *testing.T) {
 }
 
 func TestHandler_DependenciesConfigure(t *testing.T) {
-	apiPath := "/v1/dependencies/configure"
-	dependency := "dependency-name"
-
 	testCases := []struct {
 		Name                 string
 		RequestMethod        string
-		RequestBody          string
+		RequestBody          any
 		ExpectedResponseCode int
 		ExpectedBody         string
 	}{
@@ -81,16 +84,29 @@ func TestHandler_DependenciesConfigure(t *testing.T) {
 			ExpectedResponseCode: http.StatusMethodNotAllowed,
 		},
 		{
-			Name:                 "Error when the request body is empty",
+			Name:                 "Error when dependencies list is empty",
 			RequestMethod:        http.MethodPost,
-			RequestBody:          "",
+			RequestBody:          []string{""},
 			ExpectedResponseCode: http.StatusInternalServerError,
-			ExpectedBody:         "{\"error\":\"The request body is empty\"}\n",
+			ExpectedBody:         "{\"error\":\"The dependency list could not be empty. X-Request-Id: \"}\n",
+		},
+		{
+			Name:                 "Error when unmarshalling request body fails",
+			RequestMethod:        http.MethodPost,
+			RequestBody:          "{invalid}",
+			ExpectedResponseCode: http.StatusInternalServerError,
+			ExpectedBody:         "{\"error\":\"An error occurred while unmarshalling request body: json: cannot unmarshal string into Go value of type []string. X-Request-Id: \"}\n",
 		},
 		{
 			Name:                 "Successfully handled dependency configure request",
 			RequestMethod:        http.MethodPost,
-			RequestBody:          dependency,
+			RequestBody:          dependencies,
+			ExpectedResponseCode: http.StatusOK,
+		},
+		{
+			Name:                 "Successfully handled dependency configure request with multiple dependencies",
+			RequestMethod:        http.MethodPost,
+			RequestBody:          multipleDependencies,
 			ExpectedResponseCode: http.StatusOK,
 		},
 	}
@@ -98,9 +114,11 @@ func TestHandler_DependenciesConfigure(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			depConfigureReq, err := http.NewRequest(testCase.RequestMethod, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
+			reqBody, err := json.Marshal(testCase.RequestBody)
 			require.NoError(t, err)
-			h := NewHandler()
+			depConfigureReq, err := http.NewRequest(testCase.RequestMethod, url+depConfApiPath, bytes.NewBuffer(reqBody))
+			require.NoError(t, err)
+			h := NewHandler("")
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -118,30 +136,78 @@ func TestHandler_DependenciesConfigure(t *testing.T) {
 }
 
 func TestHandler_Dependencies(t *testing.T) {
-	depConfApiPath := "/v1/dependencies/configure"
 	depApiPath := "/v1/dependencies"
-	dependency := "dependency-name"
+
+	testCases := []struct {
+		Name                 string
+		RequestBody          any
+		ExpectedResponseCode int
+		ExpectedResponse     string
+	}{
+		{
+			Name:                 "Error when dependencies list is empty",
+			RequestBody:          "{invalid}",
+			ExpectedResponseCode: http.StatusInternalServerError,
+			ExpectedResponse:     "{\"error\":\"The dependency list could not be empty. X-Request-Id: \"}\n",
+		},
+		{
+			Name:                 "Successfully handled get dependency request with one dependency",
+			RequestBody:          dependencies,
+			ExpectedResponseCode: http.StatusOK,
+			ExpectedResponse:     fmt.Sprintf("[{\"xsappname\":\"%s\"}]", dependencies[0]),
+		},
+		{
+			Name:                 "Successfully handled get dependency request with multiple dependencies",
+			RequestBody:          multipleDependencies,
+			ExpectedResponseCode: http.StatusOK,
+			ExpectedResponse:     fmt.Sprintf("[{\"xsappname\":\"%s\"},{\"xsappname\":\"%s\"}]", multipleDependencies[0], multipleDependencies[1]),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			reqBody, err := json.Marshal(testCase.RequestBody)
+			require.NoError(t, err)
+			depConfigureReq, err := http.NewRequest(http.MethodPost, url+depConfApiPath, bytes.NewBuffer(reqBody))
+			require.NoError(t, err)
+			depReq, err := http.NewRequest(http.MethodGet, url+depApiPath, bytes.NewBuffer([]byte{}))
+			require.NoError(t, err)
+			h := NewHandler("")
+
+			//WHEN
+			r := httptest.NewRecorder()
+			h.DependenciesConfigure(r, depConfigureReq)
+			resp := r.Result()
+
+			//THEN
+			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode)
+
+			// WHEN
+			r = httptest.NewRecorder()
+			h.Dependencies(r, depReq)
+			resp = r.Result()
+
+			//THEN
+			assertExpectedResponse(t, resp, testCase.ExpectedResponse, testCase.ExpectedResponseCode)
+		})
+	}
+}
+
+func TestHandler_DependenciesIndirect(t *testing.T) {
+	depApiPath := "/v1/dependencies/indirect"
+	dependency := "direct-dependency-name"
 
 	t.Run("Successfully handled get dependency request", func(t *testing.T) {
 		//GIVEN
-		depConfigureReq, err := http.NewRequest(http.MethodPost, url+depConfApiPath, bytes.NewBuffer([]byte(dependency)))
-		require.NoError(t, err)
 		depReq, err := http.NewRequest(http.MethodGet, url+depApiPath, bytes.NewBuffer([]byte{}))
 		require.NoError(t, err)
-		h := NewHandler()
+		h := NewHandler(dependency)
 
 		//WHEN
 		r := httptest.NewRecorder()
-		h.DependenciesConfigure(r, depConfigureReq)
+		h.DependenciesIndirect(r, depReq)
 		resp := r.Result()
-
-		//THEN
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-
-		// WHEN
-		r = httptest.NewRecorder()
-		h.Dependencies(r, depReq)
-		resp = r.Result()
 
 		//THEN
 		expectedBody := fmt.Sprintf("[{\"xsappname\":\"%s\"}]", dependency)

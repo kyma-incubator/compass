@@ -6,10 +6,11 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v4"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -113,6 +114,11 @@ func getURLWithRetries(client *http.Client, url string) (*http.Response, error) 
 		retry.OnRetry(func(retryNo uint, err error) {
 			happyRun = false
 			log.Printf("Retry: [%d / %d], error: %s", retryNo, maxAttempts, err)
+		}),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "connection reset by peer")
 		}),
 	)
 

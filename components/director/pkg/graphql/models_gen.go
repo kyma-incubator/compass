@@ -75,12 +75,35 @@ type ApplicationEventingConfiguration struct {
 
 // **Validation:** provided placeholders' names are unique
 type ApplicationFromTemplateInput struct {
+	ID *string `json:"id"`
 	// **Validation:** ASCII printable characters, max=100
 	TemplateName string `json:"templateName"`
 	// **Validation:** if provided, placeholdersPayload not required
 	Values []*TemplateValueInput `json:"values"`
 	// **Validation:** if provided, values not required
 	PlaceholdersPayload *string `json:"placeholdersPayload"`
+	Labels              Labels  `json:"labels"`
+}
+
+type ApplicationJSONInput struct {
+	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	Name string `json:"name"`
+	// **Validation:** max=256
+	ProviderName *string `json:"providerName"`
+	// **Validation:** max=2000
+	Description *string `json:"description"`
+	// **Validation:** label key is alphanumeric with underscore
+	Labels   Labels          `json:"labels"`
+	Webhooks []*WebhookInput `json:"webhooks"`
+	// **Validation:** valid URL, max=256
+	HealthCheckURL *string `json:"healthCheckURL"`
+	// **Validation:** valid URL, max=256
+	BaseURL              *string                     `json:"baseUrl"`
+	ApplicationNamespace *string                     `json:"applicationNamespace"`
+	IntegrationSystemID  *string                     `json:"integrationSystemID"`
+	StatusCondition      *ApplicationStatusCondition `json:"statusCondition"`
+	LocalTenantID        *string                     `json:"localTenantID"`
+	Bundles              []*BundleCreateInput        `json:"bundles"`
 }
 
 type ApplicationPage struct {
@@ -126,7 +149,7 @@ type ApplicationTemplateInput struct {
 	Description *string         `json:"description"`
 	// **Validation:** label key is alphanumeric with underscore
 	Labels               Labels                         `json:"labels"`
-	ApplicationInput     *ApplicationRegisterInput      `json:"applicationInput"`
+	ApplicationInput     *ApplicationJSONInput          `json:"applicationInput"`
 	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
 	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
 	ApplicationNamespace *string                        `json:"applicationNamespace"`
@@ -144,9 +167,11 @@ type ApplicationTemplateUpdateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
+	Webhooks             []*WebhookInput                `json:"webhooks"`
 	Description          *string                        `json:"description"`
-	ApplicationInput     *ApplicationRegisterInput      `json:"applicationInput"`
+	ApplicationInput     *ApplicationJSONInput          `json:"applicationInput"`
 	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
+	Labels               Labels                         `json:"labels"`
 	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
 	ApplicationNamespace *string                        `json:"applicationNamespace"`
 }
@@ -243,6 +268,14 @@ type BundleInstanceAuth struct {
 	RuntimeContextID *string                   `json:"runtimeContextID"`
 }
 
+type BundleInstanceAuthCreateInput struct {
+	Context          *JSON      `json:"context"`
+	InputParams      *JSON      `json:"inputParams"`
+	Auth             *AuthInput `json:"auth"`
+	RuntimeID        *string    `json:"runtimeID"`
+	RuntimeContextID *string    `json:"runtimeContextID"`
+}
+
 type BundleInstanceAuthRequestInput struct {
 	ID *string `json:"id"`
 	// Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
@@ -287,6 +320,12 @@ type BundleInstanceAuthStatusInput struct {
 	Reason string `json:"reason"`
 }
 
+type BundleInstanceAuthUpdateInput struct {
+	Context     *JSON      `json:"context"`
+	InputParams *JSON      `json:"inputParams"`
+	Auth        *AuthInput `json:"auth"`
+}
+
 type BundlePage struct {
 	Data       []*Bundle `json:"data"`
 	PageInfo   *PageInfo `json:"pageInfo"`
@@ -313,6 +352,7 @@ type BusinessTenantMappingInput struct {
 	Region         *string `json:"region"`
 	Type           string  `json:"type"`
 	Provider       string  `json:"provider"`
+	LicenseType    *string `json:"licenseType"`
 }
 
 type CSRFTokenCredentialRequestAuth struct {
@@ -474,13 +514,15 @@ type FetchRequestStatus struct {
 }
 
 type FormationAssignment struct {
-	ID         string                  `json:"id"`
-	Source     string                  `json:"source"`
-	SourceType FormationAssignmentType `json:"sourceType"`
-	Target     string                  `json:"target"`
-	TargetType FormationAssignmentType `json:"targetType"`
-	State      string                  `json:"state"`
-	Value      *string                 `json:"value"`
+	ID            string                  `json:"id"`
+	Source        string                  `json:"source"`
+	SourceType    FormationAssignmentType `json:"sourceType"`
+	Target        string                  `json:"target"`
+	TargetType    FormationAssignmentType `json:"targetType"`
+	State         string                  `json:"state"`
+	Value         *string                 `json:"value"`
+	Configuration *string                 `json:"configuration"`
+	Error         *string                 `json:"error"`
 }
 
 type FormationAssignmentPage struct {
@@ -492,19 +534,23 @@ type FormationAssignmentPage struct {
 func (FormationAssignmentPage) IsPageable() {}
 
 type FormationConstraint struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	ConstraintType  string `json:"constraintType"`
-	TargetOperation string `json:"targetOperation"`
-	Operator        string `json:"operator"`
-	ResourceType    string `json:"resourceType"`
-	ResourceSubtype string `json:"resourceSubtype"`
-	InputTemplate   string `json:"inputTemplate"`
-	ConstraintScope string `json:"constraintScope"`
+	ID              string    `json:"id"`
+	Name            string    `json:"name"`
+	Description     string    `json:"description"`
+	ConstraintType  string    `json:"constraintType"`
+	TargetOperation string    `json:"targetOperation"`
+	Operator        string    `json:"operator"`
+	ResourceType    string    `json:"resourceType"`
+	ResourceSubtype string    `json:"resourceSubtype"`
+	InputTemplate   string    `json:"inputTemplate"`
+	ConstraintScope string    `json:"constraintScope"`
+	Priority        int       `json:"priority"`
+	CreatedAt       Timestamp `json:"createdAt"`
 }
 
 type FormationConstraintInput struct {
 	Name            string          `json:"name"`
+	Description     *string         `json:"description"`
 	ConstraintType  ConstraintType  `json:"constraintType"`
 	TargetOperation TargetOperation `json:"targetOperation"`
 	Operator        string          `json:"operator"`
@@ -512,15 +558,26 @@ type FormationConstraintInput struct {
 	ResourceSubtype string          `json:"resourceSubtype"`
 	InputTemplate   string          `json:"inputTemplate"`
 	ConstraintScope ConstraintScope `json:"constraintScope"`
+	Priority        *int            `json:"priority"`
 }
 
 type FormationConstraintUpdateInput struct {
-	InputTemplate string `json:"inputTemplate"`
+	InputTemplate string  `json:"inputTemplate"`
+	Priority      *int    `json:"priority"`
+	Description   *string `json:"description"`
+}
+
+type FormationError struct {
+	Message   string `json:"message"`
+	ErrorCode int    `json:"errorCode"`
 }
 
 type FormationInput struct {
 	Name         string  `json:"name"`
 	TemplateName *string `json:"templateName"`
+	// The initial state of the newly created formation.
+	// It is used in specific use-cases by internal components that need to manipulate the formation notification engine's logic and hold the tenant mapping notifications until a certain external event happens.
+	State *string `json:"state"`
 }
 
 type FormationPage struct {
@@ -537,19 +594,20 @@ type FormationStatus struct {
 }
 
 type FormationStatusError struct {
-	AssignmentID string `json:"assignmentID"`
-	Message      string `json:"message"`
-	ErrorCode    int    `json:"errorCode"`
+	AssignmentID *string `json:"assignmentID"`
+	Message      string  `json:"message"`
+	ErrorCode    int     `json:"errorCode"`
 }
 
 type FormationTemplateInput struct {
 	Name                   string          `json:"name"`
 	ApplicationTypes       []string        `json:"applicationTypes"`
 	RuntimeTypes           []string        `json:"runtimeTypes"`
-	RuntimeTypeDisplayName string          `json:"runtimeTypeDisplayName"`
-	RuntimeArtifactKind    ArtifactType    `json:"runtimeArtifactKind"`
+	RuntimeTypeDisplayName *string         `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    *ArtifactType   `json:"runtimeArtifactKind"`
 	Webhooks               []*WebhookInput `json:"webhooks"`
 	LeadingProductIDs      []string        `json:"leadingProductIDs"`
+	SupportsReset          *bool           `json:"supportsReset"`
 }
 
 type FormationTemplatePage struct {
@@ -723,9 +781,10 @@ type RuntimeRegisterInput struct {
 	// **Validation:**  max=2000
 	Description *string `json:"description"`
 	// **Validation:** key: required, alphanumeric with underscore
-	Labels          Labels                  `json:"labels"`
-	Webhooks        []*WebhookInput         `json:"webhooks"`
-	StatusCondition *RuntimeStatusCondition `json:"statusCondition"`
+	Labels               Labels                  `json:"labels"`
+	Webhooks             []*WebhookInput         `json:"webhooks"`
+	StatusCondition      *RuntimeStatusCondition `json:"statusCondition"`
+	ApplicationNamespace *string                 `json:"applicationNamespace"`
 }
 
 type RuntimeStatus struct {
@@ -749,8 +808,9 @@ type RuntimeUpdateInput struct {
 	// **Validation:**  max=2000
 	Description *string `json:"description"`
 	// **Validation:** key: required, alphanumeric with underscore
-	Labels          Labels                  `json:"labels"`
-	StatusCondition *RuntimeStatusCondition `json:"statusCondition"`
+	Labels               Labels                  `json:"labels"`
+	StatusCondition      *RuntimeStatusCondition `json:"statusCondition"`
+	ApplicationNamespace *string                 `json:"applicationNamespace"`
 }
 
 type SystemAuthUpdateInput struct {
@@ -761,6 +821,26 @@ type TemplateValueInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
 	Placeholder string `json:"placeholder"`
 	Value       string `json:"value"`
+}
+
+type TenantAccess struct {
+	TenantID     string                 `json:"tenantID"`
+	ResourceType TenantAccessObjectType `json:"resourceType"`
+	ResourceID   string                 `json:"resourceID"`
+	Owner        bool                   `json:"owner"`
+}
+
+type TenantAccessInput struct {
+	TenantID     string                 `json:"tenantID"`
+	ResourceType TenantAccessObjectType `json:"resourceType"`
+	ResourceID   string                 `json:"resourceID"`
+	Owner        bool                   `json:"owner"`
+}
+
+type TenantBusinessType struct {
+	ID   string `json:"id"`
+	Code string `json:"code"`
+	Name string `json:"name"`
 }
 
 type TenantPage struct {
@@ -1156,16 +1236,18 @@ type ConstraintType string
 const (
 	ConstraintTypePre  ConstraintType = "PRE"
 	ConstraintTypePost ConstraintType = "POST"
+	ConstraintTypeUI   ConstraintType = "UI"
 )
 
 var AllConstraintType = []ConstraintType{
 	ConstraintTypePre,
 	ConstraintTypePost,
+	ConstraintTypeUI,
 }
 
 func (e ConstraintType) IsValid() bool {
 	switch e {
-	case ConstraintTypePre, ConstraintTypePost:
+	case ConstraintTypePre, ConstraintTypePost, ConstraintTypeUI:
 		return true
 	}
 	return false
@@ -1922,6 +2004,10 @@ const (
 	TargetOperationDeleteFormation                         TargetOperation = "DELETE_FORMATION"
 	TargetOperationGenerateFormationAssignmentNotification TargetOperation = "GENERATE_FORMATION_ASSIGNMENT_NOTIFICATION"
 	TargetOperationGenerateFormationNotification           TargetOperation = "GENERATE_FORMATION_NOTIFICATION"
+	TargetOperationLoadFormations                          TargetOperation = "LOAD_FORMATIONS"
+	TargetOperationSelectSystemsForFormation               TargetOperation = "SELECT_SYSTEMS_FOR_FORMATION"
+	TargetOperationSendNotification                        TargetOperation = "SEND_NOTIFICATION"
+	TargetOperationNotificationStatusReturned              TargetOperation = "NOTIFICATION_STATUS_RETURNED"
 )
 
 var AllTargetOperation = []TargetOperation{
@@ -1931,11 +2017,15 @@ var AllTargetOperation = []TargetOperation{
 	TargetOperationDeleteFormation,
 	TargetOperationGenerateFormationAssignmentNotification,
 	TargetOperationGenerateFormationNotification,
+	TargetOperationLoadFormations,
+	TargetOperationSelectSystemsForFormation,
+	TargetOperationSendNotification,
+	TargetOperationNotificationStatusReturned,
 }
 
 func (e TargetOperation) IsValid() bool {
 	switch e {
-	case TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateFormationAssignmentNotification, TargetOperationGenerateFormationNotification:
+	case TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateFormationAssignmentNotification, TargetOperationGenerateFormationNotification, TargetOperationLoadFormations, TargetOperationSelectSystemsForFormation, TargetOperationSendNotification, TargetOperationNotificationStatusReturned:
 		return true
 	}
 	return false
@@ -1959,6 +2049,49 @@ func (e *TargetOperation) UnmarshalGQL(v interface{}) error {
 }
 
 func (e TargetOperation) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type TenantAccessObjectType string
+
+const (
+	TenantAccessObjectTypeApplication    TenantAccessObjectType = "APPLICATION"
+	TenantAccessObjectTypeRuntime        TenantAccessObjectType = "RUNTIME"
+	TenantAccessObjectTypeRuntimeContext TenantAccessObjectType = "RUNTIME_CONTEXT"
+)
+
+var AllTenantAccessObjectType = []TenantAccessObjectType{
+	TenantAccessObjectTypeApplication,
+	TenantAccessObjectTypeRuntime,
+	TenantAccessObjectTypeRuntimeContext,
+}
+
+func (e TenantAccessObjectType) IsValid() bool {
+	switch e {
+	case TenantAccessObjectTypeApplication, TenantAccessObjectTypeRuntime, TenantAccessObjectTypeRuntimeContext:
+		return true
+	}
+	return false
+}
+
+func (e TenantAccessObjectType) String() string {
+	return string(e)
+}
+
+func (e *TenantAccessObjectType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TenantAccessObjectType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TenantAccessObjectType", str)
+	}
+	return nil
+}
+
+func (e TenantAccessObjectType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -2053,12 +2186,13 @@ func (e WebhookMode) MarshalGQL(w io.Writer) {
 type WebhookType string
 
 const (
-	WebhookTypeConfigurationChanged     WebhookType = "CONFIGURATION_CHANGED"
-	WebhookTypeApplicationTenantMapping WebhookType = "APPLICATION_TENANT_MAPPING"
-	WebhookTypeRegisterApplication      WebhookType = "REGISTER_APPLICATION"
-	WebhookTypeUnregisterApplication    WebhookType = "UNREGISTER_APPLICATION"
-	WebhookTypeOpenResourceDiscovery    WebhookType = "OPEN_RESOURCE_DISCOVERY"
-	WebhookTypeFormationLifecycle       WebhookType = "FORMATION_LIFECYCLE"
+	WebhookTypeConfigurationChanged        WebhookType = "CONFIGURATION_CHANGED"
+	WebhookTypeApplicationTenantMapping    WebhookType = "APPLICATION_TENANT_MAPPING"
+	WebhookTypeRegisterApplication         WebhookType = "REGISTER_APPLICATION"
+	WebhookTypeUnregisterApplication       WebhookType = "UNREGISTER_APPLICATION"
+	WebhookTypeOpenResourceDiscovery       WebhookType = "OPEN_RESOURCE_DISCOVERY"
+	WebhookTypeOpenResourceDiscoveryStatic WebhookType = "OPEN_RESOURCE_DISCOVERY_STATIC"
+	WebhookTypeFormationLifecycle          WebhookType = "FORMATION_LIFECYCLE"
 )
 
 var AllWebhookType = []WebhookType{
@@ -2067,12 +2201,13 @@ var AllWebhookType = []WebhookType{
 	WebhookTypeRegisterApplication,
 	WebhookTypeUnregisterApplication,
 	WebhookTypeOpenResourceDiscovery,
+	WebhookTypeOpenResourceDiscoveryStatic,
 	WebhookTypeFormationLifecycle,
 }
 
 func (e WebhookType) IsValid() bool {
 	switch e {
-	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeFormationLifecycle:
+	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeOpenResourceDiscoveryStatic, WebhookTypeFormationLifecycle:
 		return true
 	}
 	return false

@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -62,9 +64,13 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	sourceKey := "key"
 	labelFilter := "templateProp"
 
+	tenantID := "tenantId1"
+	syncTimestampID := "timestampId1"
+
 	systemfetcher.SystemSourceKey = sourceKey
 	systemfetcher.ApplicationTemplateLabelFilter = labelFilter
 
+	var mutex sync.Mutex
 	client := systemfetcher.NewClient(systemfetcher.APIConfig{
 		Endpoint:        url + "/fetch",
 		FilterCriteria:  "%s",
@@ -72,19 +78,20 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		PagingSkipParam: "$skip",
 		PagingSizeParam: "$top",
 		SystemSourceKey: sourceKey,
+		SystemRPSLimit:  15,
 	}, mock.httpClient)
 
 	t.Run("Success", func(t *testing.T) {
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
+		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
 		require.NoError(t, err)
 		require.Len(t, systems, 1)
 		require.Equal(t, systems[0].TemplateID, "")
 	})
 
 	t.Run("Success with template mappings", func(t *testing.T) {
-		mock.expectedFilterCriteria = " key eq 'type1' "
+		mock.expectedFilterCriteria = "(key eq 'type1')"
 
 		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
 			{
@@ -94,7 +101,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				Labels: map[string]*model.Label{
 					labelFilter: {
 						Key:   labelFilter,
-						Value: "type1",
+						Value: []interface{}{"type1"},
 					},
 				},
 			},
@@ -114,15 +121,15 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
+		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
 		require.NoError(t, err)
 		require.Len(t, systems, 2)
 		require.Equal(t, systems[0].TemplateID, "type1")
 		require.Equal(t, systems[1].TemplateID, "")
 	})
 
-	t.Run("Success for more than one page", func(t *testing.T) {
-		mock.expectedFilterCriteria = " key eq 'type1' "
+	t.Run("Success with template mappings and SystemSynchronizationTimestamps exist", func(t *testing.T) {
+		mock.expectedFilterCriteria = "(key eq 'type1' and lastChangeDateTime gt '2023-05-02 20:30:00 +0000 UTC')"
 
 		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
 			{
@@ -132,7 +139,57 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				Labels: map[string]*model.Label{
 					labelFilter: {
 						Key:   labelFilter,
-						Value: "type1",
+						Value: []interface{}{"type1"},
+					},
+				},
+			},
+		}
+
+		systemfetcher.SystemSynchronizationTimestamps = map[string]map[string]systemfetcher.SystemSynchronizationTimestamp{
+			tenantID: {
+				"type1": {
+					ID:                syncTimestampID,
+					LastSyncTimestamp: time.Date(2023, 5, 2, 20, 30, 0, 0, time.UTC).UTC(),
+				},
+			},
+		}
+
+		mock.bodiesToReturn = [][]byte{[]byte(`[{
+			"displayName": "name1",
+			"productDescription": "description",
+			"baseUrl": "url",
+			"infrastructureProvider": "provider1",
+			"key": "type1"
+		}, {
+			"displayName": "name2",
+			"productDescription": "description",
+			"baseUrl": "url",
+			"infrastructureProvider": "provider1",
+			"key": "type2"
+		}]`)}
+		mock.callNumber = 0
+		mock.pageCount = 1
+		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
+		require.NoError(t, err)
+		require.Len(t, systems, 2)
+		require.Equal(t, systems[0].TemplateID, "type1")
+		require.Equal(t, systems[1].TemplateID, "")
+
+		systemfetcher.SystemSynchronizationTimestamps = nil
+	})
+
+	t.Run("Success for more than one page", func(t *testing.T) {
+		mock.expectedFilterCriteria = "(key eq 'type1')"
+
+		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
+			{
+				AppTemplate: &model.ApplicationTemplate{
+					ID: "type1",
+				},
+				Labels: map[string]*model.Label{
+					labelFilter: {
+						Key:   labelFilter,
+						Value: []interface{}{"type1"},
 					},
 				},
 			},
@@ -149,13 +206,13 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 2
-		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
+		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
 		require.NoError(t, err)
 		require.Len(t, systems, 5)
 	})
 
 	t.Run("Does not map to the last template mapping if haven't matched before", func(t *testing.T) {
-		mock.expectedFilterCriteria = " key eq 'type1' or key eq 'type2' or key eq 'type3' "
+		mock.expectedFilterCriteria = "(key eq 'type1') or (key eq 'type2') or (key eq 'type3')"
 		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
 			{
 				AppTemplate: &model.ApplicationTemplate{
@@ -164,7 +221,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				Labels: map[string]*model.Label{
 					labelFilter: {
 						Key:   labelFilter,
-						Value: "type1",
+						Value: []interface{}{"type1"},
 					},
 				},
 			},
@@ -175,7 +232,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				Labels: map[string]*model.Label{
 					labelFilter: {
 						Key:   labelFilter,
-						Value: "type2",
+						Value: []interface{}{"type2"},
 					},
 				},
 			},
@@ -186,7 +243,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				Labels: map[string]*model.Label{
 					labelFilter: {
 						Key:   labelFilter,
-						Value: "type3",
+						Value: []interface{}{"type3"},
 					},
 				},
 			},
@@ -213,7 +270,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
+		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
 		require.NoError(t, err)
 		require.Len(t, systems, 3)
 		require.Equal(t, systems[0].TemplateID, "type1")
@@ -225,7 +282,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		mock.callNumber = 0
 		mock.pageCount = 1
 		mock.statusCodeToReturn = http.StatusBadRequest
-		_, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
+		_, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
 		require.Contains(t, err.Error(), "unexpected status code")
 	})
 
@@ -234,7 +291,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		mock.pageCount = 1
 		mock.bodiesToReturn = [][]byte{[]byte("not a JSON")}
 		mock.statusCodeToReturn = http.StatusOK
-		_, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
+		_, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
 		require.Contains(t, err.Error(), "failed to unmarshal systems response")
 	})
 }
@@ -286,13 +343,31 @@ func fixHTTPClient(t *testing.T) (*mockData, string) {
 func fixSystems() []systemfetcher.System {
 	return []systemfetcher.System{
 		{
-			SystemBase: systemfetcher.SystemBase{
-				DisplayName:            "System1",
-				ProductDescription:     "System1 description",
-				BaseURL:                "http://example1.com",
-				InfrastructureProvider: "test",
-				AdditionalURLs:         map[string]string{"mainUrl": "http://mainurl.com"},
+			SystemPayload: map[string]interface{}{
+				"displayName":            "System1",
+				"productDescription":     "System1 description",
+				"baseUrl":                "http://example1.com",
+				"infrastructureProvider": "test",
+				"additionalUrls":         map[string]string{"mainUrl": "http://mainurl.com"},
 			},
+			StatusCondition: model.ApplicationStatusConditionInitial,
+		},
+	}
+}
+
+func fixSystemsWithTbt() []systemfetcher.System {
+	return []systemfetcher.System{
+		{
+			SystemPayload: map[string]interface{}{
+				"displayName":             "System2",
+				"productDescription":      "System2 description",
+				"baseUrl":                 "http://example2.com",
+				"infrastructureProvider":  "test",
+				"additionalUrls":          map[string]string{"mainUrl": "http://mainurl.com"},
+				"businessTypeId":          "Test business type id",
+				"businessTypeDescription": "Test business description",
+			},
+			StatusCondition: model.ApplicationStatusConditionInitial,
 		},
 	}
 }

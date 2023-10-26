@@ -22,6 +22,7 @@ const (
 )
 
 // ClientDetailsConfigProvider missing godoc
+//
 //go:generate mockery --name=ClientDetailsConfigProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ClientDetailsConfigProvider interface {
 	GetRequiredScopes(path string) ([]string, error)
@@ -29,12 +30,14 @@ type ClientDetailsConfigProvider interface {
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // OryHydraService missing godoc
+//
 //go:generate mockery --name=OryHydraService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OryHydraService interface {
 	ListOAuth2Clients(params *admin.ListOAuth2ClientsParams, opts ...admin.ClientOption) (*admin.ListOAuth2ClientsOK, error)

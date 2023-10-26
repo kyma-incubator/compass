@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -25,8 +27,8 @@ const (
 )
 
 var (
-	webhookColumns         = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template", "created_at", "formation_template_id"}
-	updatableColumns       = []string{"type", "url", "auth", "mode", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
+	webhookColumns         = []string{"id", "app_id", "app_template_id", "type", "url", "proxy_url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template", "created_at", "formation_template_id"}
+	updatableColumns       = []string{"type", "url", "proxy_url", "auth", "mode", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
 	missingInputModelError = apperrors.NewInternalError("model has to be provided")
 )
 
@@ -43,6 +45,7 @@ type repository struct {
 	singleGetterGlobal             repo.SingleGetterGlobal
 	webhookUpdater                 repo.Updater
 	updaterGlobal                  repo.UpdaterGlobal
+	ftWebhookUpdaterGlobal         repo.UpdaterGlobal
 	creator                        repo.Creator
 	globalCreator                  repo.CreatorGlobal
 	deleterGlobal                  repo.DeleterGlobal
@@ -56,18 +59,21 @@ type repository struct {
 
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
+	creator := repo.NewCreator(tableName, webhookColumns)
+	creator.SetParentAccessVerifier(label.NewDefaultParentAccessVerifier().Verify)
 	return &repository{
-		singleGetter:        repo.NewSingleGetter(tableName, webhookColumns),
-		singleGetterGlobal:  repo.NewSingleGetterGlobal(resource.Webhook, tableName, webhookColumns),
-		creator:             repo.NewCreator(tableName, webhookColumns),
-		globalCreator:       repo.NewCreatorGlobal(resource.Webhook, tableName, webhookColumns),
-		webhookUpdater:      repo.NewUpdater(tableName, updatableColumns, []string{"id"}),
-		updaterGlobal:       repo.NewUpdaterGlobal(resource.Webhook, tableName, updatableColumns, []string{"id", "app_template_id"}),
-		deleterGlobal:       repo.NewDeleterGlobal(resource.Webhook, tableName),
-		deleter:             repo.NewDeleter(tableName),
-		lister:              repo.NewLister(tableName, webhookColumns),
-		conditionTreeLister: repo.NewConditionTreeLister(tableName, webhookColumns),
-		listerGlobal:        repo.NewListerGlobal(resource.Webhook, tableName, webhookColumns),
+		singleGetter:           repo.NewSingleGetter(tableName, webhookColumns),
+		singleGetterGlobal:     repo.NewSingleGetterGlobal(resource.Webhook, tableName, webhookColumns),
+		creator:                creator,
+		globalCreator:          repo.NewCreatorGlobal(resource.Webhook, tableName, webhookColumns),
+		webhookUpdater:         repo.NewUpdater(tableName, updatableColumns, []string{"id"}),
+		updaterGlobal:          repo.NewUpdaterGlobal(resource.Webhook, tableName, updatableColumns, []string{"id", "app_template_id"}),
+		ftWebhookUpdaterGlobal: repo.NewUpdaterGlobal(resource.Webhook, tableName, updatableColumns, []string{"id", "formation_template_id"}),
+		deleterGlobal:          repo.NewDeleterGlobal(resource.Webhook, tableName),
+		deleter:                repo.NewDeleter(tableName),
+		lister:                 repo.NewLister(tableName, webhookColumns),
+		conditionTreeLister:    repo.NewConditionTreeLister(tableName, webhookColumns),
+		listerGlobal:           repo.NewListerGlobal(resource.Webhook, tableName, webhookColumns),
 		listerGlobalOrderedByCreatedAt: repo.NewListerGlobalWithOrderBy(resource.Webhook, tableName, webhookColumns, repo.OrderByParams{
 			{
 				Field: "created_at",
@@ -147,7 +153,6 @@ func (r *repository) ListByReferenceObjectIDGlobal(ctx context.Context, objID st
 // ListByReferenceObjectTypeAndWebhookType lists all webhooks of a given type for a given object type
 func (r *repository) ListByReferenceObjectTypeAndWebhookType(ctx context.Context, tenant string, whType model.WebhookType, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
 	var entities Collection
-
 	refColumn, err := getReferenceColumnForListByReferenceObjectType(objType)
 	if err != nil {
 		return nil, err
@@ -202,9 +207,12 @@ func (r *repository) ListByReferenceObjectTypesAndWebhookType(ctx context.Contex
 		if err != nil {
 			return nil, err
 		}
-		conditionsForAppTemplate := repo.NewNotNullCondition(refColumn)
+		conditionsForAppTemplate := repo.Conditions{
+			repo.NewNotNullCondition(refColumn),
+			repo.NewEqualCondition("type", whType),
+		}
 
-		if err := r.listerGlobal.ListGlobal(ctx, &appTemplateWebhooks, conditionsForAppTemplate); err != nil {
+		if err := r.listerGlobal.ListGlobal(ctx, &appTemplateWebhooks, conditionsForAppTemplate...); err != nil {
 			return nil, err
 		}
 
@@ -214,7 +222,9 @@ func (r *repository) ListByReferenceObjectTypesAndWebhookType(ctx context.Contex
 	return convertToWebhooks(entities, r)
 }
 
-// GetByIDAndWebhookType returns a webhook given an objectID, objectType and webhookType
+// GetByIDAndWebhookType returns a webhook given an objectID, objectType and webhookType.
+// Global getter is used for object type ApplicationTemplateWebhookReference as the application template is not tenant scoped
+// and single getter is used for all other object types.
 func (r *repository) GetByIDAndWebhookType(ctx context.Context, tenant, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) {
 	var entity Entity
 	refColumn, err := getReferenceColumnForListByReferenceObjectType(objectType)
@@ -226,9 +236,43 @@ func (r *repository) GetByIDAndWebhookType(ctx context.Context, tenant, objectID
 		repo.NewEqualCondition(refColumn, objectID),
 		repo.NewEqualCondition("type", webhookType),
 	}
-	if err := r.singleGetter.Get(ctx, objectType.GetResourceType(), tenant, conditions, repo.NoOrderBy, &entity); err != nil {
+
+	switch objectType {
+	case model.ApplicationTemplateWebhookReference:
+		if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
+			return nil, err
+		}
+	default:
+		if err := r.singleGetter.Get(ctx, objectType.GetResourceType(), tenant, conditions, repo.NoOrderBy, &entity); err != nil {
+			return nil, err
+		}
+	}
+
+	m, err := r.conv.FromEntity(&entity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting from entity to model")
+	}
+	return m, nil
+}
+
+// GetByIDAndWebhookTypeGlobal returns a webhook given an objectID, objectType and webhookType.
+// Global getter is used for all object types.
+func (r *repository) GetByIDAndWebhookTypeGlobal(ctx context.Context, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) {
+	var entity Entity
+	refColumn, err := getReferenceColumnForListByReferenceObjectType(objectType)
+	if err != nil {
 		return nil, err
 	}
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(refColumn, objectID),
+		repo.NewEqualCondition("type", webhookType),
+	}
+
+	if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
 	m, err := r.conv.FromEntity(&entity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting from entity to model")
@@ -325,6 +369,9 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Webh
 	if item.ObjectType.GetResourceType() == resource.Webhook { // Global resource webhook
 		return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 	}
+	if item.ObjectType.GetResourceType() == resource.FormationTemplateWebhook && tenant == "" {
+		return r.ftWebhookUpdaterGlobal.UpdateSingleGlobal(ctx, entity)
+	}
 	return r.webhookUpdater.UpdateSingle(ctx, item.ObjectType.GetResourceType(), tenant, entity)
 }
 
@@ -336,6 +383,11 @@ func (r *repository) Delete(ctx context.Context, id string) error {
 // DeleteAllByApplicationID missing godoc
 func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant, applicationID string) error {
 	return r.deleter.DeleteMany(ctx, resource.AppWebhook, tenant, repo.Conditions{repo.NewEqualCondition("app_id", applicationID)})
+}
+
+// DeleteAllByApplicationTemplateID missing godoc
+func (r *repository) DeleteAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) error {
+	return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition("app_template_id", applicationTemplateID)})
 }
 
 func convertToWebhooks(entities Collection, r *repository) ([]*model.Webhook, error) {

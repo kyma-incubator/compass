@@ -4,6 +4,12 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"testing"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
@@ -27,19 +33,91 @@ const (
 	testSubdomain                 = "subdomain"
 	testRegion                    = "eu-1"
 	testProvider                  = "Compass"
+	testLicenseType               = "TESTLICENSE"
 	initializedColumn             = "initialized"
+	invalidResourceType           = "INVALID"
 )
 
 var (
-	testError        = errors.New("test error")
-	testTableColumns = []string{"id", "external_name", "external_tenant", "parent", "type", "provider_name", "status"}
+	testError                    = errors.New("test error")
+	testTableColumns             = []string{"id", "external_name", "external_tenant", "parent", "type", "provider_name", "status"}
+	tenantAccessTestTableColumns = []string{"tenant_id", "id", "owner"}
+	tenantAccessInput            = graphql.TenantAccessInput{
+		TenantID:     testExternal,
+		ResourceType: graphql.TenantAccessObjectTypeApplication,
+		ResourceID:   testID,
+		Owner:        true,
+	}
+	tenantAccessInputWithInvalidResourceType = graphql.TenantAccessInput{
+		TenantID:     testExternal,
+		ResourceType: graphql.TenantAccessObjectType(invalidResourceType),
+		ResourceID:   testID,
+		Owner:        true,
+	}
+	tenantAccessGQL = &graphql.TenantAccess{
+		TenantID:     testExternal,
+		ResourceType: graphql.TenantAccessObjectTypeApplication,
+		ResourceID:   testID,
+		Owner:        true,
+	}
+	tenantAccessModel = &model.TenantAccess{
+		ExternalTenantID: testExternal,
+		InternalTenantID: testInternal,
+		ResourceType:     resource.Application,
+		ResourceID:       testID,
+		Owner:            true,
+	}
+	tenantAccessModelWithoutExternalTenant = &model.TenantAccess{
+		InternalTenantID: testInternal,
+		ResourceType:     resource.Application,
+		ResourceID:       testID,
+		Owner:            true,
+	}
+	tenantAccessWithoutInternalTenantModel = &model.TenantAccess{
+		ExternalTenantID: testExternal,
+		ResourceType:     resource.Application,
+		ResourceID:       testID,
+		Owner:            true,
+	}
+	tenantAccessEntity = &repo.TenantAccess{
+		TenantID:   testInternal,
+		ResourceID: testID,
+		Owner:      true,
+	}
+	invalidTenantAccessModel = &model.TenantAccess{
+		ResourceType: invalidResourceType,
+	}
+	expectedTenantModel = &model.BusinessTenantMapping{
+		ID:             testExternal,
+		Name:           testName,
+		ExternalTenant: testExternal,
+		Parent:         "",
+		Type:           tenant.Account,
+		Provider:       testProvider,
+		Status:         tenant.Active,
+		Initialized:    nil,
+	}
+
+	expectedTenantGQL = &graphql.Tenant{
+		ID:          testExternal,
+		InternalID:  testInternal,
+		Name:        str.Ptr(testName),
+		Type:        string(tenant.Account),
+		ParentID:    "",
+		Initialized: nil,
+		Labels:      nil,
+	}
 )
 
 func newModelBusinessTenantMapping(id, name string) *model.BusinessTenantMapping {
-	return newModelBusinessTenantMappingWithType(id, name, "", tenant.Account)
+	return newModelBusinessTenantMappingWithType(id, name, "", nil, tenant.Account)
 }
 
-func newModelBusinessTenantMappingWithType(id, name, parent string, tenantType tenant.Type) *model.BusinessTenantMapping {
+func newModelBusinessTenantMappingWithLicense(id, name string, licenseType *string) *model.BusinessTenantMapping {
+	return newModelBusinessTenantMappingWithType(id, name, "", licenseType, tenant.Account)
+}
+
+func newModelBusinessTenantMappingWithType(id, name, parent string, licenseType *string, tenantType tenant.Type) *model.BusinessTenantMapping {
 	return &model.BusinessTenantMapping{
 		ID:             id,
 		Name:           name,
@@ -48,6 +126,7 @@ func newModelBusinessTenantMappingWithType(id, name, parent string, tenantType t
 		Type:           tenantType,
 		Provider:       testProvider,
 		Status:         tenant.Active,
+		LicenseType:    licenseType,
 	}
 }
 
@@ -57,7 +136,7 @@ func newModelBusinessTenantMappingWithComputedValues(id, name string, initialize
 	return tenantModel
 }
 
-func newModelBusinessTenantMappingWithParentAndType(id, name, parent string, tntType tenant.Type) *model.BusinessTenantMapping {
+func newModelBusinessTenantMappingWithParentAndType(id, name, parent string, licenseType *string, tntType tenant.Type) *model.BusinessTenantMapping {
 	return &model.BusinessTenantMapping{
 		ID:             id,
 		Name:           name,
@@ -67,6 +146,7 @@ func newModelBusinessTenantMappingWithParentAndType(id, name, parent string, tnt
 		Provider:       testProvider,
 		Status:         tenant.Active,
 		Initialized:    boolToPtr(true),
+		LicenseType:    licenseType,
 	}
 }
 
@@ -135,11 +215,11 @@ func fixTenantMappingCreateArgs(ent tenant.Entity) []driver.Value {
 	return []driver.Value{ent.ID, ent.Name, ent.ExternalTenant, ent.Parent, ent.Type, ent.ProviderName, ent.Status}
 }
 
-func newModelBusinessTenantMappingInput(name, subdomain, region string) model.BusinessTenantMappingInput {
-	return newModelBusinessTenantMappingInputWithType(testExternal, name, "", subdomain, region, tenant.Account)
+func newModelBusinessTenantMappingInput(name, subdomain, region string, licenseType *string) model.BusinessTenantMappingInput {
+	return newModelBusinessTenantMappingInputWithType(testExternal, name, "", subdomain, region, licenseType, tenant.Account)
 }
 
-func newModelBusinessTenantMappingInputWithType(tenantID, name, parent, subdomain, region string, tenantType tenant.Type) model.BusinessTenantMappingInput {
+func newModelBusinessTenantMappingInputWithType(tenantID, name, parent, subdomain, region string, licenseType *string, tenantType tenant.Type) model.BusinessTenantMappingInput {
 	return model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: tenantID,
@@ -148,6 +228,7 @@ func newModelBusinessTenantMappingInputWithType(tenantID, name, parent, subdomai
 		Parent:         parent,
 		Type:           tenant.TypeToStr(tenantType),
 		Provider:       testProvider,
+		LicenseType:    licenseType,
 	}
 }
 
@@ -175,4 +256,24 @@ func fixTenantAccessesRow() []driver.Value {
 
 func boolToPtr(in bool) *bool {
 	return &in
+}
+
+func unusedConverter() *automock.BusinessTenantMappingConverter {
+	return &automock.BusinessTenantMappingConverter{}
+}
+
+func unusedDBMock(t *testing.T) (*sqlx.DB, testdb.DBMock) {
+	return testdb.MockDatabase(t)
+}
+
+func unusedTenantConverter() *automock.BusinessTenantMappingConverter {
+	return &automock.BusinessTenantMappingConverter{}
+}
+
+func unusedTenantService() *automock.BusinessTenantMappingService {
+	return &automock.BusinessTenantMappingService{}
+}
+
+func unusedFetcherService() *automock.Fetcher {
+	return &automock.Fetcher{}
 }

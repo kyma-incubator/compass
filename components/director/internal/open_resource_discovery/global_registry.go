@@ -3,13 +3,18 @@ package ord
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 )
 
 // GlobalRegistryService processes global resources (products and vendors) provided via global registry.
+//
 //go:generate mockery --name=GlobalRegistryService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type GlobalRegistryService interface {
 	SyncGlobalResources(ctx context.Context) (map[string]bool, error)
@@ -30,38 +35,39 @@ type globalRegistryService struct {
 	productService GlobalProductService
 
 	ordClient Client
+
+	credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping
 }
 
 // NewGlobalRegistryService creates new instance of GlobalRegistryService.
-func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalRegistryConfig, vendorService GlobalVendorService, productService GlobalProductService, ordClient Client) *globalRegistryService {
+func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalRegistryConfig, vendorService GlobalVendorService, productService GlobalProductService, ordClient Client, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) *globalRegistryService {
 	return &globalRegistryService{
-		transact:       transact,
-		config:         config,
-		vendorService:  vendorService,
-		productService: productService,
-		ordClient:      ordClient,
+		transact:                                 transact,
+		config:                                   config,
+		vendorService:                            vendorService,
+		productService:                           productService,
+		ordClient:                                ordClient,
+		credentialExchangeStrategyTenantMappings: credentialExchangeStrategyTenantMappings,
 	}
 }
 
 // SyncGlobalResources syncs global resources (products and vendors) provided via global registry.
 func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[string]bool, error) {
 	// dummy app used only for logging
-	app := &model.Application{
+	resource := Resource{
+		ID:   "global-registry",
 		Name: "global-registry",
-		Type: "global-registry",
-		BaseEntity: &model.BaseEntity{
-			ID: "global-registry",
-		},
+		Type: directorresource.Application,
 	}
-	documents, _, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, &model.Webhook{
+	documents, _, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, &model.Webhook{
 		Type: model.WebhookTypeOpenResourceDiscovery,
 		URL:  &s.config.URL,
-	})
+	}, application.ORDWebhookMapping{}, webhook.OpenResourceDiscoveryWebhookRequestObject{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "while fetching global registry documents from %s", s.config.URL)
 	}
 
-	if err := documents.Validate(s.config.URL, nil, nil, nil, nil, map[string]bool{}); err != nil {
+	if err := documents.Validate(s.config.URL, ResourcesFromDB{}, nil, map[string]bool{}, s.credentialExchangeStrategyTenantMappings); err != nil {
 		return nil, errors.Wrap(err, "while validating global registry documents")
 	}
 
@@ -72,6 +78,7 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 	apisInput := make([]*model.APIDefinitionInput, 0)
 	eventsInput := make([]*model.EventDefinitionInput, 0)
 	tombstonesInput := make([]*model.TombstoneInput, 0)
+	capabilitiesInput := make([]*model.CapabilityInput, 0)
 	for _, doc := range documents {
 		vendorsInput = append(vendorsInput, doc.Vendors...)
 		productsInput = append(productsInput, doc.Products...)
@@ -80,9 +87,10 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 		apisInput = append(apisInput, doc.APIResources...)
 		eventsInput = append(eventsInput, doc.EventResources...)
 		tombstonesInput = append(tombstonesInput, doc.Tombstones...)
+		capabilitiesInput = append(capabilitiesInput, doc.Capabilities...)
 	}
 
-	if len(packagesInput) > 0 || len(bundlesInput) > 0 || len(apisInput) > 0 || len(eventsInput) > 0 || len(tombstonesInput) > 0 {
+	if len(packagesInput) > 0 || len(bundlesInput) > 0 || len(apisInput) > 0 || len(eventsInput) > 0 || len(tombstonesInput) > 0 || len(capabilitiesInput) > 0 {
 		return nil, errors.New("global registry supports only vendors and products")
 	}
 

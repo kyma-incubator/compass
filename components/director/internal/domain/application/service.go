@@ -9,7 +9,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
-	"github.com/imdario/mergo"
+	"dario.cat/mergo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -39,19 +39,23 @@ const (
 	intSysKey                    = "integrationSystemID"
 	nameKey                      = "name"
 	sccLabelKey                  = "scc"
-	managedKey                   = "managed"
 	subaccountKey                = "Subaccount"
 	locationIDKey                = "LocationID"
 	urlSuffixToBeTrimmed         = "/"
-	applicationTypeLabelKey      = "applicationType"
 	ppmsProductVersionIDLabelKey = "ppmsProductVersionId"
 	urlSubdomainSeparator        = "."
+
+	// ManagedLabelKey is the key of the application label for internally or externally managed applications.
+	ManagedLabelKey = "managed"
+	// ApplicationTypeLabelKey is the key of the application label for determining the type of the application.
+	ApplicationTypeLabelKey = "applicationType"
 )
 
 type repoCreatorFunc func(ctx context.Context, tenant string, application *model.Application) error
 type repoUpserterFunc func(ctx context.Context, tenant string, application *model.Application) (string, error)
 
 // ApplicationRepository missing godoc
+//
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -60,6 +64,7 @@ type ApplicationRepository interface {
 	GetByIDForUpdate(ctx context.Context, tenant, id string) (*model.Application, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 	GetBySystemNumber(ctx context.Context, tenant, systemNumber string) (*model.Application, error)
+	GetByLocalTenantIDAndAppTemplateID(ctx context.Context, tenant, localTenantID, appTemplateID string) (*model.Application, error)
 	GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context, tenant string) ([]*model.Application, error)
@@ -81,6 +86,7 @@ type ApplicationRepository interface {
 }
 
 // LabelRepository missing godoc
+//
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
@@ -92,6 +98,7 @@ type LabelRepository interface {
 }
 
 // WebhookRepository missing godoc
+//
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
@@ -99,6 +106,7 @@ type WebhookRepository interface {
 }
 
 // FormationService missing godoc
+//
 //go:generate mockery --name=FormationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationService interface {
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
@@ -106,6 +114,7 @@ type FormationService interface {
 }
 
 // RuntimeRepository missing godoc
+//
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -113,12 +122,14 @@ type RuntimeRepository interface {
 }
 
 // IntegrationSystemRepository missing godoc
+//
 //go:generate mockery --name=IntegrationSystemRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationSystemRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
 // LabelService missing godoc
+//
 //go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
@@ -127,12 +138,14 @@ type LabelService interface {
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // ApplicationHideCfgProvider missing godoc
+//
 //go:generate mockery --name=ApplicationHideCfgProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationHideCfgProvider interface {
 	GetApplicationHideSelectors() (map[string][]string, error)
@@ -313,6 +326,21 @@ func (s *service) GetForUpdate(ctx context.Context, id string) (*model.Applicati
 	return app, nil
 }
 
+// GetByLocalTenantIDAndAppTemplateID returns an application retrieved by local tenant id and app template id
+func (s *service) GetByLocalTenantIDAndAppTemplateID(ctx context.Context, localTenantID, appTemplateID string) (*model.Application, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	app, err := s.appRepo.GetByLocalTenantIDAndAppTemplateID(ctx, appTenant, localTenantID, appTemplateID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Application with local tenant id: %s and app template id: %s", localTenantID, appTemplateID)
+	}
+
+	return app, nil
+}
+
 // GetBySystemNumber returns an application retrieved by systemNumber
 func (s *service) GetBySystemNumber(ctx context.Context, systemNumber string) (*model.Application, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
@@ -326,6 +354,15 @@ func (s *service) GetBySystemNumber(ctx context.Context, systemNumber string) (*
 	}
 
 	return app, nil
+}
+
+// GetGlobalByID returns an application by id
+func (s *service) GetGlobalByID(ctx context.Context, id string) (*model.Application, error) {
+	application, err := s.appRepo.GetGlobalByID(ctx, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Application with ID %s", id)
+	}
+	return application, nil
 }
 
 // Exist missing godoc
@@ -530,13 +567,13 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 	}
 	log.C(ctx).Debugf("Successfully set Label for Application with id %s", app.ID)
 
-	appTypeLbl, err := s.labelService.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, app.ID, applicationTypeLabelKey)
+	appTypeLbl, err := s.labelService.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, app.ID, ApplicationTypeLabelKey)
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
-			return errors.Wrapf(err, "while getting label %q for %s with id %q", applicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
+			return errors.Wrapf(err, "while getting label %q for %s with id %q", ApplicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
 		}
 
-		log.C(ctx).Infof("Label %q is missing for %s with id %q. Skipping ord webhook creation", applicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
+		log.C(ctx).Infof("Label %q is missing for %s with id %q. Skipping ord webhook creation", ApplicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
 		return nil
 	}
 
@@ -753,6 +790,39 @@ func (s *service) GetLabel(ctx context.Context, applicationID string, key string
 	return label, nil
 }
 
+// GetScenariosGlobal list the scenario labels for the application globally and merges their values
+func (s *service) GetScenariosGlobal(ctx context.Context, applicationID string) ([]string, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	appExists, err := s.appRepo.Exists(ctx, appTenant, applicationID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while checking the existence of Application with ID: %s", applicationID)
+	}
+	if !appExists {
+		return nil, fmt.Errorf("application with ID %s doesn't exist", applicationID)
+	}
+
+	labels, err := s.labelRepo.ListGlobalByKeyAndObjects(ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting label for Application with ID: %s", applicationID)
+	}
+
+	var scenarios []string
+	for _, lbl := range labels {
+		scenariosFromLabel, err := label.ValueToStringsSlice(lbl.Value)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while parsing label values for Application with ID: %s", applicationID)
+		}
+
+		scenarios = append(scenarios, scenariosFromLabel...)
+	}
+
+	return scenarios, nil
+}
+
 // ListLabels missing godoc
 func (s *service) ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
@@ -912,7 +982,7 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 	return s.appRepo.GetByID(ctx, appTenant, destID)
 }
 
-// handleMergeLabels merges source labels into destination labels. managedKey label is merged manually.
+// handleMergeLabels merges source labels into destination labels. ManagedLabelKey label is merged manually.
 // It is updated only if the source or destination label have a value "true"
 func (s *service) handleMergeLabels(ctx context.Context, srcAppLabels, destAppLabels map[string]*model.Label) (map[string]interface{}, error) {
 	destScenarios, ok := destAppLabels[model.ScenariosKey]
@@ -932,30 +1002,30 @@ func (s *service) handleMergeLabels(ctx context.Context, srcAppLabels, destAppLa
 
 	destAppLabels[model.ScenariosKey].Value = destScenariosStrSlice
 
-	srcLabelManaged, ok := srcAppLabels[managedKey]
+	srcLabelManaged, ok := srcAppLabels[ManagedLabelKey]
 	if !ok {
-		log.C(ctx).Infof("No %q label found in source object.", managedKey)
+		log.C(ctx).Infof("No %q label found in source object.", ManagedLabelKey)
 		srcLabelManaged = &model.Label{Value: "false"}
 	}
 
 	srcLabelManagedValue, err := str.CastToBool(srcLabelManaged.Value)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting %s value for source label with ID: %s", managedKey, srcAppLabels[managedKey].ID)
+		return nil, errors.Wrapf(err, "while converting %s value for source label with ID: %s", ManagedLabelKey, srcAppLabels[ManagedLabelKey].ID)
 	}
 
-	destLabelManaged, ok := destAppLabels[managedKey]
+	destLabelManaged, ok := destAppLabels[ManagedLabelKey]
 	if !ok {
-		log.C(ctx).Infof("No %q label found in destination object.", managedKey)
+		log.C(ctx).Infof("No %q label found in destination object.", ManagedLabelKey)
 		destLabelManaged = &model.Label{Value: "false"}
 	}
 
 	destLabelManagedValue, err := str.CastToBool(destLabelManaged.Value)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting %s value for destination label with ID: %s", managedKey, destAppLabels[managedKey].ID)
+		return nil, errors.Wrapf(err, "while converting %s value for destination label with ID: %s", ManagedLabelKey, destAppLabels[ManagedLabelKey].ID)
 	}
 
 	if destLabelManagedValue || srcLabelManagedValue {
-		destAppLabels[managedKey].Value = "true"
+		destAppLabels[ManagedLabelKey].Value = "true"
 	}
 
 	conv := make(map[string]interface{}, len(destAppLabels))
@@ -1099,7 +1169,7 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	}
 
 	if in.Bundles != nil {
-		if err = s.bndlService.CreateMultiple(ctx, id, in.Bundles); err != nil {
+		if err = s.bndlService.CreateMultiple(ctx, resource.Application, id, in.Bundles); err != nil {
 			return "", errors.Wrapf(err, "while creating related Bundle resources for Application with id %s", id)
 		}
 	}
@@ -1196,18 +1266,13 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 func (s *service) getScenarioNamesForApplication(ctx context.Context, applicationID string) ([]string, error) {
 	log.C(ctx).Infof("Getting scenarios for application with id %s", applicationID)
 
-	applicationLabel, err := s.GetLabel(ctx, applicationID, model.ScenariosKey)
+	scenarios, err := s.GetScenariosGlobal(ctx, applicationID)
 	if err != nil {
 		if apperrors.ErrorCode(err) == apperrors.NotFound {
 			log.C(ctx).Infof("No scenarios found for application")
 			return nil, nil
 		}
 		return nil, err
-	}
-
-	scenarios, err := label.ValueToStringsSlice(applicationLabel.Value)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while parsing application label values")
 	}
 
 	return scenarios, nil
@@ -1274,14 +1339,23 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 	}
 	in.Labels[nameKey] = s.appNameNormalizer.Normalize(app.Name)
 
+	if scenarioLabel, ok := in.Labels[model.ScenariosKey]; ok {
+		if err := s.setScenarioLabel(ctx, appTenant, &model.LabelInput{Value: scenarioLabel, ObjectID: id}); err != nil {
+			return err
+		}
+
+		// In order for the scenario label not to be attempted to be created during upsert later
+		delete(in.Labels, model.ScenariosKey)
+	}
+
 	err = s.labelService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
 	if err != nil {
 		return errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
 	}
 
-	appTypeLbl, ok := in.Labels[applicationTypeLabelKey]
+	appTypeLbl, ok := in.Labels[ApplicationTypeLabelKey]
 	if !ok {
-		log.C(ctx).Infof("Label %q is missing for %s with id %q. Skipping ord webhook creation", applicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
+		log.C(ctx).Infof("Label %q is missing for %s with id %q. Skipping ord webhook creation", ApplicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
 		return nil
 	}
 
@@ -1434,7 +1508,7 @@ func (s *service) prepareORDWebhook(ctx context.Context, baseURL, applicationTyp
 		return nil
 	}
 
-	webhookInput, err := createORDWebhookInput(baseURL, mappingCfg.SubdomainSuffix, mappingCfg.OrdURLPath)
+	webhookInput, err := createORDWebhookInput(baseURL, mappingCfg)
 	if err != nil {
 		log.C(ctx).Infof("Creating ORD Webhook failed with error: %v", err)
 		return nil
@@ -1472,15 +1546,19 @@ func buildWebhookURL(suffix string, ordPath string, baseURL *string) (string, er
 	return fmt.Sprintf("%s%s", urlStr, ordPath), nil
 }
 
-func createORDWebhookInput(baseURL, suffix, ordPath string) (*model.WebhookInput, error) {
-	webhookURL, err := buildWebhookURL(suffix, ordPath, &baseURL)
+func createORDWebhookInput(baseURL string, ordWebhookMapping ORDWebhookMapping) (*model.WebhookInput, error) {
+	webhookURL, err := buildWebhookURL(ordWebhookMapping.SubdomainSuffix, ordWebhookMapping.OrdURLPath, &baseURL)
 	if err != nil {
 		return nil, err
 	}
 
+	proxyURL := buildWebhookProxyURL(ordWebhookMapping)
+
 	return &model.WebhookInput{
-		Type: model.WebhookTypeOpenResourceDiscovery,
-		URL:  str.Ptr(webhookURL),
+		Type:           model.WebhookTypeOpenResourceDiscovery,
+		URL:            str.Ptr(webhookURL),
+		ProxyURL:       str.Ptr(proxyURL),
+		HeaderTemplate: str.Ptr(ordWebhookMapping.ProxyHeaderTemplate),
 		Auth: &model.AuthInput{
 			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
 		},
@@ -1497,4 +1575,12 @@ func createMapFromFormationsSlice(formations []string) map[string]struct{} {
 
 func allowAllCriteria(_ string) bool {
 	return true
+}
+
+func buildWebhookProxyURL(mappingCfg ORDWebhookMapping) string {
+	if mappingCfg.ProxyURL == "" {
+		return ""
+	}
+
+	return mappingCfg.ProxyURL + mappingCfg.OrdURLPath
 }

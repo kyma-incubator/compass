@@ -19,13 +19,16 @@ func (_m *AppTmplService) Create(ctx context.Context, in model.ApplicationTempla
 	ret := _m.Called(ctx, in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationTemplateInput) (string, error)); ok {
+		return rf(ctx, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationTemplateInput) string); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationTemplateInput) error); ok {
 		r1 = rf(ctx, in)
 	} else {
@@ -40,6 +43,10 @@ func (_m *AppTmplService) GetByNameAndRegion(ctx context.Context, name string, r
 	ret := _m.Called(ctx, name, region)
 
 	var r0 *model.ApplicationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, interface{}) (*model.ApplicationTemplate, error)); ok {
+		return rf(ctx, name, region)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, interface{}) *model.ApplicationTemplate); ok {
 		r0 = rf(ctx, name, region)
 	} else {
@@ -48,7 +55,6 @@ func (_m *AppTmplService) GetByNameAndRegion(ctx context.Context, name string, r
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, interface{}) error); ok {
 		r1 = rf(ctx, name, region)
 	} else {
@@ -72,13 +78,12 @@ func (_m *AppTmplService) Update(ctx context.Context, id string, in model.Applic
 	return r0
 }
 
-type mockConstructorTestingTNewAppTmplService interface {
+// NewAppTmplService creates a new instance of AppTmplService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAppTmplService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewAppTmplService creates a new instance of AppTmplService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAppTmplService(t mockConstructorTestingTNewAppTmplService) *AppTmplService {
+}) *AppTmplService {
 	mock := &AppTmplService{}
 	mock.Mock.Test(t)
 

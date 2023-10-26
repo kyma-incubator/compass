@@ -6,6 +6,9 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -23,7 +26,7 @@ func TestPgRepository_Create(t *testing.T) {
 
 	var nilBundleMode *model.Bundle
 	bndlModel := fixBundleModel(name, desc)
-	bndlEntity := fixEntityBundle(bundleID, name, desc)
+	bndlEntity := fixEntityBundleWithAppID(bundleID, name, desc)
 
 	defAuth, err := json.Marshal(bndlModel.DefaultInstanceAuth)
 	require.NoError(t, err)
@@ -44,7 +47,7 @@ func TestPgRepository_Create(t *testing.T) {
 			},
 			{
 				Query:       `^INSERT INTO public.bundles \(.+\) VALUES \(.+\)$`,
-				Args:        fixBundleCreateArgs(string(defAuth), *bndlModel.InstanceAuthRequestInputSchema, bndlModel),
+				Args:        fixBundleCreateArgsForApp(string(defAuth), *bndlModel.InstanceAuthRequestInputSchema, bndlModel),
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},
@@ -61,12 +64,46 @@ func TestPgRepository_Create(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestPgRepository_CreateGlobal(t *testing.T) {
+	// GIVEN
+	name := "foo"
+
+	var nilBundleMode *model.Bundle
+	bndlModel := fixBundleModelWithIDAndAppTemplateVersionID(bundleID, name, desc)
+	bndlEntity := fixEntityBundleWithAppTemplateVersionID(bundleID, name, desc)
+
+	defAuth, err := json.Marshal(bndlModel.DefaultInstanceAuth)
+	require.NoError(t, err)
+
+	suite := testdb.RepoCreateTestSuite{
+		Name: "Create Bundle Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:       `^INSERT INTO public.bundles \(.+\) VALUES \(.+\)$`,
+				Args:        fixBundleCreateArgsForAppTemplateVersion(string(defAuth), *bndlModel.InstanceAuthRequestInputSchema, bndlModel),
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: bundle.NewRepository,
+		ModelEntity:         bndlModel,
+		DBEntity:            bndlEntity,
+		NilModelEntity:      nilBundleMode,
+		IsGlobal:            true,
+		MethodName:          "CreateGlobal",
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(`UPDATE public.bundles SET name = ?, description = ?, instance_auth_request_json_schema = ?, default_instance_auth = ?, ord_id = ?, short_description = ?, links = ?, labels = ?, credential_exchange_strategies = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, correlation_ids = ?, documentation_labels = ? WHERE id = ? AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = ? AND owner = true))`)
+	updateQuery := regexp.QuoteMeta(`UPDATE public.bundles SET name = ?, description = ?, version = ?, instance_auth_request_json_schema = ?, default_instance_auth = ?, ord_id = ?, local_tenant_id = ?, short_description = ?, links = ?, labels = ?, credential_exchange_strategies = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, correlation_ids = ?, tags = ?, resource_hash = ?, documentation_labels = ? WHERE id = ? AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = ? AND owner = true))`)
 
 	var nilBundleMode *model.Bundle
 	bndl := fixBundleModel("foo", "update")
-	entity := fixEntityBundle(bundleID, "foo", "update")
+	entity := fixEntityBundleWithAppID(bundleID, "foo", "update")
 	entity.UpdatedAt = &fixedTimestamp
 	entity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
 
@@ -75,7 +112,7 @@ func TestPgRepository_Update(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         updateQuery,
-				Args:          []driver.Value{entity.Name, entity.Description, entity.InstanceAuthRequestJSONSchema, entity.DefaultInstanceAuth, entity.OrdID, entity.ShortDescription, entity.Links, entity.Labels, entity.CredentialExchangeStrategies, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.CorrelationIDs, entity.DocumentationLabels, entity.ID, tenantID},
+				Args:          []driver.Value{entity.Name, entity.Description, entity.Version, entity.InstanceAuthRequestJSONSchema, entity.DefaultInstanceAuth, entity.OrdID, entity.LocalTenantID, entity.ShortDescription, entity.Links, entity.Labels, entity.CredentialExchangeStrategies, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.CorrelationIDs, entity.Tags, entity.ResourceHash, entity.DocumentationLabels, entity.ID, tenantID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -88,6 +125,39 @@ func TestPgRepository_Update(t *testing.T) {
 		DBEntity:            entity,
 		NilModelEntity:      nilBundleMode,
 		TenantID:            tenantID,
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_UpdateGlobal(t *testing.T) {
+	updateQuery := regexp.QuoteMeta(`UPDATE public.bundles SET name = ?, description = ?, version = ?, instance_auth_request_json_schema = ?, default_instance_auth = ?, ord_id = ?, local_tenant_id = ?, short_description = ?, links = ?, labels = ?, credential_exchange_strategies = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, correlation_ids = ?, tags = ?, resource_hash = ?, documentation_labels = ? WHERE id = ?`)
+
+	var nilBundleMode *model.Bundle
+	bndl := fixBundleModel("foo", "update")
+	entity := fixEntityBundleWithAppID(bundleID, "foo", "update")
+	entity.UpdatedAt = &fixedTimestamp
+	entity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
+
+	suite := testdb.RepoUpdateTestSuite{
+		Name: "Update Bundle Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         updateQuery,
+				Args:          []driver.Value{entity.Name, entity.Description, entity.Version, entity.InstanceAuthRequestJSONSchema, entity.DefaultInstanceAuth, entity.OrdID, entity.LocalTenantID, entity.ShortDescription, entity.Links, entity.Labels, entity.CredentialExchangeStrategies, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.CorrelationIDs, entity.Tags, entity.ResourceHash, entity.DocumentationLabels, entity.ID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: bundle.NewRepository,
+		ModelEntity:         bndl,
+		DBEntity:            entity,
+		NilModelEntity:      nilBundleMode,
+		IsGlobal:            true,
+		UpdateMethodName:    "UpdateGlobal",
 	}
 
 	suite.Run(t)
@@ -109,6 +179,29 @@ func TestPgRepository_Delete(t *testing.T) {
 		},
 		RepoConstructorFunc: bundle.NewRepository,
 		MethodArgs:          []interface{}{tenantID, bundleID},
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_DeleteGlobal(t *testing.T) {
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Bundle Delete Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.bundles WHERE id = $1`),
+				Args:          []driver.Value{bundleID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: bundle.NewRepository,
+		MethodArgs:          []interface{}{bundleID},
+		IsGlobal:            true,
+		MethodName:          "DeleteGlobal",
 	}
 
 	suite.Run(t)
@@ -144,19 +237,19 @@ func TestPgRepository_Exists(t *testing.T) {
 }
 
 func TestPgRepository_GetByID(t *testing.T) {
-	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")
+	bndlEntity := fixEntityBundleWithAppID(bundleID, "foo", "bar")
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Bundle",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.bundles WHERE id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, name, description, version, instance_auth_request_json_schema, default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, resource_hash, documentation_labels FROM public.bundles WHERE id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{bundleID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{
 						sqlmock.NewRows(fixBundleColumns()).
-							AddRow(fixBundleRow(bundleID, "placeholder")...),
+							AddRow(fixBundleRowWithAppID(bundleID)...),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -178,20 +271,56 @@ func TestPgRepository_GetByID(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestPgRepository_GetByIDGlobal(t *testing.T) {
+	bndlEntity := fixEntityBundleWithAppTemplateVersionID(bundleID, "foo", "bar")
+
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Bundle Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, name, description, version, instance_auth_request_json_schema, default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, resource_hash, documentation_labels FROM public.bundles WHERE id = $1`),
+				Args:     []driver.Value{bundleID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixBundleColumns()).
+							AddRow(fixBundleRowWithAppTemplateVersionID(bundleID)...),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixBundleColumns()),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: bundle.NewRepository,
+		ExpectedModelEntity: fixBundleModel("foo", "bar"),
+		ExpectedDBEntity:    bndlEntity,
+		MethodArgs:          []interface{}{bundleID},
+		MethodName:          "GetByIDGlobal",
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_GetForApplication(t *testing.T) {
-	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")
+	bndlEntity := fixEntityBundleWithAppID(bundleID, "foo", "bar")
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Bundle For Application",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.bundles WHERE id = $1 AND app_id = $2 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $3))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, name, description, version, instance_auth_request_json_schema, default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, resource_hash, documentation_labels FROM public.bundles WHERE id = $1 AND app_id = $2 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{bundleID, appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{
 						sqlmock.NewRows(fixBundleColumns()).
-							AddRow(fixBundleRow(bundleID, "placeholder")...),
+							AddRow(fixBundleRowWithAppID(bundleID)...),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -222,33 +351,33 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 
 	onePageAppID := "onePageAppID"
 	firstBundleID := "111111111-1111-1111-1111-111111111111"
-	firstBundleEntity := fixEntityBundle(firstBundleID, "foo", "bar")
-	firstBundleEntity.ApplicationID = onePageAppID
-	firstBndlModel := fixBundleModelWithID(firstBundleID, "foo", desc)
-	firstBndlModel.ApplicationID = onePageAppID
+	firstBundleEntity := fixEntityBundleWithAppID(firstBundleID, "foo", "bar")
+	firstBundleEntity.ApplicationID = repo.NewValidNullableString(onePageAppID)
+	firstBndlModel := fixBundleModelWithIDAndAppID(firstBundleID, "foo", desc)
+	firstBndlModel.ApplicationID = &onePageAppID
 
 	multiplePagesAppID := "multiplePagesAppID"
 
 	secondBundleID := "222222222-2222-2222-2222-222222222222"
-	secondBundleEntity := fixEntityBundle(secondBundleID, "foo", "bar")
-	secondBundleEntity.ApplicationID = multiplePagesAppID
-	secondBndlModel := fixBundleModelWithID(secondBundleID, "foo", desc)
-	secondBndlModel.ApplicationID = multiplePagesAppID
+	secondBundleEntity := fixEntityBundleWithAppID(secondBundleID, "foo", "bar")
+	secondBundleEntity.ApplicationID = repo.NewValidNullableString(multiplePagesAppID)
+	secondBndlModel := fixBundleModelWithIDAndAppID(secondBundleID, "foo", desc)
+	secondBndlModel.ApplicationID = &multiplePagesAppID
 
 	suite := testdb.RepoListPageableTestSuite{
 		Name: "List Bundles for multiple Applications with paging",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`(SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $1)) AND app_id = $2 ORDER BY app_id ASC, id ASC LIMIT $3 OFFSET $4)
+				Query: regexp.QuoteMeta(`(SELECT id, app_id, app_template_version_id, name, description, version, instance_auth_request_json_schema, default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, resource_hash, documentation_labels FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $1)) AND app_id = $2 ORDER BY app_id ASC, id ASC LIMIT $3 OFFSET $4)
 												UNION
-												(SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $5)) AND app_id = $6 ORDER BY app_id ASC, id ASC LIMIT $7 OFFSET $8)
+												(SELECT id, app_id, app_template_version_id, name, description, version, instance_auth_request_json_schema, default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, resource_hash, documentation_labels FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $5)) AND app_id = $6 ORDER BY app_id ASC, id ASC LIMIT $7 OFFSET $8)
 												UNION
-												(SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $9)) AND app_id = $10 ORDER BY app_id ASC, id ASC LIMIT $11 OFFSET $12)`),
+												(SELECT id, app_id, app_template_version_id, name, description, version, instance_auth_request_json_schema, default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, resource_hash, documentation_labels FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $9)) AND app_id = $10 ORDER BY app_id ASC, id ASC LIMIT $11 OFFSET $12)`),
 
 				Args:     []driver.Value{tenantID, emptyPageAppID, pageSize, 0, tenantID, onePageAppID, pageSize, 0, tenantID, multiplePagesAppID, pageSize, 0},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns()).AddRow(fixBundleRowWithAppID(firstBundleID, onePageAppID)...).AddRow(fixBundleRowWithAppID(secondBundleID, multiplePagesAppID)...)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns()).AddRow(fixBundleRowWithCustomAppID(firstBundleID, onePageAppID)...).AddRow(fixBundleRowWithCustomAppID(secondBundleID, multiplePagesAppID)...)}
 				},
 			},
 			{
@@ -312,24 +441,28 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 	suite.Run(t)
 }
 
-func TestPgRepository_ListByApplicationIDNoPaging(t *testing.T) {
+func TestPgRepository_ListByResourceIDNoPaging(t *testing.T) {
 	firstBundleID := "111111111-1111-1111-1111-111111111111"
-	firstBundleEntity := fixEntityBundle(firstBundleID, "foo", "bar")
-	firstBndlModel := fixBundleModelWithID(firstBundleID, "foo", desc)
+	firstAppBundleEntity := fixEntityBundleWithAppID(firstBundleID, "foo", "bar")
+	firstAppTemplateVersionBundleEntity := fixEntityBundleWithAppTemplateVersionID(firstBundleID, "foo", "bar")
+	firstAppBndlModel := fixBundleModelWithIDAndAppID(firstBundleID, "foo", desc)
+	firstAppTemplateVersionBndlModel := fixBundleModelWithIDAndAppTemplateVersionID(firstBundleID, "foo", desc)
 	secondBundleID := "222222222-2222-2222-2222-222222222222"
-	secondBundleEntity := fixEntityBundle(secondBundleID, "foo", "bar")
-	secondBndlModel := fixBundleModelWithID(secondBundleID, "foo", desc)
+	secondAppBundleEntity := fixEntityBundleWithAppID(secondBundleID, "foo", "bar")
+	secondAppTemplateVersionBundleEntity := fixEntityBundleWithAppTemplateVersionID(secondBundleID, "foo", "bar")
+	secondAppBndlModel := fixBundleModelWithIDAndAppID(secondBundleID, "foo", desc)
+	secondAppTemplateVersionBndlModel := fixBundleModelWithIDAndAppTemplateVersionID(secondBundleID, "foo", desc)
 
-	suite := testdb.RepoListTestSuite{
+	suiteForApplication := testdb.RepoListTestSuite{
 		Name: "List Bundles No Paging",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.bundles WHERE app_id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2)) FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, name, description, version, instance_auth_request_json_schema, default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, resource_hash, documentation_labels FROM public.bundles WHERE app_id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2)) FOR UPDATE`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns()).
-						AddRow(fixBundleRow(firstBundleID, "placeholder")...).AddRow(fixBundleRow(secondBundleID, "placeholder")...)}
+						AddRow(fixBundleRowWithAppID(firstBundleID)...).AddRow(fixBundleRowWithAppID(secondBundleID)...)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns())}
@@ -340,17 +473,44 @@ func TestPgRepository_ListByApplicationIDNoPaging(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc:   bundle.NewRepository,
-		ExpectedModelEntities: []interface{}{firstBndlModel, secondBndlModel},
-		ExpectedDBEntities:    []interface{}{firstBundleEntity, secondBundleEntity},
-		MethodArgs:            []interface{}{tenantID, appID},
-		MethodName:            "ListByApplicationIDNoPaging",
+		ExpectedModelEntities: []interface{}{firstAppBndlModel, secondAppBndlModel},
+		ExpectedDBEntities:    []interface{}{firstAppBundleEntity, secondAppBundleEntity},
+		MethodArgs:            []interface{}{tenantID, appID, resource.Application},
+		MethodName:            "ListByResourceIDNoPaging",
 	}
 
-	suite.Run(t)
+	suiteForApplicationTemplateVersion := testdb.RepoListTestSuite{
+		Name: "List Bundles No Paging",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, name, description, version, instance_auth_request_json_schema, default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, resource_hash, documentation_labels FROM public.bundles WHERE app_template_version_id = $1 FOR UPDATE`),
+				Args:     []driver.Value{appTemplateVersionID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns()).
+						AddRow(fixBundleRowWithAppTemplateVersionID(firstBundleID)...).AddRow(fixBundleRowWithAppTemplateVersionID(secondBundleID)...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   bundle.NewRepository,
+		ExpectedModelEntities: []interface{}{firstAppTemplateVersionBndlModel, secondAppTemplateVersionBndlModel},
+		ExpectedDBEntities:    []interface{}{firstAppTemplateVersionBundleEntity, secondAppTemplateVersionBundleEntity},
+		MethodArgs:            []interface{}{tenantID, appTemplateVersionID, resource.ApplicationTemplateVersion},
+		MethodName:            "ListByResourceIDNoPaging",
+	}
+
+	suiteForApplication.Run(t)
+	suiteForApplicationTemplateVersion.Run(t)
 }
 
 func TestPgRepository_ListByDestination(t *testing.T) {
-	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")
+	bndlEntity := fixEntityBundleWithAppID(bundleID, "foo", "bar")
 	modelBundle := fixBundleModel("foo", "bar")
 
 	destinationWithSystemName := model.DestinationInput{
@@ -363,9 +523,9 @@ func TestPgRepository_ListByDestination(t *testing.T) {
 		Name: "List Bundles By Destination with system name",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, 
-					default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies,
-					ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM 
+				Query: regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, name, description, version, instance_auth_request_json_schema, 
+					default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, credential_exchange_strategies,
+					ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, resource_hash, documentation_labels FROM 
 					public.bundles WHERE app_id IN (
 						SELECT id
 						FROM public.applications
@@ -381,7 +541,7 @@ func TestPgRepository_ListByDestination(t *testing.T) {
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns()).
-						AddRow(fixBundleRow(bundleID, "placeholder")...),
+						AddRow(fixBundleRowWithAppID(bundleID)...),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -411,9 +571,9 @@ func TestPgRepository_ListByDestination(t *testing.T) {
 		Name: "List Bundles By Destination with system ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema,
-					default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies,
-					ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM
+				Query: regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, name, description, version, instance_auth_request_json_schema,
+					default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, credential_exchange_strategies,
+					ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, resource_hash, documentation_labels FROM
 					public.bundles WHERE app_id IN (
 						SELECT DISTINCT pa.id as id
 						FROM public.applications pa JOIN labels l ON pa.id=l.app_id
@@ -431,7 +591,7 @@ func TestPgRepository_ListByDestination(t *testing.T) {
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns()).
-						AddRow(fixBundleRow(bundleID, "placeholder")...),
+						AddRow(fixBundleRowWithAppID(bundleID)...),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {

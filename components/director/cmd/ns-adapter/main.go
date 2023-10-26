@@ -8,6 +8,14 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
 
@@ -25,8 +33,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
 	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	authmiddleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
+
 	"github.com/kyma-incubator/compass/components/director/internal/methodnotallowed"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -99,11 +108,7 @@ func main() {
 	mtlsHTTPClient := httputildirector.PrepareMTLSClient(conf.ClientTimeout, certCache, conf.ExternalClientCertSecretName)
 	extSvcMtlsHTTPClient := httputildirector.PrepareMTLSClient(conf.ClientTimeout, certCache, conf.ExtSvcClientCertSecretName)
 
-	uidSvc := uid.NewService()
-
 	tenantConv := tenant.NewConverter()
-	tenantRepo := tenant.NewRepository(tenantConv)
-
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -122,7 +127,14 @@ func main() {
 	runtimeContextConverter := runtimectx.NewConverter()
 	formationConv := formation.NewConverter()
 	formationTemplateConverter := formationtemplate.NewConverter(webhookConverter)
+	assignmentConv := scenarioassignment.NewConverter()
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
+	formationConstraintConverter := formationconstraint.NewConverter()
+	formationTemplateConstraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
+	formationAssignmentConv := formationassignment.NewConverter()
+	certSubjectMappingConv := certsubjectmapping.NewConverter()
 
+	tenantRepo := tenant.NewRepository(tenantConv)
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
 	labelRepo := label.NewRepository(labelConverter)
@@ -139,10 +151,17 @@ func main() {
 	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConverter)
 	formationRepo := formation.NewRepository(formationConv)
 	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
-
-	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	assignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
+	bundleInstanceAuthRepo := bundleinstanceauth.NewRepository(bundleinstanceauth.NewConverter(authConverter))
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
+	formationConstraintRepo := formationconstraint.NewRepository(formationConstraintConverter)
+	formationTemplateConstraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(formationTemplateConstraintReferencesConverter)
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+	certSubjectMappingRepo := certsubjectmapping.NewRepository(certSubjectMappingConv)
+
+	timeSvc := time.NewService()
+	uidSvc := uid.NewService()
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, &http.Client{Timeout: conf.ClientTimeout}, accessstrategy.NewDefaultExecutorProvider(certCache, conf.ExternalClientCertSecretName, conf.ExtSvcClientCertSecretName))
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
@@ -150,32 +169,27 @@ func main() {
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
-	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
+	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
+	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, bundleInstanceAuthSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
-	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConv)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
 
-	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
-	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
-
-	formationConstraintConverter := formationconstraint.NewConverter()
-	formationConstraintRepo := formationconstraint.NewRepository(formationConstraintConverter)
-
-	formationTemplateConstraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
-	formationTemplateConstraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(formationTemplateConstraintReferencesConverter)
-
-	formationAssignmentConv := formationassignment.NewConverter()
-	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
-	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
+	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
+	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
+	certSubjectInputBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)
+	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, webhookLabelBuilder, webhookTenantBuilder, certSubjectInputBuilder)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	constraintEngine := formationconstraint.NewConstraintEngine(formationConstraintSvc, tntSvc, scenarioAssignmentSvc, formationRepo, labelRepo)
+	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tntSvc, scenarioAssignmentSvc, nil, nil, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
-	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator)
-	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv, notificationSvc)
-	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder)
-	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
+	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo)
+	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder, runtimeContextRepo, labelSvc, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
+	formationAssignmentStatusSvc := formationassignment.NewFormationAssignmentStatusService(formationAssignmentRepo, constraintEngine, faNotificationSvc)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
+	formationStatusSvc := formation.NewFormationStatusService(formationRepo, labelDefRepo, scenariosSvc, notificationSvc, constraintEngine)
+	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, conf.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 
 	err = registerAppTemplate(ctx, transact, appTemplateSvc)
@@ -202,7 +216,7 @@ func main() {
 	router.HandleFunc("/readyz", healthz.NewReadinessHandler(ready))
 
 	subrouter := router.PathPrefix("/api").Subrouter()
-	subrouter.Use(authenticator.New(http.DefaultClient, conf.JwksEndpoint, conf.AllowJWTSigningNone, "", claims.NewClaimsValidator()).NSAdapterHandler())
+	subrouter.Use(authmiddleware.New(http.DefaultClient, conf.JwksEndpoint, conf.AllowJWTSigningNone, "", claims.NewClaimsValidator()).NSAdapterHandler())
 	subrouter.MethodNotAllowedHandler = methodnotallowed.CreateMethodNotAllowedHandler()
 	subrouter.Methods(http.MethodPut).
 		Path("/v1/notifications").
@@ -335,10 +349,12 @@ func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, t
 	labelConverter := label.NewConverter()
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
+	appRepo := application.NewRepository(appConverter)
 
+	timeSvc := time.NewService()
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, appRepo, timeSvc)
 
 	tx, err := transact.Begin()
 	if err != nil {

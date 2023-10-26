@@ -8,6 +8,7 @@ mutation {
     runtimeTypeDisplayName
     runtimeArtifactKind
     leadingProductIDs
+    supportsReset
     webhooks {
       id
       applicationID

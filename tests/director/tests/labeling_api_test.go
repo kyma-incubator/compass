@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
@@ -14,6 +16,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+)
+
+const (
+	ScenariosLabel = "scenarios"
+	testScenario   = "test-scenario"
 )
 
 func TestCreateLabel(t *testing.T) {
@@ -44,7 +51,7 @@ func TestCreateLabel(t *testing.T) {
 	require.NotEmpty(t, label.Value)
 	require.Equal(t, labelKey, label.Key)
 	require.Equal(t, labelValue, label.Value)
-	saveExample(t, setLabelRequest.Query(), "set application label")
+	example.SaveExample(t, setLabelRequest.Query(), "set application label")
 
 	t.Log("Update label value on application")
 	newLabelValue := "new-val"
@@ -110,7 +117,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application")
-	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), tenantId)
+	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app", conf.ApplicationTypeLabelKey, fixtures.CreateAppTemplateName("Cloud for Customer"), tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
@@ -252,7 +259,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	assert.Equal(t, applicationPage.TotalCount, 1)
 	assert.Contains(t, applicationPage.Data[0].Labels, labelKeyBar)
 	assert.Equal(t, applicationPage.Data[0].Labels[labelKeyBar], labelValueBar)
-	saveExampleInCustomDir(t, applicationRequest.Query(), queryApplicationsCategory, "query applications with label filter")
+	example.SaveExampleInCustomDir(t, applicationRequest.Query(), example.QueryApplicationsCategory, "query applications with label filter")
 }
 
 func TestSearchRuntimesByLabels(t *testing.T) {
@@ -265,14 +272,16 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	labelKeyFoo := "foo"
 	labelKeyBar := "bar"
 
-	inputFirst := fixRuntimeInput("first")
-	firstRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inputFirst, conf.GatewayOauth)
+	inputFirst := fixtures.FixRuntimeRegisterInputWithoutLabels("first")
+	var firstRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &firstRuntime)
+	firstRuntime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inputFirst, conf.GatewayOauth)
 
 	//Create second runtime
-	inputSecond := fixRuntimeInput("second")
-	secondRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inputSecond, conf.GatewayOauth)
+	inputSecond := fixtures.FixRuntimeRegisterInputWithoutLabels("second")
+	var secondRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &secondRuntime)
+	secondRuntime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inputSecond, conf.GatewayOauth)
 
 	//Set label "foo" on both runtimes
 	labelValueFoo := "val"
@@ -334,7 +343,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	assert.Equal(t, runtimePage.TotalCount, 1)
 	assert.Contains(t, runtimePage.Data[0].Labels, labelKeyBar)
 	assert.Equal(t, runtimePage.Data[0].Labels[labelKeyBar], labelValueBar)
-	saveExampleInCustomDir(t, runtimesRequest.Query(), QueryRuntimesCategory, "query runtimes with label filter")
+	example.SaveExampleInCustomDir(t, runtimesRequest.Query(), example.QueryRuntimesCategory, "query runtimes with label filter")
 }
 
 func TestListLabelDefinitions(t *testing.T) {
@@ -363,7 +372,7 @@ func TestListLabelDefinitions(t *testing.T) {
 	require.NoError(t, err)
 
 	createRequest := fixtures.FixCreateLabelDefinitionRequest(in)
-	saveExample(t, createRequest.Query(), "create label definition")
+	example.SaveExample(t, createRequest.Query(), "create label definition")
 
 	output := graphql.LabelDefinition{}
 	if err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createRequest, &output); err != nil {
@@ -377,7 +386,7 @@ func TestListLabelDefinitions(t *testing.T) {
 
 	//WHEN
 	labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID)
-	saveExample(t, fixtures.FixLabelDefinitionsRequest().Query(), "query label definitions")
+	example.SaveExample(t, fixtures.FixLabelDefinitionsRequest().Query(), "query label definitions")
 
 	//THEN
 	require.NoError(t, err)
@@ -404,7 +413,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 		Name: name,
 		Labels: graphql.Labels{
 			ScenariosLabel:               scenarios,
-			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
+			conf.ApplicationTypeLabelKey: fixtures.CreateAppTemplateName("Cloud for Customer"),
 		},
 	}
 

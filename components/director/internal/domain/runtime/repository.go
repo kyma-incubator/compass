@@ -19,10 +19,12 @@ import (
 const runtimeTable string = `public.runtimes`
 
 var (
-	runtimeColumns = []string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}
+	runtimeColumns   = []string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp", "application_namespace"}
+	updatableColumns = []string{"name", "description", "status_condition", "status_timestamp", "application_namespace"}
 )
 
 // EntityConverter missing godoc
+//
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
 	ToEntity(in *model.Runtime) (*Runtime, error)
@@ -57,7 +59,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		ownerLister:        repo.NewOwnerLister(runtimeTable, runtimeColumns, true),
 		listerGlobal:       repo.NewListerGlobal(resource.Runtime, runtimeTable, runtimeColumns),
 		creator:            repo.NewCreator(runtimeTable, runtimeColumns),
-		updater:            repo.NewUpdater(runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, []string{"id"}),
+		updater:            repo.NewUpdater(runtimeTable, updatableColumns, []string{"id"}),
 		conv:               conv,
 	}
 }

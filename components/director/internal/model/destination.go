@@ -1,6 +1,8 @@
 package model
 
-import "errors"
+import (
+	"errors"
+)
 
 // DestinationInput missing godoc
 type DestinationInput struct {
@@ -13,6 +15,18 @@ type DestinationInput struct {
 	XSystemTenantName string `json:"x-system-name"`
 	XSystemType       string `json:"x-system-type"`
 	XSystemBaseURL    string `json:"x-system-base-url"`
+}
+
+// Destination is an internal model representation of the destination entity
+type Destination struct {
+	ID                    string  `json:"id"`
+	Name                  string  `json:"name"`
+	Type                  string  `json:"type"`
+	URL                   string  `json:"url"`
+	Authentication        string  `json:"authentication"`
+	SubaccountID          string  `json:"subaccount_id"`
+	InstanceID            *string `json:"instanceId"`
+	FormationAssignmentID *string `json:"formationAssignmentID"`
 }
 
 // Validate returns error if system doesn't have the required properties

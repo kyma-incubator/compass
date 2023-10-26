@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
@@ -12,6 +14,7 @@ import (
 type ApplicationTenantMappingInput struct {
 	Operation                 model.FormationOperation
 	FormationID               string
+	Formation                 *model.Formation
 	SourceApplicationTemplate *ApplicationTemplateWithLabels
 	// SourceApplication is the application that the notification is about
 	SourceApplication         *ApplicationWithLabels
@@ -52,10 +55,6 @@ func (rd *ApplicationTenantMappingInput) GetParticipantsIDs() []string {
 
 // SetAssignment sets the assignment for the ApplicationTenantMappingInput to the provided one
 func (rd *ApplicationTenantMappingInput) SetAssignment(assignment *model.FormationAssignment) {
-	config := string(assignment.Value)
-	if config == "" {
-		config = "\"\""
-	}
 	rd.Assignment = &FormationAssignment{
 		ID:          assignment.ID,
 		FormationID: assignment.FormationID,
@@ -65,16 +64,13 @@ func (rd *ApplicationTenantMappingInput) SetAssignment(assignment *model.Formati
 		Target:      assignment.Target,
 		TargetType:  assignment.TargetType,
 		State:       assignment.State,
-		Value:       config,
+		Value:       str.StringifyJSONRawMessage(assignment.Value),
+		Error:       str.StringifyJSONRawMessage(assignment.Error),
 	}
 }
 
 // SetReverseAssignment sets the reverseAssignment for the ApplicationTenantMappingInput to the provided one
 func (rd *ApplicationTenantMappingInput) SetReverseAssignment(reverseAssignment *model.FormationAssignment) {
-	config := string(reverseAssignment.Value)
-	if config == "" {
-		config = "\"\""
-	}
 	rd.ReverseAssignment = &FormationAssignment{
 		ID:          reverseAssignment.ID,
 		FormationID: reverseAssignment.FormationID,
@@ -84,15 +80,17 @@ func (rd *ApplicationTenantMappingInput) SetReverseAssignment(reverseAssignment 
 		Target:      reverseAssignment.Target,
 		TargetType:  reverseAssignment.TargetType,
 		State:       reverseAssignment.State,
-		Value:       config,
+		Value:       str.StringifyJSONRawMessage(reverseAssignment.Value),
+		Error:       str.StringifyJSONRawMessage(reverseAssignment.Error),
 	}
 }
 
-// Clone return a copy of the ApplicationTenantMappingInput
+// Clone returns a copy of the ApplicationTenantMappingInput
 func (rd *ApplicationTenantMappingInput) Clone() FormationAssignmentTemplateInput {
 	return &ApplicationTenantMappingInput{
 		Operation:                 rd.Operation,
 		FormationID:               rd.FormationID,
+		Formation:                 rd.Formation,
 		SourceApplicationTemplate: rd.SourceApplicationTemplate,
 		SourceApplication:         rd.SourceApplication,
 		TargetApplicationTemplate: rd.TargetApplicationTemplate,

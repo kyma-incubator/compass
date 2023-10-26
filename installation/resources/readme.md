@@ -7,7 +7,6 @@ The following table lists Kyma components files based on the type of Compass ins
 | File                                	   | Description                                                	          |
 |-----------------------------------------|-----------------------------------------------------------------------|
 | `kyma-components-minimal.yaml` 	        | Kyma components that are required for minimal Compass installation. 	 |
-| `kyma-components-full.yaml` 	           | Kyma components that are required for full Compass installation. 	    |
 
 ## KYMA_VERSION file
 

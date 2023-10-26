@@ -55,8 +55,16 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 	}
 
 	var bundleID string
-	if bundleRef.BundleID != nil {
-		bundleID = *bundleRef.BundleID
+	apiDefaultTargetURL := ExtractTargetURLFromJSONArray(in.TargetURLs)
+
+	if bundleRef != nil {
+		if bundleRef.BundleID != nil {
+			bundleID = *bundleRef.BundleID
+		}
+
+		if bundleRef.APIDefaultTargetURL != nil {
+			apiDefaultTargetURL = *bundleRef.APIDefaultTargetURL
+		}
 	}
 
 	return &graphql.APIDefinition{
@@ -64,7 +72,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 		Name:        in.Name,
 		Description: in.Description,
 		Spec:        s,
-		TargetURL:   str.PtrStrToStr(bundleRef.APIDefaultTargetURL),
+		TargetURL:   apiDefaultTargetURL,
 		Group:       in.Group,
 		Version:     c.version.ToGraphQL(in.Version),
 		BaseEntity: &graphql.BaseEntity{
@@ -79,8 +87,8 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 }
 
 // MultipleToGraphQL converts the provided service-layer representations of an APIDefinition to the graphql-layer ones.
-func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error) {
-	if len(in) != len(specs) || len(in) != len(bundleRefs) || len(bundleRefs) != len(specs) {
+func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error) {
+	if len(in) != len(bundleRefs) {
 		return nil, errors.New("different apis, specs and bundleRefs count provided")
 	}
 
@@ -90,7 +98,7 @@ func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.
 			continue
 		}
 
-		api, err := c.ToGraphQL(a, specs[i], bundleRefs[i])
+		api, err := c.ToGraphQL(a, nil, bundleRefs[i])
 		if err != nil {
 			return nil, err
 		}
@@ -142,13 +150,15 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 // FromEntity converts the provided Entity repo-layer representation of an APIDefinition to the service-layer representation model.APIDefinition.
 func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
 	return &model.APIDefinition{
-		ApplicationID:                           entity.ApplicationID,
+		ApplicationID:                           repo.StringPtrFromNullableString(entity.ApplicationID),
+		ApplicationTemplateVersionID:            repo.StringPtrFromNullableString(entity.ApplicationTemplateVersionID),
 		PackageID:                               repo.StringPtrFromNullableString(entity.PackageID),
 		Name:                                    entity.Name,
 		Description:                             repo.StringPtrFromNullableString(entity.Description),
 		TargetURLs:                              repo.JSONRawMessageFromNullableString(entity.TargetURLs),
 		Group:                                   repo.StringPtrFromNullableString(entity.Group),
 		OrdID:                                   repo.StringPtrFromNullableString(entity.OrdID),
+		LocalTenantID:                           repo.StringPtrFromNullableString(entity.LocalTenantID),
 		ShortDescription:                        repo.StringPtrFromNullableString(entity.ShortDescription),
 		SystemInstanceAware:                     repo.BoolPtrFromNullableBool(entity.SystemInstanceAware),
 		PolicyLevel:                             repo.StringPtrFromNullableString(entity.PolicyLevel),
@@ -174,7 +184,11 @@ func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
 		Version:                                 c.version.FromEntity(entity.Version),
 		Extensible:                              repo.JSONRawMessageFromNullableString(entity.Extensible),
 		ResourceHash:                            repo.StringPtrFromNullableString(entity.ResourceHash),
+		SupportedUseCases:                       repo.JSONRawMessageFromNullableString(entity.SupportedUseCases),
 		DocumentationLabels:                     repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
+		CorrelationIDs:                          repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
+		Direction:                               repo.StringPtrFromNullableString(entity.Direction),
+		LastUpdate:                              repo.StringPtrFromNullableString(entity.LastUpdate),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -194,13 +208,15 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
 	}
 
 	return &Entity{
-		ApplicationID:                           apiModel.ApplicationID,
+		ApplicationID:                           repo.NewNullableString(apiModel.ApplicationID),
+		ApplicationTemplateVersionID:            repo.NewNullableString(apiModel.ApplicationTemplateVersionID),
 		PackageID:                               repo.NewNullableString(apiModel.PackageID),
 		Name:                                    apiModel.Name,
 		Description:                             repo.NewNullableString(apiModel.Description),
 		Group:                                   repo.NewNullableString(apiModel.Group),
 		TargetURLs:                              repo.NewNullableStringFromJSONRawMessage(apiModel.TargetURLs),
 		OrdID:                                   repo.NewNullableString(apiModel.OrdID),
+		LocalTenantID:                           repo.NewNullableString(apiModel.LocalTenantID),
 		ShortDescription:                        repo.NewNullableString(apiModel.ShortDescription),
 		SystemInstanceAware:                     repo.NewNullableBool(apiModel.SystemInstanceAware),
 		PolicyLevel:                             repo.NewNullableString(apiModel.PolicyLevel),
@@ -227,6 +243,10 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
 		Extensible:                              repo.NewNullableStringFromJSONRawMessage(apiModel.Extensible),
 		ResourceHash:                            repo.NewNullableString(apiModel.ResourceHash),
 		DocumentationLabels:                     repo.NewNullableStringFromJSONRawMessage(apiModel.DocumentationLabels),
+		SupportedUseCases:                       repo.NewNullableStringFromJSONRawMessage(apiModel.SupportedUseCases),
+		CorrelationIDs:                          repo.NewNullableStringFromJSONRawMessage(apiModel.CorrelationIDs),
+		Direction:                               repo.NewNullableString(apiModel.Direction),
+		LastUpdate:                              repo.NewNullableString(apiModel.LastUpdate),
 		BaseEntity: &repo.BaseEntity{
 			ID:        apiModel.ID,
 			Ready:     apiModel.Ready,

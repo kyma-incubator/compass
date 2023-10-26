@@ -2,7 +2,10 @@ package fixtures
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gcli "github.com/machinebox/graphql"
@@ -48,4 +51,28 @@ func GetTenantByExternalID(gqlClient *gcli.Client, externalTenantID string) (*gr
 	}
 
 	return response.Result, nil
+}
+
+func FixAddTenantAccessRequest(tenantAccessInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addTenantAccess(in: %s) {
+					%s
+				}
+			}`,
+			tenantAccessInput, testctx.Tc.GQLFieldsProvider.ForTenantAccess()))
+}
+
+func FixRemoveTenantAccessRequest(tenantID, resourceID string, resourceType graphql.TenantAccessObjectType) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: removeTenantAccess(
+ 				tenantID: "%s"
+      			resourceID: "%s"
+      			resourceType: %s
+			){
+					%s
+				}
+			}`,
+			tenantID, resourceID, resourceType, testctx.Tc.GQLFieldsProvider.ForTenantAccess()))
 }

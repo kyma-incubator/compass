@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -87,6 +89,70 @@ func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 		OutputTemplate:        in.OutputTemplate,
 		StatusTemplate:        in.StatusTemplate,
 		CreatedAt:             timePtrToTimestampPtr(in.CreatedAt),
+	}, nil
+}
+
+// ToModel converts graphql.Webhook to model.Webhook
+func (c *converter) ToModel(in *graphql.Webhook) (*model.Webhook, error) {
+	if in == nil {
+		return nil, nil
+	}
+
+	authModel, err := auth.ToModel(in.Auth)
+	if err != nil {
+		return nil, err
+	}
+
+	var objectID string
+	var objectType model.WebhookReferenceObjectType
+	if in.ApplicationID != nil {
+		objectID = *in.ApplicationID
+		objectType = model.ApplicationWebhookReference
+	} else if in.RuntimeID != nil {
+		objectID = *in.RuntimeID
+		objectType = model.RuntimeWebhookReference
+	} else if in.ApplicationTemplateID != nil {
+		objectID = *in.ApplicationTemplateID
+		objectType = model.ApplicationTemplateWebhookReference
+	} else if in.IntegrationSystemID != nil {
+		objectID = *in.IntegrationSystemID
+		objectType = model.IntegrationSystemWebhookReference
+	} else if in.FormationTemplateID != nil {
+		objectID = *in.FormationTemplateID
+		objectType = model.FormationTemplateWebhookReference
+	} else {
+		objectType = model.UnknownWebhookReference
+	}
+
+	var webhookMode *model.WebhookMode
+	if in.Mode != nil {
+		mode := model.WebhookMode(*in.Mode)
+		webhookMode = &mode
+	}
+
+	var createdAt *time.Time = nil
+	if in.CreatedAt != nil {
+		t := time.Time(*(in.CreatedAt))
+		createdAt = &t
+	}
+
+	return &model.Webhook{
+		ID:               in.ID,
+		ObjectID:         objectID,
+		ObjectType:       objectType,
+		CorrelationIDKey: in.CorrelationIDKey,
+		Type:             model.WebhookType(in.Type),
+		URL:              in.URL,
+		Auth:             authModel,
+		Mode:             webhookMode,
+		RetryInterval:    in.RetryInterval,
+		Timeout:          in.Timeout,
+		URLTemplate:      in.URLTemplate,
+		InputTemplate:    in.InputTemplate,
+		HeaderTemplate:   in.HeaderTemplate,
+		OutputTemplate:   in.OutputTemplate,
+		StatusTemplate:   in.StatusTemplate,
+		CreatedAt:        createdAt,
 	}, nil
 }
 
@@ -201,6 +267,7 @@ func (c *converter) ToEntity(in *model.Webhook) (*Entity, error) {
 		CollectionIDKey:       repo.NewNullableString(in.CorrelationIDKey),
 		Type:                  string(in.Type),
 		URL:                   repo.NewNullableString(in.URL),
+		ProxyURL:              repo.NewNullableString(in.ProxyURL),
 		Auth:                  optionalAuth,
 		Mode:                  webhookMode,
 		RetryInterval:         repo.NewNullableInt(in.RetryInterval),
@@ -256,6 +323,7 @@ func (c *converter) FromEntity(in *Entity) (*model.Webhook, error) {
 		CorrelationIDKey: repo.StringPtrFromNullableString(in.CollectionIDKey),
 		Type:             model.WebhookType(in.Type),
 		URL:              repo.StringPtrFromNullableString(in.URL),
+		ProxyURL:         repo.StringPtrFromNullableString(in.ProxyURL),
 		Auth:             auth,
 		Mode:             webhookMode,
 		RetryInterval:    repo.IntPtrFromNullableInt(in.RetryInterval),

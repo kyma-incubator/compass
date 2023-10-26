@@ -10,6 +10,8 @@ const (
 	Application Type = "application"
 	// ApplicationTemplate type represents application template resource.
 	ApplicationTemplate Type = "applicationTemplate"
+	// ApplicationTemplateVersion type represents application template version resource.
+	ApplicationTemplateVersion Type = "applicationTemplateVersion"
 	// Runtime type represents runtime resource.
 	Runtime Type = "runtime"
 	// RuntimeContext type represents runtime context resource.
@@ -50,12 +52,18 @@ const (
 	APISpecFetchRequest Type = "apiSpecFetchRequest"
 	// EventSpecFetchRequest type represents Event specification fetch request resource.
 	EventSpecFetchRequest Type = "eventSpecFetchRequest"
+	// CapabilitySpecFetchRequest type represents Capability specification fetch request resource.
+	CapabilitySpecFetchRequest Type = "capabilitySpecFetchRequest"
 	// Specification type represents generic specification resource. This resource does not assume the referenced resource type of the Spec.
 	Specification Type = "specification"
+	// EntityType type represents Entity Type resource.
+	EntityType Type = "entityType"
 	// APISpecification type represents API specification resource.
 	APISpecification Type = "apiSpecification"
 	// EventSpecification type represents Event specification resource.
 	EventSpecification Type = "eventSpecification"
+	// CapabilitySpecification type represents Capability specification resource.
+	CapabilitySpecification Type = "capabilitySpecification"
 	// Document type represents document resource.
 	Document Type = "document"
 	// BundleInstanceAuth type represents bundle instance auth resource.
@@ -64,6 +72,8 @@ const (
 	API Type = "api"
 	// EventDefinition type represents event resource.
 	EventDefinition Type = "eventDefinition"
+	// Capability type represents capability resource.
+	Capability Type = "capability"
 	// AutomaticScenarioAssigment type represents ASA resource.
 	AutomaticScenarioAssigment Type = "automaticScenarioAssigment"
 	// CertSubjectMapping type represents certificate subject mapping resource
@@ -84,15 +94,25 @@ const (
 	AppWebhook Type = "appWebhook"
 	// RuntimeWebhook type represents runtime webhook resource.
 	RuntimeWebhook Type = "runtimeWebhook"
+	// Operation type represents operation resource.
+	Operation Type = "operation"
 	// FormationTemplateWebhook type represents formation template webhook resource.
 	FormationTemplateWebhook Type = "formationTemplateWebhook"
 	// Tenant type represents tenant resource.
 	Tenant Type = "tenant"
 	// TenantAccess type represents tenant access resource.
 	TenantAccess Type = "tenantAccess"
+	// TenantBusinessType type represents tenant business type resource.
+	TenantBusinessType Type = "tenantBusinessType"
 	// Schema type represents schema resource.
 	Schema Type = "schemaMigration"
+	// SystemsSync type represents systems synchronization timestamps resource
+	SystemsSync Type = "systemsSync"
 )
+
+var ignoredTenantAccessTable = map[Type]string{
+	ApplicationTemplateVersion: "application_template_versions",
+}
 
 var tenantAccessTable = map[Type]string{
 	// Tables
@@ -103,28 +123,32 @@ var tenantAccessTable = map[Type]string{
 
 	// Views
 
-	Label:                    "labels_tenants",
-	ApplicationLabel:         "application_labels_tenants",
-	RuntimeLabel:             "runtime_labels_tenants",
-	RuntimeContextLabel:      "runtime_contexts_labels_tenants",
-	Bundle:                   "bundles_tenants",
-	Package:                  "packages_tenants",
-	Product:                  "products_tenants",
-	Vendor:                   "vendors_tenants",
-	Tombstone:                "tombstones_tenants",
-	DocFetchRequest:          "document_fetch_requests_tenants",
-	APISpecFetchRequest:      "api_specifications_fetch_requests_tenants",
-	EventSpecFetchRequest:    "event_specifications_fetch_requests_tenants",
-	APISpecification:         "api_specifications_tenants",
-	EventSpecification:       "event_specifications_tenants",
-	Document:                 "documents_tenants",
-	BundleInstanceAuth:       "bundle_instance_auths_tenants",
-	API:                      "api_definitions_tenants",
-	EventDefinition:          "event_api_definitions_tenants",
-	Webhook:                  "webhooks_tenants",
-	AppWebhook:               "application_webhooks_tenants",
-	RuntimeWebhook:           "runtime_webhooks_tenants",
-	FormationTemplateWebhook: "formation_templates_webhooks_tenants",
+	Label:                      "labels_tenants",
+	ApplicationLabel:           "application_labels_tenants",
+	RuntimeLabel:               "runtime_labels_tenants",
+	RuntimeContextLabel:        "runtime_contexts_labels_tenants",
+	Bundle:                     "bundles_tenants",
+	Package:                    "packages_tenants",
+	Product:                    "products_tenants",
+	Vendor:                     "vendors_tenants",
+	Tombstone:                  "tombstones_tenants",
+	DocFetchRequest:            "document_fetch_requests_tenants",
+	APISpecFetchRequest:        "api_specifications_fetch_requests_tenants",
+	EventSpecFetchRequest:      "event_specifications_fetch_requests_tenants",
+	CapabilitySpecFetchRequest: "capability_specifications_fetch_requests_tenants",
+	APISpecification:           "api_specifications_tenants",
+	EventSpecification:         "event_specifications_tenants",
+	CapabilitySpecification:    "capability_specifications_tenants",
+	Document:                   "documents_tenants",
+	BundleInstanceAuth:         "bundle_instance_auths_tenants",
+	API:                        "api_definitions_tenants",
+	EventDefinition:            "event_api_definitions_tenants",
+	EntityType:                 "entity_types_tenants",
+	Capability:                 "capabilities_tenants",
+	Webhook:                    "webhooks_tenants",
+	AppWebhook:                 "application_webhooks_tenants",
+	RuntimeWebhook:             "runtime_webhooks_tenants",
+	FormationTemplateWebhook:   "formation_templates_webhooks_tenants",
 }
 
 var tablesWithEmbeddedTenant = map[Type]string{
@@ -134,6 +158,18 @@ var tablesWithEmbeddedTenant = map[Type]string{
 	LabelDefinition:            "label_definitions",
 	Label:                      "labels",
 	SystemAuth:                 "system_auths",
+}
+
+// IgnoredTenantAccessTable returns the table / view with tenant accesses of the given type.
+func (t Type) IgnoredTenantAccessTable() (string, bool) {
+	tbl, ok := ignoredTenantAccessTable[t]
+	return tbl, ok
+}
+
+// IsTenantIgnorable returns true if the entity has a Global access and does not need tenant isolation
+func (t Type) IsTenantIgnorable() bool {
+	_, exists := ignoredTenantAccessTable[t]
+	return exists
 }
 
 // TenantAccessTable returns the table / view with tenant accesses of the given type.
@@ -150,9 +186,10 @@ func (t Type) EmbeddedTenantTable() (string, bool) {
 
 // TopLevelEntities is a map of entities that has a many-to-many relationship with the tenants along with their table names.
 var TopLevelEntities = map[Type]string{
-	Application:    "public.applications",
-	Runtime:        "public.runtimes",
-	RuntimeContext: "public.runtime_contexts",
+	Application:                "public.applications",
+	ApplicationTemplateVersion: "public.application_template_versions",
+	Runtime:                    "public.runtimes",
+	RuntimeContext:             "public.runtime_contexts",
 }
 
 // IsTopLevel returns true only if the entity has a many-to-many relationship with the tenants.

@@ -52,7 +52,7 @@ func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundl
 	}
 
 	var bundleID string
-	if bundleRef.BundleID != nil {
+	if bundleRef != nil && bundleRef.BundleID != nil {
 		bundleID = *bundleRef.BundleID
 	}
 
@@ -75,9 +75,9 @@ func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundl
 }
 
 // MultipleToGraphQL converts the provided service-layer representations of an EventDefinition to the graphql-layer ones.
-func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error) {
-	if len(in) != len(specs) || len(in) != len(bundleRefs) || len(bundleRefs) != len(specs) {
-		return nil, errors.New("different events, specs and bundleRefs count provided")
+func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error) {
+	if len(in) != len(bundleRefs) {
+		return nil, errors.New("different events and bundleRefs count provided")
 	}
 
 	events := make([]*graphql.EventDefinition, 0, len(in))
@@ -86,7 +86,7 @@ func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, specs []*mode
 			continue
 		}
 
-		event, err := c.ToGraphQL(e, specs[i], bundleRefs[i])
+		event, err := c.ToGraphQL(e, nil, bundleRefs[i])
 		if err != nil {
 			return nil, err
 		}
@@ -137,33 +137,40 @@ func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.E
 // FromEntity converts the provided Entity repo-layer representation of an EventDefinition to the service-layer representation model.EventDefinition.
 func (c *converter) FromEntity(entity *Entity) *model.EventDefinition {
 	return &model.EventDefinition{
-		ApplicationID:       entity.ApplicationID,
-		PackageID:           repo.StringPtrFromNullableString(entity.PackageID),
-		Name:                entity.Name,
-		Description:         repo.StringPtrFromNullableString(entity.Description),
-		Group:               repo.StringPtrFromNullableString(entity.GroupName),
-		OrdID:               repo.StringPtrFromNullableString(entity.OrdID),
-		ShortDescription:    repo.StringPtrFromNullableString(entity.ShortDescription),
-		SystemInstanceAware: repo.BoolPtrFromNullableBool(entity.SystemInstanceAware),
-		PolicyLevel:         repo.StringPtrFromNullableString(entity.PolicyLevel),
-		CustomPolicyLevel:   repo.StringPtrFromNullableString(entity.CustomPolicyLevel),
-		Tags:                repo.JSONRawMessageFromNullableString(entity.Tags),
-		Countries:           repo.JSONRawMessageFromNullableString(entity.Countries),
-		Links:               repo.JSONRawMessageFromNullableString(entity.Links),
-		ReleaseStatus:       repo.StringPtrFromNullableString(entity.ReleaseStatus),
-		SunsetDate:          repo.StringPtrFromNullableString(entity.SunsetDate),
-		Successors:          repo.JSONRawMessageFromNullableString(entity.Successors),
-		ChangeLogEntries:    repo.JSONRawMessageFromNullableString(entity.ChangeLogEntries),
-		Labels:              repo.JSONRawMessageFromNullableString(entity.Labels),
-		Visibility:          &entity.Visibility,
-		Disabled:            repo.BoolPtrFromNullableBool(entity.Disabled),
-		PartOfProducts:      repo.JSONRawMessageFromNullableString(entity.PartOfProducts),
-		LineOfBusiness:      repo.JSONRawMessageFromNullableString(entity.LineOfBusiness),
-		Industry:            repo.JSONRawMessageFromNullableString(entity.Industry),
-		Version:             c.vc.FromEntity(entity.Version),
-		Extensible:          repo.JSONRawMessageFromNullableString(entity.Extensible),
-		ResourceHash:        repo.StringPtrFromNullableString(entity.ResourceHash),
-		DocumentationLabels: repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
+		ApplicationID:                           repo.StringPtrFromNullableString(entity.ApplicationID),
+		ApplicationTemplateVersionID:            repo.StringPtrFromNullableString(entity.ApplicationTemplateVersionID),
+		PackageID:                               repo.StringPtrFromNullableString(entity.PackageID),
+		Name:                                    entity.Name,
+		Description:                             repo.StringPtrFromNullableString(entity.Description),
+		Group:                                   repo.StringPtrFromNullableString(entity.GroupName),
+		OrdID:                                   repo.StringPtrFromNullableString(entity.OrdID),
+		LocalTenantID:                           repo.StringPtrFromNullableString(entity.LocalTenantID),
+		ShortDescription:                        repo.StringPtrFromNullableString(entity.ShortDescription),
+		SystemInstanceAware:                     repo.BoolPtrFromNullableBool(entity.SystemInstanceAware),
+		PolicyLevel:                             repo.StringPtrFromNullableString(entity.PolicyLevel),
+		CustomPolicyLevel:                       repo.StringPtrFromNullableString(entity.CustomPolicyLevel),
+		Tags:                                    repo.JSONRawMessageFromNullableString(entity.Tags),
+		Countries:                               repo.JSONRawMessageFromNullableString(entity.Countries),
+		Links:                                   repo.JSONRawMessageFromNullableString(entity.Links),
+		ReleaseStatus:                           repo.StringPtrFromNullableString(entity.ReleaseStatus),
+		SunsetDate:                              repo.StringPtrFromNullableString(entity.SunsetDate),
+		Successors:                              repo.JSONRawMessageFromNullableString(entity.Successors),
+		ChangeLogEntries:                        repo.JSONRawMessageFromNullableString(entity.ChangeLogEntries),
+		Labels:                                  repo.JSONRawMessageFromNullableString(entity.Labels),
+		Visibility:                              &entity.Visibility,
+		Disabled:                                repo.BoolPtrFromNullableBool(entity.Disabled),
+		PartOfProducts:                          repo.JSONRawMessageFromNullableString(entity.PartOfProducts),
+		LineOfBusiness:                          repo.JSONRawMessageFromNullableString(entity.LineOfBusiness),
+		Industry:                                repo.JSONRawMessageFromNullableString(entity.Industry),
+		Version:                                 c.vc.FromEntity(entity.Version),
+		ImplementationStandard:                  repo.StringPtrFromNullableString(entity.ImplementationStandard),
+		CustomImplementationStandard:            repo.StringPtrFromNullableString(entity.CustomImplementationStandard),
+		CustomImplementationStandardDescription: repo.StringPtrFromNullableString(entity.CustomImplementationStandardDescription),
+		Extensible:                              repo.JSONRawMessageFromNullableString(entity.Extensible),
+		ResourceHash:                            repo.StringPtrFromNullableString(entity.ResourceHash),
+		DocumentationLabels:                     repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
+		CorrelationIDs:                          repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
+		LastUpdate:                              repo.StringPtrFromNullableString(entity.LastUpdate),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -183,33 +190,40 @@ func (c *converter) ToEntity(eventModel *model.EventDefinition) *Entity {
 	}
 
 	return &Entity{
-		ApplicationID:       eventModel.ApplicationID,
-		PackageID:           repo.NewNullableString(eventModel.PackageID),
-		Name:                eventModel.Name,
-		Description:         repo.NewNullableString(eventModel.Description),
-		GroupName:           repo.NewNullableString(eventModel.Group),
-		OrdID:               repo.NewNullableString(eventModel.OrdID),
-		ShortDescription:    repo.NewNullableString(eventModel.ShortDescription),
-		SystemInstanceAware: repo.NewNullableBool(eventModel.SystemInstanceAware),
-		PolicyLevel:         repo.NewNullableString(eventModel.PolicyLevel),
-		CustomPolicyLevel:   repo.NewNullableString(eventModel.CustomPolicyLevel),
-		Tags:                repo.NewNullableStringFromJSONRawMessage(eventModel.Tags),
-		Countries:           repo.NewNullableStringFromJSONRawMessage(eventModel.Countries),
-		Links:               repo.NewNullableStringFromJSONRawMessage(eventModel.Links),
-		ReleaseStatus:       repo.NewNullableString(eventModel.ReleaseStatus),
-		SunsetDate:          repo.NewNullableString(eventModel.SunsetDate),
-		Successors:          repo.NewNullableStringFromJSONRawMessage(eventModel.Successors),
-		ChangeLogEntries:    repo.NewNullableStringFromJSONRawMessage(eventModel.ChangeLogEntries),
-		Labels:              repo.NewNullableStringFromJSONRawMessage(eventModel.Labels),
-		Visibility:          *visibility,
-		Disabled:            repo.NewNullableBool(eventModel.Disabled),
-		PartOfProducts:      repo.NewNullableStringFromJSONRawMessage(eventModel.PartOfProducts),
-		LineOfBusiness:      repo.NewNullableStringFromJSONRawMessage(eventModel.LineOfBusiness),
-		Industry:            repo.NewNullableStringFromJSONRawMessage(eventModel.Industry),
-		Version:             c.convertVersionToEntity(eventModel.Version),
-		Extensible:          repo.NewNullableStringFromJSONRawMessage(eventModel.Extensible),
-		ResourceHash:        repo.NewNullableString(eventModel.ResourceHash),
-		DocumentationLabels: repo.NewNullableStringFromJSONRawMessage(eventModel.DocumentationLabels),
+		ApplicationID:                           repo.NewNullableString(eventModel.ApplicationID),
+		ApplicationTemplateVersionID:            repo.NewNullableString(eventModel.ApplicationTemplateVersionID),
+		PackageID:                               repo.NewNullableString(eventModel.PackageID),
+		Name:                                    eventModel.Name,
+		Description:                             repo.NewNullableString(eventModel.Description),
+		GroupName:                               repo.NewNullableString(eventModel.Group),
+		OrdID:                                   repo.NewNullableString(eventModel.OrdID),
+		LocalTenantID:                           repo.NewNullableString(eventModel.LocalTenantID),
+		ShortDescription:                        repo.NewNullableString(eventModel.ShortDescription),
+		SystemInstanceAware:                     repo.NewNullableBool(eventModel.SystemInstanceAware),
+		PolicyLevel:                             repo.NewNullableString(eventModel.PolicyLevel),
+		CustomPolicyLevel:                       repo.NewNullableString(eventModel.CustomPolicyLevel),
+		Tags:                                    repo.NewNullableStringFromJSONRawMessage(eventModel.Tags),
+		Countries:                               repo.NewNullableStringFromJSONRawMessage(eventModel.Countries),
+		Links:                                   repo.NewNullableStringFromJSONRawMessage(eventModel.Links),
+		ReleaseStatus:                           repo.NewNullableString(eventModel.ReleaseStatus),
+		SunsetDate:                              repo.NewNullableString(eventModel.SunsetDate),
+		Successors:                              repo.NewNullableStringFromJSONRawMessage(eventModel.Successors),
+		ChangeLogEntries:                        repo.NewNullableStringFromJSONRawMessage(eventModel.ChangeLogEntries),
+		Labels:                                  repo.NewNullableStringFromJSONRawMessage(eventModel.Labels),
+		Visibility:                              *visibility,
+		Disabled:                                repo.NewNullableBool(eventModel.Disabled),
+		PartOfProducts:                          repo.NewNullableStringFromJSONRawMessage(eventModel.PartOfProducts),
+		LineOfBusiness:                          repo.NewNullableStringFromJSONRawMessage(eventModel.LineOfBusiness),
+		Industry:                                repo.NewNullableStringFromJSONRawMessage(eventModel.Industry),
+		Version:                                 c.convertVersionToEntity(eventModel.Version),
+		ImplementationStandard:                  repo.NewNullableString(eventModel.ImplementationStandard),
+		CustomImplementationStandard:            repo.NewNullableString(eventModel.CustomImplementationStandard),
+		CustomImplementationStandardDescription: repo.NewNullableString(eventModel.CustomImplementationStandardDescription),
+		Extensible:                              repo.NewNullableStringFromJSONRawMessage(eventModel.Extensible),
+		ResourceHash:                            repo.NewNullableString(eventModel.ResourceHash),
+		DocumentationLabels:                     repo.NewNullableStringFromJSONRawMessage(eventModel.DocumentationLabels),
+		CorrelationIDs:                          repo.NewNullableStringFromJSONRawMessage(eventModel.CorrelationIDs),
+		LastUpdate:                              repo.NewNullableString(eventModel.LastUpdate),
 		BaseEntity: &repo.BaseEntity{
 			ID:        eventModel.ID,
 			Ready:     eventModel.Ready,

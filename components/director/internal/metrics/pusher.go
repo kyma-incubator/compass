@@ -86,10 +86,11 @@ func (p AggregationFailurePusher) ReportAggregationFailureORD(ctx context.Contex
 
 	log.C(ctx).WithFields(logrus.Fields{InstanceIDKeyName: p.instanceID}).Info("Reporting failed aggregation...")
 
-	currentAppID := log.C(ctx).Data["app_id"]
+	currentResourceID := log.C(ctx).Data["resource_id"]
+	currentResourceType := log.C(ctx).Data["resource_type"]
 	currentCorrelationID := log.C(ctx).Data["x-request-id"]
 
-	p.aggregationFailuresCounter.WithLabelValues(err, currentAppID.(string), currentCorrelationID.(string)).Inc()
+	p.aggregationFailuresCounter.WithLabelValues(err, currentResourceID.(string), currentResourceType.(string), currentCorrelationID.(string)).Inc()
 
 	p.push(ctx)
 }

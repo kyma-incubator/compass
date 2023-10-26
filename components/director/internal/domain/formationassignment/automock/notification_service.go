@@ -7,8 +7,6 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	testing "testing"
-
 	webhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -20,11 +18,15 @@ type NotificationService struct {
 }
 
 // SendNotification provides a mock function with given fields: ctx, webhookNotificationReq
-func (_m *NotificationService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookRequest) (*webhook.Response, error) {
+func (_m *NotificationService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhook.Response, error) {
 	ret := _m.Called(ctx, webhookNotificationReq)
 
 	var r0 *webhook.Response
-	if rf, ok := ret.Get(0).(func(context.Context, webhookclient.WebhookRequest) *webhook.Response); ok {
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, webhookclient.WebhookExtRequest) (*webhook.Response, error)); ok {
+		return rf(ctx, webhookNotificationReq)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, webhookclient.WebhookExtRequest) *webhook.Response); ok {
 		r0 = rf(ctx, webhookNotificationReq)
 	} else {
 		if ret.Get(0) != nil {
@@ -32,8 +34,7 @@ func (_m *NotificationService) SendNotification(ctx context.Context, webhookNoti
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, webhookclient.WebhookRequest) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, webhookclient.WebhookExtRequest) error); ok {
 		r1 = rf(ctx, webhookNotificationReq)
 	} else {
 		r1 = ret.Error(1)
@@ -42,8 +43,12 @@ func (_m *NotificationService) SendNotification(ctx context.Context, webhookNoti
 	return r0, r1
 }
 
-// NewNotificationService creates a new instance of NotificationService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewNotificationService(t testing.TB) *NotificationService {
+// NewNotificationService creates a new instance of NotificationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewNotificationService(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *NotificationService {
 	mock := &NotificationService{}
 	mock.Mock.Test(t)
 

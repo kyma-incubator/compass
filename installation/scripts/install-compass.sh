@@ -62,28 +62,44 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+# As of Kyma 2.6.3 we need to specify which namespaces should enable istio injection
+RELEASE_NS=compass-system
+kubectl create ns $RELEASE_NS --dry-run=client -o yaml | kubectl apply -f -
+kubectl label ns $RELEASE_NS istio-injection=enabled --overwrite
+# As of Kubernetes 1.25 we need to replace PodSecurityPolicies; we chose the Pod Security Standards
+kubectl label ns $RELEASE_NS pod-security.kubernetes.io/enforce=baseline --overwrite
+
 if [[ ${SQL_HELM_BACKEND} ]]; then
     echo -e "${GREEN}Helm SQL storage backend will be used${NC}"
 
-    DB_USER=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-director-username']}"))
-    DB_PWD=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-director-password']}"))
-    DB_NAME=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-directorDatabaseName']}"))
-    DB_PORT=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-servicePort']}"))
+    DB_USER=$(base64 -d <<< $(kubectl get secret -n "${RELEASE_NS}" compass-postgresql -o=jsonpath="{.data['postgresql-director-username']}"))
+    DB_PWD=$(base64 -d <<< $(kubectl get secret -n "${RELEASE_NS}" compass-postgresql -o=jsonpath="{.data['postgresql-director-password']}"))
+    DB_NAME=$(base64 -d <<< $(kubectl get secret -n "${RELEASE_NS}" compass-postgresql -o=jsonpath="{.data['postgresql-directorDatabaseName']}"))
+    DB_PORT=$(base64 -d <<< $(kubectl get secret -n "${RELEASE_NS}" compass-postgresql -o=jsonpath="{.data['postgresql-servicePort']}"))
 
-    kubectl port-forward --namespace compass-system svc/compass-postgresql ${DB_PORT}:${DB_PORT} &
+    kubectl port-forward --namespace "${RELEASE_NS}" svc/compass-postgresql ${DB_PORT}:${DB_PORT} &
     sleep 5 #wait port-forwarding to be completed
 
     export HELM_DRIVER=sql
     export HELM_DRIVER_SQL_CONNECTION_STRING=postgres://${DB_USER}:${DB_PWD}@localhost:${DB_PORT}/${DB_NAME}?sslmode=disable
 fi
 
-echo "Wait for helm stable status"
-wait_for_helm_stable_state "compass" "compass-system" 
+echo "Wait for helm stable status..."
+wait_for_helm_stable_state "compass" ""${RELEASE_NS}"" 
 
-echo "Install Compass"
+echo "Starting compass installation..."
 echo "Path to compass charts: " ${COMPASS_CHARTS}
-helm upgrade --install --wait --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system compass "${COMPASS_CHARTS}"
+helm upgrade --install --atomic --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace "${RELEASE_NS}" compass "${COMPASS_CHARTS}"
 trap "cleanup_trap" RETURN EXIT INT TERM
+echo "Compass installation finished successfully"
+
+STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
+echo "Compass installation status ${STATUS}"
+
+if [[ $(uname -m) == "arm64" ]]; then
+  echo "Patching image on octopus for arm64..."
+ 	kubectl set image -n "${RELEASE_NS}" statefulset/compass-octopus "manager=europe-west1-docker.pkg.dev/sap-cp-cmp-dev/ucl-dev/octopus:5f353cd5"
+fi
 
 if [[ ${SQL_HELM_BACKEND} ]]; then
     pkill kubectl

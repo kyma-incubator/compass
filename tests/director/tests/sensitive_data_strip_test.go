@@ -25,10 +25,10 @@ func TestSensitiveDataStrip(t *testing.T) {
 	)
 
 	ctx := context.Background()
-	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
 	t.Log("Creating application template")
-	appTemplateName := createAppTemplateName("app-template-test")
+	appTemplateName := fixtures.CreateAppTemplateName("app-template-test")
 	appTmpInput := fixAppTemplateWithWebhookInput(appTemplateName)
 
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmpInput)
@@ -37,10 +37,11 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NotEmpty(t, appTemplate.ID)
 
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
-	runtimeRegInput := fixRuntimeInput(runtimeName)
+	runtimeRegInput := fixtures.FixRuntimeRegisterInputWithoutLabels(runtimeName)
 
-	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, runtimeRegInput, conf.GatewayOauth)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, runtimeRegInput, conf.GatewayOauth)
 
 	t.Log(fmt.Sprintf("Requesting OAuth client for runtime %q", runtimeName))
 	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), certSecuredGraphQLClient, tenantId, runtime.ID)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
@@ -25,8 +26,10 @@ import (
 
 const applicationTypeLabelKey = "applicationType"
 const otherSystemType = "Other System Type"
+const providerSAP = "SAP"
+const labelsKey = "labels"
 
-// ApplicationTemplateRepository missing godoc
+// ApplicationTemplateRepository is responsible for repository layer Application Templates operations
 //
 //go:generate mockery --name=ApplicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateRepository interface {
@@ -41,33 +44,56 @@ type ApplicationTemplateRepository interface {
 	Delete(ctx context.Context, id string) error
 }
 
-// UIDService missing godoc
+// UIDService is responsible for generating UUIDs
 //
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
-// WebhookRepository missing godoc
+// WebhookRepository is responsible for repository layer Webhook operations
 //
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
+	DeleteAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) error
 }
 
-// LabelUpsertService missing godoc
+// LabelUpsertService is responsible for service layer label upserts
 //
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
+	UpsertLabelGlobal(ctx context.Context, labelInput *model.LabelInput) error
 }
 
-// LabelRepository missing godoc
+// CertSubjectMappingService is responsible for the service layer Certificate Subject Mappings
+//
+//go:generate mockery --name=CertSubjectMappingService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type CertSubjectMappingService interface {
+	DeleteByConsumerID(ctx context.Context, consumerID string) error
+}
+
+// TimeService is responsible for time operations
+//
+//go:generate mockery --name=TimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TimeService interface {
+	Now() time.Time
+}
+
+// LabelRepository is responsible for repository layer Label operations
 //
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	ListForGlobalObject(ctx context.Context, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+}
+
+// ApplicationRepository is responsible for repository layer Application operations
+//
+//go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationRepository interface {
+	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
 }
 
 type service struct {
@@ -76,20 +102,24 @@ type service struct {
 	uidService         UIDService
 	labelUpsertService LabelUpsertService
 	labelRepo          LabelRepository
+	appRepo            ApplicationRepository
+	timeService        TimeService
 }
 
-// NewService missing godoc
-func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService, labelUpsertService LabelUpsertService, labelRepo LabelRepository) *service {
+// NewService creates a new service instance
+func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService, labelUpsertService LabelUpsertService, labelRepo LabelRepository, appRepo ApplicationRepository, timeSvc TimeService) *service {
 	return &service{
 		appTemplateRepo:    appTemplateRepo,
 		webhookRepo:        webhookRepo,
 		uidService:         uidService,
 		labelUpsertService: labelUpsertService,
 		labelRepo:          labelRepo,
+		appRepo:            appRepo,
+		timeService:        timeSvc,
 	}
 }
 
-// Create missing godoc
+// Create creates an Application Template, its Labels and Webhooks
 func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error) {
 	appTemplateID := s.uidService.Generate()
 	if len(str.PtrStrToStr(in.ID)) > 0 {
@@ -118,6 +148,10 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 	}
 
 	appTemplate := in.ToApplicationTemplate(appTemplateID)
+
+	now := s.timeService.Now()
+	appTemplate.SetCreatedAt(now)
+	appTemplate.SetUpdatedAt(now)
 
 	err = s.appTemplateRepo.Create(ctx, appTemplate)
 	if err != nil {
@@ -154,7 +188,7 @@ func (s *service) CreateWithLabels(ctx context.Context, in model.ApplicationTemp
 	return appTemplateID, nil
 }
 
-// Get missing godoc
+// Get gets a single Application Template by ID
 func (s *service) Get(ctx context.Context, id string) (*model.ApplicationTemplate, error) {
 	appTemplate, err := s.appTemplateRepo.Get(ctx, id)
 	if err != nil {
@@ -250,7 +284,7 @@ func (s *service) GetLabel(ctx context.Context, appTemplateID string, key string
 	return label, nil
 }
 
-// Exists missing godoc
+// Exists checks if an Application Template with a given ID exists
 func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 	exist, err := s.appTemplateRepo.Exists(ctx, id)
 	if err != nil {
@@ -260,7 +294,7 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
-// List missing godoc
+// List lists Application Templates in a pagable manner for a given set of filters
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
 	if pageSize < 1 || pageSize > 200 {
 		return model.ApplicationTemplatePage{}, apperrors.NewInvalidDataError("page size must be between 1 and 200")
@@ -269,7 +303,8 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 	return s.appTemplateRepo.List(ctx, filter, pageSize, cursor)
 }
 
-// Update missing godoc
+// Update updates a given Application Template with its labels. Webhooks are deleted and re-created.
+// It also finds the Application children and updates their applicationTypeLabelKey label
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error {
 	oldAppTemplate, err := s.Get(ctx, id)
 	if err != nil {
@@ -298,15 +333,55 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 	}
 
 	appTemplate := in.ToApplicationTemplate(id)
+	appTemplate.SetUpdatedAt(s.timeService.Now())
+
 	err = s.appTemplateRepo.Update(ctx, appTemplate)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application Template with ID %s", id)
 	}
 
+	if err = s.webhookRepo.DeleteAllByApplicationTemplateID(ctx, appTemplate.ID); err != nil {
+		return errors.Wrapf(err, "while deleting Webhooks for applicationTemplate")
+	}
+
+	webhooks := make([]*model.Webhook, 0, len(in.Webhooks))
+	for _, item := range in.Webhooks {
+		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), appTemplate.ID, model.ApplicationTemplateWebhookReference))
+	}
+	if err = s.webhookRepo.CreateMany(ctx, "", webhooks); err != nil {
+		return errors.Wrapf(err, "while creating Webhooks for applicationTemplate")
+	}
+
+	err = s.labelUpsertService.UpsertMultipleLabels(ctx, "", model.AppTemplateLabelableObject, id, in.Labels)
+	if err != nil {
+		return errors.Wrapf(err, "while upserting labels for Application Template with id %s", id)
+	}
+
+	if oldAppTemplate.Name != appTemplate.Name {
+		log.C(ctx).Infof("Listing applications registered from application template with id %s", id)
+		appsByAppTemplate, err := s.appRepo.ListAllByApplicationTemplateID(ctx, id)
+		if err != nil {
+			return errors.Wrapf(err, "while listing applications for app template with id %s", id)
+		}
+
+		for _, app := range appsByAppTemplate {
+			log.C(ctx).Infof("Updating %s label for application with id %s", applicationTypeLabelKey, app.ID)
+			err = s.labelUpsertService.UpsertLabelGlobal(ctx, &model.LabelInput{
+				Key:        applicationTypeLabelKey,
+				Value:      appTemplate.Name,
+				ObjectID:   app.ID,
+				ObjectType: model.ApplicationLabelableObject,
+			})
+			if err != nil {
+				return errors.Wrapf(err, "while updating %s label of application with id %s", applicationTypeLabelKey, app.ID)
+			}
+		}
+	}
+
 	return nil
 }
 
-// Delete missing godoc
+// Delete deletes an Application Template by a given ID
 func (s *service) Delete(ctx context.Context, id string) error {
 	err := s.appTemplateRepo.Delete(ctx, id)
 	if err != nil {
@@ -316,24 +391,66 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-// PrepareApplicationCreateInputJSON missing godoc
+// PrepareApplicationCreateInputJSON prepares the string JSON representation of graphql.ApplicationRegisterInput by
+// populating the placeholders in the Application Input with the given input values
 func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error) {
 	appCreateInputJSON := appTemplate.ApplicationInputJSON
 	for _, placeholder := range appTemplate.Placeholders {
 		newValue, err := values.FindPlaceholderValue(placeholder.Name)
-		var optional bool
-		if placeholder.Optional == nil {
-			optional = false
-		} else {
-			optional = *placeholder.Optional
+		isOptional := false
+		if placeholder.Optional != nil {
+			isOptional = *placeholder.Optional
 		}
 
-		if err != nil && !optional {
+		if err != nil && !isOptional {
 			return "", errors.Wrap(err, "required placeholder not provided")
 		}
+
+		err = validatePlaceholderValue(placeholder, newValue)
+		if err != nil {
+			return "", errors.Wrap(err, "value of placeholder is invalid")
+		}
+
 		appCreateInputJSON = strings.ReplaceAll(appCreateInputJSON, fmt.Sprintf("{{%s}}", placeholder.Name), newValue)
+		appCreateInputJSON, err = removeEmptyKeyFromLabels(appCreateInputJSON, placeholder.Name)
+		if err != nil {
+			return "", errors.Wrap(err, "error while clear optional empty value")
+		}
 	}
 	return appCreateInputJSON, nil
+}
+
+func removeEmptyKeyFromLabels(stringInput string, keyName string) (string, error) {
+	var objMap map[string]interface{}
+	err := json.Unmarshal([]byte(stringInput), &objMap)
+	if err != nil {
+		return "", errors.Wrap(err, "error while unmarshal input")
+	}
+	processMap(&objMap, keyName, true)
+
+	output, err := json.Marshal(objMap)
+	if err != nil {
+		return "", errors.Wrap(err, "error while marshal output")
+	}
+	return string(output), nil
+}
+
+func processMap(input *map[string]interface{}, keyName string, rootObject bool) {
+	for key, value := range *input {
+		if _, ok := value.(string); ok {
+			// String value
+			if value == "" && key == keyName {
+				if !rootObject {
+					delete(*input, key)
+				}
+			}
+		} else if mapValue, ok := value.(map[string]interface{}); ok {
+			// Object value - process only labels object
+			if key == labelsKey {
+				processMap(&mapValue, keyName, false)
+			}
+		}
+	}
 }
 
 func (s *service) retrieveLabel(ctx context.Context, id string, labelKey string) (interface{}, error) {
@@ -344,6 +461,32 @@ func (s *service) retrieveLabel(ctx context.Context, id string, labelKey string)
 	return label.Value, nil
 }
 
+func validatePlaceholderValue(placeholder model.ApplicationTemplatePlaceholder, value string) error {
+	if placeholder.Name == "provider" {
+		valueRemovedWhitespaces := strings.Fields(value)
+
+		for _, i := range valueRemovedWhitespaces {
+			if i == providerSAP {
+				return errors.New("provider cannot contain \"SAP\"")
+			}
+		}
+	}
+
+	if placeholder.Name == "application-type" {
+		currentValue := value
+		if len(value) >= 4 {
+			firstFour := value[:4]
+			currentValue = strings.Trim(firstFour, " \t\n")
+		}
+
+		if currentValue == providerSAP {
+			return errors.New("your application type cannot start with \"SAP\"")
+		}
+	}
+
+	return nil
+}
+
 func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string) (string, error) {
 	var appInput map[string]interface{}
 
@@ -351,7 +494,7 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string
 		return "", errors.Wrapf(err, "while unmarshaling application input json")
 	}
 
-	labels, ok := appInput["labels"]
+	labels, ok := appInput[labelsKey]
 	if ok && labels != nil {
 		labelsMap, ok := labels.(map[string]interface{})
 		if !ok {
@@ -370,9 +513,9 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string
 		}
 
 		labelsMap[applicationTypeLabelKey] = applicationType
-		appInput["labels"] = labelsMap
+		appInput[labelsKey] = labelsMap
 	} else {
-		appInput["labels"] = map[string]interface{}{applicationTypeLabelKey: applicationType}
+		appInput[labelsKey] = map[string]interface{}{applicationTypeLabelKey: applicationType}
 	}
 
 	inputJSON, err := json.Marshal(appInput)

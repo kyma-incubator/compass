@@ -14,30 +14,38 @@ import (
 )
 
 // Service missing godoc
+//
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Service interface {
 	RequestDeletion(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultBundleInstanceAuth *model.Auth) (bool, error)
 	Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string) (string, error)
+	CreateBundleInstanceAuth(ctx context.Context, bundleID string, in model.BundleInstanceAuthCreateInput, requestInputSchema *string) (string, error)
+	Update(ctx context.Context, instanceAuth *model.BundleInstanceAuth) error
 	Get(ctx context.Context, id string) (*model.BundleInstanceAuth, error)
 	SetAuth(ctx context.Context, id string, in model.BundleInstanceAuthSetInput) error
 	Delete(ctx context.Context, id string) error
 }
 
 // Converter missing godoc
+//
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleInstanceAuth, error)
 	RequestInputFromGraphQL(in graphql.BundleInstanceAuthRequestInput) model.BundleInstanceAuthRequestInput
 	SetInputFromGraphQL(in graphql.BundleInstanceAuthSetInput) (model.BundleInstanceAuthSetInput, error)
+	CreateInputFromGraphQL(in graphql.BundleInstanceAuthCreateInput) (model.BundleInstanceAuthCreateInput, error)
+	UpdateInputFromGraphQL(in graphql.BundleInstanceAuthUpdateInput) (model.BundleInstanceAuthUpdateInput, error)
 }
 
 // BundleService missing godoc
+//
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
 // BundleConverter missing godoc
+//
 //go:generate mockery --name=BundleConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleConverter interface {
 	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
@@ -265,6 +273,101 @@ func (r *Resolver) RequestBundleInstanceAuthDeletion(ctx context.Context, authID
 	if err != nil {
 		return nil, err
 	}
+
+	return r.conv.ToGraphQL(instanceAuth)
+}
+
+// CreateBundleInstanceAuth creates a BundleInstanceAuth for a Bundle with ID - bundleID from a given BundleInstanceAuthCreateInput
+func (r *Resolver) CreateBundleInstanceAuth(ctx context.Context, bundleID string, in graphql.BundleInstanceAuthCreateInput) (*graphql.BundleInstanceAuth, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	log.C(ctx).Infof("Creating BundleInstanceAuth for Bundle with id %q", bundleID)
+
+	bndl, err := r.bndlSvc.Get(ctx, bundleID)
+	if err != nil {
+		return nil, err
+	}
+
+	convertedIn, err := r.conv.CreateInputFromGraphQL(in)
+	if err != nil {
+		return nil, err
+	}
+
+	instanceAuthID, err := r.svc.CreateBundleInstanceAuth(ctx, bundleID, convertedIn, bndl.InstanceAuthRequestInputSchema)
+	if err != nil {
+		return nil, err
+	}
+
+	instanceAuth, err := r.svc.Get(ctx, instanceAuthID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Infof("Successfully created BundleInstanceAuth with id %q for Bundle with id %q", instanceAuthID, bundleID)
+
+	return r.conv.ToGraphQL(instanceAuth)
+}
+
+// UpdateBundleInstanceAuth updates a BundleInstanceAuth with id for a Bundle with ID - bundleID from a given BundleInstanceAuthUpdateInput
+func (r *Resolver) UpdateBundleInstanceAuth(ctx context.Context, id string, bundleID string, in graphql.BundleInstanceAuthUpdateInput) (*graphql.BundleInstanceAuth, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	log.C(ctx).Infof("Creating BundleInstanceAuth for Bundle with id %q", bundleID)
+
+	bndl, err := r.bndlSvc.Get(ctx, bundleID)
+	if err != nil {
+		return nil, err
+	}
+
+	convertedIn, err := r.conv.UpdateInputFromGraphQL(in)
+	if err != nil {
+		return nil, err
+	}
+
+	bndlInstAuth, err := r.svc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	bndlInstAuth.SetFromUpdateInput(convertedIn)
+
+	if in.InputParams != nil {
+		log.C(ctx).Debugf("Validating BundleInstanceAuth request input for Bundle with id %q", bundleID)
+		if err = validateInputParamsAgainstSchema(convertedIn.InputParams, bndl.InstanceAuthRequestInputSchema); err != nil {
+			return nil, errors.Wrapf(err, "while validating BundleInstanceAuth request input for Bundle with id %q", bundleID)
+		}
+	}
+
+	if err = r.svc.Update(ctx, bndlInstAuth); err != nil {
+		return nil, errors.Wrapf(err, "while updating BundleInstanceAuth with id %q for Bundle with id %q", id, bundleID)
+	}
+
+	instanceAuth, err := r.svc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Infof("Successfully updated BundleInstanceAuth with id %q for Bundle with id %q", id, bundleID)
 
 	return r.conv.ToGraphQL(instanceAuth)
 }

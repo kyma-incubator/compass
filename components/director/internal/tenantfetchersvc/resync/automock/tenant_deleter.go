@@ -33,6 +33,10 @@ func (_m *TenantDeleter) TenantsToDelete(ctx context.Context, region string, fro
 	ret := _m.Called(ctx, region, fromTimestamp)
 
 	var r0 []model.BusinessTenantMappingInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]model.BusinessTenantMappingInput, error)); ok {
+		return rf(ctx, region, fromTimestamp)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) []model.BusinessTenantMappingInput); ok {
 		r0 = rf(ctx, region, fromTimestamp)
 	} else {
@@ -41,7 +45,6 @@ func (_m *TenantDeleter) TenantsToDelete(ctx context.Context, region string, fro
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, region, fromTimestamp)
 	} else {
@@ -51,13 +54,12 @@ func (_m *TenantDeleter) TenantsToDelete(ctx context.Context, region string, fro
 	return r0, r1
 }
 
-type mockConstructorTestingTNewTenantDeleter interface {
+// NewTenantDeleter creates a new instance of TenantDeleter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTenantDeleter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTenantDeleter creates a new instance of TenantDeleter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantDeleter(t mockConstructorTestingTNewTenantDeleter) *TenantDeleter {
+}) *TenantDeleter {
 	mock := &TenantDeleter{}
 	mock.Mock.Test(t)
 

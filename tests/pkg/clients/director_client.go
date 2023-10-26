@@ -12,7 +12,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v4"
 	"github.com/sirupsen/logrus"
 
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"

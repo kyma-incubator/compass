@@ -56,8 +56,9 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	(runtimeInput.Labels)["scenarios"] = []string{testScenario}
 	(runtimeInput.Labels)["isNormalized"] = "false"
 
-	runtime := fixtures.RegisterKymaRuntimeBench(b, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(b, ctx, certSecuredGraphQLClient, tenantID, &runtime)
+	runtime = fixtures.RegisterKymaRuntimeBench(b, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
 
 	request := fixtures.FixApplicationForRuntimeRequestWithPageSize(runtime.ID, appsCount)
 	request.Header.Set("Tenant", tenantID)

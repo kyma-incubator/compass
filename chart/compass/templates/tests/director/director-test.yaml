@@ -16,7 +16,7 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "true"
-        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
     spec:
@@ -43,6 +43,8 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentResetPath }}"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}"
             - name: APP_DIRECTOR_INTERNAL_GATEWAY_URL
@@ -77,10 +79,14 @@ spec:
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
               value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_DIRECT_DEPENDENCY_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderIdValue | quote }}
             - name: APP_SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
             - name: APP_SELF_REG_REGION2
               value: {{ .Values.global.tests.selfRegistration.region2 }}
+            - name: APP_APPLICATION_TEMPLATE_PRODUCT_LABEL
+              value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
             - name: TEST_EXTERNAL_CERT_CN
@@ -107,6 +113,10 @@ spec:
               value: {{ .Values.global.director.runtimeTypeLabelKey }}
             - name: APP_KYMA_RUNTIME_TYPE_LABEL_VALUE
               value: {{ .Values.global.director.kymaRuntimeTypeLabelValue }}
+            - name: APP_KYMA_APPLICATION_NAMESPACE_VALUE
+              value: {{ .Values.global.director.kymaApplicationNamespaceValue }}
+            - name: APP_DEFAULT_TENANT_REGION
+              value: {{ .Values.global.defaultTenantRegion }}
             - name: APP_APPLICATION_TYPE_LABEL_KEY
               value: {{ .Values.global.director.applicationTypeLabelKey }}
             - name: APP_SELF_REGISTER_SAAS_APP_LABEL_KEY
@@ -170,30 +180,14 @@ spec:
               value: {{ .Values.global.externalServicesMock.oauthSecret.oauthTokenPath }}
             - name: APP_CONSUMER_TOKEN_URL
               value: {{ .Values.global.tests.subscription.consumerTokenURL }}
-            - name: APP_PROVIDER_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
-                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientIdKey }}
-            - name: APP_PROVIDER_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
-                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
-            - name: APP_BASIC_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.tests.basicCredentials.secretName }}
-                  key: username
-            - name: APP_BASIC_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.tests.basicCredentials.secretName }}
-                  key: password
             - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
               value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
-            - name: APP_CONSUMER_SUBACCOUNT_LABEL_KEY
-              value: {{ .Values.global.director.subscription.consumerSubaccountLabelKey }}
+            - name: APP_INDIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.indirectDependencySubscriptionProviderAppNameValue }}
+            - name: APP_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderAppNameValue }}
+            - name: APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY
+              value: {{ .Values.global.director.globalSubaccountIDLabelKey }}
             - name: APP_SUBSCRIPTION_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
             - name: SKIP_TESTS_REGEX
@@ -206,10 +200,10 @@ spec:
               value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
             - name: APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2
               value: {{ .Values.global.tests.externalCertConfiguration.issuerLocalityRegion2 }}
-            - name: APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY
-              value: {{ .Values.global.tests.externalServicesMock.formationAsyncApi.responseDelayInSeconds | quote}}
+            - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY
+              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInSeconds | quote}}
             - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
-              value: {{ .Values.global.hydrator.certSubjectMappingResyncInterval | quote }}
+              value: {{ .Values.global.tests.hydrator.certSubjectMappingResyncInterval | quote }}
             - name: APP_PROVIDER_CLIENT_ID
               valueFrom:
                 secretKeyRef:
@@ -232,12 +226,1381 @@ spec:
                   key: password
             - name: APP_SUPPORTED_ORD_APPLICATION_TYPE
               value: {{ .Values.global.tests.director.supportedOrdApplicationType }}
-          {{ if .Values.global.isLocalEnv }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTIONS_LABEL_KEY
+              value: {{ .Values.global.tests.subscription.labelKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_STANDARD_FLOW
+              value: {{ .Values.global.tests.subscription.standardFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_DIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.directDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_INDIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
+              value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
+            - name: APP_ENDPOINT_TENANT_DESTINATIONS
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATIONS
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationsEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationCertificatesEndpoint }}"
+            - name: APP_DESTINATIONS_TIMEOUT
+              value: {{ .Values.global.destinationFetcher.request.requestTimeout }}
+            - name: APP_DESTINATIONS_SKIP_SSL_VERIFY
+              value: {{ .Values.global.destinationFetcher.request.skipSSLValidation | quote }}
+            - name: APP_DESTINATION_OAUTH_TOKEN_PATH
+              value: {{ .Values.global.destinationFetcher.request.oauthTokenPath }}
+            - name: APP_DESTINATION_INSTANCE_CLIENT_ID_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientIdPath }}
+            - name: APP_DESTINATION_INSTANCE_CLIENT_SECRET_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientSecretPath }}
+            - name: APP_DESTINATION_INSTANCE_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.urlPath }}
+            - name: APP_DESTINATION_INSTANCE_TOKEN_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.tokenUrlPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_CERT_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientCertPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_KEY_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientKeyPath }}
+            - name: APP_DESTINATION_SECRET_PATH
+              value: "{{ .Values.global.destinationFetcher.dependenciesConfig.path }}/{{ .Values.global.destinationRegionSecret.fileName }}"
+            - name: APP_DESTINATION_OAUTH_MODE
+              value: {{ .Values.global.destinationFetcher.oauthMode }}
+            - name: APP_PROVIDER_DESTINATION_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientIdKey }}
+            - name: APP_PROVIDER_DESTINATION_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientSecretKey }}
+            - name: APP_PROVIDER_DESTINATION_TOKEN_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthUrlKey }}
+            - name: APP_PROVIDER_DESTINATION_TOKEN_PATH
+              value: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthTokenPath }}
+            - name: APP_PROVIDER_DESTINATION_SERVICE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.serviceUrlKey }}
+            - name: APP_PROVIDER_DESTINATION_DEPENDENCY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.dependencyKey }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
+              value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS
+              value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
+            - name: APP_TEST_DESTINATION_INSTANCE_ID
+              value: {{ .Values.global.tests.destination.instanceID | quote }}
+            - name: APP_DIRECTOR_EXTERNAL_CERT_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
           volumeMounts:
+            - name: dest-svc-instances
+              mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
+              readOnly: true
+          {{ if .Values.global.isLocalEnv }}
             - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
               name: examples
           {{ end }}
       volumes:
+        - name: dest-svc-instances
+          secret:
+            secretName: {{ .Values.global.destinationRegionSecret.secretName }}
+      {{ if .Values.global.isLocalEnv }}
+        - name: examples
+          hostPath:
+            path: "/examples"
+            type: DirectoryOrCreate
+      {{ end }}
+      restartPolicy: Never
+---
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: {{ .Chart.Name }}-e2e-director-notifications
+  labels:
+    app: {{ .Chart.Name }}-director-tests-app
+    release: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Chart.Name }}-director-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+  namespace: {{ .Values.global.tests.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+      labels:
+        app: {{ .Chart.Name }}-director-tests-app
+    spec:
+      serviceAccountName: {{ .Chart.Name }}-e2e-director
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+        - name: {{ .Values.global.portieris.imagePullSecretName }}
+    {{ end }}
+      containers:
+        - name: director-notifications-tests
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["-c", "/director-notifications.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          resources:
+            limits:
+              memory: "256Mi"
+          env:
+            - name: APP_DIRECTOR_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
+            - name: APP_GATEWAY_OAUTH
+              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentResetPath }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}"
+            - name: APP_DIRECTOR_INTERNAL_GATEWAY_URL
+              value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
+            - name: APP_HEALTH_URL
+              value: "https://director.{{ .Values.global.ingress.domainName }}/healthz"
+            - name: APP_WEBHOOK_URL
+              value: "https://kyma-project.io"
+            - name: APP_DEFAULT_SCENARIO
+              value: "DEFAULT"
+            - name: APP_DEFAULT_NORMALIZATION_PREFIX
+              value: "mp-"
+            - name: APP_INFO_API_ENDPOINT
+              value: {{ .Values.global.director.info.path }}
+            - name: APP_INFO_CERT_CONSUMER_ID
+              value: "{{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXT_SVC_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
+            - name: APP_EXT_SVC_CLIENT_CERT_KEY
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
+            - name: APP_EXT_SVC_CLIENT_KEY_KEY
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_DIRECT_DEPENDENCY_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_REGION
+              value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_SELF_REG_REGION2
+              value: {{ .Values.global.tests.selfRegistration.region2 }}
+            - name: APP_APPLICATION_TEMPLATE_PRODUCT_LABEL
+              value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
+            - name: APP_SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: TEST_EXTERNAL_CERT_CN
+              value: {{ .Values.global.externalCertConfiguration.commonName }}
+            - name: TEST_EXTERNAL_CERT_SUBJECT
+              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+            - name: TEST_ATOM_EXTERNAL_CERT_SUBJECT
+              value: {{ printf .Values.global.externalCertConfiguration.technicalClientSubjectPattern .Values.global.tests.subscription.tenants.consumerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+            - name: TEST_EXTERNAL_CERT_SUBJECT_REGION2
+              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountIDRegion2 .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+            - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
+              value: {{ .Values.global.tests.subscription.externalClientCertTestSecretName }}
+            - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE
+              value: {{ .Values.global.tests.subscription.externalClientCertTestSecretNamespace }}
+            - name: EXTERNAL_CERT_TEST_JOB_NAME
+              value: {{ .Values.global.tests.subscription.externalCertTestJobName }}
+            - name: CERT_SVC_INSTANCE_TEST_SECRET_NAME
+              value: {{ .Values.global.tests.subscription.certSvcInstanceTestSecretName }}
+            - name: CERT_SVC_INSTANCE_TEST_REGION2_SECRET_NAME
+              value: {{ .Values.global.tests.subscription.certSvcInstanceTestRegion2SecretName }}
+            - name: EXTERNAL_CERT_CRONJOB_CONTAINER_NAME
+              value: {{ .Values.global.externalCertConfiguration.rotationCronjob.containerName }}
+            - name: APP_RUNTIME_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.runtimeTypeLabelKey }}
+            - name: APP_KYMA_RUNTIME_TYPE_LABEL_VALUE
+              value: {{ .Values.global.director.kymaRuntimeTypeLabelValue }}
+            - name: APP_KYMA_APPLICATION_NAMESPACE_VALUE
+              value: {{ .Values.global.director.kymaApplicationNamespaceValue }}
+            - name: APP_DEFAULT_TENANT_REGION
+              value: {{ .Values.global.defaultTenantRegion }}
+            - name: APP_APPLICATION_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.applicationTypeLabelKey }}
+            - name: APP_SELF_REGISTER_SAAS_APP_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
+            - name: APP_SUBSCRIPTION_CONFIG_URL
+              value: {{ .Values.global.tests.subscription.subscriptionURL }}
+            - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.oauthUrlKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.clientIdKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.clientSecretKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION
+              value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION2
+              value: {{ .Values.global.tests.selfRegistration.region2 }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.label }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX
+              value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_SUBDOMAIN_PLACEHOLDER_VALUE
+              value: {{ .Values.global.tests.subscription.consumerSubdomain }}
+            - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
+              value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_PROVIDER_ACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
+            - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
+            - name: APP_TEST_PROVIDER_SUBACCOUNT_ID_REGION2
+              value:  {{ .Values.global.tests.subscription.tenants.providerSubaccountIDRegion2 }}
+            - name: APP_TEST_CONSUMER_ACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
+            - name: APP_TEST_CONSUMER_SUBACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
+            - name: APP_TEST_CONSUMER_ACCOUNT_ID_TENANT_HIERARCHY
+              value: {{ .Values.global.tests.subscription.tenants.consumerAccountIDTenantHierarchy }}
+            - name: APP_TEST_CONSUMER_SUBACCOUNT_ID_TENANT_HIERARCHY
+              value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountIDTenantHierarchy }}
+            - name: APP_TEST_CONSUMER_TENANT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
+            - name: APP_EXTERNAL_SERVICES_MOCK_BASE_URL
+              value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
+            - name: APP_EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL
+              value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{.Values.global.ingress.domainName}}:443"
+            - name: APP_TOKEN_PATH
+              value: {{ .Values.global.externalServicesMock.oauthSecret.oauthTokenPath }}
+            - name: APP_CONSUMER_TOKEN_URL
+              value: {{ .Values.global.tests.subscription.consumerTokenURL }}
+            - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
+            - name: APP_INDIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.indirectDependencySubscriptionProviderAppNameValue }}
+            - name: APP_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderAppNameValue }}
+            - name: APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY
+              value: {{ .Values.global.director.globalSubaccountIDLabelKey }}
+            - name: APP_SUBSCRIPTION_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
+            - name: SKIP_TESTS_REGEX
+              value: {{ .Values.global.tests.director.skipPattern }}
+            - name: CERT_SVC_INSTANCE_SECRET_NAME
+              value: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+            - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT
+              value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
+            - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN
+              value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
+            - name: APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2
+              value: {{ .Values.global.tests.externalCertConfiguration.issuerLocalityRegion2 }}
+            - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY
+              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInSeconds | quote}}
+            - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
+              value: {{ .Values.global.tests.hydrator.certSubjectMappingResyncInterval | quote }}
+            - name: APP_PROVIDER_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientIdKey }}
+            - name: APP_PROVIDER_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
+            - name: APP_BASIC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
+                  key: username
+            - name: APP_BASIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
+                  key: password
+            - name: APP_SUPPORTED_ORD_APPLICATION_TYPE
+              value: {{ .Values.global.tests.director.supportedOrdApplicationType }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTIONS_LABEL_KEY
+              value: {{ .Values.global.tests.subscription.labelKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_STANDARD_FLOW
+              value: {{ .Values.global.tests.subscription.standardFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_DIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.directDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_INDIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
+              value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
+            - name: APP_ENDPOINT_TENANT_DESTINATIONS
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATIONS
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationsEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationCertificatesEndpoint }}"
+            - name: APP_DESTINATIONS_TIMEOUT
+              value: {{ .Values.global.destinationFetcher.request.requestTimeout }}
+            - name: APP_DESTINATIONS_SKIP_SSL_VERIFY
+              value: {{ .Values.global.destinationFetcher.request.skipSSLValidation | quote }}
+            - name: APP_DESTINATION_OAUTH_TOKEN_PATH
+              value: {{ .Values.global.destinationFetcher.request.oauthTokenPath }}
+            - name: APP_DESTINATION_INSTANCE_CLIENT_ID_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientIdPath }}
+            - name: APP_DESTINATION_INSTANCE_CLIENT_SECRET_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientSecretPath }}
+            - name: APP_DESTINATION_INSTANCE_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.urlPath }}
+            - name: APP_DESTINATION_INSTANCE_TOKEN_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.tokenUrlPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_CERT_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientCertPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_KEY_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientKeyPath }}
+            - name: APP_DESTINATION_SECRET_PATH
+              value: "{{ .Values.global.destinationFetcher.dependenciesConfig.path }}/{{ .Values.global.destinationRegionSecret.fileName }}"
+            - name: APP_DESTINATION_OAUTH_MODE
+              value: {{ .Values.global.destinationFetcher.oauthMode }}
+            - name: APP_PROVIDER_DESTINATION_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientIdKey }}
+            - name: APP_PROVIDER_DESTINATION_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientSecretKey }}
+            - name: APP_PROVIDER_DESTINATION_TOKEN_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthUrlKey }}
+            - name: APP_PROVIDER_DESTINATION_TOKEN_PATH
+              value: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthTokenPath }}
+            - name: APP_PROVIDER_DESTINATION_SERVICE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.serviceUrlKey }}
+            - name: APP_PROVIDER_DESTINATION_DEPENDENCY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.dependencyKey }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
+              value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS
+              value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
+            - name: APP_TEST_DESTINATION_INSTANCE_ID
+              value: {{ .Values.global.tests.destination.instanceID | quote }}
+            - name: APP_DIRECTOR_EXTERNAL_CERT_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
+          volumeMounts:
+            - name: dest-svc-instances
+              mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
+              readOnly: true
+          {{ if .Values.global.isLocalEnv }}
+            - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
+              name: examples
+          {{ end }}
+      volumes:
+        - name: dest-svc-instances
+          secret:
+            secretName: {{ .Values.global.destinationRegionSecret.secretName }}
+      {{ if .Values.global.isLocalEnv }}
+        - name: examples
+          hostPath:
+            path: "/examples"
+            type: DirectoryOrCreate
+      {{ end }}
+      restartPolicy: Never
+---
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: {{ .Chart.Name }}-e2e-director-runtime
+  labels:
+    app: {{ .Chart.Name }}-director-tests-app
+    release: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Chart.Name }}-director-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+  namespace: {{ .Values.global.tests.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+      labels:
+        app: {{ .Chart.Name }}-director-tests-app
+    spec:
+      serviceAccountName: {{ .Chart.Name }}-e2e-director
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+        - name: {{ .Values.global.portieris.imagePullSecretName }}
+    {{ end }}
+      containers:
+        - name: director-runtime-tests
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["-c", "/director-runtime.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          resources:
+            limits:
+              memory: "256Mi"
+          env:
+            - name: APP_DIRECTOR_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
+            - name: APP_GATEWAY_OAUTH
+              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentResetPath }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}"
+            - name: APP_DIRECTOR_INTERNAL_GATEWAY_URL
+              value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
+            - name: APP_HEALTH_URL
+              value: "https://director.{{ .Values.global.ingress.domainName }}/healthz"
+            - name: APP_WEBHOOK_URL
+              value: "https://kyma-project.io"
+            - name: APP_DEFAULT_SCENARIO
+              value: "DEFAULT"
+            - name: APP_DEFAULT_NORMALIZATION_PREFIX
+              value: "mp-"
+            - name: APP_INFO_API_ENDPOINT
+              value: {{ .Values.global.director.info.path }}
+            - name: APP_INFO_CERT_CONSUMER_ID
+              value: "{{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXT_SVC_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
+            - name: APP_EXT_SVC_CLIENT_CERT_KEY
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
+            - name: APP_EXT_SVC_CLIENT_KEY_KEY
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_DIRECT_DEPENDENCY_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_REGION
+              value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_SELF_REG_REGION2
+              value: {{ .Values.global.tests.selfRegistration.region2 }}
+            - name: APP_APPLICATION_TEMPLATE_PRODUCT_LABEL
+              value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
+            - name: APP_SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: TEST_EXTERNAL_CERT_CN
+              value: {{ .Values.global.externalCertConfiguration.commonName }}
+            - name: TEST_EXTERNAL_CERT_SUBJECT
+              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+            - name: TEST_ATOM_EXTERNAL_CERT_SUBJECT
+              value: {{ printf .Values.global.externalCertConfiguration.technicalClientSubjectPattern .Values.global.tests.subscription.tenants.consumerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+            - name: TEST_EXTERNAL_CERT_SUBJECT_REGION2
+              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountIDRegion2 .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+            - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
+              value: {{ .Values.global.tests.subscription.externalClientCertTestSecretName }}
+            - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE
+              value: {{ .Values.global.tests.subscription.externalClientCertTestSecretNamespace }}
+            - name: EXTERNAL_CERT_TEST_JOB_NAME
+              value: {{ .Values.global.tests.subscription.externalCertTestJobName }}
+            - name: CERT_SVC_INSTANCE_TEST_SECRET_NAME
+              value: {{ .Values.global.tests.subscription.certSvcInstanceTestSecretName }}
+            - name: CERT_SVC_INSTANCE_TEST_REGION2_SECRET_NAME
+              value: {{ .Values.global.tests.subscription.certSvcInstanceTestRegion2SecretName }}
+            - name: EXTERNAL_CERT_CRONJOB_CONTAINER_NAME
+              value: {{ .Values.global.externalCertConfiguration.rotationCronjob.containerName }}
+            - name: APP_RUNTIME_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.runtimeTypeLabelKey }}
+            - name: APP_KYMA_RUNTIME_TYPE_LABEL_VALUE
+              value: {{ .Values.global.director.kymaRuntimeTypeLabelValue }}
+            - name: APP_KYMA_APPLICATION_NAMESPACE_VALUE
+              value: {{ .Values.global.director.kymaApplicationNamespaceValue }}
+            - name: APP_DEFAULT_TENANT_REGION
+              value: {{ .Values.global.defaultTenantRegion }}
+            - name: APP_APPLICATION_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.applicationTypeLabelKey }}
+            - name: APP_SELF_REGISTER_SAAS_APP_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
+            - name: APP_SUBSCRIPTION_CONFIG_URL
+              value: {{ .Values.global.tests.subscription.subscriptionURL }}
+            - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.oauthUrlKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.clientIdKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.clientSecretKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION
+              value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION2
+              value: {{ .Values.global.tests.selfRegistration.region2 }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.label }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX
+              value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_SUBDOMAIN_PLACEHOLDER_VALUE
+              value: {{ .Values.global.tests.subscription.consumerSubdomain }}
+            - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
+              value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_PROVIDER_ACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
+            - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
+            - name: APP_TEST_PROVIDER_SUBACCOUNT_ID_REGION2
+              value:  {{ .Values.global.tests.subscription.tenants.providerSubaccountIDRegion2 }}
+            - name: APP_TEST_CONSUMER_ACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
+            - name: APP_TEST_CONSUMER_SUBACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
+            - name: APP_TEST_CONSUMER_ACCOUNT_ID_TENANT_HIERARCHY
+              value: {{ .Values.global.tests.subscription.tenants.consumerAccountIDTenantHierarchy }}
+            - name: APP_TEST_CONSUMER_SUBACCOUNT_ID_TENANT_HIERARCHY
+              value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountIDTenantHierarchy }}
+            - name: APP_TEST_CONSUMER_TENANT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
+            - name: APP_EXTERNAL_SERVICES_MOCK_BASE_URL
+              value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
+            - name: APP_EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL
+              value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{.Values.global.ingress.domainName}}:443"
+            - name: APP_TOKEN_PATH
+              value: {{ .Values.global.externalServicesMock.oauthSecret.oauthTokenPath }}
+            - name: APP_CONSUMER_TOKEN_URL
+              value: {{ .Values.global.tests.subscription.consumerTokenURL }}
+            - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
+            - name: APP_INDIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.indirectDependencySubscriptionProviderAppNameValue }}
+            - name: APP_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderAppNameValue }}
+            - name: APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY
+              value: {{ .Values.global.director.globalSubaccountIDLabelKey }}
+            - name: APP_SUBSCRIPTION_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
+            - name: SKIP_TESTS_REGEX
+              value: {{ .Values.global.tests.director.skipPattern }}
+            - name: CERT_SVC_INSTANCE_SECRET_NAME
+              value: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+            - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT
+              value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
+            - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN
+              value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
+            - name: APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2
+              value: {{ .Values.global.tests.externalCertConfiguration.issuerLocalityRegion2 }}
+            - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY
+              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInSeconds | quote}}
+            - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
+              value: {{ .Values.global.tests.hydrator.certSubjectMappingResyncInterval | quote }}
+            - name: APP_PROVIDER_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientIdKey }}
+            - name: APP_PROVIDER_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
+            - name: APP_BASIC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
+                  key: username
+            - name: APP_BASIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
+                  key: password
+            - name: APP_SUPPORTED_ORD_APPLICATION_TYPE
+              value: {{ .Values.global.tests.director.supportedOrdApplicationType }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTIONS_LABEL_KEY
+              value: {{ .Values.global.tests.subscription.labelKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_STANDARD_FLOW
+              value: {{ .Values.global.tests.subscription.standardFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_DIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.directDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_INDIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
+              value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
+            - name: APP_ENDPOINT_TENANT_DESTINATIONS
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATIONS
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationsEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationCertificatesEndpoint }}"
+            - name: APP_DESTINATIONS_TIMEOUT
+              value: {{ .Values.global.destinationFetcher.request.requestTimeout }}
+            - name: APP_DESTINATIONS_SKIP_SSL_VERIFY
+              value: {{ .Values.global.destinationFetcher.request.skipSSLValidation | quote }}
+            - name: APP_DESTINATION_OAUTH_TOKEN_PATH
+              value: {{ .Values.global.destinationFetcher.request.oauthTokenPath }}
+            - name: APP_DESTINATION_INSTANCE_CLIENT_ID_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientIdPath }}
+            - name: APP_DESTINATION_INSTANCE_CLIENT_SECRET_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientSecretPath }}
+            - name: APP_DESTINATION_INSTANCE_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.urlPath }}
+            - name: APP_DESTINATION_INSTANCE_TOKEN_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.tokenUrlPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_CERT_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientCertPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_KEY_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientKeyPath }}
+            - name: APP_DESTINATION_SECRET_PATH
+              value: "{{ .Values.global.destinationFetcher.dependenciesConfig.path }}/{{ .Values.global.destinationRegionSecret.fileName }}"
+            - name: APP_DESTINATION_OAUTH_MODE
+              value: {{ .Values.global.destinationFetcher.oauthMode }}
+            - name: APP_PROVIDER_DESTINATION_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientIdKey }}
+            - name: APP_PROVIDER_DESTINATION_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientSecretKey }}
+            - name: APP_PROVIDER_DESTINATION_TOKEN_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthUrlKey }}
+            - name: APP_PROVIDER_DESTINATION_TOKEN_PATH
+              value: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthTokenPath }}
+            - name: APP_PROVIDER_DESTINATION_SERVICE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.serviceUrlKey }}
+            - name: APP_PROVIDER_DESTINATION_DEPENDENCY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.dependencyKey }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
+              value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS
+              value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
+            - name: APP_TEST_DESTINATION_INSTANCE_ID
+              value: {{ .Values.global.tests.destination.instanceID | quote }}
+            - name: APP_DIRECTOR_EXTERNAL_CERT_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
+          volumeMounts:
+            - name: dest-svc-instances
+              mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
+              readOnly: true
+          {{ if .Values.global.isLocalEnv }}
+            - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
+              name: examples
+          {{ end }}
+      volumes:
+        - name: dest-svc-instances
+          secret:
+            secretName: {{ .Values.global.destinationRegionSecret.secretName }}
+      {{ if .Values.global.isLocalEnv }}
+        - name: examples
+          hostPath:
+            path: "/examples"
+            type: DirectoryOrCreate
+      {{ end }}
+      restartPolicy: Never
+---
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: {{ .Chart.Name }}-e2e-director-formation
+  labels:
+    app: {{ .Chart.Name }}-director-tests-app
+    release: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Chart.Name }}-director-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+  namespace: {{ .Values.global.tests.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+      labels:
+        app: {{ .Chart.Name }}-director-tests-app
+    spec:
+      serviceAccountName: {{ .Chart.Name }}-e2e-director
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+        - name: {{ .Values.global.portieris.imagePullSecretName }}
+    {{ end }}
+      containers:
+        - name: director-formation-tests
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["-c", "/director-formation.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          resources:
+            limits:
+              memory: "256Mi"
+          env:
+            - name: APP_DIRECTOR_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
+            - name: APP_GATEWAY_OAUTH
+              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentResetPath }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}"
+            - name: APP_DIRECTOR_INTERNAL_GATEWAY_URL
+              value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
+            - name: APP_HEALTH_URL
+              value: "https://director.{{ .Values.global.ingress.domainName }}/healthz"
+            - name: APP_WEBHOOK_URL
+              value: "https://kyma-project.io"
+            - name: APP_DEFAULT_SCENARIO
+              value: "DEFAULT"
+            - name: APP_DEFAULT_NORMALIZATION_PREFIX
+              value: "mp-"
+            - name: APP_INFO_API_ENDPOINT
+              value: {{ .Values.global.director.info.path }}
+            - name: APP_INFO_CERT_CONSUMER_ID
+              value: "{{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXT_SVC_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
+            - name: APP_EXT_SVC_CLIENT_CERT_KEY
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
+            - name: APP_EXT_SVC_CLIENT_KEY_KEY
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_DIRECT_DEPENDENCY_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_REGION
+              value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_SELF_REG_REGION2
+              value: {{ .Values.global.tests.selfRegistration.region2 }}
+            - name: APP_APPLICATION_TEMPLATE_PRODUCT_LABEL
+              value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
+            - name: APP_SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: TEST_EXTERNAL_CERT_CN
+              value: {{ .Values.global.externalCertConfiguration.commonName }}
+            - name: TEST_EXTERNAL_CERT_SUBJECT
+              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+            - name: TEST_ATOM_EXTERNAL_CERT_SUBJECT
+              value: {{ printf .Values.global.externalCertConfiguration.technicalClientSubjectPattern .Values.global.tests.subscription.tenants.consumerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+            - name: TEST_EXTERNAL_CERT_SUBJECT_REGION2
+              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountIDRegion2 .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+            - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
+              value: {{ .Values.global.tests.subscription.externalClientCertTestSecretName }}
+            - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE
+              value: {{ .Values.global.tests.subscription.externalClientCertTestSecretNamespace }}
+            - name: EXTERNAL_CERT_TEST_JOB_NAME
+              value: {{ .Values.global.tests.subscription.externalCertTestJobName }}
+            - name: CERT_SVC_INSTANCE_TEST_SECRET_NAME
+              value: {{ .Values.global.tests.subscription.certSvcInstanceTestSecretName }}
+            - name: CERT_SVC_INSTANCE_TEST_REGION2_SECRET_NAME
+              value: {{ .Values.global.tests.subscription.certSvcInstanceTestRegion2SecretName }}
+            - name: EXTERNAL_CERT_CRONJOB_CONTAINER_NAME
+              value: {{ .Values.global.externalCertConfiguration.rotationCronjob.containerName }}
+            - name: APP_RUNTIME_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.runtimeTypeLabelKey }}
+            - name: APP_KYMA_RUNTIME_TYPE_LABEL_VALUE
+              value: {{ .Values.global.director.kymaRuntimeTypeLabelValue }}
+            - name: APP_KYMA_APPLICATION_NAMESPACE_VALUE
+              value: {{ .Values.global.director.kymaApplicationNamespaceValue }}
+            - name: APP_DEFAULT_TENANT_REGION
+              value: {{ .Values.global.defaultTenantRegion }}
+            - name: APP_APPLICATION_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.applicationTypeLabelKey }}
+            - name: APP_SELF_REGISTER_SAAS_APP_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
+            - name: APP_SUBSCRIPTION_CONFIG_URL
+              value: {{ .Values.global.tests.subscription.subscriptionURL }}
+            - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.oauthUrlKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.clientIdKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.clientSecretKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION
+              value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION2
+              value: {{ .Values.global.tests.selfRegistration.region2 }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.label }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX
+              value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_SUBDOMAIN_PLACEHOLDER_VALUE
+              value: {{ .Values.global.tests.subscription.consumerSubdomain }}
+            - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
+              value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_PROVIDER_ACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
+            - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
+            - name: APP_TEST_PROVIDER_SUBACCOUNT_ID_REGION2
+              value:  {{ .Values.global.tests.subscription.tenants.providerSubaccountIDRegion2 }}
+            - name: APP_TEST_CONSUMER_ACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
+            - name: APP_TEST_CONSUMER_SUBACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
+            - name: APP_TEST_CONSUMER_ACCOUNT_ID_TENANT_HIERARCHY
+              value: {{ .Values.global.tests.subscription.tenants.consumerAccountIDTenantHierarchy }}
+            - name: APP_TEST_CONSUMER_SUBACCOUNT_ID_TENANT_HIERARCHY
+              value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountIDTenantHierarchy }}
+            - name: APP_TEST_CONSUMER_TENANT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
+            - name: APP_EXTERNAL_SERVICES_MOCK_BASE_URL
+              value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
+            - name: APP_EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL
+              value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{.Values.global.ingress.domainName}}:443"
+            - name: APP_TOKEN_PATH
+              value: {{ .Values.global.externalServicesMock.oauthSecret.oauthTokenPath }}
+            - name: APP_CONSUMER_TOKEN_URL
+              value: {{ .Values.global.tests.subscription.consumerTokenURL }}
+            - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
+            - name: APP_INDIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.indirectDependencySubscriptionProviderAppNameValue }}
+            - name: APP_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderAppNameValue }}
+            - name: APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY
+              value: {{ .Values.global.director.globalSubaccountIDLabelKey }}
+            - name: APP_SUBSCRIPTION_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
+            - name: SKIP_TESTS_REGEX
+              value: {{ .Values.global.tests.director.skipPattern }}
+            - name: CERT_SVC_INSTANCE_SECRET_NAME
+              value: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+            - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT
+              value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
+            - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN
+              value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
+            - name: APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2
+              value: {{ .Values.global.tests.externalCertConfiguration.issuerLocalityRegion2 }}
+            - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY
+              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInSeconds | quote}}
+            - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
+              value: {{ .Values.global.tests.hydrator.certSubjectMappingResyncInterval | quote }}
+            - name: APP_PROVIDER_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientIdKey }}
+            - name: APP_PROVIDER_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
+            - name: APP_BASIC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
+                  key: username
+            - name: APP_BASIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
+                  key: password
+            - name: APP_SUPPORTED_ORD_APPLICATION_TYPE
+              value: {{ .Values.global.tests.director.supportedOrdApplicationType }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTIONS_LABEL_KEY
+              value: {{ .Values.global.tests.subscription.labelKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_STANDARD_FLOW
+              value: {{ .Values.global.tests.subscription.standardFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_DIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.directDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_INDIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
+              value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
+            - name: APP_ENDPOINT_TENANT_DESTINATIONS
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATIONS
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationsEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationCertificatesEndpoint }}"
+            - name: APP_DESTINATIONS_TIMEOUT
+              value: {{ .Values.global.destinationFetcher.request.requestTimeout }}
+            - name: APP_DESTINATIONS_SKIP_SSL_VERIFY
+              value: {{ .Values.global.destinationFetcher.request.skipSSLValidation | quote }}
+            - name: APP_DESTINATION_OAUTH_TOKEN_PATH
+              value: {{ .Values.global.destinationFetcher.request.oauthTokenPath }}
+            - name: APP_DESTINATION_INSTANCE_CLIENT_ID_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientIdPath }}
+            - name: APP_DESTINATION_INSTANCE_CLIENT_SECRET_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientSecretPath }}
+            - name: APP_DESTINATION_INSTANCE_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.urlPath }}
+            - name: APP_DESTINATION_INSTANCE_TOKEN_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.tokenUrlPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_CERT_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientCertPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_KEY_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientKeyPath }}
+            - name: APP_DESTINATION_SECRET_PATH
+              value: "{{ .Values.global.destinationFetcher.dependenciesConfig.path }}/{{ .Values.global.destinationRegionSecret.fileName }}"
+            - name: APP_DESTINATION_OAUTH_MODE
+              value: {{ .Values.global.destinationFetcher.oauthMode }}
+            - name: APP_PROVIDER_DESTINATION_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientIdKey }}
+            - name: APP_PROVIDER_DESTINATION_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientSecretKey }}
+            - name: APP_PROVIDER_DESTINATION_TOKEN_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthUrlKey }}
+            - name: APP_PROVIDER_DESTINATION_TOKEN_PATH
+              value: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthTokenPath }}
+            - name: APP_PROVIDER_DESTINATION_SERVICE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.serviceUrlKey }}
+            - name: APP_PROVIDER_DESTINATION_DEPENDENCY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.dependencyKey }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
+              value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS
+              value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
+            - name: APP_TEST_DESTINATION_INSTANCE_ID
+              value: {{ .Values.global.tests.destination.instanceID | quote }}
+            - name: APP_DIRECTOR_EXTERNAL_CERT_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
+          volumeMounts:
+            - name: dest-svc-instances
+              mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
+              readOnly: true
+          {{ if .Values.global.isLocalEnv }}
+            - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
+              name: examples
+          {{ end }}
+      volumes:
+        - name: dest-svc-instances
+          secret:
+            secretName: {{ .Values.global.destinationRegionSecret.secretName }}
+      {{ if .Values.global.isLocalEnv }}
+        - name: examples
+          hostPath:
+            path: "/examples"
+            type: DirectoryOrCreate
+      {{ end }}
+      restartPolicy: Never
+---
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: {{ .Chart.Name }}-e2e-director-application
+  labels:
+    app: {{ .Chart.Name }}-director-tests-app
+    release: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Chart.Name }}-director-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+  namespace: {{ .Values.global.tests.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+      labels:
+        app: {{ .Chart.Name }}-director-tests-app
+    spec:
+      serviceAccountName: {{ .Chart.Name }}-e2e-director
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+        - name: {{ .Values.global.portieris.imagePullSecretName }}
+    {{ end }}
+      containers:
+        - name: director-application-tests
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["-c", "/director-application.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          resources:
+            limits:
+              memory: "256Mi"
+          env:
+            - name: APP_DIRECTOR_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
+            - name: APP_GATEWAY_OAUTH
+              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentResetPath }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}"
+            - name: APP_DIRECTOR_INTERNAL_GATEWAY_URL
+              value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
+            - name: APP_HEALTH_URL
+              value: "https://director.{{ .Values.global.ingress.domainName }}/healthz"
+            - name: APP_WEBHOOK_URL
+              value: "https://kyma-project.io"
+            - name: APP_DEFAULT_SCENARIO
+              value: "DEFAULT"
+            - name: APP_DEFAULT_NORMALIZATION_PREFIX
+              value: "mp-"
+            - name: APP_INFO_API_ENDPOINT
+              value: {{ .Values.global.director.info.path }}
+            - name: APP_INFO_CERT_CONSUMER_ID
+              value: "{{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXT_SVC_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
+            - name: APP_EXT_SVC_CLIENT_CERT_KEY
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
+            - name: APP_EXT_SVC_CLIENT_KEY_KEY
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_DIRECT_DEPENDENCY_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_REGION
+              value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_SELF_REG_REGION2
+              value: {{ .Values.global.tests.selfRegistration.region2 }}
+            - name: APP_APPLICATION_TEMPLATE_PRODUCT_LABEL
+              value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
+            - name: APP_SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: TEST_EXTERNAL_CERT_CN
+              value: {{ .Values.global.externalCertConfiguration.commonName }}
+            - name: TEST_EXTERNAL_CERT_SUBJECT
+              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+            - name: TEST_ATOM_EXTERNAL_CERT_SUBJECT
+              value: {{ printf .Values.global.externalCertConfiguration.technicalClientSubjectPattern .Values.global.tests.subscription.tenants.consumerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+            - name: TEST_EXTERNAL_CERT_SUBJECT_REGION2
+              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountIDRegion2 .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+            - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
+              value: {{ .Values.global.tests.subscription.externalClientCertTestSecretName }}
+            - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE
+              value: {{ .Values.global.tests.subscription.externalClientCertTestSecretNamespace }}
+            - name: EXTERNAL_CERT_TEST_JOB_NAME
+              value: {{ .Values.global.tests.subscription.externalCertTestJobName }}
+            - name: CERT_SVC_INSTANCE_TEST_SECRET_NAME
+              value: {{ .Values.global.tests.subscription.certSvcInstanceTestSecretName }}
+            - name: CERT_SVC_INSTANCE_TEST_REGION2_SECRET_NAME
+              value: {{ .Values.global.tests.subscription.certSvcInstanceTestRegion2SecretName }}
+            - name: EXTERNAL_CERT_CRONJOB_CONTAINER_NAME
+              value: {{ .Values.global.externalCertConfiguration.rotationCronjob.containerName }}
+            - name: APP_RUNTIME_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.runtimeTypeLabelKey }}
+            - name: APP_KYMA_RUNTIME_TYPE_LABEL_VALUE
+              value: {{ .Values.global.director.kymaRuntimeTypeLabelValue }}
+            - name: APP_KYMA_APPLICATION_NAMESPACE_VALUE
+              value: {{ .Values.global.director.kymaApplicationNamespaceValue }}
+            - name: APP_DEFAULT_TENANT_REGION
+              value: {{ .Values.global.defaultTenantRegion }}
+            - name: APP_APPLICATION_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.applicationTypeLabelKey }}
+            - name: APP_SELF_REGISTER_SAAS_APP_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
+            - name: APP_SUBSCRIPTION_CONFIG_URL
+              value: {{ .Values.global.tests.subscription.subscriptionURL }}
+            - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.oauthUrlKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.clientIdKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.clientSecretKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION
+              value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION2
+              value: {{ .Values.global.tests.selfRegistration.region2 }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.label }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX
+              value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_SUBDOMAIN_PLACEHOLDER_VALUE
+              value: {{ .Values.global.tests.subscription.consumerSubdomain }}
+            - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
+              value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_PROVIDER_ACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
+            - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
+            - name: APP_TEST_PROVIDER_SUBACCOUNT_ID_REGION2
+              value:  {{ .Values.global.tests.subscription.tenants.providerSubaccountIDRegion2 }}
+            - name: APP_TEST_CONSUMER_ACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
+            - name: APP_TEST_CONSUMER_SUBACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
+            - name: APP_TEST_CONSUMER_ACCOUNT_ID_TENANT_HIERARCHY
+              value: {{ .Values.global.tests.subscription.tenants.consumerAccountIDTenantHierarchy }}
+            - name: APP_TEST_CONSUMER_SUBACCOUNT_ID_TENANT_HIERARCHY
+              value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountIDTenantHierarchy }}
+            - name: APP_TEST_CONSUMER_TENANT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
+            - name: APP_EXTERNAL_SERVICES_MOCK_BASE_URL
+              value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
+            - name: APP_EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL
+              value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{.Values.global.ingress.domainName}}:443"
+            - name: APP_TOKEN_PATH
+              value: {{ .Values.global.externalServicesMock.oauthSecret.oauthTokenPath }}
+            - name: APP_CONSUMER_TOKEN_URL
+              value: {{ .Values.global.tests.subscription.consumerTokenURL }}
+            - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
+            - name: APP_INDIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.indirectDependencySubscriptionProviderAppNameValue }}
+            - name: APP_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderAppNameValue }}
+            - name: APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY
+              value: {{ .Values.global.director.globalSubaccountIDLabelKey }}
+            - name: APP_SUBSCRIPTION_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
+            - name: SKIP_TESTS_REGEX
+              value: {{ .Values.global.tests.director.skipPattern }}
+            - name: CERT_SVC_INSTANCE_SECRET_NAME
+              value: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+            - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT
+              value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
+            - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN
+              value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
+            - name: APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2
+              value: {{ .Values.global.tests.externalCertConfiguration.issuerLocalityRegion2 }}
+            - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY
+              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInSeconds | quote}}
+            - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
+              value: {{ .Values.global.tests.hydrator.certSubjectMappingResyncInterval | quote }}
+            - name: APP_PROVIDER_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientIdKey }}
+            - name: APP_PROVIDER_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
+            - name: APP_BASIC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
+                  key: username
+            - name: APP_BASIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
+                  key: password
+            - name: APP_SUPPORTED_ORD_APPLICATION_TYPE
+              value: {{ .Values.global.tests.director.supportedOrdApplicationType }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTIONS_LABEL_KEY
+              value: {{ .Values.global.tests.subscription.labelKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_STANDARD_FLOW
+              value: {{ .Values.global.tests.subscription.standardFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_DIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.directDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_INDIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
+              value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
+            - name: APP_ENDPOINT_TENANT_DESTINATIONS
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATIONS
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationsEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationCertificatesEndpoint }}"
+            - name: APP_DESTINATIONS_TIMEOUT
+              value: {{ .Values.global.destinationFetcher.request.requestTimeout }}
+            - name: APP_DESTINATIONS_SKIP_SSL_VERIFY
+              value: {{ .Values.global.destinationFetcher.request.skipSSLValidation | quote }}
+            - name: APP_DESTINATION_OAUTH_TOKEN_PATH
+              value: {{ .Values.global.destinationFetcher.request.oauthTokenPath }}
+            - name: APP_DESTINATION_INSTANCE_CLIENT_ID_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientIdPath }}
+            - name: APP_DESTINATION_INSTANCE_CLIENT_SECRET_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientSecretPath }}
+            - name: APP_DESTINATION_INSTANCE_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.urlPath }}
+            - name: APP_DESTINATION_INSTANCE_TOKEN_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.tokenUrlPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_CERT_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientCertPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_KEY_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientKeyPath }}
+            - name: APP_DESTINATION_SECRET_PATH
+              value: "{{ .Values.global.destinationFetcher.dependenciesConfig.path }}/{{ .Values.global.destinationRegionSecret.fileName }}"
+            - name: APP_DESTINATION_OAUTH_MODE
+              value: {{ .Values.global.destinationFetcher.oauthMode }}
+            - name: APP_PROVIDER_DESTINATION_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientIdKey }}
+            - name: APP_PROVIDER_DESTINATION_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientSecretKey }}
+            - name: APP_PROVIDER_DESTINATION_TOKEN_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthUrlKey }}
+            - name: APP_PROVIDER_DESTINATION_TOKEN_PATH
+              value: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthTokenPath }}
+            - name: APP_PROVIDER_DESTINATION_SERVICE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.serviceUrlKey }}
+            - name: APP_PROVIDER_DESTINATION_DEPENDENCY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.dependencyKey }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
+              value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS
+              value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
+            - name: APP_TEST_DESTINATION_INSTANCE_ID
+              value: {{ .Values.global.tests.destination.instanceID | quote }}
+            - name: APP_DIRECTOR_EXTERNAL_CERT_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
+          volumeMounts:
+            - name: dest-svc-instances
+              mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
+              readOnly: true
+          {{ if .Values.global.isLocalEnv }}
+            - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
+              name: examples
+          {{ end }}
+      volumes:
+        - name: dest-svc-instances
+          secret:
+            secretName: {{ .Values.global.destinationRegionSecret.secretName }}
       {{ if .Values.global.isLocalEnv }}
         - name: examples
           hostPath:

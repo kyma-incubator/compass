@@ -12,6 +12,7 @@ import (
 )
 
 // KubeClient missing godoc
+//
 //go:generate mockery --name=KubeClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type KubeClient interface {
 	GetTenantFetcherConfigMapData(ctx context.Context) (string, string, error)
@@ -136,6 +137,8 @@ func resyncTimestamps(ctx context.Context, client KubeClient, fullResyncInterval
 		log.C(ctx).Infof("Last full resync was %s ago. Will perform a full resync.", fullResyncInterval)
 		lastConsumedTenantTimestamp = "1"
 		lastFullResyncTimestamp = convertTimeToUnixMilliSecondString(startTime)
+	} else {
+		log.C(ctx).Infof("Last full resync was %s ago. Will perform a delta resync.", fullResyncInterval)
 	}
 	return &startTime, lastConsumedTenantTimestamp, lastFullResyncTimestamp, nil
 }

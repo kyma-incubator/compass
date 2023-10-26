@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -34,6 +36,7 @@ import (
 )
 
 // ApplicationService missing godoc
+//
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
@@ -42,6 +45,7 @@ type ApplicationService interface {
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	GetBySystemNumber(ctx context.Context, systemNumber string) (*model.Application, error)
+	GetByLocalTenantIDAndAppTemplateID(ctx context.Context, localTenantID, appTemplateID string) (*model.Application, error)
 	ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context) ([]*model.Application, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
@@ -53,6 +57,7 @@ type ApplicationService interface {
 }
 
 // ApplicationConverter missing godoc
+//
 //go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
@@ -63,6 +68,7 @@ type ApplicationConverter interface {
 }
 
 // EventingService missing godoc
+//
 //go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventingService interface {
 	CleanupAfterUnregisteringApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
@@ -70,12 +76,14 @@ type EventingService interface {
 }
 
 // WebhookService missing godoc
+//
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
 	ListAllApplicationWebhooks(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 }
 
 // SystemAuthService missing godoc
+//
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string) ([]pkgmodel.SystemAuth, error)
@@ -83,6 +91,7 @@ type SystemAuthService interface {
 }
 
 // WebhookConverter missing godoc
+//
 //go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookConverter interface {
 	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
@@ -92,18 +101,21 @@ type WebhookConverter interface {
 }
 
 // SystemAuthConverter missing godoc
+//
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthConverter interface {
 	ToGraphQL(in *pkgmodel.SystemAuth) (graphql.SystemAuth, error)
 }
 
 // OAuth20Service missing godoc
+//
 //go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OAuth20Service interface {
 	DeleteMultipleClientCredentials(ctx context.Context, auths []pkgmodel.SystemAuth) error
 }
 
 // RuntimeService missing godoc
+//
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
@@ -111,14 +123,51 @@ type RuntimeService interface {
 }
 
 // BundleService missing godoc
+//
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleService interface {
 	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error)
 	ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error)
-	CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error
+	CreateMultiple(ctx context.Context, resourceType resource.Type, resourceID string, in []*model.BundleCreateInput) error
+}
+
+// APIDefinitionService missing godoc
+//
+//go:generate mockery --name=APIDefinitionService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type APIDefinitionService interface {
+	GetForApplication(ctx context.Context, id string, appID string) (*model.APIDefinition, error)
+}
+
+// EventDefinitionService missing godoc
+//
+//go:generate mockery --name=EventDefinitionService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type EventDefinitionService interface {
+	GetForApplication(ctx context.Context, id string, appID string) (*model.EventDefinition, error)
+}
+
+// APIDefinitionConverter missing godoc
+//
+//go:generate mockery --name=APIDefinitionConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type APIDefinitionConverter interface {
+	ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error)
+}
+
+// EventDefinitionConverter missing godoc
+//
+//go:generate mockery --name=EventDefinitionConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type EventDefinitionConverter interface {
+	ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.EventDefinition, error)
+}
+
+// SpecService is responsible for the service-layer Specification operations.
+//
+//go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type SpecService interface {
+	GetByReferenceObjectID(ctx context.Context, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
 }
 
 // BundleConverter missing godoc
+//
 //go:generate mockery --name=BundleConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleConverter interface {
 	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
@@ -127,15 +176,39 @@ type BundleConverter interface {
 }
 
 // OneTimeTokenService missing godoc
+//
 //go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OneTimeTokenService interface {
 	IsTokenValid(systemAuth *pkgmodel.SystemAuth) (bool, error)
 }
 
 // ApplicationTemplateService missing godoc
+//
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
 	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
+	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
+}
+
+// ApplicationTemplateConverter converts between the graphql and model
+//
+//go:generate mockery --name=ApplicationTemplateConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationTemplateConverter interface {
+	ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error)
+}
+
+// TenantBusinessTypeService is responsible for the service-layer Tenant Business Type operations.
+//
+//go:generate mockery --name=TenantBusinessTypeService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
+type TenantBusinessTypeService interface {
+	GetByID(ctx context.Context, id string) (*model.TenantBusinessType, error)
+}
+
+// TenantBusinessTypeConverter converts between the graphql and model
+//
+//go:generate mockery --name=TenantBusinessTypeConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TenantBusinessTypeConverter interface {
+	ToGraphQL(in *model.TenantBusinessType) *graphql.TenantBusinessType
 }
 
 // Resolver missing godoc
@@ -145,12 +218,23 @@ type Resolver struct {
 	appSvc       ApplicationService
 	appConverter ApplicationConverter
 
-	appTemplateSvc ApplicationTemplateService
+	appTemplateSvc       ApplicationTemplateService
+	appTemplateConverter ApplicationTemplateConverter
+
+	tenantBusinessTypeSvc       TenantBusinessTypeService
+	tenantBusinessTypeConverter TenantBusinessTypeConverter
 
 	webhookSvc WebhookService
 	oAuth20Svc OAuth20Service
 	sysAuthSvc SystemAuthService
 	bndlSvc    BundleService
+
+	apiDefinitionSvc    APIDefinitionService
+	eventDefinitionSvc  EventDefinitionService
+	apiDefinitionConv   APIDefinitionConverter
+	eventDefinitionConv EventDefinitionConverter
+
+	specService SpecService
 
 	webhookConverter WebhookConverter
 	sysAuthConv      SystemAuthConverter
@@ -173,7 +257,15 @@ func NewResolver(transact persistence.Transactioner,
 	eventingSvc EventingService,
 	bndlSvc BundleService,
 	bndlConverter BundleConverter,
+	specSvc SpecService,
+	apiDefinitionSvc APIDefinitionService,
+	eventDefinitionSvc EventDefinitionService,
+	apiDefinitionConverter APIDefinitionConverter,
+	eventDefinitionConverter EventDefinitionConverter,
 	appTemplateSvc ApplicationTemplateService,
+	appTemplateConverter ApplicationTemplateConverter,
+	tenantBusinessTypeSvc TenantBusinessTypeService,
+	tenantBusinessTypeConverter TenantBusinessTypeConverter,
 	selfRegisterDistinguishLabelKey, tokenPrefix string) *Resolver {
 	return &Resolver{
 		transact:                        transact,
@@ -186,8 +278,16 @@ func NewResolver(transact persistence.Transactioner,
 		sysAuthConv:                     sysAuthConv,
 		eventingSvc:                     eventingSvc,
 		bndlSvc:                         bndlSvc,
+		specService:                     specSvc,
+		apiDefinitionSvc:                apiDefinitionSvc,
+		eventDefinitionSvc:              eventDefinitionSvc,
+		apiDefinitionConv:               apiDefinitionConverter,
+		eventDefinitionConv:             eventDefinitionConverter,
 		bndlConv:                        bndlConverter,
 		appTemplateSvc:                  appTemplateSvc,
+		appTemplateConverter:            appTemplateConverter,
+		tenantBusinessTypeSvc:           tenantBusinessTypeSvc,
+		tenantBusinessTypeConverter:     tenantBusinessTypeConverter,
 		selfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
 		tokenPrefix:                     tokenPrefix,
 	}
@@ -271,6 +371,13 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 func (r *Resolver) ApplicationBySystemNumber(ctx context.Context, systemNumber string) (*graphql.Application, error) {
 	return r.getApplication(ctx, func(ctx context.Context) (*model.Application, error) {
 		return r.appSvc.GetBySystemNumber(ctx, systemNumber)
+	})
+}
+
+// ApplicationByLocalTenantIDAndAppTemplateID returns an application retrieved by local tenant id and app template id
+func (r *Resolver) ApplicationByLocalTenantIDAndAppTemplateID(ctx context.Context, localTenantID, appTemplateID string) (*graphql.Application, error) {
+	return r.getApplication(ctx, func(ctx context.Context) (*model.Application, error) {
+		return r.appSvc.GetByLocalTenantIDAndAppTemplateID(ctx, localTenantID, appTemplateID)
 	})
 }
 
@@ -783,6 +890,146 @@ func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id stri
 	}
 
 	return gqlBundle, nil
+}
+
+// APIDefinition fetches an API and its spec for Application and APIDefinition with a given ID
+func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Application, id string) (*graphql.APIDefinition, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Application cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	api, err := r.apiDefinitionSvc.GetForApplication(ctx, id, obj.ID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.APISpecReference, api.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
+	}
+
+	gqlBundle, err := r.apiDefinitionConv.ToGraphQL(api, spec, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return gqlBundle, nil
+}
+
+// EventDefinition fetches an API and its spec for Application and EventDefinition with a given ID
+func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Application, id string) (*graphql.EventDefinition, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Application cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	event, err := r.eventDefinitionSvc.GetForApplication(ctx, id, obj.ID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.EventSpecReference, event.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
+	}
+
+	gqlBundle, err := r.eventDefinitionConv.ToGraphQL(event, spec, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return gqlBundle, nil
+}
+
+// ApplicationTemplate retrieves application template by given application
+func (r *Resolver) ApplicationTemplate(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationTemplate, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Application cannot be empty")
+	}
+	if obj.ApplicationTemplateID == nil {
+		return nil, nil
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	appTemplate, err := r.appTemplateSvc.Get(ctx, *obj.ApplicationTemplateID)
+	if err != nil {
+		log.C(ctx).Infof("No app template found with id %s", *obj.ApplicationTemplateID)
+		return nil, errors.Wrapf(err, "no app template found with id %s", *obj.ApplicationTemplateID)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return r.appTemplateConverter.ToGraphQL(appTemplate)
+}
+
+// TenantBusinessType retrieves tenant business type by given application
+func (r *Resolver) TenantBusinessType(ctx context.Context, obj *graphql.Application) (*graphql.TenantBusinessType, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Application cannot be empty")
+	}
+	if obj.TenantBusinessTypeID == nil {
+		return nil, nil
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	tenantBusinessType, err := r.tenantBusinessTypeSvc.GetByID(ctx, *obj.TenantBusinessTypeID)
+	if err != nil {
+		log.C(ctx).Infof("No tenant business type found with id %s", *obj.TenantBusinessTypeID)
+		return nil, errors.Wrapf(err, "no tenant business type found with id %s", *obj.TenantBusinessTypeID)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return r.tenantBusinessTypeConverter.ToGraphQL(tenantBusinessType), nil
 }
 
 // getApplicationProviderTenant should be used when making requests with double authentication, i.e. consumerInfo.OnBehalfOf != nil;

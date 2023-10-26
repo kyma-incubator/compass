@@ -135,6 +135,29 @@ func (c *equalCondition) GetQueryArgs() ([]interface{}, bool) {
 	return []interface{}{c.val}, true
 }
 
+// NewLessThanCondition represents less than SQL condition (field < val)
+func NewLessThanCondition(field string, val interface{}) Condition {
+	return &lessThanCondition{
+		field: field,
+		val:   val,
+	}
+}
+
+type lessThanCondition struct {
+	field string
+	val   interface{}
+}
+
+// GetQueryPart returns formatted string that will be included in the SQL query for a given condition
+func (c *lessThanCondition) GetQueryPart() string {
+	return fmt.Sprintf("%s < ?", c.field)
+}
+
+// GetQueryArgs returns a list of query arguments and boolean flag showing if there are placeholders for the arguments
+func (c *lessThanCondition) GetQueryArgs() ([]interface{}, bool) {
+	return []interface{}{c.val}, true
+}
+
 // NewNotEqualCondition represents not equal SQL condition (field != val)
 func NewNotEqualCondition(field string, val interface{}) Condition {
 	return &notEqualCondition{

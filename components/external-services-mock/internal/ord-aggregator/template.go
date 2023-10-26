@@ -52,7 +52,7 @@ const ordDocument = `{
          "ordId":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
          "vendor":"sap:vendor:SAP:",
          "title":"PACKAGE 1 TITLE",
-         "shortDescription":"lorem ipsum",
+         "shortDescription":"short desc",
          "description":"lorem ipsum dolor set",
          "version":"1.1.2",
          "packageLinks":[
@@ -68,12 +68,12 @@ const ordDocument = `{
          "links":[
             {
                "description":"loremipsumdolornem",
-               "title":"LinkTitle",
+               "title":"LinkTitle1",
                "url":"https://example.com/2018/04/11/testing/"
             },
             {
                "description":"loremipsumdolornem",
-               "title":"LinkTitle",
+               "title":"LinkTitle2",
                "url":"/testing/relative"
             }
          ],
@@ -117,6 +117,57 @@ const ordDocument = `{
 		 {{ .additionalProperties }}	 
       }
    ],
+   "entityTypes":[
+      {
+         "ordId":"ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1",
+         "vendor":"sap:vendor:SAP:",
+         "localId":"BusinessPartner",
+         "level":"aggregate",
+         "title":"ENTITYTYPE 1 TITLE",
+         "shortDescription":"short desc",
+         "description":"lorem ipsum dolor set",
+         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "visibility":"public",
+         "version":"1.1.2",
+         "releaseStatus":"active",
+         "links":[
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle1",
+               "url":"https://example.com/2018/04/11/testing/"
+            },
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle2",
+               "url":"/testing/relative"
+            }
+         ],
+         "tags":[
+            "testTag"
+         ],
+         "labels":{
+            "label-key-1":[
+               "label-val"
+            ],
+            "pkg-label":[
+               "label-val"
+            ]
+         },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
+         "policyLevel":"sap:core:v1",
+         "customPolicyLevel":null,
+         "partOfProducts":[
+            "sap:product:id{{ .randomSuffix }}:",
+            "sap:product:SAPCloudPlatform:"
+         ]
+		 {{ .additionalProperties }}	 
+      }
+   ],
    "consumptionBundles":[
       {
          "title":"BUNDLE TITLE",
@@ -126,12 +177,12 @@ const ordDocument = `{
          "links":[
             {
                "description":"loremipsumdolornem",
-               "title":"LinkTitle",
+               "title":"LinkTitle1",
                "url":"https://example.com/2018/04/11/testing/"
             },
             {
                "description":"loremipsumdolornem",
-               "title":"LinkTitle",
+               "title":"LinkTitle2",
                "url":"/testing/relative"
             }
          ],
@@ -199,12 +250,12 @@ const ordDocument = `{
          "links":[
             {
                "description":"loremipsumdolornem",
-               "title":"LinkTitle",
+               "title":"LinkTitle1",
                "url":"https://example.com/2018/04/11/testing/"
             },
             {
                "description":"loremipsumdolornem",
-               "title":"LinkTitle",
+               "title":"LinkTitle2",
                "url":"/testing/relative"
             }
          ]
@@ -215,6 +266,7 @@ const ordDocument = `{
       {
          "ordId":"sap:product:id{{ .randomSuffix }}:",
          "title":"PRODUCT TITLE",
+         "description":"lorem ipsum dolor nsq sme",
          "shortDescription":"lorem ipsum",
          "vendor":"sap:vendor:SAP:",
          "parent":"ns:product:id2:",
@@ -260,12 +312,12 @@ const ordDocument = `{
          "links":[
             {
                "description":"loremipsumdolornem",
-               "title":"LinkTitle",
+               "title":"LinkTitle1",
                "url":"https://example.com/2018/04/11/testing/"
             },
             {
                "description":"loremipsumdolornem",
-               "title":"LinkTitle",
+               "title":"LinkTitle2",
                "url":"/testing/relative"
             }
          ],
@@ -399,12 +451,12 @@ const ordDocument = `{
          "links":[
             {
                "description":"loremipsumdolornem",
-               "title":"LinkTitle",
+               "title":"LinkTitle1",
                "url":"https://example.com/2018/04/11/testing/"
             },
             {
                "description":"loremipsumdolornem",
-               "title":"LinkTitle",
+               "title":"LinkTitle2",
                "url":"/testing/relative"
             }
          ],
@@ -648,12 +700,12 @@ const ordDocument = `{
          "links":[
             {
                "description":"loremipsumdolornem",
-               "title":"LinkTitle",
+               "title":"LinkTitle1",
                "url":"https://example.com/2018/04/11/testing/"
             },
             {
                "description":"loremipsumdolornem",
-               "title":"LinkTitle",
+               "title":"LinkTitle2",
                "url":"/testing/relative"
             }
          ],
@@ -743,12 +795,12 @@ const ordDocument = `{
          "links":[
             {
                "description":"loremipsumdolornem",
-               "title":"LinkTitle",
+               "title":"LinkTitle1",
                "url":"https://example.com/2018/04/11/testing/"
             },
             {
                "description":"loremipsumdolornem",
-               "title":"LinkTitle",
+               "title":"LinkTitle2",
                "url":"/testing/relative"
             }
          ],
@@ -891,6 +943,34 @@ const ordDocument = `{
 		 {{ .additionalProperties }}
       }
    ],
+	"capabilities":[
+    {
+      "ordId": "sap.foo.bar:capability:{{ .randomSuffix }}:v1",
+      "title": "CAPABILITY TITLE",
+      "type": "sap.mdo:mdi-capability:v1",
+      "shortDescription": "Short description of capability",
+      "description": "Optional, longer description",
+      "version": "1.0.0",
+      "lastUpdate": "2023-01-26T15:47:04+00:00",
+      "releaseStatus": "active",
+      "visibility": "public",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "definitions": [
+        {
+          "type": "sap.mdo:mdi-capability-definition:v1",
+          "mediaType": "application/json",
+          "url": "/external-api/spec?format=json", 
+          "accessStrategies": [
+            {
+                "type":"{{ .specsAccessStrategy }}",
+                "customType":"",
+				"customDescription":""
+			}
+          ]
+        }
+      ]
+    }
+  ],
    "tombstones":[
       {
          "ordId":"ns:apiResource:API_ID2{{ .randomSuffix }}:v1",

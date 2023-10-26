@@ -35,6 +35,7 @@ import (
 
 type config struct {
 	DefaultTestTenant                                     string
+	DefaultTestSubaccount                                 string
 	DirectorExternalCertSecuredURL                        string
 	DirectorGraphqlOauthURL                               string
 	ORDAggregatorURL                                      string
@@ -65,6 +66,8 @@ type config struct {
 	ClientTimeout                                         time.Duration `envconfig:"default=60s"`
 	SkipSSLValidation                                     bool          `envconfig:"default=false"`
 	SubscriptionConfig                                    subscription.Config
+	ORDWebhookMappings                                    string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
+	ProxyApplicationTemplateName                          string `envconfig:"APP_PROXY_APPLICATION_TEMPLATE_NAME"`
 }
 
 var (

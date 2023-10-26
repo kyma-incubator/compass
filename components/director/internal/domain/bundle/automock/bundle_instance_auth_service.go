@@ -19,6 +19,10 @@ func (_m *BundleInstanceAuthService) GetForBundle(ctx context.Context, id string
 	ret := _m.Called(ctx, id, bundleID)
 
 	var r0 *model.BundleInstanceAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.BundleInstanceAuth, error)); ok {
+		return rf(ctx, id, bundleID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.BundleInstanceAuth); ok {
 		r0 = rf(ctx, id, bundleID)
 	} else {
@@ -27,7 +31,6 @@ func (_m *BundleInstanceAuthService) GetForBundle(ctx context.Context, id string
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, id, bundleID)
 	} else {
@@ -42,6 +45,10 @@ func (_m *BundleInstanceAuthService) List(ctx context.Context, id string) ([]*mo
 	ret := _m.Called(ctx, id)
 
 	var r0 []*model.BundleInstanceAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.BundleInstanceAuth, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.BundleInstanceAuth); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -50,7 +57,6 @@ func (_m *BundleInstanceAuthService) List(ctx context.Context, id string) ([]*mo
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -60,13 +66,38 @@ func (_m *BundleInstanceAuthService) List(ctx context.Context, id string) ([]*mo
 	return r0, r1
 }
 
-type mockConstructorTestingTNewBundleInstanceAuthService interface {
-	mock.TestingT
-	Cleanup(func())
+// ListByRuntimeID provides a mock function with given fields: ctx, runtimeID
+func (_m *BundleInstanceAuthService) ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error) {
+	ret := _m.Called(ctx, runtimeID)
+
+	var r0 []*model.BundleInstanceAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.BundleInstanceAuth, error)); ok {
+		return rf(ctx, runtimeID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.BundleInstanceAuth); ok {
+		r0 = rf(ctx, runtimeID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BundleInstanceAuth)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, runtimeID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // NewBundleInstanceAuthService creates a new instance of BundleInstanceAuthService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBundleInstanceAuthService(t mockConstructorTestingTNewBundleInstanceAuthService) *BundleInstanceAuthService {
+// The first argument is typically a *testing.T value.
+func NewBundleInstanceAuthService(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *BundleInstanceAuthService {
 	mock := &BundleInstanceAuthService{}
 	mock.Mock.Test(t)
 

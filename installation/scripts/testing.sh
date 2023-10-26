@@ -63,6 +63,13 @@ then
    exit 1
 fi
 
+${kc} get cts  ${suiteName} -ojsonpath="{.metadata.name}" > /dev/null 2>&1
+if [[ $? -eq 0 ]]
+then
+   echo "ERROR: Another ClusterTestSuite CRD is currently running in this cluster."
+   exit 1
+fi
+
 # match all tests
 if [ -z "$testDefinitionName" ]
 then
@@ -148,7 +155,21 @@ do
         break
     fi
     if (( ${previousPrintTime} != ${min} )); then
-        echo "ClusterTestSuite not finished. Waiting..."
+        running_test=$(kubectl get cts ${suiteName} -o yaml | grep "status: Running" -B5 | head -n 1 | cut -d ':' -f 2 | tr -d " ")
+        if [ -z "$running_test" ]; then
+          running_test="none"
+        fi
+        echo "Running test is ${running_test}"
+        if [[ ! "${running_test}" == "none" ]]; then
+          logs_from_last_min=$(kubectl logs -n kyma-system --since=1m ${running_test})
+          if echo "${logs_from_last_min}" | grep -q "FAIL:"; then
+            echo "----------------------------"
+            echo "A test has failed in the last minute."
+            echo "Logs from test execution:"
+            echo "${logs_from_last_min}"
+            echo "----------------------------"
+          fi
+        fi
         previousPrintTime=${min}
     fi
     sleep 3
@@ -162,6 +183,30 @@ cleanupExitCode=$?
 
 echo "ClusterTestSuite details:"
 kubectl get cts ${suiteName} -oyaml
+
+echo "Pod execution time details:"
+podInfo=$(kubectl get cts ${suiteName} -o=go-template --template='{{range .status.results}}{{range .executions }}{{printf "%s %s %s\n" .id .startTime .completionTime }}{{end}}{{end}}')
+
+if [ "$(uname)" == "Darwin" ]; then
+  extra_flags="-j -f %Y-%m-%dT%H:%M:%SZ"
+else
+  extra_flags="-D %Y-%m-%dT%H:%M:%SZ -d"
+fi
+
+while read -r podName startTime endTime;
+do
+  startTimeTimestamp=$(date $extra_flags "$startTime" +%s)
+  endTimeTimestamp=$(date $extra_flags "$endTime" +%s)
+  duration=$((endTimeTimestamp - startTimeTimestamp))
+
+  min=$((duration/60))
+  sec=$((duration%60))
+  minString=""
+  if ((min > 0)); then
+    minString="${min}m"
+  fi
+  echo "$podName execution time: ${minString}${sec}s"
+done <<< "$podInfo"
 
 if [[ ! "${BENCHMARK}" == "true" ]]
 then

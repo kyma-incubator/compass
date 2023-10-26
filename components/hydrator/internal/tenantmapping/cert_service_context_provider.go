@@ -71,13 +71,19 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), p.tenantKeys, scopes, mergeWithOtherScopes,
 		authDetails.Region, "", getConsumerID(reqData, authDetails), authDetails.AuthFlow, consumer.ConsumerType(consumerType), tenantmapping.CertServiceObjectContextProvider)
-	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
+	log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
 	return objCtx, nil
 }
 
 // Match checks if there is "client-id-from-certificate" Header with nonempty value and "client-certificate-issuer" Header with value "certificate-service".
 // If so AuthDetails object is build.
 func (p *certServiceContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+	//In case there are tenant access levels the accessLevelContextProvider should be matched
+	//and there is no need to generate object context for the certServiceContextProvider
+	if len(data.TenantAccessLevels()) != 0 {
+		return false, nil, nil
+	}
+
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
 

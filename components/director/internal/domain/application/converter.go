@@ -45,6 +45,7 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 		HealthCheckURL:        repo.NewNullableString(in.HealthCheckURL),
 		IntegrationSystemID:   repo.NewNullableString(in.IntegrationSystemID),
 		ApplicationTemplateID: repo.NewNullableString(in.ApplicationTemplateID),
+		TenantBusinessTypeID:  repo.NewNullableString(in.TenantBusinessTypeID),
 		BaseURL:               repo.NewNullableString(in.BaseURL),
 		ApplicationNamespace:  repo.NewNullableString(in.ApplicationNamespace),
 		SystemNumber:          repo.NewNullableString(in.SystemNumber),
@@ -52,6 +53,7 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 		OrdLabels:             repo.NewNullableStringFromJSONRawMessage(in.OrdLabels),
 		CorrelationIDs:        repo.NewNullableStringFromJSONRawMessage(in.CorrelationIDs),
 		SystemStatus:          repo.NewNullableString(in.SystemStatus),
+		Tags:                  repo.NewNullableStringFromJSONRawMessage(in.Tags),
 		DocumentationLabels:   repo.NewNullableStringFromJSONRawMessage(in.DocumentationLabels),
 		BaseEntity: &repo.BaseEntity{
 			ID:        in.ID,
@@ -83,11 +85,13 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 		HealthCheckURL:        repo.StringPtrFromNullableString(entity.HealthCheckURL),
 		IntegrationSystemID:   repo.StringPtrFromNullableString(entity.IntegrationSystemID),
 		ApplicationTemplateID: repo.StringPtrFromNullableString(entity.ApplicationTemplateID),
+		TenantBusinessTypeID:  repo.StringPtrFromNullableString(entity.TenantBusinessTypeID),
 		BaseURL:               repo.StringPtrFromNullableString(entity.BaseURL),
 		ApplicationNamespace:  repo.StringPtrFromNullableString(entity.ApplicationNamespace),
 		OrdLabels:             repo.JSONRawMessageFromNullableString(entity.OrdLabels),
 		CorrelationIDs:        repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
 		SystemStatus:          repo.StringPtrFromNullableString(entity.SystemStatus),
+		Tags:                  repo.JSONRawMessageFromNullableString(entity.Tags),
 		DocumentationLabels:   repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
@@ -115,6 +119,7 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 		ApplicationNamespace:  in.ApplicationNamespace,
 		IntegrationSystemID:   in.IntegrationSystemID,
 		ApplicationTemplateID: in.ApplicationTemplateID,
+		TenantBusinessTypeID:  in.TenantBusinessTypeID,
 		ProviderName:          in.ProviderName,
 		SystemNumber:          in.SystemNumber,
 		LocalTenantID:         in.LocalTenantID,
@@ -203,12 +208,23 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) mo
 	}
 }
 
-// CreateInputJSONToGQL missing godoc
-func (c *converter) CreateInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error) {
+// CreateRegisterInputJSONToGQL missing godoc
+func (c *converter) CreateRegisterInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error) {
 	var appInput graphql.ApplicationRegisterInput
 	err := json.Unmarshal([]byte(in), &appInput)
 	if err != nil {
 		return graphql.ApplicationRegisterInput{}, errors.Wrap(err, "while unmarshalling string to ApplicationRegisterInput")
+	}
+
+	return appInput, nil
+}
+
+// CreateJSONInputJSONToGQL missing godoc
+func (c *converter) CreateJSONInputJSONToGQL(in string) (graphql.ApplicationJSONInput, error) {
+	var appInput graphql.ApplicationJSONInput
+	err := json.Unmarshal([]byte(in), &appInput)
+	if err != nil {
+		return graphql.ApplicationJSONInput{}, errors.Wrap(err, "while unmarshalling string to ApplicationJSONInput")
 	}
 
 	return appInput, nil
@@ -223,8 +239,18 @@ func (c *converter) CreateInputJSONToModel(ctx context.Context, in string) (mode
 	return modelIn, nil
 }
 
-// CreateInputGQLToJSON missing godoc
-func (c *converter) CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (string, error) {
+// CreateRegisterInputGQLToJSON missing godoc
+func (c *converter) CreateRegisterInputGQLToJSON(in *graphql.ApplicationRegisterInput) (string, error) {
+	appInput, err := json.Marshal(in)
+	if err != nil {
+		return "", errors.Wrap(err, "while marshaling application input")
+	}
+
+	return string(appInput), nil
+}
+
+// CreateJSONInputGQLToJSON missing godoc
+func (c *converter) CreateJSONInputGQLToJSON(in *graphql.ApplicationJSONInput) (string, error) {
 	appInput, err := json.Marshal(in)
 	if err != nil {
 		return "", errors.Wrap(err, "while marshaling application input")

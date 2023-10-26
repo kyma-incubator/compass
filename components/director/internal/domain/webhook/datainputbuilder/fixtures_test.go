@@ -11,55 +11,80 @@ import (
 )
 
 const (
-	ScenarioName            = "scenario-A"
-	Tnt                     = "953ac686-5773-4ad0-8eb1-2349e931f852"
-	RuntimeID               = "rt-id"
-	RuntimeContextRuntimeID = "rt-ctx-rt-id"
-	RuntimeContextID        = "rt-ctx-id"
-	RuntimeContext2ID       = "rt-ctx-id-2"
-	ApplicationID           = "04f3568d-3e0c-4f6b-b646-e6979e9d060c"
-	Application2ID          = "6f5389cf-4f9e-46b3-9870-624d792d94ad"
-	ApplicationTemplateID   = "58963c6f-24f6-4128-a05c-51d5356e7e09"
+	ScenarioName                = "scenario-A"
+	Tnt                         = "953ac686-5773-4ad0-8eb1-2349e931f852"
+	RuntimeID                   = "rt-id"
+	RuntimeContextRuntimeID     = "rt-ctx-rt-id"
+	RuntimeContextID            = "rt-ctx-id"
+	RuntimeContext2ID           = "rt-ctx-id-2"
+	ApplicationID               = "04f3568d-3e0c-4f6b-b646-e6979e9d060c"
+	Application2ID              = "6f5389cf-4f9e-46b3-9870-624d792d94ad"
+	ApplicationTemplateID       = "58963c6f-24f6-4128-a05c-51d5356e7e09"
+	ApplicationTemplate2ID      = "b203a000-02af-449b-a8b5-fd0787a9fa4e"
+	ApplicationTenantID         = "d456f5a3-9b1f-42d5-aa81-8fde48cddfbd"
+	ApplicationTemplateTenantID = "946d2550-5d90-4727-93e7-87c48286a6e7"
+	globalSubaccountIDLabelKey  = "global_subaccount_id"
 )
 
 var (
 	applicationMappings = map[string]*webhook.ApplicationWithLabels{
 		ApplicationID: {
 			Application: fixApplicationModel(ApplicationID),
-			Labels:      fixApplicationLabelsMap(),
+			Labels:      fixLabelsMapForApplicationWithLabels(),
+			Tenant:      testAppTenantWithLabels,
 		},
 		Application2ID: {
 			Application: fixApplicationModelWithoutTemplate(Application2ID),
-			Labels:      fixApplicationLabelsMap(),
+			Labels:      fixLabelsMapForApplicationWithLabels(),
+			Tenant:      testAppTenantWithLabels,
 		},
 	}
 
 	applicationTemplateMappings = map[string]*webhook.ApplicationTemplateWithLabels{
 		ApplicationTemplateID: {
 			ApplicationTemplate: fixApplicationTemplateModel(),
-			Labels:              fixApplicationTemplateLabelsMap(),
+			Labels:              fixLabelsMapForApplicationTemplateWithLabels(),
+			Tenant:              testAppTemplateTenantWithLabels,
+			TrustDetails:        testTrustDetails,
 		},
 	}
 
 	runtimeMappings = map[string]*webhook.RuntimeWithLabels{
 		RuntimeContextRuntimeID: {
 			Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
-			Labels:  fixRuntimeLabelsMap(),
+			Labels:  fixLabelsMapForRuntimeWithLabels(),
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: testRuntimeOwner,
+				Labels:                convertLabels(testTenantLabels),
+			},
 		},
 		RuntimeID: {
 			Runtime: fixRuntimeModel(RuntimeID),
-			Labels:  fixRuntimeLabelsMap(),
+			Labels:  fixLabelsMapForRuntimeWithLabels(),
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: testRuntimeOwner,
+				Labels:                convertLabels(testTenantLabels),
+			},
+			TrustDetails: testTrustDetails,
 		},
 	}
 
 	runtimeContextMappings = map[string]*webhook.RuntimeContextWithLabels{
 		RuntimeContextRuntimeID: {
 			RuntimeContext: fixRuntimeContextModel(),
-			Labels:         fixRuntimeContextLabelsMap(),
+			Labels:         fixLabelsMapForRuntimeContextWithLabels(),
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: testRuntimeCtxOwner,
+				Labels:                convertLabels(testTenantLabels),
+			},
 		},
 		RuntimeID: {
 			RuntimeContext: fixRuntimeContextModelWithRuntimeID(RuntimeID),
-			Labels:         fixRuntimeContextLabelsMap(),
+			Labels:         fixLabelsMapForRuntimeContextWithLabels(),
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: testRuntimeCtxOwner,
+				Labels:                convertLabels(testTenantLabels),
+			},
 		},
 	}
 )
@@ -70,9 +95,40 @@ func fixApplicationLabelsMap() map[string]interface{} {
 	}
 }
 
+func fixApplicationLabelsMapWithUnquotableLabels() map[string]interface{} {
+	return map[string]interface{}{
+		"app-label-key": []string{"app-label-value"},
+	}
+}
+
+func fixLabelsMapForApplicationWithLabels() map[string]string {
+	return map[string]string{
+		"app-label-key": "app-label-value",
+	}
+}
+
+func fixLabelsMapForApplicationWithCompositeLabels() map[string]string {
+	return map[string]string{
+		"app-label-key": "[\"app-label-value\"]",
+	}
+}
+
 func fixApplicationTemplateLabelsMap() map[string]interface{} {
 	return map[string]interface{}{
 		"apptemplate-label-key": "apptemplate-label-value",
+	}
+}
+
+func fixLabelsMapForApplicationTemplateWithLabels() map[string]string {
+	return map[string]string{
+		"apptemplate-label-key": "apptemplate-label-value",
+	}
+}
+
+func fixLabelsMapForApplicationTemplateWithSubaccountLabels() map[string]string {
+	return map[string]string{
+		globalSubaccountIDLabelKey: ApplicationTemplateTenantID,
+		"apptemplate-label-key":    "apptemplate-label-value",
 	}
 }
 
@@ -109,8 +165,20 @@ func fixRuntimeLabelsMap() map[string]interface{} {
 	}
 }
 
+func fixLabelsMapForRuntimeWithLabels() map[string]string {
+	return map[string]string{
+		"runtime-label-key": "runtime-label-value",
+	}
+}
+
 func fixRuntimeContextLabelsMap() map[string]interface{} {
 	return map[string]interface{}{
+		"runtime-context-label-key": "runtime-context-label-value",
+	}
+}
+
+func fixLabelsMapForRuntimeContextWithLabels() map[string]string {
+	return map[string]string{
 		"runtime-context-label-key": "runtime-context-label-value",
 	}
 }
@@ -175,4 +243,20 @@ func unusedRuntimeCtxRepo() *automock.RuntimeContextRepository {
 
 func unusedLabelRepo() *automock.LabelRepository {
 	return &automock.LabelRepository{}
+}
+
+func unusedTenantRepo() *automock.TenantRepository {
+	return &automock.TenantRepository{}
+}
+
+func unusedLabelBuilder() *automock.LabelInputBuilder {
+	return &automock.LabelInputBuilder{}
+}
+
+func unusedTenantBuilder() *automock.TenantInputBuilder {
+	return &automock.TenantInputBuilder{}
+}
+
+func unusedCertSubjectBuilder() *automock.CertSubjectInputBuilder {
+	return &automock.CertSubjectInputBuilder{}
 }

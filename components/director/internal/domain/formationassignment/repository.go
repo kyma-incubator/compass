@@ -18,8 +18,8 @@ const tableName string = `public.formation_assignments`
 
 var (
 	idTableColumns        = []string{"id"}
-	updatableTableColumns = []string{"state", "value"}
-	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value"}
+	updatableTableColumns = []string{"state", "value", "error"}
+	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value", "error"}
 	tenantColumn          = "tenant_id"
 )
 
@@ -41,6 +41,7 @@ type repository struct {
 	conditionLister       repo.ConditionTreeLister
 	updaterGlobal         repo.UpdaterGlobal
 	deleter               repo.Deleter
+	deleteConditionTree   repo.DeleterConditionTree
 	existQuerier          repo.ExistQuerier
 	conv                  EntityConverter
 }
@@ -57,6 +58,7 @@ func NewRepository(conv EntityConverter) *repository {
 		conditionLister:       repo.NewConditionTreeListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		updaterGlobal:         repo.NewUpdaterWithEmbeddedTenant(resource.FormationAssignment, tableName, updatableTableColumns, tenantColumn, idTableColumns),
 		deleter:               repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
+		deleteConditionTree:   repo.NewDeleterConditionTreeWithEmbeddedTenant(tableName, tenantColumn),
 		existQuerier:          repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
 		conv:                  conv,
 	}
@@ -138,6 +140,21 @@ func (r *repository) GetAssignmentsForFormationWithStates(ctx context.Context, t
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("formation_id", formationID),
 		repo.NewInConditionForStringValues("state", states),
+	}
+
+	if err := r.lister.List(ctx, resource.FormationAssignment, tenantID, &formationAssignmentCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(formationAssignmentCollection), nil
+}
+
+// GetAssignmentsForFormation retrieves formation assignments matching formation ID `formationID` for tenant with ID `tenantID`
+func (r *repository) GetAssignmentsForFormation(ctx context.Context, tenantID, formationID string) ([]*model.FormationAssignment, error) {
+	var formationAssignmentCollection EntityCollection
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("formation_id", formationID),
 	}
 
 	if err := r.lister.List(ctx, resource.FormationAssignment, tenantID, &formationAssignmentCollection, conditions...); err != nil {
@@ -273,6 +290,10 @@ func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, 
 
 // ListAllForObjectIDs retrieves all FormationAssignment objects for formation with ID `formationID` that have any of the objectIDs as `target` or `source` from the database that are visible for `tenant`
 func (r *repository) ListAllForObjectIDs(ctx context.Context, tenant, formationID string, objectIDs []string) ([]*model.FormationAssignment, error) {
+	if len(objectIDs) == 0 {
+		return nil, nil
+	}
+
 	var entities EntityCollection
 	conditions := repo.And(
 		&repo.ConditionTree{Operand: repo.NewEqualCondition("formation_id", formationID)},
@@ -315,6 +336,17 @@ func (r *repository) Update(ctx context.Context, model *model.FormationAssignmen
 // Delete deletes a Formation Assignment with given ID
 func (r *repository) Delete(ctx context.Context, id, tenantID string) error {
 	return r.deleter.DeleteOne(ctx, resource.FormationAssignment, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+func (r *repository) DeleteAssignmentsForObjectID(ctx context.Context, tenant, formationID, objectID string) error {
+	conditions := repo.And(
+		&repo.ConditionTree{Operand: repo.NewEqualCondition("formation_id", formationID)},
+		repo.Or(repo.ConditionTreesFromConditions([]repo.Condition{
+			repo.NewEqualCondition("source", objectID),
+			repo.NewEqualCondition("target", objectID),
+		})...))
+
+	return r.deleteConditionTree.DeleteConditionTree(ctx, resource.FormationAssignment, tenant, conditions)
 }
 
 // Exists check if a Formation Assignment with given ID exists

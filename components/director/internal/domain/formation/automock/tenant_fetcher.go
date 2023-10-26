@@ -3,7 +3,7 @@
 package automock
 
 import (
-	testing "testing"
+	context "context"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -13,13 +13,13 @@ type TenantFetcher struct {
 	mock.Mock
 }
 
-// FetchOnDemand provides a mock function with given fields: tenant, parentTenant
-func (_m *TenantFetcher) FetchOnDemand(tenant string, parentTenant string) error {
-	ret := _m.Called(tenant, parentTenant)
+// FetchOnDemand provides a mock function with given fields: ctx, tenant, parentTenant
+func (_m *TenantFetcher) FetchOnDemand(ctx context.Context, tenant string, parentTenant string) error {
+	ret := _m.Called(ctx, tenant, parentTenant)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string) error); ok {
-		r0 = rf(tenant, parentTenant)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tenant, parentTenant)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -27,8 +27,12 @@ func (_m *TenantFetcher) FetchOnDemand(tenant string, parentTenant string) error
 	return r0
 }
 
-// NewTenantFetcher creates a new instance of TenantFetcher. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantFetcher(t testing.TB) *TenantFetcher {
+// NewTenantFetcher creates a new instance of TenantFetcher. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTenantFetcher(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *TenantFetcher {
 	mock := &TenantFetcher{}
 	mock.Mock.Test(t)
 

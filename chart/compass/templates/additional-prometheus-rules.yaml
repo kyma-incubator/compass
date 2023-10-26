@@ -122,6 +122,18 @@ spec:
             > 0.3
           labels:
             severity: warning
+      {{- if eq .Values.global.auditlog.tlsOrigination true }}
+        - alert: Auditlog-WorkloadFailures-5xx
+          annotations:
+            description: From source_workload={{`{{`}} $labels.source_workload {{`}}`}} to external Audit Log service ({{`{{`}}
+              $labels.destination_service {{`}}`}}) its 5xx failure rate ({{`{{`}} $value | humanizePercentage {{`}}`}} > 30%) in the past 5 minutes.
+          expr: (sum by (source_workload)(rate(istio_requests_total{destination_service={{ .Values.global.auditlog.host | quote }}, response_code=~"5.*"}[5m]))
+            / sum by (source_workload)(rate(istio_requests_total{destination_service={{ .Values.global.auditlog.host | quote }}}[5m])))
+            > 0.3
+          for: 10m
+          labels:
+            severity: warning
+      {{- end }}
       {{- if eq .Values.global.portieris.isEnabled true }}
         - alert: CompassPortierisDeniedImage
           annotations:
@@ -133,7 +145,7 @@ spec:
       {{- end }}
         - alert: ORDAggregationValidationErrors
           annotations:
-            description: Aggregation for app_id = {{`{{`}} $labels.app_id {{`}}`}}, x-request-id = {{`{{`}} $labels.x_request_id {{`}}`}} failed with error = {{`{{`}} $labels.error {{`}}`}}
+            description: Aggregation for resource_type = {{`{{`}} $labels.resource_type {{`}}`}} and resource_id = {{`{{`}} $labels.resource_id {{`}}`}}, x-request-id = {{`{{`}} $labels.x_request_id {{`}}`}} failed with error = {{`{{`}} $labels.error {{`}}`}}
           expr: delta(compass_ordaggregator_compass_ord_aggregator_job_sync_failure_number[1m]) >= 0
           for: 0m
           labels:

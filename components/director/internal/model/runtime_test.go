@@ -13,6 +13,7 @@ func TestRuntimeRegisterInput_ToRuntime(t *testing.T) {
 	// GIVEN
 	desc := "Sample"
 	id := "foo"
+	appNamespace := "testRegisterNs"
 	creationTimestamp := time.Now()
 	conditionTimestamp := time.Now()
 	conditionStatus := model.RuntimeStatusConditionConnected
@@ -29,7 +30,8 @@ func TestRuntimeRegisterInput_ToRuntime(t *testing.T) {
 				Labels: map[string]interface{}{
 					"test": []string{"val", "val2"},
 				},
-				StatusCondition: &conditionStatus,
+				StatusCondition:      &conditionStatus,
+				ApplicationNamespace: &appNamespace,
 			},
 			Expected: &model.Runtime{
 				Name:        "Foo",
@@ -39,7 +41,8 @@ func TestRuntimeRegisterInput_ToRuntime(t *testing.T) {
 					Condition: conditionStatus,
 					Timestamp: conditionTimestamp,
 				},
-				CreationTimestamp: creationTimestamp,
+				CreationTimestamp:    creationTimestamp,
+				ApplicationNamespace: &appNamespace,
 			},
 		},
 		{
@@ -64,25 +67,27 @@ func TestRuntimeUpdateInput_ToRuntime(t *testing.T) {
 	// GIVEN
 	desc := "Sample"
 	id := "foo"
+	appNamespace := "testUpdateNs"
 	creationTimestamp := time.Now()
 	conditionTimestamp := time.Now()
 	conditionStatus := model.RuntimeStatusConditionConnected
 	testCases := []struct {
 		Name     string
-		Input    *model.RuntimeUpdateInput
-		Expected *model.Runtime
+		Input    model.RuntimeUpdateInput
+		Expected model.Runtime
 	}{
 		{
 			Name: "All properties given",
-			Input: &model.RuntimeUpdateInput{
+			Input: model.RuntimeUpdateInput{
 				Name:        "Foo",
 				Description: &desc,
 				Labels: map[string]interface{}{
 					"test": []string{"val", "val2"},
 				},
-				StatusCondition: &conditionStatus,
+				StatusCondition:      &conditionStatus,
+				ApplicationNamespace: &appNamespace,
 			},
-			Expected: &model.Runtime{
+			Expected: model.Runtime{
 				Name:        "Foo",
 				ID:          id,
 				Description: &desc,
@@ -90,23 +95,21 @@ func TestRuntimeUpdateInput_ToRuntime(t *testing.T) {
 					Condition: conditionStatus,
 					Timestamp: conditionTimestamp,
 				},
-				CreationTimestamp: creationTimestamp,
+				CreationTimestamp:    creationTimestamp,
+				ApplicationNamespace: &appNamespace,
 			},
-		},
-		{
-			Name:     "Nil",
-			Input:    nil,
-			Expected: nil,
 		},
 	}
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+			rtm := model.Runtime{}
+
 			// WHEN
-			result := testCase.Input.ToRuntime(id, creationTimestamp, conditionTimestamp)
+			rtm.SetFromUpdateInput(testCase.Input, id, creationTimestamp, conditionTimestamp)
 
 			// THEN
-			assert.Equal(t, testCase.Expected, result)
+			assert.Equal(t, testCase.Expected, rtm)
 		})
 	}
 }

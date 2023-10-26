@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/product"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/product/automock"
@@ -37,8 +39,8 @@ func TestPgRepository_Create(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc:       product.NewRepository,
-		ModelEntity:               fixProductModel(),
-		DBEntity:                  fixEntityProduct(),
+		ModelEntity:               fixProductModelForApp(),
+		DBEntity:                  fixEntityProductForApp(),
 		NilModelEntity:            fixNilModelProduct(),
 		TenantID:                  tenantID,
 		DisableConverterErrorTest: true,
@@ -62,8 +64,8 @@ func TestPgRepository_CreateGlobal(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc:       product.NewRepository,
-		ModelEntity:               fixProductModel(),
-		DBEntity:                  fixEntityProduct(),
+		ModelEntity:               fixProductModelForApp(),
+		DBEntity:                  fixEntityProductForApp(),
 		NilModelEntity:            fixNilModelProduct(),
 		MethodName:                "CreateGlobal",
 		DisableConverterErrorTest: true,
@@ -80,7 +82,7 @@ func TestPgRepository_Update(t *testing.T) {
 		Name: "Update Product",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.products SET title = ?, short_description = ?, vendor = ?, parent = ?, labels = ?, correlation_ids = ?, documentation_labels = ? WHERE id = ? AND (id IN (SELECT id FROM products_tenants WHERE tenant_id = ? AND owner = true))`),
+				Query:         regexp.QuoteMeta(`UPDATE public.products SET title = ?, short_description = ?, description = ?, vendor = ?, parent = ?, labels = ?, correlation_ids = ?, tags = ?, documentation_labels = ? WHERE id = ? AND (id IN (SELECT id FROM products_tenants WHERE tenant_id = ? AND owner = true))`),
 				Args:          append(fixProductUpdateArgs(), entity.ID, tenantID),
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
@@ -90,7 +92,7 @@ func TestPgRepository_Update(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc:       product.NewRepository,
-		ModelEntity:               fixProductModel(),
+		ModelEntity:               fixProductModelForApp(),
 		DBEntity:                  entity,
 		NilModelEntity:            fixNilModelProduct(),
 		TenantID:                  tenantID,
@@ -107,7 +109,7 @@ func TestPgRepository_UpdateGlobal(t *testing.T) {
 		Name: "Update Product Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.products SET title = ?, short_description = ?, vendor = ?, parent = ?, labels = ?, correlation_ids = ?, documentation_labels = ? WHERE id = ?`),
+				Query:         regexp.QuoteMeta(`UPDATE public.products SET title = ?, short_description = ?, description = ?, vendor = ?, parent = ?, labels = ?, correlation_ids = ?, tags = ?, documentation_labels = ? WHERE id = ?`),
 				Args:          append(fixProductUpdateArgs(), entity.ID),
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
@@ -117,7 +119,7 @@ func TestPgRepository_UpdateGlobal(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc:       product.NewRepository,
-		ModelEntity:               fixProductModel(),
+		ModelEntity:               fixProductModelForApp(),
 		DBEntity:                  entity,
 		NilModelEntity:            fixNilModelProduct(),
 		DisableConverterErrorTest: true,
@@ -206,7 +208,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		Name: "Get Product",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, short_description, vendor, parent, labels, correlation_ids, id, documentation_labels FROM public.products WHERE id = $1 AND (id IN (SELECT id FROM products_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, title, short_description, description, vendor, parent, labels, correlation_ids, id, tags, documentation_labels FROM public.products WHERE id = $1 AND (id IN (SELECT id FROM products_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{productID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -221,8 +223,8 @@ func TestPgRepository_GetByID(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc: product.NewRepository,
-		ExpectedModelEntity: fixProductModel(),
-		ExpectedDBEntity:    fixEntityProduct(),
+		ExpectedModelEntity: fixProductModelForApp(),
+		ExpectedDBEntity:    fixEntityProductForApp(),
 		MethodArgs:          []interface{}{tenantID, productID},
 	}
 
@@ -234,7 +236,7 @@ func TestPgRepository_GetByIDGlobal(t *testing.T) {
 		Name: "Get Product Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, short_description, vendor, parent, labels, correlation_ids, id, documentation_labels FROM public.products WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, title, short_description, description, vendor, parent, labels, correlation_ids, id, tags, documentation_labels FROM public.products WHERE id = $1`),
 				Args:     []driver.Value{productID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -249,8 +251,8 @@ func TestPgRepository_GetByIDGlobal(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc: product.NewRepository,
-		ExpectedModelEntity: fixProductModel(),
-		ExpectedDBEntity:    fixEntityProduct(),
+		ExpectedModelEntity: fixProductModelForApp(),
+		ExpectedDBEntity:    fixEntityProductForApp(),
 		MethodName:          "GetByIDGlobal",
 		MethodArgs:          []interface{}{productID},
 	}
@@ -258,16 +260,16 @@ func TestPgRepository_GetByIDGlobal(t *testing.T) {
 	suite.Run(t)
 }
 
-func TestPgRepository_ListByApplicationID(t *testing.T) {
-	suite := testdb.RepoListTestSuite{
-		Name: "List Products",
+func TestPgRepository_ListByResourceID(t *testing.T) {
+	suiteForApp := testdb.RepoListTestSuite{
+		Name: "List Products for Application",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, short_description, vendor, parent, labels, correlation_ids, id, documentation_labels FROM public.products WHERE app_id = $1 AND (id IN (SELECT id FROM products_tenants WHERE tenant_id = $2)) FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, title, short_description, description, vendor, parent, labels, correlation_ids, id, tags, documentation_labels FROM public.products WHERE app_id = $1 AND (id IN (SELECT id FROM products_tenants WHERE tenant_id = $2)) FOR UPDATE`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixProductColumns()).AddRow(fixProductRowWithTitle("title1")...).AddRow(fixProductRowWithTitle("title2")...)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixProductColumns()).AddRow(fixProductRowWithTitleForApp("title1")...).AddRow(fixProductRowWithTitleForApp("title2")...)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixProductColumns())}
@@ -278,13 +280,39 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc:   product.NewRepository,
-		ExpectedModelEntities: []interface{}{fixProductModelWithTitle("title1"), fixProductModelWithTitle("title2")},
-		ExpectedDBEntities:    []interface{}{fixEntityProductWithTitle("title1"), fixEntityProductWithTitle("title2")},
-		MethodArgs:            []interface{}{tenantID, appID},
-		MethodName:            "ListByApplicationID",
+		ExpectedModelEntities: []interface{}{fixProductModelWithTitleForApp("title1"), fixProductModelWithTitleForApp("title2")},
+		ExpectedDBEntities:    []interface{}{fixEntityProductWithTitleForApp("title1"), fixEntityProductWithTitleForApp("title2")},
+		MethodArgs:            []interface{}{tenantID, appID, resource.Application},
+		MethodName:            "ListByResourceID",
 	}
 
-	suite.Run(t)
+	suiteForAppTemplateVersion := testdb.RepoListTestSuite{
+		Name: "List Products for Application Template Version",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, title, short_description, description, vendor, parent, labels, correlation_ids, id, tags, documentation_labels FROM public.products WHERE app_template_version_id = $1 FOR UPDATE`),
+				Args:     []driver.Value{appTemplateVersionID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixProductColumns()).AddRow(fixProductRowWithTitleForAppTemplateVersion("title1")...).AddRow(fixProductRowWithTitleForAppTemplateVersion("title2")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixProductColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   product.NewRepository,
+		ExpectedModelEntities: []interface{}{fixProductModelWithTitleForAppTemplateVersion("title1"), fixProductModelWithTitleForAppTemplateVersion("title2")},
+		ExpectedDBEntities:    []interface{}{fixEntityProductWithTitleForAppTemplateVersion("title1"), fixEntityProductWithTitleForAppTemplateVersion("title2")},
+		MethodArgs:            []interface{}{tenantID, appTemplateVersionID, resource.ApplicationTemplateVersion},
+		MethodName:            "ListByResourceID",
+	}
+
+	suiteForApp.Run(t)
+	suiteForAppTemplateVersion.Run(t)
 }
 
 func TestPgRepository_ListGlobal(t *testing.T) {
@@ -292,11 +320,11 @@ func TestPgRepository_ListGlobal(t *testing.T) {
 		Name: "List Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, short_description, vendor, parent, labels, correlation_ids, id, documentation_labels FROM public.products WHERE app_id IS NULL FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, title, short_description, description, vendor, parent, labels, correlation_ids, id, tags, documentation_labels FROM public.products WHERE app_id IS NULL FOR UPDATE`),
 				Args:     []driver.Value{},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixProductColumns()).AddRow(fixProductRowWithTitle("title1")...).AddRow(fixProductRowWithTitle("title2")...)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixProductColumns()).AddRow(fixProductRowWithTitleForApp("title1")...).AddRow(fixProductRowWithTitleForApp("title2")...)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixProductColumns())}
@@ -307,8 +335,8 @@ func TestPgRepository_ListGlobal(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc:   product.NewRepository,
-		ExpectedModelEntities: []interface{}{fixProductModelWithTitle("title1"), fixProductModelWithTitle("title2")},
-		ExpectedDBEntities:    []interface{}{fixEntityProductWithTitle("title1"), fixEntityProductWithTitle("title2")},
+		ExpectedModelEntities: []interface{}{fixProductModelWithTitleForApp("title1"), fixProductModelWithTitleForApp("title2")},
+		ExpectedDBEntities:    []interface{}{fixEntityProductWithTitleForApp("title1"), fixEntityProductWithTitleForApp("title2")},
 		MethodArgs:            []interface{}{},
 		MethodName:            "ListGlobal",
 	}

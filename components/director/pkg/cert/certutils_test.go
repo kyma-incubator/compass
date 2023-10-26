@@ -10,7 +10,7 @@ import (
 )
 
 func TestSubjectExtraction(t *testing.T) {
-	for _, testCase := range []struct {
+	testCases := []struct {
 		subject          string
 		orgUnitPattern   string
 		orgRegionPattern string
@@ -114,8 +114,10 @@ func TestSubjectExtraction(t *testing.T) {
 			orgUnits:   []string{},
 			commonName: "",
 		},
-	} {
-		t.Run("should extract subject values", func(t *testing.T) {
+	}
+
+	for _, testCase := range testCases {
+		t.Run("should extract subject values from subject: "+testCase.subject, func(t *testing.T) {
 			assert.Equal(t, testCase.country, cert.GetCountry(testCase.subject))
 			assert.Equal(t, testCase.locality, cert.GetLocality(testCase.subject))
 			assert.Equal(t, testCase.province, cert.GetProvince(testCase.subject))

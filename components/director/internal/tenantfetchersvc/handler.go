@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -38,15 +40,16 @@ type TenantSubscriber interface {
 // HandlerConfig is the configuration required by the tenant handler.
 // It includes configurable parameters for incoming requests, including different tenant IDs json properties, and path parameters.
 type HandlerConfig struct {
-	TenantOnDemandHandlerEndpoint      string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{parentTenantId}/{tenantId}"`
-	RegionalHandlerEndpoint            string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
-	DependenciesEndpoint               string `envconfig:"APP_REGIONAL_DEPENDENCIES_ENDPOINT,default=/v1/regional/{region}/dependencies"`
-	TenantPathParam                    string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
-	ParentTenantPathParam              string `envconfig:"APP_PARENT_TENANT_PATH_PARAM,default=parentTenantId"`
-	RegionPathParam                    string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
-	XsAppNamePathParam                 string `envconfig:"APP_TENANT_FETCHER_XSAPPNAME_PATH,default=xsappname"`
-	OmitDependenciesCallbackParam      string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_NAME"`
-	OmitDependenciesCallbackParamValue string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_VALUE"`
+	TenantWithParentOnDemandHandlerEndpoint    string `envconfig:"APP_TENANT_WITH_PARENT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{parentTenantId}/{tenantId}"`
+	TenantWithoutParentOnDemandHandlerEndpoint string `envconfig:"APP_TENANT_WITHOUT_PARENT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{tenantId}"`
+	RegionalHandlerEndpoint                    string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
+	DependenciesEndpoint                       string `envconfig:"APP_REGIONAL_DEPENDENCIES_ENDPOINT,default=/v1/regional/{region}/dependencies"`
+	TenantPathParam                            string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
+	ParentTenantPathParam                      string `envconfig:"APP_PARENT_TENANT_PATH_PARAM,default=parentTenantId"`
+	RegionPathParam                            string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
+	XsAppNamePathParam                         string `envconfig:"APP_TENANT_FETCHER_XSAPPNAME_PATH,default=xsappname"`
+	OmitDependenciesCallbackParam              string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_NAME"`
+	OmitDependenciesCallbackParamValue         string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_VALUE"`
 
 	Database persistence.DatabaseConfig
 
@@ -67,6 +70,7 @@ type TenantProviderConfig struct {
 	SubaccountTenantIDProperty          string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY,default=subaccountTenantId"`
 	CustomerIDProperty                  string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY,default=customerId"`
 	SubdomainProperty                   string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY,default=subdomain"`
+	LicenseTypeProperty                 string `envconfig:"APP_TENANT_PROVIDER_LICENSE_TYPE_PROPERTY,default=licenseType"`
 	TenantProvider                      string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
 	SubscriptionProviderIDProperty      string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY,default=subscriptionProviderIdProperty"`
 	ProviderSubaccountIDProperty        string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY,default=providerSubaccountIdProperty"`
@@ -115,14 +119,16 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 
 	parentTenantID, ok := vars[h.config.ParentTenantPathParam]
 	if !ok || len(parentTenantID) == 0 {
-		log.C(ctx).Error("Parent tenant path parameter is missing from request")
-		http.Error(writer, "Parent tenant ID path parameter is missing from request", http.StatusBadRequest)
-		return
+		parentTenantID = ""
 	}
 
 	log.C(ctx).Infof("Fetching create event for tenant with ID %s", tenantID)
 
 	if err := h.fetcher.SynchronizeTenant(ctx, parentTenantID, tenantID); err != nil {
+		if apperrors.IsEmptyParentIDError(err) {
+			http.Error(writer, "Parent tenant ID path parameter is missing from request", http.StatusBadRequest)
+			return
+		}
 		log.C(ctx).WithError(err).Errorf("Error while processing request for creation of tenant %s: %v", tenantID, err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
@@ -233,6 +239,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		h.config.TenantIDProperty:                    true,
 		h.config.SubaccountTenantIDProperty:          false,
 		h.config.SubdomainProperty:                   true,
+		h.config.LicenseTypeProperty:                 false,
 		h.config.CustomerIDProperty:                  false,
 		h.config.SubscriptionProviderIDProperty:      true,
 		h.config.ProviderSubaccountIDProperty:        true,
@@ -247,6 +254,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		AccountTenantID:             properties[h.config.TenantIDProperty],
 		SubaccountTenantID:          properties[h.config.SubaccountTenantIDProperty],
 		CustomerTenantID:            properties[h.config.CustomerIDProperty],
+		SubscriptionLcenseType:      properties[h.config.LicenseTypeProperty],
 		Subdomain:                   properties[h.config.SubdomainProperty],
 		SubscriptionProviderID:      properties[h.config.SubscriptionProviderIDProperty],
 		ProviderSubaccountID:        properties[h.config.ProviderSubaccountIDProperty],

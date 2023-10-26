@@ -18,6 +18,7 @@ type Application struct {
 	HealthCheckURL        *string
 	IntegrationSystemID   *string
 	ApplicationTemplateID *string
+	TenantBusinessTypeID  *string
 	SystemNumber          *string
 	LocalTenantID         *string
 	BaseURL               *string         `json:"baseUrl"`
@@ -27,6 +28,7 @@ type Application struct {
 	Type                  string          `json:"-"`
 	// SystemStatus shows whether the on-premise system is reachable or unreachable
 	SystemStatus        *string
+	Tags                json.RawMessage `json:"tags"`
 	DocumentationLabels json.RawMessage `json:"documentationLabels"`
 
 	*BaseEntity
@@ -44,6 +46,7 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	}
 	app.Status.Condition = getApplicationStatusConditionOrDefault(update.StatusCondition)
 	app.Status.Timestamp = timestamp
+	app.SetUpdatedAt(timestamp)
 
 	if update.Description != nil {
 		app.Description = update.Description
@@ -74,6 +77,9 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	}
 	if update.LocalTenantID != nil {
 		app.LocalTenantID = update.LocalTenantID
+	}
+	if update.Tags != nil {
+		app.Tags = update.Tags
 	}
 	if update.DocumentationLabels != nil {
 		app.DocumentationLabels = update.DocumentationLabels
@@ -137,6 +143,7 @@ type ApplicationRegisterInput struct {
 	Webhooks             []*WebhookInput
 	Bundles              []*BundleCreateInput
 	IntegrationSystemID  *string
+	TenantBusinessTypeID *string
 	StatusCondition      *ApplicationStatusCondition
 	BaseURL              *string
 	ApplicationNamespace *string
@@ -144,6 +151,7 @@ type ApplicationRegisterInput struct {
 	OrdLabels            json.RawMessage
 	CorrelationIDs       json.RawMessage
 	SystemStatus         *string
+	Tags                 json.RawMessage
 	DocumentationLabels  json.RawMessage
 	LocalTenantID        *string
 }
@@ -161,11 +169,12 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id string)
 	}
 
 	return &Application{
-		Name:                i.Name,
-		Description:         i.Description,
-		HealthCheckURL:      i.HealthCheckURL,
-		IntegrationSystemID: i.IntegrationSystemID,
-		ProviderName:        i.ProviderName,
+		Name:                 i.Name,
+		Description:          i.Description,
+		HealthCheckURL:       i.HealthCheckURL,
+		IntegrationSystemID:  i.IntegrationSystemID,
+		TenantBusinessTypeID: i.TenantBusinessTypeID,
+		ProviderName:         i.ProviderName,
 		Status: &ApplicationStatus{
 			Condition: getApplicationStatusConditionOrDefault(i.StatusCondition),
 			Timestamp: timestamp,
@@ -177,6 +186,7 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id string)
 		SystemNumber:         i.SystemNumber,
 		LocalTenantID:        i.LocalTenantID,
 		SystemStatus:         i.SystemStatus,
+		Tags:                 i.Tags,
 		DocumentationLabels:  i.DocumentationLabels,
 		BaseEntity: &BaseEntity{
 			ID:    id,
@@ -206,6 +216,7 @@ type ApplicationUpdateInput struct {
 	OrdLabels            json.RawMessage
 	CorrelationIDs       json.RawMessage
 	SystemStatus         *string
+	Tags                 json.RawMessage
 	DocumentationLabels  json.RawMessage
 	LocalTenantID        *string
 }

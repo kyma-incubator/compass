@@ -7,7 +7,11 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
+
+	"github.com/avast/retry-go/v4"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/paging"
@@ -15,6 +19,7 @@ import (
 )
 
 // APIClient missing godoc
+//
 //go:generate mockery --name=APIClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIClient interface {
 	Do(*http.Request, string) (*http.Response, error)
@@ -29,6 +34,7 @@ type APIConfig struct {
 	PagingSkipParam string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SKIP_PARAM"`
 	PagingSizeParam string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE_PARAM"`
 	SystemSourceKey string        `envconfig:"APP_SYSTEM_INFORMATION_SOURCE_KEY"`
+	SystemRPSLimit  uint64        `envconfig:"default=15,APP_SYSTEM_INFORMATION_RPS_LIMIT"`
 }
 
 // Client missing godoc
@@ -45,9 +51,13 @@ func NewClient(apiConfig APIConfig, client APIClient) *Client {
 	}
 }
 
+var currentRPS uint64
+
 // FetchSystemsForTenant fetches systems from the service
-func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
+func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string, mutex *sync.Mutex) ([]System, error) {
+	mutex.Lock()
 	qp := c.buildFilter()
+	mutex.Unlock()
 	log.C(ctx).Infof("Fetching systems for tenant %s with query: %s", tenant, qp)
 
 	var systems []System
@@ -97,7 +107,41 @@ func (c *Client) fetchSystemsForTenant(ctx context.Context, url, tenant string) 
 
 func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, tenant string) func(string) (uint64, error) {
 	return func(url string) (uint64, error) {
-		currentSystems, err := c.fetchSystemsForTenant(ctx, url, tenant)
+		err := retry.Do(
+			func() error {
+				if atomic.LoadUint64(&currentRPS) >= c.apiConfig.SystemRPSLimit {
+					return errors.New("RPS limit reached")
+				} else {
+					atomic.AddUint64(&currentRPS, 1)
+					return nil
+				}
+			},
+			retry.Attempts(0),
+			retry.Delay(time.Millisecond*100),
+		)
+
+		if err != nil {
+			return 0, err
+		}
+
+		var currentSystems []System
+		err = retry.Do(
+			func() error {
+				currentSystems, err = c.fetchSystemsForTenant(ctx, url, tenant)
+				if err != nil && err.Error() == "unexpected status code: expected: 200, but got: 401" {
+					return retry.Unrecoverable(err)
+				}
+				return err
+			},
+			retry.Attempts(3),
+			retry.Delay(time.Second),
+			retry.OnRetry(func(n uint, err error) {
+				log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
+			}),
+		)
+
+		atomic.AddUint64(&currentRPS, ^uint64(0))
+
 		if err != nil {
 			return 0, err
 		}
@@ -108,20 +152,56 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 }
 
 func (c *Client) buildFilter() map[string]string {
-	var queryBuilder strings.Builder
+	var filterBuilder FilterBuilder
 
-	for idx, at := range ApplicationTemplates {
-		lbl, ok := at.Labels[ApplicationTemplateLabelFilter]
+	for _, at := range ApplicationTemplates {
+		appTemplateLblFilter, ok := at.Labels[ApplicationTemplateLabelFilter]
 		if !ok {
 			continue
 		}
 
-		queryBuilder.WriteString(fmt.Sprintf(" %s eq '%s' ", c.apiConfig.SystemSourceKey, lbl.Value))
+		appTemplateLblFilterArr, ok := appTemplateLblFilter.Value.([]interface{})
+		if !ok {
+			continue
+		}
 
-		if idx < len(ApplicationTemplates)-1 {
-			queryBuilder.WriteString("or")
+		for _, lbl := range appTemplateLblFilterArr {
+			appTemplateLblStr, ok := lbl.(string)
+			if !ok {
+				continue
+			}
+
+			expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", appTemplateLblStr)
+
+			lblExists := false
+			minTime := time.Now()
+
+			for _, systemTimestamps := range SystemSynchronizationTimestamps {
+				if timestamp, ok := systemTimestamps[appTemplateLblStr]; ok {
+					lblExists = true
+					if timestamp.LastSyncTimestamp.Before(minTime) {
+						minTime = timestamp.LastSyncTimestamp
+					}
+				}
+			}
+
+			if lblExists {
+				expr2 := filterBuilder.NewExpression("lastChangeDateTime", "gt", minTime.String())
+				filterBuilder.addFilter(expr1, expr2)
+			} else {
+				filterBuilder.addFilter(expr1)
+			}
 		}
 	}
+	result := map[string]string{"fetchAcrossZones": "true"}
 
-	return map[string]string{"$filter": fmt.Sprintf(c.apiConfig.FilterCriteria, queryBuilder.String()), "fetchAcrossZones": "true"}
+	if len(c.apiConfig.FilterCriteria) > 0 {
+		result["$filter"] = fmt.Sprintf(c.apiConfig.FilterCriteria, filterBuilder.buildFilterQuery())
+	}
+
+	selectFilter := strings.Join(SelectFilter, ",")
+	if len(selectFilter) > 0 {
+		result["$select"] = selectFilter
+	}
+	return result
 }

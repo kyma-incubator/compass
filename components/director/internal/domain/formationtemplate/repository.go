@@ -16,11 +16,12 @@ const (
 	tableName      string = `public.formation_templates`
 	tenantIDColumn string = "tenant_id"
 	idColumn       string = "id"
+	nameColumn     string = "name"
 )
 
 var (
 	idTableColumns            = []string{idColumn}
-	updatableTableColumns     = []string{"name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind", "leading_product_ids"}
+	updatableTableColumns     = []string{"name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind", "leading_product_ids", "supports_reset"}
 	tenantTableColumn         = []string{tenantIDColumn}
 	tableColumnsWithoutTenant = append(idTableColumns, updatableTableColumns...)
 	tableColumns              = append(tableColumnsWithoutTenant, tenantTableColumn...)
@@ -134,8 +135,8 @@ func (r *repository) GetByNameAndTenant(ctx context.Context, templateName, tenan
 	return result, nil
 }
 
-// List queries for all FormationTemplate sorted by ID and paginated by the pageSize and cursor parameters
-func (r *repository) List(ctx context.Context, tenantID string, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
+// List queries for all FormationTemplate filtered by name, sorted by ID and paginated by the pageSize and cursor parameters
+func (r *repository) List(ctx context.Context, name *string, tenantID string, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
 	var entityCollection EntityCollection
 
 	var conditions *repo.ConditionTree
@@ -143,6 +144,10 @@ func (r *repository) List(ctx context.Context, tenantID string, pageSize int, cu
 		conditions = &repo.ConditionTree{Operand: repo.NewNullCondition(tenantIDColumn)}
 	} else {
 		conditions = repo.Or(&repo.ConditionTree{Operand: repo.NewNullCondition(tenantIDColumn)}, &repo.ConditionTree{Operand: repo.NewEqualCondition(tenantIDColumn, tenantID)})
+	}
+
+	if name != nil {
+		conditions = repo.And(conditions, &repo.ConditionTree{Operand: repo.NewEqualCondition(nameColumn, *name)})
 	}
 
 	page, totalCount, err := r.pageableQuerierGlobal.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, idColumn, &entityCollection, conditions)

@@ -27,9 +27,9 @@ const (
 )
 
 var (
-	applicationColumns    = []string{"id", "app_template_id", "system_number", "local_tenant_id", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "application_namespace", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
-	updatableColumns      = []string{"name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "application_namespace", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels", "system_number", "local_tenant_id"}
-	upsertableColumns     = []string{"name", "description", "status_condition", "system_status", "provider_name", "base_url", "application_namespace", "labels"}
+	applicationColumns    = []string{"id", "app_template_id", "system_number", "local_tenant_id", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "application_namespace", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "tags", "documentation_labels", "tenant_business_type_id"}
+	updatableColumns      = []string{"name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "application_namespace", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "tags", "documentation_labels", "system_number", "local_tenant_id"}
+	upsertableColumns     = []string{"name", "description", "status_condition", "system_status", "provider_name", "base_url", "local_tenant_id", "application_namespace", "labels", "tenant_business_type_id"}
 	matchingSystemColumns = []string{"system_number"}
 )
 
@@ -164,6 +164,22 @@ func (r *pgRepository) GetByIDForUpdate(ctx context.Context, tenant, id string) 
 func (r *pgRepository) GetBySystemNumber(ctx context.Context, tenant, systemNumber string) (*model.Application, error) {
 	var appEnt Entity
 	if err := r.singleGetter.Get(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("system_number", systemNumber)}, repo.NoOrderBy, &appEnt); err != nil {
+		return nil, err
+	}
+
+	appModel := r.conv.FromEntity(&appEnt)
+
+	return appModel, nil
+}
+
+// GetByLocalTenantIDAndAppTemplateID returns the application with matching local tenant id and app template id from the Compass DB
+func (r *pgRepository) GetByLocalTenantIDAndAppTemplateID(ctx context.Context, tenant, localTenantID, appTemplateID string) (*model.Application, error) {
+	var appEnt Entity
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("local_tenant_id", localTenantID),
+		repo.NewEqualCondition("app_template_id", appTemplateID),
+	}
+	if err := r.singleGetter.Get(ctx, resource.Application, tenant, conditions, repo.NoOrderBy, &appEnt); err != nil {
 		return nil, err
 	}
 

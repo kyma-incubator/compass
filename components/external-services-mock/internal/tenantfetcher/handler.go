@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"sync"
 
+	"k8s.io/utils/strings/slices"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/pkg/errors"
@@ -24,16 +26,18 @@ const (
 )
 
 type Handler struct {
-	mutex            sync.Mutex
-	mockedEvents     map[string][][]byte
-	tenantOnDemandID string
+	mutex                    sync.Mutex
+	mockedEvents             map[string][][]byte
+	allowedTenantOnDemandIDs []string
+	defaultTenantID          string
 }
 
-func NewHandler(tenantOnDemandID string) *Handler {
+func NewHandler(allowedTenantOnDemandIDs []string, defaultTenantID string) *Handler {
 	return &Handler{
-		mutex:            sync.Mutex{},
-		mockedEvents:     make(map[string][][]byte),
-		tenantOnDemandID: tenantOnDemandID,
+		mutex:                    sync.Mutex{},
+		mockedEvents:             make(map[string][][]byte),
+		allowedTenantOnDemandIDs: allowedTenantOnDemandIDs,
+		defaultTenantID:          defaultTenantID,
 	}
 }
 
@@ -73,8 +77,8 @@ func (s *Handler) HandleFunc(eventType string) func(rw http.ResponseWriter, req 
 		rw.WriteHeader(http.StatusOK)
 
 		resp := []byte("[]")
-		if isSpecificSubaccountBeingFetched(req, eventType) {
-			resp = getMockEventForSubaccount(req, s.tenantOnDemandID)
+		if ok, entity := isSpecificSubaccountBeingFetched(req, eventType); ok {
+			resp = s.getMockEventForSubaccount(entity)
 		} else if events, found := s.mockedEvents[eventType]; found && len(events) > 0 {
 			resp = events[0]
 			events = events[1:]
@@ -99,25 +103,34 @@ func (s *Handler) HandleReset(eventType string) func(rw http.ResponseWriter, req
 	}
 }
 
-func isSpecificSubaccountBeingFetched(req *http.Request, eventType string) bool {
+func isSpecificSubaccountBeingFetched(req *http.Request, eventType string) (bool, string) {
 	entityIdParam := req.URL.Query().Get("entityId")
-	return entityIdParam != "" && eventType == SubaccountCreationEventType
+	return entityIdParam != "" && eventType == SubaccountCreationEventType, entityIdParam
 }
 
-func getMockEventForSubaccount(req *http.Request, tenantOnDemandID string) []byte {
-	subaccountID := req.URL.Query().Get("entityId")
+func (s *Handler) getMockEventForSubaccount(tenantOnDemandID string) []byte {
 	mockSubaccountEventPattern := `
 {
-	"eventData": {
-		"guid": "%s",
-		"displayName": "%s",
-		"subdomain": "%s",
-		"parentGuid": "%s",
-		"region": "%s"
-	},
-	"globalAccountGUID": "%s",
-	"type": "Subaccount"
+    "totalResults": 1,
+	"totalPages": 1,
+	"pageNum": 0,
+	"morePages": false,
+	"events": [
+		{ 
+			"eventData": {
+				"guid": "%s",
+				"displayName": "%s",
+				"subdomain": "%s",
+				"licenseType": "%s",
+				"parentGuid": "%s",
+				"region": "%s"
+           	},
+			"globalAccountGUID": "%s",
+			"type": "Subaccount"
+		}
+	]
 }`
+
 	emptyTenantProviderResponse := `
 {
 	"total": 0,
@@ -126,8 +139,9 @@ func getMockEventForSubaccount(req *http.Request, tenantOnDemandID string) []byt
 	"morePages": false,
 	"events": []
 }`
-	if subaccountID == tenantOnDemandID {
-		mockedEvent := fmt.Sprintf(mockSubaccountEventPattern, subaccountID, "Subaccount on demand", "subdomain", "SubaacountOnDemandParent", "region", "SubaacountOnDemandParent")
+
+	if slices.Contains(s.allowedTenantOnDemandIDs, tenantOnDemandID) {
+		mockedEvent := fmt.Sprintf(mockSubaccountEventPattern, tenantOnDemandID, "Subaccount on demand", "subdomain", "LICENSETYPE", s.defaultTenantID, "region", s.defaultTenantID)
 		return []byte(mockedEvent)
 	}
 	return []byte(emptyTenantProviderResponse)

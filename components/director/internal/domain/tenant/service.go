@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -18,9 +19,12 @@ const (
 	SubdomainLabelKey = "subdomain"
 	// RegionLabelKey is the key of the tenant label for region.
 	RegionLabelKey = "region"
+	// LicenseTypeLabelKey is the key of the tenant label for licensetype.
+	LicenseTypeLabelKey = "licensetype"
 )
 
 // TenantMappingRepository is responsible for the repo-layer tenant operations.
+//
 //go:generate mockery --name=TenantMappingRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantMappingRepository interface {
 	UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) error
@@ -36,22 +40,27 @@ type TenantMappingRepository interface {
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 	ListByExternalTenants(ctx context.Context, externalTenant []string) ([]*model.BusinessTenantMapping, error)
 	ListByParentAndType(ctx context.Context, parentID string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
+	ListByType(ctx context.Context, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
 	GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error)
+	GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 }
 
 // LabelUpsertService is responsible for creating, or updating already existing labels, and their label definitions.
+//
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
 // LabelRepository is responsible for the repo-layer label operations.
+//
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
 // UIDService is responsible for generating GUIDs, which will be used as internal tenant IDs when tenants are created.
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -66,22 +75,25 @@ type labeledService struct {
 type service struct {
 	uidService        UIDService
 	tenantMappingRepo TenantMappingRepository
+	converter         BusinessTenantMappingConverter
 }
 
 // NewService returns a new object responsible for service-layer tenant operations.
-func NewService(tenantMapping TenantMappingRepository, uidService UIDService) *service {
+func NewService(tenantMapping TenantMappingRepository, uidService UIDService, converter BusinessTenantMappingConverter) *service {
 	return &service{
 		uidService:        uidService,
 		tenantMappingRepo: tenantMapping,
+		converter:         converter,
 	}
 }
 
 // NewServiceWithLabels returns a new entity responsible for service-layer tenant operations, including operations with labels like listing all labels related to the given tenant.
-func NewServiceWithLabels(tenantMapping TenantMappingRepository, uidService UIDService, labelRepo LabelRepository, labelUpsertSvc LabelUpsertService) *labeledService {
+func NewServiceWithLabels(tenantMapping TenantMappingRepository, uidService UIDService, labelRepo LabelRepository, labelUpsertSvc LabelUpsertService, converter BusinessTenantMappingConverter) *labeledService {
 	return &labeledService{
 		service: service{
 			uidService:        uidService,
 			tenantMappingRepo: tenantMapping,
+			converter:         converter,
 		},
 		labelRepo:      labelRepo,
 		labelUpsertSvc: labelUpsertSvc,
@@ -116,6 +128,11 @@ func (s *service) List(ctx context.Context) ([]*model.BusinessTenantMapping, err
 // ListsByExternalIDs returns all tenants for provided external IDs.
 func (s *service) ListsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error) {
 	return s.tenantMappingRepo.ListByExternalTenants(ctx, ids)
+}
+
+// ListsByType returns all tenants for provided external IDs.
+func (s *service) ListByType(ctx context.Context, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error) {
+	return s.tenantMappingRepo.ListByType(ctx, tenantType)
 }
 
 // ListPageBySearchTerm returns all tenants present in the Compass storage.
@@ -179,18 +196,20 @@ func (s *service) GetCustomerIDParentRecursively(ctx context.Context, tenantID s
 	return s.tenantMappingRepo.GetCustomerIDParentRecursively(ctx, tenantID)
 }
 
+// GetParentRecursivelyByExternalTenant gets the top parent for a given external tenant
+func (s *service) GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
+	return s.tenantMappingRepo.GetParentRecursivelyByExternalTenant(ctx, externalTenant)
+}
+
 // CreateTenantAccessForResource creates a tenant access for a single resource.Type
-func (s *service) CreateTenantAccessForResource(ctx context.Context, tenantID, resourceID string, isOwner bool, resourceType resource.Type) error {
+func (s *service) CreateTenantAccessForResource(ctx context.Context, tenantAccess *model.TenantAccess) error {
+	resourceType := tenantAccess.ResourceType
 	m2mTable, ok := resourceType.TenantAccessTable()
 	if !ok {
 		return errors.Errorf("entity %q does not have access table", resourceType)
 	}
 
-	ta := &repo.TenantAccess{
-		TenantID:   tenantID,
-		ResourceID: resourceID,
-		Owner:      isOwner,
-	}
+	ta := s.converter.TenantAccessToEntity(tenantAccess)
 
 	if err := repo.CreateSingleTenantAccess(ctx, m2mTable, ta); err != nil {
 		return errors.Wrapf(err, "while creating tenant acccess for resource type %q with ID %q for tenant %q", string(resourceType), ta.ResourceID, ta.TenantID)
@@ -199,14 +218,66 @@ func (s *service) CreateTenantAccessForResource(ctx context.Context, tenantID, r
 	return nil
 }
 
+// CreateTenantAccessForResourceRecursively creates a tenant access for a single resource.Type recursively
+func (s *service) CreateTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error {
+	resourceType := tenantAccess.ResourceType
+	m2mTable, ok := resourceType.TenantAccessTable()
+	if !ok {
+		return errors.Errorf("entity %q does not have access table", resourceType)
+	}
+
+	ta := s.converter.TenantAccessToEntity(tenantAccess)
+
+	if err := repo.CreateTenantAccessRecursively(ctx, m2mTable, ta); err != nil {
+		return errors.Wrapf(err, "while creating tenant acccess for resource type %q with ID %q for tenant %q", string(resourceType), ta.ResourceID, ta.TenantID)
+	}
+
+	return nil
+}
+
+// DeleteTenantAccessForResourceRecursively deletes a tenant access for a single resource.Type recursively
+func (s *service) DeleteTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error {
+	resourceType := tenantAccess.ResourceType
+	m2mTable, ok := resourceType.TenantAccessTable()
+	if !ok {
+		return errors.Errorf("entity %q does not have access table", resourceType)
+	}
+
+	ta := s.converter.TenantAccessToEntity(tenantAccess)
+
+	if err := repo.DeleteTenantAccessRecursively(ctx, m2mTable, tenantAccess.InternalTenantID, []string{tenantAccess.ResourceID}); err != nil {
+		return errors.Wrapf(err, "while deleting tenant acccess for resource type %q with ID %q for tenant %q", string(resourceType), ta.ResourceID, ta.TenantID)
+	}
+
+	return nil
+}
+
+// GetTenantAccessForResource gets a tenant access record for the specified resource
+func (s *service) GetTenantAccessForResource(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) (*model.TenantAccess, error) {
+	m2mTable, ok := resourceType.TenantAccessTable()
+	if !ok {
+		return nil, errors.Errorf("entity %q does not have access table", resourceType)
+	}
+
+	ta, err := repo.GetSingleTenantAccess(ctx, m2mTable, tenantID, resourceID)
+	if err != nil {
+		return nil, err
+	}
+
+	tenantAccessModel := s.converter.TenantAccessFromEntity(ta)
+	tenantAccessModel.ResourceType = resourceType
+
+	return tenantAccessModel, nil
+}
+
 // ListByParentAndType list tenants by parent ID and tenant.Type
 func (s *service) ListByParentAndType(ctx context.Context, parentID string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error) {
 	return s.tenantMappingRepo.ListByParentAndType(ctx, parentID, tenantType)
 }
 
 // ExtractTenantIDForTenantScopedFormationTemplates returns the tenant ID based on its type:
-//		1. If it's a SA -> return its parent GA id
-//		2. If it's any other tenant type -> return its ID
+//  1. If it's a SA -> return its parent GA id
+//  2. If it's any other tenant type -> return its ID
 func (s *service) ExtractTenantIDForTenantScopedFormationTemplates(ctx context.Context) (string, error) {
 	internalTenantID, err := s.getTenantFromContext(ctx)
 	if err != nil {
@@ -230,9 +301,9 @@ func (s *service) ExtractTenantIDForTenantScopedFormationTemplates(ctx context.C
 }
 
 // getTenantFromContext validates and returns the tenant present in the context:
-//  - if both internalID and externalID are present -> proceed with tenant scoped formation templates (return the internalID from ctx)
-//  - if both internalID and externalID are NOT present -> -> proceed with global formation templates (return empty id)
-//  - otherwise return TenantNotFoundError
+//   - if both internalID and externalID are present -> proceed with tenant scoped formation templates (return the internalID from ctx)
+//   - if both internalID and externalID are NOT present -> -> proceed with global formation templates (return empty id)
+//   - otherwise return TenantNotFoundError
 func (s *service) getTenantFromContext(ctx context.Context) (string, error) {
 	tntCtx, err := LoadTenantPairFromContextNoChecks(ctx)
 	if err != nil {
@@ -332,18 +403,23 @@ func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.Bus
 		return "", errors.Wrapf(err, "while retrieving the internal tenant ID of tenant with external ID %s", tenant.ExternalTenant)
 	}
 
-	return tenantFromDB.ID, s.upsertLabels(ctx, tenantFromDB.ID, subdomain, region)
+	return tenantFromDB.ID, s.upsertLabels(ctx, tenantFromDB.ID, subdomain, region, str.PtrStrToStr(tenant.LicenseType))
 }
 
-func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region string) error {
+func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region, licenseType string) error {
 	if len(subdomain) > 0 {
-		if err := s.upsertSubdomainLabel(ctx, tenantID, subdomain); err != nil {
+		if err := s.upsertLabel(ctx, tenantID, SubdomainLabelKey, subdomain); err != nil {
 			return errors.Wrapf(err, "while setting subdomain label for tenant with ID %s", tenantID)
 		}
 	}
 	if len(region) > 0 {
-		if err := s.upsertRegionLabel(ctx, tenantID, region); err != nil {
+		if err := s.upsertLabel(ctx, tenantID, RegionLabelKey, region); err != nil {
 			return errors.Wrapf(err, "while setting subdomain label for tenant with ID %s", tenantID)
+		}
+	}
+	if len(licenseType) > 0 {
+		if err := s.upsertLabel(ctx, tenantID, LicenseTypeLabelKey, licenseType); err != nil {
+			return errors.Wrapf(err, "while setting licenseType label for tenant with ID %s", tenantID)
 		}
 	}
 	return nil
@@ -392,20 +468,10 @@ func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[s
 	return labels, nil
 }
 
-func (s *labeledService) upsertSubdomainLabel(ctx context.Context, tenantID, subdomain string) error {
+func (s *labeledService) upsertLabel(ctx context.Context, tenantID, key, value string) error {
 	label := &model.LabelInput{
-		Key:        SubdomainLabelKey,
-		Value:      subdomain,
-		ObjectID:   tenantID,
-		ObjectType: model.TenantLabelableObject,
-	}
-	return s.labelUpsertSvc.UpsertLabel(ctx, tenantID, label)
-}
-
-func (s *labeledService) upsertRegionLabel(ctx context.Context, tenantID, region string) error {
-	label := &model.LabelInput{
-		Key:        RegionLabelKey,
-		Value:      region,
+		Key:        key,
+		Value:      value,
 		ObjectID:   tenantID,
 		ObjectType: model.TenantLabelableObject,
 	}

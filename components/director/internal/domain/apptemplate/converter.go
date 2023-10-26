@@ -22,7 +22,7 @@ import (
 //
 //go:generate mockery --name=AppConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AppConverter interface {
-	CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (string, error)
+	CreateJSONInputGQLToJSON(in *graphql.ApplicationJSONInput) (string, error)
 }
 
 type converter struct {
@@ -64,6 +64,8 @@ func (c *converter) ToGraphQL(in *model.ApplicationTemplate) (*graphql.Applicati
 		ApplicationInput:     gqlAppInput,
 		Placeholders:         c.placeholdersToGraphql(in.Placeholders),
 		AccessLevel:          graphql.ApplicationTemplateAccessLevel(in.AccessLevel),
+		CreatedAt:            graphql.Timestamp(in.CreatedAt),
+		UpdatedAt:            graphql.Timestamp(in.UpdatedAt),
 	}, nil
 }
 
@@ -90,7 +92,7 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model
 	var appCreateInput string
 	var err error
 	if in.ApplicationInput != nil {
-		appCreateInput, err = c.appConverter.CreateInputGQLToJSON(in.ApplicationInput)
+		appCreateInput, err = c.appConverter.CreateJSONInputGQLToJSON(in.ApplicationInput)
 		if err != nil {
 			return model.ApplicationTemplateInput{}, errors.Wrapf(err, "error occurred while converting GraphQL input to Application Template model with name %s", in.Name)
 		}
@@ -122,10 +124,15 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateI
 	var appCreateInput string
 	var err error
 	if in.ApplicationInput != nil {
-		appCreateInput, err = c.appConverter.CreateInputGQLToJSON(in.ApplicationInput)
+		appCreateInput, err = c.appConverter.CreateJSONInputGQLToJSON(in.ApplicationInput)
 		if err != nil {
 			return model.ApplicationTemplateUpdateInput{}, errors.Wrapf(err, "error occurred while converting GraphQL update input to Application Template model with name %s", in.Name)
 		}
+	}
+
+	webhooks, err := c.webhookConverter.MultipleInputFromGraphQL(in.Webhooks)
+	if err != nil {
+		return model.ApplicationTemplateUpdateInput{}, errors.Wrapf(err, "error occurred while converting webhooks og GraphQL input to Application Template model with name %s", in.Name)
 	}
 
 	return model.ApplicationTemplateUpdateInput{
@@ -135,6 +142,8 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateI
 		ApplicationInputJSON: appCreateInput,
 		Placeholders:         c.placeholdersFromGraphql(in.Placeholders),
 		AccessLevel:          model.ApplicationTemplateAccessLevel(in.AccessLevel),
+		Labels:               in.Labels,
+		Webhooks:             webhooks,
 	}, nil
 }
 
@@ -179,9 +188,15 @@ func (c *converter) ApplicationFromTemplateInputFromGraphQL(appTemplate *model.A
 		}
 	}
 
+	var labels map[string]interface{}
+	if in.Labels != nil {
+		labels = in.Labels
+	}
+
 	return model.ApplicationFromTemplateInput{
 		TemplateName: in.TemplateName,
 		Values:       values,
+		Labels:       labels,
 	}, nil
 }
 
@@ -204,6 +219,8 @@ func (c *converter) ToEntity(in *model.ApplicationTemplate) (*Entity, error) {
 		ApplicationInputJSON: in.ApplicationInputJSON,
 		PlaceholdersJSON:     placeholders,
 		AccessLevel:          string(in.AccessLevel),
+		CreatedAt:            in.CreatedAt,
+		UpdatedAt:            in.UpdatedAt,
 	}, nil
 }
 
@@ -226,6 +243,8 @@ func (c *converter) FromEntity(entity *Entity) (*model.ApplicationTemplate, erro
 		ApplicationInputJSON: entity.ApplicationInputJSON,
 		Placeholders:         placeholders,
 		AccessLevel:          model.ApplicationTemplateAccessLevel(entity.AccessLevel),
+		CreatedAt:            entity.CreatedAt,
+		UpdatedAt:            entity.UpdatedAt,
 	}, nil
 }
 

@@ -126,7 +126,7 @@ func TestService_Create(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -173,7 +173,7 @@ func TestService_Create(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -215,7 +215,7 @@ func TestService_Create(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -269,7 +269,7 @@ func TestService_Create(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, normalizedModelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, normalizedModelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -472,7 +472,7 @@ func TestService_Create(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(testErr).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(testErr).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -645,7 +645,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -687,7 +687,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -729,7 +729,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -788,7 +788,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, normalizedModelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, normalizedModelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -958,7 +958,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(testErr).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(testErr).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -1034,7 +1034,6 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 	normalizedModelInput.Bundles = modelInput.Bundles
 
 	labels := map[string]interface{}{
-		model.ScenariosKey:     []interface{}{testScenario},
 		"integrationSystemID":  intSysID,
 		"label":                "value",
 		"name":                 "mp-foo-bar-not",
@@ -1048,7 +1047,6 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 	}
 
 	labelsWithInvalidPpmsProductVersion := map[string]interface{}{
-		model.ScenariosKey:     []interface{}{testScenario},
 		"integrationSystemID":  intSysID,
 		"label":                "value",
 		"name":                 "mp-foo-bar-not",
@@ -1067,16 +1065,6 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 		IntegrationSystemID: &intSysID,
 		BaseURL:             str.Ptr("http://test.com"),
 	}
-
-	modelInputWithoutBaseURL := applicationRegisterInputWithScenarios()
-	modelInputWithoutBaseURL.BaseURL = str.Ptr("")
-
-	modelInputWithInvalidBaseURL := applicationRegisterInputWithScenarios()
-	modelInputWithInvalidBaseURL.BaseURL = str.Ptr("123://localhost")
-
-	modelInputWithInvalidPpmsProductVersion := applicationRegisterInputWithScenarios()
-	modelInputWithInvalidPpmsProductVersion.Labels["ppmsProductVersionId"] = "2"
-	modelInputWithInvalidPpmsProductVersion.BaseURL = str.Ptr("123://localhost")
 
 	id := "foo"
 
@@ -1099,16 +1087,18 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name              string
-		AppNameNormalizer normalizer.Normalizator
-		AppRepoFn         func(string) *automock.ApplicationRepository
-		IntSysRepoFn      func() *automock.IntegrationSystemRepository
-		LabelServiceFn    func() *automock.LabelService
-		UIDServiceFn      func() *automock.UIDService
-		WebhookRepoFn     func() *automock.WebhookRepository
-		Input             model.ApplicationRegisterInput
-		OrdWebhookMapping []application.ORDWebhookMapping
-		ExpectedErr       error
+		Name               string
+		AppNameNormalizer  normalizer.Normalizator
+		AppRepoFn          func(string) *automock.ApplicationRepository
+		IntSysRepoFn       func() *automock.IntegrationSystemRepository
+		LabelServiceFn     func() *automock.LabelService
+		LabelRepoFn        func() *automock.LabelRepository
+		UIDServiceFn       func() *automock.UIDService
+		WebhookRepoFn      func() *automock.WebhookRepository
+		FormationServiceFn func() *automock.FormationService
+		GetInput           func() model.ApplicationRegisterInput
+		OrdWebhookMapping  []application.ORDWebhookMapping
+		ExpectedErr        error
 	}{
 		{
 			Name:              "Success",
@@ -1128,6 +1118,11 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labels).Return(nil).Once()
 				return svc
 			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.ApplicationLabel, "")).Once()
+				return repo
+			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id)
@@ -1143,9 +1138,16 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				webhookRepo.On("CreateMany", ctx, tnt, mock.AnythingOfType("[]*model.Webhook")).Return(nil)
 				return webhookRepo
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}).Return(nil, nil).Once()
+				return svc
+			},
 			OrdWebhookMapping: ordWebhookMapping,
-			Input:             applicationRegisterInputWithScenarios(),
-			ExpectedErr:       nil,
+			GetInput: func() model.ApplicationRegisterInput {
+				return applicationRegisterInputWithScenarios()
+			},
+			ExpectedErr: nil,
 		},
 		{
 			Name:              "Success when no labels provided",
@@ -1161,17 +1163,21 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithoutIntSys).Return(nil).Once()
 				return svc
 			},
+			LabelRepoFn: UnusedLabelRepository,
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			WebhookRepoFn: UnusedWebhookRepository,
-			Input:         model.ApplicationRegisterInput{Name: "test", Labels: nilLabels},
-			ExpectedErr:   nil,
+			WebhookRepoFn:      UnusedWebhookRepository,
+			FormationServiceFn: UnusedFormationService,
+			GetInput: func() model.ApplicationRegisterInput {
+				return model.ApplicationRegisterInput{Name: "test", Labels: nilLabels}
+			},
+			ExpectedErr: nil,
 		},
 		{
-			Name:              "Success when scenarios label provided",
+			Name:              "Success when scenarios label not provided",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func(upsertMethodName string) *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
@@ -1184,17 +1190,57 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithoutIntSys).Return(nil).Once()
 				return svc
 			},
+			LabelRepoFn: UnusedLabelRepository,
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			WebhookRepoFn:      UnusedWebhookRepository,
+			FormationServiceFn: UnusedFormationService,
+			GetInput: func() model.ApplicationRegisterInput {
+				return model.ApplicationRegisterInput{
+					Name:   "test",
+					Labels: labelsWithoutIntSys,
+				}
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name:              "Error when assigning formation",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func(upsertMethodName string) *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On(upsertMethodName, ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("foo", nil).Once()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelServiceFn: UnusedLabelService,
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.ApplicationLabel, "")).Once()
+				return repo
+			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id)
 				return svc
 			},
 			WebhookRepoFn: UnusedWebhookRepository,
-			Input: model.ApplicationRegisterInput{
-				Name:   "test",
-				Labels: labelsWithoutIntSys,
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}).Return(nil, testErr).Once()
+				return svc
 			},
-			ExpectedErr: nil,
+			OrdWebhookMapping: ordWebhookMapping,
+			GetInput: func() model.ApplicationRegisterInput {
+				return applicationRegisterInputWithScenarios()
+			},
+			ExpectedErr: testErr,
 		},
 		{
 			Name:              "Returns error when listing webhooks",
@@ -1214,6 +1260,11 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labels).Return(nil).Once()
 				return svc
 			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.ApplicationLabel, "")).Once()
+				return repo
+			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id)
@@ -1224,9 +1275,16 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				webhookRepo.On("ListByReferenceObjectID", ctx, tnt, id, model.ApplicationWebhookReference).Return(nil, testErr)
 				return webhookRepo
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}).Return(nil, nil).Once()
+				return svc
+			},
 			OrdWebhookMapping: ordWebhookMapping,
-			Input:             modelInput,
-			ExpectedErr:       testErr,
+			GetInput: func() model.ApplicationRegisterInput {
+				return applicationRegisterInputWithScenarios()
+			},
+			ExpectedErr: testErr,
 		},
 		{
 			Name:              "Returns error when creating webhooks",
@@ -1246,6 +1304,11 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labels).Return(nil).Once()
 				return svc
 			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.ApplicationLabel, "")).Once()
+				return repo
+			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id)
@@ -1257,9 +1320,16 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				webhookRepo.On("CreateMany", ctx, tnt, mock.AnythingOfType("[]*model.Webhook")).Return(testErr)
 				return webhookRepo
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}).Return(nil, nil).Once()
+				return svc
+			},
 			OrdWebhookMapping: ordWebhookMapping,
-			Input:             modelInput,
-			ExpectedErr:       testErr,
+			GetInput: func() model.ApplicationRegisterInput {
+				return applicationRegisterInputWithScenarios()
+			},
+			ExpectedErr: testErr,
 		},
 		{
 			Name:              "Returns error when application upsert failed",
@@ -1275,14 +1345,18 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				return repo
 			},
 			LabelServiceFn: UnusedLabelService,
+			LabelRepoFn:    UnusedLabelRepository,
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
 				return svc
 			},
-			WebhookRepoFn: UnusedWebhookRepository,
-			Input:         applicationRegisterInputWithScenarios(),
-			ExpectedErr:   testErr,
+			WebhookRepoFn:      UnusedWebhookRepository,
+			FormationServiceFn: UnusedFormationService,
+			GetInput: func() model.ApplicationRegisterInput {
+				return applicationRegisterInputWithScenarios()
+			},
+			ExpectedErr: testErr,
 		},
 		{
 			Name:              "Returns error when integration system doesn't exist",
@@ -1295,11 +1369,15 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(false, nil).Once()
 				return repo
 			},
-			LabelServiceFn: UnusedLabelService,
-			UIDServiceFn:   UnusedUIDService,
-			WebhookRepoFn:  UnusedWebhookRepository,
-			Input:          applicationRegisterInputWithScenarios(),
-			ExpectedErr:    errors.New("Object not found"),
+			LabelServiceFn:     UnusedLabelService,
+			LabelRepoFn:        UnusedLabelRepository,
+			UIDServiceFn:       UnusedUIDService,
+			WebhookRepoFn:      UnusedWebhookRepository,
+			FormationServiceFn: UnusedFormationService,
+			GetInput: func() model.ApplicationRegisterInput {
+				return applicationRegisterInputWithScenarios()
+			},
+			ExpectedErr: errors.New("Object not found"),
 		},
 		{
 			Name:              "Returns error when checking for integration system fails",
@@ -1312,11 +1390,15 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(false, testErr).Once()
 				return repo
 			},
-			LabelServiceFn: UnusedLabelService,
-			UIDServiceFn:   UnusedUIDService,
-			WebhookRepoFn:  UnusedWebhookRepository,
-			Input:          applicationRegisterInputWithScenarios(),
-			ExpectedErr:    testErr,
+			LabelServiceFn:     UnusedLabelService,
+			LabelRepoFn:        UnusedLabelRepository,
+			UIDServiceFn:       UnusedUIDService,
+			WebhookRepoFn:      UnusedWebhookRepository,
+			FormationServiceFn: UnusedFormationService,
+			GetInput: func() model.ApplicationRegisterInput {
+				return applicationRegisterInputWithScenarios()
+			},
+			ExpectedErr: testErr,
 		},
 		{
 			Name:              "Should not create webhooks when application type is missing from input labels",
@@ -1342,15 +1424,19 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labels).Return(nil).Once()
 				return svc
 			},
+			LabelRepoFn: UnusedLabelRepository,
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
 				return svc
 			},
-			WebhookRepoFn:     UnusedWebhookRepository,
-			OrdWebhookMapping: ordWebhookMapping,
-			Input:             modelInputWithoutApplicationType,
-			ExpectedErr:       nil,
+			WebhookRepoFn:      UnusedWebhookRepository,
+			FormationServiceFn: UnusedFormationService,
+			OrdWebhookMapping:  ordWebhookMapping,
+			GetInput: func() model.ApplicationRegisterInput {
+				return modelInputWithoutApplicationType
+			},
+			ExpectedErr: nil,
 		},
 		{
 			Name:              "Should not create webhooks when baseURL is missing from input",
@@ -1370,15 +1456,29 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labels).Return(nil).Once()
 				return svc
 			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.ApplicationLabel, "")).Once()
+				return repo
+			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
 				return svc
 			},
-			WebhookRepoFn:     UnusedWebhookRepository,
+			WebhookRepoFn: UnusedWebhookRepository,
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}).Return(nil, nil).Once()
+				return svc
+			},
 			OrdWebhookMapping: ordWebhookMapping,
-			Input:             modelInputWithoutBaseURL,
-			ExpectedErr:       nil,
+			GetInput: func() model.ApplicationRegisterInput {
+				modelInputWithoutBaseURL := applicationRegisterInputWithScenarios()
+				modelInputWithoutBaseURL.BaseURL = str.Ptr("")
+				return modelInputWithoutBaseURL
+			},
+			ExpectedErr: nil,
 		},
 		{
 			Name:              "Should not create webhooks when baseURL is invalid",
@@ -1398,15 +1498,29 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labels).Return(nil).Once()
 				return svc
 			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.ApplicationLabel, "")).Once()
+				return repo
+			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
 				return svc
 			},
-			WebhookRepoFn:     UnusedWebhookRepository,
+			WebhookRepoFn: UnusedWebhookRepository,
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}).Return(nil, nil).Once()
+				return svc
+			},
 			OrdWebhookMapping: ordWebhookMapping,
-			Input:             modelInputWithInvalidBaseURL,
-			ExpectedErr:       nil,
+			GetInput: func() model.ApplicationRegisterInput {
+				modelInputWithInvalidBaseURL := applicationRegisterInputWithScenarios()
+				modelInputWithInvalidBaseURL.BaseURL = str.Ptr("123://localhost")
+				return modelInputWithInvalidBaseURL
+			},
+			ExpectedErr: nil,
 		},
 		{
 			Name:              "Should not create webhooks when ppmsProductVersion is present in input but is not in configuration",
@@ -1426,15 +1540,30 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithInvalidPpmsProductVersion).Return(nil).Once()
 				return svc
 			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.ApplicationLabel, "")).Once()
+				return repo
+			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
 				return svc
 			},
-			WebhookRepoFn:     UnusedWebhookRepository,
+			WebhookRepoFn: UnusedWebhookRepository,
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}).Return(nil, nil).Once()
+				return svc
+			},
 			OrdWebhookMapping: ordWebhookMapping,
-			Input:             modelInputWithInvalidPpmsProductVersion,
-			ExpectedErr:       nil,
+			GetInput: func() model.ApplicationRegisterInput {
+				modelInputWithInvalidPpmsProductVersion := applicationRegisterInputWithScenarios()
+				modelInputWithInvalidPpmsProductVersion.Labels["ppmsProductVersionId"] = "2"
+				modelInputWithInvalidPpmsProductVersion.BaseURL = str.Ptr("123://localhost")
+				return modelInputWithInvalidPpmsProductVersion
+			},
+			ExpectedErr: nil,
 		},
 	}
 
@@ -1443,14 +1572,16 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			appNameNormalizer := testCase.AppNameNormalizer
 			appRepo := testCase.AppRepoFn("Upsert")
 			labelSvc := testCase.LabelServiceFn()
+			labelRepo := testCase.LabelRepoFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, nil, uidSvc, nil, "", testCase.OrdWebhookMapping)
+			formationService := testCase.FormationServiceFn()
+			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, labelRepo, intSysRepo, labelSvc, nil, uidSvc, formationService, "", testCase.OrdWebhookMapping)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			err := svc.Upsert(ctx, testCase.Input)
+			err := svc.Upsert(ctx, testCase.GetInput())
 
 			// then
 			if testCase.ExpectedErr != nil {
@@ -1460,21 +1591,23 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				require.Nil(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, appRepo, labelSvc, uidSvc, intSysRepo, webhookRepo)
+			mock.AssertExpectationsForObjects(t, appRepo, labelSvc, labelRepo, uidSvc, intSysRepo, webhookRepo, formationService)
 		})
 
 		t.Run(testCase.Name+"_TrustedUpsert", func(t *testing.T) {
 			appNameNormalizer := testCase.AppNameNormalizer
 			appRepo := testCase.AppRepoFn("TrustedUpsert")
 			labelSvc := testCase.LabelServiceFn()
+			labelRepo := testCase.LabelRepoFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, nil, uidSvc, nil, "", testCase.OrdWebhookMapping)
+			formationService := testCase.FormationServiceFn()
+			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, labelRepo, intSysRepo, labelSvc, nil, uidSvc, formationService, "", testCase.OrdWebhookMapping)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			err := svc.TrustedUpsert(ctx, testCase.Input)
+			err := svc.TrustedUpsert(ctx, testCase.GetInput())
 
 			// then
 			if testCase.ExpectedErr != nil {
@@ -1484,7 +1617,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				require.Nil(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, appRepo, labelSvc, uidSvc, intSysRepo, webhookRepo)
+			mock.AssertExpectationsForObjects(t, appRepo, labelSvc, labelRepo, uidSvc, intSysRepo, webhookRepo, formationService)
 		})
 	}
 
@@ -1516,8 +1649,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 	}
 	normalizedModelInput.Bundles = modelInput.Bundles
 
-	labelsWithTestScenario := map[string]interface{}{
-		model.ScenariosKey:     []interface{}{testScenario},
+	labels := map[string]interface{}{
 		"integrationSystemID":  intSysID,
 		"label":                "value",
 		"name":                 "mp-foo-bar-not",
@@ -1552,16 +1684,18 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testCases := []struct {
-		Name              string
-		AppNameNormalizer normalizer.Normalizator
-		AppRepoFn         func() *automock.ApplicationRepository
-		IntSysRepoFn      func() *automock.IntegrationSystemRepository
-		LabelServiceFn    func() *automock.LabelService
-		UIDServiceFn      func() *automock.UIDService
-		WebhookRepoFn     func() *automock.WebhookRepository
-		Input             model.ApplicationRegisterInput
-		OrdWebhookMapping []application.ORDWebhookMapping
-		ExpectedErr       error
+		Name               string
+		AppNameNormalizer  normalizer.Normalizator
+		AppRepoFn          func() *automock.ApplicationRepository
+		IntSysRepoFn       func() *automock.IntegrationSystemRepository
+		LabelServiceFn     func() *automock.LabelService
+		LabelRepoFn        func() *automock.LabelRepository
+		UIDServiceFn       func() *automock.UIDService
+		WebhookRepoFn      func() *automock.WebhookRepository
+		FormationServiceFn func() *automock.FormationService
+		Input              model.ApplicationRegisterInput
+		OrdWebhookMapping  []application.ORDWebhookMapping
+		ExpectedErr        error
 	}{
 		{
 			Name:              "Success",
@@ -1578,8 +1712,13 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithTestScenario).Return(nil).Once()
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labels).Return(nil).Once()
 				return svc
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.ApplicationLabel, "")).Once()
+				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
@@ -1595,6 +1734,11 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				webhookRepo.On("ListByReferenceObjectID", ctx, tnt, id, model.ApplicationWebhookReference).Return([]*model.Webhook{wh}, nil)
 				webhookRepo.On("CreateMany", ctx, tnt, mock.AnythingOfType("[]*model.Webhook")).Return(nil)
 				return webhookRepo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}).Return(nil, nil).Once()
+				return svc
 			},
 			OrdWebhookMapping: ordWebhookMapping,
 			Input:             applicationRegisterInputWithScenarios(),
@@ -1614,17 +1758,19 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithoutIntSys).Return(nil).Once()
 				return svc
 			},
+			LabelRepoFn: UnusedLabelRepository,
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			WebhookRepoFn: UnusedWebhookRepository,
-			Input:         model.ApplicationRegisterInput{Name: "test", Labels: nilLabels},
-			ExpectedErr:   nil,
+			WebhookRepoFn:      UnusedWebhookRepository,
+			FormationServiceFn: UnusedFormationService,
+			Input:              model.ApplicationRegisterInput{Name: "test", Labels: nilLabels},
+			ExpectedErr:        nil,
 		},
 		{
-			Name:              "Success when scenarios label provided",
+			Name:              "Success when scenarios label is not provided",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
@@ -1637,12 +1783,18 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithoutIntSys).Return(nil).Once()
 				return svc
 			},
+			LabelRepoFn: UnusedLabelRepository,
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id)
 				return svc
 			},
 			WebhookRepoFn: UnusedWebhookRepository,
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}).Return(nil, nil).Once()
+				return svc
+			},
 			Input: model.ApplicationRegisterInput{
 				Name:   "test",
 				Labels: labelsWithoutIntSys,
@@ -1664,8 +1816,13 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithTestScenario).Return(nil).Once()
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labels).Return(nil).Once()
 				return svc
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.ApplicationLabel, "")).Once()
+				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
@@ -1676,6 +1833,11 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				webhookRepo := &automock.WebhookRepository{}
 				webhookRepo.On("ListByReferenceObjectID", ctx, tnt, id, model.ApplicationWebhookReference).Return(nil, testErr)
 				return webhookRepo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}).Return(nil, nil).Once()
+				return svc
 			},
 			OrdWebhookMapping: ordWebhookMapping,
 			Input:             modelInput,
@@ -1704,6 +1866,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				}).Return(nil).Once()
 				return svc
 			},
+			LabelRepoFn: UnusedLabelRepository,
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id)
@@ -1715,7 +1878,8 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				webhookRepo.On("CreateMany", ctx, tnt, mock.AnythingOfType("[]*model.Webhook")).Return(testErr)
 				return webhookRepo
 			},
-			OrdWebhookMapping: ordWebhookMapping,
+			FormationServiceFn: UnusedFormationService,
+			OrdWebhookMapping:  ordWebhookMapping,
 			Input: model.ApplicationRegisterInput{
 				Name: "foo.bar-not",
 				Labels: map[string]interface{}{
@@ -1741,9 +1905,15 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				return repo
 			},
 			LabelServiceFn: UnusedLabelService,
+			LabelRepoFn:    UnusedLabelRepository,
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
+				return svc
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}).Return(nil, nil).Once()
 				return svc
 			},
 			WebhookRepoFn: UnusedWebhookRepository,
@@ -1761,11 +1931,13 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(false, nil).Once()
 				return repo
 			},
-			LabelServiceFn: UnusedLabelService,
-			UIDServiceFn:   UnusedUIDService,
-			WebhookRepoFn:  UnusedWebhookRepository,
-			Input:          applicationRegisterInputWithScenarios(),
-			ExpectedErr:    errors.New("Object not found"),
+			LabelServiceFn:     UnusedLabelService,
+			LabelRepoFn:        UnusedLabelRepository,
+			UIDServiceFn:       UnusedUIDService,
+			WebhookRepoFn:      UnusedWebhookRepository,
+			FormationServiceFn: UnusedFormationService,
+			Input:              applicationRegisterInputWithScenarios(),
+			ExpectedErr:        errors.New("Object not found"),
 		},
 		{
 			Name:              "Returns error when checking for integration system fails",
@@ -1778,11 +1950,13 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(false, testErr).Once()
 				return repo
 			},
-			LabelServiceFn: UnusedLabelService,
-			UIDServiceFn:   UnusedUIDService,
-			WebhookRepoFn:  UnusedWebhookRepository,
-			Input:          applicationRegisterInputWithScenarios(),
-			ExpectedErr:    testErr,
+			LabelServiceFn:     UnusedLabelService,
+			LabelRepoFn:        UnusedLabelRepository,
+			UIDServiceFn:       UnusedUIDService,
+			WebhookRepoFn:      UnusedWebhookRepository,
+			FormationServiceFn: UnusedFormationService,
+			Input:              applicationRegisterInputWithScenarios(),
+			ExpectedErr:        testErr,
 		},
 	}
 
@@ -1791,10 +1965,12 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			appNameNormalizer := testCase.AppNameNormalizer
 			appRepo := testCase.AppRepoFn()
 			labelSvc := testCase.LabelServiceFn()
+			labelRepo := testCase.LabelRepoFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, nil, uidSvc, nil, "", testCase.OrdWebhookMapping)
+			formationService := testCase.FormationServiceFn()
+			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, labelRepo, intSysRepo, labelSvc, nil, uidSvc, formationService, "", testCase.OrdWebhookMapping)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -1808,7 +1984,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				require.Nil(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, appRepo, labelSvc, uidSvc, intSysRepo, webhookRepo)
+			mock.AssertExpectationsForObjects(t, appRepo, labelSvc, labelRepo, uidSvc, intSysRepo, webhookRepo)
 		})
 	}
 
@@ -2460,7 +2636,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil).Once()
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{emptyScenarioLabel}, nil).Once()
 				return repo
 			},
 			InputID:            id,
@@ -2477,7 +2653,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil).Once()
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil).Once()
 				return repo
 			},
 			InputID:            id,
@@ -2494,7 +2670,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil).Once()
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil).Once()
 				return repo
 			},
 			InputID:            id,
@@ -2510,7 +2686,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil).Once()
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{emptyScenarioLabel}, nil).Once()
 				return repo
 			},
 			InputID:            id,
@@ -2612,7 +2788,7 @@ func TestService_Unpair(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{emptyScenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2638,7 +2814,7 @@ func TestService_Unpair(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2664,7 +2840,7 @@ func TestService_Unpair(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2689,7 +2865,7 @@ func TestService_Unpair(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", mock.Anything, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("ListGlobalByKeyAndObjects", mock.Anything, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2715,7 +2891,7 @@ func TestService_Unpair(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{emptyScenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2743,7 +2919,7 @@ func TestService_Unpair(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2771,7 +2947,7 @@ func TestService_Unpair(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{emptyScenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2910,7 +3086,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
@@ -2941,7 +3117,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabelsWithFalseManaged, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
@@ -2970,7 +3146,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.AssertNotCalled(t, "GetByKey")
+				repo.AssertNotCalled(t, "ListGlobalByKeyAndObjects")
 				repo.AssertNotCalled(t, "ListForObject")
 				return repo
 			},
@@ -2997,7 +3173,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.AssertNotCalled(t, "ListForObject")
 				return repo
 			},
@@ -3023,7 +3199,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.AssertNotCalled(t, "GetByKey")
+				repo.AssertNotCalled(t, "ListGlobalByKeyAndObjects")
 				repo.AssertNotCalled(t, "ListForObject")
 				return repo
 			},
@@ -3050,7 +3226,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.AssertNotCalled(t, "ListForObject")
@@ -3079,7 +3255,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.AssertNotCalled(t, "ListForObject")
@@ -3108,7 +3284,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
@@ -3137,7 +3313,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
@@ -3166,7 +3342,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
@@ -3195,7 +3371,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
@@ -3224,7 +3400,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(appTemplateLabelsWithSelfRegDistLabelKey, nil)
@@ -3254,7 +3430,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(nil, testErr)
@@ -3305,7 +3481,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(nil, testErr)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				return repo
@@ -3333,7 +3509,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(nil, testErr)
 
 				return repo
@@ -3436,6 +3612,75 @@ func TestService_Get(t *testing.T) {
 
 			// WHEN
 			app, err := svc.Get(ctx, testCase.InputID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedApplication, app)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_GetGlobalByID(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("test error")
+
+	id := "foo"
+
+	desc := "Lorem ipsum"
+
+	applicationModel := &model.Application{
+		Name:        "foo",
+		Description: &desc,
+		BaseEntity:  &model.BaseEntity{ID: "foo"},
+	}
+
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name                string
+		RepositoryFn        func() *automock.ApplicationRepository
+		InputID             string
+		ExpectedApplication *model.Application
+		ExpectedErrMessage  string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetGlobalByID", ctx, id).Return(applicationModel, nil).Once()
+				return repo
+			},
+			InputID:             id,
+			ExpectedApplication: applicationModel,
+		},
+		{
+			Name: "Returns error when application retrieval failed",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetGlobalByID", ctx, id).Return(nil, testErr).Once()
+				return repo
+			},
+			InputID:             id,
+			ExpectedApplication: applicationModel,
+			ExpectedErrMessage:  testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+
+			// WHEN
+			app, err := svc.GetGlobalByID(ctx, testCase.InputID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -4668,6 +4913,165 @@ func TestService_GetLabel(t *testing.T) {
 	}
 }
 
+func TestService_GetScenariosGlobal(t *testing.T) {
+	// GIVEN
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testErr := errors.New("Test error")
+
+	scenario := "value1"
+	scenario2 := "value2"
+	applicationID := "foo"
+	labelValue := []interface{}{scenario}
+
+	modelLabel := &model.Label{
+		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c11",
+		Tenant:     str.Ptr(tnt),
+		Key:        model.ScenariosKey,
+		Value:      labelValue,
+		ObjectID:   applicationID,
+		ObjectType: model.ApplicationLabelableObject,
+	}
+
+	labelValue2 := []interface{}{scenario2}
+
+	modelLabel2 := &model.Label{
+		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c11",
+		Tenant:     str.Ptr(tnt),
+		Key:        model.ScenariosKey,
+		Value:      labelValue2,
+		ObjectID:   applicationID,
+		ObjectType: model.ApplicationLabelableObject,
+	}
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.ApplicationRepository
+		LabelRepositoryFn  func() *automock.LabelRepository
+		InputApplicationID string
+		ExpectedScenarios  []string
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey).Return([]*model.Label{modelLabel}, nil).Once()
+				return repo
+			},
+			InputApplicationID: applicationID,
+			ExpectedScenarios:  []string{scenario},
+		},
+		{
+			Name: "Success when no labels are found",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey).Return(nil, nil).Once()
+				return repo
+			},
+			InputApplicationID: applicationID,
+		},
+		{
+			Name: "Success when multiple scenarios labels are present",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey).Return([]*model.Label{modelLabel, modelLabel2}, nil).Once()
+				return repo
+			},
+			InputApplicationID: applicationID,
+			ExpectedScenarios:  []string{scenario, scenario2},
+		},
+		{
+			Name: "Returns error when label receiving failed",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
+
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey).Return(nil, testErr).Once()
+				return repo
+			},
+			InputApplicationID: applicationID,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when fails to check for application existence",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(false, testErr).Once()
+
+				return repo
+			},
+			LabelRepositoryFn:  UnusedLabelRepository,
+			InputApplicationID: applicationID,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when application doesn't exist",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(false, nil).Once()
+
+				return repo
+			},
+			LabelRepositoryFn:  UnusedLabelRepository,
+			InputApplicationID: applicationID,
+			ExpectedErrMessage: fmt.Sprintf("application with ID %s doesn't exist", applicationID),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			labelRepo := testCase.LabelRepositoryFn()
+			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, "", nil)
+
+			// WHEN
+			scenarios, err := svc.GetScenariosGlobal(ctx, testCase.InputApplicationID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedScenarios, scenarios)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+			labelRepo.AssertExpectations(t)
+		})
+	}
+
+	t.Run("Returns error on loading tenant", func(t *testing.T) {
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+		// WHEN
+		_, err := svc.GetScenariosGlobal(context.TODO(), applicationID)
+		assert.Contains(t, err.Error(), "while loading tenant from context")
+	})
+}
+
 func TestService_ListLabel(t *testing.T) {
 	// GIVEN
 	tnt := "tenant"
@@ -4980,6 +5384,72 @@ func TestService_GetBySystemNumber(t *testing.T) {
 
 			// WHEN
 			value, err := svc.GetBySystemNumber(ctx, testCase.InputSystemNumber)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.Nil(t, err)
+			}
+
+			assert.Equal(t, testCase.ExptectedValue, value)
+			appRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_GetByLocalTenantIDAndAppTemplateID(t *testing.T) {
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+
+	modelApp := fixModelApplication("foo", "tenant-foo", "foo", "Lorem Ipsum")
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+	testError := errors.New("Test error")
+
+	testCases := []struct {
+		Name           string
+		RepositoryFn   func() *automock.ApplicationRepository
+		LocalTenantID  string
+		AppTemplateID  string
+		ExptectedValue *model.Application
+		ExpectedError  error
+	}{
+		{
+			Name: "Application found",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByLocalTenantIDAndAppTemplateID", ctx, tnt, localTenantID, appTemplateID).Return(modelApp, nil)
+				return repo
+			},
+			LocalTenantID:  localTenantID,
+			AppTemplateID:  appTemplateID,
+			ExptectedValue: modelApp,
+			ExpectedError:  nil,
+		},
+		{
+			Name: "Returns error",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByLocalTenantIDAndAppTemplateID", ctx, tnt, localTenantID, appTemplateID).Return(nil, testError)
+				return repo
+			},
+			LocalTenantID:  localTenantID,
+			AppTemplateID:  appTemplateID,
+			ExptectedValue: nil,
+			ExpectedError:  testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			appRepo := testCase.RepositoryFn()
+			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+
+			// WHEN
+			value, err := svc.GetByLocalTenantIDAndAppTemplateID(ctx, testCase.LocalTenantID, testCase.AppTemplateID)
 
 			// THEN
 			if testCase.ExpectedError != nil {

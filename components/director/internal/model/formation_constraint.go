@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 // FormationConstraintType represents the constraint type. It is part of the Join point location along with TargetOperation
 type FormationConstraintType string
 
@@ -26,6 +28,10 @@ const (
 	GenerateFormationAssignmentNotificationOperation TargetOperation = "GENERATE_FORMATION_ASSIGNMENT_NOTIFICATION"
 	// GenerateFormationNotificationOperation represents the generate formation notifications operation
 	GenerateFormationNotificationOperation TargetOperation = "GENERATE_FORMATION_NOTIFICATION"
+	// SendNotificationOperation represents the send notification operation
+	SendNotificationOperation TargetOperation = "SEND_NOTIFICATION"
+	// NotificationStatusReturned represents the notification status returned operation
+	NotificationStatusReturned TargetOperation = "NOTIFICATION_STATUS_RETURNED"
 )
 
 // ResourceType represents the type of resource the constraint is applicable to
@@ -57,6 +63,7 @@ const (
 // FormationConstraintInput represents the input for creating FormationConstraint
 type FormationConstraintInput struct {
 	Name            string
+	Description     string
 	ConstraintType  FormationConstraintType
 	TargetOperation TargetOperation
 	Operator        string
@@ -64,12 +71,14 @@ type FormationConstraintInput struct {
 	ResourceSubtype string
 	InputTemplate   string
 	ConstraintScope FormationConstraintScope
+	Priority        int
 }
 
 // FormationConstraint represents the constraint entity
 type FormationConstraint struct {
 	ID              string
 	Name            string
+	Description     string
 	ConstraintType  FormationConstraintType
 	TargetOperation TargetOperation
 	Operator        string
@@ -77,4 +86,6 @@ type FormationConstraint struct {
 	ResourceSubtype string
 	InputTemplate   string
 	ConstraintScope FormationConstraintScope
+	Priority        int
+	CreatedAt       *time.Time
 }

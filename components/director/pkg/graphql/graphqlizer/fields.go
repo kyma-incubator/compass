@@ -117,6 +117,28 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		ctx, []string{"Application.bundle", "Application.apiDefinition", "Application.eventDefinition"})
 }
 
+// ForApplicationMinimal missing godoc
+func (fp *GqlFieldsProvider) ForApplicationMinimal(ctx ...FieldCtx) string {
+	return `
+		id
+		name
+		providerName
+		description
+		baseUrl
+		systemNumber
+		systemStatus
+		integrationSystemID
+		applicationTemplateID
+		labels
+		deletedAt
+		updatedAt
+		error
+		status {condition timestamp}
+		healthCheckURL
+		eventingConfiguration { defaultURL }
+	`
+}
+
 // ForApplicationTemplate missing godoc
 func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
 	return fmt.Sprintf(`
@@ -128,6 +150,8 @@ func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
 		webhooks {%s}
 		labels
 		accessLevel
+		createdAt
+		updatedAt
 	`, fp.ForPlaceholders(), fp.ForWebhooks())
 }
 
@@ -137,6 +161,7 @@ func (fp *GqlFieldsProvider) ForFormation() string {
 		id
 		name
 		formationTemplateId
+        state
 	`
 }
 
@@ -146,6 +171,7 @@ func (fp *GqlFieldsProvider) ForFormationWithStatus() string {
 		id
 		name
 		formationTemplateId
+		state
 		status {%s}
 	`, fp.ForFormationStatus())
 }
@@ -160,8 +186,24 @@ func (fp *GqlFieldsProvider) ForFormationTemplate() string {
 		runtimeTypeDisplayName	
 		runtimeArtifactKind
         leadingProductIDs
+        supportsReset
         webhooks {%s}
 	`, fp.ForWebhooks())
+}
+
+// ForFormationTemplateWithConstraints missing godoc
+func (fp *GqlFieldsProvider) ForFormationTemplateWithConstraints() string {
+	return fmt.Sprintf(`
+		id
+		name
+        applicationTypes
+	    runtimeTypes
+		runtimeTypeDisplayName	
+		runtimeArtifactKind
+        leadingProductIDs
+        webhooks {%s}
+		formationConstraints {%s}
+	`, fp.ForWebhooks(), fp.ForFormationConstraint())
 }
 
 // ForFormationAssignment missing godoc
@@ -174,6 +216,8 @@ func (fp *GqlFieldsProvider) ForFormationAssignment() string {
 			targetType
 			state
 			value
+			configuration
+			error
 	`
 }
 
@@ -201,6 +245,7 @@ func (fp *GqlFieldsProvider) ForFormationConstraint() string {
 	return `
 			id
 			name
+            description
 			constraintType
 			targetOperation
 			operator
@@ -208,6 +253,8 @@ func (fp *GqlFieldsProvider) ForFormationConstraint() string {
 			resourceSubtype
 			inputTemplate
 			constraintScope
+            priority
+            createdAt
 	`
 }
 
@@ -521,6 +568,7 @@ func (fp *GqlFieldsProvider) ForRuntime(ctx ...FieldCtx) string {
 		id
 		name
 		description
+		applicationNamespace
 		labels 
 		status {condition timestamp}
 		metadata { creationTimestamp }
@@ -718,5 +766,15 @@ func (fp *GqlFieldsProvider) ForCertificateSubjectMapping() string {
         consumerType
 	    internalConsumerID
 		tenantAccessLevels	
+	`
+}
+
+// ForTenantAccess returns tenant access fields
+func (fp *GqlFieldsProvider) ForTenantAccess() string {
+	return `
+		tenantID
+		resourceID
+        resourceType
+		owner
 	`
 }

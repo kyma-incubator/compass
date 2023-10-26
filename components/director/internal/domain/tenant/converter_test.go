@@ -1,7 +1,11 @@
 package tenant_test
 
 import (
+	"fmt"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -23,6 +27,7 @@ var (
 	parent          = ""
 	subdomain       = "subdomain"
 	region          = "region"
+	licenseType     = "TESTLICENSE"
 )
 
 func TestConverter(t *testing.T) {
@@ -114,7 +119,7 @@ func TestConverter_ToGraphQLInput(t *testing.T) {
 		c := tenant.NewConverter()
 
 		// WHEN
-		in := newModelBusinessTenantMappingInput(names[0], subdomain, region)
+		in := newModelBusinessTenantMappingInput(names[0], subdomain, region, &licenseType)
 		res := c.ToGraphQLInput(in)
 		expected := graphql.BusinessTenantMappingInput{
 			Name:           names[0],
@@ -124,6 +129,7 @@ func TestConverter_ToGraphQLInput(t *testing.T) {
 			Region:         str.Ptr(region),
 			Type:           string(tnt.Account),
 			Provider:       testProvider,
+			LicenseType:    str.Ptr(licenseType),
 		}
 
 		// THEN
@@ -289,6 +295,7 @@ func TestConverter_MultipleInputToGraphQLInputL(t *testing.T) {
 				Region:         region,
 				Type:           string(tnt.Account),
 				Provider:       testProvider,
+				LicenseType:    str.Ptr(testLicenseType),
 			},
 			{
 				Name:           names[1],
@@ -310,6 +317,7 @@ func TestConverter_MultipleInputToGraphQLInputL(t *testing.T) {
 				Region:         str.Ptr(region),
 				Type:           string(tnt.Account),
 				Provider:       testProvider,
+				LicenseType:    str.Ptr(testLicenseType),
 			},
 			{
 				Name:           names[1],
@@ -326,4 +334,247 @@ func TestConverter_MultipleInputToGraphQLInputL(t *testing.T) {
 		require.Equal(t, len(expected), len(res))
 		require.Equal(t, expected, res)
 	})
+}
+
+func TestConverter_TenantAccessInputFromGraphQL(t *testing.T) {
+	testCases := []struct {
+		Name             string
+		Input            graphql.TenantAccessInput
+		ExpectedErrorMsg string
+		ExpectedOutput   *model.TenantAccess
+	}{
+		{
+			Name: "Success for application",
+			Input: graphql.TenantAccessInput{
+				TenantID:     testExternal,
+				ResourceType: graphql.TenantAccessObjectTypeApplication,
+				ResourceID:   testID,
+				Owner:        false,
+			},
+			ExpectedOutput: &model.TenantAccess{
+				ExternalTenantID: testExternal,
+				ResourceType:     resource.Application,
+				ResourceID:       testID,
+				Owner:            false,
+			},
+		},
+		{
+			Name: "Success for runtime",
+			Input: graphql.TenantAccessInput{
+				TenantID:     testExternal,
+				ResourceType: graphql.TenantAccessObjectTypeRuntime,
+				ResourceID:   testID,
+				Owner:        false,
+			},
+			ExpectedOutput: &model.TenantAccess{
+				ExternalTenantID: testExternal,
+				ResourceType:     resource.Runtime,
+				ResourceID:       testID,
+				Owner:            false,
+			},
+		},
+		{
+			Name: "Success for runtime context",
+			Input: graphql.TenantAccessInput{
+				TenantID:     testExternal,
+				ResourceType: graphql.TenantAccessObjectTypeRuntimeContext,
+				ResourceID:   testID,
+				Owner:        false,
+			},
+			ExpectedOutput: &model.TenantAccess{
+				ExternalTenantID: testExternal,
+				ResourceType:     resource.RuntimeContext,
+				ResourceID:       testID,
+				Owner:            false,
+			},
+		},
+		{
+			Name: "Error when converting resource type",
+			Input: graphql.TenantAccessInput{
+				TenantID:     testExternal,
+				ResourceType: graphql.TenantAccessObjectType(resource.FormationConstraint),
+				ResourceID:   testID,
+				Owner:        false,
+			},
+			ExpectedErrorMsg: fmt.Sprintf("Unknown tenant access resource type %q", resource.FormationConstraint),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			c := tenant.NewConverter()
+			output, err := c.TenantAccessInputFromGraphQL(testCase.Input)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Equal(t, testCase.ExpectedErrorMsg, err.Error())
+				require.Nil(t, output)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, testCase.ExpectedOutput, output)
+			}
+		})
+	}
+}
+
+func TestConverter_TenantAccessToGraphQL(t *testing.T) {
+	testCases := []struct {
+		Name             string
+		Input            *model.TenantAccess
+		ExpectedErrorMsg string
+		ExpectedOutput   *graphql.TenantAccess
+	}{
+		{
+			Name:           "Success when nil input",
+			Input:          nil,
+			ExpectedOutput: nil,
+		},
+		{
+			Name: "Success for application",
+			Input: &model.TenantAccess{
+				ExternalTenantID: testExternal,
+				InternalTenantID: testInternal,
+				ResourceType:     resource.Application,
+				ResourceID:       testID,
+				Owner:            false,
+			},
+			ExpectedOutput: &graphql.TenantAccess{
+				TenantID:     testExternal,
+				ResourceType: graphql.TenantAccessObjectTypeApplication,
+				ResourceID:   testID,
+				Owner:        false,
+			},
+		},
+		{
+			Name: "Success for runtime",
+			Input: &model.TenantAccess{
+				ExternalTenantID: testExternal,
+				InternalTenantID: testInternal,
+				ResourceType:     resource.Runtime,
+				ResourceID:       testID,
+				Owner:            false,
+			},
+			ExpectedOutput: &graphql.TenantAccess{
+				TenantID:     testExternal,
+				ResourceType: graphql.TenantAccessObjectTypeRuntime,
+				ResourceID:   testID,
+				Owner:        false,
+			},
+		},
+		{
+			Name: "Success for runtime context",
+			Input: &model.TenantAccess{
+				ExternalTenantID: testExternal,
+				InternalTenantID: testInternal,
+				ResourceType:     resource.RuntimeContext,
+				ResourceID:       testID,
+				Owner:            false,
+			},
+			ExpectedOutput: &graphql.TenantAccess{
+				TenantID:     testExternal,
+				ResourceType: graphql.TenantAccessObjectTypeRuntimeContext,
+				ResourceID:   testID,
+				Owner:        false,
+			},
+		},
+		{
+			Name: "Error when converting resource type",
+			Input: &model.TenantAccess{
+				ExternalTenantID: testExternal,
+				InternalTenantID: testInternal,
+				ResourceType:     resource.FormationConstraint,
+				ResourceID:       testID,
+				Owner:            false,
+			},
+			ExpectedErrorMsg: fmt.Sprintf("Unknown tenant access resource type %q", resource.FormationConstraint),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			c := tenant.NewConverter()
+			output, err := c.TenantAccessToGraphQL(testCase.Input)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Equal(t, testCase.ExpectedErrorMsg, err.Error())
+				require.Nil(t, output)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, testCase.ExpectedOutput, output)
+			}
+		})
+	}
+}
+
+func TestConverter_TenantAccessToEntity(t *testing.T) {
+	testCases := []struct {
+		Name           string
+		Input          *model.TenantAccess
+		ExpectedOutput *repo.TenantAccess
+	}{
+		{
+			Name:           "when input is nil",
+			Input:          nil,
+			ExpectedOutput: nil,
+		},
+		{
+			Name: "all fields",
+			Input: &model.TenantAccess{
+				ExternalTenantID: testExternal,
+				InternalTenantID: testInternal,
+				ResourceType:     resource.Application,
+				ResourceID:       testID,
+				Owner:            true,
+			},
+			ExpectedOutput: &repo.TenantAccess{
+				TenantID:   testInternal,
+				ResourceID: testID,
+				Owner:      true,
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			converter := tenant.NewConverter()
+			output := converter.TenantAccessToEntity(testCase.Input)
+			require.Equal(t, testCase.ExpectedOutput, output)
+		})
+	}
+}
+
+func TestConverter_TenantAccessFromEntity(t *testing.T) {
+	testCases := []struct {
+		Name           string
+		Input          *repo.TenantAccess
+		ExpectedOutput *model.TenantAccess
+	}{
+		{
+			Name:           "when input is nil",
+			Input:          nil,
+			ExpectedOutput: nil,
+		},
+		{
+			Name: "all fields",
+			Input: &repo.TenantAccess{
+				TenantID:   testInternal,
+				ResourceID: testID,
+				Owner:      false,
+			},
+			ExpectedOutput: &model.TenantAccess{
+				InternalTenantID: testInternal,
+				ResourceID:       testID,
+				Owner:            false,
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			converter := tenant.NewConverter()
+			output := converter.TenantAccessFromEntity(testCase.Input)
+			require.Equal(t, testCase.ExpectedOutput, output)
+		})
+	}
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func CreateFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationTemplateInput) *graphql.FormationTemplate {
+func CreateFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationTemplateInput) graphql.FormationTemplate {
 	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(in)
 	require.NoError(t, err)
 	createRequest := FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
@@ -20,10 +20,26 @@ func CreateFormationTemplate(t require.TestingT, ctx context.Context, gqlClient 
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, createRequest, &formationTemplate))
 	require.NotEmpty(t, formationTemplate.ID)
 
-	return &formationTemplate
+	return formationTemplate
 }
 
-func CreateFormationTemplateWithTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.FormationTemplateInput) *graphql.FormationTemplate {
+func CreateFormationTemplateExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationTemplateInput) {
+	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(in)
+	require.NoError(t, err)
+	createRequest := FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
+	formationTemplate := graphql.FormationTemplate{}
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, createRequest, &formationTemplate)
+
+	// In case of successfully created formation template the require statement terminates the test case and the ID is not returned. Should clean up the formation template here.
+	if formationTemplate.ID != "" {
+		defer CleanupFormationTemplate(t, ctx, gqlClient, &formationTemplate)
+	}
+
+	require.Error(t, err)
+	t.Log("Error: ", err.Error())
+}
+
+func CreateFormationTemplateWithTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.FormationTemplateInput) graphql.FormationTemplate {
 	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(in)
 	require.NoError(t, err)
 	createRequest := FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
@@ -32,7 +48,7 @@ func CreateFormationTemplateWithTenant(t require.TestingT, ctx context.Context, 
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, createRequest, &formationTemplate))
 	require.NotEmpty(t, formationTemplate.ID)
 
-	return &formationTemplate
+	return formationTemplate
 }
 
 func CreateFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType) graphql.FormationTemplate {
@@ -40,8 +56,27 @@ func CreateFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlC
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           []string{runtimeType},
-		RuntimeTypeDisplayName: formationTemplateName,
-		RuntimeArtifactKind:    runtimeArtifactKind,
+		RuntimeTypeDisplayName: &formationTemplateName,
+		RuntimeArtifactKind:    &runtimeArtifactKind,
+	}
+
+	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
+	require.NoError(t, err)
+	formationTmplRequest := FixCreateFormationTemplateRequest(formationTmplGQLInput)
+
+	ft := graphql.FormationTemplate{}
+	t.Logf("Creating formation template with name: %q", formationTemplateName)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, formationTmplRequest, &ft)
+	require.NoError(t, err)
+	return ft
+}
+
+func CreateAppOnlyFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName string, applicationTypes []string, leadingProductIDs []string, supportsReset bool) graphql.FormationTemplate {
+	formationTmplInput := graphql.FormationTemplateInput{
+		Name:              formationTemplateName,
+		ApplicationTypes:  applicationTypes,
+		LeadingProductIDs: leadingProductIDs,
+		SupportsReset:     &supportsReset,
 	}
 
 	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
@@ -56,7 +91,7 @@ func CreateFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlC
 }
 
 func CreateFormationTemplateWithLeadingProductIDs(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType, leadingProductIDs []string) graphql.FormationTemplate {
-	formationTmplInput := FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, runtimeType, applicationTypes, runtimeArtifactKind, leadingProductIDs)
+	formationTmplInput := FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, applicationTypes, []string{runtimeType}, runtimeArtifactKind, leadingProductIDs)
 
 	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
 	require.NoError(t, err)
@@ -73,6 +108,16 @@ func QueryFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *
 	queryRequest := FixQueryFormationTemplateRequest(id)
 
 	formationTemplate := graphql.FormationTemplate{}
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, queryRequest, &formationTemplate))
+	require.NotEmpty(t, formationTemplate.ID)
+
+	return &formationTemplate
+}
+
+func QueryFormationTemplateWithConstraints(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) *graphql.FormationTemplateExt {
+	queryRequest := FixQueryFormationTemplateWithConstraintsRequest(id)
+
+	formationTemplate := graphql.FormationTemplateExt{}
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, queryRequest, &formationTemplate))
 	require.NotEmpty(t, formationTemplate.ID)
 
@@ -99,8 +144,12 @@ func QueryFormationTemplatesWithPageSizeAndTenant(t require.TestingT, ctx contex
 	return &formationTemplates
 }
 
-func CleanupFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) *graphql.FormationTemplate {
-	deleteRequest := FixDeleteFormationTemplateRequest(id)
+func CleanupFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, template *graphql.FormationTemplate) *graphql.FormationTemplate {
+	if template == nil {
+		return &graphql.FormationTemplate{}
+	}
+
+	deleteRequest := FixDeleteFormationTemplateRequest(template.ID)
 
 	formationTemplate := graphql.FormationTemplate{}
 	err := testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, deleteRequest, &formationTemplate)
@@ -110,8 +159,27 @@ func CleanupFormationTemplate(t require.TestingT, ctx context.Context, gqlClient
 	return &formationTemplate
 }
 
-func CleanupFormationTemplateWithTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) *graphql.FormationTemplate {
-	deleteRequest := FixDeleteFormationTemplateRequest(id)
+func UpdateFormationTemplateExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string, in graphql.FormationTemplateInput) {
+	updatedFormationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(in)
+	require.NoError(t, err)
+
+	updateFormationTemplateRequest := FixUpdateFormationTemplateRequest(id, updatedFormationTemplateInputGQLString)
+	output := graphql.FormationTemplate{}
+
+	// WHEN
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, updateFormationTemplateRequest, &output)
+
+	//THEN
+	require.Error(t, err)
+	t.Log("Error: ", err.Error())
+}
+
+func CleanupFormationTemplateWithTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, template *graphql.FormationTemplate) *graphql.FormationTemplate {
+	if template == nil {
+		return &graphql.FormationTemplate{}
+	}
+
+	deleteRequest := FixDeleteFormationTemplateRequest(template.ID)
 
 	formationTemplate := graphql.FormationTemplate{}
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &formationTemplate)

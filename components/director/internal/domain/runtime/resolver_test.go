@@ -61,8 +61,8 @@ func TestResolver_CreateRuntime(t *testing.T) {
 
 	ctx := tenant.SaveToContext(context.TODO(), accountTenantID, accountExternalID)
 
-	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum")
-	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Lorem ipsum")
+	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum", "test.ns")
+	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 	testErr := errors.New("Test error")
 
 	gqlInput := graphql.RuntimeRegisterInput{
@@ -188,7 +188,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
-				svc.On("FetchOnDemand", extSubaccountID, accountTenantID).Return(nil).Once()
+				svc.On("FetchOnDemand", ctx, extSubaccountID, accountTenantID).Return(nil).Once()
 				return svc
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrorsAndGetSelfRegDistinguishingLabelKey(selfRegLabels),
@@ -277,7 +277,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
-				svc.On("FetchOnDemand", extSubaccountID, accountTenantID).Return(testErr).Once()
+				svc.On("FetchOnDemand", ctx, extSubaccountID, accountTenantID).Return(testErr).Once()
 				return svc
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(selfRegLabels),
@@ -596,8 +596,8 @@ func TestResolver_CreateRuntime(t *testing.T) {
 
 func TestResolver_UpdateRuntime(t *testing.T) {
 	// GIVEN
-	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum")
-	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Lorem ipsum")
+	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum", "test.ns")
+	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 	testErr := errors.New("Test error")
 
 	desc := "Lorem ipsum"
@@ -724,8 +724,8 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 
 func TestResolver_DeleteRuntime(t *testing.T) {
 	// GIVEN
-	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar")
-	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar")
+	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar", "test.ns")
+	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar", "test.ns")
 	testErr := errors.New("Test error")
 	labelNotFoundErr := apperrors.NewNotFoundError(resource.Label, "")
 	scenarioAssignmentNotFoundErr := apperrors.NewNotFoundError(resource.AutomaticScenarioAssigment, "")
@@ -1742,8 +1742,8 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 
 func TestResolver_Runtime(t *testing.T) {
 	// GIVEN
-	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar")
-	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar")
+	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar", "test.ns")
+	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar", "test.ns")
 	testErr := errors.New("Test error")
 
 	testCases := []struct {
@@ -1848,13 +1848,13 @@ func TestResolver_Runtime(t *testing.T) {
 func TestResolver_Runtimes(t *testing.T) {
 	// GIVEN
 	modelRuntimes := []*model.Runtime{
-		fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem Ipsum"),
-		fixModelRuntime(t, "bar", "tenant-bar", "Bar", "Lorem Ipsum"),
+		fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem Ipsum", "foo.ns"),
+		fixModelRuntime(t, "bar", "tenant-bar", "Bar", "Lorem Ipsum", "bar.ns"),
 	}
 
 	gqlRuntimes := []*graphql.Runtime{
-		fixGQLRuntime(t, "foo", "Foo", "Lorem Ipsum"),
-		fixGQLRuntime(t, "bar", "Bar", "Lorem Ipsum"),
+		fixGQLRuntime(t, "foo", "Foo", "Lorem Ipsum", "foo.ns"),
+		fixGQLRuntime(t, "bar", "Bar", "Lorem Ipsum", "bar.ns"),
 	}
 
 	first := 2
@@ -1949,8 +1949,8 @@ func TestResolver_Runtimes(t *testing.T) {
 
 func TestResolver_RuntimeByTokenIssuer(t *testing.T) {
 	// GIVEN
-	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar")
-	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar")
+	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar", "test.ns")
+	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar", "test.ns")
 	testErr := errors.New("Test error")
 
 	testCases := []struct {
@@ -2287,7 +2287,7 @@ func TestResolver_Webhooks(t *testing.T) {
 	// GIVEN
 	id := "foo"
 
-	gqlRuntime := fixGQLRuntime(t, id, "name", "desc")
+	gqlRuntime := fixGQLRuntime(t, id, "name", "desc", "test.ns")
 
 	modelWebhooks := []*model.Webhook{{Type: "test webhook"}}
 	gqlWebhooks := []*graphql.Webhook{{Type: "test webhook"}}
@@ -2413,7 +2413,7 @@ func TestResolver_Labels(t *testing.T) {
 	labelKey2 := "key2"
 	labelValue2 := "val2"
 
-	gqlRuntime := fixGQLRuntime(t, id, "name", "desc")
+	gqlRuntime := fixGQLRuntime(t, id, "name", "desc", "test.ns")
 
 	modelLabels := map[string]*model.Label{
 		"abc": {
@@ -2666,7 +2666,7 @@ func TestResolver_RuntimeContext(t *testing.T) {
 
 	modelRuntimeContext := fixModelRuntimeContext(id, runtimeID, key, val)
 	gqlRuntimeContext := fixGqlRuntimeContext(id, key, val)
-	gqlRuntime := fixGQLRuntime(t, runtimeID, "runtime", "description")
+	gqlRuntime := fixGQLRuntime(t, runtimeID, "runtime", "description", "test.ns")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -2961,7 +2961,7 @@ func TestResolver_Auths(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
-	parentRuntime := fixGQLRuntime(t, "foo", "bar", "baz")
+	parentRuntime := fixGQLRuntime(t, "foo", "bar", "baz", "test.ns")
 
 	modelSysAuths := []pkgmodel.SystemAuth{
 		fixModelSystemAuth("bar", tnt, parentRuntime.ID, fixModelAuth()),
@@ -3102,7 +3102,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	runtimeID := uuid.New()
-	gqlRuntime := fixGQLRuntime(t, runtimeID.String(), "bar", "baz")
+	gqlRuntime := fixGQLRuntime(t, runtimeID.String(), "bar", "baz", "test.ns")
 
 	testErr := errors.New("this is a test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)

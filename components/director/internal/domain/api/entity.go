@@ -11,13 +11,15 @@ import (
 
 // Entity is a representation of a API in the database.
 type Entity struct {
-	ApplicationID                           string         `db:"app_id"`
+	ApplicationID                           sql.NullString `db:"app_id"`
+	ApplicationTemplateVersionID            sql.NullString `db:"app_template_version_id"`
 	PackageID                               sql.NullString `db:"package_id"`
 	Name                                    string         `db:"name"`
 	Description                             sql.NullString `db:"description"`
 	Group                                   sql.NullString `db:"group_name"`
 	TargetURLs                              sql.NullString `db:"target_urls"`
 	OrdID                                   sql.NullString `db:"ord_id"`
+	LocalTenantID                           sql.NullString `db:"local_tenant_id"`
 	ShortDescription                        sql.NullString `db:"short_description"`
 	SystemInstanceAware                     sql.NullBool   `db:"system_instance_aware"`
 	PolicyLevel                             sql.NullString `db:"policy_level"`
@@ -42,7 +44,11 @@ type Entity struct {
 	CustomImplementationStandardDescription sql.NullString `db:"custom_implementation_standard_description"`
 	Extensible                              sql.NullString `db:"extensible"`
 	ResourceHash                            sql.NullString `db:"resource_hash"`
+	SupportedUseCases                       sql.NullString `db:"supported_use_cases"`
 	DocumentationLabels                     sql.NullString `db:"documentation_labels"`
+	CorrelationIDs                          sql.NullString `db:"correlation_ids"`
+	Direction                               sql.NullString `db:"direction"`
+	LastUpdate                              sql.NullString `db:"last_update"`
 
 	*repo.BaseEntity
 	version.Version
@@ -50,7 +56,13 @@ type Entity struct {
 
 // GetParent returns the parent type and the parent ID of the entity.
 func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
-	return resource.Application, e.ApplicationID
+	if e.ApplicationID.Valid {
+		return resource.Application, e.ApplicationID.String
+	} else if e.ApplicationTemplateVersionID.Valid {
+		return resource.ApplicationTemplateVersion, e.ApplicationTemplateVersionID.String
+	}
+
+	return "", ""
 }
 
 // DecorateWithTenantID decorates the entity with the given tenant ID.

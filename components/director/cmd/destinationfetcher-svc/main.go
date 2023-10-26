@@ -22,9 +22,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	auth_middleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
+
+	"github.com/gorilla/mux"
 	destinationfetcher "github.com/kyma-incubator/compass/components/director/internal/destinationfetchersvc"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -58,7 +59,7 @@ type config struct {
 
 	ServerTimeout              time.Duration `envconfig:"default=110s"`
 	ShutdownTimeout            time.Duration `envconfig:"default=10s"`
-	DestinationFetcherSchedule time.Duration `envconfig:"APP_DESTINATION_FETCHER_SCHEDULE,default=10m"`
+	DestinationFetcherSchedule time.Duration `envconfig:"APP_DESTINATION_FETCHER_SCHEDULE,default=10s"`
 	TenantSyncTimeout          time.Duration `envconfig:"APP_DESTINATION_FETCHER_TENANT_SYNC_TIMEOUT,default=5m"`
 	ParallelTenantSyncs        int           `envconfig:"APP_DESTINATION_FETCHER_PARALLEL_TENANTS,default=10"`
 	DestinationsRootAPI        string        `envconfig:"APP_ROOT_API,default=/destinations"`
@@ -70,6 +71,8 @@ type config struct {
 	Log                         log.Config
 	SecurityConfig              securityConfig
 	ElectionConfig              cronjob.ElectionConfig
+
+	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 }
 
 type securityConfig struct {
@@ -139,7 +142,7 @@ func main() {
 
 func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg securityConfig, requiredScopes ...string) {
 	scopeValidator := claims.NewScopesValidator(requiredScopes)
-	middleware := authenticator.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
+	middleware := auth_middleware.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())
 
 	log.C(ctx).Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
@@ -160,7 +163,8 @@ func exitOnError(err error, context string) {
 
 func getDestinationService(cfg config, transact persistence.Transactioner) *destinationfetcher.DestinationService {
 	uuidSvc := uuid.NewService()
-	destRepo := destination.NewRepository()
+	destConv := destination.NewConverter()
+	destRepo := destination.NewRepository(destConv)
 	bundleRepo := bundleRepo()
 
 	labelConverter := label.NewConverter()
@@ -172,16 +176,7 @@ func getDestinationService(cfg config, transact persistence.Transactioner) *dest
 	err := cfg.DestinationsConfig.MapInstanceConfigs()
 	exitOnError(err, "error while loading destination instances config")
 
-	return &destinationfetcher.DestinationService{
-		Transactioner:      transact,
-		UUIDSvc:            uuidSvc,
-		DestinationRepo:    destRepo,
-		BundleRepo:         bundleRepo,
-		LabelRepo:          labelRepo,
-		DestinationsConfig: cfg.DestinationsConfig,
-		APIConfig:          cfg.DestinationServiceAPIConfig,
-		TenantRepo:         tenantRepo,
-	}
+	return destinationfetcher.NewDestinationService(transact, uuidSvc, destRepo, bundleRepo, labelRepo, cfg.DestinationsConfig, cfg.DestinationServiceAPIConfig, tenantRepo, cfg.SelfRegisterDistinguishLabelKey)
 }
 
 func initAPIHandler(ctx context.Context, httpClient *http.Client,

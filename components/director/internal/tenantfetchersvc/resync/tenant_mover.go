@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	tnt "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -21,12 +21,14 @@ const (
 )
 
 // RuntimeService missing godoc
+//
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	ListByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 // LabelRepo missing godoc
+//
 //go:generate mockery --name=LabelRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepo interface {
 	GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error)
@@ -245,7 +247,7 @@ func fetchMovedSubaccountsWithRetries(ctx context.Context, eventAPIClient EventA
 		}
 		tenants = fetchedTenants
 		return nil
-	}, retry.Attempts(retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
+	}, retry.Attempts(retryAttempts), retry.Delay(retryDelaySeconds*time.Second))
 	if err != nil {
 		return nil, errors.Wrapf(err, "while fetching moved tenants after %d retries", retryAttempts)
 	}

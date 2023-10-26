@@ -14,11 +14,12 @@ import (
 const productTable string = `public.products`
 
 var (
-	productColumns   = []string{"ord_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id", "documentation_labels"}
-	updatableColumns = []string{"title", "short_description", "vendor", "parent", "labels", "correlation_ids", "documentation_labels"}
+	productColumns   = []string{"ord_id", "app_id", "app_template_version_id", "title", "short_description", "description", "vendor", "parent", "labels", "correlation_ids", "id", "tags", "documentation_labels"}
+	updatableColumns = []string{"title", "short_description", "description", "vendor", "parent", "labels", "correlation_ids", "tags", "documentation_labels"}
 )
 
 // EntityConverter missing godoc
+//
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
 	ToEntity(in *model.Product) *Entity
@@ -64,7 +65,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.P
 		return apperrors.NewInternalError("model can not be nil")
 	}
 
-	log.C(ctx).Debugf("Persisting Product entity with id %q", model.ID)
+	log.C(ctx).Infof("Persisting Product entity with id %q", model.ID)
 	return r.creator.Create(ctx, resource.Product, tenant, r.conv.ToEntity(model))
 }
 
@@ -145,12 +146,22 @@ func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Pro
 	return productModel, nil
 }
 
-// ListByApplicationID gets all products for a given application id
-func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Product, error) {
+// ListByResourceID gets all products for a given resource ID and type
+func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Product, error) {
 	productCollection := productCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Product, tenantID, &productCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+
+	var err error
+	if resourceType == resource.Application {
+		condition := repo.NewEqualCondition("app_id", resourceID)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.Product, tenantID, &productCollection, condition)
+	} else {
+		condition := repo.NewEqualCondition("app_template_version_id", resourceID)
+		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &productCollection, condition)
+	}
+	if err != nil {
 		return nil, err
 	}
+
 	products := make([]*model.Product, 0, productCollection.Len())
 	for _, product := range productCollection {
 		productModel, err := r.conv.FromEntity(&product)

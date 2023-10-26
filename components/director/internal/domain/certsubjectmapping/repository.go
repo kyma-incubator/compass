@@ -20,9 +20,12 @@ var (
 	idTableColumns        = []string{"id"}
 	updatableTableColumns = []string{"subject", "consumer_type", "internal_consumer_id", "tenant_access_levels"}
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
+
+	internalConsumerIDColumn = "internal_consumer_id"
 )
 
 // entityConverter converts between the internal model and entity
+//
 //go:generate mockery --exported --name=entityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type entityConverter interface {
 	ToEntity(in *model.CertSubjectMapping) (*Entity, error)
@@ -139,4 +142,35 @@ func (r *repository) List(ctx context.Context, pageSize int, cursor string) (*mo
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
+}
+
+// ListByConsumerID queries all certificate subject mappings with given consumer id
+func (r *repository) ListByConsumerID(ctx context.Context, consumerID string) ([]*model.CertSubjectMapping, error) {
+	log.C(ctx).Debug("Listing certificate subject mappings from DB")
+	var entityCollection EntityCollection
+
+	condition := repo.NewEqualCondition(internalConsumerIDColumn, consumerID)
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, condition); err != nil {
+		return nil, err
+	}
+
+	result := make([]*model.CertSubjectMapping, 0, len(entityCollection))
+
+	for _, entity := range entityCollection {
+		certSubjectMapping, err := r.conv.FromEntity(entity)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while converting certificate subject mapping with ID: %s", entity.ID)
+		}
+
+		result = append(result, certSubjectMapping)
+	}
+
+	return result, nil
+}
+
+// DeleteByConsumerID deletes all certificate subject mappings for a specific consumer id
+func (r *repository) DeleteByConsumerID(ctx context.Context, consumerID string) error {
+	log.C(ctx).Debugf("Deleting all certificate subject mappings for consumer ID %q from DB", consumerID)
+	return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition("internal_consumer_id", consumerID)})
 }

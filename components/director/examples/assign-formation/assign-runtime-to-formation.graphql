@@ -8,5 +8,14 @@ mutation {
     id
     name
     formationTemplateId
+    state
+    status {
+      condition
+      errors {
+        assignmentID
+        message
+        errorCode
+      }
+    }
   }
 }

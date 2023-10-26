@@ -1,15 +1,17 @@
 package systemfetcher
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 
-	"github.com/imdario/mergo"
+	"k8s.io/client-go/util/jsonpath"
+
+	"dario.cat/mergo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
-	"github.com/tidwall/gjson"
 )
 
 //go:generate mockery --name=applicationTemplateService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
@@ -46,9 +48,11 @@ func NewTemplateRenderer(appTemplateService applicationTemplateService, appConve
 		return nil, errors.Wrapf(err, "while converting override application input JSON into application input")
 	}
 	placeholders := make([]model.ApplicationTemplatePlaceholder, 0)
-	for _, p := range mapping {
+	for i := 0; i < len(mapping); i++ {
 		placeholders = append(placeholders, model.ApplicationTemplatePlaceholder{
-			Name: p.PlaceholderName,
+			Name:     mapping[i].PlaceholderName,
+			JSONPath: &mapping[i].SystemKey,
+			Optional: &mapping[i].Optional,
 		})
 	}
 
@@ -67,12 +71,16 @@ func (r *renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc 
 		return nil, errors.Wrapf(err, "while getting application template with ID %s", sc.TemplateID)
 	}
 
-	inputValues, err := r.getTemplateInputs(sc)
+	inputValues, err := r.getTemplateInputs(sc.SystemPayload, appTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting template inputs for Application Template with name %s", appTemplate.Name)
 	}
+	placeholdersOverride, err := r.extendPlaceholdersOverride(sc.SystemPayload, appTemplate)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while extending placeholders override for Application Template with name %s", appTemplate.Name)
+	}
 
-	appTemplate.Placeholders = r.placeholdersOverride
+	appTemplate.Placeholders = placeholdersOverride
 	appTemplate.ApplicationInputJSON, err = r.mergedApplicationInput(appTemplate.ApplicationInputJSON, r.appInputOverride)
 	if err != nil {
 		return nil, errors.Wrap(err, "while merging application input from template and override application input")
@@ -90,24 +98,44 @@ func (r *renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc 
 	return &appRegisterInput, nil
 }
 
-func (r *renderer) getTemplateInputs(s System) (*model.ApplicationFromTemplateInputValues, error) {
-	systemJSON, err := json.Marshal(s)
-	if err != nil {
-		return nil, err
-	}
+func (r *renderer) getTemplateInputs(systemPayload map[string]interface{}, appTemplate *model.ApplicationTemplate) (*model.ApplicationFromTemplateInputValues, error) {
+	parser := jsonpath.New("parser")
 
-	inputValues := model.ApplicationFromTemplateInputValues{}
+	placeholdersMappingInputValues := model.ApplicationFromTemplateInputValues{}
 	for _, pm := range r.placeholdersMapping {
-		placeholderInput := gjson.GetBytes(systemJSON, pm.SystemKey).String()
-		if len(placeholderInput) == 0 && !pm.Optional {
-			return nil, fmt.Errorf("missing or empty key %q in system input %s", pm.SystemKey, string(systemJSON))
+		if err := parser.Parse(fmt.Sprintf("{%s}", pm.SystemKey)); err != nil {
+			return nil, errors.Wrapf(err, "while parsing placeholder mapping with name %s and system key: %s", pm.PlaceholderName, pm.SystemKey)
 		}
-		inputValues = append(inputValues, &model.ApplicationTemplateValueInput{
+
+		placeholderInput := new(bytes.Buffer)
+		if err := parser.Execute(placeholderInput, systemPayload); err != nil && !pm.Optional {
+			return nil, errors.Wrapf(err, "missing or empty key %q in system payload.", pm.SystemKey)
+		}
+
+		placeholdersMappingInputValues = append(placeholdersMappingInputValues, &model.ApplicationTemplateValueInput{
 			Placeholder: pm.PlaceholderName,
-			Value:       placeholderInput,
+			Value:       placeholderInput.String(),
 		})
 	}
+	var appTemplatePlaceholdersInputValues model.ApplicationFromTemplateInputValues
+	for _, placeholder := range appTemplate.Placeholders {
+		if placeholder.JSONPath != nil && len(*placeholder.JSONPath) > 0 {
+			if err := parser.Parse(fmt.Sprintf("{%s}", *placeholder.JSONPath)); err != nil {
+				return nil, errors.Wrapf(err, "while parsing placeholder jsonPath with name: %s and path: %s for ap template with id: %s", placeholder.Name, *placeholder.JSONPath, appTemplate.ID)
+			}
 
+			placeholderInput := new(bytes.Buffer)
+			if err := parser.Execute(placeholderInput, systemPayload); err != nil {
+				return nil, errors.Wrapf(err, "placeholder value with name: %s and path: %s for app template with id: %s not found in system payload", placeholder.Name, *placeholder.JSONPath, appTemplate.ID)
+			}
+
+			appTemplatePlaceholdersInputValues = append(appTemplatePlaceholdersInputValues, &model.ApplicationTemplateValueInput{
+				Placeholder: placeholder.Name,
+				Value:       placeholderInput.String(),
+			})
+		}
+	}
+	inputValues := mergeInputValues(appTemplatePlaceholdersInputValues, placeholdersMappingInputValues)
 	return &inputValues, nil
 }
 
@@ -123,13 +151,73 @@ func (r *renderer) mergedApplicationInput(originalAppInputJSON, overrideAppInput
 		return "", errors.Wrapf(err, "while unmarshaling override application input")
 	}
 
-	if err := mergo.Merge(&overrideAppInput, originalAppInput); err != nil {
+	if err := mergo.Merge(&originalAppInput, overrideAppInput); err != nil {
 		return "", errors.Wrapf(err, "while merging original app input: %v into destination app input: %v", originalAppInput, overrideAppInputJSON)
 	}
-
-	merged, err := json.Marshal(overrideAppInput)
+	merged, err := json.Marshal(originalAppInput)
 	if err != nil {
 		return "", errors.Wrapf(err, "while marshalling merged app input")
 	}
 	return string(merged), nil
+}
+
+func (r *renderer) extendPlaceholdersOverride(systemPayload map[string]interface{}, appTemplate *model.ApplicationTemplate) ([]model.ApplicationTemplatePlaceholder, error) {
+	parser := jsonpath.New("parser")
+
+	var appTemplatePlaceholdersOverride []model.ApplicationTemplatePlaceholder
+	for _, placeholder := range appTemplate.Placeholders {
+		if placeholder.JSONPath != nil && len(*placeholder.JSONPath) > 0 {
+			if err := parser.Parse(fmt.Sprintf("{%s}", *placeholder.JSONPath)); err != nil {
+				return nil, errors.Wrapf(err, "while parsing placeholder jsonPath with name: %s and path: %s for ap template with id: %s", placeholder.Name, *placeholder.JSONPath, appTemplate.ID)
+			}
+
+			placeholderInput := new(bytes.Buffer)
+			if err := parser.Execute(placeholderInput, systemPayload); err != nil {
+				return nil, errors.Wrapf(err, "placeholder value with name: %s and path: %s for app template with id: %s not found in system payload", placeholder.Name, *placeholder.JSONPath, appTemplate.ID)
+			}
+
+			appTemplatePlaceholdersOverride = append(appTemplatePlaceholdersOverride, model.ApplicationTemplatePlaceholder{
+				Name:     placeholder.Name,
+				JSONPath: placeholder.JSONPath,
+				Optional: placeholder.Optional,
+			})
+		}
+	}
+	placeholdersOverride := mergePlaceholders(appTemplatePlaceholdersOverride, r.placeholdersOverride)
+
+	return placeholdersOverride, nil
+}
+
+func mergePlaceholders(appTemplatePlaceholdersOverride []model.ApplicationTemplatePlaceholder, placeholdersOverride []model.ApplicationTemplatePlaceholder) []model.ApplicationTemplatePlaceholder {
+	placeholdersMap := make(map[string]model.ApplicationTemplatePlaceholder)
+	for _, placeholder := range appTemplatePlaceholdersOverride {
+		placeholdersMap[placeholder.Name] = placeholder
+	}
+	for _, placeholder := range placeholdersOverride {
+		if _, exists := placeholdersMap[placeholder.Name]; !exists {
+			placeholdersMap[placeholder.Name] = placeholder
+		}
+	}
+	mergedPlaceholders := make([]model.ApplicationTemplatePlaceholder, 0)
+	for _, p := range placeholdersMap {
+		mergedPlaceholders = append(mergedPlaceholders, p)
+	}
+	return mergedPlaceholders
+}
+
+func mergeInputValues(appTemplatePlaceholdersInputValues model.ApplicationFromTemplateInputValues, placeholdersMappingInputValues model.ApplicationFromTemplateInputValues) model.ApplicationFromTemplateInputValues {
+	inputsMap := make(map[string]*model.ApplicationTemplateValueInput)
+	for _, input := range appTemplatePlaceholdersInputValues {
+		inputsMap[input.Placeholder] = input
+	}
+	for _, input := range placeholdersMappingInputValues {
+		if _, exists := inputsMap[input.Placeholder]; !exists {
+			inputsMap[input.Placeholder] = input
+		}
+	}
+	mergedInputs := make(model.ApplicationFromTemplateInputValues, 0)
+	for _, input := range inputsMap {
+		mergedInputs = append(mergedInputs, input)
+	}
+	return mergedInputs
 }

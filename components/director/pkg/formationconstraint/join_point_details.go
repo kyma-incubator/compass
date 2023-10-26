@@ -2,6 +2,7 @@ package formationconstraint
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 )
 
@@ -40,6 +41,7 @@ type AssignFormationOperationDetails struct {
 	FormationType       string
 	FormationTemplateID string
 	FormationID         string
+	FormationName       string
 	TenantID            string
 }
 
@@ -73,11 +75,12 @@ func (d *UnassignFormationOperationDetails) GetMatchingDetails() MatchingDetails
 // GenerateFormationAssignmentNotificationOperationDetails contains details applicable to generate formation assignment notifications join point
 type GenerateFormationAssignmentNotificationOperationDetails struct {
 	Operation             model.FormationOperation
-	FormationID           string
+	FormationTemplateID   string
 	ResourceType          model.ResourceType
 	ResourceSubtype       string
 	ResourceID            string
 	CustomerTenantContext *webhook.CustomerTenantContext
+	Formation             *model.Formation
 
 	// fields used when generating notifications from configuration changed webhooks
 	ApplicationTemplate *webhook.ApplicationTemplateWithLabels
@@ -122,5 +125,51 @@ func (d *GenerateFormationNotificationOperationDetails) GetMatchingDetails() Mat
 	return MatchingDetails{
 		ResourceType:    model.FormationResourceType,
 		ResourceSubtype: d.FormationType,
+	}
+}
+
+// SendNotificationOperationDetails contains details applicable to send notifications join point
+type SendNotificationOperationDetails struct {
+	ResourceType               model.ResourceType
+	ResourceSubtype            string
+	Location                   JoinPointLocation
+	Operation                  model.FormationOperation
+	Webhook                    *graphql.Webhook
+	CorrelationID              string
+	TemplateInput              webhook.TemplateInput
+	FormationAssignment        *model.FormationAssignment
+	ReverseFormationAssignment *model.FormationAssignment
+	Formation                  *model.Formation
+}
+
+// GetMatchingDetails returns matching details for SendNotificationOperationDetails
+func (d *SendNotificationOperationDetails) GetMatchingDetails() MatchingDetails {
+	return MatchingDetails{
+		ResourceType:    d.ResourceType,
+		ResourceSubtype: d.ResourceSubtype,
+	}
+}
+
+// NotificationStatusReturnedOperationDetails contains details applicable to notification status returned join point
+type NotificationStatusReturnedOperationDetails struct {
+	ResourceType                         model.ResourceType
+	ResourceSubtype                      string
+	Location                             JoinPointLocation
+	LastFormationAssignmentState         string
+	LastFormationAssignmentConfiguration string
+	Tenant                               string
+	FormationAssignmentTemplateInput     webhook.FormationAssignmentTemplateInput
+	Operation                            model.FormationOperation
+	FormationAssignment                  *model.FormationAssignment
+	ReverseFormationAssignment           *model.FormationAssignment
+	Formation                            *model.Formation
+	FormationTemplate                    *model.FormationTemplate
+}
+
+// GetMatchingDetails returns matching details for NotificationStatusReturnedOperationDetails
+func (d *NotificationStatusReturnedOperationDetails) GetMatchingDetails() MatchingDetails {
+	return MatchingDetails{
+		ResourceType:    d.ResourceType,
+		ResourceSubtype: d.ResourceSubtype,
 	}
 }

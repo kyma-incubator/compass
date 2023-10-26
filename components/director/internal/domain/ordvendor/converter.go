@@ -22,13 +22,15 @@ func (c *converter) ToEntity(in *model.Vendor) *Entity {
 	}
 
 	output := &Entity{
-		ID:                  in.ID,
-		OrdID:               in.OrdID,
-		ApplicationID:       repo.NewNullableString(in.ApplicationID),
-		Title:               in.Title,
-		Partners:            repo.NewNullableStringFromJSONRawMessage(in.Partners),
-		Labels:              repo.NewNullableStringFromJSONRawMessage(in.Labels),
-		DocumentationLabels: repo.NewNullableStringFromJSONRawMessage(in.DocumentationLabels),
+		ID:                           in.ID,
+		OrdID:                        in.OrdID,
+		ApplicationID:                repo.NewNullableString(in.ApplicationID),
+		ApplicationTemplateVersionID: repo.NewNullableString(in.ApplicationTemplateVersionID),
+		Title:                        in.Title,
+		Partners:                     repo.NewNullableStringFromJSONRawMessage(in.Partners),
+		Tags:                         repo.NewNullableStringFromJSONRawMessage(in.Tags),
+		Labels:                       repo.NewNullableStringFromJSONRawMessage(in.Labels),
+		DocumentationLabels:          repo.NewNullableStringFromJSONRawMessage(in.DocumentationLabels),
 	}
 
 	return output
@@ -41,13 +43,15 @@ func (c *converter) FromEntity(entity *Entity) (*model.Vendor, error) {
 	}
 
 	output := &model.Vendor{
-		ID:                  entity.ID,
-		OrdID:               entity.OrdID,
-		ApplicationID:       repo.StringPtrFromNullableString(entity.ApplicationID),
-		Title:               entity.Title,
-		Partners:            repo.JSONRawMessageFromNullableString(entity.Partners),
-		Labels:              repo.JSONRawMessageFromNullableString(entity.Labels),
-		DocumentationLabels: repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
+		ID:                           entity.ID,
+		OrdID:                        entity.OrdID,
+		ApplicationID:                repo.StringPtrFromNullableString(entity.ApplicationID),
+		ApplicationTemplateVersionID: repo.StringPtrFromNullableString(entity.ApplicationTemplateVersionID),
+		Title:                        entity.Title,
+		Partners:                     repo.JSONRawMessageFromNullableString(entity.Partners),
+		Tags:                         repo.JSONRawMessageFromNullableString(entity.Tags),
+		Labels:                       repo.JSONRawMessageFromNullableString(entity.Labels),
+		DocumentationLabels:          repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 	}
 
 	return output, nil

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"regexp"
+	"sync"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
@@ -77,7 +78,8 @@ func (a Type) isSupported() bool {
 }
 
 // Executor defines an interface for execution of different access strategies
+//
 //go:generate mockery --name=Executor --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Executor interface {
-	Execute(ctx context.Context, client *http.Client, url, tnt string) (*http.Response, error)
+	Execute(ctx context.Context, client *http.Client, url, tnt string, additionalHeaders *sync.Map) (*http.Response, error)
 }

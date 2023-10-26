@@ -1,108 +1,16 @@
 function prometheusMTLSPatch() {
-  patchPrometheusForMTLS
-  patchAlertManagerForMTLS
   enableNodeExporterMTLS
-  patchDeploymentsToInjectSidecar
   patchKymaServiceMonitorsForMTLS
   removeKymaPeerAuthsForPrometheus
-}
-
-function patchPrometheusForMTLS() {
-  patch=$(cat <<"EOF"
-apiVersion: monitoring.coreos.com/v1
-kind: Prometheus
-metadata:
-  name: monitoring-prometheus
-  namespace: kyma-system
-spec:
-  alerting:
-    alertmanagers:
-      - apiVersion: v2
-        name: monitoring-alertmanager
-        namespace: kyma-system
-        pathPrefix: /
-        port: http-web
-        scheme: https
-        tlsConfig:
-          caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
-          certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
-          keyFile: /etc/prometheus/secrets/istio.default/key.pem
-          insecureSkipVerify: true
-  podMetadata:
-    annotations:
-      sidecar.istio.io/inject: "true"
-      traffic.sidecar.istio.io/includeInboundPorts: ""   # do not intercept any inbound ports
-      traffic.sidecar.istio.io/includeOutboundIPRanges: ""  # do not intercept any outbound traffic
-      proxy.istio.io/config: |
-        # configure an env variable OUTPUT_CERTS to write certificates to the given folder
-        proxyMetadata:
-          OUTPUT_CERTS: /etc/istio-output-certs
-      sidecar.istio.io/userVolumeMount: '[{"name": "istio-certs", "mountPath": "/etc/istio-output-certs"}]' # mount the shared volume at sidecar proxy
-  volumes:
-    - emptyDir:
-        medium: Memory
-      name: istio-certs
-  volumeMounts:
-    - mountPath: /etc/prometheus/secrets/istio.default/
-      name: istio-certs
-EOF
-  )
-
-  echo "${patch}" > patch.yaml
-  kubectl apply -f patch.yaml
-  rm patch.yaml
-}
-
-function patchAlertManagerForMTLS() {
-  patch=$(cat <<"EOF"
-apiVersion: monitoring.coreos.com/v1
-kind: Alertmanager
-metadata:
-  name: monitoring-alertmanager
-  namespace: kyma-system
-spec:
-  podMetadata:
-    annotations:
-      sidecar.istio.io/inject: "true"
-EOF
-  )
-
-  echo "${patch}" > patch.yaml
-  kubectl apply -f patch.yaml
-  rm patch.yaml
-}
-
-function patchDeploymentsToInjectSidecar() {
-  allDeploy=(
-    kiali-server
-    monitoring-kube-state-metrics
-    monitoring-operator
-  )
-
-  resource="deployment"
-  namespace="kyma-system"
-
-  for depl in "${allDeploy[@]}"; do
-    if kubectl get ${resource} -n ${namespace} "${depl}" > /dev/null; then
-      kubectl get ${resource} -n ${namespace} "${depl}" -o yaml > "${depl}.yaml"
-
-      if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' -e 's/sidecar.istio.io\/inject: "false"/sidecar.istio.io\/inject: "true"/g' "${depl}.yaml"
-      else # assume Linux otherwise
-        sed -i 's/sidecar.istio.io\/inject: "false"/sidecar.istio.io\/inject: "true"/g' "${depl}.yaml"
-      fi
-
-      kubectl apply -f "${depl}.yaml" || true
-
-      rm "${depl}.yaml"
-    fi
-  done
 }
 
 function enableNodeExporterMTLS() {
   # The patches around the DaemonSet involve an addition of two init containers that together setup certificates
   # for the node-exporter application to use. There are also two new mounts - a shared directory (node-certs)
   # and the Istio CA secret (istio-certs).
+  # This can be moved to the Helm values.yaml but it depends on the existence of Istio (its certificate Secret has to be
+  # replicated in the kyma-system namespace as well). As Istio and the monitoring stack are both deployed by Kyma this
+  # Secret replication is tricky, that's why the patch is kept.
 
   daemonset=$(cat <<"EOF"
 apiVersion: apps/v1
@@ -256,14 +164,10 @@ EOF
 } 
 
 function patchKymaServiceMonitorsForMTLS() {
+  # Some of the ServiceMonitor MTLS overrides were moved to the Kyma Helm chart overrides
   kymaSvcMonitors=(
-    monitoring-alertmanager
-    monitoring-kube-state-metrics
     monitoring-operator
-    monitoring-prometheus-node-exporter
-    monitoring-prometheus-pushgateway
-    tracing-metrics
-    ory-oathkeeper-maester
+    ory-stack-oathkeeper-maester
   )
 
   crd="servicemonitors.monitoring.coreos.com"
@@ -277,6 +181,11 @@ function patchKymaServiceMonitorsForMTLS() {
   }'
 
   for sm in "${kymaSvcMonitors[@]}"; do
+    # ory-stack-oathkeeper-maester is in different namespace as it is created by Helm
+    if [ "$sm" = "ory-stack-oathkeeper-maester" ]; then
+      namespace=ory
+    fi
+    
     if kubectl get ${crd} -n ${namespace} "${sm}" > /dev/null; then
       kubectl get ${crd} -n ${namespace} "${sm}" -o json > "${sm}.json"
 
@@ -291,26 +200,10 @@ function patchKymaServiceMonitorsForMTLS() {
       rm "${sm}.json"
     fi
   done
-
-  kubectl delete servicemonitors.monitoring.coreos.com -n kyma-system ory-hydra-maester || true
 }
 
 function removeKymaPeerAuthsForPrometheus() {
   crd="peerauthentications.security.istio.io"
-  namespace="kyma-system"
 
-  allPAs=(
-    kiali
-    logging-fluent-bit-metrics
-    logging-loki
-    monitoring-grafana-policy
-    ory-oathkeeper-maester-metrics
-    ory-hydra-maester-metrics
-    tracing-jaeger-operator-metrics
-    tracing-jaeger-metrics
-  )
-
-  for pa in "${allPAs[@]}"; do
-    kubectl delete ${crd} -n ${namespace} "${pa}" || true
-  done
+  kubectl delete ${crd} -n kyma-system monitoring-grafana-policy
 }

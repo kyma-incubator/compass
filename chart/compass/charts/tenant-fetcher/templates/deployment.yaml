@@ -78,6 +78,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.subaccountTenantIdProperty }}
             - name: APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
+            - name: APP_TENANT_PROVIDER_LICENSE_TYPE_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.licenseTypeProperty }}
             - name: APP_TENANT_PROVIDER
               value: {{ .Values.global.tenantFetcher.tenantProvider.name }}
             - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY
@@ -94,8 +96,10 @@ spec:
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: APP_ROOT_API
               value: "{{ .Values.global.tenantFetcher.prefix }}"
-            - name: APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT
-              value: "{{ .Values.global.tenantFetcher.server.fetchTenantEndpoint }}"
+            - name: APP_TENANT_WITH_PARENT_ON_DEMAND_HANDLER_ENDPOINT
+              value: "{{ .Values.global.tenantFetcher.server.fetchTenantWithParentEndpoint }}"
+            - name: APP_TENANT_WITHOUT_PARENT_ON_DEMAND_HANDLER_ENDPOINT
+              value: "{{ .Values.global.tenantFetcher.server.fetchTenantWithoutParentEndpoint }}"
             - name: APP_REGIONAL_HANDLER_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
             - name: APP_REGIONAL_DEPENDENCIES_ENDPOINT
@@ -215,6 +219,8 @@ spec:
               value: {{ $config.api.fieldMapping.regionField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_ENTITY_TYPE
               value: {{ $config.api.fieldMapping.entityTypeField }}
+            - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_LICENSE_TYPE
+              value: {{ default "licenseType" $config.api.fieldMapping.licenseTypeField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_DISCRIMINATOR
               value: {{ $config.api.fieldMapping.discriminatorField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_VALUE_DISCRIMINATOR
@@ -272,6 +278,8 @@ spec:
               value: {{ default "region"  $config.regionalConfig.fieldMapping.regionField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_ENTITY_TYPE
               value: {{ $config.regionalConfig.fieldMapping.entityTypeField }}
+            - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_LICENSE_TYPE
+              value: {{ default "licenseType" $config.regionalConfig.fieldMapping.licenseTypeField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_DISCRIMINATOR
               value: {{ $config.regionalConfig.fieldMapping.discriminatorField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_VALUE_DISCRIMINATOR
@@ -343,6 +351,8 @@ spec:
             # Sync tenants config
             - name: APP_{{ $tenantFetcherJobName }}_TENANT_FETCHER_JOB_INTERVAL
               value: {{ default "1m" $config.job.interval}}
+            - name: APP_{{ $tenantFetcherJobName }}_PAGE_WORKERS
+              value: {{ default "2" $config.pageWorkers | quote }}
             - name: APP_{{ $tenantFetcherJobName }}_TENANT_INSERT_CHUNK_SIZE
               value: {{ default "500" $config.tenantInsertChunkSize | quote }}
             # API Regional config

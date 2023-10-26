@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"testing"
 
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/pkg/errors"
 
@@ -27,12 +29,23 @@ var (
 	testErr  = errors.New("test error")
 	txGen    = txtest.NewTransactionContextGenerator(testErr)
 
+	// Tenant IDs variables
 	internalTntID = "testInternalID"
 	externalTntID = "testExternalID"
 
+	// Formation Assignment variables
+	faSourceID                = "testSourceID"
+	faTargetID                = "testTargetID"
+	testFormationAssignmentID = "testFormationAssignmentID"
+
+	// Formation variables
 	testFormationID         = "testFormationID"
 	testFormationName       = "testFormationName"
 	testFormationTemplateID = "testFormationTemplateID"
+
+	// UCL Subaccount IDs
+	matchingTestUCLSubaccountID = "testSubaccID"
+	nonMatchingUCLSubaccountID  = "anotherTestSubaccID"
 )
 
 func fixTestHandler(t *testing.T) http.HandlerFunc {
@@ -47,6 +60,7 @@ func fixRequestWithContext(t *testing.T, ctx context.Context, httpMethod string)
 	reqWithContext, err := http.NewRequest(httpMethod, "/", nil)
 	require.NoError(t, err)
 	reqWithContext = reqWithContext.WithContext(ctx)
+	reqWithContext.Header.Set(fm.ClientIDFromCertificateHeader, matchingTestUCLSubaccountID)
 	return reqWithContext
 }
 
@@ -66,6 +80,16 @@ func fixContextWithTenantAndConsumer(c consumer.Consumer, internalTntID, externa
 
 func fixContextWithConsumer(c consumer.Consumer) context.Context {
 	return consumer.SaveToContext(emptyCtx, c)
+}
+
+func fixFormationWithState(state model.FormationState) *model.Formation {
+	return &model.Formation{
+		ID:                  testFormationID,
+		TenantID:            internalTntID,
+		FormationTemplateID: testFormationTemplateID,
+		Name:                testFormationName,
+		State:               state,
+	}
 }
 
 func fixFormationAssignmentModel(testFormationID, testTenantID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType) *model.FormationAssignment {
@@ -94,21 +118,27 @@ func fixFormationAssignmentModelWithStateAndConfig(testFormationAssignmentID, te
 	}
 }
 
-func fixFormationAssignmentInput(testFormationID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType, state model.FormationAssignmentState, config string) *model.FormationAssignmentInput {
-	return &model.FormationAssignmentInput{
-		FormationID: testFormationID,
-		Source:      sourceID,
-		SourceType:  sourceFAType,
-		Target:      targetID,
-		TargetType:  targetFAType,
-		State:       string(state),
-		Value:       json.RawMessage(config),
+func fixBusinessTenantMapping() *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             internalTntID,
+		Name:           "tnt",
+		ExternalTenant: externalTntID,
+		Type:           tenantpkg.Account,
+	}
+}
+
+func fixResourceGroupBusinessTenantMapping() *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             internalTntID,
+		Name:           "tnt",
+		ExternalTenant: externalTntID,
+		Type:           tenantpkg.ResourceGroup,
 	}
 }
 
 func fixEmptyNotificationRequest() *webhookclient.FormationAssignmentNotificationRequest {
 	return &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook:       graphql.Webhook{},
+		Webhook:       &graphql.Webhook{},
 		Object:        nil,
 		CorrelationID: "",
 	}
@@ -149,10 +179,6 @@ func fixUnusedFormationAssignmentSvc() *automock.FormationAssignmentService {
 	return &automock.FormationAssignmentService{}
 }
 
-func fixUnusedFormationAssignmentConverter() *automock.FormationAssignmentConverter {
-	return &automock.FormationAssignmentConverter{}
-}
-
 func fixUnusedFormationAssignmentNotificationSvc() *automock.FormationAssignmentNotificationService {
 	return &automock.FormationAssignmentNotificationService{}
 }
@@ -181,10 +207,51 @@ func fixUnusedLabelRepo() *automock.LabelRepository {
 	return &automock.LabelRepository{}
 }
 
+func fixUnusedTenantRepo() *automock.TenantRepository {
+	return &automock.TenantRepository{}
+}
+
 func fixUnusedFormationRepo() *automock.FormationRepository {
 	return &automock.FormationRepository{}
 }
 
 func fixUnusedFormationTemplateRepo() *automock.FormationTemplateRepository {
 	return &automock.FormationTemplateRepository{}
+}
+
+func ThatDoesNotCommitInGoRoutine() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+	persistTx := &persistenceautomock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil).Once()
+
+	transact := &persistenceautomock.Transactioner{}
+	transact.On("Begin").Return(persistTx, nil).Twice()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+	return persistTx, transact
+}
+
+func ThatFailsOnCommitInGoRoutine() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+	persistTx := &persistenceautomock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil).Once()
+	persistTx.On("Commit").Return(testErr).Once()
+
+	transact := &persistenceautomock.Transactioner{}
+	transact.On("Begin").Return(persistTx, nil).Twice()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+	return persistTx, transact
+}
+
+func ThatFailsOnBeginInGoRoutine() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+	persistTx := &persistenceautomock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil).Once()
+
+	transact := &persistenceautomock.Transactioner{}
+	transact.On("Begin").Return(persistTx, nil).Once()
+	transact.On("Begin").Return(persistTx, testErr).Once()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+	return persistTx, transact
 }

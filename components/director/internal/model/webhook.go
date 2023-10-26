@@ -14,6 +14,7 @@ type Webhook struct {
 	CorrelationIDKey *string
 	Type             WebhookType
 	URL              *string
+	ProxyURL         *string
 	Auth             *Auth
 	Mode             *WebhookMode
 	RetryInterval    *int
@@ -28,9 +29,11 @@ type Webhook struct {
 
 // WebhookInput represents a webhook input for creating/updating webhooks.
 type WebhookInput struct {
+	ID               string
 	CorrelationIDKey *string
 	Type             WebhookType
 	URL              *string
+	ProxyURL         *string
 	Auth             *AuthInput
 	Mode             *WebhookMode
 	RetryInterval    *int
@@ -56,6 +59,8 @@ const (
 	WebhookTypeDeleteApplication WebhookType = "UNREGISTER_APPLICATION"
 	// WebhookTypeOpenResourceDiscovery represents a webhook that is called to aggregate ORD information of a system.
 	WebhookTypeOpenResourceDiscovery WebhookType = "OPEN_RESOURCE_DISCOVERY"
+	// WebhookTypeOpenResourceDiscoveryStatic represents a webhook that is called to aggregate static ORD information.
+	WebhookTypeOpenResourceDiscoveryStatic WebhookType = "OPEN_RESOURCE_DISCOVERY_STATIC"
 	// WebhookTypeFormationLifecycle represents a webhook that is called when lifecycle event (creation/deletion) of formation occurs
 	WebhookTypeFormationLifecycle WebhookType = "FORMATION_LIFECYCLE"
 )
@@ -120,6 +125,7 @@ func (i *WebhookInput) ToWebhook(id, objID string, objectType WebhookReferenceOb
 		CorrelationIDKey: i.CorrelationIDKey,
 		Type:             i.Type,
 		URL:              i.URL,
+		ProxyURL:         i.ProxyURL,
 		Auth:             i.Auth.ToAuth(),
 		Mode:             i.Mode,
 		RetryInterval:    i.RetryInterval,

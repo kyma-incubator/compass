@@ -1,0 +1,158 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.deployment.minReplicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      release: {{ .Release.Name }}
+  strategy:
+    {{- toYaml .Values.deployment.strategy | nindent 4 }}
+  template:
+    metadata:
+      annotations:
+        restartOnNewInstallationMarker: {{ randAlphaNum 5 | quote }} # Restarts the deployment on a new Helm installation. (https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments)
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        {{ if .Values.deployment.resourcesIstioProxy.requests.cpu }}
+        sidecar.istio.io/proxyCPU: {{ .Values.deployment.resourcesIstioProxy.requests.cpu }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.requests.memory }}
+        sidecar.istio.io/proxyMemory: {{ .Values.deployment.resourcesIstioProxy.requests.memory }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.limits.cpu }}
+        sidecar.istio.io/proxyCPULimit: {{ .Values.deployment.resourcesIstioProxy.limits.cpu }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.limits.memory }}
+        sidecar.istio.io/proxyMemoryLimit: {{ .Values.deployment.resourcesIstioProxy.limits.memory }}
+        {{ end }}
+      labels:
+        app: {{ .Chart.Name }}
+        reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit2MBLabel }}
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ template "fullname" . }}
+      nodeSelector:
+        {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+      {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+        - name: {{ .Values.global.portieris.imagePullSecretName }}
+      {{ end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.ias_adapter.dir }}compass-ias-adapter:{{ $.Values.global.images.ias_adapter.version }}
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          command:
+            - "/bin/sh"
+          args:
+              - "-c"
+              - "./main; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+          ports:
+            - name: http
+              containerPort: {{ .Values.deployment.args.containerPort }}
+              protocol: TCP
+          volumeMounts:
+            - name: ias-adapter-cockpit
+              mountPath: {{ .Values.global.iasAdapter.ias.secret.path }}
+              readOnly: true
+          resources:
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          env:
+            - name: APP_API_ROOT_PATH
+              value: {{ .Values.global.iasAdapter.apiRootPath }}
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
+            - name: APP_READ_TIMEOUT
+              value: {{ .Values.global.iasAdapter.readTimeout }}
+            - name: APP_READ_HEADER_TIMEOUT
+              value: {{ .Values.global.iasAdapter.readHeaderTimeout }}
+            - name: APP_WRITE_TIMEOUT
+              value: {{ .Values.global.iasAdapter.writeTimeout }}
+            - name: APP_IDLE_TIMEOUT
+              value: {{ .Values.global.iasAdapter.idleTimeout }}
+            - name: APP_TENANT_INFO_ENDPOINT
+              value: https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.info.path }}
+            - name: APP_TENANT_INFO_REQUEST_TIMEOUT
+              value: {{ .Values.global.iasAdapter.tenantInfo.requestTimeout }}
+            - name: APP_TENANT_INFO_INSECURE_SKIP_VERIFY
+              value: {{ .Values.global.iasAdapter.tenantInfo.insecureSkipVerify | quote }}
+            - name: APP_JWK_CACHE_ENDPOINT
+              value: {{ .Values.global.iasAdapter.authentication.jwksEndpoint | quote }}
+            - name: APP_IAS_REQUEST_TIMEOUT
+              value: {{ .Values.global.iasAdapter.ias.requestTimeout }}
+            - name: APP_IAS_COCKPIT_PATH
+              value: {{ .Values.global.iasAdapter.ias.secret.path }}/{{ .Values.global.iasAdapter.ias.secret.fileName }}
+            - name: APP_POSTGRES_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: ias-adapter-postgresql
+                  key: postgresql-ias-adapter-db-name
+            - name: APP_POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ias-adapter-postgresql
+                  key: postgresql-ias-adapter-username
+            - name: APP_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ias-adapter-postgresql
+                  key: postgresql-ias-adapter-password
+            - name: APP_POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: ias-adapter-postgresql
+                  key: postgresql-serviceName
+            - name: APP_POSTGRES_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: ias-adapter-postgresql
+                  key: postgresql-servicePort
+            - name: APP_POSTGRES_SSL_MODE
+              valueFrom:
+                secretKeyRef:
+                  name: ias-adapter-postgresql
+                  key: postgresql-sslMode
+            - name: APP_POSTGRES_CONNECT_TIMEOUT
+              value: {{ .Values.global.iasAdapter.postgres.connectTimeout }}
+            - name: APP_POSTGRES_REQUEST_TIMEOUT
+              value: {{ .Values.global.iasAdapter.postgres.requestTimeout }}
+          livenessProbe:
+            httpGet:
+              port: {{.Values.deployment.args.containerPort }}
+              path: "{{ .Values.global.iasAdapter.apiRootPath }}/healthz"
+            initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              port: {{.Values.deployment.args.containerPort }}
+              path: "{{ .Values.global.iasAdapter.apiRootPath }}/readyz"
+            initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
+        {{if eq .Values.global.database.embedded.enabled false}}
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
+          command: ["/cloud_sql_proxy",
+                    "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                    "-term_timeout=2s"]
+          resources:
+          {{- toYaml .Values.deployment.resourcesCloudsqlProxy | nindent 12 }}
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+        {{end}}
+      volumes:
+        - name: ias-adapter-cockpit
+          secret:
+            secretName: {{ .Values.global.iasAdapter.ias.secret.name }}

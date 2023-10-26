@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"context"
+	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -11,6 +12,8 @@ import (
 
 type AssignmentState struct {
 	Config *string
+	Value  *string
+	Error  *string
 	State  string
 }
 
@@ -20,4 +23,18 @@ func ListFormationAssignments(t require.TestingT, ctx context.Context, gqlClient
 	require.NoError(t, err)
 
 	return &formation.FormationAssignments
+}
+
+func GetFormationAssignmentsBySourceAndTarget(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationID, sourceID, targetID string) *graphql.FormationAssignment {
+	listFormationAssignmentsRequest := FixListFormationAssignmentRequest(formationID, 200)
+	assignmentsPage := ListFormationAssignments(t, ctx, gqlClient, tenantID, listFormationAssignmentsRequest)
+	assignments := assignmentsPage.Data
+
+	for _, assignment := range assignments {
+		if assignment.Source == sourceID && assignment.Target == targetID {
+			return assignment
+		}
+	}
+
+	return nil
 }

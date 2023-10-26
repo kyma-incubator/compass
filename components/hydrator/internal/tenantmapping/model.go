@@ -1,6 +1,9 @@
 package tenantmapping
 
 import (
+	"crypto/sha256"
+	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 )
@@ -65,4 +68,22 @@ func NewObjectContext(tenantCtx TenantContext, keysExtra KeysExtra, scopes strin
 		ConsumerType:        consumerType,
 		ContextProvider:     contextProvider,
 	}
+}
+
+func RedactConsumerIDForLogging(original ObjectContext) ObjectContext {
+	if original.ConsumerType == consumer.User {
+		return ObjectContext{
+			TenantContext:       original.TenantContext,
+			KeysExtra:           original.KeysExtra,
+			Scopes:              original.Scopes,
+			ScopesMergeStrategy: original.ScopesMergeStrategy,
+			Region:              original.Region,
+			OauthClientID:       original.OauthClientID,
+			ConsumerID:          fmt.Sprintf("REDACTED_%x", sha256.Sum256([]byte(original.ConsumerID))),
+			AuthFlow:            original.AuthFlow,
+			ConsumerType:        original.ConsumerType,
+			ContextProvider:     original.ContextProvider,
+		}
+	}
+	return original
 }

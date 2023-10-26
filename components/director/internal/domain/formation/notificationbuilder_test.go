@@ -2,7 +2,6 @@ package formation_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
@@ -81,9 +80,8 @@ func TestBuildFormationAssignmentNotificationRequest(t *testing.T) {
 				engine.On("EnforceConstraints", ctx, preGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
-			Details:            generateConfigurationChangeNotificationDetails,
-			Webhook:            webhook,
-			ExpectedErrMessage: fmt.Sprintf("While enforcing constraints for target operation %q and constraint type %q: %s", model.GenerateFormationAssignmentNotificationOperation, model.PreOperation, testErr.Error()),
+			Details: generateConfigurationChangeNotificationDetails,
+			Webhook: webhook,
 		},
 		{
 			Name: "error when webhook type is not supported",
@@ -94,7 +92,7 @@ func TestBuildFormationAssignmentNotificationRequest(t *testing.T) {
 			},
 			Details:            generateConfigurationChangeNotificationDetails,
 			Webhook:            &model.Webhook{Type: model.WebhookTypeRegisterApplication},
-			ExpectedErrMessage: "Unsupported Webhook Type",
+			ExpectedErrMessage: "Unsupported webhook type",
 		},
 		{
 			Name: "error while converting webhook",
@@ -125,9 +123,8 @@ func TestBuildFormationAssignmentNotificationRequest(t *testing.T) {
 				engine.On("EnforceConstraints", ctx, postGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
-			Details:            generateConfigurationChangeNotificationDetails,
-			Webhook:            webhook,
-			ExpectedErrMessage: fmt.Sprintf("While enforcing constraints for target operation %q and constraint type %q: %s", model.GenerateFormationAssignmentNotificationOperation, model.PostOperation, testErr.Error()),
+			Details: generateConfigurationChangeNotificationDetails,
+			Webhook: webhook,
 		},
 	}
 
@@ -146,7 +143,7 @@ func TestBuildFormationAssignmentNotificationRequest(t *testing.T) {
 			builder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, runtimeType, applicationType)
 
 			// WHEN
-			actual, err := builder.BuildFormationAssignmentNotificationRequest(ctx, FormationTemplateID, testCase.Details, testCase.Webhook)
+			actual, err := builder.BuildFormationAssignmentNotificationRequest(ctx, testCase.Details, testCase.Webhook)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -165,8 +162,7 @@ func TestBuildFormationAssignmentNotificationRequest(t *testing.T) {
 
 func TestBuildFormationNotificationRequests(t *testing.T) {
 	ctx := context.Background()
-	formationLifecycleGQLWebhook := fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID)
-	formationInput := fixFormationModelWithoutError()
+	formationLifecycleGQLWebhook := fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync)
 
 	testCases := []struct {
 		name                              string
@@ -186,11 +182,11 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 			},
 			webhookConverterFn: func() *automock.WebhookConverter {
 				webhookConv := &automock.WebhookConverter{}
-				webhookConv.On("ToGraphQL", formationLifecycleWebhook).Return(&formationLifecycleGQLWebhook, nil).Once()
+				webhookConv.On("ToGraphQL", formationLifecycleSyncWebhook).Return(formationLifecycleGQLWebhook, nil).Once()
 				return webhookConv
 			},
-			formationTemplateWebhooks:         formationLifecycleWebhooks,
-			expectedFormationNotificationReqs: formationNotificationRequests,
+			formationTemplateWebhooks:         formationLifecycleSyncWebhooks,
+			expectedFormationNotificationReqs: formationNotificationSyncCreateRequests,
 		},
 		{
 			name: "Error when enforcing pre generate formation notification constraints",
@@ -199,7 +195,7 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 				engine.On("EnforceConstraints", ctx, preGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
-			formationTemplateWebhooks: formationLifecycleWebhooks,
+			formationTemplateWebhooks: formationLifecycleSyncWebhooks,
 			expectedErrMsg:            testErr.Error(),
 		},
 		{
@@ -220,10 +216,10 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 			},
 			webhookConverterFn: func() *automock.WebhookConverter {
 				webhookConv := &automock.WebhookConverter{}
-				webhookConv.On("ToGraphQL", formationLifecycleWebhook).Return(nil, testErr).Once()
+				webhookConv.On("ToGraphQL", formationLifecycleSyncWebhook).Return(nil, testErr).Once()
 				return webhookConv
 			},
-			formationTemplateWebhooks: formationLifecycleWebhooks,
+			formationTemplateWebhooks: formationLifecycleSyncWebhooks,
 			expectedErrMsg:            testErr.Error(),
 		},
 		{
@@ -236,10 +232,10 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 			},
 			webhookConverterFn: func() *automock.WebhookConverter {
 				webhookConv := &automock.WebhookConverter{}
-				webhookConv.On("ToGraphQL", formationLifecycleWebhook).Return(&formationLifecycleGQLWebhook, nil).Once()
+				webhookConv.On("ToGraphQL", formationLifecycleSyncWebhook).Return(formationLifecycleGQLWebhook, nil).Once()
 				return webhookConv
 			},
-			formationTemplateWebhooks: formationLifecycleWebhooks,
+			formationTemplateWebhooks: formationLifecycleSyncWebhooks,
 			expectedErrMsg:            testErr.Error(),
 		},
 	}
@@ -259,7 +255,7 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, constraintEngine, webhookConv)
 
 			builder := formation.NewNotificationsBuilder(webhookConv, constraintEngine, runtimeType, applicationType)
-			formationNotificationReqs, err := builder.BuildFormationNotificationRequests(ctx, formationNotificationDetails, formationInput, testCase.formationTemplateWebhooks)
+			formationNotificationReqs, err := builder.BuildFormationNotificationRequests(ctx, formationNotificationDetails, formationModelWithoutError, testCase.formationTemplateWebhooks)
 
 			if testCase.expectedErrMsg != "" {
 				require.Error(t, err)
@@ -281,26 +277,26 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 
 	application := &webhookdir.ApplicationWithLabels{
 		Application: fixApplicationModel(ApplicationID),
-		Labels: map[string]interface{}{
+		Labels: map[string]string{
 			applicationType: applicationType,
 		},
 	}
 
 	runtime := &webhookdir.RuntimeWithLabels{
 		Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
-		Labels: map[string]interface{}{
+		Labels: map[string]string{
 			runtimeType: runtimeType,
 		},
 	}
 
 	applicationWithoutType := &webhookdir.ApplicationWithLabels{
 		Application: fixApplicationModel(ApplicationID),
-		Labels:      map[string]interface{}{},
+		Labels:      map[string]string{},
 	}
 
 	runtimeWithoutType := &webhookdir.RuntimeWithLabels{
 		Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
-		Labels:  map[string]interface{}{},
+		Labels:  map[string]string{},
 	}
 
 	runtimeContext := &webhookdir.RuntimeContextWithLabels{
@@ -335,16 +331,18 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 			TargetType:          model.ApplicationResourceType,
 			ExpectedNotificationDetails: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 				Operation:           model.AssignFormation,
-				FormationID:         fixUUID(),
+				FormationTemplateID: FormationTemplateID,
 				ResourceType:        model.ApplicationResourceType,
 				ResourceSubtype:     applicationType,
 				ResourceID:          ApplicationID,
+				Formation:           formationModelWithoutError,
 				ApplicationTemplate: applicationTemplate,
 				Application:         application,
 				Runtime:             runtime,
 				RuntimeContext:      runtimeContext,
 				Assignment:          emptyFormationAssignment,
 				ReverseAssignment:   emptyFormationAssignment,
+				TenantID:            tenantID.String(),
 			},
 			ExpectedErrMessage: "",
 		},
@@ -361,16 +359,18 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 			TargetType:          model.RuntimeResourceType,
 			ExpectedNotificationDetails: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 				Operation:           model.AssignFormation,
-				FormationID:         fixUUID(),
+				FormationTemplateID: FormationTemplateID,
 				ResourceType:        model.RuntimeResourceType,
 				ResourceSubtype:     runtimeType,
 				ResourceID:          RuntimeContextRuntimeID,
+				Formation:           formationModelWithoutError,
 				ApplicationTemplate: applicationTemplate,
 				Application:         application,
 				Runtime:             runtime,
 				RuntimeContext:      runtimeContext,
 				Assignment:          emptyFormationAssignment,
 				ReverseAssignment:   emptyFormationAssignment,
+				TenantID:            tenantID.String(),
 			},
 			ExpectedErrMessage: "",
 		},
@@ -387,16 +387,18 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 			TargetType:          model.RuntimeContextResourceType,
 			ExpectedNotificationDetails: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 				Operation:           model.AssignFormation,
-				FormationID:         fixUUID(),
+				FormationTemplateID: FormationTemplateID,
 				ResourceType:        model.RuntimeContextResourceType,
 				ResourceSubtype:     runtimeType,
 				ResourceID:          RuntimeContextID,
+				Formation:           formationModelWithoutError,
 				ApplicationTemplate: applicationTemplate,
 				Application:         application,
 				Runtime:             runtime,
 				RuntimeContext:      runtimeContext,
 				Assignment:          emptyFormationAssignment,
 				ReverseAssignment:   emptyFormationAssignment,
+				TenantID:            tenantID.String(),
 			},
 			ExpectedErrMessage: "",
 		},
@@ -460,7 +462,7 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 			builder := formation.NewNotificationsBuilder(nil, nil, runtimeType, applicationType)
 
 			// WHEN
-			actual, err := builder.PrepareDetailsForConfigurationChangeNotificationGeneration(testCase.Operation, testCase.FormationID, testCase.ApplicationTemplate, testCase.Application, testCase.Runtime, testCase.RuntimeContext, testCase.Assignment, testCase.ReverseAssignment, testCase.TargetType, nil)
+			actual, err := builder.PrepareDetailsForConfigurationChangeNotificationGeneration(testCase.Operation, FormationTemplateID, formationModelWithoutError, testCase.ApplicationTemplate, testCase.Application, testCase.Runtime, testCase.RuntimeContext, testCase.Assignment, testCase.ReverseAssignment, testCase.TargetType, nil, tenantID.String())
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -483,20 +485,19 @@ func TestNotificationBuilder_PrepareDetailsForApplicationTenantMappingNotificati
 
 	application := &webhookdir.ApplicationWithLabels{
 		Application: fixApplicationModel(ApplicationID),
-		Labels: map[string]interface{}{
+		Labels: map[string]string{
 			applicationType: applicationType,
 		},
 	}
 
 	applicationWithoutType := &webhookdir.ApplicationWithLabels{
 		Application: fixApplicationModel(ApplicationID),
-		Labels:      map[string]interface{}{},
+		Labels:      map[string]string{},
 	}
 
 	testCases := []struct {
 		Name                        string
 		Operation                   model.FormationOperation
-		FormationID                 string
 		SourceApplicationTemplate   *webhookdir.ApplicationTemplateWithLabels
 		SourceApplication           *webhookdir.ApplicationWithLabels
 		TargetApplicationTemplate   *webhookdir.ApplicationTemplateWithLabels
@@ -510,7 +511,6 @@ func TestNotificationBuilder_PrepareDetailsForApplicationTenantMappingNotificati
 		{
 			Name:                      "success resource type application",
 			Operation:                 model.AssignFormation,
-			FormationID:               fixUUID(),
 			SourceApplicationTemplate: applicationTemplate,
 			SourceApplication:         application,
 			TargetApplicationTemplate: applicationTemplate,
@@ -520,23 +520,24 @@ func TestNotificationBuilder_PrepareDetailsForApplicationTenantMappingNotificati
 			TargetType:                model.ApplicationResourceType,
 			ExpectedNotificationDetails: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 				Operation:                 model.AssignFormation,
-				FormationID:               fixUUID(),
+				FormationTemplateID:       FormationTemplateID,
 				ResourceType:              model.ApplicationResourceType,
 				ResourceSubtype:           applicationType,
 				ResourceID:                ApplicationID,
+				Formation:                 formationModelWithoutError,
 				SourceApplicationTemplate: applicationTemplate,
 				SourceApplication:         application,
 				TargetApplicationTemplate: applicationTemplate,
 				TargetApplication:         application,
 				Assignment:                emptyFormationAssignment,
 				ReverseAssignment:         emptyFormationAssignment,
+				TenantID:                  tenantID.String(),
 			},
 			ExpectedErrMessage: "",
 		},
 		{
 			Name:                      "fail to determine target application type",
 			Operation:                 model.AssignFormation,
-			FormationID:               fixUUID(),
 			SourceApplicationTemplate: applicationTemplate,
 			SourceApplication:         application,
 			TargetApplicationTemplate: applicationTemplate,
@@ -554,7 +555,7 @@ func TestNotificationBuilder_PrepareDetailsForApplicationTenantMappingNotificati
 			builder := formation.NewNotificationsBuilder(nil, nil, runtimeType, applicationType)
 
 			// WHEN
-			actual, err := builder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(testCase.Operation, testCase.FormationID, testCase.SourceApplicationTemplate, testCase.SourceApplication, testCase.TargetApplicationTemplate, testCase.TargetApplication, testCase.Assignment, testCase.ReverseAssignment, nil)
+			actual, err := builder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(testCase.Operation, FormationTemplateID, formationModelWithoutError, testCase.SourceApplicationTemplate, testCase.SourceApplication, testCase.TargetApplicationTemplate, testCase.TargetApplication, testCase.Assignment, testCase.ReverseAssignment, nil, tenantID.String())
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {

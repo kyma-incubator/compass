@@ -454,3 +454,100 @@ spec:
   - handler: id_token
     config:
       claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}
+---
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
+  name: compass-gateway-ias-adapter
+spec:
+  upstream:
+    url: "http://compass-ias-adapter.{{ .Release.Namespace }}.svc.cluster.local:8080"
+  match:
+    methods:
+    - GET
+    - PATCH
+    url: <http|https>://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.iasAdapter.apiRootPath }}/<.*>
+  authenticators:
+    - handler: noop
+  authorizer:
+    handler: allow
+  mutators:
+  - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
+  - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
+  - handler: id_token
+    config:
+      claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}
+---
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
+  name: compass-gateway-kyma-adapter
+spec:
+  upstream:
+    url: "http://compass-kyma-adapter.{{ .Release.Namespace }}.svc.cluster.local:8080"
+  match:
+    methods:
+    - PATCH
+    url: <http|https>://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.kymaAdapter.apiRootPath }}/<.*>
+  authenticators:
+    - handler: noop
+  authorizer:
+    handler: allow
+  mutators:
+  - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
+  - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
+  - handler: id_token
+    config:
+      claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}
+---
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
+  name: compass-gateway-instance-creator
+spec:
+  upstream:
+    url: "http://compass-instance-creator.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.instanceCreator.port }}"
+  match:
+    methods:
+    - PATCH
+    url: <http|https>://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.instanceCreator.apiRootPath }}/<.*>
+  authenticators:
+    - handler: noop
+  authorizer:
+    handler: allow
+  mutators:
+  - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
+  - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
+  - handler: id_token
+    config:
+      claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}
+---
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
+  name: compass-gateway-default-tenant-mapping-handler
+spec:
+  upstream:
+    url: "http://compass-default-tenant-mapping-handler.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.defaultTenantMappingHandler.port }}"
+  match:
+    methods:
+      - PATCH
+    url: <http|https>://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.defaultTenantMappingHandler.apiRootPath }}/<.*>
+  authenticators:
+    - handler: noop
+  authorizer:
+    handler: allow
+  mutators:
+  - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
+  - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
+  - handler: id_token
+    config:
+      claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}

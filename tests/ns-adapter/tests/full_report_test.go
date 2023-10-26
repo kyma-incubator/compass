@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"time"
@@ -170,7 +172,7 @@ func TestFullReport(stdT *testing.T) {
 		app := apps[0]
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, app)
 
-		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel, "reachable")
+		validateApplication(t, app, "nonSAPsys", "http", nil, expectedLabel, "reachable")
 	})
 
 	t.Run("Full report - create systems for two sccs connected to one subaccount", func(t *testing.T) {
@@ -230,8 +232,8 @@ func TestFullReport(stdT *testing.T) {
 		appTwo := apps[0]
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, appTwo)
 
-		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
-		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "reachable")
+		validateApplication(t, appOne, "nonSAPsys", "http", str.Ptr("system_one"), expectedLabel, "reachable")
+		validateApplication(t, appTwo, "nonSAPsys", "http", str.Ptr("system_two"), expectedLabelWithLocId, "reachable")
 	})
 
 	t.Run("Full report - delete system when there are two sccs connected to one subaccount", func(t *testing.T) {
@@ -291,8 +293,8 @@ func TestFullReport(stdT *testing.T) {
 		appTwo := apps[0]
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, appTwo)
 
-		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
-		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "reachable")
+		validateApplication(t, appOne, "nonSAPsys", "http", str.Ptr("system_one"), expectedLabel, "reachable")
+		validateApplication(t, appTwo, "nonSAPsys", "http", str.Ptr("system_two"), expectedLabelWithLocId, "reachable")
 
 		report = baseReport
 		report.Value = append(report.Value,
@@ -330,8 +332,8 @@ func TestFullReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 		appTwo = apps[0]
 
-		validateApplication(t, appOne, "nonSAPsys", "http", "system_updated", expectedLabel, "reachable")
-		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "unreachable")
+		validateApplication(t, appOne, "nonSAPsys", "http", str.Ptr("system_updated"), expectedLabel, "reachable")
+		validateApplication(t, appTwo, "nonSAPsys", "http", str.Ptr("system_two"), expectedLabelWithLocId, "unreachable")
 	})
 
 	t.Run("Full report - update system", func(t *testing.T) {
@@ -379,7 +381,7 @@ func TestFullReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 
 		app := apps[0]
-		validateApplication(t, app, "nonSAPsys", "mail", "edited", expectedLabel, "reachable")
+		validateApplication(t, app, "nonSAPsys", "mail", str.Ptr("edited"), expectedLabel, "reachable")
 	})
 
 	t.Run("Full report - delete system", func(t *testing.T) {
@@ -418,7 +420,7 @@ func TestFullReport(stdT *testing.T) {
 		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
-		validateApplication(t, apps[0], "nonSAPsys", "mail", "description of the system", expectedLabel, "unreachable")
+		validateApplication(t, apps[0], "nonSAPsys", "mail", str.Ptr("description of the system"), expectedLabel, "unreachable")
 	})
 
 	t.Run("Full report - create system with systemNumber", func(t *testing.T) {
@@ -457,7 +459,7 @@ func TestFullReport(stdT *testing.T) {
 		app := apps[0]
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, app)
 
-		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel, "reachable")
+		validateApplication(t, app, "nonSAPsys", "http", nil, expectedLabel, "reachable")
 	})
 
 	t.Run("Full report - update system with systemNumber", func(t *testing.T) {
@@ -518,7 +520,7 @@ func TestFullReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 
 		app = apps[0]
-		validateApplication(t, app, "nonSAPsys", "mail", "edited", expectedLabel, "reachable")
+		validateApplication(t, app, "nonSAPsys", "mail", str.Ptr("edited"), expectedLabel, "reachable")
 	})
 
 	t.Run("Full report - delete system for entire SCC", func(t *testing.T) {
@@ -551,7 +553,7 @@ func TestFullReport(stdT *testing.T) {
 
 		app := apps[0]
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, app)
-		validateApplication(t, apps[0], "nonSAPsys", "mail", "initial description", expectedLabel, "reachable")
+		validateApplication(t, apps[0], "nonSAPsys", "mail", str.Ptr("initial description"), expectedLabel, "reachable")
 
 		report = baseReport
 		body, err = json.Marshal(report)
@@ -563,7 +565,7 @@ func TestFullReport(stdT *testing.T) {
 		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
-		validateApplication(t, apps[0], "nonSAPsys", "mail", "initial description", expectedLabel, "unreachable")
+		validateApplication(t, apps[0], "nonSAPsys", "mail", str.Ptr("initial description"), expectedLabel, "unreachable")
 	})
 
 	t.Run("Full report - no systems", func(t *testing.T) {

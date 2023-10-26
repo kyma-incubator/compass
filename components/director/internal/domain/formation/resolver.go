@@ -29,7 +29,7 @@ type Service interface {
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
-	ResynchronizeFormationNotifications(ctx context.Context, formationID string) error
+	ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset bool) (*model.Formation, error)
 }
 
 // Converter missing godoc
@@ -37,21 +37,25 @@ type Service interface {
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	FromGraphQL(i graphql.FormationInput) model.Formation
-	ToGraphQL(i *model.Formation) *graphql.Formation
-	MultipleToGraphQL(in []*model.Formation) []*graphql.Formation
+	ToGraphQL(i *model.Formation) (*graphql.Formation, error)
+	MultipleToGraphQL(in []*model.Formation) ([]*graphql.Formation, error)
 }
 
 //go:generate mockery --exported --name=formationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentService interface {
 	Delete(ctx context.Context, id string) error
+	DeleteAssignmentsForObjectID(ctx context.Context, formationID, objectID string) error
 	ListByFormationIDs(ctx context.Context, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
 	ListByFormationIDsNoPaging(ctx context.Context, formationIDs []string) ([][]*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
 	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
-	ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPair) (bool, error)) error
-	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) (bool, error)
-	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error)
-	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) (bool, error)
+	ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error
+	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
+	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignmentInput, error)
+	PersistAssignments(ctx context.Context, tnt string, assignments []*model.FormationAssignmentInput) ([]*model.FormationAssignment, error)
+	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
+	GetAssignmentsForFormation(ctx context.Context, tenantID, formationID string) ([]*model.FormationAssignment, error)
+	Update(ctx context.Context, id string, fa *model.FormationAssignment) error
 	GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error)
 	GetReverseBySourceAndTarget(ctx context.Context, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
 }
@@ -68,7 +72,7 @@ type FormationAssignmentConverter interface {
 //
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
-	FetchOnDemand(tenant, parentTenant string) error
+	FetchOnDemand(ctx context.Context, tenant, parentTenant string) error
 }
 
 // Resolver is the formation resolver
@@ -111,7 +115,7 @@ func (r *Resolver) getFormation(ctx context.Context, get func(context.Context) (
 		return nil, err
 	}
 
-	return r.conv.ToGraphQL(formation), nil
+	return r.conv.ToGraphQL(formation)
 }
 
 // FormationByName returns a Formation by its name
@@ -159,7 +163,10 @@ func (r *Resolver) Formations(ctx context.Context, first *int, after *graphql.Pa
 		return nil, err
 	}
 
-	formations := r.conv.MultipleToGraphQL(formationPage.Data)
+	formations, err := r.conv.MultipleToGraphQL(formationPage.Data)
+	if err != nil {
+		return nil, err
+	}
 
 	return &graphql.FormationPage{
 		Data:       formations,
@@ -201,7 +208,7 @@ func (r *Resolver) CreateFormation(ctx context.Context, formationInput graphql.F
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	return r.conv.ToGraphQL(newFormation), nil
+	return r.conv.ToGraphQL(newFormation)
 }
 
 // DeleteFormation deletes the formation from the caller tenant formations
@@ -228,7 +235,7 @@ func (r *Resolver) DeleteFormation(ctx context.Context, formation graphql.Format
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	return r.conv.ToGraphQL(deletedFormation), nil
+	return r.conv.ToGraphQL(deletedFormation)
 }
 
 // AssignFormation assigns object to the provided formation
@@ -239,7 +246,7 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 	}
 
 	if objectType == graphql.FormationObjectTypeTenant {
-		if err := r.fetcher.FetchOnDemand(objectID, tnt); err != nil {
+		if err := r.fetcher.FetchOnDemand(ctx, objectID, tnt); err != nil {
 			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", objectID)
 		}
 	}
@@ -261,7 +268,7 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	return r.conv.ToGraphQL(newFormation), nil
+	return r.conv.ToGraphQL(newFormation)
 }
 
 // UnassignFormation unassigns the object from the provided formation
@@ -288,7 +295,7 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	return r.conv.ToGraphQL(newFormation), nil
+	return r.conv.ToGraphQL(newFormation)
 }
 
 // FormationAssignments retrieves a page of FormationAssignments for the specified Formation
@@ -383,7 +390,7 @@ func (r *Resolver) FormationAssignment(ctx context.Context, obj *graphql.Formati
 
 // Status retrieves a Status for the specified Formation
 func (r *Resolver) Status(ctx context.Context, obj *graphql.Formation) (*graphql.FormationStatus, error) {
-	param := dataloader.ParamFormationStatus{ID: obj.ID, Ctx: ctx}
+	param := dataloader.ParamFormationStatus{ID: obj.ID, State: obj.State, Message: obj.Error.Message, ErrorCode: obj.Error.ErrorCode, Ctx: ctx}
 	return dataloader.FormationStatusFor(ctx).FormationStatusByID.Load(param)
 }
 
@@ -411,26 +418,44 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 	if err != nil {
 		return nil, []error{err}
 	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, []error{err}
+	}
+
 	gqlFormationStatuses := make([]*graphql.FormationStatus, 0, len(formationAssignmentsPerFormation))
-	for _, formationAssignments := range formationAssignmentsPerFormation {
-		condition := graphql.FormationStatusConditionReady
+	for i := 0; i < len(keys); i++ {
+		formationAssignments := formationAssignmentsPerFormation[i]
+
+		var condition graphql.FormationStatusCondition
 		var formationStatusErrors []*graphql.FormationStatusError
+
+		switch formationState := keys[i].State; formationState {
+		case string(model.ReadyFormationState):
+			condition = graphql.FormationStatusConditionReady
+		case string(model.InitialFormationState), string(model.DeletingFormationState):
+			condition = graphql.FormationStatusConditionInProgress
+		case string(model.CreateErrorFormationState), string(model.DeleteErrorFormationState):
+			condition = graphql.FormationStatusConditionError
+			formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{Message: keys[i].Message, ErrorCode: keys[i].ErrorCode})
+		}
 
 		for _, fa := range formationAssignments {
 			if isInErrorState(fa.State) {
 				condition = graphql.FormationStatusConditionError
 
-				if fa.Value == nil {
-					formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{AssignmentID: fa.ID})
+				if fa.Error == nil {
+					formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{AssignmentID: &fa.ID})
 					continue
 				}
+
 				var assignmentError formationassignment.AssignmentErrorWrapper
-				if err = json.Unmarshal(fa.Value, &assignmentError); err != nil {
+				if err = json.Unmarshal(fa.Error, &assignmentError); err != nil {
 					return nil, []error{errors.Wrapf(err, "while unmarshalling formation assignment error with assignment ID %q", fa.ID)}
 				}
 
 				formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{
-					AssignmentID: fa.ID,
+					AssignmentID: &fa.ID,
 					Message:      assignmentError.Error.Message,
 					ErrorCode:    int(assignmentError.Error.ErrorCode),
 				})
@@ -445,15 +470,11 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 		})
 	}
 
-	if err = tx.Commit(); err != nil {
-		return nil, []error{err}
-	}
-
 	return gqlFormationStatuses, nil
 }
 
 // ResynchronizeFormationNotifications sends all notifications that are in error or initial state
-func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*graphql.Formation, error) {
+func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset *bool) (*graphql.Formation, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -462,12 +483,12 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	err = r.service.ResynchronizeFormationNotifications(ctx, formationID)
-	if err != nil {
-		return nil, err
+	shouldReset := false
+	if reset != nil {
+		shouldReset = *reset
 	}
 
-	formationModel, err := r.service.Get(ctx, formationID)
+	updatedFormation, err := r.service.ResynchronizeFormationNotifications(ctx, formationID, shouldReset)
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +497,7 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 		return nil, err
 	}
 
-	return r.conv.ToGraphQL(formationModel), nil
+	return r.conv.ToGraphQL(updatedFormation)
 }
 
 func isInErrorState(state string) bool {

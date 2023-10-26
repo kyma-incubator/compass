@@ -18,13 +18,16 @@ func (_m *Converter) FromEntity(in systemauth.Entity) (model.SystemAuth, error) 
 	ret := _m.Called(in)
 
 	var r0 model.SystemAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(systemauth.Entity) (model.SystemAuth, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(systemauth.Entity) model.SystemAuth); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(model.SystemAuth)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(systemauth.Entity) error); ok {
 		r1 = rf(in)
 	} else {
@@ -39,13 +42,16 @@ func (_m *Converter) ToEntity(in model.SystemAuth) (systemauth.Entity, error) {
 	ret := _m.Called(in)
 
 	var r0 systemauth.Entity
+	var r1 error
+	if rf, ok := ret.Get(0).(func(model.SystemAuth) (systemauth.Entity, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(model.SystemAuth) systemauth.Entity); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(systemauth.Entity)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(model.SystemAuth) error); ok {
 		r1 = rf(in)
 	} else {
@@ -55,13 +61,12 @@ func (_m *Converter) ToEntity(in model.SystemAuth) (systemauth.Entity, error) {
 	return r0, r1
 }
 
-type mockConstructorTestingTNewConverter interface {
+// NewConverter creates a new instance of Converter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewConverter creates a new instance of Converter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewConverter(t mockConstructorTestingTNewConverter) *Converter {
+}) *Converter {
 	mock := &Converter{}
 	mock.Mock.Test(t)
 

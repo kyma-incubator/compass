@@ -1,8 +1,3 @@
-api-gateway:
-  deployment:
-    resources:
-      limits:
-        cpu: 200m
 cluster-essentials:
   global:
     disableLegacyConnectivity: true
@@ -30,64 +25,63 @@ helm-broker:
       limits:
         memory: 256Mi
 istio:
+  global:
+    # Use official images that have support for arm and amd as Kyma's images are only for amd
+    images:
+      istio_proxyv2:
+        name: "proxyv2"
+        version: "1.15.3-distroless"
+        directory: "istio"
+        containerRegistryPath: "docker.io"
+      istio_pilot:
+        name: "pilot"
+        version: "1.15.3-distroless"
+        directory: "istio"
+        containerRegistryPath: "docker.io"
+      istio_install-cni:
+        name: "install-cni"
+        version: "1.15.3-distroless"
+        directory: "istio"
+        containerRegistryPath: "docker.io"
+
   components:
     egressGateways:
       enabled: false
     ingressGateways:
-      config:
-        affinity:
-          nodeAffinity:
-            preferredDuringSchedulingIgnoredDuringExecution:
-              - preference:
-                  matchExpressions:
-                    - key: beta.kubernetes.io/arch
-                      operator: In
-                      values:
-                        - arm64
-                        - amd64
-                weight: 2
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-                - matchExpressions:
-                    - key: beta.kubernetes.io/arch
-                      operator: In
-                      values:
-                        - arm64
-                        - amd64
       enabled: true
+      config:
+        hpaSpec:
+          metrics:
+            - type: Resource
+              resource:
+                name: cpu
+                target:
+                  type: Utilization
+                  averageUtilization: 80
+            - type: Resource
+              resource:
+                name: memory
+                target:
+                  type: Utilization
+                  averageUtilization: 80
     pilot:
       config:
-        affinity:
-          nodeAffinity:
-            preferredDuringSchedulingIgnoredDuringExecution:
-              - preference:
-                  matchExpressions:
-                    - key: beta.kubernetes.io/arch
-                      operator: In
-                      values:
-                        - arm64
-                        - amd64
-                weight: 2
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-                - matchExpressions:
-                    - key: beta.kubernetes.io/arch
-                      operator: In
-                      values:
-                        - arm64
-                        - amd64
         hpaSpec:
           maxReplicas: 5
-          metrics:
-            - resource:
-                name: cpu
-                targetAverageUtilization: 80
-              type: Resource
-            - resource:
-                name: memory
-                targetAverageUtilization: 80
-              type: Resource
           minReplicas: 1
+          metrics:
+            - type: Resource
+              resource:
+                name: cpu
+                target:
+                  type: Utilization
+                  averageUtilization: 80
+            - type: Resource
+              resource:
+                name: memory
+                target:
+                  type: Utilization
+                  averageUtilization: 80
         resources:
           limits:
             cpu: 2000m
@@ -106,6 +100,7 @@ istio:
       enabled: true
   helmValues:
     global:
+      autoscalingv2API: true
       proxy:
         resources:
           limits:
@@ -114,43 +109,28 @@ istio:
           requests:
             cpu: 50m
             memory: 160Mi
-    pilot:
-      resources:
-        limits:
-          memory: 2048Mi
   meshConfig:
     defaultConfig:
       holdApplicationUntilProxyStarts: true
-kiali:
-  authProxy:
-    enabled: false
-    resources:
-      limits:
-        memory: 256Mi
-      requests:
-        memory: 32Mi
-  kcproxy:
-    resources:
-      limits:
-        memory: 256Mi
-      requests:
-        memory: 32Mi
-logging:
-  global:
-    logging_integration_tests:
-      enabled: false
-  loki:
-    resources:
-      limits:
-        memory: 512Mi
 monitoring:
   alertmanager:
     alertmanagerSpec:
+      podMetadata:
+        annotations:
+          sidecar.istio.io/inject: "true"
       resources:
         limits:
           cpu: 40m
         requests:
           cpu: 5m
+    serviceMonitor:
+      scheme: https
+      # By default in Kyma, Prometheus injects the Istio certificates from a sidecar
+      tlsConfig:
+        caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
+        certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
+        keyFile: /etc/prometheus/secrets/istio.default/key.pem
+        insecureSkipVerify: true
   grafana:
     env:
       GF_AUTH_ANONYMOUS_ENABLED: true
@@ -166,6 +146,21 @@ monitoring:
         requests:
           cpu: 50m
           memory: 64Mi
+  prometheus:
+    prometheusSpec:
+      alertingEndpoints:
+        - apiVersion: v2
+          name: monitoring-alertmanager
+          namespace: kyma-system
+          pathPrefix: /
+          port: http-web
+          scheme: https
+          # By default in Kyma, Prometheus injects the Istio certificates from a sidecar
+          tlsConfig:
+            caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
+            certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
+            keyFile: /etc/prometheus/secrets/istio.default/key.pem
+            insecureSkipVerify: true
   prometheus-istio:
     server:
       resources:
@@ -173,141 +168,27 @@ monitoring:
           memory: 1Gi
   prometheusOperator:
     configReloaderMemory: 256Mi
-ory:
-  hydra:
-    deployment:
-      resources:
-        limits:
-          cpu: 1000m
-          memory: 400Mi
-        requests:
-          cpu: 100m
-          memory: 128Mi
-    hydra:
-      autoMigrate: true
-      config:
-        dsn: memory
-        log:
-          leak_sensitive_values: false
-          level: trace
-        secrets: {}
-        serve:
-          admin:
-            port: 4445
-          public:
-            port: 4444
-          tls:
-            allow_termination_from:
-              - 10.0.0.0/8
-              - 172.16.0.0/12
-              - 192.168.0.0/16
-        urls:
-          self: {}
-      dangerousAllowInsecureRedirectUrls: false
-      dangerousForceHttp: true
-      existingSecret: ory-hydra-credentials
-  oathkeeper:
-    deployment:
-      autoscaling:
-        maxReplicas: "1"
-        minReplicas: "1"
-      resources:
-        limits:
-          cpu: 100m
-          memory: 512Mi
-        requests:
-          cpu: 20m
-          memory: 128Mi
-    oathkeeper:
-      config:
-        authenticators:
-          anonymous:
-            config:
-              subject: anonymous
-            enabled: true
-          cookie_session:
-            config:
-              check_session_url: https://session-store-host
-              only:
-                - sessionid
-            enabled: false
-          jwt:
-            config:
-              scope_strategy: wildcard
-            enabled: true
-          noop:
-            enabled: true
-          oauth2_client_credentials:
-            config:
-              token_url: http://ory-hydra-public.kyma-system.svc.cluster.local:4444/oauth2/token
-            enabled: true
-          oauth2_introspection:
-            config:
-              introspection_url: http://ory-hydra-admin.kyma-system.svc.cluster.local:4445/oauth2/introspect
-              scope_strategy: exact
-            enabled: true
-          unauthorized:
-            enabled: true
-        authorizers:
-          allow:
-            enabled: true
-          deny:
-            enabled: true
-        log:
-          level: trace
-        mutators:
-          cookie:
-            config:
-              cookies:
-                processedWith: oathkeeper
-            enabled: true
-          header:
-            config:
-              headers:
-                X-Server: oathkeeper
-            enabled: true
-          hydrator:
-            config:
-              api:
-                url: http://compass-director.compass-system.svc.cluster.local:3000/tenant-mapping
-            enabled: true
-          id_token:
-            config:
-              issuer_url: https://oathkeeper.local.kyma.dev/
-              jwks_url: file:///etc/secrets/jwks.json
-              ttl: 60s
-            enabled: true
-          noop:
-            enabled: true
-        serve:
-          api:
-            port: 4456
-          proxy:
-            port: 4455
-            timeout:
-              idle: 3600s
-              read: 3600s
-              write: 3600s
-    oathkeeper-maester:
-      deployment:
-        resources:
-          limits:
-            cpu: 100m
-            memory: 256Mi
-          requests:
-            cpu: 50m
-            memory: 64Mi
-tracing:
-  authProxy:
-    enabled: false
-    resources:
-      limits:
-        memory: 256Mi
-      requests:
-        memory: 32Mi
-  kcproxy:
-    resources:
-      limits:
-        memory: 256Mi
-      requests:
-        memory: 32Mi
+    podAnnotations:
+      sidecar.istio.io/inject: "true"
+  prometheus-node-exporter:
+    prometheus:
+      monitor:
+        scheme: https
+        # By default in Kyma, Prometheus injects the Istio certificates from a sidecar
+        tlsConfig:
+          caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
+          certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
+          keyFile: /etc/prometheus/secrets/istio.default/key.pem
+          insecureSkipVerify: true
+  kube-state-metrics:
+    podAnnotations:
+      sidecar.istio.io/inject: "true"
+    prometheus:
+      monitor:
+        scheme: https
+        # By default in Kyma, Prometheus injects the Istio certificates from a sidecar
+        tlsConfig:
+          caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
+          certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
+          keyFile: /etc/prometheus/secrets/istio.default/key.pem
+          insecureSkipVerify: true

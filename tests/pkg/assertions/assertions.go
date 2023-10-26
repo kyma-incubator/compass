@@ -69,6 +69,23 @@ func AssertWebhooks(t *testing.T, in []*graphql.WebhookInput, actual []graphql.W
 	}
 }
 
+func AssertKymaRuntimeWebhooks(t *testing.T, in []*graphql.WebhookInput, actual []graphql.Webhook) {
+	assert.Equal(t, len(in)+1, len(actual))
+	for _, inWh := range in {
+		found := false
+		for _, actWh := range actual {
+			if urlsAreIdentical(inWh.URL, actWh.URL) {
+				found = true
+				assert.NotNil(t, actWh.ID)
+				assert.Equal(t, inWh.Type, actWh.Type)
+
+				AssertAuth(t, inWh.Auth, actWh.Auth)
+			}
+		}
+		assert.True(t, found)
+	}
+}
+
 func AssertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
 	if in == nil {
 		assert.Nil(t, actual)
@@ -254,6 +271,13 @@ func AssertRuntime(t *testing.T, in graphql.RuntimeRegisterInput, actualRuntime 
 	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels)
 }
 
+func AssertKymaRuntime(t *testing.T, in graphql.RuntimeRegisterInput, actualRuntime graphql.RuntimeExt) {
+	assert.Equal(t, in.Name, actualRuntime.Name)
+	assert.Equal(t, in.Description, actualRuntime.Description)
+	AssertKymaRuntimeWebhooks(t, in.Webhooks, actualRuntime.Webhooks)
+	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels)
+}
+
 func AssertUpdatedRuntime(t *testing.T, in graphql.RuntimeUpdateInput, actualRuntime graphql.RuntimeExt) {
 	assert.Equal(t, in.Name, actualRuntime.Name)
 	assert.Equal(t, in.Description, actualRuntime.Description)
@@ -309,7 +333,7 @@ func AssertApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateInput
 	assert.Equal(t, in.Name, actualApplicationTemplate.Name)
 	assert.Equal(t, in.Description, actualApplicationTemplate.Description)
 
-	gqlAppInput, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(*in.ApplicationInput)
+	gqlAppInput, err := testctx.Tc.Graphqlizer.ApplicationJSONInputToGQL(*in.ApplicationInput)
 	require.NoError(t, err)
 
 	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)
@@ -326,7 +350,7 @@ func AssertUpdateApplicationTemplate(t *testing.T, in graphql.ApplicationTemplat
 	assert.Equal(t, in.Name, actualApplicationTemplate.Name)
 	assert.Equal(t, in.Description, actualApplicationTemplate.Description)
 
-	gqlAppInput, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(*in.ApplicationInput)
+	gqlAppInput, err := testctx.Tc.Graphqlizer.ApplicationJSONInputToGQL(*in.ApplicationInput)
 	require.NoError(t, err)
 
 	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)
@@ -343,6 +367,22 @@ func AssertFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, a
 	assert.ElementsMatch(t, in.RuntimeTypes, actual.RuntimeTypes)
 	assert.Equal(t, in.RuntimeTypeDisplayName, actual.RuntimeTypeDisplayName)
 	assert.Equal(t, in.RuntimeArtifactKind, actual.RuntimeArtifactKind)
+	var webhooks []graphql.Webhook
+	for _, webhook := range actual.Webhooks {
+		webhooks = append(webhooks, *webhook)
+	}
+	if in.SupportsReset != nil {
+		assert.Equal(t, *in.SupportsReset, actual.SupportsReset)
+	}
+	AssertWebhooks(t, in.Webhooks, webhooks)
+}
+
+func AssertAppOnlyFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, actual *graphql.FormationTemplate) {
+	assert.Equal(t, in.Name, actual.Name)
+	assert.ElementsMatch(t, in.ApplicationTypes, actual.ApplicationTypes)
+	assert.Empty(t, actual.RuntimeTypes)
+	assert.Empty(t, actual.RuntimeTypeDisplayName)
+	assert.Empty(t, actual.RuntimeArtifactKind)
 	var webhooks []graphql.Webhook
 	for _, webhook := range actual.Webhooks {
 		webhooks = append(webhooks, *webhook)
@@ -419,27 +459,20 @@ func AssertGraphQLJSONSchema(t *testing.T, inExpected *graphql.JSONSchema, inAct
 	assert.Equal(t, expected, actual)
 }
 
-func AssertAutomaticScenarioAssignment(t *testing.T, expected graphql.AutomaticScenarioAssignmentSetInput, actual graphql.AutomaticScenarioAssignment) {
-	assert.Equal(t, expected.ScenarioName, actual.ScenarioName)
+func AssertAutomaticScenarioAssignment(t *testing.T, expectedScenario string, expectedSelector *graphql.Label, actual graphql.AutomaticScenarioAssignment) {
+	assert.Equal(t, expectedScenario, actual.ScenarioName)
 	require.NotNil(t, actual.Selector)
-	require.NotNil(t, expected.Selector)
-	assert.Equal(t, expected.Selector.Value, actual.Selector.Value)
-	assert.Equal(t, expected.Selector.Key, actual.Selector.Key)
+	require.NotNil(t, expectedSelector)
+	assert.Equal(t, expectedSelector.Value, actual.Selector.Value)
+	assert.Equal(t, expectedSelector.Key, actual.Selector.Key)
 }
 
-func AssertAutomaticScenarioAssignments(t *testing.T, expected []graphql.AutomaticScenarioAssignmentSetInput, actual []*graphql.AutomaticScenarioAssignment) {
+func AssertAutomaticScenarioAssignments(t *testing.T, expected map[string]*graphql.Label, actual []*graphql.AutomaticScenarioAssignment) {
 	assert.Equal(t, len(expected), len(actual))
-	for _, expectedAssignment := range expected {
-		found := false
-		for _, actualAssignment := range actual {
-			require.NotNil(t, actualAssignment)
-			if expectedAssignment.ScenarioName == actualAssignment.ScenarioName {
-				found = true
-				AssertAutomaticScenarioAssignment(t, expectedAssignment, *actualAssignment)
-				break
-			}
-		}
-		assert.True(t, found, "Assignment for scenario: '%s' not found", expectedAssignment.ScenarioName)
+	for _, actualAssignment := range actual {
+		expectedAssignment, ok := expected[actualAssignment.ScenarioName]
+		require.True(t, ok, "Assignment for scenario: '%s' not found", actualAssignment.ScenarioName)
+		AssertAutomaticScenarioAssignment(t, actualAssignment.ScenarioName, expectedAssignment, *actualAssignment)
 	}
 }
 
@@ -533,12 +566,12 @@ func AssertSpecInBundleNotNil(t *testing.T, bndl graphql.BundleExt) {
 	assert.NotNil(t, bndl.APIDefinitions.Data[0].Spec.Data)
 }
 
-func AssertSpecsFromORDService(t *testing.T, respBody string, expectedNumberOfAPIs int, apiSpecsMap map[string]int) []gjson.Result {
+func AssertSpecsFromORDService(t *testing.T, respBody string, expectedNumberOfResources int, resourcesSpecsMap map[string]int, resourceDefinitionsFieldName string) []gjson.Result {
 	var specs []gjson.Result
 
-	for i := 0; i < expectedNumberOfAPIs; i++ {
-		crrSpecs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", i)).Array()
-		require.Equal(t, apiSpecsMap[gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()], len(crrSpecs))
+	for i := 0; i < expectedNumberOfResources; i++ {
+		crrSpecs := gjson.Get(respBody, fmt.Sprintf("value.%d.%s", i, resourceDefinitionsFieldName)).Array()
+		require.Equal(t, resourcesSpecsMap[gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()], len(crrSpecs))
 		specs = append(specs, crrSpecs...)
 	}
 	return specs
@@ -641,14 +674,16 @@ func AssertDefaultBundleID(t *testing.T, respBody string, numberOfEntities int, 
 	}
 }
 
-func AssertRelationBetweenBundleAndEntityFromORDService(t *testing.T, respBody string, entityType string, numberOfEntitiesForBundle map[string]int, entitiesDataForBundle map[string][]string) {
+func AssertRelationBetweenBundleAndEntityFromORDService(t *testing.T, respBody string, entityType string, numberOfEntitiesForBundle map[string]int, entitiesDataForBundle map[string][]string) bool {
 	numberOfBundles := len(gjson.Get(respBody, "value").Array())
 
 	for i := 0; i < numberOfBundles; i++ {
 		bundleTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
 		numberOfEntities := len(gjson.Get(respBody, fmt.Sprintf("value.%d.%s", i, entityType)).Array())
 		require.NotEmpty(t, bundleTitle)
-		require.Equal(t, numberOfEntitiesForBundle[bundleTitle], numberOfEntities)
+		if numberOfEntitiesForBundle[bundleTitle] != numberOfEntities {
+			return false
+		}
 
 		for j := 0; j < numberOfEntities; j++ {
 			entityTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.%s.%d.title", i, entityType, j)).String()
@@ -656,6 +691,7 @@ func AssertRelationBetweenBundleAndEntityFromORDService(t *testing.T, respBody s
 			require.Contains(t, entitiesDataForBundle[bundleTitle], entityTitle)
 		}
 	}
+	return true
 }
 
 func AssertTombstoneFromORDService(t *testing.T, respBody string, expectedNumber int, expectedIDRegex string) {

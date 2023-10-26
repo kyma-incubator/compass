@@ -35,6 +35,7 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Tenant)
 
 	authDetails := oathkeeper.AuthDetails{AuthID: providerTenantID, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
+	scopes := []string{"runtime:read", "runtime:write", "tenant:read"}
 
 	reqData := oathkeeper.ReqData{
 		Body: oathkeeper.ReqBody{
@@ -77,8 +78,10 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		DirectorClient     func() *automock.DirectorClient
+		ScopesGetterFn     func() *automock.ScopesGetter
 		ReqDataInput       oathkeeper.ReqData
 		AuthDetailsInput   oathkeeper.AuthDetails
+		ExpectedScopes     string
 		ExpectedInternalID string
 		ExpectedExternalID string
 		ExpectedErr        error
@@ -90,10 +93,16 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(nil, notFoundErr).Once()
 				return client
 			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
+			},
 			ReqDataInput:       reqData,
 			AuthDetailsInput:   authDetails,
 			ExpectedInternalID: "",
 			ExpectedExternalID: consumerTenantID,
+			ExpectedScopes:     strings.Join(scopes, " "),
 			ExpectedErr:        nil,
 		},
 		{
@@ -101,8 +110,14 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 			DirectorClient: func() *automock.DirectorClient {
 				return &automock.DirectorClient{}
 			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
+			},
 			ReqDataInput:       noTenantReqData,
 			AuthDetailsInput:   authDetails,
+			ExpectedScopes:     strings.Join(scopes, " "),
 			ExpectedInternalID: "",
 			ExpectedExternalID: "",
 			ExpectedErr:        nil,
@@ -113,6 +128,11 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				tenantRepo := &automock.DirectorClient{}
 				tenantRepo.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(nil, testError).Once()
 				return tenantRepo
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
 			},
 			ReqDataInput:       reqData,
 			AuthDetailsInput:   authDetails,
@@ -127,8 +147,14 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testSubaccount, nil).Once()
 				return client
 			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
+			},
 			ReqDataInput:       reqData,
 			AuthDetailsInput:   authDetails,
+			ExpectedScopes:     strings.Join(scopes, " "),
 			ExpectedInternalID: internalSubaccount,
 			ExpectedExternalID: consumerTenantID,
 			ExpectedErr:        nil,
@@ -140,8 +166,14 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testSubaccount, nil).Once()
 				return client
 			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
+			},
 			ReqDataInput:       reqData,
 			AuthDetailsInput:   authDetails,
+			ExpectedScopes:     strings.Join(scopes, " "),
 			ExpectedInternalID: internalSubaccount,
 			ExpectedExternalID: consumerTenantID,
 			ExpectedErr:        nil,
@@ -153,6 +185,11 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testAccount, nil).Once()
 				return client
 			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
+			},
 			ReqDataInput:     reqData,
 			AuthDetailsInput: authDetails,
 			ExpectedErr:      apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to %s tenant with ID %s", authDetails.AuthID, testAccount.Type, consumerTenantID)),
@@ -161,6 +198,11 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 			Name: "Error when consumer don't have global access",
 			DirectorClient: func() *automock.DirectorClient {
 				return &automock.DirectorClient{}
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
 			},
 			ReqDataInput: oathkeeper.ReqData{
 				Body: oathkeeper.ReqBody{
@@ -173,12 +215,34 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 			AuthDetailsInput: authDetails,
 			ExpectedErr:      apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s does not have global access", authDetails.AuthID)),
 		},
+		{
+			Name: "Error while getting scopes",
+			DirectorClient: func() *automock.DirectorClient {
+				return &automock.DirectorClient{}
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return([]string{}, testError)
+				return scopesGetter
+			},
+			ReqDataInput: oathkeeper.ReqData{
+				Body: oathkeeper.ReqBody{
+					Extra: map[string]interface{}{
+						cert.ConsumerTypeExtraField: model.IntegrationSystemReference,
+						cert.AccessLevelsExtraField: []interface{}{tenantEntity.Subaccount},
+					},
+				},
+			},
+			AuthDetailsInput: authDetails,
+			ExpectedErr:      apperrors.NewInternalError("failed to extract scopes for consumer with type integration system"),
+		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			client := testCase.DirectorClient()
-			provider := tenantmapping.NewAccessLevelContextProvider(client)
+			scopesGetter := testCase.ScopesGetterFn()
+			provider := tenantmapping.NewAccessLevelContextProvider(client, scopesGetter)
 			// WHEN
 			objectCtx, err := provider.GetObjectContext(emptyCtx, testCase.ReqDataInput, testCase.AuthDetailsInput)
 
@@ -189,7 +253,7 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				require.Equal(t, providerTenantID, objectCtx.ConsumerID)
 				require.Equal(t, testCase.ExpectedInternalID, objectCtx.TenantContext.TenantID)
 				require.Equal(t, testCase.ExpectedExternalID, objectCtx.TenantContext.ExternalTenantID)
-				require.Equal(t, "", objectCtx.Scopes)
+				require.Equal(t, testCase.ExpectedScopes, objectCtx.Scopes)
 				if objectCtx.TenantID != "" {
 					require.Equal(t, region, objectCtx.Region)
 				}
@@ -198,13 +262,13 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				require.Contains(t, strings.ToLower(err.Error()), strings.ToLower(testCase.ExpectedErr.Error()))
 				require.Empty(t, objectCtx)
 			}
-			mock.AssertExpectationsForObjects(t, client)
+			mock.AssertExpectationsForObjects(t, client, scopesGetter)
 		})
 	}
 }
 
 func TestAccessLevelContextProvider_Match(t *testing.T) {
-	provider := tenantmapping.NewAccessLevelContextProvider(nil)
+	provider := tenantmapping.NewAccessLevelContextProvider(nil, nil)
 	clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
 	tenantHeader := "123"
 	accessLevels := []interface{}{"account"}

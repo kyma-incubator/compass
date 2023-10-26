@@ -19,7 +19,7 @@ import (
 func TestConverter_ToGraphQL(t *testing.T) {
 	// GIVEN
 	placeholder := "test"
-	modelAPIDefinition, modelSpec, modelBundleReference := fixFullAPIDefinitionModel(placeholder)
+	modelAPIDefinition, modelSpec, modelBundleReference := fixFullAPIDefinitionModelWithAppID(placeholder)
 	gqlAPIDefinition := fixFullGQLAPIDefinition(placeholder)
 	emptyModelAPIDefinition := &model.APIDefinition{BaseEntity: &model.BaseEntity{}}
 	emptyGraphQLAPIDefinition := &graphql.APIDefinition{BaseEntity: &graphql.BaseEntity{}}
@@ -124,24 +124,27 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// GIVEN
-	api1, spec1, bundleRef1 := fixFullAPIDefinitionModel("test1")
-	api2, spec2, bundleRef2 := fixFullAPIDefinitionModel("test2")
+	api1, _, bundleRef1 := fixFullAPIDefinitionModelWithAppID("test1")
+	api2, _, bundleRef2 := fixFullAPIDefinitionModelWithAppID("test2")
 
 	inputAPIs := []*model.APIDefinition{
 		&api1, &api2, {BaseEntity: &model.BaseEntity{}}, nil,
 	}
 
-	inputSpecs := []*model.Spec{
-		&spec1, &spec2, {}, nil,
-	}
+	var emptySpec *model.Spec
 
 	inputBundleRefs := []*model.BundleReference{
 		&bundleRef1, &bundleRef2, {}, nil,
 	}
 
+	apiDef1 := fixFullGQLAPIDefinition("test1")
+	apiDef1.Spec = nil
+	apiDef2 := fixFullGQLAPIDefinition("test2")
+	apiDef2.Spec = nil
+
 	expected := []*graphql.APIDefinition{
-		fixFullGQLAPIDefinition("test1"),
-		fixFullGQLAPIDefinition("test2"),
+		apiDef1,
+		apiDef2,
 		{BaseEntity: &graphql.BaseEntity{}},
 	}
 
@@ -153,12 +156,12 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 			continue
 		}
 		versionConverter.On("ToGraphQL", api.Version).Return(expected[i].Version).Once()
-		specConverter.On("ToGraphQLAPISpec", inputSpecs[i]).Return(expected[i].Spec, nil).Once()
+		specConverter.On("ToGraphQLAPISpec", emptySpec).Return(nil, nil)
 	}
 
 	// WHEN
 	converter := api.NewConverter(versionConverter, specConverter)
-	res, err := converter.MultipleToGraphQL(inputAPIs, inputSpecs, inputBundleRefs)
+	res, err := converter.MultipleToGraphQL(inputAPIs, inputBundleRefs)
 	assert.NoError(t, err)
 
 	// then
@@ -349,17 +352,30 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 }
 
 func TestEntityConverter_ToEntity(t *testing.T) {
-	t.Run("success all nullable properties filled", func(t *testing.T) {
+	t.Run("success all nullable properties filled with Application ID", func(t *testing.T) {
 		// GIVEN
-		apiModel, _, _ := fixFullAPIDefinitionModel("foo")
+		apiModel, _, _ := fixFullAPIDefinitionModelWithAppID("foo")
 
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(versionConv, nil)
 		// WHEN
 		entity := conv.ToEntity(&apiModel)
 		// THEN
-		assert.Equal(t, fixFullEntityAPIDefinition(apiDefID, "foo"), *entity)
+		assert.Equal(t, fixFullEntityAPIDefinitionWithAppID(apiDefID, "foo"), *entity)
 	})
+
+	t.Run("success all nullable properties filled with Application Template Version ID", func(t *testing.T) {
+		// GIVEN
+		apiModel, _, _ := fixFullAPIDefinitionModelWithAppTemplateVersionID("foo")
+
+		versionConv := version.NewConverter()
+		conv := api.NewConverter(versionConv, nil)
+		// WHEN
+		entity := conv.ToEntity(&apiModel)
+		// THEN
+		assert.Equal(t, fixFullEntityAPIDefinitionWithAppTemplateVersionID(apiDefID, "foo"), *entity)
+	})
+
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		// GIVEN
 		apiModel := fixAPIDefinitionModel("id", "name", "target_url")
@@ -376,13 +392,13 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
 		// GIVEN
-		entity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
+		entity := fixFullEntityAPIDefinitionWithAppID(apiDefID, "placeholder")
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(versionConv, nil)
 		// WHEN
 		apiModel := conv.FromEntity(&entity)
 		// THEN
-		expectedModel, _, _ := fixFullAPIDefinitionModel("placeholder")
+		expectedModel, _, _ := fixFullAPIDefinitionModelWithAppID("placeholder")
 		assert.Equal(t, &expectedModel, apiModel)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {

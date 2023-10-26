@@ -2,6 +2,7 @@ package systemfetcher
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -15,8 +16,12 @@ var (
 	// ApplicationTemplateLabelFilter represent a label for the Application Templates which has a value that
 	// should match to the SystemSourceKey's value of the fetched systems
 	ApplicationTemplateLabelFilter string
+	// SelectFilter represents the select filter that determines which properties of a system will be fetched
+	SelectFilter []string
 	// SystemSourceKey represents a key for filtering systems
 	SystemSourceKey string
+	// SystemSynchronizationTimestamps represents the systems last synchronization timestamps for each tenant
+	SystemSynchronizationTimestamps map[string]map[string]SystemSynchronizationTimestamp
 )
 
 // TemplateMapping holds data for Application Templates and their Labels
@@ -25,34 +30,22 @@ type TemplateMapping struct {
 	Labels      map[string]*model.Label
 }
 
-// AdditionalURLs missing godoc
-type AdditionalURLs map[string]string
-
-// AdditionalAttributes missing godoc
-type AdditionalAttributes map[string]string
-
-// SystemBase missing godoc
-type SystemBase struct {
-	SystemNumber           string               `json:"systemNumber"`
-	DisplayName            string               `json:"displayName"`
-	ProductID              string               `json:"productId"`
-	PpmsProductVersionID   string               `json:"ppmsProductVersionId"`
-	ProductDescription     string               `json:"productDescription"`
-	BaseURL                string               `json:"baseUrl"`
-	InfrastructureProvider string               `json:"infrastructureProvider"`
-	AdditionalURLs         AdditionalURLs       `json:"additionalUrls"`
-	AdditionalAttributes   AdditionalAttributes `json:"additionalAttributes"`
-}
-
 // System missing godoc
 type System struct {
-	SystemBase
-	TemplateID string `json:"-"`
+	SystemPayload   map[string]interface{}
+	TemplateID      string                           `json:"-"`
+	StatusCondition model.ApplicationStatusCondition `json:"-"`
+}
+
+// SystemSynchronizationTimestamp represents the last synchronization time of a system
+type SystemSynchronizationTimestamp struct {
+	ID                string
+	LastSyncTimestamp time.Time
 }
 
 // UnmarshalJSON missing godoc
 func (s *System) UnmarshalJSON(data []byte) error {
-	if err := json.Unmarshal(data, &s.SystemBase); err != nil {
+	if err := json.Unmarshal(data, &s.SystemPayload); err != nil {
 		return err
 	}
 
@@ -72,14 +65,21 @@ func matchProps(data []byte, tm TemplateMapping) bool {
 		return false
 	}
 
-	templateMappingLabelValue, ok := lbl.Value.(string)
+	templateMappingLabelValues, ok := lbl.Value.([]interface{})
 	if !ok {
 		return false
 	}
 
-	if systemSourceKeyValue := gjson.GetBytes(data, SystemSourceKey).String(); systemSourceKeyValue != templateMappingLabelValue {
-		return false
+	for _, labelValue := range templateMappingLabelValues {
+		labelStr, ok := labelValue.(string)
+		if !ok {
+			continue
+		}
+
+		if systemSourceKeyValue := gjson.GetBytes(data, SystemSourceKey).String(); systemSourceKeyValue == labelStr {
+			return true
+		}
 	}
 
-	return true
+	return false
 }

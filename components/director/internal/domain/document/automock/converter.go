@@ -19,6 +19,10 @@ func (_m *Converter) FromEntity(in *document.Entity) (*model.Document, error) {
 	ret := _m.Called(in)
 
 	var r0 *model.Document
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*document.Entity) (*model.Document, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*document.Entity) *model.Document); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +31,6 @@ func (_m *Converter) FromEntity(in *document.Entity) (*model.Document, error) {
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*document.Entity) error); ok {
 		r1 = rf(in)
 	} else {
@@ -42,6 +45,10 @@ func (_m *Converter) ToEntity(in *model.Document) (*document.Entity, error) {
 	ret := _m.Called(in)
 
 	var r0 *document.Entity
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.Document) (*document.Entity, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.Document) *document.Entity); ok {
 		r0 = rf(in)
 	} else {
@@ -50,7 +57,6 @@ func (_m *Converter) ToEntity(in *model.Document) (*document.Entity, error) {
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.Document) error); ok {
 		r1 = rf(in)
 	} else {
@@ -60,13 +66,12 @@ func (_m *Converter) ToEntity(in *model.Document) (*document.Entity, error) {
 	return r0, r1
 }
 
-type mockConstructorTestingTNewConverter interface {
+// NewConverter creates a new instance of Converter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewConverter creates a new instance of Converter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewConverter(t mockConstructorTestingTNewConverter) *Converter {
+}) *Converter {
 	mock := &Converter{}
 	mock.Mock.Test(t)
 

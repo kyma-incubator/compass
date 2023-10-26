@@ -54,13 +54,12 @@ func (_m *Indicator) Status() healthz.Status {
 	return r0
 }
 
-type mockConstructorTestingTNewIndicator interface {
+// NewIndicator creates a new instance of Indicator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewIndicator(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewIndicator creates a new instance of Indicator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewIndicator(t mockConstructorTestingTNewIndicator) *Indicator {
+}) *Indicator {
 	mock := &Indicator{}
 	mock.Mock.Test(t)
 

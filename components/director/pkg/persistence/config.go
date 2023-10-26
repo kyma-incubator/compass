@@ -15,8 +15,8 @@ type DatabaseConfig struct {
 	Port               string        `envconfig:"default=5432,APP_DB_PORT"`
 	Name               string        `envconfig:"default=compass,APP_DB_NAME"`
 	SSLMode            string        `envconfig:"default=disable,APP_DB_SSL"`
-	MaxOpenConnections int           `envconfig:"default=2,APP_DB_MAX_OPEN_CONNECTIONS"`
-	MaxIdleConnections int           `envconfig:"default=2,APP_DB_MAX_IDLE_CONNECTIONS"`
+	MaxOpenConnections int           `envconfig:"default=5,APP_DB_MAX_OPEN_CONNECTIONS"`
+	MaxIdleConnections int           `envconfig:"default=5,APP_DB_MAX_IDLE_CONNECTIONS"`
 	ConnMaxLifetime    time.Duration `envconfig:"default=30m,APP_DB_CONNECTION_MAX_LIFETIME"`
 }
 

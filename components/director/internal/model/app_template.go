@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
@@ -19,6 +20,18 @@ type ApplicationTemplate struct {
 	AccessLevel          ApplicationTemplateAccessLevel
 	Webhooks             []Webhook
 	Labels               map[string]interface{}
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+}
+
+// SetCreatedAt is a setter for CreatedAt property
+func (at *ApplicationTemplate) SetCreatedAt(t time.Time) {
+	at.CreatedAt = t
+}
+
+// SetUpdatedAt is a setter for UpdatedAt property
+func (at *ApplicationTemplate) SetUpdatedAt(t time.Time) {
+	at.UpdatedAt = t
 }
 
 // ApplicationTemplatePage missing godoc
@@ -51,9 +64,11 @@ const (
 
 // ApplicationFromTemplateInput missing godoc
 type ApplicationFromTemplateInput struct {
+	ID                  *string
 	TemplateName        string
 	Values              ApplicationFromTemplateInputValues
 	PlaceholdersPayload *string
+	Labels              map[string]interface{}
 }
 
 // ApplicationFromTemplateInputValues missing godoc
@@ -117,12 +132,20 @@ type ApplicationTemplateUpdateInput struct {
 	Placeholders         []ApplicationTemplatePlaceholder
 	AccessLevel          ApplicationTemplateAccessLevel
 	Labels               map[string]interface{}
+	Webhooks             []*WebhookInput
 }
 
 // ToApplicationTemplate missing godoc
 func (a *ApplicationTemplateUpdateInput) ToApplicationTemplate(id string) ApplicationTemplate {
 	if a == nil {
 		return ApplicationTemplate{}
+	}
+
+	uidService := uid.NewService()
+	webhooks := make([]Webhook, 0)
+	for _, webhookInput := range a.Webhooks {
+		webhook := webhookInput.ToWebhook(uidService.Generate(), id, ApplicationTemplateWebhookReference)
+		webhooks = append(webhooks, *webhook)
 	}
 
 	return ApplicationTemplate{
@@ -134,5 +157,6 @@ func (a *ApplicationTemplateUpdateInput) ToApplicationTemplate(id string) Applic
 		Placeholders:         a.Placeholders,
 		AccessLevel:          a.AccessLevel,
 		Labels:               a.Labels,
+		Webhooks:             webhooks,
 	}
 }

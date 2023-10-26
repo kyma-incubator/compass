@@ -4,6 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
+
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -89,10 +93,11 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	accountTenant := tenant.TestTenants.GetDefaultTenantID()
 
 	// Register runtime in customer's tenant
-	input := fixRuntimeInput("customerRuntime")
+	input := fixtures.FixRuntimeRegisterInputWithoutLabels("customerRuntime")
 
-	customerRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, customerTenant, input, conf.GatewayOauth)
+	var customerRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, customerTenant, &customerRuntime)
+	customerRuntime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, customerTenant, input, conf.GatewayOauth)
 
 	// Assert customer's runtime is visible in the customer's tenant
 	customerRuntimes := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, customerTenant)
@@ -104,9 +109,10 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	require.Len(t, accountRuntimes.Data, 0)
 
 	// Register runtime in account's tenant
-	accountRuntimeInput := fixRuntimeInput("accountRuntime")
-	accountRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, accountTenant, accountRuntimeInput, conf.GatewayOauth)
+	accountRuntimeInput := fixtures.FixRuntimeRegisterInputWithoutLabels("accountRuntime")
+	var accountRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, accountTenant, &accountRuntime)
+	accountRuntime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, accountTenant, accountRuntimeInput, conf.GatewayOauth)
 
 	// Assert account's runtime is visible in the account's tenant
 	accountRuntimes = fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, accountTenant)
@@ -118,12 +124,12 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	assertions.AssertRuntimePageContainOnlyIDs(t, customerRuntimes, customerRuntime.ID, accountRuntime.ID)
 
 	// Assert customer can update his own runtime
-	customerRuntimeUpdateInput := fixRuntimeUpdateInput("customerRuntimeUpdated")
+	customerRuntimeUpdateInput := fixtures.FixRuntimeUpdateInputWithoutLabels("customerRuntimeUpdated")
 	customerRuntime, err := fixtures.UpdateRuntimeWithinTenant(t, ctx, certSecuredGraphQLClient, customerTenant, customerRuntime.ID, customerRuntimeUpdateInput)
 	require.NoError(t, err)
 
 	// Assert customer can update his child account's runtime
-	accountRuntimeUpdateInput := fixRuntimeUpdateInput("accountRuntimeUpdated")
+	accountRuntimeUpdateInput := fixtures.FixRuntimeUpdateInputWithoutLabels("accountRuntimeUpdated")
 	accountRuntime, err = fixtures.UpdateRuntimeWithinTenant(t, ctx, certSecuredGraphQLClient, customerTenant, accountRuntime.ID, accountRuntimeUpdateInput)
 	require.NoError(t, err)
 
@@ -158,4 +164,47 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	accountRuntime = fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, customerTenant, accountRuntime.ID)
 	require.Equal(t, 2, len(accountRuntime.RuntimeContexts.Data))
 	require.ElementsMatch(t, []*graphql.RuntimeContextExt{&customerRuntimeContextForAccountRuntime, &accountRuntimeContextForAccountRuntime}, accountRuntime.RuntimeContexts.Data)
+}
+
+func TestTenantAccess(t *testing.T) {
+	ctx := context.Background()
+
+	actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "e2e-tenant-access", tenant.TestTenants.GetDefaultTenantID())
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+
+	customTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
+	anotherTenantsApps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customTenant)
+	assert.Empty(t, anotherTenantsApps.Data)
+
+	in := graphql.TenantAccessInput{
+		TenantID:     customTenant,
+		ResourceType: graphql.TenantAccessObjectTypeApplication,
+		ResourceID:   actualApp.ID,
+		Owner:        true,
+	}
+
+	tenantAccessInputString, err := testctx.Tc.Graphqlizer.TenantAccessInputToGQL(in)
+	require.NoError(t, err)
+
+	addTenantAccessRequest := fixtures.FixAddTenantAccessRequest(tenantAccessInputString)
+	example.SaveExample(t, addTenantAccessRequest.Query(), "add tenant access")
+
+	tenantAccess := &graphql.TenantAccess{}
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, addTenantAccessRequest, tenantAccess)
+	require.NoError(t, err)
+
+	anotherTenantsApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customTenant)
+	require.Len(t, anotherTenantsApps.Data, 1)
+	require.Equal(t, anotherTenantsApps.Data[0].ID, actualApp.ID)
+
+	removeTenantAccessRequest := fixtures.FixRemoveTenantAccessRequest(customTenant, actualApp.ID, graphql.TenantAccessObjectTypeApplication)
+	example.SaveExample(t, removeTenantAccessRequest.Query(), "remove tenant access")
+
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, removeTenantAccessRequest, tenantAccess)
+	require.NoError(t, err)
+
+	anotherTenantsApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customTenant)
+	assert.Empty(t, anotherTenantsApps.Data)
 }

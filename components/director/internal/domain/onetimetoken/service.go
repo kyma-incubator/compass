@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tokens"
@@ -266,7 +266,11 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 		clientUser = correlation.CorrelationIDFromContext(ctx)
 	}
 
-	scenarioGroups := scenariogroups.LoadFromContext(ctx)
+	rawScenarioGroups := scenariogroups.LoadFromContext(ctx)
+	scenarioGroups, err := unmarshalScenarioGroups(rawScenarioGroups)
+	if err != nil {
+		return nil, err
+	}
 
 	graphqlApp := s.appConverter.ToGraphQL(&app)
 	data := pairing.RequestData{
@@ -419,4 +423,17 @@ func (s *service) IsTokenValid(systemAuth *pkgmodel.SystemAuth) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func unmarshalScenarioGroups(rawScenarioGroups []string) ([]pairing.ScenarioGroup, error) {
+	scenarioGroups := make([]pairing.ScenarioGroup, 0)
+	for _, gr := range rawScenarioGroups {
+		var scenarioGroup pairing.ScenarioGroup
+		err := json.Unmarshal([]byte(gr), &scenarioGroup)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error while unmarshalling a scenario group")
+		}
+		scenarioGroups = append(scenarioGroups, scenarioGroup)
+	}
+	return scenarioGroups, nil
 }

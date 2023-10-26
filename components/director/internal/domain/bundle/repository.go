@@ -3,6 +3,8 @@ package bundle
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
@@ -16,18 +18,20 @@ import (
 )
 
 const (
-	bundleTable    string = `public.bundles`
-	correlationIDs string = "correlation_ids"
-	appIDColumn    string = "app_id"
+	bundleTable                string = `public.bundles`
+	correlationIDs             string = "correlation_ids"
+	appIDColumn                string = "app_id"
+	appTemplateVersionIDColumn string = "app_template_version_id"
 )
 
 var (
-	bundleColumns    = []string{"id", appIDColumn, "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", correlationIDs, "documentation_labels"}
-	updatableColumns = []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
+	bundleColumns    = []string{"id", appIDColumn, "app_template_version_id", "name", "description", "version", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "local_tenant_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", correlationIDs, "tags", "resource_hash", "documentation_labels"}
+	updatableColumns = []string{"name", "description", "version", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "local_tenant_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "tags", "resource_hash", "documentation_labels"}
 	orderByColumns   = repo.OrderByParams{repo.NewAscOrderBy(appIDColumn), repo.NewAscOrderBy("id")}
 )
 
 // EntityConverter missing godoc
+//
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
 	ToEntity(in *model.Bundle) (*Entity, error)
@@ -39,11 +43,14 @@ type pgRepository struct {
 	singleGetter       repo.SingleGetter
 	singleGlobalGetter repo.SingleGetterGlobal
 	deleter            repo.Deleter
+	deleterGlobal      repo.DeleterGlobal
 	lister             repo.Lister
 	globalLister       repo.ListerGlobal
 	unionLister        repo.UnionLister
 	creator            repo.Creator
+	creatorGlobal      repo.CreatorGlobal
 	updater            repo.Updater
+	updaterGlobal      repo.UpdaterGlobal
 	conv               EntityConverter
 }
 
@@ -54,11 +61,14 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		singleGetter:       repo.NewSingleGetter(bundleTable, bundleColumns),
 		singleGlobalGetter: repo.NewSingleGetterGlobal(resource.Bundle, bundleTable, bundleColumns),
 		deleter:            repo.NewDeleter(bundleTable),
+		deleterGlobal:      repo.NewDeleterGlobal(resource.Bundle, bundleTable),
 		lister:             repo.NewLister(bundleTable, bundleColumns),
 		globalLister:       repo.NewListerGlobal(resource.Bundle, bundleTable, bundleColumns),
 		unionLister:        repo.NewUnionLister(bundleTable, bundleColumns),
 		creator:            repo.NewCreator(bundleTable, bundleColumns),
+		creatorGlobal:      repo.NewCreatorGlobal(resource.Bundle, bundleTable, bundleColumns),
 		updater:            repo.NewUpdater(bundleTable, updatableColumns, []string{"id"}),
+		updaterGlobal:      repo.NewUpdaterGlobal(resource.Bundle, bundleTable, updatableColumns, []string{"id"}),
 		conv:               conv,
 	}
 }
@@ -86,6 +96,21 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.B
 	return r.creator.Create(ctx, resource.Bundle, tenant, bndlEnt)
 }
 
+// CreateGlobal creates a bundle without tenant isolation
+func (r *pgRepository) CreateGlobal(ctx context.Context, model *model.Bundle) error {
+	if model == nil {
+		return apperrors.NewInternalError("model can not be nil")
+	}
+
+	bndlEnt, err := r.conv.ToEntity(model)
+	if err != nil {
+		return errors.Wrap(err, "while converting to Bundle entity")
+	}
+
+	log.C(ctx).Debugf("Persisting Bundle entity with id %s to db", model.ID)
+	return r.creatorGlobal.Create(ctx, bndlEnt)
+}
+
 // Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.Bundle) error {
 	if model == nil {
@@ -101,9 +126,29 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.B
 	return r.updater.UpdateSingle(ctx, resource.Bundle, tenant, bndlEnt)
 }
 
+// UpdateGlobal updates a bundle without tenant isolation
+func (r *pgRepository) UpdateGlobal(ctx context.Context, model *model.Bundle) error {
+	if model == nil {
+		return apperrors.NewInternalError("model can not be nil")
+	}
+
+	bndlEnt, err := r.conv.ToEntity(model)
+
+	if err != nil {
+		return errors.Wrap(err, "while converting to Bundle entity")
+	}
+
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, bndlEnt)
+}
+
 // Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	return r.deleter.DeleteOne(ctx, resource.Bundle, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+// DeleteGlobal deletes a bundles by ID without tenant isolation
+func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
+	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // Exists missing godoc
@@ -115,6 +160,16 @@ func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, err
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Bundle, error) {
 	var bndlEnt Entity
 	if err := r.singleGetter.Get(ctx, resource.Bundle, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &bndlEnt); err != nil {
+		return nil, err
+	}
+
+	return convertToBundle(r, &bndlEnt)
+}
+
+// GetByIDGlobal gets a single bundle by ID without tenant isolation
+func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Bundle, error) {
+	var bndlEnt Entity
+	if err := r.singleGlobalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &bndlEnt); err != nil {
 		return nil, err
 	}
 
@@ -164,7 +219,8 @@ func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string
 		if err != nil {
 			return nil, errors.Wrap(err, "while creating Bundle model from entity")
 		}
-		bundleByID[bundleEnt.ApplicationID] = append(bundleByID[bundleEnt.ApplicationID], m)
+		applicationID := str.PtrStrToStr(repo.StringPtrFromNullableString(bundleEnt.ApplicationID))
+		bundleByID[applicationID] = append(bundleByID[applicationID], m)
 	}
 
 	offset, err := pagination.DecodeOffsetCursor(cursor)
@@ -194,12 +250,23 @@ func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string
 	return bundlePages, nil
 }
 
-// ListByApplicationIDNoPaging missing godoc
-func (r *pgRepository) ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error) {
+// ListByResourceIDNoPaging lists bundles by resource type are resource ID without paging
+func (r *pgRepository) ListByResourceIDNoPaging(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Bundle, error) {
+	var condition repo.Condition
+	var err error
 	bundleCollection := BundleCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Bundle, tenantID, &bundleCollection, repo.NewEqualCondition(appIDColumn, appID)); err != nil {
+
+	if resourceType == resource.Application {
+		condition = repo.NewEqualCondition(appIDColumn, resourceID)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.Bundle, tenantID, &bundleCollection, condition)
+	} else {
+		condition = repo.NewEqualCondition(appTemplateVersionIDColumn, resourceID)
+		err = r.globalLister.ListGlobalWithSelectForUpdate(ctx, &bundleCollection, condition)
+	}
+	if err != nil {
 		return nil, err
 	}
+
 	bundles := make([]*model.Bundle, 0, bundleCollection.Len())
 	for _, bundle := range bundleCollection {
 		bundleModel, err := r.conv.FromEntity(&bundle)
@@ -208,6 +275,7 @@ func (r *pgRepository) ListByApplicationIDNoPaging(ctx context.Context, tenantID
 		}
 		bundles = append(bundles, bundleModel)
 	}
+
 	return bundles, nil
 }
 

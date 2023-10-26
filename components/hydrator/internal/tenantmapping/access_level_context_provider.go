@@ -3,6 +3,9 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	directorErrors "github.com/kyma-incubator/compass/components/hydrator/internal/director"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
@@ -20,16 +23,18 @@ const GlobalAccessLevel = "global"
 type accessLevelContextProvider struct {
 	directorClient DirectorClient
 	tenantKeys     KeysExtra
+	scopesGetter   ScopesGetter
 }
 
 // NewAccessLevelContextProvider implements the ObjectContextProvider interface by looking tenant header and access levels defined in the auth session extra.
-func NewAccessLevelContextProvider(clientProvider DirectorClient) *accessLevelContextProvider {
+func NewAccessLevelContextProvider(clientProvider DirectorClient, scopesGetter ScopesGetter) *accessLevelContextProvider {
 	return &accessLevelContextProvider{
 		directorClient: clientProvider,
 		tenantKeys: KeysExtra{
 			TenantKey:         tenantmapping.ConsumerTenantKey,
 			ExternalTenantKey: tenantmapping.ExternalTenantKey,
 		},
+		scopesGetter: scopesGetter,
 	}
 }
 
@@ -42,6 +47,12 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 	})
 	ctx = log.ContextWithLogger(ctx, logger)
 
+	scopes, err := p.directorScopes(consumerType)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to get scopes for consumer type %s: %v", consumerType, err)
+		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Failed to extract scopes for consumer with type %s", consumerType))
+	}
+
 	externalTenantID, err := reqData.GetExternalTenantID()
 	if err != nil {
 		if apperrors.IsKeyDoesNotExist(err) {
@@ -51,7 +62,7 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 				return ObjectContext{}, err
 			}
 
-			return NewObjectContext(NewTenantContext("", ""), p.tenantKeys, "", mergeWithOtherScopes,
+			return NewObjectContext(NewTenantContext("", ""), p.tenantKeys, scopes, mergeWithOtherScopes,
 				"", "", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), tenantmapping.CertServiceObjectContextProvider), nil
 		}
 		return ObjectContext{}, err
@@ -64,7 +75,7 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 			// tenant not in DB yet, might be because we have not imported all subaccounts yet
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), p.tenantKeys, "", mergeWithOtherScopes, "",
+			return NewObjectContext(NewTenantContext(externalTenantID, ""), p.tenantKeys, scopes, mergeWithOtherScopes, "",
 				"", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), tenantmapping.CertServiceObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
@@ -77,9 +88,9 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 		return ObjectContext{}, err
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), p.tenantKeys, "", mergeWithOtherScopes,
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), p.tenantKeys, scopes, mergeWithOtherScopes,
 		authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), tenantmapping.CertServiceObjectContextProvider)
-	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
+	log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
 	return objCtx, nil
 }
 
@@ -123,4 +134,12 @@ func (p *accessLevelContextProvider) verifyTenantAccessLevels(accessLevel string
 	}
 
 	return apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to %s tenant with ID %s", authDetails.AuthID, accessLevel, externalTenantID))
+}
+
+func (p *accessLevelContextProvider) directorScopes(consumerType model.SystemAuthReferenceObjectType) (string, error) {
+	declaredScopes, err := p.scopesGetter.GetRequiredScopes(buildPath(consumerType))
+	if err != nil {
+		return "", errors.Wrap(err, "while fetching scopes")
+	}
+	return strings.Join(declaredScopes, " "), nil
 }

@@ -17,6 +17,7 @@
     - "automatic_scenario_assignment:read"
     - "application.auths:read"
     - "application.webhooks:read"
+    - "application.application_template:read"
     - "application_template.webhooks:read"
     - "bundle.instance_auths:read"
     - "document.fetch_request:read"
@@ -27,6 +28,7 @@
     - "fetch-request.auth:read"
     - "webhooks.auth:read"
     - "formation:write"
+    - "formation.state:write"
     - "formation:read"
     - "internal_visibility:read"
     - "runtime.webhooks:read"
@@ -38,6 +40,8 @@
     - "formation_constraint:write"
     - "certificate_subject_mapping:read"
     - "certificate_subject_mapping:write"
+    - "tenant_access:write"
+    - "bundle_instance_auth:write"
 {{- end -}}
 {{ range $name := regexSplit "," .Values.operatorGroupNames -1 }}
 - groupname: "{{ trim $name }}"

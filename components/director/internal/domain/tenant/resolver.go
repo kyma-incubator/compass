@@ -3,6 +3,8 @@ package tenant
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -16,6 +18,7 @@ import (
 )
 
 // BusinessTenantMappingService is responsible for the service-layer tenant operations.
+//
 //go:generate mockery --name=BusinessTenantMappingService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BusinessTenantMappingService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
@@ -28,16 +31,26 @@ type BusinessTenantMappingService interface {
 	Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, tenantInputs []string) error
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
+	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
+	CreateTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
+	DeleteTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
+	GetTenantAccessForResource(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) (*model.TenantAccess, error)
+	GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 }
 
 // BusinessTenantMappingConverter is used to convert the internally used tenant representation model.BusinessTenantMapping
 // into the external GraphQL representation graphql.Tenant.
+//
 //go:generate mockery --name=BusinessTenantMappingConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BusinessTenantMappingConverter interface {
 	MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant
 	MultipleInputFromGraphQL(in []*graphql.BusinessTenantMappingInput) []model.BusinessTenantMappingInput
 	InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) model.BusinessTenantMappingInput
 	ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant
+	TenantAccessInputFromGraphQL(in graphql.TenantAccessInput) (*model.TenantAccess, error)
+	TenantAccessToGraphQL(in *model.TenantAccess) (*graphql.TenantAccess, error)
+	TenantAccessToEntity(in *model.TenantAccess) *repo.TenantAccess
+	TenantAccessFromEntity(in *repo.TenantAccess) *model.TenantAccess
 }
 
 // Resolver is the resolver responsible for tenant-related GraphQL requests.
@@ -113,10 +126,9 @@ func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tena
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-
 	tenant, err := r.srv.GetTenantByExternalID(ctx, externalID)
 	if err != nil && apperrors.IsNotFoundError(err) {
-		tx, err = r.fetchTenant(tx, externalID)
+		tx, err = r.fetchTenant(ctx, tx, externalID)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, apperrors.NewNotFoundError(resource.Tenant, externalID)
@@ -178,6 +190,29 @@ func (r *Resolver) TenantByLowestOwnerForResource(ctx context.Context, resourceS
 	}
 
 	return tenantID, nil
+}
+
+// RootTenant fetches the top parent external ID for a given tenant
+func (r *Resolver) RootTenant(ctx context.Context, externalTenant string) (*graphql.Tenant, error) {
+	log.C(ctx).Infof("Getting the top parent ID for a external tenant: %q", externalTenant)
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	result, err := r.srv.GetParentRecursivelyByExternalTenant(ctx, externalTenant)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while fetching the top parent ID for a external tenant %q", externalTenant)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return r.conv.ToGraphQL(result), nil
 }
 
 // Labels transactionally retrieves all existing labels of the given tenant if it exists.
@@ -312,11 +347,12 @@ func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTen
 	return r.conv.ToGraphQL(tenant), nil
 }
 
-func (r *Resolver) fetchTenant(tx persistence.PersistenceTx, externalID string) (persistence.PersistenceTx, error) {
+func (r *Resolver) fetchTenant(ctx context.Context, tx persistence.PersistenceTx, externalID string) (persistence.PersistenceTx, error) {
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-	if err := r.fetcher.FetchOnDemand(externalID, ""); err != nil { // will always fail
+
+	if err := r.fetcher.FetchOnDemand(ctx, externalID, ""); err != nil {
 		return nil, errors.Wrapf(err, "while trying to create if not exists tenant %s", externalID)
 	}
 	tr, err := r.transact.Begin()
@@ -324,4 +360,93 @@ func (r *Resolver) fetchTenant(tx persistence.PersistenceTx, externalID string) 
 		return nil, err
 	}
 	return tr, nil
+}
+
+// AddTenantAccess adds a tenant access record for tenantID about resourceID
+func (r *Resolver) AddTenantAccess(ctx context.Context, in graphql.TenantAccessInput) (*graphql.TenantAccess, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	tenantAccess, err := r.conv.TenantAccessInputFromGraphQL(in)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting tenant access input for tenant %q about resource %q of type %q", in.TenantID, in.ResourceID, in.ResourceType)
+	}
+
+	internalTenant, err := r.srv.GetInternalTenant(ctx, tenantAccess.ExternalTenantID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting internal tenant for external tenant ID: %q", tenantAccess.ExternalTenantID)
+	}
+	tenantAccess.InternalTenantID = internalTenant
+
+	if err := r.srv.CreateTenantAccessForResourceRecursively(ctx, tenantAccess); err != nil {
+		return nil, errors.Wrapf(err, "while creating tenant access record for tenant %q about resource %q of type %q", tenantAccess.InternalTenantID, tenantAccess.ResourceID, tenantAccess.ResourceType)
+	}
+
+	storedTenantAccess, err := r.srv.GetTenantAccessForResource(ctx, tenantAccess.InternalTenantID, tenantAccess.ResourceID, tenantAccess.ResourceType)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while fetching stored tenant access for tenant %q about resource %q of type %q", tenantAccess.InternalTenantID, tenantAccess.ResourceID, tenantAccess.ResourceType)
+	}
+	storedTenantAccess.ExternalTenantID = tenantAccess.ExternalTenantID
+
+	output, err := r.conv.TenantAccessToGraphQL(storedTenantAccess)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting to graphql tenant access for tenant %q about resource %q of type %q", tenantAccess.InternalTenantID, tenantAccess.ResourceID, tenantAccess.ResourceType)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return output, nil
+}
+
+// RemoveTenantAccess removes the tenant access record for tenantID about resourceID
+func (r *Resolver) RemoveTenantAccess(ctx context.Context, tenantID, resourceID string, resourceType graphql.TenantAccessObjectType) (*graphql.TenantAccess, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	internalTenantID, err := r.srv.GetInternalTenant(ctx, tenantID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting internal tenant for external tenant ID: %q", tenantID)
+	}
+
+	resourceTypeModel, err := fromTenantAccessObjectTypeToResourceType(resourceType)
+	if err != nil {
+		return nil, err
+	}
+
+	tenantAccess, err := r.srv.GetTenantAccessForResource(ctx, internalTenantID, resourceID, resourceTypeModel)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, apperrors.NewNotFoundErrorWithType(resource.TenantAccess)
+		}
+
+		return nil, errors.Wrapf(err, "while fetching stored tenant access for tenant %q about resource %q of type %q", internalTenantID, resourceID, resourceTypeModel)
+	}
+	tenantAccess.ExternalTenantID = tenantID
+
+	if err := r.srv.DeleteTenantAccessForResourceRecursively(ctx, tenantAccess); err != nil {
+		return nil, errors.Wrapf(err, "while deleting tenant access record for tenant %q about resource %q of type %q", tenantAccess.InternalTenantID, tenantAccess.ResourceID, tenantAccess.ResourceType)
+	}
+
+	output, err := r.conv.TenantAccessToGraphQL(tenantAccess)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting to graphql tenant access for tenant %q about resource %q of type %q", tenantAccess.InternalTenantID, tenantAccess.ResourceID, tenantAccess.ResourceType)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return output, nil
 }

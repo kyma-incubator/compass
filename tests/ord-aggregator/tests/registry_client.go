@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -73,7 +73,7 @@ func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Contex
 		return "", err
 	}
 
-	resp, err := executor.Execute(ctx, c.Client, documentURL, "")
+	resp, err := executor.Execute(ctx, c.Client, documentURL, "", &sync.Map{})
 	if err != nil {
 		return "", err
 	}
@@ -85,7 +85,7 @@ func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Contex
 	}
 
 	resp.Body = http.MaxBytesReader(nil, resp.Body, 2097152)
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.Wrap(err, "error reading document body")
 	}
@@ -108,7 +108,7 @@ func (c *client) fetchConfig(ctx context.Context, globalRegistryURL string) (*We
 
 	defer closeBody(ctx, resp.Body)
 
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "error reading response body")
 	}

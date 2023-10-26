@@ -16,6 +16,7 @@ import (
 )
 
 // AuthConverter missing godoc
+//
 //go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AuthConverter interface {
 	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
@@ -51,17 +52,22 @@ func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 	}
 
 	output := &Entity{
-		ApplicationID:                 in.ApplicationID,
+		ApplicationID:                 repo.NewNullableString(in.ApplicationID),
+		ApplicationTemplateVersionID:  repo.NewNullableString(in.ApplicationTemplateVersionID),
 		Name:                          in.Name,
 		Description:                   repo.NewNullableString(in.Description),
 		InstanceAuthRequestJSONSchema: repo.NewNullableString(in.InstanceAuthRequestInputSchema),
+		Version:                       repo.NewNullableString(in.Version),
+		ResourceHash:                  repo.NewNullableString(in.ResourceHash),
 		DefaultInstanceAuth:           repo.NewNullableString(defaultInstanceAuth),
 		OrdID:                         repo.NewNullableString(in.OrdID),
+		LocalTenantID:                 repo.NewNullableString(in.LocalTenantID),
 		ShortDescription:              repo.NewNullableString(in.ShortDescription),
 		Links:                         repo.NewNullableStringFromJSONRawMessage(in.Links),
 		Labels:                        repo.NewNullableStringFromJSONRawMessage(in.Labels),
 		CredentialExchangeStrategies:  repo.NewNullableStringFromJSONRawMessage(in.CredentialExchangeStrategies),
 		CorrelationIDs:                repo.NewNullableStringFromJSONRawMessage(in.CorrelationIDs),
+		Tags:                          repo.NewNullableStringFromJSONRawMessage(in.Tags),
 		DocumentationLabels:           repo.NewNullableStringFromJSONRawMessage(in.DocumentationLabels),
 		BaseEntity: &repo.BaseEntity{
 			ID:        in.ID,
@@ -88,17 +94,22 @@ func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 	}
 
 	output := &model.Bundle{
-		ApplicationID:                  entity.ApplicationID,
+		ApplicationID:                  repo.StringPtrFromNullableString(entity.ApplicationID),
+		ApplicationTemplateVersionID:   repo.StringPtrFromNullableString(entity.ApplicationTemplateVersionID),
 		Name:                           entity.Name,
 		Description:                    repo.StringPtrFromNullableString(entity.Description),
+		Version:                        repo.StringPtrFromNullableString(entity.Version),
+		ResourceHash:                   repo.StringPtrFromNullableString(entity.ResourceHash),
 		InstanceAuthRequestInputSchema: repo.StringPtrFromNullableString(entity.InstanceAuthRequestJSONSchema),
 		DefaultInstanceAuth:            defaultInstanceAuth,
 		OrdID:                          repo.StringPtrFromNullableString(entity.OrdID),
+		LocalTenantID:                  repo.StringPtrFromNullableString(entity.LocalTenantID),
 		ShortDescription:               repo.StringPtrFromNullableString(entity.ShortDescription),
 		Links:                          repo.JSONRawMessageFromNullableString(entity.Links),
 		Labels:                         repo.JSONRawMessageFromNullableString(entity.Labels),
 		CredentialExchangeStrategies:   repo.JSONRawMessageFromNullableString(entity.CredentialExchangeStrategies),
 		CorrelationIDs:                 repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
+		Tags:                           repo.JSONRawMessageFromNullableString(entity.Tags),
 		DocumentationLabels:            repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,

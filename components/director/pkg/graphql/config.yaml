@@ -68,6 +68,8 @@ models:
         resolver: true
       bundle:
         resolver: true
+      applicationTemplate:
+        resolver: true
   Bundle:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Bundle"
     fields:
@@ -103,7 +105,7 @@ models:
   EventDefinition:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.EventDefinition"
     fields:
-      eventSpec:
+      spec:
         resolver: true
 
   Document:
@@ -143,6 +145,8 @@ models:
   APIDefinition:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.APIDefinition"
     fields:
+      spec:
+        resolver: true
       auth:
         resolver: true
       auths:

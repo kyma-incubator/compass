@@ -16,11 +16,41 @@ type ApplicationTemplateService struct {
 	mock.Mock
 }
 
+// Get provides a mock function with given fields: ctx, id
+func (_m *ApplicationTemplateService) Get(ctx context.Context, id string) (*model.ApplicationTemplate, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.ApplicationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.ApplicationTemplate, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.ApplicationTemplate); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ApplicationTemplate)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByFilters provides a mock function with given fields: ctx, filter
 func (_m *ApplicationTemplateService) GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 *model.ApplicationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)); ok {
+		return rf(ctx, filter)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) *model.ApplicationTemplate); ok {
 		r0 = rf(ctx, filter)
 	} else {
@@ -29,7 +59,6 @@ func (_m *ApplicationTemplateService) GetByFilters(ctx context.Context, filter [
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, filter)
 	} else {
@@ -39,13 +68,12 @@ func (_m *ApplicationTemplateService) GetByFilters(ctx context.Context, filter [
 	return r0, r1
 }
 
-type mockConstructorTestingTNewApplicationTemplateService interface {
+// NewApplicationTemplateService creates a new instance of ApplicationTemplateService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplicationTemplateService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplicationTemplateService creates a new instance of ApplicationTemplateService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationTemplateService(t mockConstructorTestingTNewApplicationTemplateService) *ApplicationTemplateService {
+}) *ApplicationTemplateService {
 	mock := &ApplicationTemplateService{}
 	mock.Mock.Test(t)
 

@@ -19,48 +19,70 @@ import (
 
 const regionLabelKey = "region"
 
+// UUIDService service generating UUIDs
+//
 //go:generate mockery --name=UUIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
-// UUIDService missing godoc
 type UUIDService interface {
 	Generate() string
 }
 
+// DestinationRepo destinations repository
+//
 //go:generate mockery --name=DestinationRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
-// DestinationRepo missing godoc
 type DestinationRepo interface {
 	Upsert(ctx context.Context, in model.DestinationInput, id, tenantID, bundleID, revision string) error
 	DeleteOld(ctx context.Context, latestRevision, tenantID string) error
 }
 
+// LabelRepo labels repository
+//
 //go:generate mockery --name=LabelRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
-// LabelRepo missing godoc
 type LabelRepo interface {
 	GetSubdomainLabelForSubscribedRuntime(ctx context.Context, tenantID string) (*model.Label, error)
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
+// BundleRepo bundles repository
+//
 //go:generate mockery --name=BundleRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
-// BundleRepo missing godoc
 type BundleRepo interface {
 	ListByDestination(ctx context.Context, tenantID string, destination model.DestinationInput) ([]*model.Bundle, error)
 }
 
+// TenantRepo tenants repository
+//
 //go:generate mockery --name=TenantRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
-// TenantRepo missing godoc
 type TenantRepo interface {
-	ListBySubscribedRuntimes(ctx context.Context) ([]*model.BusinessTenantMapping, error)
+	ExistsSubscribed(ctx context.Context, id, selfDistinguishLabel string) (bool, error)
+	ListBySubscribedRuntimesAndApplicationTemplates(ctx context.Context, selfRegDistinguishLabel string) ([]*model.BusinessTenantMapping, error)
 }
 
 // DestinationService missing godoc
 type DestinationService struct {
-	Transactioner      persistence.Transactioner
-	UUIDSvc            UUIDService
-	DestinationRepo    DestinationRepo
-	BundleRepo         BundleRepo
-	LabelRepo          LabelRepo
-	DestinationsConfig config.DestinationsConfig
-	APIConfig          DestinationServiceAPIConfig
-	TenantRepo         TenantRepo
+	Transactioner           persistence.Transactioner
+	UUIDSvc                 UUIDService
+	DestinationRepo         DestinationRepo
+	BundleRepo              BundleRepo
+	LabelRepo               LabelRepo
+	DestinationsConfig      config.DestinationsConfig
+	APIConfig               DestinationServiceAPIConfig
+	TenantRepo              TenantRepo
+	selfRegDistinguishLabel string
+}
+
+// NewDestinationService creates new destination service
+func NewDestinationService(transactioner persistence.Transactioner, uuidSvc UUIDService, destinationRepo DestinationRepo, bundleRepo BundleRepo, labelRepo LabelRepo, destinationsConfig config.DestinationsConfig, apiConfig DestinationServiceAPIConfig, tenantRepo TenantRepo, selfRegDistinguishLabel string) *DestinationService {
+	return &DestinationService{
+		Transactioner:           transactioner,
+		UUIDSvc:                 uuidSvc,
+		DestinationRepo:         destinationRepo,
+		BundleRepo:              bundleRepo,
+		LabelRepo:               labelRepo,
+		DestinationsConfig:      destinationsConfig,
+		APIConfig:               apiConfig,
+		TenantRepo:              tenantRepo,
+		selfRegDistinguishLabel: selfRegDistinguishLabel,
+	}
 }
 
 // GetSubscribedTenantIDs returns subscribed tenants
@@ -77,11 +99,27 @@ func (d *DestinationService) GetSubscribedTenantIDs(ctx context.Context) ([]stri
 	return tenantIDs, nil
 }
 
+// IsTenantSubscribed returns true is tenant is subscribed and false if it's not
+func (d *DestinationService) IsTenantSubscribed(ctx context.Context, tenantID string) (bool, error) {
+	var exists bool
+	transactionError := d.transaction(ctx, func(ctxWithTransact context.Context) error {
+		var err error
+		exists, err = d.TenantRepo.ExistsSubscribed(ctxWithTransact, tenantID, d.selfRegDistinguishLabel)
+		if err != nil {
+			log.C(ctxWithTransact).WithError(err).Error("An error occurred while getting subscribed tenants")
+			return err
+		}
+		return nil
+	})
+
+	return exists, transactionError
+}
+
 func (d *DestinationService) getSubscribedTenants(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	var tenants []*model.BusinessTenantMapping
 	transactionError := d.transaction(ctx, func(ctxWithTransact context.Context) error {
 		var err error
-		tenants, err = d.TenantRepo.ListBySubscribedRuntimes(ctxWithTransact)
+		tenants, err = d.TenantRepo.ListBySubscribedRuntimesAndApplicationTemplates(ctxWithTransact, d.selfRegDistinguishLabel)
 		if err != nil {
 			log.C(ctxWithTransact).WithError(err).Error("An error occurred while getting subscribed tenants")
 			return err
@@ -134,6 +172,7 @@ func (d *DestinationService) SyncTenantDestinations(ctx context.Context, tenantI
 	if err != nil {
 		return errors.Wrapf(err, "failed to create destinations client for tenant '%s'", tenantID)
 	}
+	defer client.Close()
 
 	log.C(ctx).Debugf("Successfully created destination client for tenant '%s' with subdomain '%s'", tenantID, subdomainLabel.Value)
 
@@ -193,8 +232,8 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 		for _, destinationFromService := range destinations {
 			destination, err := destinationFromService.ToModel()
 			if err != nil {
-				// Log on info as there could be many destinations that should not be gathered
-				log.C(ctxWithTransact).WithError(err).Infof("Destination '%s' from tenant with id '%s' could not be processed",
+				// Log on debug as there could be many destinations that should not be gathered
+				log.C(ctxWithTransact).WithError(err).Debugf("Destination '%s' from tenant with id '%s' could not be processed",
 					destinationFromService.Name, tenant)
 				continue
 			}
@@ -266,6 +305,7 @@ func (d *DestinationService) FetchDestinationsSensitiveData(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
+	defer client.Close()
 
 	log.C(ctx).Infof("Getting data for destinations %v from tenant '%s'", destinationNames, tenantID)
 

@@ -3,6 +3,8 @@ package formationtemplate_test
 import (
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -16,8 +18,6 @@ import (
 const (
 	testID                    = "d1fddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	formationTemplateName     = "formation-template-name"
-	runtimeTypeDisplayName    = "display-name-for-runtime"
-	artifactKindAsString      = "SUBSCRIPTION"
 	applicationTypesAsString  = "[\"some-application-type\"]"
 	runtimeTypesAsString      = "[\"some-runtime-type\"]"
 	testTenantID              = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
@@ -27,6 +27,10 @@ const (
 )
 
 var (
+	runtimeTypeDisplayName      = "display-name-for-runtime"
+	artifactKindAsString        = "SUBSCRIPTION"
+	runtimeArtifactKind         = model.RuntimeArtifactKindSubscription
+	artifactKind                = graphql.ArtifactTypeSubscription
 	nilModelEntity              *model.FormationTemplate
 	emptyTemplate               = `{}`
 	url                         = "http://foo.com"
@@ -35,31 +39,74 @@ var (
 	applicationTypes            = []string{"some-application-type"}
 	runtimeTypes                = []string{"some-runtime-type"}
 	leadingProductIDs           = []string{"leading-product-id", "leading-product-id-2"}
+	shouldReset                 = true
 	formationTemplateModelInput = model.FormationTemplateInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
-		RuntimeTypeDisplayName: runtimeTypeDisplayName,
-		RuntimeArtifactKind:    artifactKindAsString,
+		RuntimeTypeDisplayName: &runtimeTypeDisplayName,
+		RuntimeArtifactKind:    &runtimeArtifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 		Webhooks:               fixModelWebhookInput(),
+	}
+	formationTemplateModelWithResetInput = model.FormationTemplateInput{
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeTypes:           runtimeTypes,
+		RuntimeTypeDisplayName: &runtimeTypeDisplayName,
+		RuntimeArtifactKind:    &runtimeArtifactKind,
+		LeadingProductIDs:      leadingProductIDs,
+		Webhooks:               fixModelWebhookInput(),
+		SupportsReset:          shouldReset,
 	}
 	formationTemplateGraphQLInput = graphql.FormationTemplateInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
-		RuntimeTypeDisplayName: runtimeTypeDisplayName,
-		RuntimeArtifactKind:    artifactKindAsString,
+		RuntimeTypeDisplayName: str.Ptr(runtimeTypeDisplayName),
+		RuntimeArtifactKind:    &artifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 		Webhooks:               fixGQLWebhookInput(),
 	}
+	formationTemplateWithResetGraphQLInput = graphql.FormationTemplateInput{
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeTypes:           runtimeTypes,
+		RuntimeTypeDisplayName: str.Ptr(runtimeTypeDisplayName),
+		RuntimeArtifactKind:    &artifactKind,
+		LeadingProductIDs:      leadingProductIDs,
+		Webhooks:               fixGQLWebhookInput(),
+		SupportsReset:          &shouldReset,
+	}
+
+	formationTemplateModelInputAppOnly = model.FormationTemplateInput{
+		Name:              formationTemplateName,
+		ApplicationTypes:  applicationTypes,
+		LeadingProductIDs: leadingProductIDs,
+		Webhooks:          fixModelWebhookInput(),
+	}
+	formationTemplateGraphQLInputAppOnly = graphql.FormationTemplateInput{
+		Name:              formationTemplateName,
+		ApplicationTypes:  applicationTypes,
+		LeadingProductIDs: leadingProductIDs,
+		Webhooks:          fixGQLWebhookInput(),
+	}
+	formationTemplateModelAppOnly = model.FormationTemplate{
+		ID:                testID,
+		Name:              formationTemplateName,
+		ApplicationTypes:  applicationTypes,
+		LeadingProductIDs: leadingProductIDs,
+		TenantID:          str.Ptr(testTenantID),
+		Webhooks:          []*model.Webhook{fixFormationTemplateModelWebhook()},
+	}
+
 	formationTemplateModel = model.FormationTemplate{
 		ID:                     testID,
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
-		RuntimeTypeDisplayName: runtimeTypeDisplayName,
-		RuntimeArtifactKind:    artifactKindAsString,
+		RuntimeTypeDisplayName: &runtimeTypeDisplayName,
+		RuntimeArtifactKind:    &runtimeArtifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 		TenantID:               str.Ptr(testTenantID),
 		Webhooks:               []*model.Webhook{fixFormationTemplateModelWebhook()},
@@ -69,8 +116,8 @@ var (
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
-		RuntimeTypeDisplayName: runtimeTypeDisplayName,
-		RuntimeArtifactKind:    artifactKindAsString,
+		RuntimeTypeDisplayName: &runtimeTypeDisplayName,
+		RuntimeArtifactKind:    &runtimeArtifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 		TenantID:               nil,
 	}
@@ -78,9 +125,9 @@ var (
 		ID:                     testID,
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypesAsString,
-		RuntimeTypes:           runtimeTypesAsString,
-		RuntimeTypeDisplayName: runtimeTypeDisplayName,
-		RuntimeArtifactKind:    artifactKindAsString,
+		RuntimeTypes:           repo.NewValidNullableString(runtimeTypesAsString),
+		RuntimeTypeDisplayName: repo.NewValidNullableString(runtimeTypeDisplayName),
+		RuntimeArtifactKind:    repo.NewValidNullableString(artifactKindAsString),
 		LeadingProductIDs:      repo.NewNullableStringFromJSONRawMessage(json.RawMessage(leadingProductIDsAsString)),
 		TenantID:               repo.NewValidNullableString(testTenantID),
 	}
@@ -88,9 +135,9 @@ var (
 		ID:                     testID,
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypesAsString,
-		RuntimeTypes:           runtimeTypesAsString,
-		RuntimeTypeDisplayName: runtimeTypeDisplayName,
-		RuntimeArtifactKind:    artifactKindAsString,
+		RuntimeTypes:           repo.NewValidNullableString(runtimeTypesAsString),
+		RuntimeTypeDisplayName: repo.NewValidNullableString(runtimeTypeDisplayName),
+		RuntimeArtifactKind:    repo.NewValidNullableString(artifactKindAsString),
 		LeadingProductIDs:      repo.NewNullableStringFromJSONRawMessage(json.RawMessage(leadingProductIDsAsString)),
 		TenantID:               repo.NewValidNullableString(""),
 	}
@@ -99,8 +146,8 @@ var (
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
-		RuntimeTypeDisplayName: runtimeTypeDisplayName,
-		RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,
+		RuntimeTypeDisplayName: &runtimeTypeDisplayName,
+		RuntimeArtifactKind:    &artifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 		Webhooks:               []*graphql.Webhook{fixFormationTemplateGQLWebhook()},
 	}
@@ -130,6 +177,59 @@ var (
 			HasNextPage: false,
 		},
 		TotalCount: 1,
+	}
+
+	constraintID1           = "constraintID1"
+	constraintID2           = "constraintID2"
+	operatorName            = operators.IsNotAssignedToAnyFormationOfTypeOperator
+	formationConstraintName = "constraint-name"
+	resourceSubtype         = "test subtype"
+	inputTemplate           = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}"}`
+
+	formationConstraint1 = &model.FormationConstraint{
+		ID:              constraintID1,
+		Name:            formationConstraintName,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        operatorName,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: model.FormationTypeFormationConstraintScope,
+	}
+	formationConstraint2 = &model.FormationConstraint{
+		ID:              constraintID2,
+		Name:            formationConstraintName,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        operatorName,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: model.FormationTypeFormationConstraintScope,
+	}
+
+	formationConstraintGql1 = &graphql.FormationConstraint{
+		ID:              constraintID1,
+		Name:            formationConstraintName,
+		ConstraintType:  graphql.ConstraintTypePre.String(),
+		TargetOperation: graphql.TargetOperationAssignFormation.String(),
+		Operator:        operatorName,
+		ResourceType:    graphql.ResourceTypeApplication.String(),
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: graphql.ConstraintScopeFormationType.String(),
+	}
+	formationConstraintGql2 = &graphql.FormationConstraint{
+		ID:              constraintID2,
+		Name:            formationConstraintName,
+		ConstraintType:  graphql.ConstraintTypePre.String(),
+		TargetOperation: graphql.TargetOperationAssignFormation.String(),
+		Operator:        operatorName,
+		ResourceType:    graphql.ResourceTypeApplication.String(),
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: graphql.ConstraintScopeFormationType.String(),
 	}
 )
 
@@ -229,4 +329,12 @@ func UnusedTenantService() *automock.TenantService {
 
 func UnusedWebhookService() *automock.WebhookService {
 	return &automock.WebhookService{}
+}
+
+func UnusedFormationConstraintService() *automock.FormationConstraintService {
+	return &automock.FormationConstraintService{}
+}
+
+func UnusedFormationConstraintConverter() *automock.FormationConstraintConverter {
+	return &automock.FormationConstraintConverter{}
 }

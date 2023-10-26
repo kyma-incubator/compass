@@ -20,6 +20,10 @@ func (_m *Service) Get(ctx context.Context, tenant string, key string) (*model.L
 	ret := _m.Called(ctx, tenant, key)
 
 	var r0 *model.LabelDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.LabelDefinition, error)); ok {
+		return rf(ctx, tenant, key)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.LabelDefinition); ok {
 		r0 = rf(ctx, tenant, key)
 	} else {
@@ -28,7 +32,6 @@ func (_m *Service) Get(ctx context.Context, tenant string, key string) (*model.L
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, key)
 	} else {
@@ -43,6 +46,10 @@ func (_m *Service) List(ctx context.Context, tenant string) ([]model.LabelDefini
 	ret := _m.Called(ctx, tenant)
 
 	var r0 []model.LabelDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]model.LabelDefinition, error)); ok {
+		return rf(ctx, tenant)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []model.LabelDefinition); ok {
 		r0 = rf(ctx, tenant)
 	} else {
@@ -51,7 +58,6 @@ func (_m *Service) List(ctx context.Context, tenant string) ([]model.LabelDefini
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, tenant)
 	} else {
@@ -61,13 +67,12 @@ func (_m *Service) List(ctx context.Context, tenant string) ([]model.LabelDefini
 	return r0, r1
 }
 
-type mockConstructorTestingTNewService interface {
+// NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewService(t mockConstructorTestingTNewService) *Service {
+}) *Service {
 	mock := &Service{}
 	mock.Mock.Test(t)
 

@@ -16,6 +16,7 @@ import (
 )
 
 // Repository missing godoc
+//
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Repository interface {
 	Create(ctx context.Context, item *model.BundleInstanceAuth) error
@@ -28,6 +29,7 @@ type Repository interface {
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -56,8 +58,7 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 	}
 
 	log.C(ctx).Debugf("Validating BundleInstanceAuth request input for Bundle with id %s", bundleID)
-	err = s.validateInputParamsAgainstSchema(in.InputParams, requestInputSchema)
-	if err != nil {
+	if err = validateInputParamsAgainstSchema(in.InputParams, requestInputSchema); err != nil {
 		return "", errors.Wrapf(err, "while validating BundleInstanceAuth request input for Bundle with id %s", bundleID)
 	}
 
@@ -82,6 +83,34 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 
 	err = s.repo.Create(ctx, &bndlInstAuth)
 	if err != nil {
+		return "", errors.Wrapf(err, "while creating BundleInstanceAuth with id %s for Bundle with id %s", id, bundleID)
+	}
+
+	return id, nil
+}
+
+// CreateBundleInstanceAuth creates a BundleInstanceAuth for a Bundle with id - bundleID from a given input
+func (s *service) CreateBundleInstanceAuth(ctx context.Context, bundleID string, in model.BundleInstanceAuthCreateInput, requestInputSchema *string) (string, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	log.C(ctx).Debugf("Validating BundleInstanceAuth request input for Bundle with id %q", bundleID)
+	if err = validateInputParamsAgainstSchema(in.InputParams, requestInputSchema); err != nil {
+		return "", errors.Wrapf(err, "while validating BundleInstanceAuth request input for Bundle with id %q", bundleID)
+	}
+
+	id := s.uidService.Generate()
+	log.C(ctx).Debugf("ID %q generated for BundleInstanceAuth for Bundle with id %q", id, bundleID)
+	bndlInstAuth := in.ToBundleInstanceAuth(id, bundleID, tnt, nil)
+
+	//  Always create bundle instance auth with status SUCCEEDED
+	if err = bndlInstAuth.SetDefaultStatus(model.BundleInstanceAuthStatusConditionSucceeded, s.timestampGen()); err != nil {
+		return "", err
+	}
+
+	if err = s.repo.Create(ctx, &bndlInstAuth); err != nil {
 		return "", errors.Wrapf(err, "while creating BundleInstanceAuth with id %s for Bundle with id %s", id, bundleID)
 	}
 
@@ -279,7 +308,7 @@ func (s *service) setCreationStatusFromAuth(ctx context.Context, instanceAuth *m
 	return errors.Wrapf(err, "while setting default status for BundleInstanceAuth with id %s", instanceAuth.ID)
 }
 
-func (s *service) validateInputParamsAgainstSchema(inputParams *string, schema *string) error {
+func validateInputParamsAgainstSchema(inputParams *string, schema *string) error {
 	if schema == nil {
 		return nil
 	}

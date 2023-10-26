@@ -9,13 +9,12 @@ type HealthCheckConverter struct {
 	mock.Mock
 }
 
-type mockConstructorTestingTNewHealthCheckConverter interface {
+// NewHealthCheckConverter creates a new instance of HealthCheckConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewHealthCheckConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewHealthCheckConverter creates a new instance of HealthCheckConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewHealthCheckConverter(t mockConstructorTestingTNewHealthCheckConverter) *HealthCheckConverter {
+}) *HealthCheckConverter {
 	mock := &HealthCheckConverter{}
 	mock.Mock.Test(t)
 

@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/tidwall/sjson"
@@ -43,14 +45,13 @@ type OauthConfig struct {
 
 const (
 	RuntimeScopes                                    = "webhook:write runtime:read runtime:write application:read runtime.auths:read bundle.instance_auths:read"
-	ApplicationScopes                                = "webhook:write application:read application:write application.auths:read application.webhooks:read bundle.instance_auths:read document.fetch_request:read event_spec.fetch_request:read api_spec.fetch_request:read fetch-request.auth:read"
+	ApplicationScopes                                = "webhook:write application:read application:write application.auths:read application.webhooks:read application.application_template:read bundle.instance_auths:read document.fetch_request:read event_spec.fetch_request:read api_spec.fetch_request:read fetch-request.auth:read"
 	IntegrationSystemScopes                          = "application.local_tenant_id:write webhook:write application:read application:write application_template:read application_template:write runtime:read runtime:write integration_system:read label_definition:read label_definition:write automatic_scenario_assignment:read integration_system.auths:read application_template.webhooks:read internal_visibility:read application.auths:read formation:write"
 	IntegrationSystemScopesWithoutInternalVisibility = "application.local_tenant_id:write webhook:write application:read application:write application_template:read application_template:write runtime:read runtime:write integration_system:read label_definition:read label_definition:write automatic_scenario_assignment:read integration_system.auths:read application_template.webhooks:read"
 
 	grantTypeFieldName   = "grant_type"
 	passwordGrantType    = "password"
 	credentialsGrantType = "client_credentials"
-	claimsKey            = "claims_key"
 
 	clientIDKey     = "client_id"
 	clientSecretKey = "client_secret"
@@ -161,7 +162,7 @@ func GetClientCredentialsToken(t *testing.T, ctx context.Context, tokenURL, clie
 	data.Add(grantTypeFieldName, credentialsGrantType)
 	data.Add(clientIDKey, clientID)
 	data.Add(clientSecretKey, clientSecret)
-	data.Add(claimsKey, staticMappingClaimsKey)
+	data.Add(claims.ClaimsKey, staticMappingClaimsKey)
 
 	token := GetToken(t, ctx, tokenURL, clientID, clientSecret, data)
 	log.C(ctx).Info("Successfully issued client_credentials token")
@@ -175,7 +176,7 @@ func GetClientCredentialsTokenWithClient(t *testing.T, ctx context.Context, clie
 	data.Add(grantTypeFieldName, credentialsGrantType)
 	data.Add(clientIDKey, clientID)
 	data.Add(clientSecretKey, clientSecret)
-	data.Add(claimsKey, staticMappingClaimsKey)
+	data.Add(claims.ClaimsKey, staticMappingClaimsKey)
 
 	oauthConfig := OauthConfig{
 		TokenURL:     tokenURL,
@@ -195,7 +196,7 @@ func GetUserToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientS
 	data := url.Values{}
 	data.Add(grantTypeFieldName, passwordGrantType)
 	data.Add(clientIDKey, clientID)
-	data.Add(claimsKey, staticMappingClaimsKey)
+	data.Add(claims.ClaimsKey, staticMappingClaimsKey)
 	data.Add(userNameKey, username)
 	data.Add(passwordKey, password)
 

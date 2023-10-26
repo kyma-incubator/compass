@@ -2,6 +2,7 @@ package formation_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -78,11 +79,11 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -113,11 +114,11 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationTemplateID, model.ApplicationTemplateWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationTemplateID, model.ApplicationTemplateWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationTemplateID, model.ApplicationTemplateWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationTemplateID, model.ApplicationTemplateWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -171,7 +172,7 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 			ExpectedErrMessage:    "",
 		},
 		{
-			Name: "success - error when generating notification results in notification not generated",
+			Name: "success - when generating notification results in notification not generated",
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil).Once()
@@ -186,11 +187,11 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(nil, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -219,10 +220,10 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(nil, testErr).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Maybe()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Maybe()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Maybe()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Maybe()
 
 				return notificationsBuilder
 			},
@@ -269,7 +270,7 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              ApplicationID,
 			InputFormation:        expectedFormation,
-			ExpectedErrMessage:    "while listing CONFIGURATION_CHANGED webhooks for application template 58963c6f-24f6-4128-a05c-51d5356e7e09 on behalve of application",
+			ExpectedErrMessage:    fmt.Sprintf("while listing %q webhooks for application template with ID: %q on behalf of application with ID: %q", model.WebhookTypeConfigurationChanged, ApplicationTemplateID, ApplicationID),
 		},
 		{
 			Name: "error when getting application webhook",
@@ -397,11 +398,11 @@ func Test_GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(t *te
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -434,7 +435,7 @@ func Test_GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(t *te
 			ExpectedErrMessage:    "",
 		},
 		{
-			Name: "success - error when generating notification results in not generated notification",
+			Name: "success - when generating notification results in not generated notification",
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil).Once()
@@ -449,11 +450,11 @@ func Test_GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(t *te
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(nil, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -465,6 +466,36 @@ func Test_GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(t *te
 			ObjectID:              ApplicationID,
 			InputFormation:        expectedFormation,
 			ExpectedErrMessage:    "",
+		},
+		{
+			Name: "error when generating notification",
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)}, nil).Once()
+				return repo
+			},
+			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimesAndRuntimeContextsMappingsInFormation", ctx, TntInternalID, expectedFormation.Name).Return(runtimesMapping, runtimeContextsMapping2, nil).Once()
+				return dataInputBuilder
+			},
+			NotificationsBuilder: func() *automock.NotificationBuilder {
+				notificationsBuilder := &automock.NotificationBuilder{}
+
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(nil, testErr).Once()
+
+				return notificationsBuilder
+			},
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
+				runtimeNotificationWithRtmCtxAndAppTemplate,
+			},
+			OperationType:         model.AssignFormation,
+			CustomerTenantContext: customerTenantContext,
+			ObjectID:              ApplicationID,
+			InputFormation:        expectedFormation,
+			ExpectedErrMessage:    testErr.Error(),
 		},
 		{
 			Name: "error when preparing details for notification",
@@ -482,10 +513,10 @@ func Test_GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(t *te
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount, TntInternalID).Return(nil, testErr).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Maybe()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Maybe()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Maybe()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Maybe()
 
 				return notificationsBuilder
 			},
@@ -648,11 +679,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(WebhookID, ApplicationID)).Return(appToAppNotificationWithoutSourceTemplateWithTargetTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixApplicationTenantMappingWebhookModel(WebhookID, ApplicationID)).Return(appToAppNotificationWithoutSourceTemplateWithTargetTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(Webhook2ID, Application2ID)).Return(appToAppNotificationWithSourceTemplateWithoutTargetTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixApplicationTenantMappingWebhookModel(Webhook2ID, Application2ID)).Return(appToAppNotificationWithSourceTemplateWithoutTargetTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -687,11 +718,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels2, applicationsMappingWithApplicationTemplate[Application2ID], appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(WebhookID, ApplicationID)).Return(appToAppNotificationWithSourceAndTargetTemplatesSwaped, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels2, applicationsMappingWithApplicationTemplate[Application2ID], appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixApplicationTenantMappingWebhookModel(WebhookID, ApplicationID)).Return(appToAppNotificationWithSourceAndTargetTemplatesSwaped, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, appTemplateWithLabels2, applicationsMappingWithApplicationTemplate[Application2ID], emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(Webhook2ID, Application2ID)).Return(appToAppNotificationWithSourceAndTargetTemplates, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, appTemplateWithLabels2, applicationsMappingWithApplicationTemplate[Application2ID], emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixApplicationTenantMappingWebhookModel(Webhook2ID, Application2ID)).Return(appToAppNotificationWithSourceAndTargetTemplates, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -726,11 +757,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(WebhookID, ApplicationTemplateID)).Return(appToAppNotificationWithoutSourceTemplateWithTargetTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixApplicationTenantMappingWebhookModel(WebhookID, ApplicationTemplateID)).Return(appToAppNotificationWithoutSourceTemplateWithTargetTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(Webhook2ID, Application2ID)).Return(appToAppNotificationWithSourceTemplateWithoutTargetTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixApplicationTenantMappingWebhookModel(Webhook2ID, Application2ID)).Return(appToAppNotificationWithSourceTemplateWithoutTargetTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -745,7 +776,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			ExpectedErrMessage:    "",
 		},
 		{
-			Name: "success - error while generating notification for currently assigned application results in skipping generating the notification",
+			Name: "success - while generating notification for currently assigned application results in skipping generating the notification",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
@@ -765,11 +796,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(WebhookID, ApplicationID)).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixApplicationTenantMappingWebhookModel(WebhookID, ApplicationID)).Return(nil, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(Webhook2ID, Application2ID)).Return(appToAppNotificationWithSourceTemplateWithoutTargetTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixApplicationTenantMappingWebhookModel(Webhook2ID, Application2ID)).Return(appToAppNotificationWithSourceTemplateWithoutTargetTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -783,7 +814,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			ExpectedErrMessage:    "",
 		},
 		{
-			Name: "success - error while generating notification for already assigned application results in skipping generating the notification",
+			Name: "success - while generating notification for already assigned application results in skipping generating the notification",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
@@ -803,11 +834,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(WebhookID, ApplicationID)).Return(appToAppNotificationWithoutSourceTemplateWithTargetTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixApplicationTenantMappingWebhookModel(WebhookID, ApplicationID)).Return(appToAppNotificationWithoutSourceTemplateWithTargetTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(Webhook2ID, Application2ID)).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixApplicationTenantMappingWebhookModel(Webhook2ID, Application2ID)).Return(nil, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -864,10 +895,10 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(WebhookID, ApplicationID)).Return(appToAppNotificationWithoutSourceTemplateWithTargetTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixApplicationTenantMappingWebhookModel(WebhookID, ApplicationID)).Return(appToAppNotificationWithoutSourceTemplateWithTargetTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount, TntInternalID).Return(nil, testErr).Once()
 
 				return notificationsBuilder
 			},
@@ -898,7 +929,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount, TntInternalID).Return(nil, testErr).Once()
 
 				return notificationsBuilder
 			},
@@ -971,7 +1002,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              ApplicationID,
 			InputFormation:        expectedFormation,
-			ExpectedErrMessage:    "when listing application tenant mapping webhooks for applications and their application templates",
+			ExpectedErrMessage:    fmt.Sprintf("when listing %q webhooks for applications and their application templates", model.WebhookTypeApplicationTenantMapping),
 		},
 		{
 			Name: "error when preparing application and application template with labels",
@@ -1087,11 +1118,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -1128,11 +1159,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationTemplateID, model.ApplicationTemplateWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationTemplateID, model.ApplicationTemplateWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -1169,11 +1200,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -1210,11 +1241,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(nil, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -1250,11 +1281,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(nil, testErr).Once()
 
 				// the method we are testing iterates over map, so it is not certain whether this will be invoked or not
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Maybe()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil).Maybe()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate2, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Maybe()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil).Maybe()
 
 				return notificationsBuilder
 			},
@@ -1356,7 +1387,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeContextID,
 			InputFormation:        expectedFormation,
-			ExpectedErrMessage:    "when listing configuration changed webhooks for applications and their application templates",
+			ExpectedErrMessage:    fmt.Sprintf("when listing %q webhooks for applications and their application templates", model.WebhookTypeConfigurationChanged),
 		},
 		{
 			Name: "error while preparing runtime with labels",
@@ -1490,11 +1521,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -1530,11 +1561,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationTemplateID, model.ApplicationTemplateWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationTemplateID, model.ApplicationTemplateWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -1570,11 +1601,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -1610,11 +1641,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(nil, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -1649,11 +1680,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(nil, testErr).Once()
 
 				// the method we are testing iterates over map, so it is not certain whether this will be invoked or not
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Maybe()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil).Maybe()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Maybe()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil).Maybe()
 
 				return notificationsBuilder
 			},
@@ -1751,7 +1782,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeID,
 			InputFormation:        expectedFormation,
-			ExpectedErrMessage:    "when listing configuration changed webhooks for applications and their application templates",
+			ExpectedErrMessage:    fmt.Sprintf("when listing %q webhooks for applications and their application templates", model.WebhookTypeConfigurationChanged),
 		},
 		{
 			Name: "error while preparing runtime with labels",
@@ -1863,11 +1894,11 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssign
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithAppTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -1917,10 +1948,10 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssign
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount, TntInternalID).Return(nil, testErr).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Maybe()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil).Maybe()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Maybe()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil).Maybe()
 
 				return notificationsBuilder
 			},
@@ -1947,11 +1978,11 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssign
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(nil, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -2128,11 +2159,11 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(t *t
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -2163,11 +2194,11 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(t *t
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(nil, nil).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -2197,10 +2228,10 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(t *t
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount, TntInternalID).Return(nil, testErr).Once()
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Maybe()
-				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil).Maybe()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationTemplateID, formationModelWithoutError, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount, TntInternalID).Return(notificationDetails, nil).Maybe()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil).Maybe()
 
 				return notificationsBuilder
 			},
@@ -2337,16 +2368,16 @@ func Test_GenerateFormationLifecycleNotifications(t *testing.T) {
 			name: "Successfully generate formation notifications",
 			notificationsBuilderFn: func() *automock.NotificationBuilder {
 				notificationBuilder := &automock.NotificationBuilder{}
-				notificationBuilder.On("BuildFormationNotificationRequests", ctx, formationNotificationDetails, formationInput, formationLifecycleWebhooks).Return(formationNotificationRequests, nil).Once()
+				notificationBuilder.On("BuildFormationNotificationRequests", ctx, formationNotificationDetails, formationInput, formationLifecycleSyncWebhooks).Return(formationNotificationSyncCreateRequests, nil).Once()
 				return notificationBuilder
 			},
-			expectedFormationNotificationReqs: formationNotificationRequests,
+			expectedFormationNotificationReqs: formationNotificationSyncCreateRequests,
 		},
 		{
 			name: "Success when generating formation lifecycle notifications results in not generated notification due to error",
 			notificationsBuilderFn: func() *automock.NotificationBuilder {
 				notificationBuilder := &automock.NotificationBuilder{}
-				notificationBuilder.On("BuildFormationNotificationRequests", ctx, formationNotificationDetails, formationInput, formationLifecycleWebhooks).Return(nil, testErr).Once()
+				notificationBuilder.On("BuildFormationNotificationRequests", ctx, formationNotificationDetails, formationInput, formationLifecycleSyncWebhooks).Return(nil, testErr).Once()
 				return notificationBuilder
 			},
 		},
@@ -2362,7 +2393,7 @@ func Test_GenerateFormationLifecycleNotifications(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, notificationsBuilder)
 
 			notificationGenerator := formation.NewNotificationsGenerator(nil, nil, nil, nil, nil, nil, nil, notificationsBuilder)
-			formationNotificationReqs, err := notificationGenerator.GenerateFormationLifecycleNotifications(ctx, formationLifecycleWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, CustomerTenantContextAccount)
+			formationNotificationReqs, err := notificationGenerator.GenerateFormationLifecycleNotifications(ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, CustomerTenantContextAccount)
 
 			if testCase.expectedErrMsg != "" {
 				require.Error(t, err)

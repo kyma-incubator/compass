@@ -13,6 +13,7 @@ aliases:
     - la4ezar
     - KirilKabakchiev
     - ivantenevvasilev
+    - ognyvrac
   team-falcon:
     - NickyMateev
     - dzahariev
@@ -20,6 +21,16 @@ aliases:
     - kaloyanspiridonov
     - KirilKabakchiev
     - dragobt
+    - emmakarova
+  team-atlas:
+    - KirilKabakchiev
+    - ZdravkoGyurov
+    - petar-iv
+    - stefan-sto
+    - georgifarashev
+    - yordanovagabriela
+    - nickormushev
+    - alexpenev-s
   technical-writers: # Special value respected by kyma's prow installation.
     - alexandra-simeonova
     - Peteva

@@ -36,6 +36,7 @@ type ConditionTreeListerGlobal interface {
 type ListerGlobal interface {
 	ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error
 	ListGlobalWithSelectForUpdate(ctx context.Context, dest Collection, additionalConditions ...Condition) error
+	ListGlobalWithLimit(ctx context.Context, dest Collection, limit int, additionalConditions ...Condition) error
 	SetSelectedColumns(selectedColumns []string)
 	Clone() *universalLister
 }
@@ -167,7 +168,7 @@ func (l *universalLister) listWithTenantScope(ctx context.Context, resourceType 
 
 	if l.tenantColumn != nil {
 		additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
-		return l.list(ctx, resourceType, dest, lockClause, additionalConditions...)
+		return l.list(ctx, resourceType, dest, NoLimit, lockClause, additionalConditions...)
 	}
 
 	tenantIsolation, err :=
@@ -178,7 +179,7 @@ func (l *universalLister) listWithTenantScope(ctx context.Context, resourceType 
 
 	additionalConditions = append(additionalConditions, tenantIsolation)
 
-	return l.list(ctx, resourceType, dest, lockClause, additionalConditions...)
+	return l.list(ctx, resourceType, dest, NoLimit, lockClause, additionalConditions...)
 }
 
 func (l *universalLister) listConditionTreeWithTenantScope(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, lockClause string, conditionTree *ConditionTree) error {
@@ -221,21 +222,26 @@ func (l *universalLister) Clone() *universalLister {
 
 // ListGlobal lists global entities without tenant isolation.
 func (l *universalLister) ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error {
-	return l.list(ctx, l.resourceType, dest, NoLock, additionalConditions...)
+	return l.list(ctx, l.resourceType, dest, NoLimit, NoLock, additionalConditions...)
+}
+
+// ListGlobal lists global entities without tenant isolation.
+func (l *universalLister) ListGlobalWithLimit(ctx context.Context, dest Collection, limit int, additionalConditions ...Condition) error {
+	return l.list(ctx, l.resourceType, dest, limit, NoLock, additionalConditions...)
 }
 
 // ListGlobalWithSelectForUpdate lists global entities without tenant isolation.
 func (l *universalLister) ListGlobalWithSelectForUpdate(ctx context.Context, dest Collection, additionalConditions ...Condition) error {
-	return l.list(ctx, l.resourceType, dest, ForUpdateLock, additionalConditions...)
+	return l.list(ctx, l.resourceType, dest, NoLimit, ForUpdateLock, additionalConditions...)
 }
 
-func (l *universalLister) list(ctx context.Context, resourceType resource.Type, dest Collection, lockClause string, conditions ...Condition) error {
+func (l *universalLister) list(ctx context.Context, resourceType resource.Type, dest Collection, limit int, lockClause string, conditions ...Condition) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
 	}
 
-	query, args, err := buildSelectQuery(l.tableName, l.selectedColumns, conditions, l.orderByParams, lockClause, true)
+	query, args, err := buildSelectQuery(l.tableName, l.selectedColumns, conditions, limit, l.orderByParams, lockClause, true)
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}
@@ -243,7 +249,7 @@ func (l *universalLister) list(ctx context.Context, resourceType resource.Type, 
 	log.C(ctx).Debugf("Executing DB query: %s", query)
 	err = persist.SelectContext(ctx, dest, query, args...)
 
-	return persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list of objects from '%s' table", l.tableName)
+	return persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list of objects from '%s' table '%+v'", l.tableName, err)
 }
 
 func (l *universalLister) listWithConditionTree(ctx context.Context, resourceType resource.Type, dest Collection, lockClause string, conditionTree *ConditionTree) error {

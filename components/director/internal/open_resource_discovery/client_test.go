@@ -7,7 +7,13 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -97,6 +103,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 
 	testCases := []struct {
 		Name                 string
+		Webhook              *model.Webhook
 		Credentials          *model.Auth
 		AccessStrategy       string
 		RoundTripFunc        func(req *http.Request) *http.Response
@@ -174,13 +181,36 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedBaseURL: baseURL,
 		},
 		{
+			Name:    "Document fetched with webhook's Proxy URL",
+			Webhook: fixWebhookForApplicationWithProxyURL(),
+			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
+				data, err := json.Marshal(fixWellKnownConfig())
+				require.NoError(t, err)
+
+				executor := &automock.Executor{}
+				executor.On("Execute", context.TODO(), mock.Anything, proxyURL+ordDocURI, "", &sync.Map{}).Return(&http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewBuffer(data)),
+				}, nil).Once()
+
+				executorProvider := &automock.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy.OpenAccessStrategy).Return(accessstrategy.NewOpenAccessStrategyExecutor(), nil).Once()
+				return executorProvider
+			},
+			ExpectedBaseURL: baseURL2,
+			RoundTripFunc:   successfulRoundTripFunc(t, false, false),
+			ExpectedResult: ord.Documents{
+				fixORDDocument(),
+			},
+		},
+		{
 			Name: "Well-known config success fetch with access strategy",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				data, err := json.Marshal(fixWellKnownConfig())
 				require.NoError(t, err)
 
 				executor := &automock.Executor{}
-				executor.On("Execute", context.TODO(), mock.Anything, baseURL+ord.WellKnownEndpoint, "").Return(&http.Response{
+				executor.On("Execute", context.TODO(), mock.Anything, baseURL+ord.WellKnownEndpoint, "", &sync.Map{}).Return(&http.Response{
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBuffer(data)),
 				}, nil).Once()
@@ -212,7 +242,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			Name: "Well-known config fetch with access strategy fails when access strategy executor returns error",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				executor := &automock.Executor{}
-				executor.On("Execute", context.TODO(), mock.Anything, baseURL+ord.WellKnownEndpoint, "").Return(nil, testErr).Once()
+				executor.On("Execute", context.TODO(), mock.Anything, baseURL+ord.WellKnownEndpoint, "", &sync.Map{}).Return(nil, testErr).Once()
 
 				executorProvider := &automock.ExecutorProvider{}
 				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
@@ -287,7 +317,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 					Body:       io.NopCloser(bytes.NewBuffer(data)),
 				}
 			},
-			ExpectedErr: errors.New("error unmarshaling json body"),
+			ExpectedErr: errors.New("error unmarshaling wellknown json body"),
 		},
 		{
 			Name: "Document with unsupported access strategy is skipped",
@@ -363,6 +393,13 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.Name, func(t *testing.T) {
+			ordMappings := application.ORDWebhookMapping{
+				ProxyURL: proxyURL,
+			}
+			requestObject := webhook.OpenResourceDiscoveryWebhookRequestObject{
+				TenantID: tenantID,
+				Headers:  &sync.Map{},
+			}
 			testHTTPClient := NewTestClient(test.RoundTripFunc)
 
 			certCache := certloader.NewCertificateCache()
@@ -376,6 +413,15 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 
 			testApp := fixApplicationPage().Data[0]
 			testWebhook := fixWebhooksForApplication()[0]
+			if test.Webhook != nil {
+				testWebhook = test.Webhook
+			}
+			testResource := ord.Resource{
+				Type:          resource.Application,
+				ID:            testApp.ID,
+				Name:          testApp.Name,
+				LocalTenantID: testApp.LocalTenantID,
+			}
 
 			testWebhook.Auth = test.Credentials
 
@@ -392,7 +438,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				testWebhook.Auth.AccessStrategy = &test.AccessStrategy
 			}
 
-			docs, actualBaseURL, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), testApp, testWebhook)
+			docs, actualBaseURL, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), testResource, testWebhook, ordMappings, requestObject)
 
 			if test.ExpectedErr != nil {
 				require.Error(t, err)

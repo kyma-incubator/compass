@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"unsafe"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
@@ -29,6 +30,7 @@ type FormationAssignment struct {
 	TargetType  FormationAssignmentType `json:"target_type"`
 	State       string                  `json:"state"`
 	Value       json.RawMessage         `json:"value"`
+	Error       json.RawMessage         `json:"error"`
 }
 
 // FormationAssignmentInput is an input for creating a new FormationAssignment
@@ -40,6 +42,7 @@ type FormationAssignmentInput struct {
 	TargetType  FormationAssignmentType `json:"target_type"`
 	State       string                  `json:"state"`
 	Value       json.RawMessage         `json:"value"`
+	Error       json.RawMessage         `json:"error"`
 }
 
 // FormationAssignmentPage missing godoc
@@ -61,13 +64,23 @@ const (
 	ConfigPendingAssignmentState FormationAssignmentState = "CONFIG_PENDING"
 	// CreateErrorAssignmentState indicates that an error occurred during the creation of the formation assignment
 	CreateErrorAssignmentState FormationAssignmentState = "CREATE_ERROR"
-	// DeletingAssignmentState indicates that async unassing notification is sent and status report is expected from the receiver
+	// DeletingAssignmentState indicates that async unassign notification is sent and status report is expected from the receiver
 	DeletingAssignmentState FormationAssignmentState = "DELETING"
 	// DeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment
 	DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
 	// NotificationRecursionDepthLimit is the maximum count of configuration exchanges during assigning an object to formation
 	NotificationRecursionDepthLimit int = 10
 )
+
+// SupportedFormationAssignmentStates contains the supported formation assignment states
+var SupportedFormationAssignmentStates = map[string]bool{
+	string(InitialAssignmentState):       true,
+	string(ReadyAssignmentState):         true,
+	string(ConfigPendingAssignmentState): true,
+	string(CreateErrorAssignmentState):   true,
+	string(DeletingAssignmentState):      true,
+	string(DeleteErrorAssignmentState):   true,
+}
 
 // ToModel converts FormationAssignmentInput to FormationAssignment
 func (i *FormationAssignmentInput) ToModel(id, tenantID string) *FormationAssignment {
@@ -85,6 +98,7 @@ func (i *FormationAssignmentInput) ToModel(id, tenantID string) *FormationAssign
 		TargetType:  i.TargetType,
 		State:       i.State,
 		Value:       i.Value,
+		Error:       i.Error,
 	}
 }
 
@@ -100,5 +114,12 @@ func (f *FormationAssignment) Clone() *FormationAssignment {
 		TargetType:  f.TargetType,
 		State:       f.State,
 		Value:       f.Value,
+		Error:       f.Error,
 	}
+}
+
+// GetAddress returns the memory address of the FormationAssignment in form of an uninterpreted type(integer number)
+// Currently, it's used in some formation constraints input templates, so we could propagate the memory address to the formation constraints operators and later on to modify/update it.
+func (f *FormationAssignment) GetAddress() uintptr {
+	return uintptr(unsafe.Pointer(f))
 }

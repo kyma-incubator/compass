@@ -76,7 +76,7 @@ spec:
             - name: APP_PLAYGROUND_API_ENDPOINT
               value: "{{ .Values.global.director.prefix }}/graphql"
             - name: APP_JWKS_ENDPOINT
-              value: http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json
+              value: {{ .Values.global.director.authentication.jwksEndpoint | quote }}
             - name: APP_METRICS_ENABLE_GRAPHQL_OPERATION_INSTRUMENTATION
               value: "{{ .Values.global.director.metrics.enableGraphqlOperationInstrumentation }}"
             - name: APP_DB_USER
@@ -140,7 +140,7 @@ spec:
             - name: APP_CLIENT_ID_HTTP_HEADER
               value: {{ .Values.global.director.clientIDHeaderKey }}
             - name: APP_OAUTH20_URL
-              value: http://ory-hydra-admin.kyma-system.svc.cluster.local:4445
+              value: {{ .Values.global.director.authentication.oauth2.url | quote }}
             - name: APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT
               value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
             - name: APP_LEGACY_CONNECTOR_URL
@@ -175,8 +175,8 @@ spec:
               value: {{ .Values.deployment.dataloaders.wait | quote }}
             - name: APP_SUBSCRIPTION_PROVIDER_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
-            - name: APP_CONSUMER_SUBACCOUNT_LABEL_KEY
-              value: {{ .Values.global.director.subscription.consumerSubaccountLabelKey }}
+            - name: APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY
+              value: {{ .Values.global.director.globalSubaccountIDLabelKey }}
             - name: APP_TOKEN_PREFIX
               value: {{ .Values.global.director.subscription.tokenPrefix }}
             - name: APP_SUBSCRIPTION_LABEL_KEY
@@ -187,6 +187,8 @@ spec:
               value: {{ .Values.global.director.applicationTypeLabelKey }}
             - name: APP_KYMA_RUNTIME_TYPE_LABEL_VALUE
               value: {{ .Values.global.director.kymaRuntimeTypeLabelValue }}
+            - name: APP_KYMA_APPLICATION_NAMESPACE_VALUE
+              value: {{ .Values.global.director.kymaApplicationNamespaceValue }}
             - name: APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH
               value: {{ .Values.global.director.selfRegister.clientIdPath }}
             - name: APP_SELF_REGISTER_INSTANCE_CLIENT_SECRET_PATH
@@ -231,6 +233,8 @@ spec:
               value: "{{ .Values.global.http.client.skipSSLValidation }}"
             - name: APP_SELF_REGISTER_OAUTH_MODE
               value: {{ .Values.global.director.selfRegister.oauthMode }}
+            - name: APP_APPLICATION_TEMPLATE_PRODUCT_LABEL
+              value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_EXTERNAL_CLIENT_CERT_KEY
@@ -257,12 +261,70 @@ spec:
               value: {{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}
             - name: APP_FORMATION_ASSIGNMENT_ASYNC_STATUS_API_ENDPOINT
               value: {{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}
+            - name: APP_FORMATION_ASSIGNMENT_ASYNC_STATUS_RESET_API_ENDPOINT
+              value: {{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentResetPath }}
             - name: APP_FORMATION_ASYNC_STATUS_API_ENDPOINT
               value: {{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}
+            - name: APP_UCL_CERT_OU_SUBACCOUNT_ID
+              value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
             - name: APP_TENANT_MAPPING_CALLBACK_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_TENANT_MAPPING_CONFIG_PATH
               value: "{{ .Values.global.director.tenantMappingsPath}}/{{ .Values.global.director.tenantMappingsKey }}"
+            - name: APP_DESTINATION_CREATOR_CORRELATION_IDS_KEY
+              value: "{{ .Values.global.director.destinationCreator.correlationIDsKey }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_BASE_URL
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.baseURL }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_PATH
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.path }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_INSTANCE_LEVEL_PATH
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.instanceLevelPath }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_REGION_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.regionParam }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_INSTANCE_ID_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.instanceIDParam }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_SUBACCOUNT_ID_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.subaccountIDParam }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_NAME_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.nameParam }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_BASE_URL
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.baseURL }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_PATH
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.path }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_LEVEL_PATH
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.instanceLevelPath }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_REGION_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.regionParam }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_ID_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.instanceIDParam }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_SUBACCOUNT_ID_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.subaccountIDParam }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_NAME_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.nameParam }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_FILE_NAME_KEY
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.fileNameKey }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_COMMON_NAME_KEY
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.commonNameKey }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_CERT_CHAIN_KEY
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.certChainKey }}"
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_URL_TEMPLATE
+              value: {{ printf .Values.global.kymaAdapter.tenantMapping.urlTemplate (tpl "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}:443" .) | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_INPUT_TEMPLATE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.inputTemplate | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_HEADER_TEMPLATE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.headerTemplate | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_OUTPUT_TEMPLATE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.outputTemplate | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_MODE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.mode | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_TYPE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.type | quote }}
+            - name: APP_ORD_AGGREGATOR_AGGREGATE_API
+              value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordAggregator.prefix }}{{ .Values.global.ordAggregator.aggregateEndpoint }}"
+            - name: APP_ORD_AGGREGATOR_CLIENT_TIMEOUT
+              value: {{ .Values.global.ordAggregator.client.timeout }}
+            - name: APP_ORD_AGGREGATOR_SKIP_SSL_VALIDATION
+              value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}

@@ -25,6 +25,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/sjson"
@@ -45,6 +47,7 @@ type Tenant struct {
 	CustomerID                  string
 	Subdomain                   string
 	SubscriptionProviderID      string
+	SubscriptionLicenseType     *string
 	ProviderSubaccountID        string
 	ConsumerTenantID            string
 	SubscriptionProviderAppName string
@@ -56,6 +59,7 @@ type TenantIDProperties struct {
 	CustomerIDProperty                  string
 	SubdomainProperty                   string
 	SubscriptionProviderIDProperty      string
+	SubscriptionLicenseTypeProperty     string
 	ProviderSubaccountIdProperty        string
 	ConsumerTenantIDProperty            string
 	SubscriptionProviderAppNameProperty string
@@ -88,6 +92,10 @@ func CreateTenantRequest(t *testing.T, tenants Tenant, tenantProperties TenantID
 		body, err = sjson.Set(body, tenantProperties.SubscriptionProviderIDProperty, tenants.SubscriptionProviderID)
 		require.NoError(t, err)
 	}
+	if tenants.SubscriptionLicenseType != nil {
+		body, err = sjson.Set(body, tenantProperties.SubscriptionLicenseTypeProperty, *tenants.SubscriptionLicenseType)
+		require.NoError(t, err)
+	}
 	if len(tenants.ProviderSubaccountID) > 0 {
 		body, err = sjson.Set(body, tenantProperties.ProviderSubaccountIdProperty, tenants.ProviderSubaccountID)
 		require.NoError(t, err)
@@ -104,7 +112,7 @@ func CreateTenantRequest(t *testing.T, tenants Tenant, tenantProperties TenantID
 	request, err := http.NewRequest(httpMethod, tenantFetcherUrl, bytes.NewBuffer([]byte(body)))
 	require.NoError(t, err)
 
-	tkn := token.GetClientCredentialsToken(t, context.Background(), externalServicesMockURL+"/secured/oauth/token", clientID, clientSecret, "tenantFetcherClaims")
+	tkn := token.GetClientCredentialsToken(t, context.Background(), externalServicesMockURL+"/secured/oauth/token", clientID, clientSecret, claims.TenantFetcherClaimKey)
 	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
 
 	return request

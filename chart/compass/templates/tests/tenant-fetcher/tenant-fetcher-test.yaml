@@ -16,7 +16,7 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "true"
-        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-tenant-fetcher-tests-app
     spec:
@@ -47,6 +47,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.subaccountTenantIdProperty }}
             - name: APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
+            - name: APP_TENANT_PROVIDER_LICENSE_TYPE_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.licenseTypeProperty }}
             - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
             - name: APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY #The property which states the provider subaccount used in the tenant provider
@@ -107,6 +109,8 @@ spec:
               value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
             - name: APP_SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_ON_DEMAND_TENANT
+              value: {{ .Values.global.tests.tenantFetcher.missingTenantOnDemandID }}
       restartPolicy: Never
 ---
 apiVersion: v1

@@ -6,6 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -23,10 +26,14 @@ const (
 	testTenant         = "tnt"
 	testExternalTenant = "external-tnt"
 	testID             = "foo"
+	testAppID          = "app-id"
 	testConsumerID     = "consumer-id"
+	testLabelInputKey  = "applicationType"
 
 	testWebhookID                               = "webhook-id-1"
 	testName                                    = "bar"
+	testAppName                                 = "app-name"
+	updatedAppTemplateTestName                  = "new-app-template-test-name"
 	testNameOtherSystemType                     = "Other System Type"
 	testPageSize                                = 3
 	testCursor                                  = ""
@@ -46,7 +53,9 @@ var (
 	testProviderName               = "provider-display-name"
 	testURL                        = "http://valid.url"
 	testError                      = errors.New("test error")
-	testTableColumns               = []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level"}
+	testTableColumns               = []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level", "created_at", "updated_at"}
+	newTestLabels                  = map[string]interface{}{"label1": "test"}
+	timestamp                      = time.Now()
 )
 
 func fixModelApplicationTemplate(id, name string, webhooks []*model.Webhook) *model.ApplicationTemplate {
@@ -60,6 +69,8 @@ func fixModelApplicationTemplate(id, name string, webhooks []*model.Webhook) *mo
 		Placeholders:         fixModelPlaceholders(),
 		Webhooks:             modelPtrsToWebhooks(webhooks),
 		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
+		CreatedAt:            timestamp,
+		UpdatedAt:            timestamp,
 	}
 
 	return &out
@@ -88,6 +99,14 @@ func fixModelAppTemplateWithAppInputJSON(id, name, appInputJSON string, webhooks
 	return out
 }
 
+func fixModelAppTemplateWithAppInputJSONAndLabels(id, name, appInputJSON string, webhooks []*model.Webhook, labels map[string]interface{}) *model.ApplicationTemplate {
+	out := fixModelApplicationTemplate(id, name, webhooks)
+	out.Labels = labels
+	out.ApplicationInputJSON = appInputJSON
+
+	return out
+}
+
 func fixModelAppTemplateWithAppInputJSONAndPlaceholders(id, name, appInputJSON string, webhooks []*model.Webhook, placeholders []model.ApplicationTemplatePlaceholder) *model.ApplicationTemplate {
 	out := fixModelAppTemplateWithAppInputJSON(id, name, appInputJSON, webhooks)
 	out.Placeholders = placeholders
@@ -107,6 +126,8 @@ func fixGQLAppTemplate(id, name string, webhooks []*graphql.Webhook) *graphql.Ap
 		Placeholders:         fixGQLPlaceholders(),
 		Webhooks:             gqlPtrsToWebhooks(webhooks),
 		AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
+		CreatedAt:            graphql.Timestamp(timestamp),
+		UpdatedAt:            graphql.Timestamp(timestamp),
 	}
 }
 
@@ -148,6 +169,27 @@ func fixModelAppTemplateInput(name string, appInputString string) *model.Applica
 	}
 }
 
+func fixModelAppTemplateInputWithOrdWebhook(name string, appInputString string) *model.ApplicationTemplateInput {
+	desc := testDescription
+
+	return &model.ApplicationTemplateInput{
+		Name:                 name,
+		Description:          &desc,
+		ApplicationNamespace: str.Ptr("ns"),
+		ApplicationInputJSON: appInputString,
+		Placeholders:         fixModelPlaceholders(),
+		Labels:               map[string]interface{}{"test": "test"},
+		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
+		Webhooks: []*model.WebhookInput{
+			{
+				ID:   testID,
+				Type: model.WebhookTypeOpenResourceDiscovery,
+				URL:  str.Ptr("foourl"),
+			},
+		},
+	}
+}
+
 func fixModelAppTemplateWithIDInput(name, appInputString string, id *string) *model.ApplicationTemplateInput {
 	model := fixModelAppTemplateInput(name, appInputString)
 	model.ID = id
@@ -175,6 +217,13 @@ func fixModelAppTemplateUpdateInputWithPlaceholders(name string, appInputString 
 	return out
 }
 
+func fixModelAppTemplateUpdateInputWithLabels(name string, appInputString string, labels map[string]interface{}) *model.ApplicationTemplateUpdateInput {
+	out := fixModelAppTemplateUpdateInput(name, appInputString)
+	out.Labels = labels
+
+	return out
+}
+
 func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 	desc := testDescription
 
@@ -182,7 +231,7 @@ func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:        "foo",
 			Description: &desc,
 		},
@@ -199,7 +248,7 @@ func fixGQLAppTemplateInputWithPlaceholder(name string) *graphql.ApplicationTemp
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:        "foo",
 			Description: &desc,
 		},
@@ -215,7 +264,7 @@ func fixGQLAppTemplateInputWithPlaceholderAndProvider(name string) *graphql.Appl
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:         "foo",
 			Description:  &desc,
 			ProviderName: str.Ptr("SAP"),
@@ -232,7 +281,7 @@ func fixGQLAppTemplateInputInvalidAppInputURLTemplateMethod(name string) *graphq
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:        "foo",
 			Description: &desc,
 			Webhooks: []*graphql.WebhookInput{
@@ -254,11 +303,12 @@ func fixGQLAppTemplateUpdateInput(name string) *graphql.ApplicationTemplateUpdat
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:        "foo",
 			Description: &desc,
 		},
 		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		Labels:       map[string]interface{}{"label1": "test"},
 		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
 	}
 }
@@ -270,7 +320,7 @@ func fixGQLAppTemplateUpdateInputWithPlaceholder(name string) *graphql.Applicati
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:        "foo",
 			Description: &desc,
 			Labels: graphql.Labels{
@@ -289,7 +339,7 @@ func fixGQLAppTemplateUpdateInputWithPlaceholderAndProvider(name string) *graphq
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:         "foo",
 			Description:  &desc,
 			ProviderName: str.Ptr("SAP"),
@@ -306,7 +356,7 @@ func fixGQLAppTemplateUpdateInputInvalidAppInput(name string) *graphql.Applicati
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:        "foo",
 			Description: &desc,
 			Webhooks: []*graphql.WebhookInput{
@@ -336,6 +386,8 @@ func fixEntityApplicationTemplate(t *testing.T, id, name string) *apptemplate.En
 		ApplicationInputJSON: marshalledAppInput,
 		PlaceholdersJSON:     repo.NewValidNullableString(string(marshalledPlaceholders)),
 		AccessLevel:          string(model.GlobalApplicationTemplateAccessLevel),
+		CreatedAt:            timestamp,
+		UpdatedAt:            timestamp,
 	}
 }
 
@@ -457,6 +509,23 @@ func fixGQLApplicationFromTemplateInput(name string) graphql.ApplicationFromTemp
 			{Placeholder: "a", Value: "b"},
 			{Placeholder: "c", Value: "d"},
 		},
+		Labels: map[string]interface{}{
+			"key": "value",
+		},
+	}
+}
+
+func fixGQLApplicationFromTemplateWithManagedLabelInput(name, managedLabel string) graphql.ApplicationFromTemplateInput {
+	return graphql.ApplicationFromTemplateInput{
+		TemplateName: name,
+		Values: []*graphql.TemplateValueInput{
+			{Placeholder: "a", Value: "b"},
+			{Placeholder: "c", Value: "d"},
+		},
+		Labels: map[string]interface{}{
+			"key":                       "value",
+			application.ManagedLabelKey: managedLabel,
+		},
 	}
 }
 
@@ -466,6 +535,23 @@ func fixModelApplicationFromTemplateInput(name string) model.ApplicationFromTemp
 		Values: []*model.ApplicationTemplateValueInput{
 			{Placeholder: "a", Value: "b"},
 			{Placeholder: "c", Value: "d"},
+		},
+		Labels: map[string]interface{}{
+			"key": "value",
+		},
+	}
+}
+
+func fixModelApplicationFromTemplateWithManagedLabelInput(name, managedLabel string) model.ApplicationFromTemplateInput {
+	return model.ApplicationFromTemplateInput{
+		TemplateName: name,
+		Values: []*model.ApplicationTemplateValueInput{
+			{Placeholder: "a", Value: "b"},
+			{Placeholder: "c", Value: "d"},
+		},
+		Labels: map[string]interface{}{
+			"key":                       "value",
+			application.ManagedLabelKey: managedLabel,
 		},
 	}
 }
@@ -489,13 +575,13 @@ func fixModelApplicationFromTemplateInputWithPlaceholderPayload(name string) mod
 }
 
 func fixAppTemplateCreateArgs(entity apptemplate.Entity) []driver.Value {
-	return []driver.Value{entity.ID, entity.Name, entity.Description, entity.ApplicationNamespace, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel}
+	return []driver.Value{entity.ID, entity.Name, entity.Description, entity.ApplicationNamespace, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel, entity.CreatedAt, entity.UpdatedAt}
 }
 
 func fixSQLRows(entities []apptemplate.Entity) *sqlmock.Rows {
 	out := sqlmock.NewRows(testTableColumns)
 	for _, entity := range entities {
-		out.AddRow(entity.ID, entity.Name, entity.Description, entity.ApplicationNamespace, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel)
+		out.AddRow(entity.ID, entity.Name, entity.Description, entity.ApplicationNamespace, entity.ApplicationInputJSON, entity.PlaceholdersJSON, entity.AccessLevel, entity.CreatedAt, entity.UpdatedAt)
 	}
 	return out
 }
@@ -512,12 +598,12 @@ func fixModelApplicationCreateInput(name string) model.ApplicationRegisterInput 
 	}
 }
 
-func fixModelApplicationWithLabelCreateInput(name string) model.ApplicationRegisterInput {
+func fixModelApplicationWithManagedLabelCreateInput(name, managedLabel string) model.ApplicationRegisterInput {
 	return model.ApplicationRegisterInput{
 		Name:           name,
 		Description:    &testDescription,
 		HealthCheckURL: &testURL,
-		Labels:         map[string]interface{}{"managed": "false"},
+		Labels:         map[string]interface{}{application.ManagedLabelKey: managedLabel, "key": "value"},
 	}
 }
 
@@ -527,6 +613,16 @@ func fixGQLApplicationCreateInput(name string) graphql.ApplicationRegisterInput 
 		ProviderName:   &testProviderName,
 		Description:    &testDescription,
 		HealthCheckURL: &testURL,
+	}
+}
+
+func fixGQLApplicationCreateWithManagedTrueLabelInput(name, managedLabel string) graphql.ApplicationRegisterInput {
+	return graphql.ApplicationRegisterInput{
+		Name:           name,
+		ProviderName:   &testProviderName,
+		Description:    &testDescription,
+		HealthCheckURL: &testURL,
+		Labels:         map[string]interface{}{application.ManagedLabelKey: managedLabel},
 	}
 }
 
@@ -569,5 +665,35 @@ func gqlPtrsToWebhooks(in []*graphql.Webhook) (webhookPtrs []graphql.Webhook) {
 }
 
 func fixColumns() []string {
-	return []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level"}
+	return []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level", "created_at", "updated_at"}
+}
+
+func fixEnrichedTenantMappedWebhooks() []*graphql.WebhookInput {
+	syncMode := graphql.WebhookModeSync
+
+	return []*graphql.WebhookInput{
+		{
+			Type:           graphql.WebhookTypeConfigurationChanged,
+			Auth:           nil,
+			Mode:           &syncMode,
+			URLTemplate:    &testURL,
+			InputTemplate:  str.Ptr("input template"),
+			HeaderTemplate: str.Ptr("header template"),
+			OutputTemplate: str.Ptr("output template"),
+		},
+		{
+			Type: graphql.WebhookTypeOpenResourceDiscovery,
+			URL:  &testURL,
+			Auth: nil,
+		},
+	}
+}
+
+func fixLabelInput(key string, value string, objectID string, objectType model.LabelableObject) *model.LabelInput {
+	return &model.LabelInput{
+		Key:        key,
+		Value:      value,
+		ObjectID:   objectID,
+		ObjectType: objectType,
+	}
 }

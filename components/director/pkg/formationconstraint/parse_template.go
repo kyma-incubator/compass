@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"text/template"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 )
 
 // ParseInputTemplate parses tmpl using data and stores the result in dest
 func ParseInputTemplate(tmpl string, data interface{}, dest interface{}) error {
-	t, err := template.New("").Option("missingkey=zero").Parse(tmpl)
+	t, err := template.New("").Option("missingkey=zero").Funcs(templatehelper.GetFuncMap()).Parse(tmpl)
 	if err != nil {
 		return err
 	}

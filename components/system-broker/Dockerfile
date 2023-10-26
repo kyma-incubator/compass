@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.20.0-alpine3.17 as builder
+FROM --platform=$BUILDPLATFORM golang:1.21.1-alpine3.18 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/system-broker
 WORKDIR ${BASE_APP_DIR}
@@ -11,7 +11,7 @@ COPY . ${BASE_APP_DIR}
 ARG TARGETOS TARGETARCH
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o /app/system-broker ./cmd/main.go
 
-FROM alpine:3.17.2
+FROM alpine:3.18.4
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
