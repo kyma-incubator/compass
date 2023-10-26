@@ -67,8 +67,8 @@ func NewRepository(conv EntityTypeConverter) *pgRepository {
 		deleterGlobal:      repo.NewDeleterGlobal(resource.EntityType, entityTypeTable),
 		creator:            repo.NewCreator(entityTypeTable, entityTypeColumns),
 		creatorGlobal:      repo.NewCreatorGlobal(resource.EntityType, entityTypeTable, entityTypeColumns),
-		updater:            repo.NewUpdater(entityTypeTable, updatableColumns, []string{"id"}),
-		updaterGlobal:      repo.NewUpdaterGlobal(resource.EntityType, entityTypeTable, updatableColumns, []string{"id"}),
+		updater:            repo.NewUpdater(entityTypeTable, updatableColumns, []string{idColumn}),
+		updaterGlobal:      repo.NewUpdaterGlobal(resource.EntityType, entityTypeTable, updatableColumns, []string{idColumn}),
 	}
 }
 
@@ -121,25 +121,25 @@ func (r *pgRepository) UpdateGlobal(ctx context.Context, model *model.EntityType
 // Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	log.C(ctx).Debugf("Deleting EntityType entity with id %q", id)
-	return r.deleter.DeleteOne(ctx, resource.EntityType, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.EntityType, tenant, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
 // DeleteGlobal deletes n Entity Type without tenant isolation
 func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 	log.C(ctx).Debugf("Deleting EntityType entity with id %q", id)
-	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
 // Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, resource.EntityType, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerier.Exists(ctx, resource.EntityType, tenant, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
 // GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.EntityType, error) {
 	log.C(ctx).Debugf("Getting EntityType entity with id %q", id)
 	var entityTypeEnt Entity
-	if err := r.singleGetter.Get(ctx, resource.EntityType, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entityTypeEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.EntityType, tenant, repo.Conditions{repo.NewEqualCondition(idColumn, id)}, repo.NoOrderBy, &entityTypeEnt); err != nil {
 		return nil, err
 	}
 
@@ -152,7 +152,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.E
 func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.EntityType, error) {
 	log.C(ctx).Debugf("Getting EntityType entity with id %q", id)
 	var entityTypeEnt Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entityTypeEnt); err != nil {
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)}, repo.NoOrderBy, &entityTypeEnt); err != nil {
 		return nil, err
 	}
 
@@ -177,7 +177,7 @@ func (r *pgRepository) GetByApplicationID(ctx context.Context, tenantID string, 
 // ListByApplicationIDPage lists all EntityTypes for a given application ID with paging.
 func (r *pgRepository) ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.EntityTypePage, error) {
 	var entityTypeCollection EntityTypeCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, resource.EntityType, tenantID, pageSize, cursor, idColumn, &entityTypeCollection, repo.NewEqualCondition("app_id", appID))
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.EntityType, tenantID, pageSize, cursor, idColumn, &entityTypeCollection, repo.NewEqualCondition(appIDColumn, appID))
 
 	if err != nil {
 		return nil, errors.Wrap(err, "while decoding page cursor")
