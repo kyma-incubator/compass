@@ -3,8 +3,9 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	directorErrors "github.com/kyma-incubator/compass/components/hydrator/internal/director"
 

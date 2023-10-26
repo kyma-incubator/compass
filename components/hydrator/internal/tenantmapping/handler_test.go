@@ -2,13 +2,14 @@ package tenantmapping_test
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 

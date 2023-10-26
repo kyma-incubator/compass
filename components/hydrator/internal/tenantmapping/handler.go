@@ -139,7 +139,7 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 		return reqData.Body
 	}
 
-	if err = h.addTenantsToExtra(tenants, reqData); err != nil{
+	if err = h.addTenantsToExtra(tenants, reqData); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while adding tenants to extra: %v", err)
 		return reqData.Body
 	}

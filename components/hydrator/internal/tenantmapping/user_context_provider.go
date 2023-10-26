@@ -3,8 +3,9 @@ package tenantmapping
 import (
 	"context"
 	"crypto/sha256"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 

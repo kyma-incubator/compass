@@ -63,6 +63,7 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	}
 
 	testSubaccount := &graphql.Tenant{
+		ID:         consumerTenantID,
 		InternalID: internalSubaccount,
 		Type:       "subaccount",
 		Labels:     labels,

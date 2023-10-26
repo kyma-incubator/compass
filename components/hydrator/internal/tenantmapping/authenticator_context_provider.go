@@ -18,8 +18,9 @@ package tenantmapping
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 
