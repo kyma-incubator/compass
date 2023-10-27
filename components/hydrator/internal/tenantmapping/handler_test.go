@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
@@ -30,9 +32,17 @@ import (
 )
 
 const (
-	overrideAllScopes        = "overrideAllScopes"
-	mergeWithOtherScopes     = "mergeWithOtherScopes"
-	intersectWithOtherScopes = "intersectWithOtherScopes"
+	overrideAllScopes          = "overrideAllScopes"
+	mergeWithOtherScopes       = "mergeWithOtherScopes"
+	intersectWithOtherScopes   = "intersectWithOtherScopes"
+	tenantSubstitutionLabelKey = "customerId"
+	rootExternalTenantID       = "rootExternalTenantID"
+	rootInternalTenantID       = "rootInternalTenantID"
+	substituteExternalTenantID = "substituteExternalTenantID"
+	providerInternalTenantID   = "providerInternalTenantID"
+	providerExternalTenantID   = "providerExternalTenantID"
+	consumerInternalTenantID   = "consumerInternalTenantID"
+	consumerExternalTenantID   = "consumerExternalTenantID"
 )
 
 func TestHandler(t *testing.T) {
@@ -67,9 +77,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		objCtxMock := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
 			},
 			KeysExtra:    keys,
 			Scopes:       scopes,
@@ -96,7 +106,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper.JWTAuthFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -135,9 +145,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		objCtxMock := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
 			},
 			KeysExtra:       keys,
 			Scopes:          scopes,
@@ -187,7 +197,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper.JWTAuthFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -226,9 +236,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		objCtxMock := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
 			},
 			KeysExtra:       keys,
 			Region:          "region",
@@ -275,7 +285,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", identityUsername, string(oathkeeper.JWTAuthFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -304,9 +314,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		objCtxMock := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
 			},
 			KeysExtra:    keys,
 			Scopes:       scopes,
@@ -335,7 +345,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper.JWTAuthFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -363,9 +373,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		objCtx := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
 			},
 			KeysExtra:    keys,
 			Scopes:       scopes,
@@ -393,7 +403,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", systemAuthID.String(), string(oathkeeper.OAuth2Flow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -423,9 +433,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		objCtx := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
 			},
 			KeysExtra:    keys,
 			Scopes:       scopes,
@@ -453,7 +463,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", systemAuthID.String(), string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -482,9 +492,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		objCtx := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         externalTenantID,
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: externalTenantID,
 			},
 			KeysExtra:    keys,
 			ConsumerID:   externalTenantID,
@@ -511,7 +521,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -540,9 +550,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		objCtx := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
 			},
 			KeysExtra:    keys,
 			Scopes:       scopes,
@@ -570,7 +580,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", systemAuthID.String(), string(oathkeeper.OneTimeTokenFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -617,9 +627,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		certObjCtx := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         externalTenantID,
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: externalTenantID,
 			},
 			Scopes:          "test",
 			KeysExtra:       certKeys,
@@ -635,9 +645,9 @@ func TestHandler(t *testing.T) {
 		certServiceMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, externalCertAuthDetails).Return(certObjCtx, nil).Once()
 
 		JWTObjCtxMock := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
 			},
 			KeysExtra:       JWTKeys,
 			Scopes:          scopes,
@@ -686,7 +696,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -735,9 +745,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		certObjCtx := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         externalTenantID,
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: externalTenantID,
 			},
 			Scopes:              "test1 test2 test3",
 			ScopesMergeStrategy: mergeWithOtherScopes,
@@ -754,9 +764,9 @@ func TestHandler(t *testing.T) {
 		certServiceMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, externalCertAuthDetails).Return(certObjCtx, nil).Once()
 
 		JWTObjCtxMock := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
 			},
 			KeysExtra:           JWTKeys,
 			Scopes:              scopes,
@@ -806,7 +816,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -855,9 +865,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		certObjCtx := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         externalTenantID,
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: externalTenantID,
 			},
 			Scopes:              "test test1 test2 test3",
 			ScopesMergeStrategy: mergeWithOtherScopes,
@@ -874,9 +884,9 @@ func TestHandler(t *testing.T) {
 		certServiceMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, externalCertAuthDetails).Return(certObjCtx, nil).Once()
 
 		JWTObjCtxMock := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
 			},
 			KeysExtra:           JWTKeys,
 			Scopes:              scopes,
@@ -926,7 +936,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -975,9 +985,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		certObjCtx := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         externalTenantID,
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: externalTenantID,
 			},
 			Scopes:              "test test1 test2 test3",
 			ScopesMergeStrategy: intersectWithOtherScopes,
@@ -994,9 +1004,9 @@ func TestHandler(t *testing.T) {
 		certServiceMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, externalCertAuthDetails).Return(certObjCtx, nil).Once()
 
 		JWTObjCtxMock := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
 			},
 			KeysExtra:           JWTKeys,
 			Scopes:              scopes,
@@ -1046,7 +1056,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -1095,9 +1105,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		certObjCtx := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         externalTenantID,
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: externalTenantID,
 			},
 			Scopes:              "test test1 test2 test3",
 			ScopesMergeStrategy: overrideAllScopes,
@@ -1114,9 +1124,9 @@ func TestHandler(t *testing.T) {
 		certServiceMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, externalCertAuthDetails).Return(certObjCtx, nil).Once()
 
 		JWTObjCtxMock := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
 			},
 			KeysExtra:           JWTKeys,
 			Scopes:              scopes,
@@ -1166,7 +1176,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -1215,9 +1225,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		certObjCtx := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         externalTenantID,
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: externalTenantID,
 			},
 			Scopes:              "test test1 test2 test3",
 			ScopesMergeStrategy: overrideAllScopes,
@@ -1234,9 +1244,9 @@ func TestHandler(t *testing.T) {
 		certServiceMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, externalCertAuthDetails).Return(certObjCtx, nil).Once()
 
 		JWTObjCtxMock := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
 			},
 			KeysExtra:           JWTKeys,
 			Scopes:              scopes,
@@ -1286,7 +1296,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -1329,9 +1339,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		certObjCtx := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         externalTenantID,
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: externalTenantID,
 			},
 			Scopes:          "test",
 			KeysExtra:       certKeys,
@@ -1382,7 +1392,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -1419,9 +1429,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		certObjCtx := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         externalTenantID,
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: externalTenantID,
 			},
 			Scopes:          "test",
 			KeysExtra:       certKeys,
@@ -1433,10 +1443,7 @@ func TestHandler(t *testing.T) {
 		}
 
 		accessLevelObjectContext := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: "",
-				TenantID:         "",
-			},
+			Tenant:          &graphql.Tenant{},
 			Scopes:          "test",
 			KeysExtra:       accessLevelKeys,
 			ConsumerID:      externalTenantID,
@@ -1467,7 +1474,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -1516,9 +1523,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		certObjCtx := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         externalTenantID,
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: externalTenantID,
 			},
 			Scopes:          "test",
 			KeysExtra:       certKeys,
@@ -1534,9 +1541,8 @@ func TestHandler(t *testing.T) {
 		certServiceMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, externalCertAuthDetails).Return(certObjCtx, nil).Once()
 
 		JWTObjCtxMock := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         "",
+			Tenant: &graphql.Tenant{
+				ID: externalTenantID,
 			},
 			KeysExtra:       JWTKeys,
 			Scopes:          scopes,
@@ -1585,7 +1591,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -1604,7 +1610,7 @@ func TestHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
-		handler := tenantmapping.NewHandler(nil, nil, nil)
+		handler := tenantmapping.NewHandler(nil, nil, nil, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -1644,7 +1650,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", systemAuthID.String(), string(oathkeeper.JWTAuthFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -1666,9 +1672,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		objCtxMockWithoutRegion := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
 			},
 			KeysExtra:    keys,
 			Scopes:       scopes,
@@ -1704,7 +1710,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper.JWTAuthFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -1752,9 +1758,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		certObjCtx := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         externalTenantID,
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: externalTenantID,
 			},
 			Scopes:          "test",
 			KeysExtra:       certKeys,
@@ -1770,9 +1776,9 @@ func TestHandler(t *testing.T) {
 		certServiceMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, externalCertAuthDetails).Return(certObjCtx, nil).Once()
 
 		JWTObjCtxMock := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
 			},
 			KeysExtra:       JWTKeys,
 			Scopes:          scopes,
@@ -1821,7 +1827,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -1841,7 +1847,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper.ReqData{}, errors.New("some error")).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, nil, nil)
+		handler := tenantmapping.NewHandler(reqDataParserMock, nil, nil, nil, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -1855,6 +1861,263 @@ func TestHandler(t *testing.T) {
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock)
 	})
+
+	t.Run("success when substituting tenant", func(t *testing.T) {
+		scopes := "application:read"
+
+		keys := tenantmapping.KeysExtra{
+			TenantKey:         "consumerTenant",
+			ExternalTenantKey: "externalTenant",
+		}
+
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.UsernameKey: username,
+				},
+			},
+		}
+
+		objCtxMock := tenantmapping.ObjectContext{
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
+				Labels:     map[string]interface{}{tenantSubstitutionLabelKey: substituteExternalTenantID},
+			},
+			KeysExtra:    keys,
+			Scopes:       scopes,
+			ConsumerID:   username,
+			AuthFlow:     oathkeeper.JWTAuthFlow,
+			Region:       region,
+			ConsumerType: "Static User",
+		}
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","flow":"` + string(oathkeeper.JWTAuthFlow) + `","name":"` + username + `","onBehalfOf":"","region":"` + region + `","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + rootInternalTenantID + `\\\",\\\"externalTenant\\\":\\\"` + rootExternalTenantID + `\\\",\\\"providerExternalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerTenant\\\":\\\"` + tenantID.String() + `\\\"}","tokenClientID":""},"header":null}`
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		userMockContextProvider := getMockContextProvider()
+		userMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &jwtAuthDetails, nil).Once()
+		userMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetails).Return(objCtxMock, nil).Once()
+
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmappingconsts.UserObjectContextProvider: userMockContextProvider,
+		}
+
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper.JWTAuthFlow), mock.Anything)
+
+		directorClient := &automock.DirectorClient{}
+		directorClient.On("GetRootTenantByExternalID", mock.Anything, substituteExternalTenantID).Return(&graphql.Tenant{
+			ID:         rootExternalTenantID,
+			InternalID: rootInternalTenantID,
+		}, nil).Once()
+
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, directorClient, tenantSubstitutionLabelKey)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, userMockContextProvider, directorClient)
+	})
+
+	t.Run("error when fails to fetch root parent of substituting tenant", func(t *testing.T) {
+		scopes := "application:read"
+
+		keys := tenantmapping.KeysExtra{
+			TenantKey:         "consumerTenant",
+			ExternalTenantKey: "externalTenant",
+		}
+
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.UsernameKey: username,
+				},
+			},
+		}
+
+		objCtxMock := tenantmapping.ObjectContext{
+			Tenant: &graphql.Tenant{
+				ID:         externalTenantID,
+				InternalID: tenantID.String(),
+				Labels:     map[string]interface{}{tenantSubstitutionLabelKey: substituteExternalTenantID},
+			},
+			KeysExtra:    keys,
+			Scopes:       scopes,
+			ConsumerID:   username,
+			AuthFlow:     oathkeeper.JWTAuthFlow,
+			Region:       region,
+			ConsumerType: "Static User",
+		}
+		expectedRespPayload := `{"subject":"","extra":{"name":"` + username + `"},"header":null}`
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		userMockContextProvider := getMockContextProvider()
+		userMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &jwtAuthDetails, nil).Once()
+		userMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetails).Return(objCtxMock, nil).Once()
+
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmappingconsts.UserObjectContextProvider: userMockContextProvider,
+		}
+
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper.JWTAuthFlow), mock.Anything)
+
+		directorClient := &automock.DirectorClient{}
+		directorClient.On("GetRootTenantByExternalID", mock.Anything, substituteExternalTenantID).Return(nil, errors.New("testError")).Once()
+
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, directorClient, tenantSubstitutionLabelKey)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, userMockContextProvider, directorClient)
+	})
+
+	t.Run("success for the request parsed as Certificate flow for External issuer and JWT flow with custom authenticator: scopes with mergeStrategy merge: merge scopes", func(t *testing.T) {
+		certKeys := tenantmapping.KeysExtra{
+			TenantKey:         "providerTenant",
+			ExternalTenantKey: "providerExternalTenant",
+		}
+
+		JWTKeys := tenantmapping.KeysExtra{
+			TenantKey:         "consumerTenant",
+			ExternalTenantKey: "externalTenant",
+		}
+
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
+		identityAttributeKey := "identity"
+		scopes := "application:read test"
+		authenticatorName := "testAuthenticator"
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					uniqueAttributeKey:   uniqueAttributeValue,
+					identityAttributeKey: username,
+					authenticator.CoordinatesKey: authenticator.Coordinates{
+						Name:  authenticatorName,
+						Index: 0,
+					},
+				},
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{externalTenantID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+				},
+			},
+		}
+
+		certObjCtx := tenantmapping.ObjectContext{
+			Tenant: &graphql.Tenant{
+				ID:         providerExternalTenantID,
+				InternalID: providerInternalTenantID,
+			},
+			Scopes:              "test1 test2 test3",
+			ScopesMergeStrategy: mergeWithOtherScopes,
+			KeysExtra:           certKeys,
+			ConsumerID:          externalTenantID,
+			AuthFlow:            oathkeeper.CertificateFlow,
+			Region:              region,
+			ConsumerType:        consumer.Runtime,
+			ContextProvider:     tenantmappingconsts.CertServiceObjectContextProvider,
+		}
+
+		certServiceMockContextProvider := getMockContextProvider()
+		certServiceMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &externalCertAuthDetails, nil).Once()
+		certServiceMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, externalCertAuthDetails).Return(certObjCtx, nil).Once()
+
+		JWTObjCtxMock := tenantmapping.ObjectContext{
+			Tenant: &graphql.Tenant{
+				ID:         consumerExternalTenantID,
+				InternalID: consumerInternalTenantID,
+				Labels:     map[string]interface{}{tenantSubstitutionLabelKey: substituteExternalTenantID},
+			},
+			KeysExtra:           JWTKeys,
+			Scopes:              scopes,
+			ScopesMergeStrategy: mergeWithOtherScopes,
+			Region:              region,
+			OauthClientID:       "client_id",
+			ConsumerID:          username,
+			AuthFlow:            oathkeeper.JWTAuthFlow,
+			ConsumerType:        "Static User",
+			ContextProvider:     tenantmappingconsts.AuthenticatorObjectContextProvider,
+		}
+		authn := []authenticator.Config{
+			{
+				Name: authenticatorName,
+				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+				TrustedIssuers: []authenticator.TrustedIssuer{{ScopePrefix: ""}},
+			},
+		}
+
+		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0], ScopePrefix: ""}
+
+		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + externalTenantID + `","consumerType":"Runtime","flow":"` + string(oathkeeper.CertificateFlow) + `","identity":"` + username + `","onBehalfOf":"admin","region":"` + region + `","scope":"application:read test test1 test2 test3","tenant":"{\\\"consumerTenant\\\":\\\"` + rootInternalTenantID + `\\\",\\\"externalTenant\\\":\\\"` + rootExternalTenantID + `\\\",\\\"providerExternalTenant\\\":\\\"` + consumerExternalTenantID + `\\\",\\\"providerTenant\\\":\\\"` + consumerInternalTenantID + `\\\"}","tokenClientID":"client_id","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"]}}`
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		authenticatorMockContextProvider := getMockContextProvider()
+		authenticatorMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &jwtAuthDetailsWithAuthenticator, nil).Once()
+		authenticatorMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetailsWithAuthenticator).Return(JWTObjCtxMock, nil).Once()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmappingconsts.CertServiceObjectContextProvider:   certServiceMockContextProvider,
+			tenantmappingconsts.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
+		}
+
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
+
+		directorClient := &automock.DirectorClient{}
+		directorClient.On("GetRootTenantByExternalID", mock.Anything, substituteExternalTenantID).Return(&graphql.Tenant{
+			ID:         rootExternalTenantID,
+			InternalID: rootInternalTenantID,
+		}, nil).Once()
+
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, directorClient, tenantSubstitutionLabelKey)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		assertExtra(t, expectedRespPayload, string(body))
+		require.Equal(t, gjson.Get(expectedRespPayload, "subject"), gjson.Get(strings.TrimSpace(string(body)), "subject"))
+		require.Equal(t, gjson.Get(expectedRespPayload, "header"), gjson.Get(strings.TrimSpace(string(body)), "header"))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, certServiceMockContextProvider)
+	})
+
 }
 
 func getMockContextProvider() *automock.ObjectContextProvider {

@@ -47,6 +47,8 @@ const (
 	TestAtomResourceGroup                                      = "TestAtomResourceGroup"
 	TestAtomFolder                                             = "TestAtomFolder"
 	TestAtomOrganization                                       = "TestAtomOrganization"
+	TestTenantSubstitutionAccount                              = "Test Tenant Substitution Account"
+	TestTenantSubstitutionSubaccount                           = "Test Tenant Substitution Subaccount"
 )
 
 type Tenant struct {
@@ -266,6 +268,21 @@ func (mgr *TestTenantsManager) Init() {
 			Type:           ResourceGroup,
 			Status:         Active,
 			Parent:         TestAtomFolder,
+		},
+		TestTenantSubstitutionAccount: {
+			Name:           TestTenantSubstitutionAccount,
+			ExternalTenant: "baf425d1-8630-46da-bf80-f4ed5f405a27",
+			ProviderName:   testProvider,
+			Type:           Account,
+			Status:         Active,
+		},
+		TestTenantSubstitutionSubaccount: {
+			Name:           TestTenantSubstitutionSubaccount,
+			ExternalTenant: "818005d6-9264-4abb-af4c-29c754630a7d",
+			ProviderName:   testProvider,
+			Type:           Subaccount,
+			Status:         Active,
+			Parent:         TestTenantSubstitutionAccount,
 		},
 	}
 }

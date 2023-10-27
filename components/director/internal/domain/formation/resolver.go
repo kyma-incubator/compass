@@ -72,7 +72,7 @@ type FormationAssignmentConverter interface {
 //
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
-	FetchOnDemand(tenant, parentTenant string) error
+	FetchOnDemand(ctx context.Context, tenant, parentTenant string) error
 }
 
 // Resolver is the formation resolver
@@ -246,7 +246,7 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 	}
 
 	if objectType == graphql.FormationObjectTypeTenant {
-		if err := r.fetcher.FetchOnDemand(objectID, tnt); err != nil {
+		if err := r.fetcher.FetchOnDemand(ctx, objectID, tnt); err != nil {
 			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", objectID)
 		}
 	}

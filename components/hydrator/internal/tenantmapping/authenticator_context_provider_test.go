@@ -177,7 +177,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, expectedTenantID.String(), objCtx.Tenant.InternalID)
 		require.Equal(t, clientID, objCtx.OauthClientID)
 		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
 		require.Equal(t, username, objCtx.ConsumerID)
@@ -232,7 +232,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, expectedTenantID.String(), objCtx.Tenant.InternalID)
 		require.Equal(t, "", objCtx.Scopes)
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
@@ -287,7 +287,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, expectedTenantID.String(), objCtx.Tenant.InternalID)
 		require.Equal(t, "", objCtx.Scopes)
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
@@ -339,7 +339,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
 		require.NoError(t, err)
-		require.Empty(t, objCtx.TenantID)
+		require.Empty(t, objCtx.Tenant.InternalID)
 		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))

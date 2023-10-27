@@ -18,6 +18,32 @@ type Client struct {
 	mock.Mock
 }
 
+// GetRootTenantByExternalID provides a mock function with given fields: ctx, tenantID
+func (_m *Client) GetRootTenantByExternalID(ctx context.Context, tenantID string) (*graphql.Tenant, error) {
+	ret := _m.Called(ctx, tenantID)
+
+	var r0 *graphql.Tenant
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*graphql.Tenant, error)); ok {
+		return rf(ctx, tenantID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *graphql.Tenant); ok {
+		r0 = rf(ctx, tenantID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*graphql.Tenant)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, tenantID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetRuntimeByTokenIssuer provides a mock function with given fields: ctx, issuer
 func (_m *Client) GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*graphql.Runtime, error) {
 	ret := _m.Called(ctx, issuer)

@@ -151,6 +151,19 @@ func TenantByInternalIDQuery(tenantID string) string {
 	}`, tenantID)
 }
 
+func GetRootTenantByExternalIDQuery(tenantID string) string {
+	return fmt.Sprintf(`query {
+		result: rootTenant(externalTenant: "%s") {
+			id
+			internalID
+			name
+			type
+			parentID
+			labels
+		}
+	}`, tenantID)
+}
+
 func TenantByLowestOwnerForResourceQuery(resourceID, resourceType string) string {
 	return fmt.Sprintf(`query {
 		result: tenantByLowestOwnerForResource(id:"%s", resource:"%s")
