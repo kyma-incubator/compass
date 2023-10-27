@@ -1,9 +1,6 @@
 package formation
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -11,6 +8,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
+	"context"
+	"fmt"
 )
 
 // ASAEngine processes Automatic Scenario Assignments
