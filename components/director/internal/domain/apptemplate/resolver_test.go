@@ -82,8 +82,8 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			ExpectedOutput: gqlAppTemplate,
 		},
 		{
-			Name: "Returns nil when application template not found",
-			TxFn: txGen.ThatSucceeds,
+			Name: "Returns NotFoundError when application template not found",
+			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, apperrors.NewNotFoundError(resource.ApplicationTemplate, "")).Once()
@@ -92,7 +92,7 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			AppTemplateConvFn: UnusedAppTemplateConv,
 			WebhookConvFn:     UnusedWebhookConv,
 			WebhookSvcFn:      UnusedWebhookSvc,
-			ExpectedOutput:    nil,
+			ExpectedError:     apperrors.NewNotFoundError(resource.ApplicationTemplate, ""),
 		},
 		{
 			Name: "Returns error when getting application template failed",
