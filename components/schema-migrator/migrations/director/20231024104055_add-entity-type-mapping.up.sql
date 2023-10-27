@@ -147,16 +147,38 @@ FROM entity_type_mappings,
 DROP VIEW IF EXISTS entity_type_mappings_tenants;
 
 CREATE OR REPLACE VIEW entity_type_mappings_tenants
+            (id, tenant_id, owner)
+AS
+SELECT DISTINCT etm.id,
+                t_api_event_def.tenant_id,
+                t_api_event_def.owner
+FROM entity_type_mappings etm
+         JOIN (SELECT a.id,
+                      a.tenant_id,
+                      ta.owner
+               FROM tenants_apis a INNER JOIN tenant_applications ta on ta.id = a.app_id
+               UNION ALL
+               SELECT e.id,
+                      e.tenant_id,
+                      ta.owner
+               FROM tenants_events e INNER JOIN tenant_applications ta on ta.id = e.app_id) t_api_event_def
+              ON etm.api_definition_id = t_api_event_def.id OR etm.event_definition_id = t_api_event_def.id;
+
+DROP VIEW IF EXISTS tenants_entity_type_mappings;
+
+CREATE OR REPLACE VIEW tenants_entity_type_mappings
             (tenant_id, id, api_definition_id, event_definition_id)
 AS
 SELECT DISTINCT t_api_event_def.tenant_id,
                 etm.id,
                 etm.api_definition_id,
-                etm.event_definition_id
+                etm.event_definition_id,
+                etm.api_model_selectors,
+                etm.entity_type_targets
 FROM entity_type_mappings etm
          JOIN (SELECT a.id,
                       a.tenant_id
-               FROM tenants_apis a
+               FROM tenants_apis a 
                UNION ALL
                SELECT e.id,
                       e.tenant_id

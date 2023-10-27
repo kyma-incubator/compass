@@ -62,6 +62,7 @@ FROM entity_types et
               jsonb_to_record(et.extensible) actions(supported text, description text);
 
 
+DROP VIEW IF EXISTS tenants_entity_type_mappings;
 DROP VIEW IF EXISTS entity_type_mappings_tenants;
 
 DROP VIEW IF EXISTS entity_type_targets_entity_type_mappings;
