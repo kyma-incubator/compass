@@ -236,10 +236,9 @@ func NewService(
 }
 
 // Used for testing
-//nolint
 //
 //go:generate mockery --exported --name=processFunc --output=automock --outpkg=automock --case=underscore --disable-version-string
-type processFunc interface {
+type processFunc interface { //nolint
 	ProcessScenarioFunc(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)
 }
 
