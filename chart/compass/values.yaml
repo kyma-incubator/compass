@@ -2,6 +2,7 @@ global:
   disableLegacyConnectivity: true
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   defaultTenantRegion: "eu-1"
+  tenantLabelsFilePath: "/labelsData/default-tenant-labels.json"
   tenants: # tenant order matters, so new tenants should be added to the end of the list
     - name: default
       id: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
@@ -126,6 +127,17 @@ global:
       id: 777ce47b-d901-4647-9223-14e94819830b
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: Test Tenant Substitution Account
+      id: baf425d1-8630-46da-bf80-f4ed5f405a27
+      type: account
+    - name: Test Tenant Substitution Subaccount
+      id: 818005d6-9264-4abb-af4c-29c754630a7d
+      type: subaccount
+      parent: baf425d1-8630-46da-bf80-f4ed5f405a27
+  tenantsLabels:
+    - tenantID: 818005d6-9264-4abb-af4c-29c754630a7d
+      key: customerId
+      value: 777ce47b-d901-4647-9223-14e94819830b
   images:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
@@ -143,11 +155,11 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3416"
+      version: "PR-3419"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3414"
+      version: "PR-3419"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
@@ -200,7 +212,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3410"
+      version: "PR-3419"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
