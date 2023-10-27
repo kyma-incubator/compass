@@ -273,7 +273,7 @@ CREATE TABLE integration_dependencies
         CONSTRAINT integration_dependencies_ord_id_unique UNIQUE (app_id, ord_id),
     local_tenant_id VARCHAR(256),
     correlation_ids JSONB,
-    name VARCHAR(256) NOT NULL,
+    title VARCHAR(256) NOT NULL,
     short_description VARCHAR(256),
     description TEXT,
     package_id UUID,
@@ -284,7 +284,7 @@ CREATE TABLE integration_dependencies
     sunset_date VARCHAR(256),
     successors JSONB,
     mandatory BOOLEAN NOT NULL,
-    related_integration_dependencies BOOLEAN,
+    related_integration_dependencies JSONB,
     links JSONB,
     tags JSONB,
     labels JSONB,
@@ -305,31 +305,67 @@ CREATE TABLE integration_dependencies
 -- Create index for integration_dependencies table
 CREATE INDEX IF NOT EXISTS integration_dependencies_app_id ON integration_dependencies (app_id);
 
--- Create aspects table
-CREATE TABLE aspects (
-    id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    integration_dependency_id UUID NOT NULL,
-        CONSTRAINT aspects_integration_dependency_id_fkey FOREIGN KEY (integration_dependency_id) REFERENCES integration_dependencies (id) ON DELETE CASCADE,
-    name VARCHAR(256) NOT NULL,
-    description TEXT,
-    mandatory BOOLEAN NOT NULL,
-    support_multiple_providers BOOLEAN,
-    api_resources JSONB,
-    event_resources JSONB,
-    ready BOOLEAN DEFAULT TRUE,
-        CONSTRAINT aspect_id_ready_unique UNIQUE (id, ready),
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP,
-    deleted_at TIMESTAMP,
-    error JSONB
-);
+-- Create view tenants_integration_dependencies
+CREATE VIEW tenants_integration_dependencies
+            (tenant_id, formation_id, id, app_id, ord_id, local_tenant_id, correlation_ids, title, short_description, description, package_id,
+             last_update, visibility, release_status, sunset_date, successors, mandatory, related_integration_dependencies, links, tags,
+             labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at,
+             updated_at, deleted_at, error)
+AS
+SELECT DISTINCT t_apps.tenant_id,
+                t_apps.formation_id,
+                i.id,
+                i.app_id,
+                i.ord_id,
+                i.local_tenant_id,
+                i.correlation_ids,
+                i.title,
+                i.short_description,
+                i.description,
+                i.package_id,
+                i.last_update,
+                i.visibility,
+                i.release_status,
+                i.sunset_date,
+                i.successors,
+                i.mandatory,
+                i.related_integration_dependencies,
+                i.links,
+                i.tags,
+                i.labels,
+                i.documentation_labels,
+                i.resource_hash,
+                i.version_value,
+                i.version_deprecated,
+                i.version_deprecated_since,
+                i.version_for_removal,
+                i.ready,
+                i.created_at,
+                i.updated_at,
+                i.deleted_at,
+                i.error
+FROM integration_dependencies i
+         JOIN (SELECT a1.id,
+                      a1.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM apps_subaccounts) t_apps ON i.app_id = t_apps.id;
 
--- Create index for aspects table
-CREATE INDEX IF NOT EXISTS aspects_integration_dependency_id ON aspects (integration_dependency_id);
+-- Create integration_dependencies_tenants view
+CREATE VIEW integration_dependencies_tenants AS
+SELECT i.*, ta.tenant_id, ta.owner FROM integration_dependencies AS i
+                                            INNER JOIN tenant_applications ta ON ta.id = i.app_id;
 
--- tenants_aspects view ?
-
--- Create views
+-- Create integration_dependencies views for JSONB columns
 CREATE VIEW correlation_ids_integration_dependencies AS
 SELECT id                  AS integration_dependency_id,
        elements.value      AS value
@@ -342,7 +378,11 @@ SELECT id             AS integration_dependency_id,
 FROM integration_dependencies,
      jsonb_array_elements_text(integration_dependencies.successors) AS elements;
 
--- aspects view
+CREATE VIEW related_integration_dependencies AS
+SELECT id                  AS integration_dependency_id,
+       elements.value      AS value
+FROM integration_dependencies,
+     jsonb_array_elements_text(integration_dependencies.related_integration_dependencies) AS elements;
 
 CREATE VIEW links_integration_dependencies AS
 SELECT id                AS integration_dependency_id,
@@ -374,66 +414,98 @@ FROM integration_dependencies,
      jsonb_each(integration_dependencies.documentation_labels) AS expand,
      jsonb_array_elements_text(expand.value) AS elements;
 
+-- Create aspects table
+CREATE TABLE aspects (
+    id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    integration_dependency_id UUID NOT NULL,
+    CONSTRAINT aspects_integration_dependency_id_fkey FOREIGN KEY (integration_dependency_id) REFERENCES integration_dependencies (id) ON DELETE CASCADE,
+    app_id UUID NOT NULL,
+    CONSTRAINT aspects_app_id_fkey FOREIGN KEY (app_id) REFERENCES applications (id) ON DELETE CASCADE,
+    title VARCHAR(256) NOT NULL,
+    description TEXT,
+    mandatory BOOLEAN NOT NULL,
+    support_multiple_providers BOOLEAN,
+    api_resources JSONB,
+    event_resources JSONB,
+    ready BOOLEAN DEFAULT TRUE,
+    CONSTRAINT aspect_id_ready_unique UNIQUE (id, ready),
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP,
+    deleted_at TIMESTAMP,
+    error JSONB
+);
 
--- Create view tenants_integration_dependencies
-CREATE VIEW tenants_integration_dependencies
-            (tenant_id, formation_id, id, app_id, ord_id, local_tenant_id, correlation_ids, name, short_description, description, package_id,
-            last_update, visibility, release_status, sunset_date, successors, mandatory, related_integration_dependencies, links, tags,
-            labels, documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at,
-            updated_at, deleted_at, error)
+-- Create index for aspects table
+CREATE INDEX IF NOT EXISTS aspects_app_id ON aspects (app_id);
+
+-- Create index for events on its ord_id column
+CREATE INDEX IF NOT EXISTS event_api_def_ord_id ON event_api_definitions (ord_id);
+
+-- Create view tenants_aspects
+CREATE VIEW tenants_aspects
+            (tenant_id, formation_id, id, integration_dependency_id, app_id, title, description, mandatory, support_multiple_providers, api_resources, event_resources, ready, created_at,
+             updated_at, deleted_at, error)
 AS
-SELECT DISTINCT t_apps.id,
+SELECT DISTINCT t_apps.tenant_id,
                 t_apps.formation_id,
-                i.id,
-                i.app_id,
-                i.ord_id,
-                i.local_tenant_id,
-                i.correlation_ids,
-                i.name,
-                i.short_description,
-                i.description,
-                i.package_id,
-                i.last_update,
-                i.visibility,
-                i.release_status,
-                i.sunset_date,
-                i.successors,
-                i.mandatory,
-                i.related_integration_dependencies,
-                i.links,
-                i.tags,
-                i.labels,
-                i.documentation_labels,
-                i.resource_hash,
-                i.version_value,
-                i.version_deprecated,
-                i.version_deprecated_since,
-                i.version_for_removal,
-                i.ready,
-                i.created_at,
-                i.updated_at,
-                i.deleted_at,
-                i.error
-FROM integration_dependencies i
-    JOIN (SELECT a1.id,
-                 a1.tenant_id,
-                 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
-          FROM tenant_applications a1
-          UNION ALL
-          SELECT apps_subaccounts.id,
-                 apps_subaccounts.tenant_id,
-                 apps_subaccounts.formation_id
-          FROM apps_subaccounts
-          UNION ALL
-          SELECT apps_subaccounts.id,
-                 apps_subaccounts.tenant_id,
-                 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
-          FROM apps_subaccounts) t_apps ON i.app_id = t_apps.id;
+                a.id,
+                a.integration_dependency_id,
+                a.app_id,
+                a.title,
+                a.description,
+                a.mandatory,
+                a.support_multiple_providers,
+                a.api_resources,
+                a.event_resources,
+                a.ready,
+                a.created_at,
+                a.updated_at,
+                a.deleted_at,
+                a.error
+FROM aspects a
+         JOIN (SELECT a1.id,
+                      a1.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM apps_subaccounts) t_apps ON a.app_id = t_apps.id;
 
--- Create integration_dependencies_tenants view
-CREATE VIEW integration_dependencies_tenants AS
-SELECT i.*, ta.tenant_id, ta.owner FROM integration_dependencies AS i
-                                            INNER JOIN tenant_applications ta ON ta.id = i.app_id;
 
+-- Create aspects_tenants view
+CREATE VIEW aspects_tenants AS
+SELECT a.*, ta.tenant_id, ta.owner FROM aspects AS a
+                                            INNER JOIN tenant_applications ta ON ta.id = a.app_id;
+
+-- Create aspects views for JSONB columns
+CREATE VIEW aspect_api_resources AS
+SELECT id                               AS aspect_id,
+       entries."ordId"                  AS ord_id,
+       entries."minVersion"             AS min_version
+FROM aspects,
+     jsonb_to_recordset(aspects.api_resources) AS entries("ordId" TEXT, "minVersion" TEXT); -- if the JSON key has a capital letter then it should be defined with "" in the AS clause
+
+CREATE VIEW aspect_event_resources AS
+SELECT asp.id                               AS aspect_id,
+       events.id                            AS event_resource_id,
+       entries."ordId"                      AS ord_id,
+       entries."minVersion"                 AS min_version,
+       entries.subset                       AS subset
+FROM aspects asp JOIN event_api_definitions events ON asp.app_id = events.app_id, jsonb_to_recordset(asp.event_resources) AS entries("ordId" TEXT, "minVersion" TEXT, subset JSONB)
+WHERE events.ord_id = entries."ordId";
+
+CREATE VIEW aspect_event_resources_subset AS
+SELECT
+    a.event_resource_id                 AS event_resource_id,
+    entries."eventType"                 AS event_type
+FROM aspect_event_resources a,
+     jsonb_to_recordset(a.subset) AS entries("eventType" TEXT); -- if the JSON key has a capital letter then it should be defined with "" in the AS clause
 
 COMMIT;

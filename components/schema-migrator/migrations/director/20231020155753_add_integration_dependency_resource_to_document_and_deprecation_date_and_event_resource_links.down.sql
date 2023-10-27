@@ -1,12 +1,18 @@
 BEGIN;
 
 -- Drop views
+DROP VIEW IF EXISTS aspect_event_resources_subset;
+DROP VIEW IF EXISTS aspect_event_resources;
+DROP VIEW IF EXISTS aspect_api_resources;
+DROP VIEW IF EXISTS aspects_tenants;
+DROP VIEW IF EXISTS tenants_aspects;
+
 DROP VIEW IF EXISTS ord_documentation_labels_integration_dependencies;
 DROP VIEW IF EXISTS ord_labels_integration_dependencies;
 DROP VIEW IF EXISTS tags_integration_dependencies;
 DROP VIEW IF EXISTS links_integration_dependencies;
 DROP VIEW IF EXISTS tenants_integration_dependencies;
--- aspects
+DROP VIEW IF EXISTS related_integration_dependencies;
 DROP VIEW IF EXISTS integration_dependencies_successors;
 DROP VIEW IF EXISTS correlation_ids_integration_dependencies;
 DROP VIEW IF EXISTS integration_dependencies_tenants;
@@ -16,8 +22,10 @@ DROP VIEW IF EXISTS tenants_apis;
 DROP VIEW IF EXISTS tenants_events;
 DROP VIEW IF EXISTS tenants_entity_types;
 
+-- Drop index for event_api_definitions table on ord_id column
+DROP INDEX IF EXISTS event_api_def_ord_id;
 -- Drop index for aspects table
-DROP INDEX IF EXISTS aspects_integration_dependency_id;
+DROP INDEX IF EXISTS aspects_app_id;
 -- Drop index for integration_dependencies table
 DROP INDEX IF EXISTS integration_dependencies_app_id;
 
@@ -36,7 +44,7 @@ ALTER TABLE event_api_definitions
 ALTER TABLE entity_types
     DROP COLUMN deprecation_date;
 
--- Recreate views for tenant`_apis, tenant`_events and tenant`_entity_types with removed `deprecation_date` column
+-- Recreate views for tenant_apis, tenant_events and tenant_entity_types with removed `deprecation_date` column
 CREATE OR REPLACE VIEW tenants_apis
             (tenant_id, formation_id, id, app_id, name, description, group_name, default_auth, version_value,
              version_deprecated, version_deprecated_since, version_for_removal, ord_id, local_tenant_id,
