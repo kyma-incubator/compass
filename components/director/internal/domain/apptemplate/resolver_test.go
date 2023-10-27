@@ -1827,6 +1827,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 	resultLabels := map[string]interface{}{
 		"test key": "test value",
 	}
+	shouldOverride := true
 	testCases := []struct {
 		Name              string
 		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
@@ -1836,6 +1837,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 		WebhookSvcFn      func() *automock.WebhookService
 		WebhookConvFn     func() *automock.WebhookConverter
 		Input             *graphql.ApplicationTemplateUpdateInput
+		InputOverride     *bool
 		ExpectedOutput    *graphql.ApplicationTemplate
 		ExpectedError     error
 	}{
@@ -1845,7 +1847,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
-				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, *modelAppTemplateInput).Return(nil).Once()
+				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, false, *modelAppTemplateInput).Return(nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
@@ -1863,6 +1865,33 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			WebhookConvFn:  UnusedWebhookConv,
 			WebhookSvcFn:   SuccessfulWebhookSvc(gqlAppTemplateUpdateInputWithProvider.Webhooks, gqlAppTemplateUpdateInputWithProvider.Webhooks),
 			Input:          gqlAppTemplateUpdateInput,
+			ExpectedOutput: gqlAppTemplate,
+		},
+		{
+			Name: "Success with override",
+			TxFn: txGen.ThatSucceeds,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
+				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, shouldOverride, *modelAppTemplateInput).Return(nil).Once()
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
+				return appTemplateConv
+			},
+			SelfRegManagerFn: func() *automock.SelfRegisterManager {
+				srm := &automock.SelfRegisterManager{}
+				srm.On("IsSelfRegistrationFlow", txtest.CtxWithDBMatcher(), resultLabels).Return(false, nil).Once()
+				return srm
+			},
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   SuccessfulWebhookSvc(gqlAppTemplateUpdateInputWithProvider.Webhooks, gqlAppTemplateUpdateInputWithProvider.Webhooks),
+			Input:          gqlAppTemplateUpdateInput,
+			InputOverride:  &shouldOverride,
 			ExpectedOutput: gqlAppTemplate,
 		},
 		{
@@ -1886,7 +1915,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
-				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, *modelAppTemplateInput).Return(nil).Once()
+				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, false, *modelAppTemplateInput).Return(nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
@@ -1942,7 +1971,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
-				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, *modelAppTemplateInput).Return(testError).Once()
+				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, false, *modelAppTemplateInput).Return(testError).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
@@ -1966,7 +1995,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
-				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, *modelAppTemplateInput).Return(nil).Once()
+				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, false, *modelAppTemplateInput).Return(nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testError).Once()
 				return appTemplateSvc
 			},
@@ -2121,7 +2150,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
-				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, *modelAppTemplateInput).Return(nil).Once()
+				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, false, *modelAppTemplateInput).Return(nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
@@ -2146,7 +2175,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
-				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, *modelAppTemplateInput).Return(nil).Once()
+				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, false, *modelAppTemplateInput).Return(nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
@@ -2180,7 +2209,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, selfRegManager, nil, nil, "", apiclient.OrdAggregatorClientConfig{})
 
 			// WHEN
-			result, err := resolver.UpdateApplicationTemplate(ctx, testID, *testCase.Input)
+			result, err := resolver.UpdateApplicationTemplate(ctx, testID, testCase.InputOverride, *testCase.Input)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -2203,7 +2232,8 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", apiclient.OrdAggregatorClientConfig{})
 
 		// WHEN
-		_, err := resolver.UpdateApplicationTemplate(ctx, testID, *gqlAppTemplateUpdateInputInvalid)
+		override := false
+		_, err := resolver.UpdateApplicationTemplate(ctx, testID, &override, *gqlAppTemplateUpdateInputInvalid)
 
 		// THEN
 		require.Error(t, err)
