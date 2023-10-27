@@ -76,6 +76,9 @@ global:
         nsadapter:
           authenticator:
             enabled: true
+        user-name-authenticator:
+          authenticator:
+            enabled: true
   ordService:
     skipSSLValidation: true
   ordAggregator:
@@ -218,6 +221,11 @@ global:
         tokenEndpointPath: "url"
         tokenURLPath: "/cert/token"
   tests:
+    userNameAuthenticators:
+      account:
+        manage: true
+      subaccount:
+        manage: true
     basicCredentials:
       manage: true
     http:

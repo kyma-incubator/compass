@@ -4,11 +4,15 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 	"github.com/kyma-incubator/compass/tests/director/tests/example"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -29,6 +33,65 @@ func TestTenantIsolation(t *testing.T) {
 	anotherTenantsApps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customTenant)
 
 	assert.Empty(t, anotherTenantsApps.Data)
+}
+
+func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
+	ctx := context.Background()
+	providerAccountID := conf.TestProviderAccountID
+	providerSubaccountID := conf.TestProviderSubaccountID
+
+	// The accountToken is JWT token containing claim with provider account ID for tenant. In local setup that's 'testDefaultTenant'
+	accountToken := token.GetUserToken(t, ctx, conf.UsernameAuthCfg.Account.TokenURL+conf.UsernameAuthCfg.Account.OAuthTokenPath, conf.UsernameAuthCfg.Account.ClientID, conf.UsernameAuthCfg.Account.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.AccountAuthenticatorClaimKey)
+	// The subaccountToken is JWT token containing claim with provider subaccount ID for tenant. In local setup that's 'TestProviderSubaccount'
+	subaccountToken := token.GetUserToken(t, ctx, conf.UsernameAuthCfg.Subaccount.TokenURL+conf.UsernameAuthCfg.Subaccount.OAuthTokenPath, conf.UsernameAuthCfg.Subaccount.ClientID, conf.UsernameAuthCfg.Subaccount.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubaccountAuthenticatorClaimKey)
+
+	accountGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accountToken, conf.DirectorUserNameAuthenticatorURL)
+	subaccountGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(subaccountToken, conf.DirectorUserNameAuthenticatorURL)
+
+	testCases := []struct {
+		name              string
+		graphqlClient     *gcli.Client
+		isSubaacountLevel bool
+	}{
+		{
+			name:          "With account token",
+			graphqlClient: accountGraphQLClient,
+		},
+		{
+			name:              "With subaccount token",
+			graphqlClient:     subaccountGraphQLClient,
+			isSubaacountLevel: true,
+		},
+	}
+
+	for _, ts := range testCases {
+		t.Run(ts.name, func(t *testing.T) {
+			accountApp, err := fixtures.RegisterApplication(t, ctx, ts.graphqlClient, "e2e-provider-account-app", providerAccountID)
+			defer fixtures.CleanupApplication(t, ctx, ts.graphqlClient, providerAccountID, &accountApp)
+			require.NoError(t, err)
+			require.NotEmpty(t, accountApp.ID)
+
+			subaccountApp, err := fixtures.RegisterApplication(t, ctx, ts.graphqlClient, "e2e-provider-subaccount-app", providerSubaccountID)
+			defer fixtures.CleanupApplication(t, ctx, ts.graphqlClient, providerSubaccountID, &subaccountApp)
+			require.NoError(t, err)
+			require.NotEmpty(t, subaccountApp.ID)
+
+			req := fixtures.FixApplicationsPageableRequest(5, "")
+			var resp graphql.ApplicationPageExt
+			err = testctx.Tc.RunOperationWithoutTenant(ctx, ts.graphqlClient, req, &resp)
+			require.NoError(t, err)
+
+			require.Equal(t, 1, resp.TotalCount)
+			require.Len(t, resp.Data, 1)
+			if ts.isSubaacountLevel {
+				require.Equal(t, subaccountApp.ID, resp.Data[0].ID)
+				require.Equal(t, subaccountApp.Name, resp.Data[0].Name)
+			} else {
+				require.Equal(t, accountApp.ID, resp.Data[0].ID)
+				require.Equal(t, accountApp.Name, resp.Data[0].Name)
+			}
+		})
+	}
 }
 
 func TestHierarchicalTenantIsolation(t *testing.T) {
