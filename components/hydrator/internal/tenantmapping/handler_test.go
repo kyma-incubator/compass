@@ -2071,11 +2071,11 @@ func TestHandler(t *testing.T) {
 						Key: identityAttributeKey,
 					},
 				},
-				TrustedIssuers: []authenticator.TrustedIssuer{{ScopePrefix: ""}},
+				TrustedIssuers: []authenticator.TrustedIssuer{{ScopePrefixes: []string{""}}},
 			},
 		}
 
-		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0], ScopePrefix: ""}
+		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0], ScopePrefixes: []string{""}}
 
 		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + externalTenantID + `","consumerType":"Runtime","flow":"` + string(oathkeeper.CertificateFlow) + `","identity":"` + username + `","onBehalfOf":"admin","region":"` + region + `","scope":"application:read test test1 test2 test3","tenant":"{\\\"consumerTenant\\\":\\\"` + rootInternalTenantID + `\\\",\\\"externalTenant\\\":\\\"` + rootExternalTenantID + `\\\",\\\"providerExternalTenant\\\":\\\"` + consumerExternalTenantID + `\\\",\\\"providerTenant\\\":\\\"` + consumerInternalTenantID + `\\\"}","tokenClientID":"client_id","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"]}}`
 
