@@ -147,10 +147,10 @@ function createCluster() {
   export TLS_KEY="${utils_generate_self_signed_cert_return_tls_key:?}"
 
   export DNS_DOMAIN_TRAILING=${DNS_DOMAIN%.}
-  envsubst < "${TEST_INFRA_SOURCES_DIR}/prow/scripts/resources/compass-gke-overrides.tpl.yaml" > "$PWD/compass_common_overrides.yaml"
+  envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/compass-gke-overrides.tpl.yaml" > "$PWD/compass_common_overrides.yaml"
   CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/compass-overrides-gke-benchmark.yaml" > "$PWD/compass_benchmark_overrides.yaml"
-  CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${TEST_INFRA_SOURCES_DIR}/prow/scripts/resources/compass-gke-kyma-overrides.tpl.yaml" > "$PWD/kyma_overrides.yaml"
-  CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/ory-overrides-gke-benchmark.tpl.yaml" > "$PWD/ory_benchmark_overrides.yaml"
+  CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/compass-gke-kyma-overrides.tpl.yaml" > "$PWD/kyma_overrides.yaml"
+  CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/ory-overrides-gke-benchmark.tpl.yaml" > ~/ory_benchmark_overrides.yaml
 }
 
 function installYQ() {

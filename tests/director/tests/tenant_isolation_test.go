@@ -208,3 +208,21 @@ func TestTenantAccess(t *testing.T) {
 	anotherTenantsApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customTenant)
 	assert.Empty(t, anotherTenantsApps.Data)
 }
+
+func TestSubstituteCaller(t *testing.T) {
+	ctx := context.Background()
+
+	substitutionTenant := tenant.TestTenants.GetDefaultSubaccountTenantID()
+
+	actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "e2e-tenant-access", substitutionTenant)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+
+	anotherTenantsApps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetIDByName(t, tenant.TestTenantSubstitutionAccount))
+	assert.Empty(t, anotherTenantsApps.Data)
+
+	anotherTenantsApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetIDByName(t, tenant.TestTenantSubstitutionSubaccount))
+	require.Len(t, anotherTenantsApps.Data, 1)
+	require.Equal(t, anotherTenantsApps.Data[0].ID, actualApp.ID)
+}

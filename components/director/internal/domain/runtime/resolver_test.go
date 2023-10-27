@@ -188,7 +188,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
-				svc.On("FetchOnDemand", extSubaccountID, accountTenantID).Return(nil).Once()
+				svc.On("FetchOnDemand", ctx, extSubaccountID, accountTenantID).Return(nil).Once()
 				return svc
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrorsAndGetSelfRegDistinguishingLabelKey(selfRegLabels),
@@ -277,7 +277,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
-				svc.On("FetchOnDemand", extSubaccountID, accountTenantID).Return(testErr).Once()
+				svc.On("FetchOnDemand", ctx, extSubaccountID, accountTenantID).Return(testErr).Once()
 				return svc
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(selfRegLabels),

@@ -408,17 +408,17 @@ func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.Bus
 
 func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region, licenseType string) error {
 	if len(subdomain) > 0 {
-		if err := s.upsertLabel(ctx, tenantID, SubdomainLabelKey, subdomain); err != nil {
+		if err := s.UpsertLabel(ctx, tenantID, SubdomainLabelKey, subdomain); err != nil {
 			return errors.Wrapf(err, "while setting subdomain label for tenant with ID %s", tenantID)
 		}
 	}
 	if len(region) > 0 {
-		if err := s.upsertLabel(ctx, tenantID, RegionLabelKey, region); err != nil {
+		if err := s.UpsertLabel(ctx, tenantID, RegionLabelKey, region); err != nil {
 			return errors.Wrapf(err, "while setting subdomain label for tenant with ID %s", tenantID)
 		}
 	}
 	if len(licenseType) > 0 {
-		if err := s.upsertLabel(ctx, tenantID, LicenseTypeLabelKey, licenseType); err != nil {
+		if err := s.UpsertLabel(ctx, tenantID, LicenseTypeLabelKey, licenseType); err != nil {
 			return errors.Wrapf(err, "while setting licenseType label for tenant with ID %s", tenantID)
 		}
 	}
@@ -468,7 +468,8 @@ func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[s
 	return labels, nil
 }
 
-func (s *labeledService) upsertLabel(ctx context.Context, tenantID, key, value string) error {
+// UpsertLabel upserts label that is directly linked to the provided tenant
+func (s *labeledService) UpsertLabel(ctx context.Context, tenantID, key, value string) error {
 	label := &model.LabelInput{
 		Key:        key,
 		Value:      value,
