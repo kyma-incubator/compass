@@ -14,7 +14,7 @@ type IntegrationDependency struct {
 	OrdID                          *string
 	LocalTenantID                  *string
 	CorrelationIDs                 json.RawMessage
-	Name                           string
+	Title                          string
 	ShortDescription               *string
 	Description                    *string
 	PackageID                      *string
@@ -24,7 +24,7 @@ type IntegrationDependency struct {
 	ReleaseStatus                  *string
 	SunsetDate                     *string
 	Successors                     json.RawMessage
-	Mandatory                      bool
+	Mandatory                      *bool
 	RelatedIntegrationDependencies json.RawMessage
 	Links                          json.RawMessage
 	Tags                           json.RawMessage
@@ -44,7 +44,7 @@ type IntegrationDependencyInput struct {
 	OrdID                          *string         `json:"ordId"`
 	LocalTenantID                  *string         `json:"localTenantId,omitempty"`
 	CorrelationIDs                 json.RawMessage `json:"correlationIds,omitempty"`
-	Name                           string          `json:"title"`
+	Title                          string          `json:"title"`
 	ShortDescription               *string         `json:"shortDescription,omitempty"`
 	Description                    *string         `json:"description,omitempty"`
 	OrdPackageID                   *string         `json:"partOfPackage"`
@@ -53,7 +53,7 @@ type IntegrationDependencyInput struct {
 	ReleaseStatus                  *string         `json:"releaseStatus"`
 	SunsetDate                     *string         `json:"sunsetDate,omitempty"`
 	Successors                     json.RawMessage `json:"successors,omitempty"`
-	Mandatory                      bool            `json:"mandatory"`
+	Mandatory                      *bool           `json:"mandatory"`
 	Aspects                        []*AspectInput  `json:"aspects,omitempty"`
 	RelatedIntegrationDependencies json.RawMessage `json:"relatedIntegrationDependencies,omitempty"`
 	Links                          json.RawMessage `json:"links,omitempty"`
@@ -78,7 +78,7 @@ func (i *IntegrationDependencyInput) ToIntegrationDependency(id string, resource
 		OrdID:                          i.OrdID,
 		LocalTenantID:                  i.LocalTenantID,
 		CorrelationIDs:                 i.CorrelationIDs,
-		Name:                           i.Name,
+		Title:                          i.Title,
 		ShortDescription:               i.ShortDescription,
 		Description:                    i.Description,
 		PackageID:                      packageID,

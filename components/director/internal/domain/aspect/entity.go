@@ -8,9 +8,9 @@ import (
 // Entity is a representation of an Aspect in the database.
 type Entity struct {
 	IntegrationDependencyID  string         `db:"integration_dependency_id"`
-	Name                     string         `db:"title"`
+	Title                    string         `db:"title"`
 	Description              sql.NullString `db:"description"`
-	Mandatory                bool           `db:"mandatory"`
+	Mandatory                sql.NullBool   `db:"mandatory"`
 	SupportMultipleProviders sql.NullBool   `db:"support_multiple_providers"`
 	ApiResources             sql.NullString `db:"api_resources"`
 	EventResources           sql.NullString `db:"event_resources"`

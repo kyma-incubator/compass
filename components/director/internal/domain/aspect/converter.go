@@ -16,9 +16,9 @@ func NewConverter() *converter {
 func (c *converter) FromEntity(entity *Entity) *model.Aspect {
 	return &model.Aspect{
 		IntegrationDependencyID:  entity.IntegrationDependencyID,
-		Name:                     entity.Name,
+		Title:                    entity.Title,
 		Description:              repo.StringPtrFromNullableString(entity.Description),
-		Mandatory:                entity.Mandatory,
+		Mandatory:                repo.BoolPtrFromNullableBool(entity.Mandatory),
 		SupportMultipleProviders: repo.BoolPtrFromNullableBool(entity.SupportMultipleProviders),
 		ApiResources:             repo.JSONRawMessageFromNullableString(entity.ApiResources),
 		EventResources:           repo.JSONRawMessageFromNullableString(entity.EventResources),
@@ -37,9 +37,9 @@ func (c *converter) FromEntity(entity *Entity) *model.Aspect {
 func (c *converter) ToEntity(aspectModel *model.Aspect) *Entity {
 	return &Entity{
 		IntegrationDependencyID:  aspectModel.IntegrationDependencyID,
-		Name:                     aspectModel.Name,
+		Title:                    aspectModel.Title,
 		Description:              repo.NewNullableString(aspectModel.Description),
-		Mandatory:                aspectModel.Mandatory,
+		Mandatory:                repo.NewNullableBool(aspectModel.Mandatory),
 		SupportMultipleProviders: repo.NewNullableBool(aspectModel.SupportMultipleProviders),
 		ApiResources:             repo.NewNullableStringFromJSONRawMessage(aspectModel.ApiResources),
 		EventResources:           repo.NewNullableStringFromJSONRawMessage(aspectModel.EventResources),

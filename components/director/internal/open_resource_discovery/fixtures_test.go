@@ -292,6 +292,7 @@ var (
 	versionDeprecated      = false
 	versionDeprecatedSince = "v1.0"
 	versionForRemoval      = false
+	mandatoryTrue          = true
 
 	documentationLabels = removeWhitespace(`{
         "Some Aspect": ["Markdown Documentation [with links](#)", "With multiple values"]
@@ -870,15 +871,25 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		},
 		IntegrationDependencies: []*model.IntegrationDependencyInput{
 			{
-				OrdID:               str.Ptr(integrationDependency1ORDID),
-				LocalTenantID:       str.Ptr(localTenantID),
-				OrdPackageID:        str.Ptr(packageORDID),
-				Name:                "Integration Dependency Title",
-				Description:         str.Ptr("Integration Dependency Description"),
-				ShortDescription:    str.Ptr("Integration Dependency short description"),
-				Tags:                json.RawMessage(`["integrationDependencyTestTag"]`),
-				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
-				Mandatory:           true,
+				OrdID:            str.Ptr(integrationDependency1ORDID),
+				LocalTenantID:    str.Ptr(localTenantID),
+				OrdPackageID:     str.Ptr(packageORDID),
+				Title:            "Integration Dependency Title",
+				Description:      str.Ptr("Integration Dependency Description"),
+				ShortDescription: str.Ptr("Integration Dependency short description"),
+				Tags:             json.RawMessage(`["integrationDependencyTestTag"]`),
+				Links:            json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				Mandatory:        &mandatoryTrue,
+				Aspects: []*model.AspectInput{
+					{
+						Title:                    "Aspect Title",
+						Description:              str.Ptr("Description of Aspect"),
+						Mandatory:                &mandatoryTrue,
+						SupportMultipleProviders: &mandatoryTrue,
+						ApiResources:             json.RawMessage("[]"),
+						EventResources:           json.RawMessage("[]"),
+					},
+				},
 				ReleaseStatus:       str.Ptr("active"),
 				Labels:              json.RawMessage(labels),
 				Visibility:          "public",
@@ -892,12 +903,12 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				OrdID:               str.Ptr(integrationDependency2ORDID),
 				LocalTenantID:       str.Ptr(localTenantID),
 				OrdPackageID:        str.Ptr(packageORDID),
-				Name:                "Integration Dependency Title 2",
+				Title:               "Integration Dependency Title 2",
 				Description:         str.Ptr("Integration Dependency Description"),
 				ShortDescription:    str.Ptr("Integration Dependency short description"),
 				Tags:                json.RawMessage(`["integrationDependencyTestTag"]`),
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
-				Mandatory:           false,
+				Mandatory:           &mandatoryTrue,
 				ReleaseStatus:       str.Ptr("active"),
 				Labels:              json.RawMessage(labels),
 				Visibility:          "public",
@@ -1717,14 +1728,14 @@ func fixIntegrationDependencies() []*model.IntegrationDependency {
 		{
 			ApplicationID:    &appID,
 			PackageID:        str.Ptr(packageORDID),
-			Name:             "Integration Dependency Title",
+			Title:            "Integration Dependency Title",
 			Description:      str.Ptr("Integration Dependency Description"),
 			OrdID:            str.Ptr(integrationDependency1ORDID),
 			LocalTenantID:    nil,
 			ShortDescription: str.Ptr("Integration Dependency short description"),
 			Tags:             json.RawMessage(`["testTag","integrationDependencyTestTag"]`),
 			Links:            json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
-			Mandatory:        true,
+			Mandatory:        &mandatoryTrue,
 			ReleaseStatus:    str.Ptr("active"),
 			Labels:           json.RawMessage(mergedLabels),
 			Visibility:       "public",
@@ -1741,14 +1752,14 @@ func fixIntegrationDependencies() []*model.IntegrationDependency {
 		{
 			ApplicationID:    &appID,
 			PackageID:        str.Ptr(packageORDID),
-			Name:             "Integration Dependency Title 2",
+			Title:            "Integration Dependency Title 2",
 			Description:      str.Ptr("Integration Dependency Description"),
 			OrdID:            str.Ptr(integrationDependency2ORDID),
 			LocalTenantID:    nil,
 			ShortDescription: str.Ptr("Integration Dependency short description"),
 			Tags:             json.RawMessage(`["testTag","integrationDependencyTestTag"]`),
 			Links:            json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
-			Mandatory:        false,
+			Mandatory:        &mandatoryTrue,
 			ReleaseStatus:    str.Ptr("active"),
 			Labels:           json.RawMessage(mergedLabels),
 			Visibility:       "public",

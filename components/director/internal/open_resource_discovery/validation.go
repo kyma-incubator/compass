@@ -88,6 +88,12 @@ const (
 	MinDescriptionLength = 1
 	// MaxDescriptionLength represents the maximal accepted length of the Description field
 	MaxDescriptionLength = 5000
+	// MinShortDescriptionLength represents the minimal length of ShortDescription field
+	MinShortDescriptionLength = 1
+	// MaxShortDescriptionRuneLength represents the maximal length of ShortDescription field
+	MaxShortDescriptionRuneLength = 256
+	// MaxShortDescriptionLengthSapCorePolicy represents the maximal length of ShortDescription field for sap:core:v1 policy
+	MaxShortDescriptionLengthSapCorePolicy = 180
 	// MinLocalTenantIDLength represents the minimal accepted length of the LocalID field
 	MinLocalTenantIDLength = 1
 	// MaxLocalTenantIDLength represents the maximal accepted length of the LocalID field
@@ -417,6 +423,9 @@ func validateShortDescriptionDoesNotStartWithResourceName(name string) func(valu
 		// this is need, because in the package the value is string, but in apis and events the value is *string
 		switch v := value.(type) {
 		case *string:
+			if v == nil {
+				return nil
+			}
 			shortDescription = *v
 		case string:
 			shortDescription = v
@@ -439,6 +448,9 @@ func validateDescriptionDoesNotContainShortDescription(shortDescription *string)
 		// this is need, because in the package the value is string, but in apis and events the value is *string
 		switch v := value.(type) {
 		case *string:
+			if v == nil {
+				return nil
+			}
 			description = *v
 		case string:
 			description = v
@@ -509,7 +521,7 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, api.PolicyLevel, PolicyLevelSap), validation.Length(MinTitleLength, MaxTitleLengthSAPCorePolicy), validation.By(validateTitleDoesNotContainsTerms)),
 			validation.Length(MinTitleLength, MaxTitleLength)),
 		validation.Field(&api.ShortDescription, validation.Required, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
-			validation.When(checkResourcePolicyLevel(docPolicyLevel, api.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinTitleLength, MaxTitleLength), validation.By(validateShortDescriptionDoesNotStartWithResourceName(api.Name)))),
+			validation.When(checkResourcePolicyLevel(docPolicyLevel, api.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinShortDescriptionLength, MaxShortDescriptionLengthSapCorePolicy), validation.By(validateShortDescriptionDoesNotStartWithResourceName(api.Name)))),
 		validation.Field(&api.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, api.PolicyLevel, PolicyLevelSap) && api.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(api.ShortDescription)))),
 		validation.Field(&api.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom, PolicyLevelNone), validation.When(api.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
@@ -603,7 +615,7 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, event.PolicyLevel, PolicyLevelSap), validation.Length(MinTitleLength, MaxTitleLengthSAPCorePolicy), validation.By(validateTitleDoesNotContainsTerms)),
 			validation.Length(MinTitleLength, MaxTitleLength)),
 		validation.Field(&event.ShortDescription, validation.Required, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
-			validation.When(checkResourcePolicyLevel(docPolicyLevel, event.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinTitleLength, MaxTitleLength), validation.By(validateShortDescriptionDoesNotStartWithResourceName(event.Name)))),
+			validation.When(checkResourcePolicyLevel(docPolicyLevel, event.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinShortDescriptionLength, MaxShortDescriptionLengthSapCorePolicy), validation.By(validateShortDescriptionDoesNotStartWithResourceName(event.Name)))),
 		validation.Field(&event.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, event.PolicyLevel, PolicyLevelSap) && event.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(event.ShortDescription)))),
 		validation.Field(&event.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom, PolicyLevelNone), validation.When(event.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
@@ -673,6 +685,13 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 	)
 }
 
+func validateEventInputWithSuppressedErrors(event *model.EventDefinitionInput, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
+	return validation.ValidateStruct(event,
+		validation.Field(&event.VersionInput.Value, validation.By(func(value interface{}) error {
+			return validateEventDefinitionVersionInput(value, *event, eventsFromDB, eventHashes)
+		})))
+}
+
 func validateEntityTypeInputWithSuppressedErrors(entityType *model.EntityTypeInput, entityTypesFromDB map[string]*model.EntityType, entityTypeHashes map[string]uint64) error {
 	return validation.ValidateStruct(entityType,
 		validation.Field(&entityType.VersionInput.Value, validation.By(func(value interface{}) error {
@@ -691,7 +710,7 @@ func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *
 		validation.Field(&entityType.Title, validation.Required, validation.NewStringRule(common.NoNewLines, "title should not contain line breaks"),
 			validation.Length(MinTitleLength, MaxTitleLength)),
 		validation.Field(&entityType.ShortDescription, validation.Required, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
-			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinTitleLength, MaxTitleLength))),
+			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinShortDescriptionLength, MaxShortDescriptionLengthSapCorePolicy))),
 		validation.Field(&entityType.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap) && entityType.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(entityType.ShortDescription)))),
 		validation.Field(&entityType.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
@@ -720,13 +739,6 @@ func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *
 		validation.Field(&entityType.Labels, validation.By(validateORDLabels)),
 		validation.Field(&entityType.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
-}
-
-func validateEventInputWithSuppressedErrors(event *model.EventDefinitionInput, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
-	return validation.ValidateStruct(event,
-		validation.Field(&event.VersionInput.Value, validation.By(func(value interface{}) error {
-			return validateEventDefinitionVersionInput(value, *event, eventsFromDB, eventHashes)
-		})))
 }
 
 func validateCapabilityInput(capability *model.CapabilityInput) error {
@@ -773,12 +785,12 @@ func validateIntegrationDependencyInput(integrationDependency *model.Integration
 		validation.Field(&integrationDependency.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
-		validation.Field(&integrationDependency.Name, validation.Required, validation.NewStringRule(common.NoNewLines, "title should not contain line breaks"),
+		validation.Field(&integrationDependency.Title, validation.Required, validation.NewStringRule(common.NoNewLines, "title should not contain line breaks"),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, nil, PolicyLevelSap), validation.Length(MinTitleLength, MaxTitleLengthSAPCorePolicy), validation.By(validateTitleDoesNotContainsTerms)),
 			validation.Length(MinTitleLength, MaxTitleLength)),
-		validation.Field(&integrationDependency.ShortDescription, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
-			validation.When(checkResourcePolicyLevel(docPolicyLevel, nil, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinTitleLength, MaxTitleLength), validation.By(validateShortDescriptionDoesNotStartWithResourceName(integrationDependency.Name)))),
-		validation.Field(&integrationDependency.Description, validation.Length(MinDescriptionLength, MaxDescriptionLength),
+		validation.Field(&integrationDependency.ShortDescription, validation.NilOrNotEmpty, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(MinShortDescriptionLength, MaxShortDescriptionRuneLength),
+			validation.When(checkResourcePolicyLevel(docPolicyLevel, nil, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinShortDescriptionLength, MaxShortDescriptionLengthSapCorePolicy), validation.By(validateShortDescriptionDoesNotStartWithResourceName(integrationDependency.Title)))),
+		validation.Field(&integrationDependency.Description, validation.NilOrNotEmpty, validation.Length(MinDescriptionLength, MaxDescriptionLength),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, nil, PolicyLevelSap) && integrationDependency.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(integrationDependency.ShortDescription)))),
 		validation.Field(&integrationDependency.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&integrationDependency.LastUpdate, validation.When(integrationDependency.LastUpdate != nil, validation.By(isValidDate))),

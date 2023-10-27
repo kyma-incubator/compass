@@ -13,10 +13,10 @@ const integrationDependencyTable string = `public.integration_dependencies`
 
 var (
 	idColumns                    = []string{"id"}
-	integrationDependencyColumns = []string{"id", "app_id", "app_template_version_id", "ord_id", "local_tenant_id", "correlation_ids", "name", "short_description", "description", "package_id", "last_update", "visibility",
+	integrationDependencyColumns = []string{"id", "app_id", "app_template_version_id", "ord_id", "local_tenant_id", "correlation_ids", "title", "short_description", "description", "package_id", "last_update", "visibility",
 		"release_status", "sunset_date", "successors", "mandatory", "related_integration_dependencies", "links", "tags", "labels", "documentation_labels", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal",
 		"ready", "created_at", "updated_at", "deleted_at", "error", "resource_hash"}
-	updatableColumns = []string{"ord_id", "local_tenant_id", "correlation_ids", "name", "short_description", "description", "package_id", "last_update", "visibility",
+	updatableColumns = []string{"ord_id", "local_tenant_id", "correlation_ids", "title", "short_description", "description", "package_id", "last_update", "visibility",
 		"release_status", "sunset_date", "successors", "mandatory", "related_integration_dependencies", "links", "tags", "labels", "documentation_labels", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal",
 		"ready", "created_at", "updated_at", "deleted_at", "error", "resource_hash"}
 )

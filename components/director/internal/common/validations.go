@@ -29,10 +29,11 @@ const (
 	// AspectEventResourceRegex represents the valid structure of the eventResource items in Integration Dependency Aspect
 	AspectEventResourceRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// EventResourceEventTypeRegex represents the valid structure of the event type items in event resource subset
-	EventResourceEventTypeRegex = "^([a-z0-9A-Z]+(?:[.][a-z0-9A-Z]+)*)\\.(v0|v[1-9][0-9]*)$"
-
+	EventResourceEventTypeRegex = "^([a-z0-9A-Z]+(?:[.][a-z0-9A-Z]+)(?:[.][a-z0-9A-Z]+)+)\\.(v0|v[1-9][0-9]*)$"
+	//AspectResourcesMinVersionRegex represents the valid structure of the minVersion for apiResources and eventResources in Aspect
+	AspectResourcesMinVersionRegex = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 	// AspectMsg represents the resource name for Aspect used in error message
-	AspectMsg string = "aspect"
+	AspectMsg = "aspect"
 )
 
 // ValidateAspectApiResources validates the JSONB field `apiResources` in Aspect
@@ -44,7 +45,7 @@ func ValidateAspectApiResources(value interface{}) error {
 			validation.Match(regexp.MustCompile(AspectApiResourceRegex)),
 		},
 		"minVersion": {
-			validation.Empty,
+			validation.Match(regexp.MustCompile(AspectResourcesMinVersionRegex)),
 		},
 	})
 }
@@ -58,7 +59,7 @@ func ValidateAspectEventResources(value interface{}) error {
 			validation.Match(regexp.MustCompile(AspectEventResourceRegex)),
 		},
 		"minVersion": {
-			validation.Empty,
+			validation.Match(regexp.MustCompile(AspectResourcesMinVersionRegex)),
 		},
 		"subset": {
 			validation.By(validateAspectEventResourceSubset),
@@ -68,7 +69,18 @@ func ValidateAspectEventResources(value interface{}) error {
 
 // validateAspectEventResourceSubset validates the Aspect Event Resource fields
 func validateAspectEventResourceSubset(value interface{}) error {
-	return ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
+	if value == nil {
+		return nil
+	}
+
+	v, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+
+	var rawValue json.RawMessage = v
+
+	return ValidateJSONArrayOfObjects(rawValue, map[string][]validation.Rule{
 		"eventType": {
 			validation.Required,
 			validation.Match(regexp.MustCompile(EventResourceEventTypeRegex)),
@@ -122,15 +134,15 @@ func ValidateJSONArrayOfObjects(arr interface{}, elementFieldRules map[string][]
 
 // ValidateFieldMandatory validates the mandatory field
 func ValidateFieldMandatory(value interface{}, resource string) error {
-	if value == nil {
-		return errors.New(fmt.Sprintf("%s mandatory field is required", resource))
+	switch v := value.(type) {
+	case *bool:
+		if v == nil {
+			return errors.New(fmt.Sprintf("%s mandatory field is required", resource))
+		}
+		return nil
+	default:
+		return errors.New(fmt.Sprintf("%s mandatory field is not a boolean pointer", resource))
 	}
-	_, ok := value.(bool)
-	if !ok {
-		return errors.New(fmt.Sprintf("%s mandatory field is not a boolean", resource))
-	}
-
-	return nil
 }
 
 func NoNewLines(s string) bool {

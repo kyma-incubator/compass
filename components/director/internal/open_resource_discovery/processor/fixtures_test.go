@@ -47,6 +47,7 @@ var (
 	versionDeprecated      = false
 	versionDeprecatedSince = "v1.0"
 	versionForRemoval      = false
+	mandatoryTrue          = true
 	changeLogEntries       = removeWhitespace(`[
         {
 		  "date": "2020-04-29",
@@ -208,8 +209,8 @@ func fixIntegrationDependencyInputModel(integrationDependencyORDID string) *mode
 		OrdPackageID: str.Ptr(ordPackageID),
 		Aspects: []*model.AspectInput{
 			{
-				Name:      "Test integration aspect name",
-				Mandatory: true,
+				Title:     "Test integration aspect name",
+				Mandatory: &mandatoryTrue,
 			},
 		},
 	}
