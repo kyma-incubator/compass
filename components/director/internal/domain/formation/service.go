@@ -1,6 +1,12 @@
 package formation
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/pkg/errors"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,12 +17,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
