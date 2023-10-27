@@ -53,7 +53,7 @@ type pgRepository struct {
 	updaterGlobal      repo.UpdaterGlobal
 }
 
-// NewRepository missing godoc
+// NewRepository returns a repository instance
 func NewRepository(conv EntityTypeConverter) *pgRepository {
 	return &pgRepository{
 		conv:               conv,
@@ -80,7 +80,7 @@ func (r EntityTypeCollection) Len() int {
 	return len(r)
 }
 
-// Create missing godoc
+// Create creates an Entity Type for a given resource.Type
 func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.EntityType) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
@@ -100,7 +100,7 @@ func (r *pgRepository) CreateGlobal(ctx context.Context, model *model.EntityType
 	return r.creatorGlobal.Create(ctx, r.conv.ToEntity(model))
 }
 
-// Update missing godoc
+// Update updates an Entity Type by ID for a given resource.Type
 func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.EntityType) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
@@ -109,7 +109,7 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.E
 	return r.updater.UpdateSingle(ctx, resource.EntityType, tenant, r.conv.ToEntity(model))
 }
 
-// UpdateGlobal updates n entity type globally without tenant isolation
+// UpdateGlobal updates entity type globally without tenant isolation
 func (r *pgRepository) UpdateGlobal(ctx context.Context, model *model.EntityType) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
@@ -118,24 +118,24 @@ func (r *pgRepository) UpdateGlobal(ctx context.Context, model *model.EntityType
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, r.conv.ToEntity(model))
 }
 
-// Delete missing godoc
+// Delete deletes an Entity Type by ID
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	log.C(ctx).Debugf("Deleting EntityType entity with id %q", id)
 	return r.deleter.DeleteOne(ctx, resource.EntityType, tenant, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
-// DeleteGlobal deletes n Entity Type without tenant isolation
+// DeleteGlobal deletes an Entity Type without tenant isolation
 func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 	log.C(ctx).Debugf("Deleting EntityType entity with id %q", id)
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
-// Exists missing godoc
+// Exists checks if an Entity Type with ID exists
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, resource.EntityType, tenant, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
-// GetByID missing godoc
+// GetByID returns an Entity Type by ID
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.EntityType, error) {
 	log.C(ctx).Debugf("Getting EntityType entity with id %q", id)
 	var entityTypeEnt Entity
@@ -148,7 +148,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.E
 	return entityTypeModel, nil
 }
 
-// GetByIDGlobal gets a netity type by ID without tenant isolation
+// GetByIDGlobal gets an entity type by ID without tenant isolation
 func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.EntityType, error) {
 	log.C(ctx).Debugf("Getting EntityType entity with id %q", id)
 	var entityTypeEnt Entity
@@ -198,7 +198,7 @@ func (r *pgRepository) ListByApplicationIDPage(ctx context.Context, tenantID str
 
 // ListByResourceID lists EntityTypes by a given resource type and resource ID
 func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.EntityType, error) {
-	entityTypeCollection := entityTypeCollection{}
+	entityTypeCollection := EntityTypeCollection{}
 
 	var condition repo.Condition
 	var err error
@@ -219,11 +219,4 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceI
 		entityTypes = append(entityTypes, entityTypeModel)
 	}
 	return entityTypes, nil
-}
-
-type entityTypeCollection []Entity
-
-// Len missing godoc
-func (etc entityTypeCollection) Len() int {
-	return len(etc)
 }

@@ -9,12 +9,12 @@ import (
 type converter struct {
 }
 
-// NewConverter missing godoc
+// NewConverter returns new converter instance
 func NewConverter() *converter {
 	return &converter{}
 }
 
-// ToEntity missing godoc
+// ToEntity converts to Entity
 func (c *converter) ToEntity(entityModel *model.EntityTypeMapping) *Entity {
 	if entityModel == nil {
 		return nil
@@ -38,7 +38,7 @@ func (c *converter) ToEntity(entityModel *model.EntityTypeMapping) *Entity {
 	return output
 }
 
-// FromEntity missing godoc
+// FromEntity converts from model.Entity*
 func (c *converter) FromEntity(entity *Entity) *model.EntityTypeMapping {
 	if entity == nil {
 		return nil

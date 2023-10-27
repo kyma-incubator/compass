@@ -21,7 +21,7 @@ const (
 	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	externalTenantID = "external-tnt"
 	ordID            = "com.compass.v1"
-	localTenantID          = "BusinessPartner"
+	localTenantID    = "BusinessPartner"
 	correlationIDs   = `["sap.s4:sot:BusinessPartner", "sap.s4:sot:CostCenter", "sap.s4:sot:WorkforcePerson"]`
 	level            = "aggregate"
 	title            = "BusinessPartner"

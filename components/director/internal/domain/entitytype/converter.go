@@ -22,12 +22,12 @@ type converter struct {
 	vc VersionConverter
 }
 
-// NewConverter missing godoc
+// NewConverter returns new converter instance
 func NewConverter(vc VersionConverter) *converter {
 	return &converter{vc: vc}
 }
 
-// ToEntity missing godoc
+// ToEntity converts to Entity
 func (c *converter) ToEntity(entityModel *model.EntityType) *Entity {
 	if entityModel == nil {
 		return nil
@@ -87,7 +87,7 @@ func (c *converter) convertVersionToEntity(inVer *model.Version) version.Version
 	return c.vc.ToEntity(*inVer)
 }
 
-// FromEntity missing godoc
+// FromEntity converts from model.Entity*
 func (c *converter) FromEntity(entity *Entity) *model.EntityType {
 	if entity == nil {
 		return nil

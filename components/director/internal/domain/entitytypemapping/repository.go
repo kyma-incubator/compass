@@ -49,7 +49,7 @@ type pgRepository struct {
 	updaterGlobal      repo.UpdaterGlobal
 }
 
-// NewRepository missing godoc
+// NewRepository returns a repository instance
 func NewRepository(conv EntityTypeMappingConverter) *pgRepository {
 	return &pgRepository{
 		conv:               conv,
@@ -76,7 +76,7 @@ func (r EntityTypeMappingCollection) Len() int {
 	return len(r)
 }
 
-// Create missing godoc
+// Create creates an Entity Type Mapping for a given resource.Type
 func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.EntityTypeMapping) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
@@ -96,7 +96,7 @@ func (r *pgRepository) CreateGlobal(ctx context.Context, model *model.EntityType
 	return r.creatorGlobal.Create(ctx, r.conv.ToEntity(model))
 }
 
-// Update missing godoc
+// Update updates an Entity Type Mapping by ID for a given resource.Type
 func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.EntityTypeMapping) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
@@ -114,24 +114,24 @@ func (r *pgRepository) UpdateGlobal(ctx context.Context, model *model.EntityType
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, r.conv.ToEntity(model))
 }
 
-// Delete missing godoc
+// Delete deletes an Entity Type Mapping by ID
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	log.C(ctx).Debugf("Deleting EntityTypeMapping entity with id %q", id)
 	return r.deleter.DeleteOne(ctx, resource.EntityTypeMapping, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// DeleteGlobal deletes n Entity Type Mapping without tenant isolation
+// DeleteGlobal deletes an Entity Type Mapping without tenant isolation
 func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 	log.C(ctx).Debugf("Deleting EntityTypeMapping entity with id %q", id)
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// Exists missing godoc
+// Exists checks if an Entity Type Mapping with ID exists
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, resource.EntityTypeMapping, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// GetByID missing godoc
+// GetByID returns an Entity Type Mapping by ID
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.EntityTypeMapping, error) {
 	log.C(ctx).Debugf("Getting EntityTypeMapping entity with id %q", id)
 	var entityTypeEnt Entity
@@ -144,7 +144,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.E
 	return entityTypeMappingModel, nil
 }
 
-// GetByIDGlobal gets a netity type by ID without tenant isolation
+// GetByIDGlobal gets an entity type by ID without tenant isolation
 func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.EntityTypeMapping, error) {
 	log.C(ctx).Debugf("Getting EntityTypeMapping entity with id %q", id)
 	var entityTypeMappingEnt Entity

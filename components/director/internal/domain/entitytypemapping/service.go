@@ -39,7 +39,7 @@ type service struct {
 	uidService            UIDService
 }
 
-// NewService missing godoc
+// NewService returns a new service instance
 func NewService(entityTypeMappingRepo EntityTypeMappingRepository, uidService UIDService) *service {
 	return &service{
 		entityTypeMappingRepo: entityTypeMappingRepo,
@@ -48,7 +48,7 @@ func NewService(entityTypeMappingRepo EntityTypeMappingRepository, uidService UI
 }
 
 // Create creates an Entity Type Mapping for a given resource.Type
-func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID string, in model.EntityTypeMappingInput) (string, error) {
+func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.EntityTypeMappingInput) (string, error) {
 	id := s.uidService.Generate()
 	entityTypeMapping := in.ToEntityTypeMapping(id, resourceType, resourceID)
 
@@ -77,7 +77,7 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 	return nil
 }
 
-// Delete missing godoc
+// Delete deletes an Entity Type Mapping by ID
 func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
 	if err := s.deleteEntityTypeMapping(ctx, id, resourceType); err != nil {
 		return errors.Wrapf(err, "while deleting Entity Type Mapping with id %s", id)
@@ -88,7 +88,7 @@ func (s *service) Delete(ctx context.Context, resourceType resource.Type, id str
 	return nil
 }
 
-// Exist missing godoc
+// Exist checks if an Entity Type Mapping with ID exists
 func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -103,7 +103,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
-// Get missing godoc
+// Get returns an Entity Type Mapping by ID
 func (s *service) Get(ctx context.Context, id string) (*model.EntityTypeMapping, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -118,7 +118,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.EntityTypeMapping,
 	return entityTypeMapping, nil
 }
 
-// ListByAPIDefinitionID lists entity types by APIDefinitionID
+// ListByAPIDefinitionID lists entity type mappings by APIDefinitionID
 func (s *service) ListByAPIDefinitionID(ctx context.Context, apiDefinitionID string) ([]*model.EntityTypeMapping, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -128,7 +128,7 @@ func (s *service) ListByAPIDefinitionID(ctx context.Context, apiDefinitionID str
 	return s.entityTypeMappingRepo.ListByResourceID(ctx, tnt, apiDefinitionID, resource.API)
 }
 
-// ListByEventDefinitionID lists entity types by EventDefinitionID
+// ListByEventDefinitionID lists entity type mappings by EventDefinitionID
 func (s *service) ListByEventDefinitionID(ctx context.Context, eventDefinitionID string) ([]*model.EntityTypeMapping, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
