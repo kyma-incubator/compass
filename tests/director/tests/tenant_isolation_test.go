@@ -2,7 +2,9 @@ package tests
 
 import (
 	"context"
+	"github.com/davecgh/go-spew/spew"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 	"github.com/kyma-incubator/compass/tests/director/tests/example"
@@ -80,6 +82,9 @@ func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 			var resp graphql.ApplicationPageExt
 			err = testctx.Tc.RunOperationWithoutTenant(ctx, ts.graphqlClient, req, &resp)
 			require.NoError(t, err)
+
+			spew.Dump(resp)
+			time.Sleep(30*time.Second)
 
 			require.Equal(t, 1, resp.TotalCount)
 			require.Len(t, resp.Data, 1)
@@ -277,7 +282,7 @@ func TestSubstituteCaller(t *testing.T) {
 
 	substitutionTenant := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
-	actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "e2e-tenant-access", substitutionTenant)
+	actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "e2e-tenant-access", substitutionTenant) // todo::: change name + tenant var names
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)

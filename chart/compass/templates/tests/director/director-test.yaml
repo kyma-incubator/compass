@@ -39,6 +39,8 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: APP_GATEWAY_OAUTH
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+            - name: APP_COMPASS_EXTERNAL_MTLS_GATEWAY_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_DIRECTOR_USER_NAME_AUTHENTICATOR_URL
               value: "https://{{ .Values.global.tests.userNameAuthenticators.gatewayHost }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
@@ -397,6 +399,8 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_COMPASS_EXTERNAL_MTLS_GATEWAY_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: APP_DIRECTOR_USER_NAME_AUTHENTICATOR_URL
+              value: "https://{{ .Values.global.tests.userNameAuthenticators.gatewayHost }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
@@ -717,6 +721,10 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: APP_GATEWAY_OAUTH
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+            - name: APP_COMPASS_EXTERNAL_MTLS_GATEWAY_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: APP_DIRECTOR_USER_NAME_AUTHENTICATOR_URL
+              value: "https://{{ .Values.global.tests.userNameAuthenticators.gatewayHost }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
@@ -1037,6 +1045,10 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: APP_GATEWAY_OAUTH
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+            - name: APP_COMPASS_EXTERNAL_MTLS_GATEWAY_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: APP_DIRECTOR_USER_NAME_AUTHENTICATOR_URL
+              value: "https://{{ .Values.global.tests.userNameAuthenticators.gatewayHost }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
@@ -1357,6 +1369,10 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: APP_GATEWAY_OAUTH
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+            - name: APP_COMPASS_EXTERNAL_MTLS_GATEWAY_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: APP_DIRECTOR_USER_NAME_AUTHENTICATOR_URL
+              value: "https://{{ .Values.global.tests.userNameAuthenticators.gatewayHost }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
