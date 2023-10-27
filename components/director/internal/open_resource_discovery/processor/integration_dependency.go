@@ -24,7 +24,6 @@ type IntegrationDependencyService interface {
 //go:generate mockery --name=AspectService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AspectService interface {
 	Create(ctx context.Context, integrationDependencyId string, in model.AspectInput) (string, error)
-	Delete(ctx context.Context, id string) error
 	DeleteByIntegrationDependencyID(ctx context.Context, integrationDependencyID string) error
 }
 

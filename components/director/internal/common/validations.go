@@ -66,6 +66,7 @@ func ValidateAspectEventResources(value interface{}) error {
 	})
 }
 
+// validateAspectEventResourceSubset validates the Aspect Event Resource fields
 func validateAspectEventResourceSubset(value interface{}) error {
 	return ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"eventType": {
@@ -75,6 +76,7 @@ func validateAspectEventResourceSubset(value interface{}) error {
 	})
 }
 
+// ValidateJSONArrayOfObjects validates JSON array of objects
 func ValidateJSONArrayOfObjects(arr interface{}, elementFieldRules map[string][]validation.Rule, crossFieldRules ...func(gjson.Result) error) error {
 	if arr == nil {
 		return nil
@@ -118,6 +120,7 @@ func ValidateJSONArrayOfObjects(arr interface{}, elementFieldRules map[string][]
 	return nil
 }
 
+// ValidateFieldMandatory validates the mandatory field
 func ValidateFieldMandatory(value interface{}, resource string) error {
 	if value == nil {
 		return errors.New(fmt.Sprintf("%s mandatory field is required", resource))

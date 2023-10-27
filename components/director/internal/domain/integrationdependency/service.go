@@ -75,7 +75,7 @@ func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTem
 	return s.repo.ListByResourceID(ctx, "", resource.ApplicationTemplateVersion, appTemplateVersionID)
 }
 
-// Create creates integration dependency for an application with given id.
+// Create creates integration dependency for a resource with given id.
 func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) (string, error) {
 	id := s.uidService.Generate()
 	integrationDependency := in.ToIntegrationDependency(id, resourceType, resourceID, packageID, integrationDependencyHash)
@@ -89,7 +89,7 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 	return id, nil
 }
 
-// Update updates existing Integration Dependency.
+// Update updates an existing Integration Dependency.
 func (s *service) Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) error {
 	integrationDependency, err := s.getIntegrationDependency(ctx, id, resourceType)
 	if err != nil {

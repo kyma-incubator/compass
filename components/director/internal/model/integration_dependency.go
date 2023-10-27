@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-// IntegrationDependency missing godoc
+// IntegrationDependency represent structure for IntegrationDependency
 type IntegrationDependency struct {
 	ApplicationID                  *string
 	ApplicationTemplateVersionID   *string
@@ -34,12 +34,12 @@ type IntegrationDependency struct {
 	*BaseEntity
 }
 
-// GetType missing godoc
+// GetType returns Type integrationDependency
 func (*IntegrationDependency) GetType() resource.Type {
 	return resource.IntegrationDependency
 }
 
-// IntegrationDependencyInput missing godoc
+// IntegrationDependencyInput is an input for creating a new IntegrationDependency
 type IntegrationDependencyInput struct {
 	OrdID                          *string         `json:"ordId"`
 	LocalTenantID                  *string         `json:"localTenantId,omitempty"`
@@ -63,7 +63,7 @@ type IntegrationDependencyInput struct {
 	*VersionInput                  `hash:"ignore"`
 }
 
-// ToIntegrationDependency missing godoc
+// ToIntegrationDependency converts IntegrationDependencyInput to ToIntegrationDependency
 func (i *IntegrationDependencyInput) ToIntegrationDependency(id string, resourceType resource.Type, resourceID string, packageID *string, integrationDependencyHash uint64) *IntegrationDependency {
 	if i == nil {
 		return nil

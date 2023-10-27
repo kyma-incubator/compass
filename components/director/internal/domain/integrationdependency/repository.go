@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const integrationDependencyTable string = `"public"."integration_dependencies"`
+const integrationDependencyTable string = `public.integration_dependencies`
 
 var (
 	idColumns                    = []string{"id"}
