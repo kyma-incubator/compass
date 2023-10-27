@@ -1,15 +1,16 @@
 package formation
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
-	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
@@ -235,7 +236,7 @@ func NewService(
 }
 
 // Used for testing
-//nolint
+// nolint
 //
 //go:generate mockery --exported --name=processFunc --output=automock --outpkg=automock --case=underscore --disable-version-string
 type processFunc interface {

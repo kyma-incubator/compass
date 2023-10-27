@@ -2,8 +2,9 @@ package formationconstraint
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
