@@ -847,6 +847,14 @@ func TestORDAggregator(stdT *testing.T) {
 			}
 			t.Log("Successfully verified api spec")
 
+			// Verify EntityTypeMappings
+			apiTitlesWithEntityTypeMappingsCountToCheck := map[string]int{}
+			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE"] = 1
+			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE INTERNAL"] = 2
+			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE PRIVATE"] = 0
+			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfAPIsInSubscription, apiTitlesWithEntityTypeMappingsCountToCheck)
+			t.Log("Successfully verified api entity type mappings")
+
 			// Verify events
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfEventsInSubscription {
@@ -854,6 +862,15 @@ func TestORDAggregator(stdT *testing.T) {
 				return false
 			}
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfEventsInSubscription)
+
+			// Verify EntityTypeMappings
+			eventTitlesWithEntityTypeMappingsCountToCheck := map[string]int{}
+			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE"] = 1
+			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE INTERNAL"] = 2
+			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE PRIVATE"] = 0
+			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfEventsInSubscription, eventTitlesWithEntityTypeMappingsCountToCheck)
+			t.Log("Successfully verified api entity type mappings")
+
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEventsInSubscription, descriptionField)
 			t.Log("Successfully verified events")
 

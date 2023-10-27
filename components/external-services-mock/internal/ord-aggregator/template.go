@@ -427,6 +427,27 @@ const ordDocument = `{
                "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
             }
          ],
+         "entityTypeMappings":[
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "odata",
+                     "entitySetName": "A_OperationalAcctgDocItemCube"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:WorkforcePerson:v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:sap.odm.JobDetails_v1"
+                  }
+               ]
+            }
+         ],
          "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
          "version":"2.1.2"
 		 {{ .additionalProperties }}
@@ -586,6 +607,46 @@ const ordDocument = `{
             {
                "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
                "defaultEntryPoint":"https://exmaple.com/test/v1"
+            }
+         ],
+         "entityTypeMappings":[
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "odata",
+                     "entitySetName": "A_OperationalAcctgDocItemCube"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:WorkforcePerson:v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:sap.odm.JobDetails_v1"
+                  }
+               ]
+            },
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "odata",
+                     "entitySetName": "B_OperationalAcctgDocItemCube"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:WorkforcePerson:v2"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v2"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:sap.odm.JobDetails_v2"
+                  }
+               ]
             }
          ],
          "resourceDefinitions":[
@@ -764,6 +825,24 @@ const ordDocument = `{
                ]
             }
          ],
+         "entityTypeMappings":[
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "json-pointer",
+                     "jsonPointer": "#/components/messages/sap_odm_finance_costobject_CostCenter_Created_v1/payload"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:CostCenter:v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:CostCenter_v1"
+                  }
+               ]
+            }
+         ],         
          "partOfConsumptionBundles":[
             {
                "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1"
@@ -890,6 +969,41 @@ const ordDocument = `{
                "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1"
             }
          ],
+         "entityTypeMappings":[
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "json-pointer",
+                     "jsonPointer": "#/components/messages/sap_odm_finance_costobject_CostCenter_Created_v1/payload"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:CostCenter:v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:CostCenter_v1"
+                  }
+               ]
+            },
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "json-pointer",
+                     "jsonPointer": "#/components/messages/sap_odm_finance_costobject_CostCenter_Created_v2/payload"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:CostCenter:v2"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:CostCenter_v2"
+                  }
+               ]
+            }
+
+         ],         
          "resourceDefinitions":[
             {
                "type":"asyncapi-v2",

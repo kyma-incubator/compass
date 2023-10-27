@@ -674,6 +674,17 @@ func AssertDefaultBundleID(t *testing.T, respBody string, numberOfEntities int, 
 	}
 }
 
+func AssertEntityTypeMappings(t *testing.T, respBody string, numberOfEntities int, entityTitlesWithEntityTypeMappingsCountToCheck map[string]int) {
+	for i := 0; i < numberOfEntities; i++ {
+		entityTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
+		expectedEntityTypeMappings, ok := entityTitlesWithEntityTypeMappingsCountToCheck[entityTitle]
+		if ok && expectedEntityTypeMappings >= 0 {
+			entityTypeMappings := gjson.Get(respBody, fmt.Sprintf("value.%d.entityTypeMappings", i)).Array()
+			require.Equal(t, expectedEntityTypeMappings, len(entityTypeMappings))
+		}
+	}
+}
+
 func AssertRelationBetweenBundleAndEntityFromORDService(t *testing.T, respBody string, entityType string, numberOfEntitiesForBundle map[string]int, entitiesDataForBundle map[string][]string) bool {
 	numberOfBundles := len(gjson.Get(respBody, "value").Array())
 
