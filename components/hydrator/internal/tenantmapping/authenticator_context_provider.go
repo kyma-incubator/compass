@@ -92,7 +92,7 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 	for _, ta := range authn.Attributes.TenantsAttribute {
 		currentTenant := gjson.Get(extra, ta.Key).String()
 		if currentTenant == "" {
-			log.C(ctx).Warnf("tenant attribute %q missing from %s authenticator token", ta.Key, authn.Name)
+			log.C(ctx).Warnf("tenant attribute: %q missing from: %s authenticator token", ta.Key, authn.Name)
 			continue
 		}
 		log.C(ctx).Infof("The priority of tenant: %s is: %d", currentTenant, ta.Priority)
@@ -103,8 +103,7 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 	}
 
 	if externalTenantID == "" {
-		return ObjectContext{}, errors.Errorf("missing tenant attribute from %q authenticator token", authn.Name)
-
+		return ObjectContext{}, errors.Errorf("missing tenant attribute from: %q authenticator token", authn.Name)
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
