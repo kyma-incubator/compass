@@ -444,7 +444,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
-		require.EqualError(t, err, fmt.Sprintf("missing tenant attribute from %q authenticator token", authn.Name))
+		require.EqualError(t, err, fmt.Sprintf("missing tenant attribute from: %q authenticator token", authn.Name))
 	})
 
 	t.Run("returns error when external tenant id that is defined in the Extra map of ReqData cannot be resolved", func(t *testing.T) {
