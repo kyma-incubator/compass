@@ -67,7 +67,7 @@ spec:
                 mountPath: {{ .Values.secret.mountPath }}
           containers:
           - name: keys-supplier
-            image: {{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.k8s_tools) }}
+            image: {{ .Values.global.images.job }}
             command:
             - /bin/bash
             - -c

@@ -6,7 +6,7 @@ metadata:
   name: ory-oathkeeper-pre-install-service-account
   namespace: {{ .Release.Namespace }}
   annotations:
-    helm.sh/hook: "pre-install, pre-upgrade"
+    helm.sh/hook: "pre-install"
     "helm.sh/hook-weight": "0"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 ---
@@ -16,7 +16,7 @@ metadata:
   namespace: {{.Release.Namespace}}
   name: ory-oathkeeper-pre-install-job-role
   annotations:
-    helm.sh/hook: "pre-install, pre-upgrade"
+    helm.sh/hook: "pre-install"
     "helm.sh/hook-weight": "1"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 rules:
@@ -34,7 +34,7 @@ metadata:
   name: ory-oathkeeper-pre-install-job-role-binding
   namespace: {{.Release.Namespace}}
   annotations:
-    helm.sh/hook: "pre-install, pre-upgrade"
+    helm.sh/hook: "pre-install"
     "helm.sh/hook-weight": "2"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 subjects:
@@ -53,7 +53,7 @@ metadata:
   name: {{ include "oathkeeper.fullname" . }}-pre-install-secret
   namespace: {{ .Release.Namespace }}
   annotations:
-    helm.sh/hook: "pre-install, pre-upgrade"
+    helm.sh/hook: "pre-install"
     "helm.sh/hook-weight": "3"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
@@ -80,7 +80,7 @@ spec:
             mountPath: {{ .Values.secret.mountPath }}
       containers:
       - name: keys-supplier
-        image: {{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.k8s_tools) }}
+        image: {{ .Values.global.images.job }}
         command:
           - /bin/bash
           - -c
