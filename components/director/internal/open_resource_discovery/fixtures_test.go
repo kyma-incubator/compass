@@ -886,7 +886,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						Description:              str.Ptr("Description of Aspect"),
 						Mandatory:                &mandatoryTrue,
 						SupportMultipleProviders: &mandatoryTrue,
-						ApiResources:             json.RawMessage("[]"),
+						APIResources:             json.RawMessage("[]"),
 						EventResources:           json.RawMessage("[]"),
 					},
 				},

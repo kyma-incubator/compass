@@ -39,26 +39,26 @@ func NewService(repo AspectRepository, uidService UIDService) *service {
 }
 
 // Create creates aspect for an Integration Dependency with given ID.
-func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyId string, in model.AspectInput) (string, error) {
+func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyID string, in model.AspectInput) (string, error) {
 	id := s.uidService.Generate()
-	aspect := in.ToAspect(id, resourceType, resourceID, integrationDependencyId)
+	aspect := in.ToAspect(id, resourceType, resourceID, integrationDependencyID)
 
 	if err := s.createAspect(ctx, aspect); err != nil {
-		return "", errors.Wrapf(err, "error occurred while creating an Aspect with id %s for integration dependency with id %s", id, integrationDependencyId)
+		return "", errors.Wrapf(err, "error occurred while creating an Aspect with id %s for integration dependency with id %s", id, integrationDependencyID)
 	}
 
-	log.C(ctx).Debugf("Successfully created a Aspect with id %s for integration dependency with id %s", id, integrationDependencyId)
+	log.C(ctx).Debugf("Successfully created a Aspect with id %s for integration dependency with id %s", id, integrationDependencyID)
 
 	return id, nil
 }
 
 // DeleteByIntegrationDependencyID deletes Aspects for an Integration Dependency with given ID
-func (s *service) DeleteByIntegrationDependencyID(ctx context.Context, integrationDependencyId string) error {
-	if err := s.deleteAspectByIntegrationDependencyID(ctx, integrationDependencyId); err != nil {
-		return errors.Wrapf(err, "while deleting Aspects for Integration Dependency with id %s", integrationDependencyId)
+func (s *service) DeleteByIntegrationDependencyID(ctx context.Context, integrationDependencyID string) error {
+	if err := s.deleteAspectByIntegrationDependencyID(ctx, integrationDependencyID); err != nil {
+		return errors.Wrapf(err, "while deleting Aspects for Integration Dependency with id %s", integrationDependencyID)
 	}
 
-	log.C(ctx).Infof("Successfully deleted Aspects for Integration Dependency with id %s", integrationDependencyId)
+	log.C(ctx).Infof("Successfully deleted Aspects for Integration Dependency with id %s", integrationDependencyID)
 
 	return nil
 }
@@ -72,11 +72,11 @@ func (s *service) createAspect(ctx context.Context, aspect *model.Aspect) error 
 	return s.repo.Create(ctx, tnt, aspect)
 }
 
-func (s *service) deleteAspectByIntegrationDependencyID(ctx context.Context, integrationDependencyId string) error {
+func (s *service) deleteAspectByIntegrationDependencyID(ctx context.Context, integrationDependencyID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	return s.repo.DeleteByIntegrationDependencyID(ctx, tnt, integrationDependencyId)
+	return s.repo.DeleteByIntegrationDependencyID(ctx, tnt, integrationDependencyID)
 }

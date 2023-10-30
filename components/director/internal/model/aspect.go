@@ -16,7 +16,7 @@ type Aspect struct {
 	Description                  *string
 	Mandatory                    *bool
 	SupportMultipleProviders     *bool
-	ApiResources                 json.RawMessage
+	APIResources                 json.RawMessage
 	EventResources               json.RawMessage
 	*BaseEntity
 }
@@ -32,7 +32,7 @@ type AspectInput struct {
 	Description              *string         `json:"description"`
 	Mandatory                *bool           `json:"mandatory"`
 	SupportMultipleProviders *bool           `json:"supportMultipleProviders"`
-	ApiResources             json.RawMessage `json:"apiResources"`
+	APIResources             json.RawMessage `json:"apiResources"`
 	EventResources           json.RawMessage `json:"eventResources"`
 }
 
@@ -44,27 +44,24 @@ func (a *AspectInput) Validate() error {
 		validation.Field(&a.Mandatory, validation.By(func(value interface{}) error {
 			return common.ValidateFieldMandatory(value, common.AspectMsg)
 		})),
-		validation.Field(&a.ApiResources, validation.By(func(value interface{}) error {
-			return common.ValidateAspectApiResources(value)
-		})),
-		validation.Field(&a.EventResources, validation.By(func(value interface{}) error {
-			return common.ValidateAspectEventResources(value)
-		})))
+		validation.Field(&a.APIResources, validation.By(common.ValidateAspectAPIResources)),
+		validation.Field(&a.EventResources, validation.By(common.ValidateAspectEventResources)),
+	)
 }
 
 // ToAspect converts AspectInput to Aspect
-func (a *AspectInput) ToAspect(id string, resourceType resource.Type, resourceID string, integrationDependencyId string) *Aspect {
+func (a *AspectInput) ToAspect(id string, resourceType resource.Type, resourceID string, integrationDependencyID string) *Aspect {
 	if a == nil {
 		return nil
 	}
 
 	aspect := &Aspect{
-		IntegrationDependencyID:  integrationDependencyId,
+		IntegrationDependencyID:  integrationDependencyID,
 		Title:                    a.Title,
 		Description:              a.Description,
 		Mandatory:                a.Mandatory,
 		SupportMultipleProviders: a.SupportMultipleProviders,
-		ApiResources:             a.ApiResources,
+		APIResources:             a.APIResources,
 		EventResources:           a.EventResources,
 		BaseEntity: &BaseEntity{
 			ID:    id,

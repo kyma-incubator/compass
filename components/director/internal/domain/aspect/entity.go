@@ -15,7 +15,7 @@ type Entity struct {
 	Description                  sql.NullString `db:"description"`
 	Mandatory                    sql.NullBool   `db:"mandatory"`
 	SupportMultipleProviders     sql.NullBool   `db:"support_multiple_providers"`
-	ApiResources                 sql.NullString `db:"api_resources"`
+	APIResources                 sql.NullString `db:"api_resources"`
 	EventResources               sql.NullString `db:"event_resources"`
 
 	*repo.BaseEntity

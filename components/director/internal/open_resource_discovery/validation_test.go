@@ -419,14 +419,14 @@ var (
 	invalidSuccessorsElement          = `["foo.bar.baz:123456", "invalidValue"]`
 	invalidSuccessorsNonStringElement = `["foo.bar.baz:123456", 992]`
 
-	validApiResourceMissingMinVersion        = `[{"ordId":"sap.s4:apiResource:FOO:v1"}]`
+	validAPIResourceMissingMinVersion        = `[{"ordId":"sap.s4:apiResource:FOO:v1"}]`
 	validEventResourceMissingMinVersion      = `[{"ordId":"sap.billing.sb:eventResource:FOO:v1"}]`
 	validEventResourceMissingSubset          = `[{"ordId":"sap.billing.sb:eventResource:FOO:v1", "minVersion":"1.1.1"}]`
-	invalidApiEventResourcesMissingOrdId     = `[{"minVersion":"1.1.1"}]`
-	invalidApiEventResourcesOrdIdTemplate    = `[{"ordId":"%s"}]`
+	invalidAPIEventResourcesMissingOrdID     = `[{"minVersion":"1.1.1"}]`
+	invalidAPIEventResourcesOrdIDTemplate    = `[{"ordId":"%s"}]`
 	invalidEventResourceMissingEventType     = `[{"ordId":"sap.billing.sb:eventResource:FOO:v1","subset":[{"eventType":""}]}]`
 	invalidEventResourceEventTypeWrongFormat = `[{"ordId":"sap.billing.sb:eventResource:FOO:v1","subset":[{"eventType":"invalid-format"}]}]`
-	invalidApiResourceMinVersion             = `[{"ordId":"sap.s4:apiResource:FOO:v1","minVersion":"invalid-version"}]`
+	invalidAPIResourceMinVersion             = `[{"ordId":"sap.s4:apiResource:FOO:v1","minVersion":"invalid-version"}]`
 	invalidEventResourceMinVersion           = `[{"ordId":"sap.billing.sb:eventResource:FOO:v1","minVersion":"invalid-version"}]`
 
 	invalidRelatedIntegrationDependenciesValue               = `["invalid-value"]`
@@ -7542,7 +7542,7 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 			Name: "Valid missing `apiResources` field Aspect of Integration Dependency",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.IntegrationDependencies[0].Aspects[0].ApiResources = nil
+				doc.IntegrationDependencies[0].Aspects[0].APIResources = nil
 
 				return []*ord.Document{doc}
 			},
@@ -7551,7 +7551,7 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 			Name: "Missing `ordId` field in `apiResources` in Aspect",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.IntegrationDependencies[0].Aspects[0].ApiResources = json.RawMessage(invalidApiEventResourcesMissingOrdId)
+				doc.IntegrationDependencies[0].Aspects[0].APIResources = json.RawMessage(invalidAPIEventResourcesMissingOrdID)
 
 				return []*ord.Document{doc}
 			},
@@ -7559,7 +7559,7 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 			Name: "Exceeded length of `ordId` field in `apiResources` in Aspect",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.IntegrationDependencies[0].Aspects[0].ApiResources = json.RawMessage(fmt.Sprintf(invalidApiEventResourcesOrdIdTemplate, strings.Repeat("a", invalidOrdIDLength)))
+				doc.IntegrationDependencies[0].Aspects[0].APIResources = json.RawMessage(fmt.Sprintf(invalidAPIEventResourcesOrdIDTemplate, strings.Repeat("a", invalidOrdIDLength)))
 
 				return []*ord.Document{doc}
 			},
@@ -7567,7 +7567,7 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 			Name: "Invalid format of `ordId` field in `apiResources` in Aspect",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.IntegrationDependencies[0].Aspects[0].ApiResources = json.RawMessage(fmt.Sprintf(invalidApiEventResourcesOrdIdTemplate, invalidOrdID))
+				doc.IntegrationDependencies[0].Aspects[0].APIResources = json.RawMessage(fmt.Sprintf(invalidAPIEventResourcesOrdIDTemplate, invalidOrdID))
 
 				return []*ord.Document{doc}
 			},
@@ -7575,7 +7575,7 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 			Name: "Valid missing `minVersion` field in `apiResources` in Aspect",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.IntegrationDependencies[0].Aspects[0].ApiResources = json.RawMessage(validApiResourceMissingMinVersion)
+				doc.IntegrationDependencies[0].Aspects[0].APIResources = json.RawMessage(validAPIResourceMissingMinVersion)
 
 				return []*ord.Document{doc}
 			},
@@ -7584,7 +7584,7 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 			Name: "Invalid `minVersion` field in `apiResources` in Aspect",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.IntegrationDependencies[0].Aspects[0].ApiResources = json.RawMessage(invalidApiResourceMinVersion)
+				doc.IntegrationDependencies[0].Aspects[0].APIResources = json.RawMessage(invalidAPIResourceMinVersion)
 
 				return []*ord.Document{doc}
 			},
@@ -7601,7 +7601,7 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 			Name: "Missing `ordId` field in `eventResources` in Aspect",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.IntegrationDependencies[0].Aspects[0].EventResources = json.RawMessage(invalidApiEventResourcesMissingOrdId)
+				doc.IntegrationDependencies[0].Aspects[0].EventResources = json.RawMessage(invalidAPIEventResourcesMissingOrdID)
 
 				return []*ord.Document{doc}
 			},
@@ -7609,7 +7609,7 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 			Name: "Exceeded length of `ordId` field in `eventResources` in Aspect",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.IntegrationDependencies[0].Aspects[0].EventResources = json.RawMessage(fmt.Sprintf(invalidApiEventResourcesOrdIdTemplate, strings.Repeat("a", invalidOrdIDLength)))
+				doc.IntegrationDependencies[0].Aspects[0].EventResources = json.RawMessage(fmt.Sprintf(invalidAPIEventResourcesOrdIDTemplate, strings.Repeat("a", invalidOrdIDLength)))
 
 				return []*ord.Document{doc}
 			},
@@ -7617,7 +7617,7 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 			Name: "Invalid format of `ordId` field in `eventResources` in Aspect",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.IntegrationDependencies[0].Aspects[0].EventResources = json.RawMessage(fmt.Sprintf(invalidApiEventResourcesOrdIdTemplate, invalidOrdID))
+				doc.IntegrationDependencies[0].Aspects[0].EventResources = json.RawMessage(fmt.Sprintf(invalidAPIEventResourcesOrdIDTemplate, invalidOrdID))
 
 				return []*ord.Document{doc}
 			},
@@ -7912,7 +7912,6 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 			if test.AfterTest != nil {
 				test.AfterTest()
 			}
-			fmt.Println(err)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {

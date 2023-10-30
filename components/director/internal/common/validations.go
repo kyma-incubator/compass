@@ -24,25 +24,25 @@ const (
 	// MaxOrdIDLength represents the maximal accepted length of the OrdID field
 	MaxOrdIDLength = 255
 
-	// AspectApiResourceRegex represents the valid structure of the apiResource items in Integration Dependency Aspect
-	AspectApiResourceRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(apiResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+	// AspectAPIResourceRegex represents the valid structure of the apiResource items in Integration Dependency Aspect
+	AspectAPIResourceRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(apiResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// AspectEventResourceRegex represents the valid structure of the eventResource items in Integration Dependency Aspect
 	AspectEventResourceRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// EventResourceEventTypeRegex represents the valid structure of the event type items in event resource subset
 	EventResourceEventTypeRegex = "^([a-z0-9A-Z]+(?:[.][a-z0-9A-Z]+)(?:[.][a-z0-9A-Z]+)+)\\.(v0|v[1-9][0-9]*)$"
-	//AspectResourcesMinVersionRegex represents the valid structure of the minVersion for apiResources and eventResources in Aspect
+	// AspectResourcesMinVersionRegex represents the valid structure of the minVersion for apiResources and eventResources in Aspect
 	AspectResourcesMinVersionRegex = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 	// AspectMsg represents the resource name for Aspect used in error message
 	AspectMsg = "aspect"
 )
 
-// ValidateAspectApiResources validates the JSONB field `apiResources` in Aspect
-func ValidateAspectApiResources(value interface{}) error {
+// ValidateAspectAPIResources validates the JSONB field `apiResources` in Aspect
+func ValidateAspectAPIResources(value interface{}) error {
 	return ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"ordId": {
 			validation.Required,
 			validation.Length(MinOrdIDLength, MaxOrdIDLength),
-			validation.Match(regexp.MustCompile(AspectApiResourceRegex)),
+			validation.Match(regexp.MustCompile(AspectAPIResourceRegex)),
 		},
 		"minVersion": {
 			validation.Match(regexp.MustCompile(AspectResourcesMinVersionRegex)),
@@ -145,6 +145,7 @@ func ValidateFieldMandatory(value interface{}, resource string) error {
 	}
 }
 
+// NoNewLines checks if a string has no new lines
 func NoNewLines(s string) bool {
 	return !strings.Contains(s, "\\n")
 }

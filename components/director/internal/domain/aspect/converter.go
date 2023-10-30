@@ -8,6 +8,7 @@ import (
 type converter struct {
 }
 
+// NewConverter returns a new Converter that can later be used to make the conversions between the service and repository layer representations of a Compass Aspect.
 func NewConverter() *converter {
 	return &converter{}
 }
@@ -22,7 +23,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Aspect {
 		Description:                  repo.StringPtrFromNullableString(entity.Description),
 		Mandatory:                    repo.BoolPtrFromNullableBool(entity.Mandatory),
 		SupportMultipleProviders:     repo.BoolPtrFromNullableBool(entity.SupportMultipleProviders),
-		ApiResources:                 repo.JSONRawMessageFromNullableString(entity.ApiResources),
+		APIResources:                 repo.JSONRawMessageFromNullableString(entity.APIResources),
 		EventResources:               repo.JSONRawMessageFromNullableString(entity.EventResources),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
@@ -45,7 +46,7 @@ func (c *converter) ToEntity(aspectModel *model.Aspect) *Entity {
 		Description:                  repo.NewNullableString(aspectModel.Description),
 		Mandatory:                    repo.NewNullableBool(aspectModel.Mandatory),
 		SupportMultipleProviders:     repo.NewNullableBool(aspectModel.SupportMultipleProviders),
-		ApiResources:                 repo.NewNullableStringFromJSONRawMessage(aspectModel.ApiResources),
+		APIResources:                 repo.NewNullableStringFromJSONRawMessage(aspectModel.APIResources),
 		EventResources:               repo.NewNullableStringFromJSONRawMessage(aspectModel.EventResources),
 		BaseEntity: &repo.BaseEntity{
 			ID:        aspectModel.ID,

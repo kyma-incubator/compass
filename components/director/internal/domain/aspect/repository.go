@@ -66,6 +66,6 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.As
 }
 
 // DeleteByIntegrationDependencyID deletes Aspects for an Integration Dependency with given ID.
-func (r *pgRepository) DeleteByIntegrationDependencyID(ctx context.Context, tenant string, integrationDependencyId string) error {
-	return r.deleter.DeleteMany(ctx, resource.Aspect, tenant, repo.Conditions{repo.NewEqualCondition("integration_dependency_id", integrationDependencyId)})
+func (r *pgRepository) DeleteByIntegrationDependencyID(ctx context.Context, tenant string, integrationDependencyID string) error {
+	return r.deleter.DeleteMany(ctx, resource.Aspect, tenant, repo.Conditions{repo.NewEqualCondition("integration_dependency_id", integrationDependencyID)})
 }

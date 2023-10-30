@@ -16,7 +16,7 @@ func TestIntegrationDependencyInput_ToIntegrationDependency(t *testing.T) {
 	appTemplateVersionID := "test-app-tmpl-id"
 	name := "Test Name"
 	desc := "Test Description"
-	pkgId := "test-pkg-id"
+	pkgID := "test-pkg-id"
 
 	testCases := []struct {
 		Name         string
@@ -35,7 +35,7 @@ func TestIntegrationDependencyInput_ToIntegrationDependency(t *testing.T) {
 				ApplicationID: &appID,
 				Title:         name,
 				Description:   &desc,
-				PackageID:     &pkgId,
+				PackageID:     &pkgID,
 				BaseEntity: &model.BaseEntity{
 					ID:    id,
 					Ready: true,
@@ -54,7 +54,7 @@ func TestIntegrationDependencyInput_ToIntegrationDependency(t *testing.T) {
 				ApplicationTemplateVersionID: &appTemplateVersionID,
 				Title:                        name,
 				Description:                  &desc,
-				PackageID:                    &pkgId,
+				PackageID:                    &pkgID,
 				BaseEntity: &model.BaseEntity{
 					ID:    id,
 					Ready: true,
@@ -73,7 +73,7 @@ func TestIntegrationDependencyInput_ToIntegrationDependency(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// WHEN
-			result := testCase.Input.ToIntegrationDependency(id, testCase.ResourceType, testCase.ResourceID, &pkgId, 0)
+			result := testCase.Input.ToIntegrationDependency(id, testCase.ResourceType, testCase.ResourceID, &pkgID, 0)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)
