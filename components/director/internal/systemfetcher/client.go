@@ -88,13 +88,14 @@ func (c *Client) fetchSystemsForTenant(ctx context.Context, url, tenant string) 
 			log.C(ctx).Println("Failed to close HTTP response body")
 		}
 	}()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: expected: %d, but got: %d", http.StatusOK, resp.StatusCode)
-	}
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse HTTP response body")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: expected: %d, but got: %d. Body: %s", http.StatusOK, resp.StatusCode, string(respBody))
 	}
 
 	var systems []System
