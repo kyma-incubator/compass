@@ -422,14 +422,14 @@ func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.Bus
 }
 
 func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region, licenseType, customerID string) error {
-	labelMappings := map[string]string{
+	labelKeyValueMappings := map[string]string{
 		SubdomainLabelKey:   subdomain,
 		RegionLabelKey:      region,
 		LicenseTypeLabelKey: licenseType,
 		CustomerIDLabelKey:  customerID,
 	}
 
-	for labelKey, labelValue := range labelMappings {
+	for labelKey, labelValue := range labelKeyValueMappings {
 		if len(labelValue) > 0 {
 			if err := s.UpsertLabel(ctx, tenantID, labelKey, labelValue); err != nil {
 				return errors.Wrapf(err, "while setting %q label for tenant with ID %s", labelKey, tenantID)
