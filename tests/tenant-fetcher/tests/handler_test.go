@@ -865,10 +865,10 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 	// cleanup global account and subaccounts
 	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(subaccountExternalTenants, gaExternalTenant))
 
-	deleteEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, "ALEXDeleteEvent", directoryParentGUID, subaccountParent, "", "", subaccountDeleteSubPath, customerIDs[0])
+	deleteEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, "", "", subaccountDeleteSubPath, customerIDs[0])
 	setMockTenantEvents(t, genMockPage(deleteEvent, 1), subaccountDeleteSubPath)
 	defer cleanupMockEvents(t, subaccountDeleteSubPath)
-	createEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, "ALEXCreateEvent", directoryParentGUID, subaccountParent, "", "", subaccountCreateSubPath, customerIDs[1])
+	createEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, "", "", subaccountCreateSubPath, customerIDs[1])
 	setMockTenantEvents(t, genMockPage(createEvent, 1), subaccountCreateSubPath)
 	defer cleanupMockEvents(t, subaccountCreateSubPath)
 
