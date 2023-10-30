@@ -101,6 +101,7 @@ type EventDefinitionInput struct {
 	ResourceDefinitions                     []*EventResourceDefinition    `json:"resourceDefinitions"`
 	PartOfConsumptionBundles                []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 	DefaultConsumptionBundle                *string                       `json:"defaultConsumptionBundle"`
+	EntityTypeMappings                      []*EntityTypeMapping          `json:"entityTypeMappings"`
 	DocumentationLabels                     json.RawMessage               `json:"documentationLabels"`
 	CorrelationIDs                          json.RawMessage               `json:"correlationIds,omitempty"`
 	LastUpdate                              *string                       `json:"lastUpdate"`

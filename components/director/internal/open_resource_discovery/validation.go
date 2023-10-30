@@ -542,6 +542,9 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 		validation.Field(&api.Extensible, validation.By(func(value interface{}) error {
 			return validateExtensibleField(value, docPolicyLevel)
 		})),
+		validation.Field(&api.EntityTypeMappings, validation.By(func(value interface{}) error {
+			return validateEntityTypeMappings(value)
+		})),
 		validation.Field(&api.DocumentationLabels, validation.By(validateDocumentationLabels)),
 		validation.Field(&api.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
@@ -623,6 +626,9 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 		validation.Field(&event.CustomImplementationStandardDescription, validation.When(event.ImplementationStandard != nil && *event.ImplementationStandard == EventImplementationStandardCustom, validation.Required).Else(validation.Empty)),
 		validation.Field(&event.Extensible, validation.By(func(value interface{}) error {
 			return validateExtensibleField(value, docPolicyLevel)
+		})),
+		validation.Field(&event.EntityTypeMappings, validation.By(func(value interface{}) error {
+			return validateEntityTypeMappings(value)
 		})),
 		validation.Field(&event.DocumentationLabels, validation.By(validateDocumentationLabels)),
 		validation.Field(&event.CorrelationIDs, validation.By(func(value interface{}) error {
@@ -1552,6 +1558,43 @@ func validateEventPartOfConsumptionBundles(value interface{}, regexPattern *rege
 
 		if br.DefaultTargetURL != "" {
 			return errors.New("events are not supposed to have defaultEntryPoint")
+		}
+	}
+	return nil
+}
+
+func validateEntityTypeMappings(value interface{}) error {
+	entityTypeMappings, ok := value.([]*model.EntityTypeMapping)
+	if !ok {
+		return errors.New("error while casting to EntityTypeMapping")
+	}
+
+	if entityTypeMappings != nil && len(entityTypeMappings) == 0 {
+		return errors.New("entityTypeMappings should not be empty if present")
+	}
+	for _, entityTypeMapping := range entityTypeMappings {
+		// Validate APIModelSelectors
+		var apiModelSelectors []*model.APIModelSelector
+		if err := json.Unmarshal(entityTypeMapping.APIModelSelectors, &apiModelSelectors); err != nil {
+			return errors.New("error while unmarshalling APIModelSelectors for EntityTypeMapping")
+		}
+		for _, apiModelSelector := range apiModelSelectors {
+			err := apiModelSelector.Validate()
+			if err != nil {
+				return err
+			}
+		}
+
+		// Validate EntityTypeTargets
+		var entityTypeTargets []*model.EntityTypeTarget
+		if err := json.Unmarshal(entityTypeMapping.EntityTypeTargets, &entityTypeTargets); err != nil {
+			return errors.New("error while unmarshalling EntityTypeTarget for EntityTypeMapping")
+		}
+		for _, entityTypeTarget := range entityTypeTargets {
+			err := entityTypeTarget.Validate()
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

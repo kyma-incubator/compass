@@ -235,6 +235,46 @@ var (
         }
       ]`)
 
+	apiAPIModelSelectors = removeWhitespace(`[
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonRead"
+		},
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonUpdate"
+		},
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonCreate"
+		}
+	  ]`)
+
+	apiEntityTypeTargets = removeWhitespace(`[
+		{
+		  "ordId": "sap.odm:entityType:WorkforcePerson:v1"
+		},
+		{
+		  "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v1"
+		}
+	  ]`)
+
+	eventAPIModelSelectors = removeWhitespace(`[
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/components/messages/sap_odm_finance_costobject_CostCenter_Created_v1/payload"
+		}
+	  ]`)
+
+	eventEntityTypeTargets = removeWhitespace(`[
+		{
+		  "ordId": "sap.odm:entityType:CostCenter:v1"
+		},
+		{
+		  "correlationId": "sap.s4:csnEntity:CostCenter_v1"
+		}
+	  ]`)
+
 	boolPtr = true
 
 	apisFromDB = map[string]*model.APIDefinition{
@@ -560,6 +600,12 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						DefaultTargetURL: "https://exmaple.com/test/v1",
 					},
 				},
+				EntityTypeMappings: []*model.EntityTypeMapping{
+					{
+						APIModelSelectors: json.RawMessage(apiAPIModelSelectors),
+						EntityTypeTargets: json.RawMessage(apiEntityTypeTargets),
+					},
+				},
 				VersionInput: &model.VersionInput{
 					Value: "2.1.2",
 				},
@@ -671,6 +717,12 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				PartOfConsumptionBundles: []*model.ConsumptionBundleReference{
 					{
 						BundleOrdID: bundleORDID,
+					},
+				},
+				EntityTypeMappings: []*model.EntityTypeMapping{
+					{
+						APIModelSelectors: json.RawMessage(eventAPIModelSelectors),
+						EntityTypeTargets: json.RawMessage(eventEntityTypeTargets),
 					},
 				},
 				VersionInput: &model.VersionInput{

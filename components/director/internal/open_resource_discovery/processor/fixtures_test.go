@@ -33,6 +33,8 @@ const (
 var (
 	fixedTimestamp         = time.Now()
 	appID                  = "appID"
+	apiID                  = "apiID"
+	eventID                = "eventID"
 	appTemplateVersionID   = "appTemplateVersionID"
 	shortDescription       = "A business partner is a person, an organization, or a group of persons or organizations in which a company has a business interest."
 	description            = "A workforce person is a natural person with a work agreement or relationship in form of a work assignment; it can be an employee or a contingent worker.\n"
@@ -109,6 +111,30 @@ var (
 	documentationLabels = removeWhitespace(`{
         "Some Aspect": ["Markdown Documentation [with links](#)", "With multiple values"]
       }`)
+	apiModelSelectors = removeWhitespace(`[
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonRead"
+		},
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonUpdate"
+		},
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonCreate"
+		}
+	  ]`)
+
+	entityTypeTargets = removeWhitespace(`[
+		{
+		  "ordId": "sap.odm:entityType:WorkforcePerson:v1"
+		},
+		{
+		  "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v1"
+		}
+	  ]`)
+
 	errTest = errors.New("test error")
 )
 
@@ -215,5 +241,27 @@ func fixPackages() []*model.Package {
 			LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
 			Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 		},
+	}
+}
+
+func fixEntityTypeMappingModel(entityTypeMappingID string) *model.EntityTypeMapping {
+	return &model.EntityTypeMapping{
+		BaseEntity: &model.BaseEntity{
+			ID:        entityTypeMappingID,
+			Ready:     true,
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+			Error:     nil,
+		},
+		APIModelSelectors: json.RawMessage(apiModelSelectors),
+		EntityTypeTargets: json.RawMessage(entityTypeTargets),
+	}
+}
+
+func fixEntityTypeMappingInputModel() *model.EntityTypeMappingInput {
+	return &model.EntityTypeMappingInput{
+		APIModelSelectors: json.RawMessage(apiModelSelectors),
+		EntityTypeTargets: json.RawMessage(entityTypeTargets),
 	}
 }
