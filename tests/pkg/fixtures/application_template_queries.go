@@ -39,7 +39,7 @@ func GetApplicationTemplate(t require.TestingT, ctx context.Context, gqlClient *
 	appTpl := graphql.ApplicationTemplate{}
 
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &appTpl)
-	require.NoError(t, err)
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 	return appTpl
 }
 
