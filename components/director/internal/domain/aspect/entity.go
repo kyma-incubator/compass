@@ -3,6 +3,7 @@ package aspect
 import (
 	"database/sql"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Entity is a representation of an Aspect in the database.
@@ -20,13 +21,13 @@ type Entity struct {
 	*repo.BaseEntity
 }
 
-// DecorateWithTenantID decorates the entity with the given tenant ID.
-func (e *Entity) DecorateWithTenantID(tenant string) interface{} {
-	return struct {
-		*Entity
-		TenantID string `db:"tenant_id"`
-	}{
-		Entity:   e,
-		TenantID: tenant,
+// GetParent returns the parent type and the parent ID of the entity.
+func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
+	if e.ApplicationID.Valid {
+		return resource.Application, e.ApplicationID.String
+	} else if e.ApplicationTemplateVersionID.Valid {
+		return resource.ApplicationTemplateVersion, e.ApplicationTemplateVersionID.String
 	}
+
+	return "", ""
 }
