@@ -70,9 +70,6 @@ global:
         tenant-fetcher:
           authenticator:
             enabled: true
-        user-name-authenticator:
-          authenticator:
-            enabled: true
   hydrator:
     http:
       client:
@@ -103,11 +100,6 @@ global:
       destinationOauthSecret:
         manage: true
       oauthSecret:
-        manage: true
-    userNameAuthenticators:
-      account:
-        manage: true
-      subaccount:
         manage: true
     basicCredentials:
       manage: true
