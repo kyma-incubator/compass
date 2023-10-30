@@ -774,7 +774,7 @@ global:
           cfg:
             config:
               api:
-                url: http://compass-hydrator.compass-system.svc.cluster.local:3000/hydrators/authn-mapping/xsuaa
+                url: http://compass-hydrator.compass-system.svc.cluster.local:3000/hydrators/authn-mapping/user-name-authenticator
                 retry:
                   give_up_after: 6s
                   max_delay: 2000ms
