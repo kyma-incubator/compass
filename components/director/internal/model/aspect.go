@@ -9,13 +9,15 @@ import (
 
 // Aspect represent structure for Aspect
 type Aspect struct {
-	IntegrationDependencyID  string
-	Title                    string
-	Description              *string
-	Mandatory                *bool
-	SupportMultipleProviders *bool
-	ApiResources             json.RawMessage
-	EventResources           json.RawMessage
+	ApplicationID                *string
+	ApplicationTemplateVersionID *string
+	IntegrationDependencyID      string
+	Title                        string
+	Description                  *string
+	Mandatory                    *bool
+	SupportMultipleProviders     *bool
+	ApiResources                 json.RawMessage
+	EventResources               json.RawMessage
 	*BaseEntity
 }
 
@@ -51,7 +53,7 @@ func (a *AspectInput) Validate() error {
 }
 
 // ToAspect converts AspectInput to Aspect
-func (a *AspectInput) ToAspect(id string, integrationDependencyId string) *Aspect {
+func (a *AspectInput) ToAspect(id string, resourceType resource.Type, resourceID string, integrationDependencyId string) *Aspect {
 	if a == nil {
 		return nil
 	}
@@ -68,6 +70,12 @@ func (a *AspectInput) ToAspect(id string, integrationDependencyId string) *Aspec
 			ID:    id,
 			Ready: true,
 		},
+	}
+
+	if resourceType.IsTenantIgnorable() {
+		aspect.ApplicationTemplateVersionID = &resourceID
+	} else if resourceType == resource.Application {
+		aspect.ApplicationID = &resourceID
 	}
 
 	return aspect

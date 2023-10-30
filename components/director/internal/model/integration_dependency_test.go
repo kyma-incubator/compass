@@ -28,12 +28,12 @@ func TestIntegrationDependencyInput_ToIntegrationDependency(t *testing.T) {
 		{
 			Name: "All properties given for App",
 			Input: &model.IntegrationDependencyInput{
-				Name:        name,
+				Title:       name,
 				Description: &desc,
 			},
 			Expected: &model.IntegrationDependency{
 				ApplicationID: &appID,
-				Name:          name,
+				Title:         name,
 				Description:   &desc,
 				PackageID:     &pkgId,
 				BaseEntity: &model.BaseEntity{
@@ -47,12 +47,12 @@ func TestIntegrationDependencyInput_ToIntegrationDependency(t *testing.T) {
 		{
 			Name: "All properties given for App Template Version",
 			Input: &model.IntegrationDependencyInput{
-				Name:        name,
+				Title:       name,
 				Description: &desc,
 			},
 			Expected: &model.IntegrationDependency{
 				ApplicationTemplateVersionID: &appTemplateVersionID,
-				Name:                         name,
+				Title:                        name,
 				Description:                  &desc,
 				PackageID:                    &pkgId,
 				BaseEntity: &model.BaseEntity{

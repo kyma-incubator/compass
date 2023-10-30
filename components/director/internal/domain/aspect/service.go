@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 )
 
@@ -38,9 +39,9 @@ func NewService(repo AspectRepository, uidService UIDService) *service {
 }
 
 // Create creates aspect for an Integration Dependency with given ID.
-func (s *service) Create(ctx context.Context, integrationDependencyId string, in model.AspectInput) (string, error) {
+func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyId string, in model.AspectInput) (string, error) {
 	id := s.uidService.Generate()
-	aspect := in.ToAspect(id, integrationDependencyId)
+	aspect := in.ToAspect(id, resourceType, resourceID, integrationDependencyId)
 
 	if err := s.createAspect(ctx, aspect); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating an Aspect with id %s for integration dependency with id %s", id, integrationDependencyId)

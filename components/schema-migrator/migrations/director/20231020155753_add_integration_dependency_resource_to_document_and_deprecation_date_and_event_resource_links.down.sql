@@ -17,6 +17,7 @@ DROP VIEW IF EXISTS integration_dependencies_successors;
 DROP VIEW IF EXISTS correlation_ids_integration_dependencies;
 DROP VIEW IF EXISTS integration_dependencies_tenants;
 
+DROP VIEW IF EXISTS event_resource_links;
 DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_apis;
 DROP VIEW IF EXISTS tenants_events;
@@ -39,7 +40,8 @@ ALTER TABLE api_definitions
     DROP COLUMN deprecation_date;
 
 ALTER TABLE event_api_definitions
-    DROP COLUMN deprecation_date;
+    DROP COLUMN deprecation_date,
+    DROP COLUMN event_resource_links;
 
 ALTER TABLE entity_types
     DROP COLUMN deprecation_date;

@@ -7,13 +7,15 @@ import (
 
 // Entity is a representation of an Aspect in the database.
 type Entity struct {
-	IntegrationDependencyID  string         `db:"integration_dependency_id"`
-	Title                    string         `db:"title"`
-	Description              sql.NullString `db:"description"`
-	Mandatory                sql.NullBool   `db:"mandatory"`
-	SupportMultipleProviders sql.NullBool   `db:"support_multiple_providers"`
-	ApiResources             sql.NullString `db:"api_resources"`
-	EventResources           sql.NullString `db:"event_resources"`
+	ApplicationID                sql.NullString `db:"app_id"`
+	ApplicationTemplateVersionID sql.NullString `db:"app_template_version_id"`
+	IntegrationDependencyID      string         `db:"integration_dependency_id"`
+	Title                        string         `db:"title"`
+	Description                  sql.NullString `db:"description"`
+	Mandatory                    sql.NullBool   `db:"mandatory"`
+	SupportMultipleProviders     sql.NullBool   `db:"support_multiple_providers"`
+	ApiResources                 sql.NullString `db:"api_resources"`
+	EventResources               sql.NullString `db:"event_resources"`
 
 	*repo.BaseEntity
 }

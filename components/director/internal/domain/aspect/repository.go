@@ -12,7 +12,7 @@ import (
 const aspectsTable string = `public.aspects`
 
 var (
-	aspectColumns = []string{"id", "integration_dependency_id", "title", "description", "mandatory", "support_multiple_providers",
+	aspectColumns = []string{"id", "app_id", "app_template_version_id", "integration_dependency_id", "title", "description", "mandatory", "support_multiple_providers",
 		"api_resources", "event_resources", "ready", "created_at", "updated_at", "deleted_at", "error"}
 )
 

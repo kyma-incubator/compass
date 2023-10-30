@@ -11,7 +11,8 @@ ALTER TABLE api_definitions
     ADD COLUMN deprecation_date VARCHAR(256);
 -- Alter table event_api_definitions - add column `deprecation_date`
 ALTER TABLE event_api_definitions
-    ADD COLUMN deprecation_date VARCHAR(256);
+    ADD COLUMN deprecation_date VARCHAR(256),
+    ADD COLUMN event_resource_links JSONB;
 -- Alter table entity_types - add column `deprecation_date`
 ALTER TABLE entity_types
     ADD COLUMN deprecation_date VARCHAR(256);
@@ -104,7 +105,7 @@ CREATE OR REPLACE VIEW tenants_events
              countries, release_status, sunset_date, labels, package_id, visibility, disabled, part_of_products,
              line_of_business, industry, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard,
              custom_implementation_standard_description, extensible_supported, extensible_description, successors,
-             resource_hash, correlation_ids, last_update, deprecation_date)
+             resource_hash, correlation_ids, last_update, deprecation_date, event_resource_links)
 AS
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.formation_id,
@@ -150,7 +151,8 @@ SELECT DISTINCT t_apps.tenant_id,
                 events.resource_hash,
                 events.correlation_ids,
                 events.last_update,
-                events.deprecation_date
+                events.deprecation_date,
+                events.event_resource_links
 FROM event_api_definitions events
          JOIN (SELECT a1.id,
                       a1.tenant_id,
@@ -258,6 +260,14 @@ FROM specifications spec
                       c.tenant_id
                FROM tenants_capabilities c) t_api_event_capability_def
               ON spec.api_def_id = t_api_event_capability_def.id OR spec.event_def_id = t_api_event_capability_def.id or spec.capability_def_id = t_api_event_capability_def.id;
+
+CREATE VIEW event_resource_links AS
+SELECT id                   AS event_definition_id,
+       actions.type         AS type,
+       actions."customType" AS custom_type,
+       actions.url          AS url
+FROM event_api_definitions,
+     jsonb_to_recordset(event_api_definitions.event_resource_links) AS actions(type TEXT, "customType" TEXT, url TEXT);
 
 
 -- Create table for integration_dependencies
@@ -418,9 +428,11 @@ FROM integration_dependencies,
 CREATE TABLE aspects (
     id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     integration_dependency_id UUID NOT NULL,
-    CONSTRAINT aspects_integration_dependency_id_fkey FOREIGN KEY (integration_dependency_id) REFERENCES integration_dependencies (id) ON DELETE CASCADE,
+        CONSTRAINT aspects_integration_dependency_id_fkey FOREIGN KEY (integration_dependency_id) REFERENCES integration_dependencies (id) ON DELETE CASCADE,
     app_id UUID NOT NULL,
-    CONSTRAINT aspects_app_id_fkey FOREIGN KEY (app_id) REFERENCES applications (id) ON DELETE CASCADE,
+        CONSTRAINT aspects_app_id_fkey FOREIGN KEY (app_id) REFERENCES applications (id) ON DELETE CASCADE,
+    app_template_version_id UUID,
+        CONSTRAINT aspects_app_template_version_id_fk FOREIGN KEY (app_template_version_id) REFERENCES app_template_versions (id) ON DELETE CASCADE,
     title VARCHAR(256) NOT NULL,
     description TEXT,
     mandatory BOOLEAN NOT NULL,
@@ -428,7 +440,7 @@ CREATE TABLE aspects (
     api_resources JSONB,
     event_resources JSONB,
     ready BOOLEAN DEFAULT TRUE,
-    CONSTRAINT aspect_id_ready_unique UNIQUE (id, ready),
+        CONSTRAINT aspect_id_ready_unique UNIQUE (id, ready),
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,

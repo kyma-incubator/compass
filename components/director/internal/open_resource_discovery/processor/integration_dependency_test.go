@@ -70,7 +70,7 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 			AspectSvcFn: func() *automock.AspectService {
 				aspectSvc := &automock.AspectService{}
 				aspectSvc.On("DeleteByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(nil).Once()
-				aspectSvc.On("Create", txtest.CtxWithDBMatcher(), integrationDependencyID, *integrationDependencyInputs[0].Aspects[0]).Return(aspectID, nil).Once()
+				aspectSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyID, *integrationDependencyInputs[0].Aspects[0]).Return(aspectID, nil).Once()
 				return aspectSvc
 			},
 			InputResource:                resource.Application,
@@ -93,7 +93,7 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 			AspectSvcFn: func() *automock.AspectService {
 				aspectSvc := &automock.AspectService{}
 				aspectSvc.On("DeleteByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(nil).Once()
-				aspectSvc.On("Create", txtest.CtxWithDBMatcher(), integrationDependencyID, *integrationDependencyInputs[0].Aspects[0]).Return(aspectID, nil).Once()
+				aspectSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, integrationDependencyID, *integrationDependencyInputs[0].Aspects[0]).Return(aspectID, nil).Once()
 				return aspectSvc
 			},
 			InputResource:                resource.ApplicationTemplateVersion,
@@ -117,7 +117,7 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 			AspectSvcFn: func() *automock.AspectService {
 				aspectSvc := &automock.AspectService{}
 				aspectSvc.On("DeleteByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(nil).Once()
-				aspectSvc.On("Create", txtest.CtxWithDBMatcher(), integrationDependencyID, *integrationDependencyInputs[0].Aspects[0]).Return(aspectID, nil).Once()
+				aspectSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyID, *integrationDependencyInputs[0].Aspects[0]).Return(aspectID, nil).Once()
 				return aspectSvc
 			},
 			InputResource:                resource.Application,
@@ -290,7 +290,7 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 			AspectSvcFn: func() *automock.AspectService {
 				aspectSvc := &automock.AspectService{}
 				aspectSvc.On("DeleteByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(nil).Once()
-				aspectSvc.On("Create", txtest.CtxWithDBMatcher(), integrationDependencyID, *integrationDependencyCreateInputs[0].Aspects[0]).Return("", testErr).Once()
+				aspectSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyID, *integrationDependencyCreateInputs[0].Aspects[0]).Return("", testErr).Once()
 				return aspectSvc
 			},
 			InputResource:                resource.Application,
@@ -318,7 +318,7 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 			AspectSvcFn: func() *automock.AspectService {
 				aspectSvc := &automock.AspectService{}
 				aspectSvc.On("DeleteByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(nil).Once()
-				aspectSvc.On("Create", txtest.CtxWithDBMatcher(), integrationDependencyID, *integrationDependencyInputs[0].Aspects[0]).Return(aspectID, nil).Once()
+				aspectSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyID, *integrationDependencyInputs[0].Aspects[0]).Return(aspectID, nil).Once()
 				return aspectSvc
 			},
 			InputResource:                resource.Application,
