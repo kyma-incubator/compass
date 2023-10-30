@@ -2,6 +2,8 @@ package formationconstraint
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -198,6 +200,30 @@ func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturn
 			Value: json.RawMessage("\"\""),
 			Error: json.RawMessage("\"\""),
 		},
+		FormationAssignmentTemplateInput: &webhook.ApplicationTenantMappingInput{
+			Operation: model.AssignFormation,
+			Formation: &model.Formation{},
+			SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixLabels(),
+			},
+			SourceApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(),
+				Labels:      fixLabels(),
+			},
+			TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixLabels(),
+			},
+			TargetApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(),
+				Labels:      fixLabels(),
+			},
+			// The assignment and reverse assignment are present on top level in the joinPointDetails and should be used from there.
+			// Here they are intentionally set to nil so that if a template that uses them will fail to register.
+			Assignment:        nil,
+			ReverseAssignment: nil,
+		},
 		ReverseFormationAssignment: &model.FormationAssignment{
 			Value: json.RawMessage("\"\""),
 			Error: json.RawMessage("\"\""),
@@ -206,5 +232,41 @@ func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturn
 			Error: json.RawMessage("\"\""),
 		},
 		FormationTemplate: &model.FormationTemplate{},
+	}
+}
+
+func fixApplicationModel() *model.Application {
+	return &model.Application{
+		ProviderName:          str.Ptr(""),
+		ApplicationTemplateID: str.Ptr(""),
+		Description:           str.Ptr(""),
+		Status: &model.ApplicationStatus{
+			Condition: model.ApplicationStatusConditionInitial,
+			Timestamp: time.Time{},
+		},
+		HealthCheckURL:      str.Ptr(""),
+		BaseURL:             str.Ptr(""),
+		OrdLabels:           json.RawMessage("[]"),
+		CorrelationIDs:      json.RawMessage("[]"),
+		SystemStatus:        str.Ptr(""),
+		DocumentationLabels: json.RawMessage("[]"),
+		BaseEntity: &model.BaseEntity{
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: &time.Time{},
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+		},
+	}
+}
+
+func fixLabels() map[string]string {
+	return map[string]string{"foo": "bar"}
+}
+
+func fixApplicationTemplateModel() *model.ApplicationTemplate {
+	return &model.ApplicationTemplate{
+		Description:          str.Ptr(""),
+		ApplicationInputJSON: `{}`,
 	}
 }

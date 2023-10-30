@@ -2,6 +2,7 @@ package notifications
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -239,7 +240,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithOperator(formationconstraintpkg.ConfigMutatorOperator).
 			WithResourceType(graphql.ResourceTypeApplication).
 			WithResourceSubtype(applicationType1).
-			WithInputTemplate(`{ \"tenant\":\"{{.Tenant}}\", \"last_formation_assignment_state\":\"{{.LastFormationAssignmentState}}\"{{if ne .FormationAssignment.State \"CREATE_ERROR\"}},\"modified_configuration\":\"{\\\"tmp\\\":\\\"tmpval\\\"}\",\"state\":{{if and (eq .LastFormationAssignmentState \"INITIAL\") (eq .LastFormationAssignmentConfiguration \"\")}}\"CONFIG_PENDING\"{{ else }}\"{{.FormationAssignment.State}}\"{{ end }}{{ end }},\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"operation\": \"{{.Operation}}\",{{ if .FormationAssignment }}\"details_formation_assignment_memory_address\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\"details_reverse_formation_assignment_memory_address\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\"join_point_location\": {\"OperationName\":\"{{.Location.OperationName}}\",\"ConstraintType\":\"{{.Location.ConstraintType}}\"}}`).
+			WithInputTemplate(`{ \"tenant\":\"{{.Tenant}}\", \"last_formation_assignment_state\":\"{{.LastFormationAssignmentState}}\"{{if ne .FormationAssignment.State \"CREATE_ERROR\"}},\"modified_configuration\":\"{\\\"tmp\\\":\\\"{{.FormationAssignmentTemplateInput.SourceApplication.Application.LocalTenantID}}\\\"}\",\"state\":{{if and (eq .LastFormationAssignmentState \"INITIAL\") (eq .LastFormationAssignmentConfiguration \"\")}}\"CONFIG_PENDING\"{{ else }}\"{{.FormationAssignment.State}}\"{{ end }}{{ end }},\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"operation\": \"{{.Operation}}\",{{ if .FormationAssignment }}\"details_formation_assignment_memory_address\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\"details_reverse_formation_assignment_memory_address\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\"join_point_location\": {\"OperationName\":\"{{.Location.OperationName}}\",\"ConstraintType\":\"{{.Location.ConstraintType}}\"}}`).
 			WithTenant(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -309,7 +310,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 
 		t.Logf("Assign application 2 to formation %s", formationName)
 		expectedConfig := str.Ptr("{\"key\":\"example.com\",\"ID\":\"0000-0000000-0000\",\"config\":{\"clientID\":\"1111-11111\", \"clientSecret\":\"secret\"}}")
-		expectedConfig2 := str.Ptr("{\"tmp\":\"tmpval\"}")
+		expectedConfig2 := str.Ptr(fmt.Sprintf("{\"tmp\":\"%s\"}", localTenantID2))
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
 			WithParticipant(app1ID).
 			WithParticipant(app2ID).

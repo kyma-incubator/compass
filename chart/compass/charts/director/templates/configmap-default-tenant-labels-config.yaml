@@ -1,0 +1,13 @@
+{{- if eq .Values.global.tenantConfig.useDefaultTenants true }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-default-tenant-labels-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+data:
+  tenantLabels.json: |-
+{{ .Values.global.tenantsLabels | toJson | indent 4 }}
+{{end}}

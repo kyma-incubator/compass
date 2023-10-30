@@ -258,6 +258,13 @@ type OAuth2SAMLBearerAssertionAuthentication struct {
 	ClientSecret    string `json:"clientSecret"`
 }
 
+// ClientCertAuthentication represents outbound communication with client certificate authentication
+type ClientCertAuthentication struct {
+	URL            string   `json:"url"`
+	UIURL          string   `json:"uiUrl,omitempty"`
+	CorrelationIds []string `json:"correlationIds,omitempty"`
+}
+
 // OAuth2ClientCredentialsAuthentication represents outbound communication with OAuth 2 client credentials authentication
 type OAuth2ClientCredentialsAuthentication struct {
 	URL             string   `json:"url"`
@@ -266,13 +273,6 @@ type OAuth2ClientCredentialsAuthentication struct {
 	ClientID        string   `json:"clientId"`
 	ClientSecret    string   `json:"clientSecret"`
 	CorrelationIds  []string `json:"correlationIds,omitempty"`
-}
-
-// ClientCertAuthentication represents outbound communication with client certificate authentication
-type ClientCertAuthentication struct {
-	URL            string   `json:"url"`
-	UIURL          string   `json:"uiUrl,omitempty"`
-	CorrelationIds []string `json:"correlationIds,omitempty"`
 }
 
 // InboundCommunicationDetails consists of a different type of inbound communication configuration details
@@ -323,9 +323,6 @@ type Destination struct {
 	SubaccountID         string          `json:"subaccountId,omitempty"`
 	InstanceID           string          `json:"instanceId,omitempty"`
 	AdditionalProperties json.RawMessage `json:"additionalProperties,omitempty"`
-	FileName             string          `json:"fileName,omitempty"`
-	CommonName           string          `json:"commonName,omitempty"`
-	CertificateChain     string          `json:"certificateChain,omitempty"`
 }
 
 // CertificateData contains the data for the certificate resource from the destination creator component
