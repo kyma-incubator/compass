@@ -849,10 +849,15 @@ func TestORDAggregator(stdT *testing.T) {
 
 			// Verify EntityTypeMappings
 			apiTitlesWithEntityTypeMappingsCountToCheck := map[string]int{}
+			entityTitlesWithEntityTypeMappingsExpectedContent := map[string]string{}
 			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE"] = 1
+			entityTitlesWithEntityTypeMappingsExpectedContent["API TITLE"] = "A_OperationalAcctgDocItemCube"
+
 			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE INTERNAL"] = 2
+			entityTitlesWithEntityTypeMappingsExpectedContent["API TITLE INTERNAL"] = "B_OperationalAcctgDocItemCube"
+
 			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE PRIVATE"] = 0
-			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfAPIsInSubscription, apiTitlesWithEntityTypeMappingsCountToCheck)
+			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfAPIsInSubscription, apiTitlesWithEntityTypeMappingsCountToCheck, entityTitlesWithEntityTypeMappingsExpectedContent)
 			t.Log("Successfully verified api entity type mappings")
 
 			// Verify events
@@ -866,9 +871,13 @@ func TestORDAggregator(stdT *testing.T) {
 			// Verify EntityTypeMappings
 			eventTitlesWithEntityTypeMappingsCountToCheck := map[string]int{}
 			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE"] = 1
+			entityTitlesWithEntityTypeMappingsExpectedContent["API TITLE"] = "A_OperationalAcctgDocItemCube"
+
 			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE INTERNAL"] = 2
+			entityTitlesWithEntityTypeMappingsExpectedContent["API TITLE INTERNAL"] = "B_OperationalAcctgDocItemCube"
+
 			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE PRIVATE"] = 0
-			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfEventsInSubscription, eventTitlesWithEntityTypeMappingsCountToCheck)
+			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfEventsInSubscription, eventTitlesWithEntityTypeMappingsCountToCheck, entityTitlesWithEntityTypeMappingsExpectedContent)
 			t.Log("Successfully verified api entity type mappings")
 
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEventsInSubscription, descriptionField)
