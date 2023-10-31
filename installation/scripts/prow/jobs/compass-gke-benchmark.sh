@@ -185,7 +185,23 @@ function installOry() {
   ORY_SCRIPT_PATH="${COMPASS_SCRIPTS_DIR}"/install-ory.sh
 
   log::info "Installing Ory Helm chart..."
-  bash "${ORY_SCRIPT_PATH}" --overrides-file "$PWD/ory_benchmark_overrides.yaml"
+  bash "${ORY_SCRIPT_PATH}" --overrides-file ~/ory_benchmark_overrides.yaml
+
+  # TODO: Remove after new Ory reaches main
+  # Workaround needed as there are breaking changes in the Ory Helm chart and Ory v2
+  CHART_VERSION=$(yq .version "${COMPASS_SOURCES_DIR}/chart/ory/Chart.yaml")
+  if [ "$CHART_VERSION" = "1.1.0" ]; then
+    # Copy old JWKS secret as it is only created with "pre-install" hook
+    kubectl get secret ory-stack-oathkeeper-jwks-secret --namespace=ory -o yaml \
+      | sed 's/name: .*/name: ory-stack-oathkeeper/' | kubectl apply -f -
+    # Copy old JWKS secret as it is only created with "pre-install" hook
+    kubectl get secret ory-hydra-credentials --namespace=ory -o yaml \
+      | sed 's/name: .*/name: ory-stack-hydra/' | kubectl apply -f -
+    # Change the DSN in the copied Hydra secret as the new Ory installation uses Compass localdb
+    kubectl get secret ory-stack-hydra -n ory -o json \
+      | jq --arg foo "$(echo -n "postgres://postgres:postgres@compass-postgresql.compass-system.svc.cluster.local:5432/hydra?sslmode=disable&max_conn_lifetime=10s" | base64)" '.data["dsn"]=$foo' \
+      | kubectl apply -f -
+  fi
 }
 
 function installDatabase() {
