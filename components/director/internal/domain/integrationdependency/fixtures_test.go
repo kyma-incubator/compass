@@ -14,7 +14,6 @@ import (
 )
 
 const (
-	aspectID                = "aspectID"
 	integrationDependencyID = "integrationDependencyID"
 	tenantID                = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	externalTenantID        = "external-tnt"
