@@ -217,6 +217,8 @@ function installCompassOld() {
   echo "Checkout $LATEST_VERSION"
   git checkout "${LATEST_VERSION}"
 
+  installOry
+
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
 
@@ -240,6 +242,8 @@ function installCompassNew() {
 
   echo "Checkout $NEW_VERSION_COMMIT_ID"
   git checkout "${NEW_VERSION_COMMIT_ID}"
+
+  installOry
 
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
@@ -295,9 +299,6 @@ installKyma
 
 log::info "Installing database"
 installDatabase
-
-log::info "Installing Ory"
-installOry
 
 NEW_VERSION_COMMIT_ID=$(cd "$COMPASS_SOURCES_DIR" && git rev-parse --short HEAD)
 log::info "Install Compass version from main"
