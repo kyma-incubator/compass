@@ -85,7 +85,16 @@ The Ory Hydra requires persistence storage; the database can be in-cluster or on
 
 ##### In-cluster database
 
-In-cluster persistence is achieved with the usage of the [Postgres Helm chart](https://github.com/bitnami/charts/tree/main/bitnami/postgresql). To use this method of persistence save the following YAML code with installation overrides into a file (for example: additionalOryOverrides.yaml).
+In-cluster persistence is achieved with the usage of [Compass' localdb Helm chart](https://github.com/kyma-incubator/compass/tree/main/chart/localdb). 
+Firstly, `localdb` needs to be installed by running:
+
+```bash
+<script from ../../installation/scripts/install-db.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --timeout <e.g: 30m0s>
+```
+
+The necessary users and databases for Hydra are handled inside the Helm chart of `localdb`.
+
+Secondly, save the following YAML code with installation overrides into a file (for example: additionalOryOverrides.yaml).
 ```yaml
 global:
   domainName: ${DOMAIN} # Optional, only needed if you use custom domains during Kyma installation.
@@ -104,23 +113,43 @@ Initiate the Ory installation with the following command:
 <script from ../../installation/scripts/install-ory.sh> --overrides-file <file from above step - e.g. additionalOryOverrides.yaml>
 ```
 
-The scripts creates the necessary Secret `ory-hydra-credentials` for Ory Hydra to connect to the database; the Oathkeeper Secret is created by the CronJob `oathkeeper-jwks-rotator`.
+The script applies the necessary overrides for Ory Hydra to connect to the database (situated under `../../chart/ory/values.yaml`); the Oathkeeper Secret is created by a pre-install Helm hook.
 
 ##### Google Clouad Platform database
 
-The Ory Hydra component can authenticate to Google Clouad Platform by using [gcloud-sqlproxy](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy). To use this method of persistence save the following YAML code with installation overrides into a file (for example: additionalOryOverrides.yaml).
+The Ory Hydra component can authenticate to Google Clouad Platform by using [gcloud-sqlproxy](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy). 
+Firstly, install the `gcloud-sqlproxy` mentioned above - another useful source is [the Ory Hydra documentation (With Google Cloud SQL
+)](https://k8s.ory.sh/helm/hydra.html). An example YAML could look like this:
+```yaml
+serviceAccount:
+  create: true
+  name: "ory-gcloud-sqlproxy"
+  # use workload identity service account to authenticate to Google Cloud Platform; more details https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity
+  # Remove the annotation if you are using the Google Cloud Platform service account JSON
+  annotations:
+    iam.gke.io/gcp-service-account: ${GCP_SA}
+cloudsql:
+  instances:
+  - instance: ${GCP_INSTANCE_NAME}
+    port: ${GCP_PORT}
+    project: ${GCP_PROJECT}
+    region: ${GCP_REGION}
+extraFlags:
+  # Uncomment if your database is situated in a private network inside GCP
+  # - private-ip
+```
+> **NOTE:** The overrides above use workload identity to authenticate to Google Cloud Platform(recommended by Google); another possibility is to use the Google Cloud Platform's service account JSON as explained at [gcloud-sqlproxy's installation](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy#installing-the-chart).
+
+Afterwards, save the following YAML code with installation overrides into a file (for example: additionalOryOverrides.yaml).
 ```yaml
 global:
   domainName: ${DOMAIN} # Optional, only needed if you use custom domains during Kyma installation.
   ory:
     hydra:
       persistence:
-        # Enabled gcloud to install the gcloud-sqlproxy component from the charts
+        # Indicates that cloud persistence shall be used; needed for the correct execution of `install-ory.sh`
         gcloud:
           enabled: true
-        # Disable in-cluster storage persistence
-        postgresql:
-          enabled: false
 
 oathkeeper:
   oathkeeper:
@@ -141,29 +170,7 @@ hydra:
       secrets:
         system: "${RANDOM_VALUE}"
         cookie: "${RANDOM_VALUE}"
-    autoMigrate: true
-    # When using in-cluster persistence the script creates the Secret before the Helm install
-    existingSecret: ""
-  # Create the Secret as it would not be created by the install-ory.sh script
-  secret:
-    enabled: true
-
-gcloud-sqlproxy: 
-  serviceAccount:
-    create: true
-    name: "ory-gcloud-sqlproxy"
-    # use workload identity service account to authenticate to Google Cloud Platform; more details https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity
-    # Remove the annotation if you are using the Google Cloud Platform service account JSON
-    annotations:
-      iam.gke.io/gcp-service-account: ${GCP_SA}
-  cloudsql:
-    instance:
-      instanceName: ${GCP_INSTANCE_NAME}
-      port: ${GCP_PORT}
-      project: ${GCP_PROJECT}
-      region: ${GCP_REGION}
 ```
-> **NOTE:** The overrides above use workload identity to authenticate to Google Cloud Platform(recommended by Google); another possibility is to use the Google Cloud Platform's service account JSON as explained at [gcloud-sqlproxy's installation](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy#installing-the-chart). 
 
 Initiate the Ory installation with the following command:
 ```bash
@@ -201,7 +208,7 @@ global:
 #      tlsKey: ${TLS_KEY}
 ```
 
-Start the Database installation by using the following command:
+Start the Database installation by using the following command, can be skipped if it was installed during [Ory installation with local persistence](#in-cluster-database):
 
 ```bash
 <script from ../../installation/scripts/install-db.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
@@ -452,7 +459,7 @@ global:
 #      tlsCrt: ${TLS_CERT}
 #      tlsKey: ${TLS_KEY}
 ```
-Start Database installation:
+Start Database installation, can be skipped if it was installed during [Ory installation with local persistence](#in-cluster-database):
 ```bash
 <script from ../../installation/scripts/install-db.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
 ```
