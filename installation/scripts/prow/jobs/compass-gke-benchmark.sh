@@ -188,6 +188,13 @@ function installOry() {
   bash "${ORY_SCRIPT_PATH}" --overrides-file "$PWD/ory_benchmark_overrides.yaml"
 }
 
+function installDatabase() {
+    mkdir "$COMPASS_SOURCES_DIR/installation/data"
+    bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --timeout 30m0s
+    STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
+    echo "DB installation status ${STATUS}"
+}
+
 function installCompassOld() {
   cd "$COMPASS_SOURCES_DIR"
   readonly LATEST_VERSION=$(git rev-parse --short main~1)
@@ -196,12 +203,6 @@ function installCompassOld() {
 
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
-
-  echo 'Installing DB'
-  mkdir "$COMPASS_SOURCES_DIR/installation/data"
-  bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
-  STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
-  echo "DB installation status ${STATUS}"
 
   echo 'Installing Compass'
   bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s --sql-helm-backend
@@ -226,10 +227,6 @@ function installCompassNew() {
 
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
-  echo 'Installing DB'
-  bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
-  STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
-  echo "DB installation status ${STATUS}"
   
   echo 'Installing Compass'
   bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s --sql-helm-backend
@@ -279,6 +276,9 @@ installKymaCLI
 
 log::info "Installing Kyma"
 installKyma
+
+log::info "Installing database"
+installDatabase
 
 log::info "Installing Ory"
 installOry
