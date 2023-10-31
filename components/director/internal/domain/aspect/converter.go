@@ -15,6 +15,10 @@ func NewConverter() *converter {
 
 // FromEntity converts the provided Entity repo-layer representation of an Aspect to the service-layer representation model.Aspect.
 func (c *converter) FromEntity(entity *Entity) *model.Aspect {
+	if entity == nil {
+		return nil
+	}
+
 	return &model.Aspect{
 		ApplicationID:                repo.StringPtrFromNullableString(entity.ApplicationID),
 		ApplicationTemplateVersionID: repo.StringPtrFromNullableString(entity.ApplicationTemplateVersionID),
@@ -38,6 +42,10 @@ func (c *converter) FromEntity(entity *Entity) *model.Aspect {
 
 // ToEntity converts the provided service-layer representation of an Aspect to the repository-layer one.
 func (c *converter) ToEntity(aspectModel *model.Aspect) *Entity {
+	if aspectModel == nil {
+		return nil
+	}
+
 	return &Entity{
 		ApplicationID:                repo.NewNullableString(aspectModel.ApplicationID),
 		ApplicationTemplateVersionID: repo.NewNullableString(aspectModel.ApplicationTemplateVersionID),

@@ -11,6 +11,8 @@ import (
 )
 
 // AspectRepository is responsible for the repo-layer Aspect operations.
+//
+//go:generate mockery --name=AspectRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AspectRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Aspect) error
 	DeleteByIntegrationDependencyID(ctx context.Context, tenant string, integrationDependencyID string) error

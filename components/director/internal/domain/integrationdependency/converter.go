@@ -25,6 +25,10 @@ func NewConverter(version VersionConverter) *converter {
 
 // FromEntity converts the provided Entity repo-layer representation of an Integration Dependency to the service-layer representation model.IntegrationDependency.
 func (c *converter) FromEntity(entity *Entity) *model.IntegrationDependency {
+	if entity == nil {
+		return nil
+	}
+
 	return &model.IntegrationDependency{
 		ApplicationID:                  repo.StringPtrFromNullableString(entity.ApplicationID),
 		ApplicationTemplateVersionID:   repo.StringPtrFromNullableString(entity.ApplicationTemplateVersionID),
@@ -61,6 +65,10 @@ func (c *converter) FromEntity(entity *Entity) *model.IntegrationDependency {
 
 // ToEntity converts the provided service-layer representation of an Integration Dependency to the repository-layer one.
 func (c *converter) ToEntity(integrationDependencyModel *model.IntegrationDependency) *Entity {
+	if integrationDependencyModel == nil {
+		return nil
+	}
+
 	return &Entity{
 		ApplicationID:                  repo.NewNullableString(integrationDependencyModel.ApplicationID),
 		ApplicationTemplateVersionID:   repo.NewNullableString(integrationDependencyModel.ApplicationTemplateVersionID),

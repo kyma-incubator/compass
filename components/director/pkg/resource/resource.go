@@ -150,6 +150,7 @@ var tenantAccessTable = map[Type]string{
 	EntityType:                 "entity_types_tenants",
 	Capability:                 "capabilities_tenants",
 	IntegrationDependency:      "integration_dependencies_tenants",
+	Aspect:                     "aspects_tenants",
 	Webhook:                    "webhooks_tenants",
 	AppWebhook:                 "application_webhooks_tenants",
 	RuntimeWebhook:             "runtime_webhooks_tenants",

@@ -16,23 +16,23 @@ type AspectService struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, resourceType, resourceID, integrationDependencyId, in
-func (_m *AspectService) Create(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyId string, in model.AspectInput) (string, error) {
-	ret := _m.Called(ctx, resourceType, resourceID, integrationDependencyId, in)
+// Create provides a mock function with given fields: ctx, resourceType, resourceID, integrationDependencyID, in
+func (_m *AspectService) Create(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyID string, in model.AspectInput) (string, error) {
+	ret := _m.Called(ctx, resourceType, resourceID, integrationDependencyID, in)
 
 	var r0 string
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.AspectInput) (string, error)); ok {
-		return rf(ctx, resourceType, resourceID, integrationDependencyId, in)
+		return rf(ctx, resourceType, resourceID, integrationDependencyID, in)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.AspectInput) string); ok {
-		r0 = rf(ctx, resourceType, resourceID, integrationDependencyId, in)
+		r0 = rf(ctx, resourceType, resourceID, integrationDependencyID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, string, model.AspectInput) error); ok {
-		r1 = rf(ctx, resourceType, resourceID, integrationDependencyId, in)
+		r1 = rf(ctx, resourceType, resourceID, integrationDependencyID, in)
 	} else {
 		r1 = ret.Error(1)
 	}

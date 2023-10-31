@@ -11,6 +11,8 @@ import (
 )
 
 // IntegrationDependencyRepository is responsible for the repo-layer IntegrationDependency operations.
+//
+//go:generate mockery --name=IntegrationDependencyRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationDependencyRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.IntegrationDependency, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.IntegrationDependency, error)
