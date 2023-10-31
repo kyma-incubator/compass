@@ -8,7 +8,7 @@ You can install Compass both on a cluster and on your local machine in the follo
 
 ### Required versions
 
-- Kubernetes 1.23
+- Kubernetes 1.25a
 - For more information about the required CLI tools versions, see: [Compass Prerequisites](https://github.com/kyma-incubator/compass#prerequisites) 
 
 ### Managed PostgreSQL Database
