@@ -1,7 +1,6 @@
 package webhook
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
 
@@ -99,7 +98,6 @@ func (rd *FormationConfigurationChangeInput) ParseInputTemplate(tmpl *string) ([
 	if err := parseTemplate(tmpl, *rd, &res); err != nil {
 		return nil, err
 	}
-	res = bytes.ReplaceAll(res, []byte("<nil>"), nil)
 	return res, nil
 }
 
