@@ -44,6 +44,8 @@ func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
 		return resource.Application, e.ApplicationID.String
 	} else if e.FormationTemplateID.Valid {
 		return resource.FormationTemplate, e.FormationTemplateID.String
+	} else if e.ApplicationTemplateID.Valid {
+		return resource.ApplicationTemplate, e.ApplicationTemplateID.String
 	}
 	return "", ""
 }

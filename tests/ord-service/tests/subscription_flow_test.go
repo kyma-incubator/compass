@@ -22,12 +22,13 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
@@ -645,6 +646,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.ElementsMatch(stdT, []string{destination.Name, destinationSecond.Name}, []string{destinationsFromResponse[0].Get("sensitiveData.destinationConfiguration.Name").String(), destinationsFromResponse[1].Get("sensitiveData.destinationConfiguration.Name").String()})
 		stdT.Log("Successfully fetched system with bundles and destinations")
 
+		unassignFromFormation(stdT, ctx, providerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")

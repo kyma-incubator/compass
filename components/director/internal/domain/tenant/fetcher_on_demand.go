@@ -1,8 +1,11 @@
 package tenant
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
 	"github.com/pkg/errors"
 )
@@ -17,7 +20,7 @@ type FetchOnDemandAPIConfig struct {
 //
 //go:generate mockery --name=Fetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Fetcher interface {
-	FetchOnDemand(tenant, parentTenant string) error
+	FetchOnDemand(ctx context.Context, tenant, parentTenant string) error
 }
 
 // Client is responsible for making HTTP requests.
@@ -46,12 +49,13 @@ func NewFetchOnDemandService(client Client, config FetchOnDemandAPIConfig) Fetch
 }
 
 // FetchOnDemand calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
-func (s *fetchOnDemandService) FetchOnDemand(tenant, parentTenant string) error {
+func (s *fetchOnDemandService) FetchOnDemand(ctx context.Context, tenant, parentTenant string) error {
 	reqURL := s.buildRequestURL(tenant, parentTenant)
 	req, err := http.NewRequest(http.MethodPost, reqURL, nil)
 	if err != nil {
 		return err
 	}
+	req.Header.Set(correlation.RequestIDHeaderKey, correlation.CorrelationIDFromContext(ctx))
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return errors.Wrapf(err, "while calling tenant-on-demand API")
@@ -62,7 +66,7 @@ func (s *fetchOnDemandService) FetchOnDemand(tenant, parentTenant string) error 
 	return nil
 }
 
-func (s *noopOnDemandService) FetchOnDemand(tenant, parentTenant string) error {
+func (s *noopOnDemandService) FetchOnDemand(_ context.Context, _, _ string) error {
 	return nil
 }
 

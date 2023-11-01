@@ -56,7 +56,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		ApplicationTypes: []string{applicationType},
 	}
 	notifications := []*webhookclient.FormationAssignmentNotificationRequest{{
-		Webhook: graphql.Webhook{
+		Webhook: &graphql.Webhook{
 			ID: "wid1",
 		},
 	}}
@@ -1841,7 +1841,9 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "error when listing applications by ID fails",
-			TxFn: txGen.ThatSucceedsTwice,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(1)
+			},
 			ApplicationRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return(nil, testErr).Once()

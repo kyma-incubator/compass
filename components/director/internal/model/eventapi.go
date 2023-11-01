@@ -50,6 +50,7 @@ type EventDefinition struct {
 	Version                                 *Version
 	DocumentationLabels                     json.RawMessage
 	CorrelationIDs                          json.RawMessage
+	LastUpdate                              *string
 	*BaseEntity
 }
 
@@ -102,6 +103,7 @@ type EventDefinitionInput struct {
 	DefaultConsumptionBundle                *string                       `json:"defaultConsumptionBundle"`
 	DocumentationLabels                     json.RawMessage               `json:"documentationLabels"`
 	CorrelationIDs                          json.RawMessage               `json:"correlationIds,omitempty"`
+	LastUpdate                              *string                       `json:"lastUpdate"`
 
 	*VersionInput `hash:"ignore"`
 }
@@ -191,6 +193,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id string, resourceType resourc
 		Extensible:                              e.Extensible,
 		DocumentationLabels:                     e.DocumentationLabels,
 		CorrelationIDs:                          e.CorrelationIDs,
+		LastUpdate:                              e.LastUpdate,
 		ResourceHash:                            hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,

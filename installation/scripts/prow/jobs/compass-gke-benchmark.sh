@@ -127,7 +127,7 @@ function createCluster() {
   gcp::provision_k8s_cluster \
         -c "$COMMON_NAME" \
         -p "$CLOUDSDK_CORE_PROJECT" \
-        -v "1.24.16" \
+        -v "1.25.10" \
         -i "cos_containerd" \
         -C "stable" \
         -j "$JOB_NAME" \
@@ -147,9 +147,9 @@ function createCluster() {
   export TLS_KEY="${utils_generate_self_signed_cert_return_tls_key:?}"
 
   export DNS_DOMAIN_TRAILING=${DNS_DOMAIN%.}
-  envsubst < "${TEST_INFRA_SOURCES_DIR}/prow/scripts/resources/compass-gke-overrides.tpl.yaml" > "$PWD/compass_common_overrides.yaml"
+  envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/compass-gke-overrides.tpl.yaml" > "$PWD/compass_common_overrides.yaml"
   CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/compass-overrides-gke-benchmark.yaml" > "$PWD/compass_benchmark_overrides.yaml"
-  CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${TEST_INFRA_SOURCES_DIR}/prow/scripts/resources/compass-gke-kyma-overrides.tpl.yaml" > "$PWD/kyma_overrides.yaml"
+  CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/compass-gke-kyma-overrides.tpl.yaml" > "$PWD/kyma_overrides.yaml"
   CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/ory-overrides-gke-benchmark.tpl.yaml" > ~/ory_benchmark_overrides.yaml
 }
 
@@ -162,7 +162,7 @@ function installHelm() {
 }
 
 function installKymaCLI() {
-  KYMA_CLI_VERSION="2.8.0"
+  KYMA_CLI_VERSION="2.9.3"
   log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
 
   PREV_WD=$(pwd)
@@ -214,9 +214,6 @@ function installCompassOld() {
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
 
-  echo "Installing Ory"
-  installOry
-
   echo 'Installing DB'
   mkdir "$COMPASS_SOURCES_DIR/installation/data"
   bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
@@ -246,9 +243,6 @@ function installCompassNew() {
 
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
-
-  echo "Installing Ory"
-  installOry
 
   echo 'Installing DB'
   bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
@@ -303,6 +297,9 @@ installKymaCLI
 
 log::info "Installing Kyma"
 installKyma
+
+log::info "Installing Ory"
+installOry
 
 NEW_VERSION_COMMIT_ID=$(cd "$COMPASS_SOURCES_DIR" && git rev-parse --short HEAD)
 log::info "Install Compass version from main"

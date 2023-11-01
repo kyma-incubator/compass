@@ -82,8 +82,8 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			ExpectedOutput: gqlAppTemplate,
 		},
 		{
-			Name: "Returns nil when application template not found",
-			TxFn: txGen.ThatSucceeds,
+			Name: "Returns NotFoundError when application template not found",
+			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, apperrors.NewNotFoundError(resource.ApplicationTemplate, "")).Once()
@@ -92,7 +92,7 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			AppTemplateConvFn: UnusedAppTemplateConv,
 			WebhookConvFn:     UnusedWebhookConv,
 			WebhookSvcFn:      UnusedWebhookSvc,
-			ExpectedOutput:    nil,
+			ExpectedError:     apperrors.NewNotFoundError(resource.ApplicationTemplate, ""),
 		},
 		{
 			Name: "Returns error when getting application template failed",
@@ -450,6 +450,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	modelAppTemplateWithOrdWebhookInput.ID = &testUUID
 	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONString)
 	modelAppTemplateInput.ID = &testUUID
+
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplateInput := fixGQLAppTemplateInputWithPlaceholder(testName)
 	gqlAppTemplateInputWithProvider := fixGQLAppTemplateInputWithPlaceholderAndProvider("SAP " + testName)
@@ -585,7 +586,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInputWithProvider.Webhooks, gqlAppTemplateInputWithProvider.Webhooks),
-			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKey(),
+			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyTwice(),
 			Ctx:              ctxWithTokenConsumer,
 			Input:            gqlAppTemplateInputWithProvider,
 			ExpectedOutput:   gqlAppTemplate,
@@ -616,7 +617,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInputWithProvider.Webhooks, gqlAppTemplateInputWithProvider.Webhooks),
-			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKey(),
+			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyTwice(),
 			Ctx:              ctxWithTokenConsumer,
 			Input:            gqlAppTemplateInputWithProvider,
 			ExpectedOutput:   gqlAppTemplate,
@@ -649,7 +650,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInputWithProviderAndWebhook.Webhooks, fixEnrichedTenantMappedWebhooks()),
-			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKey(),
+			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyTwice(),
 			Ctx:              ctxWithTokenConsumer,
 			Input:            gqlAppTemplateInputWithProviderAndWebhook,
 			ExpectedOutput:   gqlAppTemplate,
@@ -814,7 +815,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInput.Webhooks, gqlAppTemplateInput.Webhooks),
-			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKey(),
+			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyOnce(),
 			Ctx:              ctxWithCertConsumer,
 			Input:            gqlAppTemplateInput,
 			ExpectedError:    fmt.Errorf("should provide either %q or %q label", apptmpltest.TestDistinguishLabel, AppTemplateProductLabel),
@@ -832,7 +833,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInput.Webhooks, gqlAppTemplateInput.Webhooks),
-			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKey(),
+			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyOnce(),
 			Ctx:              ctxWithCertConsumer,
 			Input:            gqlAppTemplateInput,
 			ExpectedError:    fmt.Errorf("missing %q or %q label", apptmpltest.TestDistinguishLabel, AppTemplateProductLabel),
@@ -863,7 +864,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInput.Webhooks, gqlAppTemplateInput.Webhooks),
-			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKey(),
+			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyTwice(),
 			Ctx:              ctxWithTokenConsumer,
 			Input:            gqlAppTemplateInput,
 			ExpectedError:    testError,
@@ -894,7 +895,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInput.Webhooks, gqlAppTemplateInput.Webhooks),
-			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKey(),
+			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyTwice(),
 			Input:            gqlAppTemplateInput,
 			Ctx:              ctxWithTokenConsumer,
 			ExpectedError:    testError,
@@ -917,7 +918,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInput.Webhooks, gqlAppTemplateInput.Webhooks),
 			Input:            gqlAppTemplateInput,
-			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
+			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyOnce(),
 			Ctx:              ctxWithTokenConsumer,
 			ExpectedError:    testError,
 		},
@@ -947,7 +948,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInput.Webhooks, gqlAppTemplateInput.Webhooks),
-			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKey(),
+			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyTwice(),
 			Ctx:              ctxWithTokenConsumer,
 			Input:            gqlAppTemplateInput,
 			ExpectedError:    testError,
@@ -978,7 +979,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInput.Webhooks, gqlAppTemplateInput.Webhooks),
-			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKey(),
+			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyTwice(),
 			Input:            gqlAppTemplateInput,
 			Ctx:              ctxWithTokenConsumer,
 			ExpectedError:    testError,
@@ -1011,10 +1012,32 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInput.Webhooks, gqlAppTemplateInput.Webhooks),
-			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKey(),
+			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyTwice(),
 			Ctx:              ctxWithTokenConsumer,
 			Input:            gqlAppTemplateInput,
 			ExpectedOutput:   gqlAppTemplate,
+		},
+		{
+			Name: "Returns error when flow is not cert but self register label has been provided",
+			TxFn: txGen.ThatDoesntStartTransaction,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Get")
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInputWithSelfRegLabels).Return(*modelAppTemplateInputWithSelRegLabels, nil).Once()
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
+				return appTemplateConv
+			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInputWithSelfRegLabels.Webhooks, gqlAppTemplateInputWithSelfRegLabels.Webhooks),
+			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyOnce(),
+			Input:            gqlAppTemplateInputWithSelfRegLabels,
+			Ctx:              ctxWithTokenConsumer,
+			ExpectedError:    errors.New(apptmpltest.NonSelfRegFlowErrorMsg),
 		},
 		{
 			Name: "Returns error when app template self registration fails",
@@ -1089,7 +1112,6 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInputWithSelRegLabels, nil).Once()
-				//appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
 			WebhookConvFn:    UnusedWebhookConv,

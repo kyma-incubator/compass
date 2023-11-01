@@ -65,9 +65,9 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 		}
 	}
 
-	expectedObjectContextFunc := func(externalTenantID, internalTenantID, region, oauthClientID string) tenantmapping.ObjectContext {
+	expectedObjectContextFunc := func(expectedTenant *graphql.Tenant, region, oauthClientID string) tenantmapping.ObjectContext {
 		return tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.NewTenantContext(externalTenantID, internalTenantID),
+			Tenant: expectedTenant,
 			KeysExtra: tenantmapping.KeysExtra{
 				TenantKey:         tenantmapping_pkg.ConsumerTenantKey,
 				ExternalTenantKey: tenantmapping_pkg.ExternalTenantKey,
@@ -122,7 +122,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 				return client
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
-			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, consumerInternalTenantID, testRegion, clientID),
+			ExpectedObjectContext: expectedObjectContextFunc(testTenant, testRegion, clientID),
 		},
 		{
 			Name: "Success when unescape fails and the original header value is used successfully",
@@ -132,7 +132,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 				return client
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithInvalidASCIICharacter),
-			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, consumerInternalTenantID, testRegion, invalidClientID),
+			ExpectedObjectContext: expectedObjectContextFunc(testTenant, testRegion, invalidClientID),
 		},
 		{
 			Name:                  "Returns error when unescape fails and the client_id property from the original header value is empty",
@@ -177,7 +177,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 				return client
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
-			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, "", "", clientID),
+			ExpectedObjectContext: expectedObjectContextFunc(&graphql.Tenant{ID: consumerTenantID}, "", clientID),
 		},
 		{
 			Name: "Returns empty region when tenant is subaccount and tenant region label is missing",
@@ -187,7 +187,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 				return client
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
-			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, consumerInternalTenantID, "", clientID),
+			ExpectedObjectContext: expectedObjectContextFunc(testTenant, "", clientID),
 		},
 		{
 			Name: "Returns error when region label type is not the expected one",
@@ -223,8 +223,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 				require.Equal(t, authID, objectCtx.ConsumerID)
 				require.Equal(t, testCase.ExpectedObjectContext.OauthClientID, objectCtx.OauthClientID)
 				require.Equal(t, oathkeeper.ConsumerProviderFlow, objectCtx.AuthFlow)
-				require.Equal(t, testCase.ExpectedObjectContext.TenantContext.TenantID, objectCtx.TenantContext.TenantID)
-				require.Equal(t, consumerTenantID, objectCtx.TenantContext.ExternalTenantID)
+				require.Equal(t, testCase.ExpectedObjectContext.Tenant, objectCtx.Tenant)
 				require.Equal(t, "", objectCtx.Scopes)
 			} else {
 				require.Error(t, err)

@@ -10,8 +10,6 @@ import (
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/pkg/errors"
-	"github.com/tidwall/gjson"
 )
 
 // Config holds destination creator service API test configuration
@@ -142,8 +140,6 @@ func (n *DesignTimeDestRequestBody) GetDestinationType() string {
 
 // Validate validates that the AuthTypeBasic request body contains the required fields and they are valid
 func (b *BasicDestRequestBody) Validate(destinationCreatorCfg *Config) error {
-	areAdditionalPropertiesValid := newDestinationDetailsAdditionalPropertiesValidator(destinationCreatorCfg)
-
 	return validation.ValidateStruct(b,
 		validation.Field(&b.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&b.URL, validation.Required),
@@ -151,7 +147,6 @@ func (b *BasicDestRequestBody) Validate(destinationCreatorCfg *Config) error {
 		validation.Field(&b.ProxyType, validation.In(destinationcreatorpkg.ProxyTypeInternet, destinationcreatorpkg.ProxyTypeOnPremise, destinationcreatorpkg.ProxyTypePrivateLink)),
 		validation.Field(&b.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeBasic)),
 		validation.Field(&b.User, validation.Required, validation.Length(1, 256)),
-		validation.Field(&b.AdditionalProperties, areAdditionalPropertiesValid),
 	)
 }
 
@@ -192,8 +187,6 @@ func (b *BasicDestRequestBody) GetDestinationType() string {
 
 // Validate validates that the AuthTypeSAMLAssertion request body contains the required fields and they are valid
 func (s *SAMLAssertionDestRequestBody) Validate(destinationCreatorCfg *Config) error {
-	areAdditionalPropertiesValid := newDestinationDetailsAdditionalPropertiesValidator(destinationCreatorCfg)
-
 	return validation.ValidateStruct(s,
 		validation.Field(&s.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&s.URL, validation.Required),
@@ -202,7 +195,6 @@ func (s *SAMLAssertionDestRequestBody) Validate(destinationCreatorCfg *Config) e
 		validation.Field(&s.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeSAMLAssertion)),
 		validation.Field(&s.Audience, validation.Required),
 		validation.Field(&s.KeyStoreLocation, validation.Required),
-		validation.Field(&s.AdditionalProperties, areAdditionalPropertiesValid),
 	)
 }
 
@@ -243,8 +235,6 @@ func (s *SAMLAssertionDestRequestBody) GetDestinationType() string {
 
 // Validate validates that the AuthTypeClientCertificate request body contains the required fields and they are valid
 func (s *ClientCertificateAuthDestRequestBody) Validate(destinationCreatorCfg *Config) error {
-	areAdditionalPropertiesValid := newDestinationDetailsAdditionalPropertiesValidator(destinationCreatorCfg)
-
 	return validation.ValidateStruct(s,
 		validation.Field(&s.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&s.URL, validation.Required),
@@ -252,7 +242,6 @@ func (s *ClientCertificateAuthDestRequestBody) Validate(destinationCreatorCfg *C
 		validation.Field(&s.ProxyType, validation.In(destinationcreatorpkg.ProxyTypeInternet, destinationcreatorpkg.ProxyTypeOnPremise, destinationcreatorpkg.ProxyTypePrivateLink)),
 		validation.Field(&s.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeClientCertificate)),
 		validation.Field(&s.KeyStoreLocation, validation.Required),
-		validation.Field(&s.AdditionalProperties, areAdditionalPropertiesValid),
 	)
 }
 
@@ -294,45 +283,4 @@ func (c *CertificateRequestBody) Validate() error {
 	return validation.ValidateStruct(c,
 		validation.Field(&c.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 	)
-}
-
-type destinationDetailsAdditionalPropertiesValidator struct {
-	destinationCreatorCfg *Config
-}
-
-func newDestinationDetailsAdditionalPropertiesValidator(destinationCreatorCfg *Config) *destinationDetailsAdditionalPropertiesValidator {
-	return &destinationDetailsAdditionalPropertiesValidator{
-		destinationCreatorCfg: destinationCreatorCfg,
-	}
-}
-
-// Validate is a custom method that validates the correlation IDs, as part of the arbitrary destination additional attributes, are in the expected format - string divided by comma
-func (d *destinationDetailsAdditionalPropertiesValidator) Validate(value interface{}) error {
-	j, ok := value.(json.RawMessage)
-	if !ok {
-		return errors.Errorf("Invalid type: %T, expected: %T", value, json.RawMessage{})
-	}
-
-	if valid := json.Valid(j); !valid {
-		return errors.New("The additional properties json is not valid")
-	}
-
-	if d.destinationCreatorCfg == nil {
-		return errors.New("The destination creator config could not be empty")
-	}
-
-	if d.destinationCreatorCfg.CorrelationIDsKey == "" {
-		return errors.New("The correlation IDs key in the destination creator config could not be empty")
-	}
-
-	correlationIDsResult := gjson.Get(string(j), d.destinationCreatorCfg.CorrelationIDsKey)
-	if !correlationIDsResult.Exists() {
-		return errors.New("The correlationIds property part of the additional properties json is required but it does not exist.")
-	}
-
-	if correlationIDs := correlationIDsResult.String(); correlationIDs == "" {
-		return errors.New("The correlationIds property part of the additional properties could not be empty")
-	}
-
-	return nil
 }

@@ -622,41 +622,6 @@ func fixFormationAssignmentsForSelf(appID, rtmID, rtmCtxID string) []*model.Form
 	}
 }
 
-func fixFormationAssignmentInputsForSelf(appID, rtmID, rtmCtxID string) []*model.FormationAssignmentInput {
-	return []*model.FormationAssignmentInput{
-		{
-			FormationID: "ID",
-			Source:      appID,
-			SourceType:  model.FormationAssignmentTypeApplication,
-			Target:      appID,
-			TargetType:  model.FormationAssignmentTypeApplication,
-			State:       string(model.ReadyAssignmentState),
-			Value:       nil,
-			Error:       nil,
-		},
-		{
-			FormationID: "ID",
-			Source:      rtmID,
-			SourceType:  model.FormationAssignmentTypeRuntime,
-			Target:      rtmID,
-			TargetType:  model.FormationAssignmentTypeRuntime,
-			State:       string(model.ReadyAssignmentState),
-			Value:       nil,
-			Error:       nil,
-		},
-		{
-			FormationID: "ID",
-			Source:      rtmCtxID,
-			SourceType:  model.FormationAssignmentTypeRuntimeContext,
-			Target:      rtmCtxID,
-			TargetType:  model.FormationAssignmentTypeRuntimeContext,
-			State:       string(model.ReadyAssignmentState),
-			Value:       nil,
-			Error:       nil,
-		},
-	}
-}
-
 func fixFormationAssignmentsForRtmCtxWithAppAndRtmCtx(objectType model.FormationAssignmentType, objectID, appID, rtmCtxID string) []*model.FormationAssignment {
 	return []*model.FormationAssignment{
 		{
@@ -797,7 +762,7 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 	templateInput.Mock.On("SetAssignment", assignment).Times(2)
 	templateInput.Mock.On("SetReverseAssignment", assignmentReverse).Times(2)
 
-	request = &webhookclient.FormationAssignmentNotificationRequest{Webhook: webhook, Object: templateInput}
+	request = &webhookclient.FormationAssignmentNotificationRequest{Webhook: &webhook, Object: templateInput}
 
 	if hasReverseWebhook {
 		switch reverseWebhookType {
@@ -811,7 +776,7 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 		templateInputReverse.Mock.On("SetAssignment", assignmentReverse).Times(2)
 		templateInputReverse.Mock.On("SetReverseAssignment", assignment).Times(2)
 
-		requestReverse = &webhookclient.FormationAssignmentNotificationRequest{Webhook: webhookReverse, Object: templateInputReverse}
+		requestReverse = &webhookclient.FormationAssignmentNotificationRequest{Webhook: &webhookReverse, Object: templateInputReverse}
 	} else {
 		requestReverse = nil
 	}
@@ -819,15 +784,18 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 	return []*webhookclient.FormationAssignmentNotificationRequest{request, requestReverse}, templateInput, templateInputReverse
 }
 
-func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation) *formationconstraint.NotificationStatusReturnedOperationDetails {
+func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation, lastFormationAssignmentState, lastFormationAssignmentConfig, tenantID string) *formationconstraint.NotificationStatusReturnedOperationDetails {
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		ResourceType:               resourceType,
-		ResourceSubtype:            resourceSubtype,
-		Location:                   location,
-		Operation:                  assignOperation,
-		FormationAssignment:        fa,
-		ReverseFormationAssignment: reverseFa,
-		Formation:                  formation,
+		ResourceType:                         resourceType,
+		ResourceSubtype:                      resourceSubtype,
+		Location:                             location,
+		Tenant:                               tenantID,
+		Operation:                            assignOperation,
+		FormationAssignment:                  fa,
+		ReverseFormationAssignment:           reverseFa,
+		LastFormationAssignmentState:         lastFormationAssignmentState,
+		LastFormationAssignmentConfiguration: lastFormationAssignmentConfig,
+		Formation:                            formation,
 	}
 }
 

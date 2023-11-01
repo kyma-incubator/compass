@@ -94,7 +94,7 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 }
 
 // PrepareDetailsForNotificationStatusReturned creates NotificationStatusReturnedOperationDetails by given tenantID, formation assignment and formation operation
-func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
+func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
 	var targetType model.ResourceType
 	switch fa.TargetType {
 	case model.FormationAssignmentTypeApplication:
@@ -125,13 +125,27 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 		log.C(ctx).Debugf("Reverse assignment with source %q and target %q in formation with ID %q is not found.", fa.Target, fa.Source, formation.ID)
 	}
 
+	notification, err := fan.GenerateFormationAssignmentNotification(ctx, fa, operation)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while generating notification for formation assignment with ID: %q and target type: %q and target ID: %q that is used by formation constraint operators", fa.ID, fa.TargetType, fa.Target)
+	}
+
+	var formationAssignmentTemplateInput webhook.FormationAssignmentTemplateInput
+	if notification != nil {
+		formationAssignmentTemplateInput = notification.Object
+	}
+
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		ResourceType:               targetType,
-		ResourceSubtype:            targetSubtype,
-		Operation:                  operation,
-		FormationAssignment:        fa,
-		ReverseFormationAssignment: reverseFa,
-		Formation:                  formation,
+		ResourceType:                         targetType,
+		ResourceSubtype:                      targetSubtype,
+		LastFormationAssignmentState:         lastFormationAssignmentState,
+		LastFormationAssignmentConfiguration: lastFormationAssignmentConfiguration,
+		Tenant:                               tenantID,
+		FormationAssignmentTemplateInput:     formationAssignmentTemplateInput,
+		Operation:                            operation,
+		FormationAssignment:                  fa,
+		ReverseFormationAssignment:           reverseFa,
+		Formation:                            formation,
 	}, nil
 }
 
@@ -153,8 +167,8 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 	}
 
 	return &webhookclient.FormationAssignmentNotificationRequestExt{
-		Operation:                              operation,
 		FormationAssignmentNotificationRequest: faRequestMapping.Request,
+		Operation:                              operation,
 		FormationAssignment:                    faRequestMapping.FormationAssignment,
 		ReverseFormationAssignment:             reverseFa,
 		Formation:                              formation,

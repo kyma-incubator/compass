@@ -115,8 +115,9 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
+	destinationName := destinationDetails.Name
 	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
-		EntityName:   "",
+		EntityName:   destinationName,
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   destinationDetails.InstanceID,
@@ -125,7 +126,6 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 		return errors.Wrapf(err, "while building destination URL")
 	}
 
-	destinationName := destinationDetails.Name
 	destReqBody := &NoAuthDestinationRequestBody{
 		BaseDestinationRequestBody: BaseDestinationRequestBody{
 			Name:                 destinationName,
@@ -172,8 +172,9 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
+	destinationName := destinationDetails.Name
 	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
-		EntityName:   "",
+		EntityName:   destinationName,
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   destinationDetails.InstanceID,
@@ -187,7 +188,6 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 		return err
 	}
 
-	destinationName := destinationDetails.Name
 	log.C(ctx).Infof("Creating inbound basic destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
 	_, statusCode, err := s.executeCreateRequest(ctx, strURL, reqBody, destinationName)
 	if err != nil {
@@ -219,8 +219,9 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
+	destinationName := destinationDetails.Name
 	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
-		EntityName:   "",
+		EntityName:   destinationName,
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   destinationDetails.InstanceID,
@@ -234,17 +235,28 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 		return errors.Wrapf(err, "while getting destination certificate name for destination auth type: %s", destinationcreatorpkg.AuthTypeSAMLAssertion)
 	}
 
-	destinationName := destinationDetails.Name
 	destReqBody := &SAMLAssertionDestinationRequestBody{
 		BaseDestinationRequestBody: BaseDestinationRequestBody{
 			Name:               destinationName,
-			URL:                samlAuthCreds.URL,
+			URL:                "",
 			Type:               destinationcreatorpkg.TypeHTTP,
 			ProxyType:          destinationcreatorpkg.ProxyTypeInternet,
 			AuthenticationType: destinationcreatorpkg.AuthTypeSAMLAssertion,
 		},
 		KeyStoreLocation: certName + destinationcreatorpkg.JavaKeyStoreFileExtension,
 	}
+
+	enrichedProperties, err := enrichDestinationAdditionalPropertiesWithCorrelationIDs(s.config, correlationIDs, destinationDetails.AdditionalProperties)
+	if err != nil {
+		return err
+	}
+	destReqBody.AdditionalProperties = enrichedProperties
+
+	u, err := s.calculateDestinationURL(ctx, destinationDetails.URL, samlAuthCreds.URL, destinationcreatorpkg.AuthTypeSAMLAssertion, formationAssignment.TenantID, formationAssignment.Target)
+	if err != nil {
+		return errors.Wrapf(err, "while calculating destination URL")
+	}
+	destReqBody.URL = u
 
 	if destinationDetails.Type != "" {
 		destReqBody.Type = destinationcreatorpkg.Type(destinationDetails.Type)
@@ -258,12 +270,6 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 		return errors.Errorf("The provided authentication type: %s in the destination details is invalid. It should be %s", destinationDetails.Authentication, destinationcreatorpkg.AuthTypeSAMLAssertion)
 	}
 
-	enrichedProperties, err := enrichDestinationAdditionalPropertiesWithCorrelationIDs(s.config, correlationIDs, destinationDetails.AdditionalProperties)
-	if err != nil {
-		return err
-	}
-	destReqBody.AdditionalProperties = enrichedProperties
-
 	app, err := s.applicationRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Source)
 	if err != nil {
 		return errors.Wrapf(err, "while getting application with ID: %q", formationAssignment.Source)
@@ -272,7 +278,7 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 		destReqBody.Audience = *app.BaseURL
 	}
 
-	if err := destReqBody.Validate(s.config); err != nil {
+	if err := destReqBody.Validate(); err != nil {
 		return errors.Wrapf(err, "while validating SAML assertion destination request body")
 	}
 
@@ -307,8 +313,9 @@ func (s *Service) CreateClientCertificateDestination(ctx context.Context, destin
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
+	destinationName := destinationDetails.Name
 	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
-		EntityName:   "",
+		EntityName:   destinationName,
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   destinationDetails.InstanceID,
@@ -322,17 +329,28 @@ func (s *Service) CreateClientCertificateDestination(ctx context.Context, destin
 		return errors.Wrapf(err, "while getting destination certificate name for destination auth type: %s", destinationcreatorpkg.AuthTypeClientCertificate)
 	}
 
-	destinationName := destinationDetails.Name
 	destReqBody := &ClientCertAuthDestinationRequestBody{
 		BaseDestinationRequestBody: BaseDestinationRequestBody{
 			Name:               destinationName,
-			URL:                clientCertAuthCreds.URL,
+			URL:                "",
 			Type:               destinationcreatorpkg.TypeHTTP,
 			ProxyType:          destinationcreatorpkg.ProxyTypeInternet,
 			AuthenticationType: destinationcreatorpkg.AuthTypeClientCertificate,
 		},
 		KeyStoreLocation: certName + destinationcreatorpkg.JavaKeyStoreFileExtension,
 	}
+
+	enrichedProperties, err := enrichDestinationAdditionalPropertiesWithCorrelationIDs(s.config, correlationIDs, destinationDetails.AdditionalProperties)
+	if err != nil {
+		return err
+	}
+	destReqBody.AdditionalProperties = enrichedProperties
+
+	u, err := s.calculateDestinationURL(ctx, destinationDetails.URL, clientCertAuthCreds.URL, destinationcreatorpkg.AuthTypeClientCertificate, formationAssignment.TenantID, formationAssignment.Target)
+	if err != nil {
+		return errors.Wrapf(err, "while calculating destination URL")
+	}
+	destReqBody.URL = u
 
 	if destinationDetails.Type != "" {
 		destReqBody.Type = destinationcreatorpkg.Type(destinationDetails.Type)
@@ -346,13 +364,7 @@ func (s *Service) CreateClientCertificateDestination(ctx context.Context, destin
 		return errors.Errorf("The provided authentication type: %s in the destination details is invalid. It should be %s", destinationDetails.Authentication, destinationcreatorpkg.AuthTypeClientCertificate)
 	}
 
-	enrichedProperties, err := enrichDestinationAdditionalPropertiesWithCorrelationIDs(s.config, correlationIDs, destinationDetails.AdditionalProperties)
-	if err != nil {
-		return err
-	}
-	destReqBody.AdditionalProperties = enrichedProperties
-
-	if err := destReqBody.Validate(s.config); err != nil {
+	if err := destReqBody.Validate(); err != nil {
 		return errors.Wrapf(err, "while validating client certificate destination request body")
 	}
 
@@ -391,19 +403,19 @@ func (s *Service) CreateCertificate(ctx context.Context, destinationsDetails []o
 		return nil, errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
+	certName, err := GetDestinationCertificateName(ctx, destinationAuthType, formationAssignment.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	strURL, err := buildCertificateURL(ctx, s.config.CertificateAPIConfig, URLParameters{
-		EntityName:   "",
+		EntityName:   certName,
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   destinationsDetails[0].InstanceID,
 	}, false)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building certificate URL")
-	}
-
-	certName, err := GetDestinationCertificateName(ctx, destinationAuthType, formationAssignment.ID)
-	if err != nil {
-		return nil, err
 	}
 
 	certReqBody := &CertificateRequestBody{Name: certName}
@@ -642,7 +654,6 @@ func (s *Service) PrepareBasicRequestBody(
 	reqBody := &BasicAuthDestinationRequestBody{
 		BaseDestinationRequestBody: BaseDestinationRequestBody{
 			Name:               destinationDetails.Name,
-			URL:                "",
 			Type:               destinationcreatorpkg.TypeHTTP,
 			ProxyType:          destinationcreatorpkg.ProxyTypeInternet,
 			AuthenticationType: destinationcreatorpkg.AuthTypeBasic,
@@ -657,23 +668,11 @@ func (s *Service) PrepareBasicRequestBody(
 	}
 	reqBody.AdditionalProperties = enrichedProperties
 
-	if destinationDetails.URL != "" {
-		reqBody.URL = destinationDetails.URL
+	u, err := s.calculateDestinationURL(ctx, destinationDetails.URL, basicAuthenticationCredentials.URL, destinationcreatorpkg.AuthTypeBasic, formationAssignment.TenantID, formationAssignment.Target)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while calculating destination URL")
 	}
-
-	if destinationDetails.URL == "" && basicAuthenticationCredentials.URL != "" {
-		reqBody.URL = basicAuthenticationCredentials.URL
-	}
-
-	if destinationDetails.URL == "" && basicAuthenticationCredentials.URL == "" {
-		app, err := s.applicationRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Target)
-		if err != nil {
-			return nil, err
-		}
-		if app.BaseURL != nil {
-			reqBody.URL = *app.BaseURL
-		}
-	}
+	reqBody.URL = u
 
 	if destinationDetails.Type != "" {
 		reqBody.Type = destinationcreatorpkg.Type(destinationDetails.Type)
@@ -687,7 +686,7 @@ func (s *Service) PrepareBasicRequestBody(
 		return nil, errors.Errorf("The provided authentication type: %s in the destination details is invalid. It should be %s", destinationDetails.Authentication, destinationcreatorpkg.AuthTypeBasic)
 	}
 
-	if err := reqBody.Validate(s.config); err != nil {
+	if err := reqBody.Validate(); err != nil {
 		return nil, errors.Wrapf(err, "while validating basic destination request body")
 	}
 
@@ -754,6 +753,73 @@ func (s *Service) sanitizeDestinationSubaccountIDs(ctx context.Context, destinat
 	}
 
 	return nil
+}
+
+// calculateDestinationURL build the destination URL based on the provided input with the following logic/algorithm:
+// if the URL in the destination details contains schema and host(+ optionally path) it will be used as destination URL
+// if the destination details' URL contains only a path, it will be concatenated either to the URL in the credentials(if provided) or to the base URL of the system
+func (s *Service) calculateDestinationURL(ctx context.Context, destinationDetailsURL, authCredsURL string, destAuthType destinationcreatorpkg.AuthType, assignmentTenantID, assignmentTargetID string) (string, error) {
+	var (
+		finalURL       string
+		urlPath        string
+		urlHasOnlyPath bool
+	)
+
+	if destinationDetailsURL != "" {
+		u, err := url.Parse(destinationDetailsURL)
+		if err != nil {
+			return "", err
+		}
+
+		if u.IsAbs() && u.Host != "" {
+			finalURL = destinationDetailsURL
+			log.C(ctx).Infof("The final destination URL is: %s", finalURL)
+			return finalURL, nil
+		}
+
+		if u.IsAbs() && u.Host == "" {
+			return "", errors.New("The provided URL in the destination details has only scheme")
+		}
+
+		if !u.IsAbs() && u.Host == "" && u.Path != "" {
+			log.C(ctx).Infof("The provided URL in the destination details constains only path")
+			urlHasOnlyPath = true
+			urlPath = u.Path
+		}
+	}
+
+	if (destinationDetailsURL == "" || urlHasOnlyPath) && authCredsURL != "" {
+		log.C(ctx).Infof("There is provided URL: %s in the authentication credentials of type: %s", authCredsURL, destAuthType)
+		finalURL = authCredsURL
+		if urlHasOnlyPath {
+			log.C(ctx).Infof("Appending the following path: %s to the URL", urlPath)
+			finalURL += urlPath
+		}
+		log.C(ctx).Infof("The final destination URL is: %s", finalURL)
+		return finalURL, nil
+	}
+
+	if (destinationDetailsURL == "" || urlHasOnlyPath) && authCredsURL == "" {
+		log.C(ctx).Warnf("There is NOT provided URL in the authentication credentials of type: %s", destAuthType)
+		app, err := s.applicationRepository.GetByID(ctx, assignmentTenantID, assignmentTargetID)
+		if err != nil {
+			return "", err
+		}
+		if app.BaseURL != nil {
+			if *app.BaseURL == "" {
+				return "", errors.Errorf("The base URL of application with ID: %s cannot be empty", app.ID)
+			}
+			finalURL = *app.BaseURL
+			if urlHasOnlyPath {
+				log.C(ctx).Infof("Appending the following path: %s to the URL", urlPath)
+				finalURL += urlPath
+			}
+			log.C(ctx).Infof("The final destination URL is: %s", finalURL)
+			return finalURL, nil
+		}
+	}
+
+	return "", nil
 }
 
 func (s *Service) getRegionLabel(ctx context.Context, tenantID string) (string, error) {
@@ -931,6 +997,10 @@ func enrichDestinationAdditionalPropertiesWithCorrelationIDs(
 	correlationIDs []string,
 	destinationAdditionalProperties json.RawMessage,
 ) (json.RawMessage, error) {
+	if len(correlationIDs) == 0 {
+		return destinationAdditionalProperties, nil
+	}
+
 	joinedCorrelationIDs := strings.Join(correlationIDs, ",")
 	additionalProps, err := sjson.Set(string(destinationAdditionalProperties), destinationCreatorCfg.CorrelationIDsKey, joinedCorrelationIDs)
 	if err != nil {

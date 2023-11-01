@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -47,7 +46,6 @@ const (
 var (
 	TenantIDParam      = "tenantId"
 	ApplicationIDParam = "applicationId"
-	ExtraDelayParam    = "delay"
 	formationIDParam   = "uclFormationId"
 	respErrorMsg       = "An unexpected error occurred while processing the request"
 )
@@ -178,6 +176,7 @@ type Response struct {
 	Operation     Operation
 	ApplicationID *string
 	RequestBody   json.RawMessage
+	RequestPath   string
 }
 
 // NewHandler creates a new Handler
@@ -276,19 +275,56 @@ func (h *Handler) RespondWithIncompleteAndDestinationDetails(writer http.Respons
 	responseFunc := func(bodyBytes []byte) {
 		if config := gjson.Get(string(bodyBytes), "receiverTenant.configuration").String(); config == "" {
 			// NoAuthentication destination on 'provider' subaccount level
-			// BasicDestination on 'provider' instance level
+			// BasicDestination on 'provider' instance level. Also, the basic destination has only a path for the URL and no correlationIds property
 			// Client Certificate Authentication destination on 'consumer' subaccount(implicitly) level
 			// SAML Assertion destination in the 'consumer' subaccount(implicitly) on provider instance level
-			responseWithPlaceholders := "{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"destinations\":[{\"name\":\"e2e-design-time-destination-name\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"http://e2e-design-time-url-example.com\", \"subaccountId\":\"%s\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"correlationIds\":[\"e2e-basic-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-basic-destination-name\",\"description\":\"e2e-basic-destination description\",\"url\":\"http://e2e-basic-url-example.com\",\"authentication\":\"BasicAuthentication\",\"subaccountId\":\"%s\", \"instanceId\":\"%s\", \"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"e2e-saml-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-saml-assertion-destination-name\",\"description\":\"e2e saml assertion destination description\",\"url\":\"http://e2e-saml-url-example.com\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]},\"clientCertificateAuthentication\":{\"correlationIds\":[\"e2e-client-cert-auth-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-client-cert-auth-destination-name\",\"description\":\"e2e client cert auth destination description\",\"url\":\"http://e2e-client-cert-auth-url-example.com\",\"additionalProperties\":{\"e2e-clientCertAuthTestKey\":\"e2e-clientCertAuthTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}}"
+			responseWithPlaceholders := "{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"destinations\":[{\"name\":\"e2e-design-time-destination-name\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"http://e2e-design-time-url-example.com\", \"subaccountId\":\"%s\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"destinations\":[{\"name\":\"e2e-basic-destination-name\",\"description\":\"e2e-basic-destination description\",\"url\":\"/e2e-basic-url-path\",\"authentication\":\"BasicAuthentication\",\"subaccountId\":\"%s\", \"instanceId\":\"%s\", \"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"e2e-saml-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-saml-assertion-destination-name\",\"description\":\"e2e saml assertion destination description\",\"url\":\"http://e2e-saml-url-example.com\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]},\"clientCertificateAuthentication\":{\"correlationIds\":[\"e2e-client-cert-auth-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-client-cert-auth-destination-name\",\"description\":\"e2e client cert auth destination description\",\"url\":\"http://e2e-client-cert-auth-url-example.com\",\"additionalProperties\":{\"e2e-clientCertAuthTestKey\":\"e2e-clientCertAuthTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}}"
 			response := fmt.Sprintf(responseWithPlaceholders, h.config.TestProviderSubaccountID, h.config.TestProviderSubaccountID, h.config.TestDestinationInstanceID, h.config.TestDestinationInstanceID)
 			httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage(response))
 			return
 		}
 
-		response := FormationAssignmentResponseBodyWithState{
-			State: ReadyAssignmentState,
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
+	}
+
+	h.syncFAResponse(ctx, writer, r, responseFunc)
+}
+
+// RespondWithIncompleteAndRedirectDetails handles synchronous formation assignment notification requests for Assign and Unassign operation
+// that returns a random configuration later which will be used to redirect the notification based on some property of it in case of Assign request.
+// And in case of Unassign operation, we only return ready state
+func (h *Handler) RespondWithIncompleteAndRedirectDetails(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	if r.Method == http.MethodDelete {
+		log.C(ctx).Infof("Handling unassign redirect notification, returning only READY state")
+		responseFunc := func([]byte) {
+			httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
 		}
-		httputils.RespondWithBody(ctx, writer, http.StatusOK, response)
+		h.syncFAResponse(ctx, writer, r, responseFunc)
+		return
+	}
+
+	responseFunc := func(bodyBytes []byte) {
+		if config := gjson.Get(string(bodyBytes), "receiverTenant.configuration").String(); config == "" {
+			response := "{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"redirectProperties\":[{\"redirectPropertyName\":\"redirectName\",\"redirectPropertyID\":\"redirectID\"}]}}"
+			log.C(ctx).Infof("Responding with CONFIG_PENDING state and custom redirect configuration")
+			httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage(response))
+			return
+		}
+
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
+	}
+
+	h.syncFAResponse(ctx, writer, r, responseFunc)
+}
+
+// RedirectNotificationHandler handle the requests in case of a redirect operator is invoked
+// and return only READY state with no configuration
+func (h *Handler) RedirectNotificationHandler(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	responseFunc := func([]byte) {
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
 	}
 
 	h.syncFAResponse(ctx, writer, r, responseFunc)
@@ -306,10 +342,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
 func (h *Handler) DestinationDelete(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func([]byte) {
-		response := FormationAssignmentResponseBodyWithState{
-			State: ReadyAssignmentState,
-		}
-		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
 	}
 
 	h.syncFAResponse(ctx, writer, r, responseFunc)
@@ -420,6 +453,7 @@ func (h *Handler) syncFAResponse(ctx context.Context, writer http.ResponseWriter
 		mappings = append(h.Mappings[id], Response{
 			Operation:   Assign,
 			RequestBody: bodyBytes,
+			RequestPath: r.URL.Path,
 		})
 	}
 
@@ -435,6 +469,7 @@ func (h *Handler) syncFAResponse(ctx context.Context, writer http.ResponseWriter
 			Operation:     Unassign,
 			ApplicationID: &applicationId,
 			RequestBody:   bodyBytes,
+			RequestPath:   r.URL.Path,
 		})
 	}
 
@@ -451,8 +486,42 @@ type AsyncFAResponseFn func(client *http.Client, correlationID, formationID, for
 // AsyncNoopFAResponseFn is an empty implementation of the AsyncFAResponseFn function
 var AsyncNoopFAResponseFn = func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {}
 
-// Async handles asynchronous formation assignment notification requests for Assign operation
+// Async handles asynchronous formation assignment notification requests for Assign operation using the new receiverTenant/assignedTenant request body format
 func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	correlationID := correlation.CorrelationIDFromContext(ctx)
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
+		return
+	}
+
+	isInitialReq, statusCode, err := isInitialNotificationRequest(ctx, bodyBytes)
+	if err != nil {
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, statusCode)
+		return
+	}
+
+	if isInitialReq {
+		writer.WriteHeader(statusCode)
+		return
+	}
+
+	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
+		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
+		if err != nil {
+			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
+		}
+	}
+	r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+	h.asyncFAResponse(ctx, writer, r, Assign, `{"asyncKey": "asyncValue", "asyncKey2": {"asyncNestedKey": "asyncNestedValue"}}`, responseFunc)
+}
+
+// AsyncOld handles asynchronous formation assignment notification requests for Assign operation using old request body format
+// Should minimize/restrict the usage of this one and migrate to the new handler and request body format
+func (h *Handler) AsyncOld(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
@@ -475,17 +544,14 @@ func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	assignedTenantState := gjson.GetBytes(bodyBytes, "assignedTenant.state").String()
-	if assignedTenantState == "" {
-		err := errors.New("The assigned tenant state in the request body cannot be empty")
-		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
+	isInitialReq, statusCode, err := isInitialNotificationRequest(ctx, bodyBytes)
+	if err != nil {
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, statusCode)
 		return
 	}
 
-	assignedTenantConfig := gjson.GetBytes(bodyBytes, "assignedTenant.configuration").String()
-	if assignedTenantState == string(InitialAssignmentState) && assignedTenantConfig == "" || assignedTenantConfig == "\"\"" {
-		log.C(ctx).Infof("Initial notification request is received with empty config in the assigned tenant. Returning 202 Accepted with noop response func")
-		writer.WriteHeader(http.StatusAccepted)
+	if isInitialReq {
+		writer.WriteHeader(statusCode)
 		return
 	}
 
@@ -670,6 +736,7 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 	response := Response{
 		Operation:   operation,
 		RequestBody: bodyBytes,
+		RequestPath: r.URL.Path,
 	}
 	if r.Method == http.MethodDelete {
 		applicationId, ok := routeVars[ApplicationIDParam]
@@ -702,21 +769,24 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 		return
 	}
 
-	go func() {
-		if delayStr, ok := routeVars[ExtraDelayParam]; ok {
-			delay, err := strconv.Atoi(delayStr)
-			if err != nil {
-				httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while converting delay to int from request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
-				return
-			}
-			log.C(ctx).Infof("There are %d seconds of extra delay. Sleeping for %d seconds...", delay, delay)
-			time.Sleep(time.Duration(delay) * time.Second)
-		}
-
-		responseFunc(certAuthorizedHTTPClient, correlationID, formationID, formationAssignmentID, config)
-	}()
+	go responseFunc(certAuthorizedHTTPClient, correlationID, formationID, formationAssignmentID, config)
 
 	writer.WriteHeader(http.StatusAccepted)
+}
+
+func isInitialNotificationRequest(ctx context.Context, bodyBytes []byte) (bool, int, error) {
+	assignedTenantState := gjson.GetBytes(bodyBytes, "assignedTenant.state").String()
+	if assignedTenantState == "" {
+		return false, http.StatusBadRequest, errors.New("The assigned tenant state in the request body cannot be empty")
+	}
+
+	assignedTenantConfig := gjson.GetBytes(bodyBytes, "assignedTenant.configuration").String()
+	if assignedTenantState == string(InitialAssignmentState) && (assignedTenantConfig == "" || assignedTenantConfig == "\"\"") {
+		log.C(ctx).Infof("Initial notification request is received with empty config in the assigned tenant. Returning 202 Accepted with noop response func")
+		return true, http.StatusAccepted, nil
+	}
+
+	return false, http.StatusAccepted, nil
 }
 
 func retrieveFormationID(ctx context.Context, bodyBytes []byte) (string, error) {

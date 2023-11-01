@@ -23,11 +23,12 @@ const (
 	designTimeDestName               = "test-design-time-dest-name"
 	basicDestName                    = "test-basic-dest-name"
 	samlAssertionDestName            = "test-saml-assertion-dest-name"
+	samlAssertionDestURL             = "test-saml-assertion-dest-url"
 	clientCertAuthDestName           = "test-client-cert-auth-dest-name"
 	destinationDescription           = "test-dest-description"
 	destinationTypeHTTP              = string(destinationcreatorpkg.TypeHTTP)
 	destinationProxyTypeInternet     = string(destinationcreatorpkg.ProxyTypeInternet)
-	destinationURL                   = "http://dest-test-url"
+	destinationURL                   = "https://dest-test-url"
 	invalidDestAuthType              = "invalidDestAuthTypeValue"
 	destinationInternalSubaccountID  = "destination-internal-subaccount-id"
 	destinationExternalSubaccountID  = "destination-external-subaccount-id"
@@ -71,8 +72,9 @@ var (
 	emptyCtx = context.Background()
 	testErr  = errors.New("Test Error")
 
-	appTemplateID = "testAppTemplateID"
-	appBaseURL    = "http://app-test-base-url"
+	appTemplateID   = "testAppTemplateID"
+	appBaseURL      = "http://app-test-base-url"
+	appEmptyBaseURL = ""
 
 	TestEmptyErrorValueRawJSON = json.RawMessage(`\"\"`)
 	TestConfigValueRawJSON     = json.RawMessage(`{"configKey":"configValue"}`)
@@ -124,6 +126,14 @@ var (
 		},
 		Name:                  appName,
 		BaseURL:               &appBaseURL,
+		ApplicationTemplateID: &appTemplateID,
+	}
+	testAppWithEmptyBaseURL = &model.Application{
+		BaseEntity: &model.BaseEntity{
+			ID: appID,
+		},
+		Name:                  appName,
+		BaseURL:               &appEmptyBaseURL,
 		ApplicationTemplateID: &appTemplateID,
 	}
 	testAppWithoutTmplID = &model.Application{

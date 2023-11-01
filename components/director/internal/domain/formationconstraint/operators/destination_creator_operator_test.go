@@ -37,7 +37,7 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 	}{
 		{
 			Name:  "Success when operation is 'unassign' and location is 'NotificationStatusReturned'",
-			Input: inputForUnassignNotificationStatusReturned,
+			Input: destinationCreatorInputForUnassignNotificationStatusReturned,
 			DestinationSvc: func() *automock.DestinationService {
 				destSvc := &automock.DestinationService{}
 				destSvc.On("DeleteDestinations", ctx, fa, false).Return(nil)
@@ -100,7 +100,7 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 		},
 		{
 			Name:           "Success when operation is 'Unassign' and location is 'SendNotification'",
-			Input:          inputForUnassignSendNotification,
+			Input:          destinationCreatorInputForUnassignSendNotification,
 			ExpectedResult: true,
 		},
 		{
@@ -115,7 +115,7 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 		},
 		{
 			Name:  "Error when operation is 'unassign' and location is 'NotificationStatusReturned' and the deletion of destinations fails",
-			Input: inputForUnassignNotificationStatusReturned,
+			Input: destinationCreatorInputForUnassignNotificationStatusReturned,
 			DestinationSvc: func() *automock.DestinationService {
 				destSvc := &automock.DestinationService{}
 				destSvc.On("DeleteDestinations", ctx, fa, false).Return(testErr)

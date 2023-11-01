@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
@@ -26,6 +28,7 @@ const (
 	formationAssignmentID    = "c54341c4-ca3a-11ed-afa1-0242ac120564"
 	formationTemplateID      = "b87631c4-ca3a-11ed-afa1-0242ac120002"
 	otherFormationTemplateID = "b05731c4-ca3a-11ed-afa1-0242ac120002"
+	webhookID                = "f4aac335-8afa-421f-a5ad-da9ce7a676bc"
 
 	// Certificate constants
 	testFileName   = "test-file-name"
@@ -63,11 +66,50 @@ const (
 	testJSONConfig          = `{"key": "val"}`
 )
 
+// Common variables used across different operators' tests
 var (
 	ctx            = context.TODO()
 	testErr        = errors.New("test error")
 	corrleationIDs []string
 
+	preNotificationStatusReturnedLocation = fixJoinPointLocation(model.NotificationStatusReturned, model.PreOperation)
+	preSendNotificationLocation           = fixJoinPointLocation(model.SendNotificationOperation, model.PreOperation)
+	preGenerateFANotificationLocation     = fixJoinPointLocation(model.GenerateFormationAssignmentNotificationOperation, model.PreOperation)
+	preAssignFormationLocation            = fixJoinPointLocation(model.AssignFormationOperation, model.PreOperation)
+
+	details = formationconstraintpkg.AssignFormationOperationDetails{
+		ResourceType:    "runtime",
+		ResourceSubtype: "kyma",
+	}
+
+	// func TestConstraintEngine_EnforceConstraints
+	formationConstraintUnsupportedOperatorModel = &model.FormationConstraint{
+		ID:              testID,
+		Name:            formationConstraintName,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        "unsupported",
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: model.FormationTypeFormationConstraintScope,
+	}
+
+	formationConstraintModel = &model.FormationConstraint{
+		ID:              testID,
+		Name:            formationConstraintName,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        operatorName,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: model.FormationTypeFormationConstraintScope,
+	}
+)
+
+// Destination Creator variables
+var (
 	invalidFAConfig              = json.RawMessage("invalid-destination-config")
 	configWithDifferentStructure = json.RawMessage(testJSONConfig)
 	destsConfigValueRawJSON      = json.RawMessage(
@@ -94,17 +136,13 @@ var (
 
 	faConfigWithDifferentStructure = fixFormationAssignmentWithConfig(configWithDifferentStructure)
 
-	inputForUnassignNotificationStatusReturned = fixDestinationCreatorInputForUnassignWithLocationOperation(model.NotificationStatusReturned)
-	inputForUnassignSendNotification           = fixDestinationCreatorInputForUnassignWithLocationOperation(model.SendNotificationOperation)
+	destinationCreatorInputForUnassignNotificationStatusReturned = fixDestinationCreatorInputForUnassignWithLocationOperation(model.NotificationStatusReturned)
+	destinationCreatorInputForUnassignSendNotification           = fixDestinationCreatorInputForUnassignWithLocationOperation(model.SendNotificationOperation)
 
 	inputForAssignWithFormationAssignmentInitialState = &formationconstraintpkg.DestinationCreatorInput{
 		Operation:                       model.AssignFormation,
 		JoinPointDetailsFAMemoryAddress: faWithInitialState.GetAddress(),
 	}
-
-	preNotificationStatusReturnedLocation = fixJoinPointLocation(model.NotificationStatusReturned, model.PreOperation)
-	preSendNotificationLocation           = fixJoinPointLocation(model.SendNotificationOperation, model.PreOperation)
-	preGenerateFANotificationLocation     = fixJoinPointLocation(model.GenerateFormationAssignmentNotificationOperation, model.PreOperation)
 
 	inputWithAssignmentWithSAMLCertData                                 = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithSAMLCertData, preNotificationStatusReturnedLocation)
 	inputWithAssignmentWithClientCertAuthCertData                       = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithClientCertAuthCertData, preNotificationStatusReturnedLocation)
@@ -131,8 +169,10 @@ var (
 			ConstraintType: model.PreOperation,
 		},
 	}
+)
 
-	// func TestConstraintOperators_IsNotAssignedToAnyFormationOfType
+// IsNotAssignedToAnyFormationOfTypeOperator variables
+var (
 	inputTenantResourceType = &formationconstraintpkg.IsNotAssignedToAnyFormationOfTypeInput{
 		FormationTemplateID: formationTemplateID,
 		ResourceType:        model.TenantResourceType,
@@ -167,32 +207,29 @@ var (
 		Tenant:              testTenantID,
 	}
 
-	// func TestConstraintEngine_EnforceConstraints
-	formationConstraintUnsupportedOperatorModel = &model.FormationConstraint{
-		ID:              testID,
-		Name:            formationConstraintName,
-		ConstraintType:  model.PreOperation,
-		TargetOperation: model.AssignFormationOperation,
-		Operator:        "unsupported",
-		ResourceType:    model.ApplicationResourceType,
-		ResourceSubtype: resourceSubtype,
-		InputTemplate:   inputTemplate,
-		ConstraintScope: model.FormationTypeFormationConstraintScope,
+	emptyAssignments = []*model.AutomaticScenarioAssignment{}
+
+	assignments = []*model.AutomaticScenarioAssignment{
+		{ScenarioName: scenario},
 	}
 
-	formationConstraintModel = &model.FormationConstraint{
-		ID:              testID,
-		Name:            formationConstraintName,
-		ConstraintType:  model.PreOperation,
-		TargetOperation: model.AssignFormationOperation,
-		Operator:        operatorName,
-		ResourceType:    model.ApplicationResourceType,
-		ResourceSubtype: resourceSubtype,
-		InputTemplate:   inputTemplate,
-		ConstraintScope: model.FormationTypeFormationConstraintScope,
-	}
+	scenariosLabel             = &model.Label{Value: []interface{}{scenario}}
+	scenariosLabelInvalidValue = &model.Label{Value: "invalid"}
 
-	// func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification
+	formations = []*model.Formation{
+		{
+			FormationTemplateID: otherFormationTemplateID,
+		},
+	}
+	formations2 = []*model.Formation{
+		{
+			FormationTemplateID: formationTemplateID,
+		},
+	}
+)
+
+// DoNotGenerateFormationAssignmentNotificationOperator and DoNotGenerateFormationAssignmentNotificationForLoopsOperator variables
+var (
 	in = &formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationInput{
 		ResourceType:       model.ApplicationResourceType,
 		ResourceSubtype:    inputAppType,
@@ -256,38 +293,17 @@ var (
 		Tenant:             testTenantID,
 		ExceptSubtypes:     []string{exceptType},
 	}
-
-	scenariosLabel             = &model.Label{Value: []interface{}{scenario}}
-	scenariosLabelInvalidValue = &model.Label{Value: "invalid"}
-
-	formations = []*model.Formation{
-		{
-			FormationTemplateID: otherFormationTemplateID,
-		},
-	}
-
-	formations2 = []*model.Formation{
-		{
-			FormationTemplateID: formationTemplateID,
-		},
-	}
-
-	emptyAssignments = []*model.AutomaticScenarioAssignment{}
-
-	assignments = []*model.AutomaticScenarioAssignment{
-		{ScenarioName: scenario},
-	}
-
-	location = formationconstraintpkg.JoinPointLocation{
-		OperationName:  "assign",
-		ConstraintType: "pre",
-	}
-
-	details = formationconstraintpkg.AssignFormationOperationDetails{
-		ResourceType:    "runtime",
-		ResourceSubtype: "kyma",
-	}
 )
+
+// RedirectNotificationOperator variables
+var (
+	graphqlWebhook                   = fixWebhook()
+	inputWithoutWebhookMemoryAddress = &formationconstraintpkg.RedirectNotificationInput{}
+	webhookURL                       = "testWebhookURL"
+	webhookURLTemplate               = "testWebhookURLTemplate"
+)
+
+// Destination Creator operator fixtures
 
 func fixDestinationCreatorInputWithAssignmentMemoryAddress(operation model.FormationOperation, formationAssignment *model.FormationAssignment, location formationconstraintpkg.JoinPointLocation) *formationconstraintpkg.DestinationCreatorInput {
 	return &formationconstraintpkg.DestinationCreatorInput{
@@ -323,28 +339,6 @@ func fixDestinationCreatorInputWithAssignmentMemoryAddressAndCertSvcKeystore(ope
 		JoinPointDetailsFAMemoryAddress: formationAssignment.GetAddress(),
 		Location:                        location,
 		UseCertSvcKeystoreForSAML:       useCertSvcKeystoreForSAML,
-	}
-}
-
-func fixJoinPointLocation(operationName model.TargetOperation, constraintType model.FormationConstraintType) formationconstraintpkg.JoinPointLocation {
-	return formationconstraintpkg.JoinPointLocation{
-		OperationName:  operationName,
-		ConstraintType: constraintType,
-	}
-}
-
-func fixFormationAssignmentWithConfig(config json.RawMessage) *model.FormationAssignment {
-	return &model.FormationAssignment{
-		ID:    formationAssignmentID,
-		State: string(model.ReadyAssignmentState),
-		Value: config,
-	}
-}
-
-func fixFormationAssignmentWithState(state model.FormationAssignmentState) *model.FormationAssignment {
-	return &model.FormationAssignment{
-		ID:    formationAssignmentID,
-		State: string(state),
 	}
 }
 
@@ -416,6 +410,72 @@ func fixCertificateData() *operators.CertificateData {
 		CertificateChain: testCertChain,
 	}
 }
+
+// Config Mutator operator fixtures
+
+func fixConfigMutatorInput(fa *model.FormationAssignment, state, config *string, onlyForSourceSubtypes []string) *formationconstraintpkg.ConfigMutatorInput {
+	return &formationconstraintpkg.ConfigMutatorInput{
+		Operation:                       model.UnassignFormation,
+		JoinPointDetailsFAMemoryAddress: fa.GetAddress(),
+		Location: formationconstraintpkg.JoinPointLocation{
+			OperationName:  model.NotificationStatusReturned,
+			ConstraintType: model.PreOperation,
+		},
+		ModifiedConfiguration: config,
+		State:                 state,
+		Tenant:                testTenantID,
+		OnlyForSourceSubtypes: onlyForSourceSubtypes,
+	}
+}
+
+// Redirect Notification operator fixtures
+
+func fixRedirectNotificationOperatorInput(shouldRedirect bool) *formationconstraintpkg.RedirectNotificationInput {
+	return &formationconstraintpkg.RedirectNotificationInput{
+		ShouldRedirect:       shouldRedirect,
+		URLTemplate:          "redirectNotificationOperatorInputURLTemplate",
+		URL:                  "redirectNotificationOperatorInputURL",
+		WebhookMemoryAddress: graphqlWebhook.GetAddress(),
+		Location: formationconstraintpkg.JoinPointLocation{
+			OperationName:  model.SendNotificationOperation,
+			ConstraintType: model.PreOperation,
+		},
+	}
+}
+
+func fixWebhook() *graphql.Webhook {
+	return &graphql.Webhook{
+		ID:          webhookID,
+		URL:         &webhookURL,
+		URLTemplate: &webhookURLTemplate,
+	}
+}
+
+// Common fixtures for all operators
+
+func fixFormationAssignmentWithConfig(config json.RawMessage) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:    formationAssignmentID,
+		State: string(model.ReadyAssignmentState),
+		Value: config,
+	}
+}
+
+func fixFormationAssignmentWithState(state model.FormationAssignmentState) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:    formationAssignmentID,
+		State: string(state),
+	}
+}
+
+func fixJoinPointLocation(operationName model.TargetOperation, constraintType model.FormationConstraintType) formationconstraintpkg.JoinPointLocation {
+	return formationconstraintpkg.JoinPointLocation{
+		OperationName:  operationName,
+		ConstraintType: constraintType,
+	}
+}
+
+// Unused service mocks
 
 func unusedTenantService() *automock.TenantService {
 	return &automock.TenantService{}
