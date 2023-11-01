@@ -38,7 +38,7 @@ type notificationsGenerator interface {
 	GenerateFormationLifecycleNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateName, formationTemplateID string, formationOperation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationNotificationRequest, error)
 }
 
-var emptyFormationAssignment = &webhookdir.FormationAssignment{Value: "\"\""}
+var emptyFormationAssignment = &webhookdir.FormationAssignment{Value: nil}
 
 type notificationsService struct {
 	tenantRepository            tenantRepository

@@ -2168,7 +2168,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 			notificationBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, TestFormationTemplateID, formation, testAppTemplateWithLabels, testAppWithLabels, testAppTemplateWithLabels, testAppWithLabels, convertFormationAssignmentFromModel(faWithTargetTypeApplication), &webhook.FormationAssignment{Value: "\"\"", Error: "\"\""}, testCustomerTenantContext, TestTenantID).Return(details, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, TestFormationTemplateID, formation, testAppTemplateWithLabels, testAppWithLabels, testAppTemplateWithLabels, testAppWithLabels, convertFormationAssignmentFromModel(faWithTargetTypeApplication), &webhook.FormationAssignment{Value: nil, Error: nil}, testCustomerTenantContext, TestTenantID).Return(details, nil).Once()
 				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", emptyCtx, details, testAppWebhook).Return(testAppNotificationReqWithTenantMappingTypeWithoutReverseAssignment, nil).Once()
 
 				return notificationsBuilder

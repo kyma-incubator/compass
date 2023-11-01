@@ -174,7 +174,9 @@ func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 	if err = t.Execute(res, data); err != nil {
 		return err
 	}
-	if err = json.Unmarshal(res.Bytes(), dest); err != nil {
+	resBytes := bytes.ReplaceAll(res.Bytes(), []byte("\"<nil>\""), []byte("\"\""))
+	resBytes = bytes.ReplaceAll(resBytes, []byte("<nil>"), []byte("null"))
+	if err = json.Unmarshal(resBytes, dest); err != nil {
 		return err
 	}
 

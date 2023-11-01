@@ -20,10 +20,10 @@ var emptyApplicationLifecycleWebhookRequestObject = &webhook.ApplicationLifecycl
 
 var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChangeInput{
 	Assignment: &webhook.FormationAssignment{
-		Value: "\"\"",
+		Value: nil,
 	},
 	ReverseAssignment: &webhook.FormationAssignment{
-		Value: "\"\"",
+		Value: nil,
 	},
 	Formation: &model.Formation{
 		Error: json.RawMessage{},
@@ -73,10 +73,10 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 
 var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
 	Assignment: &webhook.FormationAssignment{
-		Value: "\"\"",
+		Value: nil,
 	},
 	ReverseAssignment: &webhook.FormationAssignment{
-		Value: "\"\"",
+		Value: nil,
 	},
 	Formation: &model.Formation{
 		Error: json.RawMessage{},

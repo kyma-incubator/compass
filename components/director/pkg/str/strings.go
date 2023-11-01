@@ -125,12 +125,12 @@ func CastToBool(i interface{}) (bool, error) {
 }
 
 // StringifyJSONRawMessage if the rawMessage contains value returns it, otherwise return escaped empty string (\"\")
-func StringifyJSONRawMessage(rawMessage json.RawMessage) string {
+func StringifyJSONRawMessage(rawMessage json.RawMessage) *string {
 	str := string(rawMessage)
 	if str == "" {
-		str = "\"\""
+		return nil
 	}
-	return str
+	return &str
 }
 
 // ValueIn checks if the provided value is part of the provided string slice

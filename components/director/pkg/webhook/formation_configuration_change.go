@@ -64,8 +64,8 @@ type FormationAssignment struct {
 	Target      string                        `json:"target"`
 	TargetType  model.FormationAssignmentType `json:"target_type"`
 	State       string                        `json:"state"`
-	Value       string                        `json:"value"`
-	Error       string                        `json:"error"`
+	Value       *string                       `json:"value"`
+	Error       *string                       `json:"error"`
 }
 
 // TrustDetails represents the certificate details

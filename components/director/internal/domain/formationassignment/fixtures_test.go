@@ -410,8 +410,8 @@ func fixConvertFAFromModel(formationAssignment *model.FormationAssignment) *webh
 		Target:      formationAssignment.Target,
 		TargetType:  formationAssignment.TargetType,
 		State:       formationAssignment.State,
-		Value:       string(formationAssignment.Value),
-		Error:       string(formationAssignment.Error),
+		Value:       str.Ptr(string(formationAssignment.Value)),
+		Error:       str.Ptr(string(formationAssignment.Error)),
 	}
 }
 
@@ -843,7 +843,7 @@ func unusedNotificationBuilder() *automock.NotificationBuilder {
 
 func convertFormationAssignmentFromModel(formationAssignment *model.FormationAssignment) *webhook.FormationAssignment {
 	if formationAssignment == nil {
-		return &webhook.FormationAssignment{Value: "\"\"", Error: "\"\""}
+		return &webhook.FormationAssignment{Value: nil, Error: nil}
 	}
 	return &webhook.FormationAssignment{
 		ID:          formationAssignment.ID,
