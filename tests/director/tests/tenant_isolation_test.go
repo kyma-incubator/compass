@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	gcli "github.com/machinebox/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 	"github.com/kyma-incubator/compass/tests/director/tests/example"
@@ -52,55 +54,61 @@ func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 	accountGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accountToken, conf.DirectorUserNameAuthenticatorURL)
 	subaccountGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(subaccountToken, conf.DirectorUserNameAuthenticatorURL)
 
-	t.Run("with account token", func(t *testing.T) {
-		accountApp, err := fixtures.RegisterApplication(t, ctx, accountGraphQLClient, "e2e-account-app", accountID)
-		defer fixtures.CleanupApplication(t, ctx, accountGraphQLClient, accountID, &accountApp)
-		require.NoError(t, err)
-		require.NotEmpty(t, accountApp.ID)
+	testCases := []struct {
+		name               string
+		graphqlClient      *gcli.Client
+		tenantID           string
+		isSubaccountTenant bool
+	}{
+		{
+			name:          "with account token",
+			graphqlClient: accountGraphQLClient,
+			tenantID:      accountID,
+		},
+		{
+			name:               "with subaccount token",
+			graphqlClient:      subaccountGraphQLClient,
+			tenantID:           subaccountID,
+			isSubaccountTenant: true,
+		},
+	}
 
-		accountReq := fixtures.FixApplicationsPageableRequest(5, "")
-		var accountResp graphql.ApplicationPageExt
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, accountGraphQLClient, accountReq, &accountResp)
-		require.NoError(t, err)
+	for _, ts := range testCases {
+		t.Run(ts.name, func(t *testing.T) {
+			app, err := fixtures.RegisterApplication(t, ctx, ts.graphqlClient, "e2e-user-auth-app", ts.tenantID)
+			defer fixtures.CleanupApplication(t, ctx, ts.graphqlClient, ts.tenantID, &app)
+			require.NoError(t, err)
+			require.NotEmpty(t, app.ID)
 
-		subaccountReq := fixtures.FixApplicationsPageableRequest(5, "")
-		var subaccountResp graphql.ApplicationPageExt
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, subaccountGraphQLClient, subaccountReq, &subaccountResp)
-		require.NoError(t, err)
+			subaccountReq := fixtures.FixApplicationsPageableRequest(5, "")
+			var subaccountResp graphql.ApplicationPageExt
+			err = testctx.Tc.RunOperationWithoutTenant(ctx, subaccountGraphQLClient, subaccountReq, &subaccountResp)
+			require.NoError(t, err)
 
-		require.Equal(t, 1, accountResp.TotalCount)
-		require.Len(t, accountResp.Data, 1)
-		require.Equal(t, accountApp.ID, accountResp.Data[0].ID)
-		require.Equal(t, accountApp.Name, accountResp.Data[0].Name)
+			accountReq := fixtures.FixApplicationsPageableRequest(5, "")
+			var accountResp graphql.ApplicationPageExt
+			err = testctx.Tc.RunOperationWithoutTenant(ctx, accountGraphQLClient, accountReq, &accountResp)
+			require.NoError(t, err)
 
-		require.Equal(t, 0, subaccountResp.TotalCount)
-		require.Len(t, subaccountResp.Data, 0)
-	})
+			if ts.isSubaccountTenant {
+				require.Equal(t, 1, subaccountResp.TotalCount)
+				require.Len(t, subaccountResp.Data, 1)
+				require.Equal(t, app.ID, subaccountResp.Data[0].ID)
+				require.Equal(t, app.Name, subaccountResp.Data[0].Name)
 
-	t.Run("with subaccount token", func(t *testing.T) {
-		subaccountApp, err := fixtures.RegisterApplication(t, ctx, subaccountGraphQLClient, "e2e-subaccount-app", subaccountID)
-		defer fixtures.CleanupApplication(t, ctx, subaccountGraphQLClient, subaccountID, &subaccountApp)
-		require.NoError(t, err)
-		require.NotEmpty(t, subaccountApp.ID)
+				require.Equal(t, 0, accountResp.TotalCount)
+				require.Len(t, accountResp.Data, 0)
+			} else {
+				require.Equal(t, 1, accountResp.TotalCount)
+				require.Len(t, accountResp.Data, 1)
+				require.Equal(t, app.ID, accountResp.Data[0].ID)
+				require.Equal(t, app.Name, accountResp.Data[0].Name)
 
-		subaccountReq := fixtures.FixApplicationsPageableRequest(5, "")
-		var subaccountResp graphql.ApplicationPageExt
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, subaccountGraphQLClient, subaccountReq, &subaccountResp)
-		require.NoError(t, err)
-
-		accountReq := fixtures.FixApplicationsPageableRequest(5, "")
-		var accountResp graphql.ApplicationPageExt
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, accountGraphQLClient, accountReq, &accountResp)
-		require.NoError(t, err)
-
-		require.Equal(t, 1, subaccountResp.TotalCount)
-		require.Len(t, subaccountResp.Data, 1)
-		require.Equal(t, subaccountApp.ID, subaccountResp.Data[0].ID)
-		require.Equal(t, subaccountApp.Name, subaccountResp.Data[0].Name)
-
-		require.Equal(t, 0, accountResp.TotalCount)
-		require.Len(t, accountResp.Data, 0)
-	})
+				require.Equal(t, 0, subaccountResp.TotalCount)
+				require.Len(t, subaccountResp.Data, 0)
+			}
+		})
+	}
 }
 
 func TestHierarchicalTenantIsolation(t *testing.T) {
