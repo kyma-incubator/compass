@@ -20,8 +20,8 @@ func TestPgRepository_Create(t *testing.T) {
 		Name: "Create Aspect",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
-				Args:     []driver.Value{tenantID, appID, true},
+				Query:    regexp.QuoteMeta("SELECT 1 FROM integration_dependencies_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Args:     []driver.Value{tenantID, integrationDependencyID, true},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}

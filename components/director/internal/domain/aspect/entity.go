@@ -23,10 +23,8 @@ type Entity struct {
 
 // GetParent returns the parent type and the parent ID of the entity.
 func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
-	if e.ApplicationID.Valid {
-		return resource.Application, e.ApplicationID.String
-	} else if e.ApplicationTemplateVersionID.Valid {
-		return resource.ApplicationTemplateVersion, e.ApplicationTemplateVersionID.String
+	if e.IntegrationDependencyID != "" {
+		return resource.IntegrationDependency, e.IntegrationDependencyID
 	}
 
 	return "", ""

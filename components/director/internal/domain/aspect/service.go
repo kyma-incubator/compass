@@ -40,7 +40,7 @@ func NewService(repo AspectRepository, uidService UIDService) *service {
 	}
 }
 
-// Create creates aspect for an Integration Dependency with given ID.
+// Create creates an Aspect for an Integration Dependency with given ID.
 func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyID string, in model.AspectInput) (string, error) {
 	id := s.uidService.Generate()
 	aspect := in.ToAspect(id, resourceType, resourceID, integrationDependencyID)
