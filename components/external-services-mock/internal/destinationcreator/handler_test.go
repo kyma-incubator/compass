@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gorilla/mux"
