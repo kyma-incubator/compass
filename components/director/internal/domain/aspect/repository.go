@@ -22,7 +22,7 @@ var (
 //go:generate mockery --name=AspectConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AspectConverter interface {
 	FromEntity(entity *Entity) *model.Aspect
-	ToEntity(integrationDependencyModel *model.Aspect) *Entity
+	ToEntity(aspectModel *model.Aspect) *Entity
 }
 
 type pgRepository struct {

@@ -47,10 +47,10 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 	aspect := in.ToAspect(id, resourceType, resourceID, integrationDependencyID)
 
 	if err := s.createAspect(ctx, aspect); err != nil {
-		return "", errors.Wrapf(err, "error occurred while creating an Aspect with id %s for integration dependency with id %s", id, integrationDependencyID)
+		return "", errors.Wrapf(err, "error occurred while creating an Aspect with id %s for Integration Dependency with id %s", id, integrationDependencyID)
 	}
 
-	log.C(ctx).Debugf("Successfully created a Aspect with id %s for integration dependency with id %s", id, integrationDependencyID)
+	log.C(ctx).Debugf("Successfully created an Aspect with id %s for Integration Dependency with id %s", id, integrationDependencyID)
 
 	return id, nil
 }

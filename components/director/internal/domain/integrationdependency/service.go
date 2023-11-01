@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// IntegrationDependencyRepository is responsible for the repo-layer IntegrationDependency operations.
+// IntegrationDependencyRepository is responsible for the repo-layer Integration Dependency operations.
 //
 //go:generate mockery --name=IntegrationDependencyRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationDependencyRepository interface {
@@ -39,7 +39,7 @@ type service struct {
 	timestampGen timestamp.Generator
 }
 
-// NewService returns a new object responsible for service-layer IntegrationDependency operations.
+// NewService returns a new object responsible for service-layer Integration Dependency operations.
 func NewService(repo IntegrationDependencyRepository, uidService UIDService) *service {
 	return &service{
 		repo:         repo,
@@ -48,7 +48,7 @@ func NewService(repo IntegrationDependencyRepository, uidService UIDService) *se
 	}
 }
 
-// Get returns an IntegrationDependency by given ID.
+// Get returns an Integration Dependency by given ID.
 func (s *service) Get(ctx context.Context, id string) (*model.IntegrationDependency, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -63,7 +63,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.IntegrationDepende
 	return integrationDependency, nil
 }
 
-// ListByApplicationID lists all integration dependencies for a given application ID.
+// ListByApplicationID lists all Integration Dependencies for a given application ID.
 func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.IntegrationDependency, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -73,7 +73,7 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 	return s.repo.ListByResourceID(ctx, tnt, resource.Application, appID)
 }
 
-// ListByApplicationTemplateVersionID lists all integration dependencies for a given application template version ID.
+// ListByApplicationTemplateVersionID lists all Integration Dependencies for a given application template version ID.
 func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.IntegrationDependency, error) {
 	return s.repo.ListByResourceID(ctx, "", resource.ApplicationTemplateVersion, appTemplateVersionID)
 }
@@ -87,7 +87,7 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 		return "", errors.Wrapf(err, "error occurred while creating an Integration Dependency with id %s for %s with id %s", id, resourceType, resourceID)
 	}
 
-	log.C(ctx).Debugf("Successfully created a Integration Dependency with id %s for %s with id %s", id, resourceType, resourceID)
+	log.C(ctx).Debugf("Successfully created an Integration Dependency with id %s for %s with id %s", id, resourceType, resourceID)
 
 	return id, nil
 }
@@ -109,7 +109,7 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, resour
 	return nil
 }
 
-// Delete deletes the integration dependency by its ID.
+// Delete deletes the Integration Dependency by its ID.
 func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
 	if err := s.deleteIntegrationDependency(ctx, id, resourceType); err != nil {
 		return errors.Wrapf(err, "while deleting Integration Dependency with id %s", id)

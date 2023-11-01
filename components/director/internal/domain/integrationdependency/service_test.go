@@ -62,7 +62,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedOutput: integrationDependencyID,
 		},
 		{
-			Name:                       "fail while creating integration dependency for Application",
+			Name:                       "Fail while creating integration dependency for Application",
 			InputResourceType:          resource.Application,
 			InputResourceID:            "application-id",
 			IntegrationDependencyInput: fixIntegrationDependencyInputModel(),
@@ -75,7 +75,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:                       "fail while creating integration dependency for ApplicationTemplateVersion",
+			Name:                       "Fail while creating integration dependency for ApplicationTemplateVersion",
 			InputResourceType:          resource.ApplicationTemplateVersion,
 			InputResourceID:            "application-template-version-id",
 			IntegrationDependencyInput: fixIntegrationDependencyInputModel(),
@@ -160,7 +160,7 @@ func TestService_Update(t *testing.T) {
 			ExpectedOutput: integrationDependencyID,
 		},
 		{
-			Name:                       "fail while getting integration dependency by id for Application",
+			Name:                       "Fail while getting integration dependency by id for Application",
 			InputResourceType:          resource.Application,
 			InputID:                    integrationDependencyID,
 			IntegrationDependencyInput: fixIntegrationDependencyInputModel(),
@@ -172,7 +172,7 @@ func TestService_Update(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:                       "fail while getting integration dependency by id for ApplicationTemplateVersion",
+			Name:                       "Fail while getting integration dependency by id for ApplicationTemplateVersion",
 			InputResourceType:          resource.ApplicationTemplateVersion,
 			InputID:                    integrationDependencyID,
 			IntegrationDependencyInput: fixIntegrationDependencyInputModel(),
@@ -184,7 +184,7 @@ func TestService_Update(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:                       "fail while updating integration dependency for Application",
+			Name:                       "Fail while updating integration dependency for Application",
 			InputResourceType:          resource.Application,
 			InputID:                    integrationDependencyID,
 			IntegrationDependencyInput: fixIntegrationDependencyInputModel(),
@@ -198,7 +198,7 @@ func TestService_Update(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:                       "fail while updating integration dependency for ApplicationTemplateVersion",
+			Name:                       "Fail while updating integration dependency for ApplicationTemplateVersion",
 			InputResourceType:          resource.ApplicationTemplateVersion,
 			InputID:                    integrationDependencyID,
 			IntegrationDependencyInput: fixIntegrationDependencyInputModel(),
@@ -274,7 +274,7 @@ func TestService_Delete(t *testing.T) {
 			},
 		},
 		{
-			Name:              "fail while deleting integration dependency for Application",
+			Name:              "Fail while deleting integration dependency for Application",
 			InputResourceType: resource.Application,
 			InputID:           integrationDependencyID,
 			IntegrationDependencyRepoFn: func() *automock.IntegrationDependencyRepository {
@@ -285,7 +285,7 @@ func TestService_Delete(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:              "fail while deleting integration dependency for ApplicationTemplateVersion",
+			Name:              "Fail while deleting integration dependency for ApplicationTemplateVersion",
 			InputResourceType: resource.ApplicationTemplateVersion,
 			InputID:           integrationDependencyID,
 			IntegrationDependencyRepoFn: func() *automock.IntegrationDependencyRepository {
@@ -348,7 +348,7 @@ func TestService_Get(t *testing.T) {
 			ExpectedOutput: fixIntegrationDependencyModel(integrationDependencyID),
 		},
 		{
-			Name:    "fail while getting integration dependency",
+			Name:    "Fail while getting integration dependency",
 			InputID: integrationDependencyID,
 			IntegrationDependencyRepoFn: func() *automock.IntegrationDependencyRepository {
 				IntegrationDependencyRepo := &automock.IntegrationDependencyRepository{}
@@ -412,7 +412,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 			ExpectedOutput: integrationDependencies,
 		},
 		{
-			Name:    "fail while listing by resource id",
+			Name:    "Fail while listing by resource id",
 			InputID: applicationID,
 			IntegrationDependencyRepoFn: func() *automock.IntegrationDependencyRepository {
 				IntegrationDependencyRepo := &automock.IntegrationDependencyRepository{}
@@ -476,7 +476,7 @@ func TestService_ListByApplicationTemplateVersionID(t *testing.T) {
 			ExpectedOutput: integrationDependencies,
 		},
 		{
-			Name:    "fail while listing by resource id",
+			Name:    "Fail while listing by resource id",
 			InputID: applicationTemplateVersionID,
 			IntegrationDependencyRepoFn: func() *automock.IntegrationDependencyRepository {
 				IntegrationDependencyRepo := &automock.IntegrationDependencyRepository{}

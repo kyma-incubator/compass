@@ -1322,7 +1322,7 @@ func TestORDAggregator(stdT *testing.T) {
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, integrationDependenciesMap, numberOfIntegrationDependencies, descriptionField)
 			t.Log("Successfully verified integration dependencies")
 
-			// verify public capabilities via ORD Service
+			// verify public integration dependencies via ORD Service
 			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicIntegrationDependenciesMap, integrationDependenciesField, numberOfPublicIntegrationDependencies)
 
 			// Verify tombstones

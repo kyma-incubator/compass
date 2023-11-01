@@ -64,7 +64,7 @@ type IntegrationDependencyInput struct {
 	*VersionInput                  `hash:"ignore"`
 }
 
-// ToIntegrationDependency converts IntegrationDependencyInput to ToIntegrationDependency
+// ToIntegrationDependency converts IntegrationDependencyInput to IntegrationDependency
 func (i *IntegrationDependencyInput) ToIntegrationDependency(id string, resourceType resource.Type, resourceID string, packageID *string, integrationDependencyHash uint64) *IntegrationDependency {
 	if i == nil {
 		return nil

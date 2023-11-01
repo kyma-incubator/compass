@@ -61,7 +61,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedOutput: aspectID,
 		},
 		{
-			Name:              "fail while creating entity type for Application",
+			Name:              "Fail while creating Aspect for Application",
 			InputResourceType: resource.Application,
 			InputResourceID:   "application-id",
 			AspectInput:       fixAspectInputModel(),
@@ -74,7 +74,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:              "fail while creating entity type for ApplicationTemplateVersion",
+			Name:              "Fail while creating Aspect for ApplicationTemplateVersion",
 			InputResourceType: resource.ApplicationTemplateVersion,
 			InputResourceID:   "application-template-version-id",
 			AspectInput:       fixAspectInputModel(),
