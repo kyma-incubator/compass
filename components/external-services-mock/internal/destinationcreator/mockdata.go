@@ -55,7 +55,7 @@ var FindAPISAMLAssertionDestResponseTemplate = `
     "Authentication": "%s",
     "ProxyType": "%s",
     "audience": "%s",
-    "KeyStoreLocation": "%s",
+    "KeyStoreLocation": "%s"
   },
   "certificates": [
     {
