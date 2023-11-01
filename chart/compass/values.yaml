@@ -155,7 +155,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3432"
+      version: "PR-3427"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -167,15 +167,15 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3404"
+      version: "PR-3427"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3331"
+      version: "PR-3427"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3404"
+      version: "PR-3427"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
