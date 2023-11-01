@@ -33,20 +33,28 @@ func TestTenantIsolation(t *testing.T) {
 
 func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 	ctx := context.Background()
-	providerAccountID := conf.TestProviderAccountID
-	providerSubaccountID := conf.TestProviderSubaccountID
+	accountID := conf.TestProviderAccountID
+	subaccountID := conf.TestProviderSubaccountID
 
-	// The accountToken is JWT token containing claim with provider account ID for tenant. In local setup that's 'testDefaultTenant'
-	accountToken := token.GetUserToken(t, ctx, conf.UsernameAuthCfg.Account.TokenURL+conf.UsernameAuthCfg.Account.OAuthTokenPath, conf.UsernameAuthCfg.Account.ClientID, conf.UsernameAuthCfg.Account.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.AccountAuthenticatorClaimKey)
-	// The subaccountToken is JWT token containing claim with provider subaccount ID for tenant. In local setup that's 'TestProviderSubaccount'
-	subaccountToken := token.GetUserToken(t, ctx, conf.UsernameAuthCfg.Subaccount.TokenURL+conf.UsernameAuthCfg.Subaccount.OAuthTokenPath, conf.UsernameAuthCfg.Subaccount.ClientID, conf.UsernameAuthCfg.Subaccount.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubaccountAuthenticatorClaimKey)
+	accountTokenURL, err := token.ChangeSubdomain(conf.UsernameAuthCfg.Account.TokenURL, conf.UsernameAuthCfg.Account.Subdomain, conf.UsernameAuthCfg.Account.OAuthTokenPath)
+	require.NoError(t, err)
+	require.NotEmpty(t, accountTokenURL)
+
+	subaccountTokenURL, err := token.ChangeSubdomain(conf.UsernameAuthCfg.Subaccount.TokenURL, conf.UsernameAuthCfg.Subaccount.Subdomain, conf.UsernameAuthCfg.Subaccount.OAuthTokenPath)
+	require.NoError(t, err)
+	require.NotEmpty(t, subaccountTokenURL)
+
+	// The accountToken is JWT token containing claim with account ID for tenant. In local setup that's 'testDefaultTenant'
+	accountToken := token.GetUserToken(t, ctx, accountTokenURL, conf.UsernameAuthCfg.Account.ClientID, conf.UsernameAuthCfg.Account.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.AccountAuthenticatorClaimKey)
+	// The subaccountToken is JWT token containing claim with subaccount ID for tenant. In local setup that's 'TestConsumerSubaccount'
+	subaccountToken := token.GetUserToken(t, ctx, subaccountTokenURL, conf.UsernameAuthCfg.Subaccount.ClientID, conf.UsernameAuthCfg.Subaccount.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubaccountAuthenticatorClaimKey)
 
 	accountGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accountToken, conf.DirectorUserNameAuthenticatorURL)
 	subaccountGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(subaccountToken, conf.DirectorUserNameAuthenticatorURL)
 
 	t.Run("with account token", func(t *testing.T) {
-		accountApp, err := fixtures.RegisterApplication(t, ctx, accountGraphQLClient, "e2e-provider-account-app", providerAccountID)
-		defer fixtures.CleanupApplication(t, ctx, accountGraphQLClient, providerAccountID, &accountApp)
+		accountApp, err := fixtures.RegisterApplication(t, ctx, accountGraphQLClient, "e2e-account-app", accountID)
+		defer fixtures.CleanupApplication(t, ctx, accountGraphQLClient, accountID, &accountApp)
 		require.NoError(t, err)
 		require.NotEmpty(t, accountApp.ID)
 
@@ -70,8 +78,8 @@ func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 	})
 
 	t.Run("with subaccount token", func(t *testing.T) {
-		subaccountApp, err := fixtures.RegisterApplication(t, ctx, subaccountGraphQLClient, "e2e-provider-subaccount-app", providerSubaccountID)
-		defer fixtures.CleanupApplication(t, ctx, subaccountGraphQLClient, providerSubaccountID, &subaccountApp)
+		subaccountApp, err := fixtures.RegisterApplication(t, ctx, subaccountGraphQLClient, "e2e-subaccount-app", subaccountID)
+		defer fixtures.CleanupApplication(t, ctx, subaccountGraphQLClient, subaccountID, &subaccountApp)
 		require.NoError(t, err)
 		require.NotEmpty(t, subaccountApp.ID)
 
@@ -90,10 +98,8 @@ func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 		require.Equal(t, subaccountApp.ID, subaccountResp.Data[0].ID)
 		require.Equal(t, subaccountApp.Name, subaccountResp.Data[0].Name)
 
-		require.Equal(t, 1, accountResp.TotalCount)
-		require.Len(t, accountResp.Data, 1)
-		require.Equal(t, subaccountApp.ID, accountResp.Data[0].ID)
-		require.Equal(t, subaccountApp.Name, accountResp.Data[0].Name)
+		require.Equal(t, 0, accountResp.TotalCount)
+		require.Len(t, accountResp.Data, 0)
 	})
 }
 

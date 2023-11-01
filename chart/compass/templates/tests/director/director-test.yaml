@@ -320,6 +320,8 @@ spec:
                   key: {{ .Values.global.tests.userNameAuthenticators.account.oauthUrlKey }}
             - name: APP_USER_AUTHENTICATOR_ACCOUNT_TOKEN_PATH
               value: {{ .Values.global.tests.userNameAuthenticators.account.oauthTokenPath }}
+            - name: APP_USER_AUTHENTICATOR_ACCOUNT_SUBDOMAIN
+              value: {{ .Values.global.tests.userNameAuthenticators.account.subdomain }}
             - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_CLIENT_ID
               valueFrom:
                 secretKeyRef:
@@ -337,6 +339,8 @@ spec:
                   key: {{ .Values.global.tests.userNameAuthenticators.subaccount.oauthUrlKey }}
             - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_TOKEN_PATH
               value: {{ .Values.global.tests.userNameAuthenticators.subaccount.oauthTokenPath }}
+            - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_SUBDOMAIN
+              value: {{ .Values.global.tests.userNameAuthenticators.subaccount.subdomain }}
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
@@ -678,6 +682,8 @@ spec:
                   key: {{ .Values.global.tests.userNameAuthenticators.account.oauthUrlKey }}
             - name: APP_USER_AUTHENTICATOR_ACCOUNT_TOKEN_PATH
               value: {{ .Values.global.tests.userNameAuthenticators.account.oauthTokenPath }}
+            - name: APP_USER_AUTHENTICATOR_ACCOUNT_SUBDOMAIN
+              value: {{ .Values.global.tests.userNameAuthenticators.account.subdomain }}
             - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_CLIENT_ID
               valueFrom:
                 secretKeyRef:
@@ -695,6 +701,8 @@ spec:
                   key: {{ .Values.global.tests.userNameAuthenticators.subaccount.oauthUrlKey }}
             - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_TOKEN_PATH
               value: {{ .Values.global.tests.userNameAuthenticators.subaccount.oauthTokenPath }}
+            - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_SUBDOMAIN
+              value: {{ .Values.global.tests.userNameAuthenticators.subaccount.subdomain }}
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
@@ -1036,6 +1044,8 @@ spec:
                   key: {{ .Values.global.tests.userNameAuthenticators.account.oauthUrlKey }}
             - name: APP_USER_AUTHENTICATOR_ACCOUNT_TOKEN_PATH
               value: {{ .Values.global.tests.userNameAuthenticators.account.oauthTokenPath }}
+            - name: APP_USER_AUTHENTICATOR_ACCOUNT_SUBDOMAIN
+              value: {{ .Values.global.tests.userNameAuthenticators.account.subdomain }}
             - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_CLIENT_ID
               valueFrom:
                 secretKeyRef:
@@ -1053,6 +1063,8 @@ spec:
                   key: {{ .Values.global.tests.userNameAuthenticators.subaccount.oauthUrlKey }}
             - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_TOKEN_PATH
               value: {{ .Values.global.tests.userNameAuthenticators.subaccount.oauthTokenPath }}
+            - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_SUBDOMAIN
+              value: {{ .Values.global.tests.userNameAuthenticators.subaccount.subdomain }}
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
@@ -1394,6 +1406,8 @@ spec:
                   key: {{ .Values.global.tests.userNameAuthenticators.account.oauthUrlKey }}
             - name: APP_USER_AUTHENTICATOR_ACCOUNT_TOKEN_PATH
               value: {{ .Values.global.tests.userNameAuthenticators.account.oauthTokenPath }}
+            - name: APP_USER_AUTHENTICATOR_ACCOUNT_SUBDOMAIN
+              value: {{ .Values.global.tests.userNameAuthenticators.account.subdomain }}
             - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_CLIENT_ID
               valueFrom:
                 secretKeyRef:
@@ -1411,6 +1425,8 @@ spec:
                   key: {{ .Values.global.tests.userNameAuthenticators.subaccount.oauthUrlKey }}
             - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_TOKEN_PATH
               value: {{ .Values.global.tests.userNameAuthenticators.subaccount.oauthTokenPath }}
+            - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_SUBDOMAIN
+              value: {{ .Values.global.tests.userNameAuthenticators.subaccount.subdomain }}
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
@@ -1752,6 +1768,8 @@ spec:
                   key: {{ .Values.global.tests.userNameAuthenticators.account.oauthUrlKey }}
             - name: APP_USER_AUTHENTICATOR_ACCOUNT_TOKEN_PATH
               value: {{ .Values.global.tests.userNameAuthenticators.account.oauthTokenPath }}
+            - name: APP_USER_AUTHENTICATOR_ACCOUNT_SUBDOMAIN
+              value: {{ .Values.global.tests.userNameAuthenticators.account.subdomain }}
             - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_CLIENT_ID
               valueFrom:
                 secretKeyRef:
@@ -1769,6 +1787,8 @@ spec:
                   key: {{ .Values.global.tests.userNameAuthenticators.subaccount.oauthUrlKey }}
             - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_TOKEN_PATH
               value: {{ .Values.global.tests.userNameAuthenticators.subaccount.oauthTokenPath }}
+            - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_SUBDOMAIN
+              value: {{ .Values.global.tests.userNameAuthenticators.subaccount.subdomain }}
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}

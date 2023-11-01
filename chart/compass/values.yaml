@@ -1315,6 +1315,7 @@ global:
         clientSecretKey: client-secret
         oauthUrlKey: url
         oauthTokenPath: "/secured/oauth/token"
+        subdomain: "compass-external-services-mock"
       subaccount:
         manage: false
         secretName: "user-name-subaccount-authenticator"
@@ -1322,6 +1323,7 @@ global:
         clientSecretKey: client-secret
         oauthUrlKey: url
         oauthTokenPath: "/secured/oauth/token"
+        subdomain: "compass-external-services-mock"
     basicCredentials:
       manage: false
       secretName: "test-basic-credentials-secret"
