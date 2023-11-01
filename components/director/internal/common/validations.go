@@ -3,11 +3,12 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strings"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
-	"regexp"
-	"strings"
 )
 
 const (

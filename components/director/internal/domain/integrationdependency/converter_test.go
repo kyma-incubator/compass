@@ -1,11 +1,12 @@
 package integrationdependency_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationdependency"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestEntityConverter_ToEntity(t *testing.T) {

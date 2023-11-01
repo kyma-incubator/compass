@@ -2,14 +2,15 @@ package integrationdependency_test
 
 import (
 	"database/sql/driver"
+	"regexp"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationdependency"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationdependency/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"regexp"
-	"testing"
 )
 
 func TestPgRepository_GetByID(t *testing.T) {

@@ -2,6 +2,8 @@ package processor_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
@@ -13,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (

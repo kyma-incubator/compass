@@ -2,13 +2,14 @@ package aspect_test
 
 import (
 	"database/sql/driver"
+	"regexp"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspect"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspect/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"regexp"
-	"testing"
 )
 
 func TestPgRepository_Create(t *testing.T) {

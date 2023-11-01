@@ -4,13 +4,14 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationdependency"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
-	"time"
 )
 
 const (

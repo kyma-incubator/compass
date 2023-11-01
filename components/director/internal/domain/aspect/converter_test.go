@@ -1,10 +1,11 @@
 package aspect_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspect"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestEntityConverter_ToEntity(t *testing.T) {

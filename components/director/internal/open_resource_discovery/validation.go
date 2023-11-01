@@ -3,11 +3,12 @@ package ord
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/common"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/common"
 
 	"github.com/mitchellh/hashstructure/v2"
 

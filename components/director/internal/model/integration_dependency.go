@@ -2,9 +2,10 @@ package model
 
 import (
 	"encoding/json"
+	"strconv"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"strconv"
 )
 
 // IntegrationDependency represent structure for IntegrationDependency
