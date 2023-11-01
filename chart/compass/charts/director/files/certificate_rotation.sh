@@ -71,8 +71,14 @@ function confirmValidIssuerLocalityOrRetry() {
 }
 
 echo -e "${YELLOW}Issuing token... ${NC}"
-echo "$CERT_SVC_OAUTH_CLIENT_CERT" > /tmp/client-cert.pem
-echo "$CERT_SVC_OAUTH_CLIENT_KEY" > /tmp/client-key.pem
+
+if [[ "$EXT_NOT_EXTERNAL" == true ]]; then
+  echo "$CERT_SVC_OAUTH_CLIENT_CERT" > /tmp/client-cert.pem
+  echo "$CERT_SVC_OAUTH_CLIENT_KEY" > /tmp/client-key.pem
+else
+ echo "$CERT_SVC_OAUTH_CLIENT_CERT" | openssl enc -base64 -d -A -out /tmp/client-cert.pem
+ echo "$CERT_SVC_OAUTH_CLIENT_KEY" | openssl enc -base64 -d -A -out /tmp/client-key.pem
+fi
 
 TOKEN=$(curl \
   -s $SKIP_SSL_VALIDATION_FLAG \

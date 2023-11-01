@@ -34,6 +34,8 @@ spec:
                 - |
 {{ .Files.Get "files/certificate_rotation.sh" | printf "%s" | indent 18 }}
               env:
+                - name: EXT_NOT_EXTERNAL
+                  value: 'true'
                 - name: CERT_SVC_CSR_ENDPOINT
                   valueFrom:
                     secretKeyRef:
