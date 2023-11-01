@@ -47,9 +47,9 @@ function confirmValidIssuerLocalityOrRetry() {
     echo -e "${YELLOW}Checking issuer locality... ${NC}"
     ISSUER_LOCALITY=$(openssl x509 -in /tmp/client-certificate.pem -noout -text | grep "Issuer:" | awk '{print $7}' | cut -d '=' -f2 | sed 's/,$//g')
 
-    ARRAY_OF_LOCALITIES=$(echo "$EXPECTED_ISSUER_LOCALITY" | tr ',' '\n')
+    ARRAY_OF_LOCALITIES=($(echo "$EXPECTED_ISSUER_LOCALITY" | tr ',' '\n'))
 
-    for LOCALITY in "${ARRAY_OF_LOCALITIES[@]}"
+    for LOCALITY in ${ARRAY_OF_LOCALITIES[@]}
     do
       if [[ "$ISSUER_LOCALITY" == "$LOCALITY" ]]; then
         echo -e "${GREEN}Issuer locality of the client certificate is valid. Proceeding with the next steps... ${NC}"
@@ -71,14 +71,8 @@ function confirmValidIssuerLocalityOrRetry() {
 }
 
 echo -e "${YELLOW}Issuing token... ${NC}"
-
-#if [[ "$EXTERNAL_NOT_EXT" == true ]]; then
 echo "$CERT_SVC_OAUTH_CLIENT_CERT" > /tmp/client-cert.pem
 echo "$CERT_SVC_OAUTH_CLIENT_KEY" > /tmp/client-key.pem
-#else
-#  echo "$CERT_SVC_OAUTH_CLIENT_CERT" | openssl enc -base64 -d -A -out /tmp/client-cert.pem
-#  echo "$CERT_SVC_OAUTH_CLIENT_KEY" | openssl enc -base64 -d -A -out /tmp/client-key.pem
-#fi
 
 TOKEN=$(curl \
   -s $SKIP_SSL_VALIDATION_FLAG \
