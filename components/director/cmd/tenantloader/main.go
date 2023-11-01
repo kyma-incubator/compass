@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -12,7 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
-	"os"
 
 	"github.com/kyma-incubator/compass/components/director/internal/externaltenant"
 )
