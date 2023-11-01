@@ -225,9 +225,6 @@ oathkeeper:
     # Created by the pre-install job
     enabled: false
   deployment:
-    # The Service account created by the Oathkeeper maester is used
-    serviceAccount:
-      create: true
     automountServiceAccountToken: true
     livenessProbe:
       initialDelaySeconds: 15
