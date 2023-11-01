@@ -35,8 +35,6 @@ func TestTenantIsolation(t *testing.T) {
 
 func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 	ctx := context.Background()
-	accountID := conf.TestProviderAccountID
-	subaccountID := conf.TestProviderSubaccountID
 
 	accountTokenURL, err := token.ChangeSubdomain(conf.UsernameAuthCfg.Account.TokenURL, conf.UsernameAuthCfg.Account.Subdomain, conf.UsernameAuthCfg.Account.OAuthTokenPath)
 	require.NoError(t, err)
@@ -57,26 +55,23 @@ func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 	testCases := []struct {
 		name               string
 		graphqlClient      *gcli.Client
-		tenantID           string
 		isSubaccountTenant bool
 	}{
 		{
 			name:          "with account token",
 			graphqlClient: accountGraphQLClient,
-			tenantID:      accountID,
 		},
 		{
 			name:               "with subaccount token",
 			graphqlClient:      subaccountGraphQLClient,
-			tenantID:           subaccountID,
 			isSubaccountTenant: true,
 		},
 	}
 
 	for _, ts := range testCases {
 		t.Run(ts.name, func(t *testing.T) {
-			app, err := fixtures.RegisterApplication(t, ctx, ts.graphqlClient, "e2e-user-auth-app", ts.tenantID)
-			defer fixtures.CleanupApplication(t, ctx, ts.graphqlClient, ts.tenantID, &app)
+			app, err := fixtures.RegisterApplication(t, ctx, ts.graphqlClient, "e2e-user-auth-app", "") // the tenant will be derived from the token part of the graphql client
+			defer fixtures.CleanupApplication(t, ctx, ts.graphqlClient, "", &app)                       // the tenant will be derived from the token part of the graphql client
 			require.NoError(t, err)
 			require.NotEmpty(t, app.ID)
 
