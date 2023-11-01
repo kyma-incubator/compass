@@ -12,6 +12,7 @@ import (
 const (
 	AuthorizationHeaderKey           = "Authorization"
 	ContentTypeHeaderKey             = "Content-Type"
+	UserTokenHeaderKey               = "X-user-token"
 	ContentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
 	ContentTypeApplicationJSON       = "application/json;charset=UTF-8"
 )

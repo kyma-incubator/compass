@@ -528,12 +528,13 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			destinationConsumerWithInstanceToken := token.GetClientCredentialsToken(t, ctx, consumerTokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationConsumerWithInstanceClaimKey)
 
 			t.Log("Assert destinations and destination certificates are created...")
-			assertNoAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, noAuthDestinationURL, "", destinationProviderToken)
-			assertBasicDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, basicDestinationName, basicDestinationURL, testDestinationInstanceID, destinationProviderWithInstanceToken)
-			assertSAMLAssertionDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationName, samlAssertionDestinationCertName, samlAssertionDestinationURL, app2BaseURL, testDestinationInstanceID, destinationConsumerWithInstanceToken)
-			assertClientCertAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationName, clientCertAuthDestinationCertName, clientCertAuthDestinationURL, "", destinationConsumerToken)
-			assertDestinationCertificate(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, testDestinationInstanceID, destinationConsumerWithInstanceToken)
-			assertDestinationCertificate(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "", destinationConsumerToken)
+			assertNoAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, noAuthDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken)
+			assertBasicDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, basicDestinationName, basicDestinationURL, testDestinationInstanceID, conf.TestProviderSubaccountID, destinationProviderWithInstanceToken, 1)
+			consumerUserTokenHeader := token.GetUserToken(t, ctx, consumerTokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
+			assertSAMLAssertionDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationName, samlAssertionDestinationCertName, samlAssertionDestinationURL, app2BaseURL, testDestinationInstanceID, conf.TestConsumerSubaccountID, destinationConsumerWithInstanceToken, consumerUserTokenHeader, []string{samlAssertionDestinationCertName + directordestinationcreator.JavaKeyStoreFileExtension})
+			assertClientCertAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationName, clientCertAuthDestinationCertName, clientCertAuthDestinationURL, "", conf.TestConsumerSubaccountID, destinationConsumerToken, []string{clientCertAuthDestinationCertName + directordestinationcreator.JavaKeyStoreFileExtension})
+			//assertDestinationCertificate(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, testDestinationInstanceID, destinationConsumerWithInstanceToken) // todo::: delete after validation above
+			//assertDestinationCertificate(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "", destinationConsumerToken) // todo::: delete after validation above
 			t.Log("Destinations and destination certificates have been successfully created")
 
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -562,10 +563,10 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.Empty(t, formation.Error)
 
 			t.Logf("Assert destinations and destination certificates are deleted as part of the unassign operation...")
-			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, "", destinationProviderToken)
-			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, basicDestinationName, testDestinationInstanceID, destinationProviderWithInstanceToken)
-			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationName, testDestinationInstanceID, destinationConsumerWithInstanceToken)
-			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationName, "", destinationConsumerToken)
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, destinationProviderToken)
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, basicDestinationName, destinationProviderWithInstanceToken)
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationName, destinationConsumerWithInstanceToken)
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationName, destinationConsumerToken)
 			assertNoDestinationCertificateIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, testDestinationInstanceID, destinationConsumerWithInstanceToken)
 			assertNoDestinationCertificateIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "", destinationConsumerToken)
 			t.Logf("Destinations and destination certificates are successfully deleted as part of the unassign operation")

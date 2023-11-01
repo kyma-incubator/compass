@@ -36,7 +36,7 @@ var (
 // Handler is responsible to mock and handle any Destination Service requests
 type Handler struct {
 	Config                     *Config
-	DestinationSvcDestinations map[string]json.RawMessage
+	DestinationSvcDestinations map[string]destinationcreator.Destination
 	DestinationSvcCertificates map[string]json.RawMessage
 }
 
@@ -44,7 +44,7 @@ type Handler struct {
 func NewHandler(config *Config) *Handler {
 	return &Handler{
 		Config:                     config,
-		DestinationSvcDestinations: make(map[string]json.RawMessage),
+		DestinationSvcDestinations: make(map[string]destinationcreator.Destination),
 		DestinationSvcCertificates: make(map[string]json.RawMessage),
 	}
 }
@@ -261,13 +261,10 @@ func (h *Handler) createDestination(ctx context.Context, bodyBytes []byte, reqBo
 		return http.StatusConflict, nil
 	}
 
-	destinationRawMessage, err := reqBody.ToDestination()
-	if err != nil {
-		return http.StatusInternalServerError, errors.Wrapf(err, "An error occurred while marshalling %s destination", destinationTypeName)
-	}
+	destination := reqBody.ToDestination()
 
 	log.C(ctx).Infof("Destination with identifier: %q added to the destination service", destinationIdentifier)
-	h.DestinationSvcDestinations[destinationIdentifier] = destinationRawMessage
+	h.DestinationSvcDestinations[destinationIdentifier] = destination
 
 	return http.StatusCreated, nil
 }
@@ -281,7 +278,7 @@ func (h *Handler) CleanupDestinationCertificates(writer http.ResponseWriter, r *
 
 // CleanupDestinations is "internal/technical" handler for deleting in-memory destinations mappings
 func (h *Handler) CleanupDestinations(writer http.ResponseWriter, r *http.Request) {
-	h.DestinationSvcDestinations = make(map[string]json.RawMessage)
+	h.DestinationSvcDestinations = make(map[string]destinationcreator.Destination)
 	log.C(r.Context()).Infof("Destination creator destinations and destination service destinations mappings were successfully deleted")
 	httputils.Respond(writer, http.StatusOK)
 }
@@ -289,7 +286,55 @@ func (h *Handler) CleanupDestinations(writer http.ResponseWriter, r *http.Reques
 // Destination Service handlers
 
 // GetDestinationByNameFromDestinationSvc mocks getting a single destination by its name from Destination Service
-func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWriter, r *http.Request) {
+// todo::: delete it after implementing and adopting the find API handler
+//func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWriter, r *http.Request) {
+//	ctx := r.Context()
+//	correlationID := correlation.CorrelationIDFromContext(ctx)
+//
+//	tokenValue, err := validateAuthorization(ctx, r)
+//	if err != nil {
+//		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
+//		return
+//	}
+//
+//	destinationNameParamValue, err := validateDestinationSvcPathParams(mux.Vars(r))
+//	if err != nil {
+//		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
+//		return
+//	}
+//
+//	subaccountID, serviceInstanceID, err := extractSubaccountIDAndServiceInstanceIDFromDestinationToken(tokenValue)
+//	if err != nil {
+//		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusInternalServerError)
+//		return
+//	}
+//	log.C(ctx).Infof("Subaccount ID: %q and service instance ID: %q in the destination token", subaccountID, serviceInstanceID)
+//
+//	destinationIdentifier := fmt.Sprintf(UniqueEntityNameIdentifier, destinationNameParamValue, subaccountID, serviceInstanceID)
+//	dest, exists := h.DestinationSvcDestinations[destinationIdentifier]
+//	if !exists {
+//		err := errors.Errorf("Destination with name: %q and identifier: %q does not exists", destinationNameParamValue, destinationIdentifier)
+//		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusNotFound)
+//		return
+//	}
+//	log.C(ctx).Infof("Destination with name: %q and identifier: %q was found in the destination service", destinationNameParamValue, destinationIdentifier)
+//
+//	bodyBytes, err := json.Marshal(dest)
+//	if err != nil {
+//		errMsg := fmt.Sprintf("An error occurred while marshalling destination with name: %q and identifier: %q", destinationNameParamValue, destinationIdentifier)
+//		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, errMsg), respErrorMsg, correlationID, http.StatusInternalServerError)
+//		return
+//	}
+//
+//	writer.WriteHeader(http.StatusOK)
+//	_, err = writer.Write(bodyBytes)
+//	if err != nil {
+//		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while writing response"), respErrorMsg, correlationID, http.StatusInternalServerError)
+//		return
+//	}
+//}
+
+func (h *Handler) FindDestinationByNameFromDestinationSvc(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
@@ -315,25 +360,87 @@ func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWri
 	destinationIdentifier := fmt.Sprintf(UniqueEntityNameIdentifier, destinationNameParamValue, subaccountID, serviceInstanceID)
 	dest, exists := h.DestinationSvcDestinations[destinationIdentifier]
 	if !exists {
-		err := errors.Errorf("Destination with name: %q and identifier: %q does not exists", destinationNameParamValue, destinationIdentifier)
+		err := errors.Errorf("destination with name: %q and identifier: %q does not exists", destinationNameParamValue, destinationIdentifier)
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusNotFound)
 		return
 	}
 	log.C(ctx).Infof("Destination with name: %q and identifier: %q was found in the destination service", destinationNameParamValue, destinationIdentifier)
 
-	bodyBytes, err := json.Marshal(dest)
+	findAPIResponse, err := h.buildFindAPIResponse(dest, r, subaccountID, serviceInstanceID)
 	if err != nil {
-		errMsg := fmt.Sprintf("An error occurred while marshalling destination with name: %q and identifier: %q", destinationNameParamValue, destinationIdentifier)
-		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, errMsg), respErrorMsg, correlationID, http.StatusInternalServerError)
-		return
+		httphelpers.RespondWithError(ctx, writer, err, respErrorMsg, correlationID, http.StatusInternalServerError)
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	_, err = writer.Write(bodyBytes)
+	_, err = writer.Write([]byte(findAPIResponse))
 	if err != nil {
 		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while writing response"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *Handler) buildFindAPIResponse(dest destinationcreator.Destination, r *http.Request, subaccountID, instanceID string) (string, error) {
+	if dest.GetType() == destinationcreator.SAMLAssertionDestinationType {
+		if usrHeader := r.Header.Get(httphelpers.UserTokenHeaderKey); usrHeader == "" {
+			return "", errors.New("when calling destination svc find API for SAML Assertion destination, the `X-user-token` header should be provided")
+		}
+	}
+
+	var findAPIResponse string
+	switch dest.GetType() {
+	case destinationcreator.DesignTimeDestinationType:
+		designTimeDest, ok := dest.(*destinationcreator.NoAuthenticationDestination)
+		if !ok {
+			return "", errors.New("error while type asserting destination to NoAuth one")
+		}
+		findAPIResponse = fmt.Sprintf(FindAPINoAuthDestResponseTemplate, subaccountID, instanceID, designTimeDest.Name, designTimeDest.Type, designTimeDest.URL, designTimeDest.Authentication, designTimeDest.ProxyType)
+	case destinationcreator.BasicAuthDestinationType:
+		basicDest, ok := dest.(*destinationcreator.BasicDestination)
+		if !ok {
+			return "", errors.New("error while type asserting destination to Basic one")
+		}
+		findAPIResponse = fmt.Sprintf(FindAPIBasicDestResponseTemplate, subaccountID, instanceID, basicDest.Name, basicDest.Type, basicDest.URL, basicDest.Authentication, basicDest.ProxyType, basicDest.User, basicDest.Password)
+	case destinationcreator.SAMLAssertionDestinationType:
+		samlAssertionDest, ok := dest.(*destinationcreator.SAMLAssertionDestination)
+		if !ok {
+			return "", errors.New("error while type asserting destination to SAMLAssertion one")
+		}
+		certName := samlAssertionDest.KeyStoreLocation
+		certResponseName, err := h.getCertificateName(certName, subaccountID, instanceID)
+		if err != nil {
+			return "", err
+		}
+		findAPIResponse = fmt.Sprintf(FindAPISAMLAssertionDestResponseTemplate, subaccountID, instanceID, samlAssertionDest.Name, samlAssertionDest.Type, samlAssertionDest.URL, samlAssertionDest.Authentication, samlAssertionDest.ProxyType, samlAssertionDest.Audience, samlAssertionDest.KeyStoreLocation, certResponseName)
+	case destinationcreator.ClientCertDestinationType:
+		clientCertDest, ok := dest.(*destinationcreator.ClientCertificateAuthenticationDestination)
+		if !ok {
+			return "", errors.New("error while type asserting destination to ClientCertificate one")
+		}
+		certName := clientCertDest.KeyStoreLocation
+		certResponseName, err := h.getCertificateName(certName, subaccountID, instanceID)
+		if err != nil {
+			return "", err
+		}
+		findAPIResponse = fmt.Sprintf(FindAPIClientCertDestResponseTemplate, subaccountID, instanceID, clientCertDest.Name, clientCertDest.Type, clientCertDest.URL, clientCertDest.Authentication, clientCertDest.ProxyType, clientCertDest.KeyStoreLocation, certResponseName)
+	}
+
+	return findAPIResponse, nil
+}
+
+func (h *Handler) getCertificateName(certName, subaccountID, instanceID string) (string, error) {
+	var certResponse destinationcreator.DestinationSvcCertificateResponse
+
+	certIdentifier := fmt.Sprintf(UniqueEntityNameIdentifier, certName, subaccountID, instanceID)
+	cert, exists := h.DestinationSvcCertificates[certIdentifier]
+	if !exists {
+		return "", errors.Errorf("certificate with name: %q and identifier: %q does not exists in the destination service", certName, certIdentifier)
+	}
+
+	err := json.Unmarshal(cert, &certResponse)
+	if err != nil {
+		return "", errors.Errorf("an error occurred while marshalling certificate with name: %q and identifier: %q", certName, certIdentifier)
+	}
+	return certResponse.Name, nil
 }
 
 // GetDestinationCertificateByNameFromDestinationSvc mocks getting a single certificate by its name from Destination Service

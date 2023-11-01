@@ -42,7 +42,7 @@ type CertificateAPIConfig struct {
 }
 
 type DestinationRequestBody interface {
-	ToDestination() (json.RawMessage, error)
+	ToDestination() destinationcreator.Destination // todo:: implement me
 	Validate(destinationCreatorCfg *Config) error
 	GetDestinationType() string
 	GetDestinationUniqueIdentifier(subaccountID, instanceID string) string
@@ -113,20 +113,31 @@ func (n *DesignTimeDestRequestBody) Validate(destinationCreatorCfg *Config) erro
 	)
 }
 
-func (n *DesignTimeDestRequestBody) ToDestination() (json.RawMessage, error) {
-	noAuthDest := destinationcreator.NoAuthenticationDestination{
+// todo::: delete
+//func (n *DesignTimeDestRequestBody) ToDestination() (json.RawMessage, error) {
+//	noAuthDest := destinationcreator.NoAuthenticationDestination{
+//		Name:           n.Name,
+//		URL:            n.URL,
+//		Type:           n.Type,
+//		ProxyType:      n.ProxyType,
+//		Authentication: n.AuthenticationType,
+//	}
+//
+//	return json.Marshal(noAuthDest)
+//}
+
+func (n *DesignTimeDestRequestBody) ToDestination() destinationcreator.Destination {
+	return &destinationcreator.NoAuthenticationDestination{
 		Name:           n.Name,
 		URL:            n.URL,
 		Type:           n.Type,
 		ProxyType:      n.ProxyType,
 		Authentication: n.AuthenticationType,
 	}
-
-	return json.Marshal(noAuthDest)
 }
 
 func (n *DesignTimeDestRequestBody) GetDestinationType() string {
-	return "design time"
+	return destinationcreator.DesignTimeDestinationType
 }
 
 // Validate validates that the AuthTypeBasic request body contains the required fields and they are valid
@@ -144,8 +155,25 @@ func (b *BasicDestRequestBody) Validate(destinationCreatorCfg *Config) error {
 	)
 }
 
-func (b *BasicDestRequestBody) ToDestination() (json.RawMessage, error) {
-	basicAuthDest := destinationcreator.BasicDestination{
+// todo::: delete
+//func (b *BasicDestRequestBody) ToDestination() (json.RawMessage, error) {
+//	basicAuthDest := destinationcreator.BasicDestination{
+//		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
+//			Name:           b.Name,
+//			Type:           b.Type,
+//			URL:            b.URL,
+//			Authentication: b.AuthenticationType,
+//			ProxyType:      b.ProxyType,
+//		},
+//		User:     b.User,
+//		Password: b.Password,
+//	}
+//
+//	return json.Marshal(basicAuthDest)
+//}
+
+func (b *BasicDestRequestBody) ToDestination() destinationcreator.Destination {
+	return &destinationcreator.BasicDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
 			Name:           b.Name,
 			Type:           b.Type,
@@ -156,12 +184,10 @@ func (b *BasicDestRequestBody) ToDestination() (json.RawMessage, error) {
 		User:     b.User,
 		Password: b.Password,
 	}
-
-	return json.Marshal(basicAuthDest)
 }
 
 func (b *BasicDestRequestBody) GetDestinationType() string {
-	return "basic"
+	return destinationcreator.BasicAuthDestinationType
 }
 
 // Validate validates that the AuthTypeSAMLAssertion request body contains the required fields and they are valid
@@ -180,8 +206,25 @@ func (s *SAMLAssertionDestRequestBody) Validate(destinationCreatorCfg *Config) e
 	)
 }
 
-func (s *SAMLAssertionDestRequestBody) ToDestination() (json.RawMessage, error) {
-	samlAssertionAuthDest := destinationcreator.SAMLAssertionDestination{
+// todo::: delete
+//func (s *SAMLAssertionDestRequestBody) ToDestination() (json.RawMessage, error) {
+//	samlAssertionAuthDest := destinationcreator.SAMLAssertionDestination{
+//		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
+//			Name:           s.Name,
+//			Type:           s.Type,
+//			URL:            s.URL,
+//			Authentication: s.AuthenticationType,
+//			ProxyType:      s.ProxyType,
+//		},
+//		Audience:         s.Audience,
+//		KeyStoreLocation: s.KeyStoreLocation,
+//	}
+//
+//	return json.Marshal(samlAssertionAuthDest)
+//}
+
+func (s *SAMLAssertionDestRequestBody) ToDestination() destinationcreator.Destination {
+	return &destinationcreator.SAMLAssertionDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
 			Name:           s.Name,
 			Type:           s.Type,
@@ -192,12 +235,10 @@ func (s *SAMLAssertionDestRequestBody) ToDestination() (json.RawMessage, error) 
 		Audience:         s.Audience,
 		KeyStoreLocation: s.KeyStoreLocation,
 	}
-
-	return json.Marshal(samlAssertionAuthDest)
 }
 
 func (s *SAMLAssertionDestRequestBody) GetDestinationType() string {
-	return "SAML assertion"
+	return destinationcreator.SAMLAssertionDestinationType
 }
 
 // Validate validates that the AuthTypeClientCertificate request body contains the required fields and they are valid
@@ -215,8 +256,24 @@ func (s *ClientCertificateAuthDestRequestBody) Validate(destinationCreatorCfg *C
 	)
 }
 
-func (s *ClientCertificateAuthDestRequestBody) ToDestination() (json.RawMessage, error) {
-	clientCertAuthDest := destinationcreator.ClientCertificateAuthenticationDestination{
+// todo::: delete
+//func (s *ClientCertificateAuthDestRequestBody) ToDestination() (json.RawMessage, error) {
+//	clientCertAuthDest := destinationcreator.ClientCertificateAuthenticationDestination{
+//		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
+//			Name:           s.Name,
+//			Type:           s.Type,
+//			URL:            s.URL,
+//			Authentication: s.AuthenticationType,
+//			ProxyType:      s.ProxyType,
+//		},
+//		KeyStoreLocation: s.KeyStoreLocation,
+//	}
+//
+//	return json.Marshal(clientCertAuthDest)
+//}
+
+func (s *ClientCertificateAuthDestRequestBody) ToDestination() destinationcreator.Destination {
+	return &destinationcreator.ClientCertificateAuthenticationDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
 			Name:           s.Name,
 			Type:           s.Type,
@@ -226,12 +283,10 @@ func (s *ClientCertificateAuthDestRequestBody) ToDestination() (json.RawMessage,
 		},
 		KeyStoreLocation: s.KeyStoreLocation,
 	}
-
-	return json.Marshal(clientCertAuthDest)
 }
 
 func (s *ClientCertificateAuthDestRequestBody) GetDestinationType() string {
-	return "client certificate authentication"
+	return destinationcreator.ClientCertDestinationType
 }
 
 // Validate validates that the SAML assertion certificate request body contains the required fields and they are valid
