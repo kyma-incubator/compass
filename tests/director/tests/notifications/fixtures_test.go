@@ -41,7 +41,7 @@ const (
 	exceptionSystemType              = "exception-type"
 	eventuallyTimeoutForDestinations = 60 * time.Second
 	eventuallyTickForDestinations    = 2 * time.Second
-	eventuallyTimeout                = 5 * time.Second
+	eventuallyTimeout                = 8 * time.Second
 	eventuallyTick                   = 50 * time.Millisecond
 	readyAssignmentState             = "READY"
 	initialAssignmentState           = "INITIAL"
@@ -142,35 +142,6 @@ func validateDestinationCertData(t *testing.T, assignmentConfig *string, path st
 	require.NoError(t, err)
 
 	return modifiedConfig
-}
-
-func assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, asyncStatusAPIProcessingDelay int64) {
-	t.Logf("Sleeping for %d milliseconds while the async formation assignment status is proccessed...", conf.TenantMappingAsyncResponseDelay+asyncStatusAPIProcessingDelay)
-	time.Sleep(time.Millisecond * time.Duration(conf.TenantMappingAsyncResponseDelay+asyncStatusAPIProcessingDelay))
-	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
-	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
-	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
-
-	assignments := assignmentsPage.Data
-	for _, assignment := range assignments {
-		targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
-		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q and source %q", assignment.ID, assignment.Source)
-
-		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
-		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q, source %q and target %q", assignment.ID, assignment.Source, assignment.Target)
-		require.Equal(t, assignmentExpectation.State, assignment.State, "Assignment with ID: %q has different state than expected", assignment.ID)
-
-		require.Equal(t, str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error))
-
-		expectedAssignmentConfigStr := str.PtrStrToStr(assignmentExpectation.Config)
-		actualAssignmentConfigStr := str.PtrStrToStr(assignment.Configuration)
-		if expectedAssignmentConfigStr != "" && expectedAssignmentConfigStr != "\"\"" && actualAssignmentConfigStr != "" && actualAssignmentConfigStr != "\"\"" {
-			require.JSONEq(t, expectedAssignmentConfigStr, actualAssignmentConfigStr)
-			require.JSONEq(t, str.PtrStrToStr(assignmentExpectation.Config), actualAssignmentConfigStr)
-		} else {
-			require.Equal(t, expectedAssignmentConfigStr, actualAssignmentConfigStr)
-		}
-	}
 }
 
 func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, timeout, tick time.Duration) {

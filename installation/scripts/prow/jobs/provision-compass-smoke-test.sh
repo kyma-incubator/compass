@@ -75,3 +75,4 @@ cd /home/prow/go/src/github.com/kyma-incubator/compass/installation/scripts/prow
 ./compass-smoke-test.sh "/home/prow/"
 
 log::info "Test finished"
+kubectl logs -n compass-system --selector app=director --tail=-1

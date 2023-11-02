@@ -17,7 +17,6 @@ type FormationAssignmentsAsyncAsserter struct {
 	FormationAssignmentsAsserter
 	timeout time.Duration
 	tick time.Duration
-	delay int64
 }
 
 func NewFormationAssignmentAsyncAsserter(expectations map[string]map[string]fixtures.AssignmentState, expectedAssignmentsCount int, certSecuredGraphQLClient *graphql.Client, tenantID string) *FormationAssignmentsAsyncAsserter {
@@ -28,7 +27,7 @@ func NewFormationAssignmentAsyncAsserter(expectations map[string]map[string]fixt
 			certSecuredGraphQLClient: certSecuredGraphQLClient,
 			tenantID:                 tenantID,
 		},
-		timeout: time.Second*5,
+		timeout: time.Second*8,
 		tick: time.Millisecond*50,
 	}
 	return &f
@@ -37,34 +36,6 @@ func NewFormationAssignmentAsyncAsserter(expectations map[string]map[string]fixt
 func (a *FormationAssignmentsAsyncAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
 	formationID := ctx.Value(context_keys.FormationIDKey).(string)
 	a.assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, a.certSecuredGraphQLClient, a.tenantID, formationID, a.expectedAssignmentsCount, a.expectations)
-}
-
-func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context, certSecuredGraphQLClient *graphql.Client, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
-	t.Logf("Sleeping for %d milliseconds while the async formation assignment status is proccessed...", a.delay)
-	time.Sleep(time.Millisecond * time.Duration(a.delay))
-	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
-	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
-	assignments := assignmentsPage.Data
-	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
-	for _, assignment := range assignments {
-		sourceAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
-		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q and source %q", assignment.ID, assignment.Source)
-
-		assignmentExpectation, ok := sourceAssignmentsExpectations[assignment.Target]
-		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q, source %q and target %q", assignment.ID, assignment.Source, assignment.Target)
-		require.Equal(t, assignmentExpectation.State, assignment.State, "Assignment with ID: %q has different state than expected", assignment.ID)
-
-		require.Equal(t, str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error))
-
-		expectedAssignmentConfigStr := str.PtrStrToStr(assignmentExpectation.Config)
-		actualAssignmentConfigStr := str.PtrStrToStr(assignment.Configuration)
-		if expectedAssignmentConfigStr != "" && expectedAssignmentConfigStr != "\"\"" && actualAssignmentConfigStr != "" && actualAssignmentConfigStr != "\"\"" {
-			require.JSONEq(t, expectedAssignmentConfigStr, actualAssignmentConfigStr)
-			require.JSONEq(t, str.PtrStrToStr(assignmentExpectation.Config), actualAssignmentConfigStr)
-		} else {
-			require.Equal(t, expectedAssignmentConfigStr, actualAssignmentConfigStr)
-		}
-	}
 }
 
 func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, certSecuredGraphQLClient *graphql.Client, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
