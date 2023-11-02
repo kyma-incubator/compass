@@ -124,7 +124,7 @@ func CastToBool(i interface{}) (bool, error) {
 	return strconv.ParseBool(str)
 }
 
-// StringifyJSONRawMessage if the rawMessage contains value returns it, otherwise return escaped empty string (\"\")
+// StringifyJSONRawMessage if the rawMessage contains value returns it, otherwise return nil
 func StringifyJSONRawMessage(rawMessage json.RawMessage) *string {
 	str := string(rawMessage)
 	if str == "" {
