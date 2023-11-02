@@ -160,3 +160,12 @@ func FixUpdateApplicationTemplateRequest(id, updateInputGQL string) *gcli.Reques
 					}
 				}`, id, updateInputGQL, testctx.Tc.GQLFieldsProvider.ForApplicationTemplate()))
 }
+
+func FixUpdateApplicationTemplateWithOverrideRequest(id string, override bool, updateInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+  				result: updateApplicationTemplate(id: "%s",override: %t, in: %s) {
+    					%s
+					}
+				}`, id, override, updateInputGQL, testctx.Tc.GQLFieldsProvider.ForApplicationTemplate()))
+}

@@ -53,7 +53,7 @@ type ApplicationTemplateService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	ListByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error)
 	ListByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationTemplate, error)
-	Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error
+	Update(ctx context.Context, id string, override bool, in model.ApplicationTemplateUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 	ListLabels(ctx context.Context, appTemplateID string) (map[string]*model.Label, error)
@@ -487,7 +487,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 }
 
 // UpdateApplicationTemplate missing godoc
-func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateUpdateInput) (*graphql.ApplicationTemplate, error) {
+func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, override *bool, in graphql.ApplicationTemplateUpdateInput) (*graphql.ApplicationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -538,8 +538,13 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		}
 	}
 
+	shouldOverride := false
+	if override != nil {
+		shouldOverride = *override
+	}
+
 	log.C(ctx).Infof("Updating an Application Template with id %q", id)
-	err = r.appTemplateSvc.Update(ctx, id, convertedIn)
+	err = r.appTemplateSvc.Update(ctx, id, shouldOverride, convertedIn)
 	if err != nil {
 		return nil, err
 	}
