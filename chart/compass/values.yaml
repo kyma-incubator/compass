@@ -1099,6 +1099,7 @@ global:
           discriminatorField: ""
           discriminatorValue: ""
           detailsField: "details"
+          labelsField: "labels"
           entityTypeField: "entityType"
           globalAccountID: "gaID"
           regionField: "region"
@@ -1128,6 +1129,7 @@ global:
           entityTypeField: "entityType"
           globalAccountID: "globalAccountGUID"
           regionField: "region"
+          labelsField: "labels"
           movedSubaccountTargetField: "targetGlobalAccountGUID"
           movedSubaccountSourceField: "sourceGlobalAccountGUID"
         regions:
