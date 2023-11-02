@@ -30,21 +30,23 @@ import (
 )
 
 const (
-	assignOperation              = "assign"
-	unassignOperation            = "unassign"
-	createFormationOperation     = "createFormation"
-	deleteFormationOperation     = "deleteFormation"
-	emptyParentCustomerID        = "" // in the respective tests, the used GA tenant does not have customer parent, thus we assert that it is empty
-	supportReset                 = true
-	doesNotSupportReset          = false
-	consumerType                 = "Integration System" // should be a valid consumer type
-	exceptionSystemType          = "exception-type"
-	eventuallyTimeout            = 60 * time.Second
-	eventuallyTick               = 2 * time.Second
-	readyAssignmentState         = "READY"
-	initialAssignmentState       = "INITIAL"
-	configPendingAssignmentState = "CONFIG_PENDING"
-	deletingAssignmentState      = "DELETING"
+	assignOperation                  = "assign"
+	unassignOperation                = "unassign"
+	createFormationOperation         = "createFormation"
+	deleteFormationOperation         = "deleteFormation"
+	emptyParentCustomerID            = "" // in the respective tests, the used GA tenant does not have customer parent, thus we assert that it is empty
+	supportReset                     = true
+	doesNotSupportReset              = false
+	consumerType                     = "Integration System" // should be a valid consumer type
+	exceptionSystemType              = "exception-type"
+	eventuallyTimeoutForDestinations = 60 * time.Second
+	eventuallyTickForDestinations    = 2 * time.Second
+	eventuallyTimeout                = 5 * time.Second
+	eventuallyTick                   = 50 * time.Millisecond
+	readyAssignmentState             = "READY"
+	initialAssignmentState           = "INITIAL"
+	configPendingAssignmentState     = "CONFIG_PENDING"
+	deletingAssignmentState          = "DELETING"
 )
 
 var (
@@ -171,7 +173,7 @@ func assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context,
 	}
 }
 
-func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
+func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, timeout, tick time.Duration) {
 	t.Logf("Asserting formation assignments with eventually...")
 	require.Eventually(t, func() (isOkay bool) {
 		t.Logf("Getting formation assignments...")
@@ -185,12 +187,12 @@ func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx co
 
 		assignments := assignmentsPage.Data
 		for _, assignment := range assignments {
-			targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
+			sourceAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
 			if !ok {
 				t.Logf("Could not find expectations for assignment with ID: %q and source ID: %q", assignment.ID, assignment.Source)
 				return
 			}
-			assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
+			assignmentExpectation, ok := sourceAssignmentsExpectations[assignment.Target]
 			if !ok {
 				t.Logf("Could not find expectations for assignment with ID: %q, source ID: %q and target ID: %q", assignment.ID, assignment.Source, assignment.Target)
 				return
@@ -211,7 +213,7 @@ func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx co
 
 		t.Logf("Successfully asserted formation asssignments asynchronously")
 		return true
-	}, eventuallyTimeout, eventuallyTick)
+	}, timeout, tick)
 }
 
 func assertJSONStringEquality(t *testing.T, expectedValue, actualValue *string) bool {
