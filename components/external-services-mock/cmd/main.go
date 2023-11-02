@@ -69,6 +69,7 @@ type config struct {
 	ORDServers               ORDServers
 	SelfRegConfig            selfreg.Config
 	DefaultTenant            string `envconfig:"APP_DEFAULT_TENANT"`
+	DefaultCustomerTenant    string `envconfig:"APP_DEFAULT_CUSTOMER_TENANT"`
 	TrustedTenant            string `envconfig:"APP_TRUSTED_TENANT"`
 	OnDemandTenant           string `envconfig:"APP_ON_DEMAND_TENANT"`
 
@@ -274,7 +275,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 
 	// Tenant fetcher handlers
 	allowedSubaccounts := []string{cfg.OnDemandTenant, cfg.TenantConfig.TestTenantOnDemandID}
-	tenantFetcherHandler := tenantfetcher.NewHandler(allowedSubaccounts, cfg.DefaultTenant)
+	tenantFetcherHandler := tenantfetcher.NewHandler(allowedSubaccounts, cfg.DefaultTenant, cfg.DefaultCustomerTenant)
 
 	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.AccountCreationEventType))
 	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.AccountCreationEventType))

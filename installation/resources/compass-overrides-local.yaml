@@ -151,6 +151,7 @@ global:
           tenantEventsField: "events"
           totalPagesField: "totalPages"
           totalResultsField: "totalResults"
+          labelsField: "labels"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: "2s"
@@ -196,6 +197,7 @@ global:
           tenantEventsField: "events"
           totalPagesField: "totalPages"
           totalResultsField: "totalResults"
+          labelsField: "labels"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: "2s"
