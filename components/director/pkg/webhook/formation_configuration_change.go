@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 )
 
 // TenantWithLabels represents a tenant with its corresponding labels
@@ -89,13 +90,13 @@ type FormationConfigurationChangeInput struct {
 // ParseURLTemplate missing godoc
 func (rd *FormationConfigurationChangeInput) ParseURLTemplate(tmpl *string) (*URL, error) {
 	var url URL
-	return &url, parseTemplate(tmpl, *rd, &url)
+	return &url, templatehelper.ParseTemplate(tmpl, *rd, &url)
 }
 
 // ParseInputTemplate missing godoc
 func (rd *FormationConfigurationChangeInput) ParseInputTemplate(tmpl *string) ([]byte, error) {
 	res := json.RawMessage{}
-	if err := parseTemplate(tmpl, *rd, &res); err != nil {
+	if err := templatehelper.ParseTemplate(tmpl, *rd, &res); err != nil {
 		return nil, err
 	}
 	return res, nil
@@ -104,7 +105,7 @@ func (rd *FormationConfigurationChangeInput) ParseInputTemplate(tmpl *string) ([
 // ParseHeadersTemplate missing godoc
 func (rd *FormationConfigurationChangeInput) ParseHeadersTemplate(tmpl *string) (http.Header, error) {
 	var headers http.Header
-	return headers, parseTemplate(tmpl, *rd, &headers)
+	return headers, templatehelper.ParseTemplate(tmpl, *rd, &headers)
 }
 
 // GetParticipantsIDs returns the list of IDs part of the FormationConfigurationChangeInput
