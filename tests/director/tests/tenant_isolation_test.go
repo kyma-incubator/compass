@@ -286,16 +286,18 @@ func TestTenantAccess(t *testing.T) {
 
 func TestSubstituteCaller(t *testing.T) {
 	ctx := context.Background()
-	substitutedTenant := tenant.TestTenants.GetDefaultSubaccountTenantID()
+	substitutionTenant := tenant.TestTenants.GetDefaultTenantID()
 
-	actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "e2e-test-substitution-app", substitutedTenant)
-	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+	actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "e2e-test-substitution-app", substitutionTenant)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, substitutionTenant, &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 
 	tenantsApps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetIDByName(t, tenant.TestTenantSubstitutionAccount))
 	assert.Empty(t, tenantsApps.Data)
 
+	// The 'TestTenantSubstitutionSubaccount' tenant substitute 'testDefaultSubaccountTenant' that has 'testDefaultTenant' as parent.
+	// That's why when we call with 'TestTenantSubstitutionSubaccount' we see the apps registered in the 'testDefaultTenant'
 	tenantsApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetIDByName(t, tenant.TestTenantSubstitutionSubaccount))
 	require.Len(t, tenantsApps.Data, 1)
 	require.Equal(t, tenantsApps.Data[0].ID, actualApp.ID)
