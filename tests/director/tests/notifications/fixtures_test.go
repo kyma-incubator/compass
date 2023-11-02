@@ -387,7 +387,7 @@ func assertBasicDestination(t *testing.T, client *clients.DestinationClient, ser
 	}
 }
 
-func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationClient, serviceURL, samlAssertionDestinationName, samlAssertionCertName, samlAssertionDestinationURL, app1BaseURL, instanceID, ownerSubaccountID, authToken, userTokenHeader string, expectedCertNames []string) {
+func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationClient, serviceURL, samlAssertionDestinationName, samlAssertionCertName, samlAssertionDestinationURL, app1BaseURL, instanceID, ownerSubaccountID, authToken, userTokenHeader string, expectedCertNames map[string]bool) {
 	samlAssertionDestBytes := client.FindDestinationByName(t, serviceURL, samlAssertionDestinationName, authToken, userTokenHeader, http.StatusOK)
 	var samlAssertionDest esmdestinationcreator.DestinationSvcSAMLAssertionDestResponse
 	err := json.Unmarshal(samlAssertionDestBytes, &samlAssertionDest)
@@ -404,18 +404,18 @@ func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationCli
 
 	require.Equal(t, len(expectedCertNames), len(samlAssertionDest.CertificateDetails))
 	for i := 0; i < len(expectedCertNames); i++ {
-		require.Equal(t, expectedCertNames[i], samlAssertionDest.CertificateDetails[i].Name)
+		require.True(t, expectedCertNames[samlAssertionDest.CertificateDetails[i].Name])
 		require.NotEmpty(t, samlAssertionDest.CertificateDetails[i].Content)
 	}
 
 	require.NotEmpty(t, samlAssertionDest.AuthTokens)
-	for _, authToken := range samlAssertionDest.AuthTokens {
-		require.Equal(t, samlAuthType, authToken.Type)
-		require.NotEmpty(t, authToken.Value)
+	for _, token := range samlAssertionDest.AuthTokens {
+		require.Equal(t, samlAuthType, token.Type)
+		require.NotEmpty(t, token.Value)
 	}
 }
 
-func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationClient, serviceURL, clientCertAuthDestinationName, clientCertAuthCertName, clientCertAuthDestinationURL, instanceID, ownerSubaccountID, authToken string, expectedCertNames []string) {
+func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationClient, serviceURL, clientCertAuthDestinationName, clientCertAuthCertName, clientCertAuthDestinationURL, instanceID, ownerSubaccountID, authToken string, expectedCertNames map[string]bool) {
 	clientCertAuthDestBytes := client.FindDestinationByName(t, serviceURL, clientCertAuthDestinationName, authToken, "", http.StatusOK)
 	var clientCertAuthDest esmdestinationcreator.DestinationSvcClientCertDestResponse
 	err := json.Unmarshal(clientCertAuthDestBytes, &clientCertAuthDest)
@@ -431,7 +431,7 @@ func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationCl
 
 	require.Equal(t, len(expectedCertNames), len(clientCertAuthDest.CertificateDetails))
 	for i := 0; i < len(expectedCertNames); i++ {
-		require.Equal(t, expectedCertNames[i], clientCertAuthDest.CertificateDetails[i].Name)
+		require.True(t, expectedCertNames[clientCertAuthDest.CertificateDetails[i].Name])
 		require.NotEmpty(t, clientCertAuthDest.CertificateDetails[i].Content)
 	}
 }
