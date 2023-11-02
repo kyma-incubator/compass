@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"regexp"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -73,6 +75,8 @@ func (ep EventsPage) getEventsDetails(ctx context.Context) [][]byte {
 				allDetails[key] = result.String()
 			case gjson.Number:
 				allDetails[key] = result.Float()
+			case gjson.JSON:
+				allDetails[key] = result.Value()
 			case gjson.True:
 				allDetails[key] = true
 			case gjson.False:
@@ -223,11 +227,19 @@ func constructSubaccountTenant(ctx context.Context, jsonPayload, name, subdomain
 		log.C(ctx).Debugf("Missing or invalid format of region field: %s for tenant with ID: %s", ep.FieldMapping.RegionField, externalTenant)
 	}
 	region := regionField.String()
+
 	parentIDField := gjson.Get(jsonPayload, ep.FieldMapping.GlobalAccountKey)
 	if !parentIDField.Exists() {
 		return nil, invalidFieldFormatError(ep.FieldMapping.GlobalAccountKey)
 	}
 	parentID := parentIDField.String()
+
+	var customerIDValue *string
+	customerIDField := gjson.Get(jsonPayload, ep.FieldMapping.LabelsField).Get(ep.FieldMapping.CustomerIDField)
+	if customerIDFieldArr := customerIDField.Array(); customerIDField.IsArray() && len(customerIDFieldArr) > 0 {
+		customerIDValue = str.Ptr(customerIDFieldArr[0].String())
+	}
+
 	return &model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: externalTenant,
@@ -237,6 +249,7 @@ func constructSubaccountTenant(ctx context.Context, jsonPayload, name, subdomain
 		Type:           tenant.TypeToStr(tenant.Subaccount),
 		Provider:       ep.ProviderName,
 		LicenseType:    licenseType,
+		CustomerID:     customerIDValue,
 	}, nil
 }
 
