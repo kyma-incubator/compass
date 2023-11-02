@@ -3,13 +3,14 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	"github.com/avast/retry-go/v4"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/avast/retry-go/v4"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
