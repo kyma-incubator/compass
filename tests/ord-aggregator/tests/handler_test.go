@@ -127,10 +127,10 @@ const (
 	expectedNumberOfTombstones                            = 7
 	expectedNumberOfTombstonesInSubscription              = 1
 
-	expectedNumberOfPublicAPIs         = 7
-	expectedNumberOfPublicEvents       = 14
-	expectedNumberOfPublicCapabilities = 7
-	expectedNumberOfPublicIntegrationDependencies
+	expectedNumberOfPublicAPIs                    = 7
+	expectedNumberOfPublicEvents                  = 14
+	expectedNumberOfPublicCapabilities            = 7
+	expectedNumberOfPublicIntegrationDependencies = 7
 
 	expectedNumberOfAPIsInFirstBundle    = 2
 	expectedNumberOfAPIsInSecondBundle   = 2
