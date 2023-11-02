@@ -308,13 +308,13 @@ func (_m *ApplicationTemplateService) PrepareApplicationCreateInputJSON(appTempl
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, id, in
-func (_m *ApplicationTemplateService) Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error {
-	ret := _m.Called(ctx, id, in)
+// Update provides a mock function with given fields: ctx, id, override, in
+func (_m *ApplicationTemplateService) Update(ctx context.Context, id string, override bool, in model.ApplicationTemplateUpdateInput) error {
+	ret := _m.Called(ctx, id, override, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.ApplicationTemplateUpdateInput) error); ok {
-		r0 = rf(ctx, id, in)
+	if rf, ok := ret.Get(0).(func(context.Context, string, bool, model.ApplicationTemplateUpdateInput) error); ok {
+		r0 = rf(ctx, id, override, in)
 	} else {
 		r0 = ret.Error(0)
 	}
