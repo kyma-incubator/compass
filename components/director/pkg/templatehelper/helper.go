@@ -32,6 +32,7 @@ func getFuncMap() template.FuncMap {
 	return fm
 }
 
+// ParseTemplate parses tmpl using data and stores the result in dest
 func ParseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 	t, err := template.New("").Funcs(getFuncMap()).Option("missingkey=zero").Parse(*tmpl)
 	if err != nil {
