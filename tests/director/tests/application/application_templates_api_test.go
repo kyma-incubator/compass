@@ -1221,30 +1221,41 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertClientRegion2, tenantId, appTemplate2)
 	require.NoError(t, err)
 
-	first := 199
-	after := ""
+	pageSize := 200
+	pageCursor := ""
+	hasNextPage := true
 
-	getApplicationTemplatesRequest := fixtures.FixGetApplicationTemplatesWithPagination(first, after)
-	output := graphql.ApplicationTemplatePage{}
+	var applicationTemplates []*graphql.ApplicationTemplate
+	for hasNextPage {
+		getApplicationTemplatesRequest := fixtures.FixGetApplicationTemplatesWithPagination(pageSize, pageCursor)
+		if pageCursor == "" {
+			example.SaveExample(t, getApplicationTemplatesRequest.Query(), "query application templates")
+		}
 
-	// WHEN
-	t.Log("List application templates")
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplatesRequest, &output)
-	require.NoError(t, err)
+		output := graphql.ApplicationTemplatePage{}
 
-	//THEN
+		// WHEN
+		t.Logf("List application templates page with size %d and cursor %s", pageSize, pageCursor)
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplatesRequest, &output)
+		require.NoError(t, err)
+
+		applicationTemplates = append(applicationTemplates, output.Data...)
+
+		pageCursor = string(output.PageInfo.EndCursor)
+		hasNextPage = output.PageInfo.HasNextPage
+	}
+
 	t.Log("Check if application templates were received")
 	appTemplateIDs := []string{appTemplate1.ID, appTemplate2.ID}
 	t.Logf("Created templates are with IDs: %v ", appTemplateIDs)
 	found := 0
-	for _, tmpl := range output.Data {
+	for _, tmpl := range applicationTemplates {
 		t.Logf("Checked template from query response is: %s ", tmpl.ID)
 		if str.ContainsInSlice(appTemplateIDs, tmpl.ID) {
 			found++
 		}
 	}
 	assert.Equal(t, 2, found)
-	example.SaveExample(t, getApplicationTemplatesRequest.Query(), "query application templates")
 }
 
 func TestRegisterApplicationFromTemplate(t *testing.T) {
