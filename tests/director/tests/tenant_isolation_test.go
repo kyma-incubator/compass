@@ -44,7 +44,7 @@ func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, subaccountTokenURL)
 
-	// The accountToken is JWT token containing claim with account ID for tenant. In local setup that's 'testDefaultTenant'
+	// The accountToken is JWT token containing claim with account ID for tenant. In local setup that's 'TestProviderAccountID'
 	accountToken := token.GetUserToken(t, ctx, accountTokenURL, conf.UsernameAuthCfg.Account.ClientID, conf.UsernameAuthCfg.Account.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.AccountAuthenticatorClaimKey)
 	// The subaccountToken is JWT token containing claim with subaccount ID for tenant. In local setup that's 'TestConsumerSubaccount'
 	subaccountToken := token.GetUserToken(t, ctx, subaccountTokenURL, conf.UsernameAuthCfg.Subaccount.ClientID, conf.UsernameAuthCfg.Subaccount.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubaccountAuthenticatorClaimKey)
@@ -70,8 +70,9 @@ func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 
 	for _, ts := range testCases {
 		t.Run(ts.name, func(t *testing.T) {
-			app, err := fixtures.RegisterApplication(t, ctx, ts.graphqlClient, "e2e-user-auth-app", "") // the tenant will be derived from the token part of the graphql client
-			defer fixtures.CleanupApplication(t, ctx, ts.graphqlClient, "", &app)                       // the tenant will be derived from the token part of the graphql client
+			// the tenant will be derived from the token part of the graphql client
+			app, err := fixtures.RegisterApplication(t, ctx, ts.graphqlClient, "e2e-user-auth-app", "")
+			defer fixtures.CleanupApplication(t, ctx, ts.graphqlClient, "", &app)
 			require.NoError(t, err)
 			require.NotEmpty(t, app.ID)
 
