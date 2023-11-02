@@ -27,6 +27,7 @@ const (
 )
 
 // Client is responsible for making internal graphql calls to the director
+//
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
 	GetApplicationBundles(ctx context.Context, appID, tenant string) ([]*graphql.BundleExt, error)

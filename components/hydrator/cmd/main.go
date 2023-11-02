@@ -95,6 +95,8 @@ type config struct {
 
 	ConsumerClaimsKeys cfg.ConsumerClaimsKeysConfig
 
+	TenantSubstitutionLabelKey string `envconfig:"default=customerId"`
+
 	Log log.Config
 }
 
@@ -186,7 +188,7 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 	authnMappingHandlerFunc := authnmappinghandler.NewHandler(oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators)
 
 	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.Handler.TenantMappingEndpoint)
-	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(authenticators, internalDirectorClientProvider, internalGatewayClientProvider, cfg.StaticGroupsSrc, cfgProvider, cfg.ConsumerClaimsKeys, metricsCollector)
+	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(authenticators, internalDirectorClientProvider, internalGatewayClientProvider, cfg.StaticGroupsSrc, cfgProvider, cfg.ConsumerClaimsKeys, metricsCollector, cfg.TenantSubstitutionLabelKey)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	logger.Infof("Registering Certificate Resolver endpoint on %s...", cfg.Handler.CertResolverEndpoint)
@@ -219,7 +221,7 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 	return provider
 }
 
-func getTenantMappingHandlerFunc(authenticators []authenticator.Config, internalDirectorClientProvider, internalGatewayClientProvider director.ClientProvider, staticGroupsSrc string, cfgProvider *configprovider.Provider, consumerClaimsKeysConfig cfg.ConsumerClaimsKeysConfig, metricsCollector *metrics.Collector) (*tenantmapping.Handler, error) {
+func getTenantMappingHandlerFunc(authenticators []authenticator.Config, internalDirectorClientProvider, internalGatewayClientProvider director.ClientProvider, staticGroupsSrc string, cfgProvider *configprovider.Provider, consumerClaimsKeysConfig cfg.ConsumerClaimsKeysConfig, metricsCollector *metrics.Collector, tenantSubstitutionLabelKey string) (*tenantmapping.Handler, error) {
 	staticGroupsRepo, err := tenantmapping.NewStaticGroupRepository(staticGroupsSrc)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating StaticGroup repository instance")
@@ -235,7 +237,7 @@ func getTenantMappingHandlerFunc(authenticators []authenticator.Config, internal
 	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 
-	return tenantmapping.NewHandler(reqDataParser, objectContextProviders, metricsCollector), nil
+	return tenantmapping.NewHandler(reqDataParser, objectContextProviders, metricsCollector, internalDirectorClientProvider.Client(), tenantSubstitutionLabelKey), nil
 }
 
 func getRuntimeMappingHandlerFunc(ctx context.Context, clientProvider director.ClientProvider, cachePeriod time.Duration) *runtimemapping.Handler {

@@ -11,7 +11,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
-	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	directorErrors "github.com/kyma-incubator/compass/components/hydrator/internal/director"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
@@ -61,14 +61,14 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), c.tenantKeys, "", mergeWithOtherScopes, "", userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider), nil
+			return NewObjectContext(&graphql.Tenant{ID: externalTenantID}, c.tenantKeys, "", mergeWithOtherScopes, "", userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
 	authDetails.Region = region
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), c.tenantKeys, "", mergeWithOtherScopes, authDetails.Region, userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider)
+	objCtx := NewObjectContext(tenantMapping, c.tenantKeys, "", mergeWithOtherScopes, authDetails.Region, userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
 
 	return objCtx, nil
@@ -121,7 +121,7 @@ func (c *consumerContextProvider) getUserContextData(userContextHeader string) (
 	}, nil
 }
 
-func getTenantWithRegion(ctx context.Context, directorClient DirectorClient, externalTenantID string) (*schema.Tenant, string, error) {
+func getTenantWithRegion(ctx context.Context, directorClient DirectorClient, externalTenantID string) (*graphql.Tenant, string, error) {
 	tenantMapping, err := directorClient.GetTenantByExternalID(ctx, externalTenantID)
 	if err != nil {
 		return nil, "", err

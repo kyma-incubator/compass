@@ -76,10 +76,9 @@ type tenantRepository interface {
 }
 
 // Used for testing
-//nolint
 //
 //go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
-type templateInput interface {
+type templateInput interface { //nolint
 	webhookdir.TemplateInput
 	GetParticipantsIDs() []string
 	GetAssignment() *model.FormationAssignment

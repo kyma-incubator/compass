@@ -28,6 +28,7 @@ import (
 //go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DirectorClient interface {
 	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
+	GetRootTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetSystemAuthByID(ctx context.Context, authID string) (*model.SystemAuth, error)
 	UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAuth) (director.UpdateAuthResult, error)
 }
@@ -63,20 +64,24 @@ type ClientInstrumenter interface {
 
 // Handler missing godoc
 type Handler struct {
-	reqDataParser          ReqDataParser
-	objectContextProviders map[string]ObjectContextProvider
-	clientInstrumenter     ClientInstrumenter
+	reqDataParser              ReqDataParser
+	objectContextProviders     map[string]ObjectContextProvider
+	clientInstrumenter         ClientInstrumenter
+	directorClient             DirectorClient
+	tenantSubstitutionLabelKey string
 }
 
 // NewHandler missing godoc
 func NewHandler(
 	reqDataParser ReqDataParser,
 	objectContextProviders map[string]ObjectContextProvider,
-	clientInstrumenter ClientInstrumenter) *Handler {
+	clientInstrumenter ClientInstrumenter, directorClient DirectorClient, tenantSubstitutionLabelKey string) *Handler {
 	return &Handler{
-		reqDataParser:          reqDataParser,
-		objectContextProviders: objectContextProviders,
-		clientInstrumenter:     clientInstrumenter,
+		reqDataParser:              reqDataParser,
+		objectContextProviders:     objectContextProviders,
+		clientInstrumenter:         clientInstrumenter,
+		directorClient:             directorClient,
+		tenantSubstitutionLabelKey: tenantSubstitutionLabelKey,
 	}
 }
 
@@ -128,7 +133,13 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 	}
 	log.C(ctx).Infof("Matched object contexts: [%s]", strings.Join(objCtxNames, ","))
 
-	if err := addTenantsToExtra(objCtxs, reqData); err != nil {
+	tenants, err := h.calculateTenants(ctx, objCtxs)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while calculating tenants: %v", err)
+		return reqData.Body
+	}
+
+	if err = h.addTenantsToExtra(tenants, reqData); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while adding tenants to extra: %v", err)
 		return reqData.Body
 	}
@@ -203,11 +214,18 @@ func (h *Handler) instrumentClient(objectContexts []ObjectContext, authDetails [
 	h.clientInstrumenter.InstrumentClient(details.AuthID, string(details.AuthFlow), flowDetails)
 }
 
-func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) error {
+func (h *Handler) calculateTenants(ctx context.Context, objectContexts []ObjectContext) (map[string]string, error) {
+	var substituteTenantID string
 	tenants := make(map[string]string)
 	for _, objCtx := range objectContexts {
-		tenants[objCtx.TenantKey] = objCtx.TenantID
-		tenants[objCtx.ExternalTenantKey] = objCtx.ExternalTenantID
+		tenants[objCtx.TenantKey] = objCtx.Tenant.InternalID
+		tenants[objCtx.ExternalTenantKey] = objCtx.Tenant.ID
+
+		val, ok := objCtx.Tenant.Labels[h.tenantSubstitutionLabelKey].(string)
+		if ok {
+			log.C(ctx).Infof("Found label %s with value %s of thenant wiht external ID %s", h.tenantSubstitutionLabelKey, val, objCtx.Tenant.ID)
+			substituteTenantID = val
+		}
 	}
 
 	_, consumerExists := tenants[tenantmapping.ConsumerTenantKey]
@@ -217,6 +235,23 @@ func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqDat
 		tenants[tenantmapping.ExternalTenantKey] = tenants[tenantmapping.ProviderExternalTenantKey]
 	}
 
+	if substituteTenantID != "" {
+		rootTenant, err := h.directorClient.GetRootTenantByExternalID(ctx, substituteTenantID)
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("while fetching root tenant for tenant with external ID: %s", substituteTenantID)
+			return nil, errors.Wrapf(err, "while fetching root tenant for tenant with external ID: %s", substituteTenantID)
+		}
+
+		log.C(ctx).Infof("The caller tenant has %s label with value %s, substituting the caller tenant %s with customer tenant Root parent with external ID %s and internal ID %s", h.tenantSubstitutionLabelKey, substituteTenantID, tenants[tenantmapping.ExternalTenantKey], rootTenant.ID, rootTenant.InternalID)
+		tenants[tenantmapping.ProviderTenantKey] = tenants[tenantmapping.ConsumerTenantKey]
+		tenants[tenantmapping.ProviderExternalTenantKey] = tenants[tenantmapping.ExternalTenantKey]
+
+		tenants[tenantmapping.ConsumerTenantKey] = rootTenant.InternalID
+		tenants[tenantmapping.ExternalTenantKey] = rootTenant.ID
+	}
+	return tenants, nil
+}
+func (h *Handler) addTenantsToExtra(tenants map[string]string, reqData oathkeeper.ReqData) error {
 	tenantsJSON, err := json.Marshal(tenants)
 	if err != nil {
 		return errors.Wrap(err, "while marshaling tenants")
@@ -288,7 +323,7 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 
 		if c.OnBehalfOf != "" { // i.e. make sure that regions match only during consumer-provider flow
 			for _, objCtx := range objectContexts {
-				if objCtx.TenantID != "" && objCtx.Region != region {
+				if objCtx.Tenant.InternalID != "" && objCtx.Region != region {
 					return errors.Errorf("mismatched region for consumer ID REDACTED_%x: actual %s, expected: %s)", sha256.Sum256([]byte(objCtx.ConsumerID)), objCtx.Region, region)
 				}
 			}
