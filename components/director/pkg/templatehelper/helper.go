@@ -29,13 +29,13 @@ func GetFuncMap() template.FuncMap {
 	return fm
 }
 
-func toString(bytesData []byte) string {
+func toString(bytesData []byte) *string {
 	config := string(bytesData)
 	if config == "" {
-		config = "\"\""
+		return nil
 	}
 
-	return config
+	return &config
 }
 
 func contains(faConfig json.RawMessage, str string) bool {
