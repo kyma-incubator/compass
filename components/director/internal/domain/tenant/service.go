@@ -336,7 +336,7 @@ func (s *labeledService) UpsertMany(ctx context.Context, tenantInputs ...model.B
 }
 
 // UpsertSingle creates a provided tenant if it does not exist. If it does exist, it is internally updated.
-// It creates or updates the subdomain and region labels of the provided tenant, no matter if it is pre-existing or not.
+// It creates or updates the subdomain, region and customerID labels of the provided tenant, no matter if it is pre-existing or not.
 func (s *labeledService) UpsertSingle(ctx context.Context, tenantInput model.BusinessTenantMappingInput) (string, error) {
 	return s.upsertTenant(ctx, tenantInput, s.tenantMappingRepo.Upsert)
 }

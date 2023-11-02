@@ -118,11 +118,6 @@ func newModelBusinessTenantMappingWithLicense(id, name string, licenseType *stri
 	return newModelBusinessTenantMappingWithType(id, name, "", licenseType, tenant.Account)
 }
 
-func newModelBusinessTenantMappingWithCustomerID(id, name string, customerID *string) *model.BusinessTenantMapping {
-	tnt := newModelBusinessTenantMappingWithType(id, name, "", nil, tenant.Subaccount)
-	return tnt
-}
-
 func newModelBusinessTenantMappingWithType(id, name, parent string, licenseType *string, tenantType tenant.Type) *model.BusinessTenantMapping {
 	return &model.BusinessTenantMapping{
 		ID:             id,

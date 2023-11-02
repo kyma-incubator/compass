@@ -286,6 +286,8 @@ spec:
               value: {{ $config.regionalConfig.fieldMapping.discriminatorField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_VALUE_DISCRIMINATOR
               value: {{ $config.regionalConfig.fieldMapping.discriminatorValue }}
+            - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_DETAILS
+              value: {{ $config.regionalConfig.fieldMapping.detailsField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_LABELS
               value: {{ $config.regionalConfig.fieldMapping.labelsField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_GLOBAL_ACCOUNT_KEY
