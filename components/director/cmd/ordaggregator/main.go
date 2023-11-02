@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/capability"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/entitytypemapping"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -198,6 +199,7 @@ func main() {
 	apiConverter := api.NewConverter(versionConverter, specConverter)
 	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	entityTypeConverter := entitytype.NewConverter(versionConverter)
+	entityTypeMappingConverter := entitytypemapping.NewConverter()
 	capabilityConverter := capability.NewConverter(versionConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
@@ -232,6 +234,7 @@ func main() {
 	apiRepo := api.NewRepository(apiConverter)
 	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
 	entityTypeRepo := entitytype.NewRepository(entityTypeConverter)
+	entityTypeMappingRepo := entitytypemapping.NewRepository(entityTypeMappingConverter)
 	capabilityRepo := capability.NewRepository(capabilityConverter)
 	specRepo := spec.NewRepository(specConverter)
 	docRepo := document.NewRepository(docConverter)
@@ -298,6 +301,9 @@ func main() {
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
 	appTemplateVersionSvc := apptemplateversion.NewService(appTemplateVersionRepo, appTemplateSvc, uidSvc, timeSvc)
 
+	entityTypeMappingSvc := entitytypemapping.NewService(entityTypeMappingRepo, uidSvc)
+	entityTypeMappingProcessor := processor.NewEntityTypeMappingProcessor(transact, entityTypeMappingSvc)
+
 	opRepo := operation.NewRepository(operation.NewConverter())
 	opSvc := operation.NewService(opRepo, uuid.NewService())
 
@@ -328,7 +334,7 @@ func main() {
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
 	ordConfig := ord.NewServiceConfig(cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
-	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, entityTypeSvc, entityTypeProcessor, capabilitySvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping, opSvc)
+	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, entityTypeSvc, entityTypeProcessor, entityTypeMappingProcessor, capabilitySvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping, opSvc)
 	ordOpProcessor := &ord.OperationsProcessor{
 		OrdSvc: ordSvc,
 	}

@@ -96,6 +96,14 @@ const (
 	MaxLevelLength = 255
 	// MaxTitleLengthSAPCorePolicy represents the maximal accepted length of the Title field due to sap core policy
 	MaxTitleLengthSAPCorePolicy = 120
+	// MinORDIDLength represents the minimal accepted length of the ORD ID field
+	MinORDIDLength = 1
+	// MaxORDIDLength represents the maximal accepted length of the ORD ID field
+	MaxORDIDLength = 255
+	// MinCorrelationIDLength represents the minimal accepted length of the Correaltion ID field
+	MinCorrelationIDLength = 1
+	// MaxCorrelationIDLength represents the maximal accepted length of the Correaltion ID field
+	MaxCorrelationIDLength = 255
 )
 
 const (
@@ -197,6 +205,11 @@ const (
 	DeprecatedTerm = "deprecated"
 	// DecommissionedTerm represents a term which all titles must not contain (except link titles) due to sap core policy
 	DecommissionedTerm = "decommissioned"
+
+	// APIModelSelectorTypeODATA for odata selector tyor.
+	APIModelSelectorTypeODATA = "odata"
+	// APIModelSelectorTypeJSONPointer for json pointer selector tyor.
+	APIModelSelectorTypeJSONPointer = "json-pointer"
 )
 
 var (
@@ -1564,7 +1577,7 @@ func validateEventPartOfConsumptionBundles(value interface{}, regexPattern *rege
 }
 
 func validateEntityTypeMappings(value interface{}) error {
-	entityTypeMappings, ok := value.([]*model.EntityTypeMapping)
+	entityTypeMappings, ok := value.([]*model.EntityTypeMappingInput)
 	if !ok {
 		return errors.New("error while casting to EntityTypeMapping")
 	}
@@ -1579,7 +1592,7 @@ func validateEntityTypeMappings(value interface{}) error {
 			return errors.New("error while unmarshalling APIModelSelectors for EntityTypeMapping")
 		}
 		for _, apiModelSelector := range apiModelSelectors {
-			err := apiModelSelector.Validate()
+			err := validateAPIModelSelector(apiModelSelector)
 			if err != nil {
 				return err
 			}
@@ -1590,14 +1603,56 @@ func validateEntityTypeMappings(value interface{}) error {
 		if err := json.Unmarshal(entityTypeMapping.EntityTypeTargets, &entityTypeTargets); err != nil {
 			return errors.New("error while unmarshalling EntityTypeTarget for EntityTypeMapping")
 		}
+		if len(entityTypeTargets) == 0 {
+			return errors.New("entity type target should not be blank")
+		}
 		for _, entityTypeTarget := range entityTypeTargets {
-			err := entityTypeTarget.Validate()
+			err := validateEntityTypeTarget(entityTypeTarget)
 			if err != nil {
 				return err
 			}
 		}
 	}
 	return nil
+}
+
+func validateAPIModelSelector(value interface{}) error {
+	apiModelSelector, ok := value.(*model.APIModelSelector)
+	if !ok {
+		return errors.New("error while casting to APIModelSelector")
+	}
+	return validation.ValidateStruct(apiModelSelector,
+		validation.Field(&apiModelSelector.Type, validation.Required, validation.In(APIModelSelectorTypeODATA, APIModelSelectorTypeJSONPointer)),
+		validation.Field(&apiModelSelector.EntitySetName,
+			validation.When(apiModelSelector.Type == APIModelSelectorTypeODATA, validation.Required),
+			validation.When(apiModelSelector.Type == APIModelSelectorTypeJSONPointer, validation.Nil),
+		),
+		validation.Field(&apiModelSelector.JsonPointer,
+			validation.When(apiModelSelector.Type == APIModelSelectorTypeJSONPointer, validation.Required),
+			validation.When(apiModelSelector.Type == APIModelSelectorTypeODATA, validation.Nil),
+		),
+	)
+}
+
+func validateEntityTypeTarget(value interface{}) error {
+	entityTypeTarget, ok := value.(*model.EntityTypeTarget)
+	if !ok {
+		return errors.New("error while casting to EntityTypeTarget")
+	}
+	return validation.ValidateStruct(entityTypeTarget,
+		validation.Field(&entityTypeTarget.OrdId,
+			validation.When(entityTypeTarget.CorrelationId != nil, validation.Nil),
+			validation.When(entityTypeTarget.CorrelationId == nil, validation.Required),
+			validation.Length(MinORDIDLength, MaxORDIDLength),
+			validation.Match(regexp.MustCompile(EntityTypeOrdIDRegex)),
+		),
+		validation.Field(&entityTypeTarget.CorrelationId,
+			validation.When(entityTypeTarget.OrdId != nil, validation.Nil),
+			validation.When(entityTypeTarget.OrdId == nil, validation.Required),
+			validation.Length(MinCorrelationIDLength, MaxCorrelationIDLength),
+			validation.Match(regexp.MustCompile(CorrelationIDsRegex)),
+		),
+	)
 }
 
 func validateAPIPartOfConsumptionBundles(value interface{}, targetURLs json.RawMessage, regexPattern *regexp.Regexp) error {

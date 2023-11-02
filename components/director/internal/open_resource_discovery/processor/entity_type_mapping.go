@@ -14,7 +14,6 @@ import (
 //go:generate mockery --name=EntityTypeMappingService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityTypeMappingService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.EntityTypeMappingInput) (string, error)
-	Update(ctx context.Context, resourceType resource.Type, id string, in model.EntityTypeMappingInput) error
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByAPIDefinitionID(ctx context.Context, apiDefinitionID string) ([]*model.EntityTypeMapping, error)
 	ListByEventDefinitionID(ctx context.Context, eventDefinitionID string) ([]*model.EntityTypeMapping, error)

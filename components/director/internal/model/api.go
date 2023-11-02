@@ -103,7 +103,7 @@ type APIDefinitionInput struct {
 	PartOfConsumptionBundles                []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 	DefaultConsumptionBundle                *string                       `json:"defaultConsumptionBundle"`
 	SupportedUseCases                       json.RawMessage               `json:"supportedUseCases"`
-	EntityTypeMappings                      []*EntityTypeMapping          `json:"entityTypeMappings"`
+	EntityTypeMappings                      []*EntityTypeMappingInput     `json:"entityTypeMappings"`
 	DocumentationLabels                     json.RawMessage               `json:"documentationLabels"`
 	CorrelationIDs                          json.RawMessage               `json:"correlationIds,omitempty"`
 	Direction                               *string                       `json:"direction"`

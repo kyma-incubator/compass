@@ -11,79 +11,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
-
-func TestPgRepository_GetForParent(t *testing.T) {
-	entityTypeMappingModel := fixEntityTypeMappingModel(entityTypeMappingID)
-	entityTypeMappingEntity := fixEntityTypeMappingEntity(entityTypeMappingID)
-
-	suitForAPI := testdb.RepoGetTestSuite{
-		Name: "Get EntityTypeMapping for API",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, api_definition_id, event_definition_id, api_model_selectors, entity_type_targets FROM public.entity_type_mappings WHERE id = $1 AND api_definition_id = $2 AND (id IN (SELECT id FROM entity_type_mappings_tenants WHERE tenant_id = $3))`),
-				Args:     []driver.Value{entityTypeMappingID, testAPIDefinitionID, tenantID},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{
-						sqlmock.NewRows(fixEntityTypeMappingColumns()).
-							AddRow(fixEntityTypeMappingRow(entityTypeMappingID)...),
-					}
-				},
-				InvalidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{
-						sqlmock.NewRows(fixEntityTypeMappingColumns()),
-					}
-				},
-			},
-		},
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityTypeMappingConverter{}
-		},
-		RepoConstructorFunc:       entitytypemapping.NewRepository,
-		ExpectedModelEntity:       entityTypeMappingModel,
-		ExpectedDBEntity:          entityTypeMappingEntity,
-		MethodArgs:                []interface{}{tenantID, entityTypeMappingID, testAPIDefinitionID},
-		DisableConverterErrorTest: true,
-		MethodName:                "GetByAPIDefinitionID",
-	}
-
-	suiteForEvent := testdb.RepoGetTestSuite{
-		Name: "Get EntityTypeMapping for Event",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, api_definition_id, event_definition_id, api_model_selectors, entity_type_targets FROM public.entity_type_mappings WHERE id = $1 AND event_definition_id = $2 AND (id IN (SELECT id FROM entity_type_mappings_tenants WHERE tenant_id = $3))`),
-				Args:     []driver.Value{entityTypeMappingID, testEventDefinitionID, tenantID},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{
-						sqlmock.NewRows(fixEntityTypeMappingColumns()).
-							AddRow(fixEntityTypeMappingRow(entityTypeMappingID)...),
-					}
-				},
-				InvalidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{
-						sqlmock.NewRows(fixEntityTypeMappingColumns()),
-					}
-				},
-			},
-		},
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityTypeMappingConverter{}
-		},
-		RepoConstructorFunc:       entitytypemapping.NewRepository,
-		ExpectedModelEntity:       entityTypeMappingModel,
-		ExpectedDBEntity:          entityTypeMappingEntity,
-		MethodArgs:                []interface{}{tenantID, entityTypeMappingID, testEventDefinitionID},
-		DisableConverterErrorTest: true,
-		MethodName:                "GetByEventDefinitionID",
-	}
-
-	suitForAPI.Run(t)
-	suiteForEvent.Run(t)
-}
 
 func TestPgRepository_GetByID(t *testing.T) {
 	entityTypeMappingModel := fixEntityTypeMappingModel(entityTypeMappingID)
@@ -224,105 +153,6 @@ func TestPgRepository_ListByResourceID(t *testing.T) {
 	suiteForEvent.Run(t)
 }
 
-func TestPgRepository_ListByParentIDPage(t *testing.T) {
-	pageSize := 1
-	cursor := ""
-
-	firstEntityTypeMappingID := "firstEntityTypeMappingID"
-	firstEntityTypeModel := fixEntityTypeMappingModel(firstEntityTypeMappingID)
-	firstEntityTypeEntity := fixEntityTypeMappingEntity(firstEntityTypeMappingID)
-
-	suiteForAPI := testdb.RepoListPageableTestSuite{
-		Name: "List EntityTypeMapping with paging",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, api_definition_id, event_definition_id, api_model_selectors, entity_type_targets FROM public.entity_type_mappings WHERE (api_definition_id = $1 AND (id IN (SELECT id FROM entity_type_mappings_tenants WHERE tenant_id = $2)))`),
-				Args:     []driver.Value{testAPIDefinitionID, tenantID},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixEntityTypeMappingColumns()).AddRow(fixEntityTypeMappingRow(firstEntityTypeMappingID)...)}
-				},
-			},
-			{
-				Query:    regexp.QuoteMeta(`SELECT COUNT(*) FROM public.entity_type_mappings WHERE (api_definition_id = $1 AND (id IN (SELECT id FROM entity_type_mappings_tenants WHERE tenant_id = $2)))`),
-				Args:     []driver.Value{testAPIDefinitionID, tenantID},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows([]string{"count"}).AddRow(1)}
-				},
-			},
-		},
-		Pages: []testdb.PageDetails{
-			{
-				ExpectedModelEntities: []interface{}{firstEntityTypeModel},
-				ExpectedDBEntities:    []interface{}{firstEntityTypeEntity},
-				ExpectedPage: &model.EntityTypeMappingPage{
-					Data: []*model.EntityTypeMapping{firstEntityTypeModel},
-					PageInfo: &pagination.Page{
-						StartCursor: "",
-						EndCursor:   "",
-						HasNextPage: false,
-					},
-					TotalCount: 1,
-				},
-			},
-		},
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityTypeMappingConverter{}
-		},
-		RepoConstructorFunc:       entitytypemapping.NewRepository,
-		MethodName:                "ListByAPIDefinitionIDPage",
-		MethodArgs:                []interface{}{tenantID, testAPIDefinitionID, pageSize, cursor},
-		DisableConverterErrorTest: true,
-	}
-
-	suiteForEvent := testdb.RepoListPageableTestSuite{
-		Name: "List EntityTypeMapping with paging",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, api_definition_id, event_definition_id, api_model_selectors, entity_type_targets FROM public.entity_type_mappings WHERE (event_definition_id = $1 AND (id IN (SELECT id FROM entity_type_mappings_tenants WHERE tenant_id = $2)))`),
-				Args:     []driver.Value{testEventDefinitionID, tenantID},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixEntityTypeMappingColumns()).AddRow(fixEntityTypeMappingRow(firstEntityTypeMappingID)...)}
-				},
-			},
-			{
-				Query:    regexp.QuoteMeta(`SELECT COUNT(*) FROM public.entity_type_mappings WHERE (event_definition_id = $1 AND (id IN (SELECT id FROM entity_type_mappings_tenants WHERE tenant_id = $2)))`),
-				Args:     []driver.Value{testEventDefinitionID, tenantID},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows([]string{"count"}).AddRow(1)}
-				},
-			},
-		},
-		Pages: []testdb.PageDetails{
-			{
-				ExpectedModelEntities: []interface{}{firstEntityTypeModel},
-				ExpectedDBEntities:    []interface{}{firstEntityTypeEntity},
-				ExpectedPage: &model.EntityTypeMappingPage{
-					Data: []*model.EntityTypeMapping{firstEntityTypeModel},
-					PageInfo: &pagination.Page{
-						StartCursor: "",
-						EndCursor:   "",
-						HasNextPage: false,
-					},
-					TotalCount: 1,
-				},
-			},
-		},
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityTypeMappingConverter{}
-		},
-		RepoConstructorFunc:       entitytypemapping.NewRepository,
-		MethodName:                "ListByEventDefinitionIDPage",
-		MethodArgs:                []interface{}{tenantID, testEventDefinitionID, pageSize, cursor},
-		DisableConverterErrorTest: true,
-	}
-	suiteForAPI.Run(t)
-	suiteForEvent.Run(t)
-}
-
 func TestPgRepository_CreateEntityTypeMappingInAPI(t *testing.T) {
 	// GIVEN
 	var nilEntityTypeMappingModel *model.EntityTypeMapping
@@ -437,38 +267,6 @@ func TestPgRepository_CreateGlobal(t *testing.T) {
 	suite.Run(t)
 }
 
-func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(`UPDATE public.entity_type_mappings SET ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, api_definition_id = ?, event_definition_id = ?, api_model_selectors = ?, entity_type_targets = ? WHERE id = ? AND (id IN (SELECT id FROM entity_type_mappings_tenants WHERE tenant_id = ? AND owner = true))`)
-	var nilEntityTypeMappingModel *model.EntityTypeMapping
-	entityTypeMappingModel := fixEntityTypeMappingModel(entityTypeMappingID)
-	entityTypeMappingEntity := fixEntityTypeMappingEntity(entityTypeMappingID)
-	entityTypeMappingEntity.UpdatedAt = &fixedTimestamp
-	entityTypeMappingEntity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
-
-	suite := testdb.RepoUpdateTestSuite{
-		Name: "Update EntityTypeMapping",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query:         updateQuery,
-				Args:          append(fixEntityTypeMappingUpdateArgs(entityTypeMappingID, entityTypeMappingEntity), tenantID),
-				ValidResult:   sqlmock.NewResult(-1, 1),
-				InvalidResult: sqlmock.NewResult(-1, 0),
-			},
-		},
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityTypeMappingConverter{}
-		},
-		RepoConstructorFunc:       entitytypemapping.NewRepository,
-		ModelEntity:               entityTypeMappingModel,
-		DBEntity:                  entityTypeMappingEntity,
-		NilModelEntity:            nilEntityTypeMappingModel,
-		TenantID:                  tenantID,
-		DisableConverterErrorTest: true,
-	}
-
-	suite.Run(t)
-}
-
 func TestPgRepository_Delete(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "EntityTypeMapping Delete",
@@ -508,65 +306,6 @@ func TestPgRepository_DeleteGlobal(t *testing.T) {
 		MethodArgs:          []interface{}{entityTypeMappingID},
 		IsGlobal:            true,
 		MethodName:          "DeleteGlobal",
-	}
-
-	suite.Run(t)
-}
-
-func TestRepository_Exists(t *testing.T) {
-	suite := testdb.RepoExistTestSuite{
-		Name: "EntityTypeMapping Exists",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.entity_type_mappings WHERE id = $1 AND (id IN (SELECT id FROM entity_type_mappings_tenants WHERE tenant_id = $2))`),
-				Args:     []driver.Value{entityTypeMappingID, tenantID},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
-				},
-				InvalidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
-				},
-			},
-		},
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityTypeMappingConverter{}
-		},
-		RepoConstructorFunc: entitytypemapping.NewRepository,
-		TargetID:            entityTypeMappingID,
-		TenantID:            tenantID,
-		MethodName:          "Exists",
-		MethodArgs:          []interface{}{tenantID, entityTypeMappingID},
-	}
-
-	suite.Run(t)
-}
-
-func TestPgRepository_UpdateGlobal(t *testing.T) {
-	var nilEntityTypeMappingModel *model.EntityTypeMapping
-	entityTypeMappingModel := fixEntityTypeMappingModel(entityTypeMappingID)
-	entityTypeMappingEntity := fixEntityTypeMappingEntity(entityTypeMappingID)
-
-	suite := testdb.RepoUpdateTestSuite{
-		Name: "Update EntityTypeMapping Global",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query:         regexp.QuoteMeta(`UPDATE public.entity_type_mappings SET ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, api_definition_id = ?, event_definition_id = ?, api_model_selectors = ?, entity_type_targets = ? WHERE id = ?`),
-				Args:          fixEntityTypeMappingUpdateArgs(entityTypeMappingID, entityTypeMappingEntity),
-				ValidResult:   sqlmock.NewResult(-1, 1),
-				InvalidResult: sqlmock.NewResult(-1, 0),
-			},
-		},
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityTypeMappingConverter{}
-		},
-		RepoConstructorFunc:       entitytypemapping.NewRepository,
-		ModelEntity:               entityTypeMappingModel,
-		DBEntity:                  entityTypeMappingEntity,
-		NilModelEntity:            nilEntityTypeMappingModel,
-		DisableConverterErrorTest: true,
-		IsGlobal:                  true,
-		UpdateMethodName:          "UpdateGlobal",
 	}
 
 	suite.Run(t)

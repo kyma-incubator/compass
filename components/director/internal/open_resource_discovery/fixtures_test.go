@@ -85,13 +85,14 @@ const (
 
 	applicationTypeLabelValue = "customType"
 
-	entityTypeID     = "entity-type-id"
-	ordID            = "com.compass.v1"
-	level            = "aggregate"
-	title            = "BusinessPartner"
-	publicVisibility = "public"
-	products         = `["sap:product:S4HANA_OD:"]`
-	releaseStatus    = "active"
+	entityTypeID        = "entity-type-id"
+	entityTypeMappingID = "entity-type-mapping-id"
+	ordID               = "com.compass.v1"
+	level               = "aggregate"
+	title               = "BusinessPartner"
+	publicVisibility    = "public"
+	products            = `["sap:product:S4HANA_OD:"]`
+	releaseStatus       = "active"
 )
 
 var (
@@ -600,7 +601,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						DefaultTargetURL: "https://exmaple.com/test/v1",
 					},
 				},
-				EntityTypeMappings: []*model.EntityTypeMapping{
+				EntityTypeMappings: []*model.EntityTypeMappingInput{
 					{
 						APIModelSelectors: json.RawMessage(apiAPIModelSelectors),
 						EntityTypeTargets: json.RawMessage(apiEntityTypeTargets),
@@ -719,7 +720,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						BundleOrdID: bundleORDID,
 					},
 				},
-				EntityTypeMappings: []*model.EntityTypeMapping{
+				EntityTypeMappings: []*model.EntityTypeMappingInput{
 					{
 						APIModelSelectors: json.RawMessage(eventAPIModelSelectors),
 						EntityTypeTargets: json.RawMessage(eventEntityTypeTargets),
@@ -1730,6 +1731,41 @@ func fixEntityTypes() []*model.EntityType {
 			ResourceHash:                 &resourceHash,
 		},
 	}
+}
+
+func fixEntityTypeMappingInputs(apiID, eventID string) []*model.EntityTypeMappingInput {
+	entityTypeMapping := &model.EntityTypeMappingInput{}
+	if apiID != "" {
+		entityTypeMapping.APIModelSelectors = json.RawMessage(apiAPIModelSelectors)
+		entityTypeMapping.EntityTypeTargets = json.RawMessage(apiEntityTypeTargets)
+	} else if eventID != "" {
+		entityTypeMapping.APIModelSelectors = json.RawMessage(eventAPIModelSelectors)
+		entityTypeMapping.EntityTypeTargets = json.RawMessage(eventEntityTypeTargets)
+	}
+	return []*model.EntityTypeMappingInput{entityTypeMapping}
+}
+
+func fixEntityTypeMappings(apiID, eventID string) []*model.EntityTypeMapping {
+	entityTypeMapping := &model.EntityTypeMapping{
+		BaseEntity: &model.BaseEntity{
+			ID:        entityTypeMappingID,
+			Ready:     true,
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+			Error:     nil,
+		},
+	}
+	if apiID != "" {
+		entityTypeMapping.APIDefinitionID = &apiID
+		entityTypeMapping.APIModelSelectors = json.RawMessage(apiAPIModelSelectors)
+		entityTypeMapping.EntityTypeTargets = json.RawMessage(apiEntityTypeTargets)
+	} else if eventID != "" {
+		entityTypeMapping.EventDefinitionID = &eventID
+		entityTypeMapping.APIModelSelectors = json.RawMessage(eventAPIModelSelectors)
+		entityTypeMapping.EntityTypeTargets = json.RawMessage(eventEntityTypeTargets)
+	}
+	return []*model.EntityTypeMapping{entityTypeMapping}
 }
 
 func fixVersionModel(value string, deprecated bool, deprecatedSince string, forRemoval bool) *model.Version {

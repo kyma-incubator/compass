@@ -1,6 +1,8 @@
 BEGIN;
 
-ALTER TABLE capabilities ADD COLUMN related_entity_types JSONB;
+-- Introduce related_entity_types to capabilities
+ALTER TABLE capabilities 
+       ADD COLUMN related_entity_types JSONB;
 
 
 DROP VIEW IF EXISTS entity_types_capabilities;
@@ -71,7 +73,6 @@ FROM capabilities c
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps ON c.app_id = t_apps.id;
 
--- Recreate view tenants_specifications
 CREATE OR REPLACE VIEW tenants_specifications
             (tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format,
              event_spec_type, capability_def_id, capability_spec_type, capability_spec_format, custom_type, created_at)
@@ -104,6 +105,7 @@ FROM specifications spec
                FROM tenants_capabilities c) t_api_event_capability_def
               ON spec.api_def_id = t_api_event_capability_def.id OR spec.event_def_id = t_api_event_capability_def.id or spec.capability_def_id = t_api_event_capability_def.id;
 
+-- Introduce entity_type_mappings
 
 CREATE TABLE entity_type_mappings
 (
@@ -186,9 +188,12 @@ FROM entity_type_mappings etm
               ON etm.api_definition_id = t_api_event_def.id OR etm.event_definition_id = t_api_event_def.id;
 
 
+-- Rename local_id in entity_types
+
 DROP VIEW IF EXISTS tenants_entity_types;
 
-ALTER TABLE entity_types RENAME COLUMN  local_id to local_tenant_id;
+ALTER TABLE entity_types 
+       RENAME COLUMN local_id to local_tenant_id;
 
 CREATE OR REPLACE VIEW tenants_entity_types
             (tenant_id, formation_id, id, ord_id, app_id, local_tenant_id, level, title, short_description, description, system_instance_aware, 

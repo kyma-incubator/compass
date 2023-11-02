@@ -88,26 +88,27 @@ type Service struct {
 
 	transact persistence.Transactioner
 
-	appSvc                ApplicationService
-	webhookSvc            WebhookService
-	bundleSvc             BundleService
-	bundleReferenceSvc    BundleReferenceService
-	apiSvc                APIService
-	eventSvc              EventService
-	entityTypeSvc         EntityTypeService
-	capabilitySvc         CapabilityService
-	specSvc               SpecService
-	fetchReqSvc           FetchRequestService
-	packageSvc            PackageService
-	productSvc            ProductService
-	vendorSvc             VendorService
-	tombstoneProcessor    TombstoneProcessor
-	entityTypeProcessor   EntityTypeProcessor
-	tenantSvc             TenantService
-	appTemplateVersionSvc ApplicationTemplateVersionService
-	appTemplateSvc        ApplicationTemplateService
-	labelSvc              LabelService
-	opSvc                 operationsmanager.OperationService
+	appSvc                     ApplicationService
+	webhookSvc                 WebhookService
+	bundleSvc                  BundleService
+	bundleReferenceSvc         BundleReferenceService
+	apiSvc                     APIService
+	eventSvc                   EventService
+	entityTypeSvc              EntityTypeService
+	capabilitySvc              CapabilityService
+	specSvc                    SpecService
+	fetchReqSvc                FetchRequestService
+	packageSvc                 PackageService
+	productSvc                 ProductService
+	vendorSvc                  VendorService
+	tombstoneProcessor         TombstoneProcessor
+	entityTypeProcessor        EntityTypeProcessor
+	entityTypeMappingProcessor EntityTypeMappingProcessor
+	tenantSvc                  TenantService
+	appTemplateVersionSvc      ApplicationTemplateVersionService
+	appTemplateSvc             ApplicationTemplateService
+	labelSvc                   LabelService
+	opSvc                      operationsmanager.OperationService
 
 	ordWebhookMapping []application.ORDWebhookMapping
 
@@ -118,35 +119,36 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, entityTypeMappingProcessor EntityTypeMappingProcessor, capabilitySvc CapabilityService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
-		config:                config,
-		metricsCfg:            metricsCfg,
-		transact:              transact,
-		appSvc:                appSvc,
-		webhookSvc:            webhookSvc,
-		bundleSvc:             bundleSvc,
-		bundleReferenceSvc:    bundleReferenceSvc,
-		apiSvc:                apiSvc,
-		eventSvc:              eventSvc,
-		entityTypeSvc:         entityTypeSvc,
-		entityTypeProcessor:   entityTypeProcessor,
-		capabilitySvc:         capabilitySvc,
-		specSvc:               specSvc,
-		fetchReqSvc:           fetchReqSvc,
-		packageSvc:            packageSvc,
-		productSvc:            productSvc,
-		vendorSvc:             vendorSvc,
-		tombstoneProcessor:    tombstoneProcessor,
-		tenantSvc:             tenantSvc,
-		globalRegistrySvc:     globalRegistrySvc,
-		ordClient:             client,
-		webhookConverter:      webhookConverter,
-		appTemplateVersionSvc: appTemplateVersionSvc,
-		appTemplateSvc:        appTemplateSvc,
-		labelSvc:              labelService,
-		ordWebhookMapping:     ordWebhookMapping,
-		opSvc:                 opSvc,
+		config:                     config,
+		metricsCfg:                 metricsCfg,
+		transact:                   transact,
+		appSvc:                     appSvc,
+		webhookSvc:                 webhookSvc,
+		bundleSvc:                  bundleSvc,
+		bundleReferenceSvc:         bundleReferenceSvc,
+		apiSvc:                     apiSvc,
+		eventSvc:                   eventSvc,
+		entityTypeSvc:              entityTypeSvc,
+		entityTypeProcessor:        entityTypeProcessor,
+		entityTypeMappingProcessor: entityTypeMappingProcessor,
+		capabilitySvc:              capabilitySvc,
+		specSvc:                    specSvc,
+		fetchReqSvc:                fetchReqSvc,
+		packageSvc:                 packageSvc,
+		productSvc:                 productSvc,
+		vendorSvc:                  vendorSvc,
+		tombstoneProcessor:         tombstoneProcessor,
+		tenantSvc:                  tenantSvc,
+		globalRegistrySvc:          globalRegistrySvc,
+		ordClient:                  client,
+		webhookConverter:           webhookConverter,
+		appTemplateVersionSvc:      appTemplateVersionSvc,
+		appTemplateSvc:             appTemplateSvc,
+		labelSvc:                   labelService,
+		ordWebhookMapping:          ordWebhookMapping,
+		opSvc:                      opSvc,
 	}
 }
 
@@ -1402,12 +1404,22 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 			return nil, err
 		}
 
+		_, err = s.entityTypeMappingProcessor.Process(ctx, directorresource.API, apiID, api.EntityTypeMappings)
+		if err != nil {
+			return nil, err
+		}
+
 		fr, err := s.createSpecs(ctx, model.APISpecReference, apiID, specs, resourceType)
 		if err != nil {
 			return nil, err
 		}
 
 		return fr, nil
+	} else {
+		_, err := s.entityTypeMappingProcessor.Process(ctx, directorresource.API, apisFromDB[i].ID, api.EntityTypeMappings)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	allBundleIDsForAPI, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleAPIReference, &apisFromDB[i].ID)
@@ -1480,7 +1492,17 @@ func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource
 		if err != nil {
 			return nil, err
 		}
+		_, err = s.entityTypeMappingProcessor.Process(ctx, directorresource.EventDefinition, eventID, event.EntityTypeMappings)
+		if err != nil {
+			return nil, err
+		}
+
 		return s.createSpecs(ctx, model.EventSpecReference, eventID, specs, resourceType)
+	} else {
+		_, err := s.entityTypeMappingProcessor.Process(ctx, directorresource.EventDefinition, eventsFromDB[i].ID, event.EntityTypeMappings)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	allBundleIDsForEvent, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleEventReference, &eventsFromDB[i].ID)

@@ -73,30 +73,6 @@ func (_m *EntityTypeMappingRepository) DeleteGlobal(ctx context.Context, id stri
 	return r0
 }
 
-// Exists provides a mock function with given fields: ctx, tenant, id
-func (_m *EntityTypeMappingRepository) Exists(ctx context.Context, tenant string, id string) (bool, error) {
-	ret := _m.Called(ctx, tenant, id)
-
-	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
-		return rf(ctx, tenant, id)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
-		r0 = rf(ctx, tenant, id)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenant, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetByID provides a mock function with given fields: ctx, tenant, id
 func (_m *EntityTypeMappingRepository) GetByID(ctx context.Context, tenant string, id string) (*model.EntityTypeMapping, error) {
 	ret := _m.Called(ctx, tenant, id)
@@ -173,34 +149,6 @@ func (_m *EntityTypeMappingRepository) ListByResourceID(ctx context.Context, ten
 	}
 
 	return r0, r1
-}
-
-// Update provides a mock function with given fields: ctx, tenant, item
-func (_m *EntityTypeMappingRepository) Update(ctx context.Context, tenant string, item *model.EntityTypeMapping) error {
-	ret := _m.Called(ctx, tenant, item)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.EntityTypeMapping) error); ok {
-		r0 = rf(ctx, tenant, item)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateGlobal provides a mock function with given fields: ctx, _a1
-func (_m *EntityTypeMappingRepository) UpdateGlobal(ctx context.Context, _a1 *model.EntityTypeMapping) error {
-	ret := _m.Called(ctx, _a1)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.EntityTypeMapping) error); ok {
-		r0 = rf(ctx, _a1)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }
 
 // NewEntityTypeMappingRepository creates a new instance of EntityTypeMappingRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

@@ -21,8 +21,6 @@ const (
 var (
 	entityTypeMappingColumns = []string{"id", "ready", "created_at", "updated_at", "deleted_at", "error", "api_definition_id", "event_definition_id",
 		"api_model_selectors", "entity_type_targets"}
-	updatableColumns = []string{"ready", "created_at", "updated_at", "deleted_at", "error", "api_definition_id", "event_definition_id",
-		"api_model_selectors", "entity_type_targets"}
 )
 
 // EntityTypeMappingConverter missing godoc
@@ -38,15 +36,12 @@ type pgRepository struct {
 	existQuerier       repo.ExistQuerier
 	pageableQuerier    repo.PageableQuerier
 	lister             repo.Lister
-	listerGlobal       repo.ListerGlobal
 	singleGetter       repo.SingleGetter
 	singleGetterGlobal repo.SingleGetterGlobal
 	deleter            repo.Deleter
 	deleterGlobal      repo.DeleterGlobal
 	creator            repo.Creator
 	creatorGlobal      repo.CreatorGlobal
-	updater            repo.Updater
-	updaterGlobal      repo.UpdaterGlobal
 }
 
 // NewRepository returns a repository instance
@@ -56,15 +51,12 @@ func NewRepository(conv EntityTypeMappingConverter) *pgRepository {
 		existQuerier:       repo.NewExistQuerier(entityTypeMappingTable),
 		pageableQuerier:    repo.NewPageableQuerier(entityTypeMappingTable, entityTypeMappingColumns),
 		lister:             repo.NewLister(entityTypeMappingTable, entityTypeMappingColumns),
-		listerGlobal:       repo.NewListerGlobal(resource.EntityTypeMapping, entityTypeMappingTable, entityTypeMappingColumns),
 		singleGetter:       repo.NewSingleGetter(entityTypeMappingTable, entityTypeMappingColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.EntityTypeMapping, entityTypeMappingTable, entityTypeMappingColumns),
 		deleter:            repo.NewDeleter(entityTypeMappingTable),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.EntityTypeMapping, entityTypeMappingTable),
 		creator:            repo.NewCreator(entityTypeMappingTable, entityTypeMappingColumns),
 		creatorGlobal:      repo.NewCreatorGlobal(resource.EntityTypeMapping, entityTypeMappingTable, entityTypeMappingColumns),
-		updater:            repo.NewUpdater(entityTypeMappingTable, updatableColumns, []string{"id"}),
-		updaterGlobal:      repo.NewUpdaterGlobal(resource.EntityTypeMapping, entityTypeMappingTable, updatableColumns, []string{"id"}),
 	}
 }
 
@@ -96,24 +88,6 @@ func (r *pgRepository) CreateGlobal(ctx context.Context, model *model.EntityType
 	return r.creatorGlobal.Create(ctx, r.conv.ToEntity(model))
 }
 
-// Update updates an Entity Type Mapping by ID for a given resource.Type
-func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.EntityTypeMapping) error {
-	if model == nil {
-		return apperrors.NewInternalError("model can not be nil")
-	}
-	log.C(ctx).Debugf("Updating EntityTypeMapping entity with id %q", model.ID)
-	return r.updater.UpdateSingle(ctx, resource.EntityTypeMapping, tenant, r.conv.ToEntity(model))
-}
-
-// UpdateGlobal updates entity type mapping globally without tenant isolation
-func (r *pgRepository) UpdateGlobal(ctx context.Context, model *model.EntityTypeMapping) error {
-	if model == nil {
-		return apperrors.NewInternalError("model can not be nil")
-	}
-	log.C(ctx).Debugf("Updating EntityTypeMapping entity with id %q", model.ID)
-	return r.updaterGlobal.UpdateSingleGlobal(ctx, r.conv.ToEntity(model))
-}
-
 // Delete deletes an Entity Type Mapping by ID
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	log.C(ctx).Debugf("Deleting EntityTypeMapping entity with id %q", id)
@@ -124,11 +98,6 @@ func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 	log.C(ctx).Debugf("Deleting EntityTypeMapping entity with id %q", id)
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
-}
-
-// Exists checks if an Entity Type Mapping with ID exists
-func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, resource.EntityTypeMapping, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // GetByID returns an Entity Type Mapping by ID
@@ -155,76 +124,6 @@ func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Ent
 	entityTypeMappingModel := r.conv.FromEntity(&entityTypeMappingEnt)
 
 	return entityTypeMappingModel, nil
-}
-
-// GetByAPIDefinitionID retrieves the EntityTypeMapping with matching ID and API Definition ID from the Compass storage.
-func (r *pgRepository) GetByAPIDefinitionID(ctx context.Context, tenantID string, id, apiDefinitionID string) (*model.EntityTypeMapping, error) {
-	var entityTypeMappingEntity Entity
-	err := r.singleGetter.Get(ctx, resource.EntityTypeMapping, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id), repo.NewEqualCondition(apiDefinitionIDColumn, apiDefinitionID)}, repo.NoOrderBy, &entityTypeMappingEntity)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting EntityTypeMapping for API Definition ID %s", apiDefinitionID)
-	}
-
-	entityTypeModel := r.conv.FromEntity(&entityTypeMappingEntity)
-
-	return entityTypeModel, nil
-}
-
-// ListByAPIDefinitionIDPage lists all EntityTypeMapping for a given API Definition ID with paging.
-func (r *pgRepository) ListByAPIDefinitionIDPage(ctx context.Context, tenantID string, apiDefinitionID string, pageSize int, cursor string) (*model.EntityTypeMappingPage, error) {
-	var entityTypeMappingCollection EntityTypeMappingCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, resource.EntityTypeMapping, tenantID, pageSize, cursor, idColumn, &entityTypeMappingCollection, repo.NewEqualCondition(apiDefinitionIDColumn, apiDefinitionID))
-
-	if err != nil {
-		return nil, errors.Wrap(err, "while decoding page cursor")
-	}
-
-	items := make([]*model.EntityTypeMapping, 0, len(entityTypeMappingCollection))
-	for _, entityTypeMapping := range entityTypeMappingCollection {
-		m := r.conv.FromEntity(&entityTypeMapping)
-		items = append(items, m)
-	}
-
-	return &model.EntityTypeMappingPage{
-		Data:       items,
-		TotalCount: totalCount,
-		PageInfo:   page,
-	}, nil
-}
-
-// GetByAPIDefinitionID retrieves the EntityTypeMapping with matching ID and Event Definition ID from the Compass storage.
-func (r *pgRepository) GetByEventDefinitionID(ctx context.Context, tenantID string, id, eventDefinitionID string) (*model.EntityTypeMapping, error) {
-	var entityTypeMappingEntity Entity
-	err := r.singleGetter.Get(ctx, resource.EntityTypeMapping, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id), repo.NewEqualCondition(eventDefinitionIDColumn, eventDefinitionID)}, repo.NoOrderBy, &entityTypeMappingEntity)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting EntityTypeMapping for Event Definition ID %s", eventDefinitionID)
-	}
-
-	entityTypeModel := r.conv.FromEntity(&entityTypeMappingEntity)
-
-	return entityTypeModel, nil
-}
-
-// ListByEventDefinitionIDPage lists all EntityTypeMapping for a given Event Definition ID with paging.
-func (r *pgRepository) ListByEventDefinitionIDPage(ctx context.Context, tenantID string, eventDefinitionID string, pageSize int, cursor string) (*model.EntityTypeMappingPage, error) {
-	var entityTypeMappingCollection EntityTypeMappingCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, resource.EntityTypeMapping, tenantID, pageSize, cursor, idColumn, &entityTypeMappingCollection, repo.NewEqualCondition(eventDefinitionIDColumn, eventDefinitionID))
-
-	if err != nil {
-		return nil, errors.Wrap(err, "while decoding page cursor")
-	}
-
-	items := make([]*model.EntityTypeMapping, 0, len(entityTypeMappingCollection))
-	for _, entityTypeMapping := range entityTypeMappingCollection {
-		m := r.conv.FromEntity(&entityTypeMapping)
-		items = append(items, m)
-	}
-
-	return &model.EntityTypeMappingPage{
-		Data:       items,
-		TotalCount: totalCount,
-		PageInfo:   page,
-	}, nil
 }
 
 // ListByResourceID lists EntityTypeMappings by a given resource type and resource ID

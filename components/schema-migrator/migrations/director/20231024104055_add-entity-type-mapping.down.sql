@@ -1,7 +1,10 @@
 BEGIN;
 
+-- Rename local_id in entity_types
+
 DROP VIEW IF EXISTS tenants_entity_types;
-ALTER TABLE entity_types RENAME COLUMN  local_tenant_id to local_id;
+ALTER TABLE entity_types 
+       RENAME COLUMN  local_tenant_id to local_id;
 
 DROP VIEW IF EXISTS tenants_entity_types;
 
@@ -62,6 +65,8 @@ FROM entity_types et
               jsonb_to_record(et.extensible) actions(supported text, description text);
 
 
+-- Introduce entity_type_mappings
+
 DROP VIEW IF EXISTS tenants_entity_type_mappings;
 DROP VIEW IF EXISTS entity_type_mappings_tenants;
 
@@ -71,6 +76,8 @@ DROP VIEW IF EXISTS api_model_selectors_entity_type_mappings;
 DROP INDEX IF EXISTS entity_type_mappings_api_definition_id;
 DROP INDEX IF EXISTS entity_type_mappings_event_definition_id;
 DROP TABLE entity_type_mappings;
+
+-- Introduce related_entity_types to capabilities
 
 DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_capabilities;
@@ -130,7 +137,6 @@ FROM capabilities c
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps ON c.app_id = t_apps.id;
 
--- Recreate view tenants_specifications
 CREATE OR REPLACE VIEW tenants_specifications
             (tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format,
              event_spec_type, capability_def_id, capability_spec_type, capability_spec_format, custom_type, created_at)
@@ -165,6 +171,7 @@ FROM specifications spec
 
 DROP VIEW IF EXISTS entity_types_capabilities;
 
-ALTER TABLE capabilities DROP related_entity_types;
+ALTER TABLE capabilities 
+       DROP COLUMN related_entity_types;
 
 COMMIT;

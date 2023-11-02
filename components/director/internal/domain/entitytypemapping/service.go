@@ -17,11 +17,8 @@ import (
 type EntityTypeMappingRepository interface {
 	Create(ctx context.Context, tenant string, item *model.EntityTypeMapping) error
 	CreateGlobal(ctx context.Context, model *model.EntityTypeMapping) error
-	Update(ctx context.Context, tenant string, item *model.EntityTypeMapping) error
-	UpdateGlobal(ctx context.Context, model *model.EntityTypeMapping) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
-	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.EntityTypeMapping, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.EntityTypeMapping, error)
 	ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.EntityTypeMapping, error)
@@ -61,22 +58,6 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 	return id, nil
 }
 
-// Update updates an Entity Type Mapping by ID for a given resource.Type
-func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.EntityTypeMappingInput) error {
-	entityTypeMapping, err := s.getEntityTypeMapping(ctx, id, resourceType)
-	if err != nil {
-		return errors.Wrapf(err, "while getting Entity Type with id %s", id)
-	}
-
-	entityTypeMapping.SetFromUpdateInput(in)
-
-	if err = s.updateEntityTypeMapping(ctx, entityTypeMapping, resourceType); err != nil {
-		return errors.Wrapf(err, "while updating Entity Type Mapping with id %s", id)
-	}
-
-	return nil
-}
-
 // Delete deletes an Entity Type Mapping by ID
 func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
 	if err := s.deleteEntityTypeMapping(ctx, id, resourceType); err != nil {
@@ -86,21 +67,6 @@ func (s *service) Delete(ctx context.Context, resourceType resource.Type, id str
 	log.C(ctx).Infof("Successfully deleted Entity Type Mapping with id %s", id)
 
 	return nil
-}
-
-// Exist checks if an Entity Type Mapping with ID exists
-func (s *service) Exist(ctx context.Context, id string) (bool, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return false, errors.Wrap(err, "while loading tenant from context")
-	}
-
-	exist, err := s.entityTypeMappingRepo.Exists(ctx, tnt, id)
-	if err != nil {
-		return false, errors.Wrapf(err, "while getting Entity Type Mapping with ID: %q", id)
-	}
-
-	return exist, nil
 }
 
 // Get returns an Entity Type Mapping by ID
@@ -156,19 +122,6 @@ func (s *service) getEntityTypeMapping(ctx context.Context, id string, resourceT
 	}
 
 	return s.Get(ctx, id)
-}
-
-func (s *service) updateEntityTypeMapping(ctx context.Context, entityTypeMapping *model.EntityTypeMapping, resourceType resource.Type) error {
-	if resourceType.IsTenantIgnorable() {
-		return s.entityTypeMappingRepo.UpdateGlobal(ctx, entityTypeMapping)
-	}
-
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	return s.entityTypeMappingRepo.Update(ctx, tnt, entityTypeMapping)
 }
 
 func (s *service) deleteEntityTypeMapping(ctx context.Context, id string, resourceType resource.Type) error {
