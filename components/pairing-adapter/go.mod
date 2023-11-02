@@ -12,12 +12,19 @@ require (
 )
 
 require (
-	github.com/itchyny/gojq v0.12.13 // indirect
-	github.com/itchyny/timefmt-go v0.1.5 // indirect
+	github.com/Masterminds/goutils v1.1.1 // indirect
+	github.com/Masterminds/semver/v3 v3.2.0 // indirect
+	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
+	github.com/huandu/xstrings v1.4.0 // indirect
+	github.com/mitchellh/copystructure v1.1.2 // indirect
+	github.com/mitchellh/reflectwalk v1.0.1 // indirect
+	github.com/shopspring/decimal v1.2.0 // indirect
+	github.com/spf13/cast v1.5.0 // indirect
 	github.com/tidwall/gjson v1.17.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
+	golang.org/x/crypto v0.14.0 // indirect
 )
 
 require (
@@ -42,7 +49,7 @@ require (
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231019133631-0b1baf8ec2dc
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231102124015-6b6278c5fce9
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
