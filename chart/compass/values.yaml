@@ -204,7 +204,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3413"
+      version: "PR-3428"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -212,7 +212,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3437"
+      version: "PR-3428"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1099,6 +1099,7 @@ global:
           discriminatorField: ""
           discriminatorValue: ""
           detailsField: "details"
+          labelsField: "labels"
           entityTypeField: "entityType"
           globalAccountID: "gaID"
           regionField: "region"
@@ -1128,6 +1129,7 @@ global:
           entityTypeField: "entityType"
           globalAccountID: "globalAccountGUID"
           regionField: "region"
+          labelsField: "labels"
           movedSubaccountTargetField: "targetGlobalAccountGUID"
           movedSubaccountSourceField: "sourceGlobalAccountGUID"
         regions:

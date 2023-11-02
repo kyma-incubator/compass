@@ -46,6 +46,7 @@ deploy-on-k3d: build-for-k3d
 	kubectl patch -n $(NAMESPACE) deployment/compass-ord-aggregator -p '{"spec":{"template":{"spec":{"containers":[{"name":"ord-aggregator","imagePullPolicy":"Always"}]}}}}'
 	kubectl set image -n $(NAMESPACE) deployment/compass-ord-aggregator ord-aggregator=k3d-kyma-registry:5001/compass-director:latest
 	kubectl rollout restart -n $(NAMESPACE) deployment/compass-ord-aggregator
+	kubectl patch -n $(NAMESPACE) deployment/compass-tenant-fetcher -p '{"spec":{"template":{"spec":{"containers":[{"name":"tenant-fetcher","imagePullPolicy":"Always"}]}}}}'
 	kubectl set image -n $(NAMESPACE) deployment/compass-tenant-fetcher tenant-fetcher=k3d-kyma-registry:5001/compass-director:latest
 	kubectl rollout restart -n $(NAMESPACE) deployment/compass-tenant-fetcher
 	kubectl patch -n $(NAMESPACE) cronjob/compass-system-fetcher -p '{"spec":{"jobTemplate":{"spec":{"template":{"spec":{"containers":[{"name":"system-fetcher","imagePullPolicy":"Always"}]}}}}}}'
