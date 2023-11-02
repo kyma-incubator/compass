@@ -284,55 +284,6 @@ func (h *Handler) CleanupDestinations(writer http.ResponseWriter, r *http.Reques
 
 // Destination Service handlers
 
-// GetDestinationByNameFromDestinationSvc mocks getting a single destination by its name from Destination Service
-// todo::: delete it after implementing and adopting the find API handler
-//func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWriter, r *http.Request) {
-//	ctx := r.Context()
-//	correlationID := correlation.CorrelationIDFromContext(ctx)
-//
-//	tokenValue, err := validateAuthorization(ctx, r)
-//	if err != nil {
-//		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
-//		return
-//	}
-//
-//	destinationNameParamValue, err := validateDestinationSvcPathParams(mux.Vars(r))
-//	if err != nil {
-//		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
-//		return
-//	}
-//
-//	subaccountID, serviceInstanceID, err := extractSubaccountIDAndServiceInstanceIDFromDestinationToken(tokenValue)
-//	if err != nil {
-//		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusInternalServerError)
-//		return
-//	}
-//	log.C(ctx).Infof("Subaccount ID: %q and service instance ID: %q in the destination token", subaccountID, serviceInstanceID)
-//
-//	destinationIdentifier := fmt.Sprintf(UniqueEntityNameIdentifier, destinationNameParamValue, subaccountID, serviceInstanceID)
-//	dest, exists := h.DestinationSvcDestinations[destinationIdentifier]
-//	if !exists {
-//		err := errors.Errorf("Destination with name: %q and identifier: %q does not exists", destinationNameParamValue, destinationIdentifier)
-//		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusNotFound)
-//		return
-//	}
-//	log.C(ctx).Infof("Destination with name: %q and identifier: %q was found in the destination service", destinationNameParamValue, destinationIdentifier)
-//
-//	bodyBytes, err := json.Marshal(dest)
-//	if err != nil {
-//		errMsg := fmt.Sprintf("An error occurred while marshalling destination with name: %q and identifier: %q", destinationNameParamValue, destinationIdentifier)
-//		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, errMsg), respErrorMsg, correlationID, http.StatusInternalServerError)
-//		return
-//	}
-//
-//	writer.WriteHeader(http.StatusOK)
-//	_, err = writer.Write(bodyBytes)
-//	if err != nil {
-//		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while writing response"), respErrorMsg, correlationID, http.StatusInternalServerError)
-//		return
-//	}
-//}
-
 func (h *Handler) FindDestinationByNameFromDestinationSvc(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)

@@ -40,7 +40,7 @@ type CertificateAPIConfig struct {
 }
 
 type DestinationRequestBody interface {
-	ToDestination() destinationcreator.Destination // todo:: implement me
+	ToDestination() destinationcreator.Destination
 	Validate(destinationCreatorCfg *Config) error
 	GetDestinationType() string
 	GetDestinationUniqueIdentifier(subaccountID, instanceID string) string
@@ -111,19 +111,6 @@ func (n *DesignTimeDestRequestBody) Validate(destinationCreatorCfg *Config) erro
 	)
 }
 
-// todo::: delete
-//func (n *DesignTimeDestRequestBody) ToDestination() (json.RawMessage, error) {
-//	noAuthDest := destinationcreator.NoAuthenticationDestination{
-//		Name:           n.Name,
-//		URL:            n.URL,
-//		Type:           n.Type,
-//		ProxyType:      n.ProxyType,
-//		Authentication: n.AuthenticationType,
-//	}
-//
-//	return json.Marshal(noAuthDest)
-//}
-
 func (n *DesignTimeDestRequestBody) ToDestination() destinationcreator.Destination {
 	return &destinationcreator.NoAuthenticationDestination{
 		Name:           n.Name,
@@ -149,23 +136,6 @@ func (b *BasicDestRequestBody) Validate(destinationCreatorCfg *Config) error {
 		validation.Field(&b.User, validation.Required, validation.Length(1, 256)),
 	)
 }
-
-// todo::: delete
-//func (b *BasicDestRequestBody) ToDestination() (json.RawMessage, error) {
-//	basicAuthDest := destinationcreator.BasicDestination{
-//		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-//			Name:           b.Name,
-//			Type:           b.Type,
-//			URL:            b.URL,
-//			Authentication: b.AuthenticationType,
-//			ProxyType:      b.ProxyType,
-//		},
-//		User:     b.User,
-//		Password: b.Password,
-//	}
-//
-//	return json.Marshal(basicAuthDest)
-//}
 
 func (b *BasicDestRequestBody) ToDestination() destinationcreator.Destination {
 	return &destinationcreator.BasicDestination{
@@ -198,23 +168,6 @@ func (s *SAMLAssertionDestRequestBody) Validate(destinationCreatorCfg *Config) e
 	)
 }
 
-// todo::: delete
-//func (s *SAMLAssertionDestRequestBody) ToDestination() (json.RawMessage, error) {
-//	samlAssertionAuthDest := destinationcreator.SAMLAssertionDestination{
-//		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-//			Name:           s.Name,
-//			Type:           s.Type,
-//			URL:            s.URL,
-//			Authentication: s.AuthenticationType,
-//			ProxyType:      s.ProxyType,
-//		},
-//		Audience:         s.Audience,
-//		KeyStoreLocation: s.KeyStoreLocation,
-//	}
-//
-//	return json.Marshal(samlAssertionAuthDest)
-//}
-
 func (s *SAMLAssertionDestRequestBody) ToDestination() destinationcreator.Destination {
 	return &destinationcreator.SAMLAssertionDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
@@ -244,22 +197,6 @@ func (s *ClientCertificateAuthDestRequestBody) Validate(destinationCreatorCfg *C
 		validation.Field(&s.KeyStoreLocation, validation.Required),
 	)
 }
-
-// todo::: delete
-//func (s *ClientCertificateAuthDestRequestBody) ToDestination() (json.RawMessage, error) {
-//	clientCertAuthDest := destinationcreator.ClientCertificateAuthenticationDestination{
-//		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-//			Name:           s.Name,
-//			Type:           s.Type,
-//			URL:            s.URL,
-//			Authentication: s.AuthenticationType,
-//			ProxyType:      s.ProxyType,
-//		},
-//		KeyStoreLocation: s.KeyStoreLocation,
-//	}
-//
-//	return json.Marshal(clientCertAuthDest)
-//}
 
 func (s *ClientCertificateAuthDestRequestBody) ToDestination() destinationcreator.Destination {
 	return &destinationcreator.ClientCertificateAuthenticationDestination{

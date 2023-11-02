@@ -25,7 +25,6 @@ import (
 type DestinationServiceAPIConfig struct {
 	EndpointDestinationsFindAPI                          string        `envconfig:"APP_ENDPOINT_DESTINATIONS_FIND_API,default=/destination-configuration/local/v1/destinations"`
 	EndpointTenantSubaccountLevelDestinations            string        `envconfig:"APP_ENDPOINT_TENANT_DESTINATIONS,default=/destination-configuration/v1/subaccountDestinations"`
-	EndpointTenantInstanceLevelDestinations              string        `envconfig:"APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATIONS,default=/destination-configuration/v1/instanceDestinations"` // todo::: delete once methods it is used in are deleted and delete the env var
 	EndpointTenantSubaccountLevelDestinationCertificates string        `envconfig:"APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES,default=/destination-configuration/v1/subaccountCertificates"`
 	EndpointTenantInstanceLevelDestinationCertificates   string        `envconfig:"APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES,default=/destination-configuration/v1/instanceCertificates"`
 	Timeout                                              time.Duration `envconfig:"APP_DESTINATIONS_TIMEOUT,default=30s"`
@@ -122,42 +121,6 @@ func (c *DestinationClient) DeleteDestination(t *testing.T, destinationName stri
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
-
-// todo::: delete once FindDestinationByName is implemented and adopted
-//func (c *DestinationClient) GetDestinationByName(t *testing.T, serviceURL, destinationName, instanceID, token string, expectedStatusCode int) json.RawMessage {
-//	subpath := ""
-//	if instanceID != "" {
-//		subpath = c.apiConfig.EndpointTenantInstanceLevelDestinations
-//	} else {
-//		subpath = c.apiConfig.EndpointTenantSubaccountLevelDestinations
-//	}
-//	url := serviceURL + subpath + "/" + url.QueryEscape(destinationName)
-//	request, err := http.NewRequest(http.MethodGet, url, nil)
-//	require.NoError(t, err)
-//	request.Header.Set(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
-//
-//	httpClient := &http.Client{}
-//	httpClient.Transport = &http.Transport{
-//		TLSClientConfig: &tls.Config{
-//			InsecureSkipVerify: c.apiConfig.SkipSSLVerify,
-//		},
-//	}
-//	httpClient.Timeout = c.apiConfig.Timeout
-//
-//	resp, err := httpClient.Do(request)
-//	require.NoError(t, err)
-//	defer func() {
-//		if err := resp.Body.Close(); err != nil {
-//			t.Logf("Could not close response body %s", err)
-//		}
-//	}()
-//
-//	body, err := ioutil.ReadAll(resp.Body)
-//	require.NoError(t, err)
-//
-//	require.Equal(t, expectedStatusCode, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %s", resp.StatusCode, expectedStatusCode, string(body)))
-//	return body
-//}
 
 func (c *DestinationClient) FindDestinationByName(t *testing.T, serviceURL, destinationName, authToken, userTokenHeader string, expectedStatusCode int) json.RawMessage {
 	url := serviceURL + c.apiConfig.EndpointDestinationsFindAPI + "/" + url.QueryEscape(destinationName)

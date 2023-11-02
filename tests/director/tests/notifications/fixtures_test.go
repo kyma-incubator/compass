@@ -436,16 +436,6 @@ func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationCl
 	}
 }
 
-// todo::: delete after validating that cert assertion through fing API works
-//func assertDestinationCertificate(t *testing.T, client *clients.DestinationClient, serviceURL, certificateName, instanceID, token string) {
-//	certBytes := client.GetDestinationCertificateByName(t, serviceURL, certificateName, instanceID, token, http.StatusOK)
-//	var destCertificate esmdestinationcreator.DestinationSvcCertificateResponse
-//	err := json.Unmarshal(certBytes, &destCertificate)
-//	require.NoError(t, err)
-//	require.Equal(t, certificateName, destCertificate.Name)
-//	require.NotEmpty(t, destCertificate.Content)
-//}
-
 func assertFormationAssignmentsNotificationWithItemsStructure(t *testing.T, notification gjson.Result, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID string) {
 	assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t, notification, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID, nil)
 }
