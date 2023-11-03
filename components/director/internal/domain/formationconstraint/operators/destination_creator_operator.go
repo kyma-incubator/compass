@@ -92,7 +92,12 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 					return true, nil
 				}
 
-				certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, samlAssertionDetails.Destinations, destinationcreatorpkg.AuthTypeSAMLAssertion, formationAssignment, 0, di.SkipSubaccountValidation)
+				var useSelfSignedCert bool
+				if !di.UseCertSvcKeystoreForSAML {
+					useSelfSignedCert = true
+				}
+
+				certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, samlAssertionDetails.Destinations, destinationcreatorpkg.AuthTypeSAMLAssertion, formationAssignment, 0, di.SkipSubaccountValidation, useSelfSignedCert)
 				if err != nil {
 					return false, errors.Wrap(err, "while creating SAML assertion certificate")
 				}
@@ -112,7 +117,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 					return true, nil
 				}
 
-				certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, clientCertDetails.Destinations, destinationcreatorpkg.AuthTypeClientCertificate, formationAssignment, 0, di.SkipSubaccountValidation)
+				certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, clientCertDetails.Destinations, destinationcreatorpkg.AuthTypeClientCertificate, formationAssignment, 0, di.SkipSubaccountValidation, false)
 				if err != nil {
 					return false, errors.Wrap(err, "while creating client certificate authentication certificate")
 				}

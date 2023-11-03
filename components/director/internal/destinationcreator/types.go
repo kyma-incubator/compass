@@ -67,7 +67,8 @@ type ClientCertAuthDestinationRequestBody struct {
 
 // CertificateRequestBody contains the necessary fields for the destination creator certificate request body
 type CertificateRequestBody struct {
-	Name string `json:"name"`
+	Name       string `json:"name"`
+	SelfSigned bool   `json:"selfSigned"`
 }
 
 // reqBodyNameRegex is a regex defined by the destination creator API specifying what destination names are allowed
