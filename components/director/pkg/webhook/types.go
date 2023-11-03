@@ -17,19 +17,13 @@
 package webhook
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
-	"text/template"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 	"github.com/pkg/errors"
 )
 
@@ -155,34 +149,13 @@ func (rs *ResponseStatus) Validate() error {
 // ParseOutputTemplate missing godoc
 func (rd *ResponseObject) ParseOutputTemplate(tmpl *string) (*Response, error) {
 	var resp Response
-	return &resp, parseTemplate(tmpl, *rd, &resp)
+	return &resp, templatehelper.ParseTemplate(tmpl, *rd, &resp)
 }
 
 // ParseStatusTemplate missing godoc
 func (rd *ResponseObject) ParseStatusTemplate(tmpl *string) (*ResponseStatus, error) {
 	var respStatus ResponseStatus
-	return &respStatus, parseTemplate(tmpl, *rd, &respStatus)
-}
-
-func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
-	t, err := template.New("").Funcs(templatehelper.GetFuncMap()).Option("missingkey=zero").Parse(*tmpl)
-	if err != nil {
-		return err
-	}
-
-	res := new(bytes.Buffer)
-	if err = t.Execute(res, data); err != nil {
-		return err
-	}
-	if err = json.Unmarshal(res.Bytes(), dest); err != nil {
-		return err
-	}
-
-	if validatable, ok := dest.(inputvalidation.Validatable); ok {
-		return validatable.Validate()
-	}
-
-	return nil
+	return &respStatus, templatehelper.ParseTemplate(tmpl, *rd, &respStatus)
 }
 
 func isAllowedHTTPMethod(method string) bool {
