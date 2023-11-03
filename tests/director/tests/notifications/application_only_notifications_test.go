@@ -22,6 +22,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 )
 
 func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
@@ -2274,7 +2275,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		}
 		output := formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationInput{}
 		unquoted := strings.ReplaceAll(originalInput.InputTemplate, "\\", "")
-		err = formationconstraintpkg.ParseInputTemplate(unquoted, struct {
+		err = templatehelper.ParseTemplate(&unquoted, struct {
 			SourceApplication *struct {
 				ID string `json:"id"`
 			} `json:"source_application"`
