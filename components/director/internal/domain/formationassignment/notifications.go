@@ -567,7 +567,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 
 func convertFormationAssignmentFromModel(formationAssignment *model.FormationAssignment) *webhook.FormationAssignment {
 	if formationAssignment == nil {
-		return &webhook.FormationAssignment{Value: "\"\"", Error: "\"\""}
+		return &webhook.FormationAssignment{}
 	}
 	return &webhook.FormationAssignment{
 		ID:          formationAssignment.ID,
