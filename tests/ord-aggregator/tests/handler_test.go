@@ -871,10 +871,10 @@ func TestORDAggregator(stdT *testing.T) {
 			// Verify EntityTypeMappings
 			eventTitlesWithEntityTypeMappingsCountToCheck := map[string]int{}
 			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE"] = 1
-			entityTitlesWithEntityTypeMappingsExpectedContent["API TITLE"] = "A_OperationalAcctgDocItemCube"
+			entityTitlesWithEntityTypeMappingsExpectedContent["EVENT TITLE"] = "A_OperationalAcctgDocItemCube"
 
 			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE INTERNAL"] = 2
-			entityTitlesWithEntityTypeMappingsExpectedContent["API TITLE INTERNAL"] = "B_OperationalAcctgDocItemCube"
+			entityTitlesWithEntityTypeMappingsExpectedContent["EVENT TITLE INTERNAL"] = "B_OperationalAcctgDocItemCube"
 
 			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE PRIVATE"] = 0
 			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfEventsInSubscription, eventTitlesWithEntityTypeMappingsCountToCheck, entityTitlesWithEntityTypeMappingsExpectedContent)
