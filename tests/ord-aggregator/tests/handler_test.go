@@ -812,7 +812,7 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified products")
 
 			// Verify apis
-			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$expand=entityTypeMappings&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAPIsInSubscription {
 				t.Log("Missing APIs...will try again")
 				return false
@@ -825,6 +825,19 @@ func TestORDAggregator(stdT *testing.T) {
 			// Verify defaultBundle for apis
 			assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfAPIsInSubscription, apisDefaultBundleMap, ordAndInternalIDsMappingForBundles)
 			t.Log("Successfully verified defaultBundles for apis")
+
+			// Verify EntityTypeMappings
+			apiTitlesWithEntityTypeMappingsCountToCheck := map[string]int{}
+			apiTitlesWithEntityTypeMappingsExpectedContent := map[string]string{}
+			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE"] = 1
+			apiTitlesWithEntityTypeMappingsExpectedContent["API TITLE"] = "A_OperationalAcctgDocItemCube"
+
+			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE INTERNAL"] = 2
+			apiTitlesWithEntityTypeMappingsExpectedContent["API TITLE INTERNAL"] = "B_OperationalAcctgDocItemCube"
+
+			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE PRIVATE"] = 0
+			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfAPIsInSubscription, apiTitlesWithEntityTypeMappingsCountToCheck, apiTitlesWithEntityTypeMappingsExpectedContent)
+			t.Log("Successfully verified api entity type mappings")
 
 			// Verify the api spec
 			specs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfAPIsInSubscription, apiSpecsMap, apiResourceDefinitionsFieldName)
@@ -847,21 +860,8 @@ func TestORDAggregator(stdT *testing.T) {
 			}
 			t.Log("Successfully verified api spec")
 
-			// Verify EntityTypeMappings
-			apiTitlesWithEntityTypeMappingsCountToCheck := map[string]int{}
-			entityTitlesWithEntityTypeMappingsExpectedContent := map[string]string{}
-			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE"] = 1
-			entityTitlesWithEntityTypeMappingsExpectedContent["API TITLE"] = "A_OperationalAcctgDocItemCube"
-
-			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE INTERNAL"] = 2
-			entityTitlesWithEntityTypeMappingsExpectedContent["API TITLE INTERNAL"] = "B_OperationalAcctgDocItemCube"
-
-			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE PRIVATE"] = 0
-			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfAPIsInSubscription, apiTitlesWithEntityTypeMappingsCountToCheck, entityTitlesWithEntityTypeMappingsExpectedContent)
-			t.Log("Successfully verified api entity type mappings")
-
 			// Verify events
-			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$expand=entityTypeMappings&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfEventsInSubscription {
 				t.Log("Missing Events...will try again")
 				return false
@@ -870,14 +870,15 @@ func TestORDAggregator(stdT *testing.T) {
 
 			// Verify EntityTypeMappings
 			eventTitlesWithEntityTypeMappingsCountToCheck := map[string]int{}
+			eventTitlesWithEntityTypeMappingsExpectedContent := map[string]string{}
 			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE"] = 1
-			entityTitlesWithEntityTypeMappingsExpectedContent["EVENT TITLE"] = "A_OperationalAcctgDocItemCube"
+			eventTitlesWithEntityTypeMappingsExpectedContent["EVENT TITLE"] = "sap.odm:entityType:CostCenter:v1"
 
 			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE INTERNAL"] = 2
-			entityTitlesWithEntityTypeMappingsExpectedContent["EVENT TITLE INTERNAL"] = "B_OperationalAcctgDocItemCube"
+			eventTitlesWithEntityTypeMappingsExpectedContent["EVENT TITLE INTERNAL"] = "sap.odm:entityType:CostCenter:v2"
 
 			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE PRIVATE"] = 0
-			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfEventsInSubscription, eventTitlesWithEntityTypeMappingsCountToCheck, entityTitlesWithEntityTypeMappingsExpectedContent)
+			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfEventsInSubscription, eventTitlesWithEntityTypeMappingsCountToCheck, eventTitlesWithEntityTypeMappingsExpectedContent)
 			t.Log("Successfully verified api entity type mappings")
 
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEventsInSubscription, descriptionField)

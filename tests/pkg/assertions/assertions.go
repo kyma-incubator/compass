@@ -679,17 +679,14 @@ func AssertEntityTypeMappings(t *testing.T, respBody string, numberOfEntities in
 		entityTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
 		expectedEntityTypeMappings, ok := entityTitlesWithEntityTypeMappingsCountToCheck[entityTitle]
 		if ok && expectedEntityTypeMappings >= 0 {
-			entityTypeMappings := gjson.Get(respBody, fmt.Sprintf("value.%d.entityTypeMappings", i)).Array()
+			entityTypeMappingsResult := gjson.Get(respBody, fmt.Sprintf("value.%d.entityTypeMappings", i))
+			entityTypeMappings := entityTypeMappingsResult.Array()
 			require.Equal(t, expectedEntityTypeMappings, len(entityTypeMappings))
 			if expectedEntityTypeMappings > 0 {
-				fullContent := ""
-				for _, entityTypeMappingElement := range entityTypeMappings {
-					fullContent += entityTypeMappingElement.Str
-				}
 				expectedContent, ok := entityTitlesWithEntityTypeMappingsExpectedContent[entityTitle]
 				require.True(t, ok, "there should be set expected content for entity %s", entityTitle)
 				if ok {
-					require.Contains(t, fullContent, expectedContent, "entity type mapping does not contain: %s. Full content is: %s", expectedContent, fullContent)
+					require.Contains(t, entityTypeMappingsResult.String(), expectedContent, "entity type mapping does not contain: %s. Full content is: %s", expectedContent, entityTypeMappingsResult.String())
 				}
 			} else {
 				t.Logf("as expected there are no entity type mappings for %q", entityTitle)

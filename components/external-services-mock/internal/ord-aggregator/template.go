@@ -979,10 +979,10 @@ const ordDocument = `{
                ],
                "entityTypeTargets": [
                   {
-                     "ordId": "sap.odm:entityType:CostCenter:v1"
+                     "ordId": "sap.odm:entityType:CostCenter:v2"
                   },
                   {
-                     "correlationId": "sap.s4:csnEntity:CostCenter_v1"
+                     "correlationId": "sap.s4:csnEntity:CostCenter_v2"
                   }
                ]
             },
