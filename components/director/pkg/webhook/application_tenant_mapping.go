@@ -1,13 +1,13 @@
 package webhook
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 )
 
 // ApplicationTenantMappingInput struct contains the input for an app-to-app formation notification
@@ -29,23 +29,22 @@ type ApplicationTenantMappingInput struct {
 // ParseURLTemplate missing godoc
 func (rd *ApplicationTenantMappingInput) ParseURLTemplate(tmpl *string) (*URL, error) {
 	var url URL
-	return &url, parseTemplate(tmpl, *rd, &url)
+	return &url, templatehelper.ParseTemplate(tmpl, *rd, &url)
 }
 
 // ParseInputTemplate missing godoc
 func (rd *ApplicationTenantMappingInput) ParseInputTemplate(tmpl *string) ([]byte, error) {
 	res := json.RawMessage{}
-	if err := parseTemplate(tmpl, *rd, &res); err != nil {
+	if err := templatehelper.ParseTemplate(tmpl, *rd, &res); err != nil {
 		return nil, err
 	}
-	res = bytes.ReplaceAll(res, []byte("<nil>"), nil)
 	return res, nil
 }
 
 // ParseHeadersTemplate missing godoc
 func (rd *ApplicationTenantMappingInput) ParseHeadersTemplate(tmpl *string) (http.Header, error) {
 	var headers http.Header
-	return headers, parseTemplate(tmpl, *rd, &headers)
+	return headers, templatehelper.ParseTemplate(tmpl, *rd, &headers)
 }
 
 // GetParticipantsIDs returns the list of IDs part of the FormationConfigurationChangeInput

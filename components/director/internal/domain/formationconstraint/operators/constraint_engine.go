@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 	"github.com/pkg/errors"
 )
 
@@ -208,7 +209,7 @@ func (e *ConstraintEngine) EnforceConstraints(ctx context.Context, location form
 		}
 
 		operatorInput := operatorInputConstructor()
-		if err := formationconstraintpkg.ParseInputTemplate(mc.InputTemplate, details, operatorInput); err != nil {
+		if err := templatehelper.ParseTemplate(&mc.InputTemplate, details, operatorInput); err != nil {
 			log.C(ctx).Errorf("An error occurred while parsing input template for formation constraint %q: %s", mc.Name, err.Error())
 			errs = multierror.Append(errs, formationconstraint.ConstraintError{
 				ConstraintName: mc.Name,

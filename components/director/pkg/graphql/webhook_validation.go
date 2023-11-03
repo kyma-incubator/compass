@@ -19,12 +19,8 @@ var emptyApplicationLifecycleWebhookRequestObject = &webhook.ApplicationLifecycl
 }
 
 var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChangeInput{
-	Assignment: &webhook.FormationAssignment{
-		Value: "\"\"",
-	},
-	ReverseAssignment: &webhook.FormationAssignment{
-		Value: "\"\"",
-	},
+	Assignment:        &webhook.FormationAssignment{},
+	ReverseAssignment: &webhook.FormationAssignment{},
 	Formation: &model.Formation{
 		Error: json.RawMessage{},
 	},
@@ -72,12 +68,8 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 }
 
 var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
-	Assignment: &webhook.FormationAssignment{
-		Value: "\"\"",
-	},
-	ReverseAssignment: &webhook.FormationAssignment{
-		Value: "\"\"",
-	},
+	Assignment:        &webhook.FormationAssignment{},
+	ReverseAssignment: &webhook.FormationAssignment{},
 	Formation: &model.Formation{
 		Error: json.RawMessage{},
 	},
