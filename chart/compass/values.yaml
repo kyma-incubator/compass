@@ -815,10 +815,10 @@ global:
       appDetinationsSensitiveDataScope: "destinations_sensitive_data:read"
     server:
       tenantDestinationsEndpoint: "/v1/subaccountDestinations"
-      tenantInstanceLevelDestinationsEndpoint: "/v1/instanceDestinations"
       tenantDestinationCertificatesEndpoint: "/v1/subaccountCertificates"
       tenantInstanceLevelDestinationCertificatesEndpoint: "/v1/instanceCertificates"
       sensitiveDataEndpoint: "/v1/destinations"
+      findAPIEndpoint: "/local/v1/destinations" # used by external-services-mock in the destination creator flows; due to the fact that in ESM there are separate handlers for the two flows (dest-creator & dest-fetcher), we need different endpoints where each one of them can call the destination service find API
       sensitiveDataQueryParam: "name"
     request:
       skipSSLValidation: false
