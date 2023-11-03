@@ -98,7 +98,6 @@ linters:
     # - gofmt
     # - gofumpt
     # - goheader
-    # - goimports
     # - golint
     # - gomnd
     # - gomoddirectives
@@ -155,6 +154,7 @@ linters:
     - stylecheck
     - unparam
     - whitespace
+    - goimports
   # enable-all: true
   fast: false # Run only fast linters from enabled linters set (first run won't be fast)
 

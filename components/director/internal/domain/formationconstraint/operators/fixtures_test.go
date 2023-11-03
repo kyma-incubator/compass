@@ -147,6 +147,7 @@ var (
 	inputWithAssignmentWithSAMLCertData                                 = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithSAMLCertData, preNotificationStatusReturnedLocation)
 	inputWithAssignmentWithClientCertAuthCertData                       = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithClientCertAuthCertData, preNotificationStatusReturnedLocation)
 	inputForAssignNotificationStatusReturned                            = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, fa, preNotificationStatusReturnedLocation)
+	inputForAssignNotificationStatusReturnedWithCertSvcKeyStore         = fixDestinationCreatorInputWithAssignmentMemoryAddressAndCertSvcKeystore(model.AssignFormation, fa, preNotificationStatusReturnedLocation, true)
 	inputForAssignNotificationStatusReturnedWithInvalidFAConfig         = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithInvalidConfig, preNotificationStatusReturnedLocation)
 	inputForAssignSendNotificationWithoutReverseAssignmentMemoryAddress = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, fa, preSendNotificationLocation)
 
@@ -329,6 +330,15 @@ func fixDestinationCreatorInputForUnassignWithLocationOperation(operationName mo
 			OperationName:  operationName,
 			ConstraintType: model.PreOperation,
 		},
+	}
+}
+
+func fixDestinationCreatorInputWithAssignmentMemoryAddressAndCertSvcKeystore(operation model.FormationOperation, formationAssignment *model.FormationAssignment, location formationconstraintpkg.JoinPointLocation, useCertSvcKeystoreForSAML bool) *formationconstraintpkg.DestinationCreatorInput {
+	return &formationconstraintpkg.DestinationCreatorInput{
+		Operation:                       operation,
+		JoinPointDetailsFAMemoryAddress: formationAssignment.GetAddress(),
+		Location:                        location,
+		UseCertSvcKeystoreForSAML:       useCertSvcKeystoreForSAML,
 	}
 }
 

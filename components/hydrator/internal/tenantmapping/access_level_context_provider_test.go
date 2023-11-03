@@ -63,6 +63,7 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	}
 
 	testSubaccount := &graphql.Tenant{
+		ID:         consumerTenantID,
 		InternalID: internalSubaccount,
 		Type:       "subaccount",
 		Labels:     labels,
@@ -75,16 +76,19 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 		Labels:     labels,
 	}
 
+	testEmptyTenant := &graphql.Tenant{}
+
+	testTenantWithOnlyExternalID := &graphql.Tenant{ID: consumerTenantID}
+
 	testCases := []struct {
-		Name               string
-		DirectorClient     func() *automock.DirectorClient
-		ScopesGetterFn     func() *automock.ScopesGetter
-		ReqDataInput       oathkeeper.ReqData
-		AuthDetailsInput   oathkeeper.AuthDetails
-		ExpectedScopes     string
-		ExpectedInternalID string
-		ExpectedExternalID string
-		ExpectedErr        error
+		Name             string
+		DirectorClient   func() *automock.DirectorClient
+		ScopesGetterFn   func() *automock.ScopesGetter
+		ReqDataInput     oathkeeper.ReqData
+		AuthDetailsInput oathkeeper.AuthDetails
+		ExpectedScopes   string
+		ExpectedTenant   *graphql.Tenant
+		ExpectedErr      error
 	}{
 		{
 			Name: "Success when cannot find internal tenant",
@@ -98,12 +102,11 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
 				return scopesGetter
 			},
-			ReqDataInput:       reqData,
-			AuthDetailsInput:   authDetails,
-			ExpectedInternalID: "",
-			ExpectedExternalID: consumerTenantID,
-			ExpectedScopes:     strings.Join(scopes, " "),
-			ExpectedErr:        nil,
+			ReqDataInput:     reqData,
+			AuthDetailsInput: authDetails,
+			ExpectedTenant:   testTenantWithOnlyExternalID,
+			ExpectedScopes:   strings.Join(scopes, " "),
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Success on global calls without tenant",
@@ -115,12 +118,11 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
 				return scopesGetter
 			},
-			ReqDataInput:       noTenantReqData,
-			AuthDetailsInput:   authDetails,
-			ExpectedScopes:     strings.Join(scopes, " "),
-			ExpectedInternalID: "",
-			ExpectedExternalID: "",
-			ExpectedErr:        nil,
+			ReqDataInput:     noTenantReqData,
+			AuthDetailsInput: authDetails,
+			ExpectedScopes:   strings.Join(scopes, " "),
+			ExpectedTenant:   testEmptyTenant,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Error when the error from getting the internal tenant is different from not found",
@@ -134,11 +136,10 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
 				return scopesGetter
 			},
-			ReqDataInput:       reqData,
-			AuthDetailsInput:   authDetails,
-			ExpectedInternalID: "",
-			ExpectedExternalID: consumerTenantID,
-			ExpectedErr:        testError,
+			ReqDataInput:     reqData,
+			AuthDetailsInput: authDetails,
+			ExpectedTenant:   testTenantWithOnlyExternalID,
+			ExpectedErr:      testError,
 		},
 		{
 			Name: "Success when internal tenant exists",
@@ -152,12 +153,11 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
 				return scopesGetter
 			},
-			ReqDataInput:       reqData,
-			AuthDetailsInput:   authDetails,
-			ExpectedScopes:     strings.Join(scopes, " "),
-			ExpectedInternalID: internalSubaccount,
-			ExpectedExternalID: consumerTenantID,
-			ExpectedErr:        nil,
+			ReqDataInput:     reqData,
+			AuthDetailsInput: authDetails,
+			ExpectedScopes:   strings.Join(scopes, " "),
+			ExpectedTenant:   testSubaccount,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Returns empty region when tenant is subaccount and tenant region label is missing",
@@ -171,12 +171,11 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
 				return scopesGetter
 			},
-			ReqDataInput:       reqData,
-			AuthDetailsInput:   authDetails,
-			ExpectedScopes:     strings.Join(scopes, " "),
-			ExpectedInternalID: internalSubaccount,
-			ExpectedExternalID: consumerTenantID,
-			ExpectedErr:        nil,
+			ReqDataInput:     reqData,
+			AuthDetailsInput: authDetails,
+			ExpectedScopes:   strings.Join(scopes, " "),
+			ExpectedTenant:   testSubaccount,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Error when consumer don't have access",
@@ -251,10 +250,9 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, consumer.IntegrationSystem, objectCtx.ConsumerType)
 				require.Equal(t, providerTenantID, objectCtx.ConsumerID)
-				require.Equal(t, testCase.ExpectedInternalID, objectCtx.TenantContext.TenantID)
-				require.Equal(t, testCase.ExpectedExternalID, objectCtx.TenantContext.ExternalTenantID)
+				require.Equal(t, testCase.ExpectedTenant, objectCtx.Tenant)
 				require.Equal(t, testCase.ExpectedScopes, objectCtx.Scopes)
-				if objectCtx.TenantID != "" {
+				if objectCtx.Tenant.InternalID != "" {
 					require.Equal(t, region, objectCtx.Region)
 				}
 			} else {

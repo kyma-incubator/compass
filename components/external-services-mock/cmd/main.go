@@ -69,6 +69,7 @@ type config struct {
 	ORDServers               ORDServers
 	SelfRegConfig            selfreg.Config
 	DefaultTenant            string `envconfig:"APP_DEFAULT_TENANT"`
+	DefaultCustomerTenant    string `envconfig:"APP_DEFAULT_CUSTOMER_TENANT"`
 	TrustedTenant            string `envconfig:"APP_TRUSTED_TENANT"`
 	OnDemandTenant           string `envconfig:"APP_ON_DEMAND_TENANT"`
 
@@ -84,9 +85,9 @@ type config struct {
 // DestinationServiceConfig configuration for destination service endpoints.
 type DestinationServiceConfig struct {
 	TenantDestinationsSubaccountLevelEndpoint           string `envconfig:"APP_DESTINATION_TENANT_SUBACCOUNT_LEVEL_ENDPOINT,default=/destination-configuration/v1/subaccountDestinations"`
-	TenantDestinationsInstanceLevelEndpoint             string `envconfig:"APP_DESTINATION_TENANT_INSTANCE_LEVEL_ENDPOINT,default=/destination-configuration/v1/instanceDestinations"`
 	TenantDestinationCertificateSubaccountLevelEndpoint string `envconfig:"APP_DESTINATION_CERTIFICATE_TENANT_SUBACCOUNT_LEVEL_ENDPOINT,default=/destination-configuration/v1/subaccountCertificates"`
 	TenantDestinationCertificateInstanceLevelEndpoint   string `envconfig:"APP_DESTINATION_CERTIFICATE_TENANT_INSTANCE_LEVEL_ENDPOINT,default=/destination-configuration/v1/instanceCertificates"`
+	TenantDestinationFindAPIEndpoint                    string `envconfig:"APP_DESTINATION_SERVICE_FIND_API_ENDPOINT,default=/destination-configuration/local/v1/destinations"`
 	SensitiveDataEndpoint                               string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
 	SubaccountIDClaimKey                                string `envconfig:"APP_DESTINATION_SUBACCOUNT_CLAIM_KEY"`
 	ServiceInstanceClaimKey                             string `envconfig:"APP_DESTINATION_SERVICE_INSTANCE_CLAIM_KEY"`
@@ -249,8 +250,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.HandleFunc(sensitiveDataEndpoint, destinationHandler.GetSensitiveData).Methods(http.MethodGet)
 
 	// destination service handlers but the destination creator handler is used due to shared mappings
-	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationsSubaccountLevelEndpoint+"/{name}", destinationCreatorHandler.GetDestinationByNameFromDestinationSvc).Methods(http.MethodGet)
-	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationsInstanceLevelEndpoint+"/{name}", destinationCreatorHandler.GetDestinationByNameFromDestinationSvc).Methods(http.MethodGet)
+	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationFindAPIEndpoint+"/{name}", destinationCreatorHandler.FindDestinationByNameFromDestinationSvc).Methods(http.MethodGet)
 
 	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationCertificateSubaccountLevelEndpoint+"/{name}", destinationCreatorHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
 	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationCertificateInstanceLevelEndpoint+"/{name}", destinationCreatorHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
@@ -272,7 +272,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 
 	// Tenant fetcher handlers
 	allowedSubaccounts := []string{cfg.OnDemandTenant, cfg.TenantConfig.TestTenantOnDemandID}
-	tenantFetcherHandler := tenantfetcher.NewHandler(allowedSubaccounts, cfg.DefaultTenant)
+	tenantFetcherHandler := tenantfetcher.NewHandler(allowedSubaccounts, cfg.DefaultTenant, cfg.DefaultCustomerTenant)
 
 	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.AccountCreationEventType))
 	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.AccountCreationEventType))
