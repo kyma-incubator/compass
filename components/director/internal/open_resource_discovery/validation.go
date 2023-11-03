@@ -555,9 +555,7 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 		validation.Field(&api.Extensible, validation.By(func(value interface{}) error {
 			return validateExtensibleField(value, docPolicyLevel)
 		})),
-		validation.Field(&api.EntityTypeMappings, validation.By(func(value interface{}) error {
-			return validateEntityTypeMappings(value)
-		})),
+		validation.Field(&api.EntityTypeMappings, validation.By(validateEntityTypeMappings)),
 		validation.Field(&api.DocumentationLabels, validation.By(validateDocumentationLabels)),
 		validation.Field(&api.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
@@ -640,9 +638,7 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 		validation.Field(&event.Extensible, validation.By(func(value interface{}) error {
 			return validateExtensibleField(value, docPolicyLevel)
 		})),
-		validation.Field(&event.EntityTypeMappings, validation.By(func(value interface{}) error {
-			return validateEntityTypeMappings(value)
-		})),
+		validation.Field(&event.EntityTypeMappings, validation.By(validateEntityTypeMappings)),
 		validation.Field(&event.DocumentationLabels, validation.By(validateDocumentationLabels)),
 		validation.Field(&event.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
@@ -1627,7 +1623,7 @@ func validateAPIModelSelector(value interface{}) error {
 			validation.When(apiModelSelector.Type == APIModelSelectorTypeODATA, validation.Required),
 			validation.When(apiModelSelector.Type == APIModelSelectorTypeJSONPointer, validation.Nil),
 		),
-		validation.Field(&apiModelSelector.JsonPointer,
+		validation.Field(&apiModelSelector.JSONPointer,
 			validation.When(apiModelSelector.Type == APIModelSelectorTypeJSONPointer, validation.Required),
 			validation.When(apiModelSelector.Type == APIModelSelectorTypeODATA, validation.Nil),
 		),
@@ -1640,15 +1636,15 @@ func validateEntityTypeTarget(value interface{}) error {
 		return errors.New("error while casting to EntityTypeTarget")
 	}
 	return validation.ValidateStruct(entityTypeTarget,
-		validation.Field(&entityTypeTarget.OrdId,
-			validation.When(entityTypeTarget.CorrelationId != nil, validation.Nil),
-			validation.When(entityTypeTarget.CorrelationId == nil, validation.Required),
+		validation.Field(&entityTypeTarget.OrdID,
+			validation.When(entityTypeTarget.CorrelationID != nil, validation.Nil),
+			validation.When(entityTypeTarget.CorrelationID == nil, validation.Required),
 			validation.Length(MinORDIDLength, MaxORDIDLength),
 			validation.Match(regexp.MustCompile(EntityTypeOrdIDRegex)),
 		),
-		validation.Field(&entityTypeTarget.CorrelationId,
-			validation.When(entityTypeTarget.OrdId != nil, validation.Nil),
-			validation.When(entityTypeTarget.OrdId == nil, validation.Required),
+		validation.Field(&entityTypeTarget.CorrelationID,
+			validation.When(entityTypeTarget.OrdID != nil, validation.Nil),
+			validation.When(entityTypeTarget.OrdID == nil, validation.Required),
 			validation.Length(MinCorrelationIDLength, MaxCorrelationIDLength),
 			validation.Match(regexp.MustCompile(CorrelationIDsRegex)),
 		),

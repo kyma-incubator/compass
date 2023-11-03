@@ -51,44 +51,6 @@ func TestPgRepository_GetByID(t *testing.T) {
 	suite.Run(t)
 }
 
-func TestPgRepository_GetByIDGlobal(t *testing.T) {
-	entityTypeMappingModel := fixEntityTypeMappingModel(entityTypeMappingID)
-	entityTypeMappingEntity := fixEntityTypeMappingEntity(entityTypeMappingID)
-
-	suite := testdb.RepoGetTestSuite{
-		Name: "Get EntityTypeMapping Global",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query:    regexp.QuoteMeta(`SELECT id, ready, created_at, updated_at, deleted_at, error, api_definition_id, event_definition_id, api_model_selectors, entity_type_targets FROM public.entity_type_mappings WHERE id = $1`),
-				Args:     []driver.Value{entityTypeMappingID},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{
-						sqlmock.NewRows(fixEntityTypeMappingColumns()).
-							AddRow(fixEntityTypeMappingRow(entityTypeMappingID)...),
-					}
-				},
-				InvalidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{
-						sqlmock.NewRows(fixEntityTypeMappingColumns()),
-					}
-				},
-			},
-		},
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityTypeMappingConverter{}
-		},
-		RepoConstructorFunc:       entitytypemapping.NewRepository,
-		ExpectedModelEntity:       entityTypeMappingModel,
-		ExpectedDBEntity:          entityTypeMappingEntity,
-		MethodArgs:                []interface{}{entityTypeMappingID},
-		DisableConverterErrorTest: true,
-		MethodName:                "GetByIDGlobal",
-	}
-
-	suite.Run(t)
-}
-
 func TestPgRepository_ListByResourceID(t *testing.T) {
 	firstEntityTypeMappingID := "111111111-1111-1111-1111-111111111111"
 	firstEntityTypeModel := fixEntityTypeMappingModel(firstEntityTypeMappingID)

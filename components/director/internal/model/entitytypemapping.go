@@ -61,11 +61,11 @@ func (entityTypeMapping *EntityTypeMapping) SetFromUpdateInput(update EntityType
 type APIModelSelector struct {
 	Type          string  `json:"type"`
 	EntitySetName *string `json:"entitySetName,omitempty"`
-	JsonPointer   *string `json:"jsonPointer,omitempty"`
+	JSONPointer   *string `json:"jsonPointer,omitempty"`
 }
 
 // EntityTypeTarget represents the Entity Type Target entity
 type EntityTypeTarget struct {
-	OrdId         *string `json:"ordId,omitempty"`
-	CorrelationId *string `json:"correlationId,omitempty"`
+	OrdID         *string `json:"ordId,omitempty"`
+	CorrelationID *string `json:"correlationId,omitempty"`
 }

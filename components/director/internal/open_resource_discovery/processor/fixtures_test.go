@@ -33,8 +33,6 @@ const (
 var (
 	fixedTimestamp         = time.Now()
 	appID                  = "appID"
-	apiID                  = "apiID"
-	eventID                = "eventID"
 	appTemplateVersionID   = "appTemplateVersionID"
 	shortDescription       = "A business partner is a person, an organization, or a group of persons or organizations in which a company has a business interest."
 	description            = "A workforce person is a natural person with a work agreement or relationship in form of a work assignment; it can be an employee or a contingent worker.\n"

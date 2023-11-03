@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	entityTypeMappingColumns = []string{"id", "ready", "created_at", "updated_at", "deleted_at", "error", "api_definition_id", "event_definition_id",
+	entityTypeMappingColumns = []string{idColumn, "ready", "created_at", "updated_at", "deleted_at", "error", "api_definition_id", "event_definition_id",
 		"api_model_selectors", "entity_type_targets"}
 )
 
@@ -32,27 +32,25 @@ type EntityTypeMappingConverter interface {
 }
 
 type pgRepository struct {
-	conv               EntityTypeMappingConverter
-	lister             repo.Lister
-	singleGetter       repo.SingleGetter
-	singleGetterGlobal repo.SingleGetterGlobal
-	deleter            repo.Deleter
-	deleterGlobal      repo.DeleterGlobal
-	creator            repo.Creator
-	creatorGlobal      repo.CreatorGlobal
+	conv          EntityTypeMappingConverter
+	lister        repo.Lister
+	singleGetter  repo.SingleGetter
+	deleter       repo.Deleter
+	deleterGlobal repo.DeleterGlobal
+	creator       repo.Creator
+	creatorGlobal repo.CreatorGlobal
 }
 
 // NewRepository returns a repository instance
 func NewRepository(conv EntityTypeMappingConverter) *pgRepository {
 	return &pgRepository{
-		conv:               conv,
-		lister:             repo.NewLister(entityTypeMappingTable, entityTypeMappingColumns),
-		singleGetter:       repo.NewSingleGetter(entityTypeMappingTable, entityTypeMappingColumns),
-		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.EntityTypeMapping, entityTypeMappingTable, entityTypeMappingColumns),
-		deleter:            repo.NewDeleter(entityTypeMappingTable),
-		deleterGlobal:      repo.NewDeleterGlobal(resource.EntityTypeMapping, entityTypeMappingTable),
-		creator:            repo.NewCreator(entityTypeMappingTable, entityTypeMappingColumns),
-		creatorGlobal:      repo.NewCreatorGlobal(resource.EntityTypeMapping, entityTypeMappingTable, entityTypeMappingColumns),
+		conv:          conv,
+		lister:        repo.NewLister(entityTypeMappingTable, entityTypeMappingColumns),
+		singleGetter:  repo.NewSingleGetter(entityTypeMappingTable, entityTypeMappingColumns),
+		deleter:       repo.NewDeleter(entityTypeMappingTable),
+		deleterGlobal: repo.NewDeleterGlobal(resource.EntityTypeMapping, entityTypeMappingTable),
+		creator:       repo.NewCreator(entityTypeMappingTable, entityTypeMappingColumns),
+		creatorGlobal: repo.NewCreatorGlobal(resource.EntityTypeMapping, entityTypeMappingTable, entityTypeMappingColumns),
 	}
 }
 
@@ -87,37 +85,24 @@ func (r *pgRepository) CreateGlobal(ctx context.Context, model *model.EntityType
 // Delete deletes an Entity Type Mapping by ID
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	log.C(ctx).Debugf("Deleting EntityTypeMapping entity with id %q", id)
-	return r.deleter.DeleteOne(ctx, resource.EntityTypeMapping, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.EntityTypeMapping, tenant, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
 // DeleteGlobal deletes an Entity Type Mapping without tenant isolation
 func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 	log.C(ctx).Debugf("Deleting EntityTypeMapping entity with id %q", id)
-	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
 // GetByID returns an Entity Type Mapping by ID
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.EntityTypeMapping, error) {
 	log.C(ctx).Debugf("Getting EntityTypeMapping entity with id %q", id)
 	var entityTypeEnt Entity
-	if err := r.singleGetter.Get(ctx, resource.EntityTypeMapping, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entityTypeEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.EntityTypeMapping, tenant, repo.Conditions{repo.NewEqualCondition(idColumn, id)}, repo.NoOrderBy, &entityTypeEnt); err != nil {
 		return nil, err
 	}
 
 	entityTypeMappingModel := r.conv.FromEntity(&entityTypeEnt)
-
-	return entityTypeMappingModel, nil
-}
-
-// GetByIDGlobal gets an entity type by ID without tenant isolation
-func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.EntityTypeMapping, error) {
-	log.C(ctx).Debugf("Getting EntityTypeMapping entity with id %q", id)
-	var entityTypeMappingEnt Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entityTypeMappingEnt); err != nil {
-		return nil, err
-	}
-
-	entityTypeMappingModel := r.conv.FromEntity(&entityTypeMappingEnt)
 
 	return entityTypeMappingModel, nil
 }

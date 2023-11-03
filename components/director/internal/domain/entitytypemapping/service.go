@@ -20,7 +20,6 @@ type EntityTypeMappingRepository interface {
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
 	GetByID(ctx context.Context, tenant, id string) (*model.EntityTypeMapping, error)
-	GetByIDGlobal(ctx context.Context, id string) (*model.EntityTypeMapping, error)
 	ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.EntityTypeMapping, error)
 }
 
@@ -103,14 +102,6 @@ func (s *service) createEntityTypeMapping(ctx context.Context, entityTypeMapping
 	}
 
 	return s.entityTypeMappingRepo.Create(ctx, tnt, entityTypeMapping)
-}
-
-func (s *service) getEntityTypeMapping(ctx context.Context, id string, resourceType resource.Type) (*model.EntityTypeMapping, error) {
-	if resourceType.IsTenantIgnorable() {
-		return s.entityTypeMappingRepo.GetByIDGlobal(ctx, id)
-	}
-
-	return s.Get(ctx, id)
 }
 
 func (s *service) deleteEntityTypeMapping(ctx context.Context, id string, resourceType resource.Type) error {
