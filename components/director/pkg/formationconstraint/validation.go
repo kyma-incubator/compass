@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 )
 
@@ -75,7 +76,7 @@ func NewFormationConstraintInputWrapper(input *graphql.FormationConstraintInput)
 func (i FormationConstraintInputWrapper) Validate() error {
 	if i.ConstraintType != graphql.ConstraintTypeUI {
 		input := FormationConstraintInputByOperator[i.Operator]
-		if err := ParseInputTemplate(i.InputTemplate, JoinPointDetailsByLocation[JoinPointLocation{ConstraintType: model.FormationConstraintType(i.ConstraintType), OperationName: model.TargetOperation(i.TargetOperation)}], input); err != nil {
+		if err := templatehelper.ParseTemplate(&i.InputTemplate, JoinPointDetailsByLocation[JoinPointLocation{ConstraintType: model.FormationConstraintType(i.ConstraintType), OperationName: model.TargetOperation(i.TargetOperation)}], input); err != nil {
 			return apperrors.NewInvalidDataError("failed to parse input template: %s", err)
 		}
 	}
@@ -176,35 +177,19 @@ func emptySendNotificationOperationDetails() *SendNotificationOperationDetails {
 		Webhook: &graphql.Webhook{
 			CreatedAt: &graphql.Timestamp{},
 		},
-		TemplateInput: nil,
-		FormationAssignment: &model.FormationAssignment{
-			Value: json.RawMessage("\"\""),
-			Error: json.RawMessage("\"\""),
-		},
-		ReverseFormationAssignment: &model.FormationAssignment{
-			Value: json.RawMessage("\"\""),
-			Error: json.RawMessage("\"\""),
-		},
-		Formation: &model.Formation{
-			Error: json.RawMessage("\"\""),
-		},
+		TemplateInput:              nil,
+		FormationAssignment:        &model.FormationAssignment{},
+		ReverseFormationAssignment: &model.FormationAssignment{},
+		Formation:                  &model.Formation{},
 	}
 }
 
 func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturnedOperationDetails {
 	return &NotificationStatusReturnedOperationDetails{
 		Location: JoinPointLocation{},
-		FormationAssignment: &model.FormationAssignment{
-			Value: json.RawMessage("\"\""),
-			Error: json.RawMessage("\"\""),
-		},
-		ReverseFormationAssignment: &model.FormationAssignment{
-			Value: json.RawMessage("\"\""),
-			Error: json.RawMessage("\"\""),
-		},
-		Formation: &model.Formation{
-			Error: json.RawMessage("\"\""),
-		},
+		FormationAssignment: &model.FormationAssignment{},
+		ReverseFormationAssignment: &model.FormationAssignment{},
+		Formation: &model.Formation{},
 		FormationTemplate: &model.FormationTemplate{},
 	}
 }

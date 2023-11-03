@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -689,7 +690,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	}
 
 	var shouldSendReverseNotification bool
-	if response.Config != nil && *response.Config != "" {
+	if response.Config != nil && !formationconstraintpkg.IsConfigEmpty(*response.Config) {
 		assignment.Value = []byte(*response.Config)
 		shouldSendReverseNotification = true
 	}
