@@ -21,7 +21,6 @@ import (
 // and on top of them our additional custom functions
 func getFuncMap() template.FuncMap {
 	fm := sprig.TxtFuncMap()
-	fm["toString"] = toString
 	fm["contains"] = contains
 	fm["Join"] = joinStrings
 	fm["copy"] = copyFromJSON
@@ -63,15 +62,6 @@ func ParseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 	}
 
 	return nil
-}
-
-func toString(bytesData []byte) *string {
-	config := string(bytesData)
-	if config == "" {
-		return nil
-	}
-
-	return &config
 }
 
 func contains(faConfig json.RawMessage, str string) bool {
