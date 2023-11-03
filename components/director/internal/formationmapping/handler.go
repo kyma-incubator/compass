@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	formationassignmentpkg "github.com/kyma-incubator/compass/components/director/pkg/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 
@@ -237,8 +238,8 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	}
 	log.C(ctx).Infof("The formation assignment with ID: %q and formation ID: %q was successfully updated with state: %q", formationAssignmentID, formationID, fa.State)
 
-	if len(assignmentReqBody.Configuration) == 0 { // do not generate formation assignment notifications when configuration is not provided
-		log.C(ctx).Info("No configuration is provided in the request body. Formation assignment notification won't be generated")
+	if formationassignmentpkg.IsConfigEmpty(string(assignmentReqBody.Configuration)) { // do not generate formation assignment notifications when configuration is empty
+		log.C(ctx).Info("The configuration in the request body is empty. Formation assignment notification won't be generated")
 		httputils.Respond(w, http.StatusOK)
 		return
 	}
