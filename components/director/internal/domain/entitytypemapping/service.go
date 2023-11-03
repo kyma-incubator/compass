@@ -45,7 +45,7 @@ func NewService(entityTypeMappingRepo EntityTypeMappingRepository, uidService UI
 }
 
 // Create creates an Entity Type Mapping for a given resource.Type
-func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.EntityTypeMappingInput) (string, error) {
+func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, in *model.EntityTypeMappingInput) (string, error) {
 	id := s.uidService.Generate()
 	entityTypeMapping := in.ToEntityTypeMapping(id, resourceType, resourceID)
 
@@ -84,23 +84,12 @@ func (s *service) Get(ctx context.Context, id string) (*model.EntityTypeMapping,
 	return entityTypeMapping, nil
 }
 
-// ListByAPIDefinitionID lists entity type mappings by APIDefinitionID
-func (s *service) ListByAPIDefinitionID(ctx context.Context, apiDefinitionID string) ([]*model.EntityTypeMapping, error) {
+func (s *service) ListByOwnerResourceID(ctx context.Context, resourceID string, resourceType resource.Type) ([]*model.EntityTypeMapping, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	return s.entityTypeMappingRepo.ListByResourceID(ctx, tnt, apiDefinitionID, resource.API)
-}
-
-// ListByEventDefinitionID lists entity type mappings by EventDefinitionID
-func (s *service) ListByEventDefinitionID(ctx context.Context, eventDefinitionID string) ([]*model.EntityTypeMapping, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return s.entityTypeMappingRepo.ListByResourceID(ctx, tnt, eventDefinitionID, resource.EventDefinition)
+	return s.entityTypeMappingRepo.ListByResourceID(ctx, tnt, resourceID, resourceType)
 }
 
 func (s *service) createEntityTypeMapping(ctx context.Context, entityTypeMapping *model.EntityTypeMapping, resourceType resource.Type) error {

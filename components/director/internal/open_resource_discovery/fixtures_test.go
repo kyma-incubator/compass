@@ -1733,7 +1733,7 @@ func fixEntityTypes() []*model.EntityType {
 	}
 }
 
-func fixEntityTypeMappingInputs(apiID, eventID string) []*model.EntityTypeMappingInput {
+func fixEntityTypeMappingInput(apiID, eventID string) *model.EntityTypeMappingInput {
 	entityTypeMapping := &model.EntityTypeMappingInput{}
 	if apiID != "" {
 		entityTypeMapping.APIModelSelectors = json.RawMessage(apiAPIModelSelectors)
@@ -1742,10 +1742,14 @@ func fixEntityTypeMappingInputs(apiID, eventID string) []*model.EntityTypeMappin
 		entityTypeMapping.APIModelSelectors = json.RawMessage(eventAPIModelSelectors)
 		entityTypeMapping.EntityTypeTargets = json.RawMessage(eventEntityTypeTargets)
 	}
-	return []*model.EntityTypeMappingInput{entityTypeMapping}
+	return entityTypeMapping
 }
 
-func fixEntityTypeMappings(apiID, eventID string) []*model.EntityTypeMapping {
+func fixEntityTypeMappingInputsEmpty() []*model.EntityTypeMappingInput {
+	return []*model.EntityTypeMappingInput{}
+}
+
+func fixEntityTypeMapping(apiID, eventID string) *model.EntityTypeMapping {
 	entityTypeMapping := &model.EntityTypeMapping{
 		BaseEntity: &model.BaseEntity{
 			ID:        entityTypeMappingID,
@@ -1765,7 +1769,15 @@ func fixEntityTypeMappings(apiID, eventID string) []*model.EntityTypeMapping {
 		entityTypeMapping.APIModelSelectors = json.RawMessage(eventAPIModelSelectors)
 		entityTypeMapping.EntityTypeTargets = json.RawMessage(eventEntityTypeTargets)
 	}
-	return []*model.EntityTypeMapping{entityTypeMapping}
+	return entityTypeMapping
+}
+
+func fixEntityTypeMappings(apiID, eventID string) []*model.EntityTypeMapping {
+	return []*model.EntityTypeMapping{fixEntityTypeMapping(apiID, eventID)}
+}
+
+func fixEntityTypeMappingsEmpty() []*model.EntityTypeMapping {
+	return []*model.EntityTypeMapping{}
 }
 
 func fixVersionModel(value string, deprecated bool, deprecatedSince string, forRemoval bool) *model.Version {

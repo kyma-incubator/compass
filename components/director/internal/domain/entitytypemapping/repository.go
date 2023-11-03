@@ -33,8 +33,6 @@ type EntityTypeMappingConverter interface {
 
 type pgRepository struct {
 	conv               EntityTypeMappingConverter
-	existQuerier       repo.ExistQuerier
-	pageableQuerier    repo.PageableQuerier
 	lister             repo.Lister
 	singleGetter       repo.SingleGetter
 	singleGetterGlobal repo.SingleGetterGlobal
@@ -48,8 +46,6 @@ type pgRepository struct {
 func NewRepository(conv EntityTypeMappingConverter) *pgRepository {
 	return &pgRepository{
 		conv:               conv,
-		existQuerier:       repo.NewExistQuerier(entityTypeMappingTable),
-		pageableQuerier:    repo.NewPageableQuerier(entityTypeMappingTable, entityTypeMappingColumns),
 		lister:             repo.NewLister(entityTypeMappingTable, entityTypeMappingColumns),
 		singleGetter:       repo.NewSingleGetter(entityTypeMappingTable, entityTypeMappingColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.EntityTypeMapping, entityTypeMappingTable, entityTypeMappingColumns),

@@ -94,7 +94,7 @@ func TestService_Create(t *testing.T) {
 			svc := entitytypemapping.NewService(entityTypeRepo, idSvc)
 
 			// WHEN
-			result, err := svc.Create(ctx, testCase.InputResourceType, testCase.InputResourceID, testCase.InputEntityTypeMappingInput)
+			result, err := svc.Create(ctx, testCase.InputResourceType, testCase.InputResourceID, &testCase.InputEntityTypeMappingInput)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -281,7 +281,7 @@ func TestService_ListByAPIDefinitionID(t *testing.T) {
 			svc := entitytypemapping.NewService(entityTypeMappingRepo, nil)
 
 			// WHEN
-			entityTypeMappings, err := svc.ListByAPIDefinitionID(ctx, testCase.InputID)
+			entityTypeMappings, err := svc.ListByOwnerResourceID(ctx, testCase.InputID, resource.API)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -336,7 +336,7 @@ func TestService_ListByEventDefinitionID(t *testing.T) {
 			svc := entitytypemapping.NewService(entityTypeMappingRepo, nil)
 
 			// WHEN
-			entityTypeMappings, err := svc.ListByEventDefinitionID(ctx, testCase.InputID)
+			entityTypeMappings, err := svc.ListByOwnerResourceID(ctx, testCase.InputID, resource.EventDefinition)
 
 			// THEN
 			if testCase.ExpectedError != nil {
