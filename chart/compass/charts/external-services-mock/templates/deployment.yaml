@@ -183,12 +183,12 @@ spec:
                 value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
               - name: APP_DESTINATION_TENANT_SUBACCOUNT_LEVEL_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
-              - name: APP_DESTINATION_TENANT_INSTANCE_LEVEL_ENDPOINT
-                value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationsEndpoint }}"
               - name: APP_DESTINATION_CERTIFICATE_TENANT_SUBACCOUNT_LEVEL_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
               - name: APP_DESTINATION_CERTIFICATE_TENANT_INSTANCE_LEVEL_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationCertificatesEndpoint }}"
+              - name: APP_DESTINATION_SERVICE_FIND_API_ENDPOINT
+                value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.findAPIEndpoint }}"
               - name: APP_DESTINATION_SENSITIVE_DATA_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.sensitiveDataEndpoint }}"
               - name: APP_DESTINATION_SUBACCOUNT_CLAIM_KEY

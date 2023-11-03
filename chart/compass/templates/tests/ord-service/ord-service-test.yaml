@@ -141,8 +141,6 @@ spec:
               value: {{ .Values.global.destinationFetcher.request.requestTimeout }}
             - name: APP_ENDPOINT_TENANT_DESTINATIONS
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
-            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATIONS
-              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationsEndpoint }}"
             - name: APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
             - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES

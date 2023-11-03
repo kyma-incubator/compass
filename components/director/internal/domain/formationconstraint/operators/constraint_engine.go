@@ -44,7 +44,7 @@ type destinationService interface {
 
 //go:generate mockery --exported --name=destinationCreatorService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationCreatorService interface {
-	CreateCertificate(ctx context.Context, destinationsDetails []Destination, destinationAuthType destinationcreatorpkg.AuthType, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) (*CertificateData, error)
+	CreateCertificate(ctx context.Context, destinationsDetails []Destination, destinationAuthType destinationcreatorpkg.AuthType, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation, useSelfSignedCert bool) (*CertificateData, error)
 	EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *CertificateData) (json.RawMessage, error)
 	EnrichAssignmentConfigWithSAMLCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *CertificateData) (json.RawMessage, error)
 }
