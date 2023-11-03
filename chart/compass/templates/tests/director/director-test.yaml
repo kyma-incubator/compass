@@ -236,10 +236,10 @@ spec:
               value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
             - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
               value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
+            - name: APP_ENDPOINT_DESTINATIONS_FIND_API
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.findAPIEndpoint }}"
             - name: APP_ENDPOINT_TENANT_DESTINATIONS
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
-            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATIONS
-              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationsEndpoint }}"
             - name: APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
             - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES
@@ -558,10 +558,10 @@ spec:
               value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
             - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
               value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
+            - name: APP_ENDPOINT_DESTINATIONS_FIND_API
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.findAPIEndpoint }}"
             - name: APP_ENDPOINT_TENANT_DESTINATIONS
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
-            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATIONS
-              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationsEndpoint }}"
             - name: APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
             - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES
@@ -880,10 +880,10 @@ spec:
               value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
             - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
               value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
+            - name: APP_ENDPOINT_DESTINATIONS_FIND_API
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.findAPIEndpoint }}"
             - name: APP_ENDPOINT_TENANT_DESTINATIONS
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
-            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATIONS
-              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationsEndpoint }}"
             - name: APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
             - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES
@@ -1202,10 +1202,10 @@ spec:
               value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
             - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
               value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
+            - name: APP_ENDPOINT_DESTINATIONS_FIND_API
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.findAPIEndpoint }}"
             - name: APP_ENDPOINT_TENANT_DESTINATIONS
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
-            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATIONS
-              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationsEndpoint }}"
             - name: APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
             - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES
@@ -1524,10 +1524,10 @@ spec:
               value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
             - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
               value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
+            - name: APP_ENDPOINT_DESTINATIONS_FIND_API
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.findAPIEndpoint }}"
             - name: APP_ENDPOINT_TENANT_DESTINATIONS
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
-            - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATIONS
-              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationsEndpoint }}"
             - name: APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
             - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES

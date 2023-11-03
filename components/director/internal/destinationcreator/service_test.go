@@ -1394,6 +1394,7 @@ func Test_CreateCertificate(t *testing.T) {
 		httpClient          func() *automock.HttpClient
 		labelRepoFn         func() *automock.LabelRepository
 		tenantRepoFn        func() *automock.TenantRepository
+		useSelfSignedCert   bool
 		expectedResult      *operators.CertificateData
 		expectedErrMessage  string
 	}{
@@ -1417,6 +1418,33 @@ func Test_CreateCertificate(t *testing.T) {
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
 				return tenantRepo
 			},
+			expectedResult: &operators.CertificateData{
+				FileName:         certificateFileNameValue,
+				CommonName:       certificateCommonNameValue,
+				CertificateChain: certificateChainValue,
+			},
+		},
+		{
+			name:                "Success when selfSignedCert is true",
+			destinationsDetails: samlAssertionDestsDetails,
+			destinationAuthType: destinationcreatorpkg.AuthTypeSAMLAssertion,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(fixHTTPResponse(http.StatusCreated, string(certRespBytes)), nil).Once()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			useSelfSignedCert: true,
 			expectedResult: &operators.CertificateData{
 				FileName:         certificateFileNameValue,
 				CommonName:       certificateCommonNameValue,
@@ -1675,7 +1703,7 @@ func Test_CreateCertificate(t *testing.T) {
 
 			svc := destinationcreator.NewService(httpClient, destConfig, nil, nil, nil, labelRepo, tenantRepo)
 
-			result, err := svc.CreateCertificate(emptyCtx, testCase.destinationsDetails, testCase.destinationAuthType, testCase.formationAssignment, 0, false)
+			result, err := svc.CreateCertificate(emptyCtx, testCase.destinationsDetails, testCase.destinationAuthType, testCase.formationAssignment, 0, false, testCase.useSelfSignedCert)
 			if testCase.expectedErrMessage != "" {
 				require.Empty(t, result)
 				require.Error(t, err)

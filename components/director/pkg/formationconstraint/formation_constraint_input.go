@@ -45,6 +45,7 @@ type DestinationCreatorInput struct {
 	JoinPointDetailsReverseFAMemoryAddress uintptr                  `json:"details_reverse_formation_assignment_memory_address"` // contains the memory address of the join point details' reverse formation assignment in form of an integer
 	Location                               JoinPointLocation        `json:"join_point_location"`
 	SkipSubaccountValidation               bool                     `json:"skip_subaccount_validation"`
+	UseCertSvcKeystoreForSAML              bool                     `json:"use_cert_svc_keystore_for_saml"`
 }
 
 // ConfigMutatorInput input for ConfigMutator operator
