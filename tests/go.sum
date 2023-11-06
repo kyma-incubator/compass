@@ -9,8 +9,6 @@ github.com/Masterminds/semver/v3 v3.2.0 h1:3MEsd0SM6jqZojhjLWWeBY+Kcjy9i6MQAeY7Y
 github.com/Masterminds/semver/v3 v3.2.0/go.mod h1:qvl/7zhW3nngYb5+80sSMF+FG2BjYrf8m9wsX0PNOMQ=
 github.com/Masterminds/sprig/v3 v3.2.3 h1:eL2fZNezLomi0uOLqjQoN6BfsDD+fyLtgbJMAj9n6YA=
 github.com/Masterminds/sprig/v3 v3.2.3/go.mod h1:rXcFaZ2zZbLRJv/xSysmlgIM1u11eBaRMhvYXJNkGuM=
-github.com/PuerkitoBio/purell v1.1.1/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
-github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=
 github.com/agnivade/levenshtein v1.0.3/go.mod h1:4SFRZbbXWLF4MU1T9Qg0pGgH3Pjs+t6ie5efyrwRJXs=
 github.com/agnivade/levenshtein v1.1.1 h1:QY8M92nrzkmr798gCo3kmMyqXFzdQVpxLlGPRBij0P8=
@@ -134,14 +132,10 @@ github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-2023101
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20231017062655-ff258cdc2e36/go.mod h1:8IlbNb12LtSQXpXQGweb66RHX+p0GmdZmRdvdnXzy54=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20231017062655-ff258cdc2e36 h1:spA1MeQcIT+qH41LFneZFmVnsGTdZr2ivW1ZUO9m35I=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20231017062655-ff258cdc2e36/go.mod h1:47kLUWcWfsljUrQK2DAXApTSj8avBCJoMMFbnIqdDIA=
-github.com/kyma-incubator/compass/components/director v0.0.0-20231030085146-0ea1613a0ad5 h1:eKv+WJ+XS2fHuzlGXfo5uwpq8mdyT1DL8LxQjiirp+I=
-github.com/kyma-incubator/compass/components/director v0.0.0-20231030085146-0ea1613a0ad5/go.mod h1:byH9lgW64t8VKsNqNyXp1HTq28sYsNvv45f/mlgnTeE=
 github.com/kyma-incubator/compass/components/director v0.0.0-20231103110302-3dedf920eace h1:DZ7mtqxOtPl73Z5T/F5UdLXTlb/PkL4QiPIui3+jnqE=
 github.com/kyma-incubator/compass/components/director v0.0.0-20231103110302-3dedf920eace/go.mod h1:byH9lgW64t8VKsNqNyXp1HTq28sYsNvv45f/mlgnTeE=
-github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231017062655-ff258cdc2e36 h1:VBSCqdWKkQGv+1GgQj/DRuHB4eVcC361i4pYisdFv9s=
-github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231017062655-ff258cdc2e36/go.mod h1:LZ1tUJmgc/o9z1XlvlsmzaX9IL1XKUW7OnkUUJ16JN0=
-github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231102153640-94e42d2e1f5a h1:KipWREySK53juUtQ6xGBxT6XDf6ypgLGZ15tfQeGMMY=
-github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231102153640-94e42d2e1f5a/go.mod h1:WIr+VCBxctIk69I4Ro0rwAnrMLKlnCIhPzAxMcNgIVU=
+github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231103165130-94c729c505f4 h1:qGHFDnDmJGWPMLpVsoe3SGbWuN1q7hpEfoy0zN4pWic=
+github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231103165130-94c729c505f4/go.mod h1:WIr+VCBxctIk69I4Ro0rwAnrMLKlnCIhPzAxMcNgIVU=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20231017062655-ff258cdc2e36 h1:DcX9EKFl7h92cLCFQDJyS0D7rGfeTcAuNirPwlLRJMA=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20231017062655-ff258cdc2e36/go.mod h1:xjrh1umg5m3L+2hV/RpqXs9jDalS/PiMd51xze3+a+Q=
 github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231017062655-ff258cdc2e36 h1:P0F4mBks0sRUDoTz7viXKd0ybfijqyC3T2cw1s+pbA4=
@@ -223,7 +217,6 @@ github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An
 github.com/stoewer/go-strcase v1.2.0/go.mod h1:IBiWB2sKIp3wVVQ3Y035++gc+knqhUQag1KpM8ahLw8=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.5.0 h1:1zr/of2m5FGMsad5YfcqgdqdWrIhu+EBEJRhR1U7z/c=
-github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=
 github.com/stretchr/testify v1.2.1/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=

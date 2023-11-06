@@ -149,10 +149,12 @@ spec:
                 value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
               - name: APP_TENANT_CONFIG_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_ID
                 value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderIdValue | quote }}
-              - name: APP_TENANT_CONFIG_TEST_CONSUMER_ACCOUNT_ID
-                value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
+              - name: APP_TENANT_CONFIG_TEST_PROVIDER_ACCOUNT_ID
+                value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
               - name: APP_TENANT_CONFIG_TEST_PROVIDER_SUBACCOUNT_ID
                 value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
+              - name: APP_TENANT_CONFIG_TEST_CONSUMER_ACCOUNT_ID
+                value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_SUBACCOUNT_ID
                 value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_TENANT_ID
