@@ -22,6 +22,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 )
 
 func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
@@ -491,10 +492,10 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 	t.Run("Asynchronous App to App Formation Assignment Notifications using the Default Tenant Mapping Handler", func(t *testing.T) {
 		webhookType := graphql.WebhookTypeApplicationTenantMapping
 		webhookMode := graphql.WebhookModeAsyncCallback
-		urlTemplateAsync := "{\\\"path\\\":\\\"" + conf.DirectorExternalCertURL + "/default-tenant-mapping-handler/v1/tenantMappings/{{.TargetApplication.ID}}\\\",\\\"method\\\":\\\"PATCH\\\"}"
+		urlTemplateAsync := "{\\\"path\\\":\\\"" + conf.CompassExternalMTLSGatewayURL + "/default-tenant-mapping-handler/v1/tenantMappings/{{.TargetApplication.ID}}\\\",\\\"method\\\":\\\"PATCH\\\"}"
 		inputTemplate := "" // since the Default Tenant Mapping Handler does not take into account the request body because it always returns READY, there is no need to set an InputTemplate to the Webhook
 		outputTemplate := "{\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
-		headerTemplate := "{\\\"Content-Type\\\": [\\\"application/json\\\"], \\\"Location\\\":[\\\"" + conf.DirectorExternalCertURL + "/v1/businessIntegrations/{{.FormationID}}/assignments/{{.Assignment.ID}}/status\\\"]}"
+		headerTemplate := "{\\\"Content-Type\\\": [\\\"application/json\\\"], \\\"Location\\\":[\\\"" + conf.CompassExternalMTLSGatewayURL + "/v1/businessIntegrations/{{.FormationID}}/assignments/{{.Assignment.ID}}/status\\\"]}"
 
 		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplateAsync, inputTemplate, outputTemplate)
 		applicationWebhookInput.HeaderTemplate = &headerTemplate
@@ -2242,7 +2243,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		}
 		output := formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationInput{}
 		unquoted := strings.ReplaceAll(originalInput.InputTemplate, "\\", "")
-		err = formationconstraintpkg.ParseInputTemplate(unquoted, struct {
+		err = templatehelper.ParseTemplate(&unquoted, struct {
 			SourceApplication *struct {
 				ID string `json:"id"`
 			} `json:"source_application"`

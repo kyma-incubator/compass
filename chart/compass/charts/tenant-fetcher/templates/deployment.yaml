@@ -227,6 +227,8 @@ spec:
               value: {{ $config.api.fieldMapping.discriminatorValue }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_DETAILS
               value: {{ $config.api.fieldMapping.detailsField }}
+            - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_LABELS
+              value: {{ $config.api.fieldMapping.labelsField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_GLOBAL_ACCOUNT_KEY
               value: {{ default "gaID" $config.api.fieldMapping.globalAccountID }}
             - name: APP_{{ $tenantFetcherJobName }}_TENANT_TOTAL_PAGES_FIELD
@@ -286,6 +288,8 @@ spec:
               value: {{ $config.regionalConfig.fieldMapping.discriminatorValue }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_DETAILS
               value: {{ $config.regionalConfig.fieldMapping.detailsField }}
+            - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_LABELS
+              value: {{ $config.regionalConfig.fieldMapping.labelsField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_GLOBAL_ACCOUNT_KEY
               value: {{ default "gaID" $config.regionalConfig.fieldMapping.globalAccountID }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_TENANT_TOTAL_PAGES_FIELD

@@ -79,6 +79,8 @@ spec:
                     key: password
               - name: APP_DEFAULT_TENANT
                 value: "{{ (index .Values.global.tenants 9).id }}"
+              - name: APP_DEFAULT_CUSTOMER_TENANT
+                value: "{{ (index .Values.global.tenants 10).id }}"
               - name: APP_TRUSTED_TENANT
                 value: "{{ (index .Values.global.tenants 26).id }}"
               - name: APP_ON_DEMAND_TENANT
@@ -147,10 +149,12 @@ spec:
                 value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
               - name: APP_TENANT_CONFIG_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_ID
                 value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderIdValue | quote }}
-              - name: APP_TENANT_CONFIG_TEST_CONSUMER_ACCOUNT_ID
-                value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
+              - name: APP_TENANT_CONFIG_TEST_PROVIDER_ACCOUNT_ID
+                value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
               - name: APP_TENANT_CONFIG_TEST_PROVIDER_SUBACCOUNT_ID
                 value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
+              - name: APP_TENANT_CONFIG_TEST_CONSUMER_ACCOUNT_ID
+                value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_SUBACCOUNT_ID
                 value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_TENANT_ID
@@ -179,12 +183,12 @@ spec:
                 value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
               - name: APP_DESTINATION_TENANT_SUBACCOUNT_LEVEL_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
-              - name: APP_DESTINATION_TENANT_INSTANCE_LEVEL_ENDPOINT
-                value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationsEndpoint }}"
               - name: APP_DESTINATION_CERTIFICATE_TENANT_SUBACCOUNT_LEVEL_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
               - name: APP_DESTINATION_CERTIFICATE_TENANT_INSTANCE_LEVEL_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationCertificatesEndpoint }}"
+              - name: APP_DESTINATION_SERVICE_FIND_API_ENDPOINT
+                value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.findAPIEndpoint }}"
               - name: APP_DESTINATION_SENSITIVE_DATA_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.sensitiveDataEndpoint }}"
               - name: APP_DESTINATION_SUBACCOUNT_CLAIM_KEY
