@@ -19,8 +19,8 @@ const (
 	invalidOpenResourceDiscovery               = "invalidOpenResourceDiscovery"
 	invalidURL                                 = "invalidURL"
 	invalidOrdID                               = "invalidOrdId"
-	validOrdIDWithVersion         = "sap.xref:package:SomePackage:v1"
-	validOrdIDNoVersion           = "sap.xref:package:SomePackage:"
+	validOrdIDWithVersion                      = "sap.xref:package:SomePackage:v1"
+	validOrdIDNoVersion                        = "sap.xref:package:SomePackage:"
 	invalidPartOfPackageLength                 = 256 // max allowed: 255
 	invalidShortDescriptionLength              = 257 // max allowed: 256
 	invalidShortDescriptionLengthSapCorePolicy = 181 // max allowed: 180

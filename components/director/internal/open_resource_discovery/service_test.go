@@ -1197,7 +1197,7 @@ func TestService_Processing(t *testing.T) {
 				return entityTypeProcessor
 			},
 			capabilitySvcFn:            successfulCapabilityUpdateForStaticDoc,
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			integrationDependencySvcFn: successfulIntegrationDependencyFetchForAppTemplateVersion,
 			integrationDependencyProcessorFn: func() *automock.IntegrationDependencyProcessor {
 				integrationDependencyProcessor := &automock.IntegrationDependencyProcessor{}
@@ -1247,7 +1247,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), fixResourceHashesForDocument(fixORDDocument())).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityUpdate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -1338,7 +1338,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), fixResourceHashesForDocument(fixORDDocument())).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcCreateNewForAPI1AndUpdateExistingForEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcCreateNewForAPI1AndUpdateExistingForEvent1,
 			capabilitySvcFn:                  successfulCapabilityCreate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -1371,6 +1371,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDocForProxy.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcCreateNewForAPI1AndUpdateExistingForEvent1,
 			capabilitySvcFn:            successfulCapabilityCreateForProxy,
 			integrationDependencySvcFn: successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: func() *automock.IntegrationDependencyProcessor {
@@ -1378,8 +1379,6 @@ func TestService_Processing(t *testing.T) {
 				integrationDependencyProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDocForProxy.IntegrationDependencies, mock.Anything).Return(fixIntegrationDependencies(), nil).Once()
 				return integrationDependencyProcessor
 			},
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcCreateNewForAPI1AndUpdateExistingForEvent1,
-			capabilitySvcFn:         successfulCapabilityCreateForProxy,
 			specSvcFn:               successfulSpecCreateAndUpdateForProxy,
 			fetchReqFn:              successfulFetchRequestFetchAndUpdateForProxy,
 			packageSvcFn:            successfulPackageCreateForProxy,
@@ -1697,7 +1696,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityUpdate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -1742,7 +1741,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcCreateNewForAPI1AndUpdateExistingForEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcCreateNewForAPI1AndUpdateExistingForEvent1,
 			capabilitySvcFn:                  successfulCapabilityCreate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -1781,7 +1780,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcCreateNewForAPI1AndUpdateExistingForEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcCreateNewForAPI1AndUpdateExistingForEvent1,
 			capabilitySvcFn:                  successfulCapabilityCreate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -2142,7 +2141,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			capabilitySvcFn:                  successfulCapabilityUpdate,
@@ -2375,7 +2374,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcCreateNewForAPI1AndUpdateExistingForEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcCreateNewForAPI1AndUpdateExistingForEvent1,
 			capabilitySvcFn:            successfulCapabilityCreate,
 			integrationDependencySvcFn: successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: func() *automock.IntegrationDependencyProcessor {
@@ -2385,10 +2384,10 @@ func TestService_Processing(t *testing.T) {
 				integrationDependencyProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.IntegrationDependencies, fixResourceHashesForDocument(doc)).Return(fixIntegrationDependencies(), nil).Once()
 				return integrationDependencyProcessor
 			},
-			specSvcFn:              successfulSpecCreateAndUpdate,
-			fetchReqFn:             successfulFetchRequestFetchAndUpdate,
-			packageSvcFn:           successfulPackageCreate,
-			productSvcFn:           successfulProductCreate,
+			specSvcFn:    successfulSpecCreateAndUpdate,
+			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
+			packageSvcFn: successfulPackageCreate,
+			productSvcFn: successfulProductCreate,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -2434,7 +2433,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcCreateNewForAPI1AndUpdateExistingForEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcCreateNewForAPI1AndUpdateExistingForEvent1,
 			capabilitySvcFn:            successfulCapabilityCreate,
 			integrationDependencySvcFn: successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: func() *automock.IntegrationDependencyProcessor {
@@ -2494,7 +2493,7 @@ func TestService_Processing(t *testing.T) {
 				return eventSvc
 			},
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcCreateNewForAPI1AndUpdateExistingForEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcCreateNewForAPI1AndUpdateExistingForEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			fetchReqFn:                 successfulFetchRequestFetchAndUpdate,
@@ -3424,7 +3423,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulCapabilityCreate,
 			integrationDependencySvcFn: successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: func() *automock.IntegrationDependencyProcessor {
@@ -3493,7 +3492,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulCapabilityCreate,
 			integrationDependencySvcFn: successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: func() *automock.IntegrationDependencyProcessor {
@@ -3566,7 +3565,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulCapabilityCreate,
 			integrationDependencySvcFn: successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: func() *automock.IntegrationDependencyProcessor {
@@ -3720,7 +3719,7 @@ func TestService_Processing(t *testing.T) {
 			clientFn:                   successfulClientFetch,
 			eventSvcFn:                 successfulEmptyEventList,
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
@@ -3763,7 +3762,7 @@ func TestService_Processing(t *testing.T) {
 			},
 			eventSvcFn:                 successfulEmptyEventList,
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
@@ -3802,7 +3801,7 @@ func TestService_Processing(t *testing.T) {
 			},
 			eventSvcFn:                 successfulEmptyEventList,
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
@@ -3885,7 +3884,7 @@ func TestService_Processing(t *testing.T) {
 			clientFn:                   successfulClientFetch,
 			eventSvcFn:                 successfulEmptyEventList,
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
@@ -3930,7 +3929,7 @@ func TestService_Processing(t *testing.T) {
 			clientFn:                   successfulClientFetch,
 			eventSvcFn:                 successfulEmptyEventList,
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
@@ -3971,7 +3970,7 @@ func TestService_Processing(t *testing.T) {
 			},
 			eventSvcFn:                 successfulEmptyEventList,
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
@@ -4016,7 +4015,7 @@ func TestService_Processing(t *testing.T) {
 			},
 			eventSvcFn:                 successfulEmptyEventList,
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
@@ -4169,7 +4168,7 @@ func TestService_Processing(t *testing.T) {
 				return eventSvc
 			},
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
@@ -4228,7 +4227,7 @@ func TestService_Processing(t *testing.T) {
 				return eventSvc
 			},
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
@@ -4276,7 +4275,7 @@ func TestService_Processing(t *testing.T) {
 				return eventSvc
 			},
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
@@ -4316,7 +4315,7 @@ func TestService_Processing(t *testing.T) {
 				return eventSvc
 			},
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
@@ -4355,7 +4354,7 @@ func TestService_Processing(t *testing.T) {
 				return eventSvc
 			},
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			specSvcFn: func() *automock.SpecService {
@@ -4438,7 +4437,7 @@ func TestService_Processing(t *testing.T) {
 				return eventSvc
 			},
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
@@ -4493,7 +4492,7 @@ func TestService_Processing(t *testing.T) {
 				return eventSvc
 			},
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
@@ -4545,7 +4544,7 @@ func TestService_Processing(t *testing.T) {
 				return eventSvc
 			},
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
@@ -4598,7 +4597,7 @@ func TestService_Processing(t *testing.T) {
 				return eventSvc
 			},
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
@@ -4691,7 +4690,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityUpdate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -5374,7 +5373,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityUpdate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -5424,7 +5423,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityCreate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -5464,7 +5463,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityCreate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -5535,7 +5534,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityCreate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -5775,7 +5774,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityCreate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -5838,7 +5837,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityCreate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -5907,7 +5906,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityCreate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -5966,7 +5965,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn:  successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityCreate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -6012,7 +6011,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityCreate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -6088,7 +6087,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityCreate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -6168,7 +6167,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityCreate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -6255,7 +6254,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityCreate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -6304,7 +6303,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityUpdate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,

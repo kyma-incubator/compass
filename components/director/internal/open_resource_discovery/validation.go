@@ -1722,7 +1722,7 @@ func validateEntityTypeTarget(value interface{}) error {
 		validation.Field(&entityTypeTarget.OrdID,
 			validation.When(entityTypeTarget.CorrelationID != nil, validation.Nil),
 			validation.When(entityTypeTarget.CorrelationID == nil, validation.Required),
-			validation.Length(MinORDIDLength, MaxORDIDLength),
+			validation.Length(MinOrdIDLength, MaxOrdIDLength),
 			validation.Match(regexp.MustCompile(EntityTypeOrdIDRegex)),
 		),
 		validation.Field(&entityTypeTarget.CorrelationID,
