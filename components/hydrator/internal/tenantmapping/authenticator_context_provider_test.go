@@ -49,7 +49,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 	prefixedScopes := []interface{}{scopePrefix + "application:read", scopePrefix + "application:write"}
 	userObjCtxType := "Static User"
 
-	jwtAuthDetails := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, ScopePrefix: scopePrefix}
+	jwtAuthDetails := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, ScopePrefixes: []string{scopePrefix}}
 
 	t.Run("returns tenant and scopes that are defined in the Extra map of ReqData", func(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
@@ -80,15 +80,88 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		authn := &authenticator.Config{
 			TrustedIssuers: []authenticator.TrustedIssuer{{
-				ScopePrefix: scopePrefix,
+				ScopePrefixes: []string{scopePrefix},
 			}},
 			Attributes: authenticator.Attributes{
 				UniqueAttribute: authenticator.Attribute{
 					Key:   uniqueAttributeKey,
 					Value: uniqueAttributeValue,
 				},
-				TenantAttribute: authenticator.Attribute{
-					Key: tenantAttributeKey,
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key: tenantAttributeKey,
+					},
+				},
+				ClientID: authenticator.Attribute{
+					Key: clientIDAttributeKey,
+				},
+			},
+		}
+
+		userAuthDetailsWithAuthenticator := jwtAuthDetails
+		userAuthDetailsWithAuthenticator.Authenticator = authn
+
+		provider := tenantmapping.NewAuthenticatorContextProvider(directorClient, []authenticator.Config{*authn})
+
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
+
+		require.NoError(t, err)
+		require.Equal(t, expectedTenantID.String(), objCtx.Tenant.InternalID)
+		require.Equal(t, clientID, objCtx.OauthClientID)
+		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
+		require.Equal(t, username, objCtx.ConsumerID)
+		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
+	})
+
+	t.Run("returns tenant and scopes when there are multiple tenant attributes", func(t *testing.T) {
+		uniqueAttributeKey := "extra.unique"
+		uniqueAttributeValue := "value"
+		tenantAttributeKey := "tenant"
+		tenantAttributeKey2 := "secondTenant"
+		clientIDAttributeKey := "clientid"
+		clientID := "client_id"
+		expectedExternalTenantID2 := uuid.New()
+
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					tenantAttributeKey:   expectedExternalTenantID.String(),
+					tenantAttributeKey2:  expectedExternalTenantID2.String(),
+					clientIDAttributeKey: clientID,
+					oathkeeper.ScopesKey: prefixedScopes,
+					"extra": map[string]interface{}{
+						"unique": uniqueAttributeValue,
+					},
+				},
+			},
+		}
+
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID2.String(),
+			InternalID: expectedTenantID.String(),
+		}
+
+		directorClient := &automock.Client{}
+		directorClient.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID2.String()).Return(testTenant, nil).Once()
+
+		authn := &authenticator.Config{
+			TrustedIssuers: []authenticator.TrustedIssuer{{
+				ScopePrefixes: []string{scopePrefix},
+			}},
+			Attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key:   uniqueAttributeKey,
+					Value: uniqueAttributeValue,
+				},
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key:      tenantAttributeKey,
+						Priority: 2,
+					},
+					{
+						Key:      tenantAttributeKey2,
+						Priority: 1,
+					},
 				},
 				ClientID: authenticator.Attribute{
 					Key: clientIDAttributeKey,
@@ -136,15 +209,17 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		authn := &authenticator.Config{
 			TrustedIssuers: []authenticator.TrustedIssuer{{
-				ScopePrefix: scopePrefix,
+				ScopePrefixes: []string{scopePrefix},
 			}},
 			Attributes: authenticator.Attributes{
 				UniqueAttribute: authenticator.Attribute{
 					Key:   uniqueAttributeKey,
 					Value: uniqueAttributeValue,
 				},
-				TenantAttribute: authenticator.Attribute{
-					Key: tenantAttributeKey,
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key: tenantAttributeKey,
+					},
 				},
 			},
 		}
@@ -189,15 +264,17 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		authn := &authenticator.Config{
 			TrustedIssuers: []authenticator.TrustedIssuer{{
-				ScopePrefix: scopePrefix,
+				ScopePrefixes: []string{scopePrefix},
 			}},
 			Attributes: authenticator.Attributes{
 				UniqueAttribute: authenticator.Attribute{
 					Key:   uniqueAttributeKey,
 					Value: uniqueAttributeValue,
 				},
-				TenantAttribute: authenticator.Attribute{
-					Key: tenantAttributeKey,
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key: tenantAttributeKey,
+					},
 				},
 			},
 		}
@@ -239,15 +316,17 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		authn := &authenticator.Config{
 			TrustedIssuers: []authenticator.TrustedIssuer{{
-				ScopePrefix: scopePrefix,
+				ScopePrefixes: []string{scopePrefix},
 			}},
 			Attributes: authenticator.Attributes{
 				UniqueAttribute: authenticator.Attribute{
 					Key:   uniqueAttributeKey,
 					Value: uniqueAttributeValue,
 				},
-				TenantAttribute: authenticator.Attribute{
-					Key: tenantAttributeKey,
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key: tenantAttributeKey,
+					},
 				},
 			},
 		}
@@ -292,15 +371,17 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		authn := &authenticator.Config{
 			TrustedIssuers: []authenticator.TrustedIssuer{{
-				ScopePrefix: scopePrefix,
+				ScopePrefixes: []string{scopePrefix},
 			}},
 			Attributes: authenticator.Attributes{
 				UniqueAttribute: authenticator.Attribute{
 					Key:   uniqueAttributeKey,
 					Value: uniqueAttributeValue,
 				},
-				TenantAttribute: authenticator.Attribute{
-					Key: tenantAttributeKey,
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key: tenantAttributeKey,
+					},
 				},
 			},
 		}
@@ -341,15 +422,17 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		authn := &authenticator.Config{
 			Name: "test-authenticator",
 			TrustedIssuers: []authenticator.TrustedIssuer{{
-				ScopePrefix: scopePrefix,
+				ScopePrefixes: []string{scopePrefix},
 			}},
 			Attributes: authenticator.Attributes{
 				UniqueAttribute: authenticator.Attribute{
 					Key:   uniqueAttributeKey,
 					Value: uniqueAttributeValue,
 				},
-				TenantAttribute: authenticator.Attribute{
-					Key: tenantAttributeKey,
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key: tenantAttributeKey,
+					},
 				},
 			},
 		}
@@ -361,7 +444,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
-		require.EqualError(t, err, fmt.Sprintf("tenant attribute %q missing from %s authenticator token", tenantAttributeKey, authn.Name))
+		require.EqualError(t, err, fmt.Sprintf("missing tenant attribute from: %q authenticator token", authn.Name))
 	})
 
 	t.Run("returns error when external tenant id that is defined in the Extra map of ReqData cannot be resolved", func(t *testing.T) {
@@ -387,15 +470,17 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		authn := &authenticator.Config{
 			TrustedIssuers: []authenticator.TrustedIssuer{{
-				ScopePrefix: scopePrefix,
+				ScopePrefixes: []string{scopePrefix},
 			}},
 			Attributes: authenticator.Attributes{
 				UniqueAttribute: authenticator.Attribute{
 					Key:   uniqueAttributeKey,
 					Value: uniqueAttributeValue,
 				},
-				TenantAttribute: authenticator.Attribute{
-					Key: tenantAttributeKey,
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key: tenantAttributeKey,
+					},
 				},
 			},
 		}
@@ -419,18 +504,19 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 		username             string
 		region               string
 		authenticatorName    string
-		scopePrefix          string
+		scopePrefixes        []string
 		domainURL            string
 		reqData              oathkeeper.ReqData
 		authn                []authenticator.Config
 	)
+
 	setup := func() {
 		uniqueAttributeKey = "uniqueAttribute"
 		uniqueAttributeValue = "uniqueAttributeValue"
 		identityAttributeKey = "identity"
 		authenticatorName = "auth1"
 		region = "region"
-		scopePrefix = "prefix"
+		scopePrefixes = []string{"prefix"}
 		domainURL = "domain.com"
 		username = "some-username"
 		reqData = oathkeeper.ReqData{
@@ -451,9 +537,9 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 				Name: authenticatorName,
 				TrustedIssuers: []authenticator.TrustedIssuer{
 					{
-						DomainURL:   domainURL,
-						ScopePrefix: scopePrefix,
-						Region:      region,
+						DomainURL:     domainURL,
+						ScopePrefixes: scopePrefixes,
+						Region:        region,
 					},
 				},
 				Attributes: authenticator.Attributes{
@@ -478,7 +564,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
 		require.Equal(t, username, authDetails.AuthID)
-		require.Equal(t, scopePrefix, authDetails.ScopePrefix)
+		require.Equal(t, scopePrefixes, authDetails.ScopePrefixes)
 		require.Equal(t, region, authDetails.Region)
 	})
 
@@ -493,8 +579,8 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 				Name: authenticatorName,
 				TrustedIssuers: []authenticator.TrustedIssuer{
 					{
-						DomainURL:   domainURL,
-						ScopePrefix: scopePrefix,
+						DomainURL:     domainURL,
+						ScopePrefixes: scopePrefixes,
 					},
 				},
 				Attributes: authenticator.Attributes{
@@ -515,7 +601,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
 		require.Equal(t, username, authDetails.AuthID)
-		require.Equal(t, scopePrefix, authDetails.ScopePrefix)
+		require.Equal(t, scopePrefixes, authDetails.ScopePrefixes)
 	})
 
 	t.Run("returns ID string and JWTAuthFlow when authenticator identity and also default username attribute is specified in the Extra map of request body", func(t *testing.T) {
@@ -531,7 +617,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
 		require.Equal(t, identityUsername, authDetails.AuthID)
-		require.Equal(t, scopePrefix, authDetails.ScopePrefix)
+		require.Equal(t, scopePrefixes, authDetails.ScopePrefixes)
 	})
 
 	t.Run("returns nil when does not match", func(t *testing.T) {
