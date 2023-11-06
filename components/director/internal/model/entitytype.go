@@ -32,6 +32,7 @@ type EntityType struct {
 	CustomPolicyLevel            *string
 	ReleaseStatus                string
 	SunsetDate                   *string
+	DeprecationDate              *string
 	Successors                   json.RawMessage
 	Extensible                   json.RawMessage
 	Tags                         json.RawMessage
@@ -77,6 +78,7 @@ type EntityTypeInput struct {
 	CustomPolicyLevel   *string         `json:"customPolicyLevel,omitempty"`
 	ReleaseStatus       string          `json:"releaseStatus"`
 	SunsetDate          *string         `json:"sunsetDate,omitempty"`
+	DeprecationDate     *string         `json:"deprecationDate,omitempty"`
 	Successors          json.RawMessage `json:"successors,omitempty"`
 	Extensible          json.RawMessage `json:"extensible,omitempty"`
 	Tags                json.RawMessage `json:"tags,omitempty"`
@@ -120,6 +122,7 @@ func (i *EntityTypeInput) ToEntityType(id string, resourceType resource.Type, re
 		CustomPolicyLevel:   i.CustomPolicyLevel,
 		ReleaseStatus:       i.ReleaseStatus,
 		SunsetDate:          i.SunsetDate,
+		DeprecationDate:     i.DeprecationDate,
 		Successors:          i.Successors,
 		Extensible:          i.Extensible,
 		Tags:                i.Tags,
@@ -162,6 +165,7 @@ func (entityType *EntityType) SetFromUpdateInput(update EntityTypeInput, entityT
 	entityType.CustomPolicyLevel = update.CustomPolicyLevel
 	entityType.ReleaseStatus = update.ReleaseStatus
 	entityType.SunsetDate = update.SunsetDate
+	entityType.DeprecationDate = update.DeprecationDate
 	entityType.Successors = update.Successors
 	entityType.Extensible = update.Extensible
 	entityType.Tags = update.Tags

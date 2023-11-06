@@ -31,6 +31,7 @@ type Entity struct {
 	CustomPolicyLevel            sql.NullString `db:"custom_policy_level"`
 	ReleaseStatus                string         `db:"release_status"`
 	SunsetDate                   sql.NullString `db:"sunset_date"`
+	DeprecationDate              sql.NullString `db:"deprecation_date"`
 	Successors                   sql.NullString `db:"successors"`
 	Extensible                   sql.NullString `db:"extensible"`
 	Tags                         sql.NullString `db:"tags"`

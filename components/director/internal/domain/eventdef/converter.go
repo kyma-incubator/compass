@@ -152,6 +152,7 @@ func (c *converter) FromEntity(entity *Entity) *model.EventDefinition {
 		Tags:                                    repo.JSONRawMessageFromNullableString(entity.Tags),
 		Countries:                               repo.JSONRawMessageFromNullableString(entity.Countries),
 		Links:                                   repo.JSONRawMessageFromNullableString(entity.Links),
+		EventResourceLinks:                      repo.JSONRawMessageFromNullableString(entity.EventResourceLinks),
 		ReleaseStatus:                           repo.StringPtrFromNullableString(entity.ReleaseStatus),
 		SunsetDate:                              repo.StringPtrFromNullableString(entity.SunsetDate),
 		Successors:                              repo.JSONRawMessageFromNullableString(entity.Successors),
@@ -171,6 +172,7 @@ func (c *converter) FromEntity(entity *Entity) *model.EventDefinition {
 		DocumentationLabels:                     repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 		CorrelationIDs:                          repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
 		LastUpdate:                              repo.StringPtrFromNullableString(entity.LastUpdate),
+		DeprecationDate:                         repo.StringPtrFromNullableString(entity.DeprecationDate),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -205,6 +207,7 @@ func (c *converter) ToEntity(eventModel *model.EventDefinition) *Entity {
 		Tags:                                    repo.NewNullableStringFromJSONRawMessage(eventModel.Tags),
 		Countries:                               repo.NewNullableStringFromJSONRawMessage(eventModel.Countries),
 		Links:                                   repo.NewNullableStringFromJSONRawMessage(eventModel.Links),
+		EventResourceLinks:                      repo.NewNullableStringFromJSONRawMessage(eventModel.EventResourceLinks),
 		ReleaseStatus:                           repo.NewNullableString(eventModel.ReleaseStatus),
 		SunsetDate:                              repo.NewNullableString(eventModel.SunsetDate),
 		Successors:                              repo.NewNullableStringFromJSONRawMessage(eventModel.Successors),
@@ -224,6 +227,7 @@ func (c *converter) ToEntity(eventModel *model.EventDefinition) *Entity {
 		DocumentationLabels:                     repo.NewNullableStringFromJSONRawMessage(eventModel.DocumentationLabels),
 		CorrelationIDs:                          repo.NewNullableStringFromJSONRawMessage(eventModel.CorrelationIDs),
 		LastUpdate:                              repo.NewNullableString(eventModel.LastUpdate),
+		DeprecationDate:                         repo.NewNullableString(eventModel.DeprecationDate),
 		BaseEntity: &repo.BaseEntity{
 			ID:        eventModel.ID,
 			Ready:     eventModel.Ready,

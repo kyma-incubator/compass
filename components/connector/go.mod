@@ -17,7 +17,12 @@ require (
 	k8s.io/client-go v0.26.9
 )
 
-require github.com/google/go-cmp v0.5.9 // indirect
+require (
+	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/tidwall/gjson v1.17.0 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
+)
 
 require (
 	github.com/agnivade/levenshtein v1.1.1 // indirect
@@ -40,7 +45,7 @@ require (
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231019133631-0b1baf8ec2dc
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231106074556-74d4b29c3e0d
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matryer/is v1.4.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
