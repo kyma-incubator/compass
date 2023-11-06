@@ -8,7 +8,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/aspect"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/capability"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationdependency"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -199,6 +201,8 @@ func main() {
 	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	entityTypeConverter := entitytype.NewConverter(versionConverter)
 	capabilityConverter := capability.NewConverter(versionConverter)
+	aspectConverter := aspect.NewConverter()
+	integrationDependencyConverter := integrationdependency.NewConverter(versionConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
 	intSysConverter := integrationsystem.NewConverter()
@@ -233,6 +237,8 @@ func main() {
 	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
 	entityTypeRepo := entitytype.NewRepository(entityTypeConverter)
 	capabilityRepo := capability.NewRepository(capabilityConverter)
+	aspectRepo := aspect.NewRepository(aspectConverter)
+	integrationDependencyRepo := integrationdependency.NewRepository(integrationDependencyConverter)
 	specRepo := spec.NewRepository(specConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
@@ -266,6 +272,8 @@ func main() {
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	entityTypeSvc := entitytype.NewService(entityTypeRepo, uidSvc)
 	capabilitySvc := capability.NewService(capabilityRepo, uidSvc, specSvc)
+	aspectSvc := aspect.NewService(aspectRepo, uidSvc)
+	integrationDependencySvc := integrationdependency.NewService(integrationDependencyRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, tenantMappingConfig, cfg.TenantMappingCallbackURL)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
@@ -294,6 +302,7 @@ func main() {
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
 	tombstoneProcessor := processor.NewTombstoneProcessor(transact, tombstoneSvc)
+	integrationDependencyProcessor := processor.NewIntegrationDependencyProcessor(transact, integrationDependencySvc, aspectSvc)
 	entityTypeProcessor := processor.NewEntityTypeProcessor(transact, entityTypeSvc)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
 	appTemplateVersionSvc := apptemplateversion.NewService(appTemplateVersionRepo, appTemplateSvc, uidSvc, timeSvc)
@@ -328,7 +337,7 @@ func main() {
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
 	ordConfig := ord.NewServiceConfig(cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
-	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, entityTypeSvc, entityTypeProcessor, capabilitySvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping, opSvc)
+	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, entityTypeSvc, entityTypeProcessor, capabilitySvc, integrationDependencySvc, integrationDependencyProcessor, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping, opSvc)
 	ordOpProcessor := &ord.OperationsProcessor{
 		OrdSvc: ordSvc,
 	}

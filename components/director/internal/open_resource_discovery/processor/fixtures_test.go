@@ -13,7 +13,6 @@ import (
 
 const (
 	ID1            = "ID1"
-	ID2            = "ID2"
 	ordID          = "com.compass.v1"
 	localID        = "BusinessPartner"
 	correlationIDs = `["sap.s4:sot:BusinessPartner", "sap.s4:sot:CostCenter", "sap.s4:sot:WorkforcePerson"]`
@@ -27,7 +26,6 @@ const (
 	publicVisibility = "public"
 	products         = `["sap:product:S4HANA_OD:"]`
 	releaseStatus    = "active"
-	entityTypeID     = "entity-type-id"
 )
 
 var (
@@ -49,6 +47,7 @@ var (
 	versionDeprecated      = false
 	versionDeprecatedSince = "v1.0"
 	versionForRemoval      = false
+	mandatoryTrue          = true
 	changeLogEntries       = removeWhitespace(`[
         {
 		  "date": "2020-04-29",
@@ -188,6 +187,32 @@ func fixEntityTypeInputModel() *model.EntityTypeInput {
 		Tags:                json.RawMessage(tags),
 		Labels:              json.RawMessage(labels),
 		DocumentationLabels: json.RawMessage(documentationLabels),
+	}
+}
+
+func fixIntegrationDependencyModel(integrationDependencyID, integrationDependencyORDID string) *model.IntegrationDependency {
+	return &model.IntegrationDependency{
+		BaseEntity: &model.BaseEntity{
+			ID:    integrationDependencyID,
+			Ready: true,
+		},
+		OrdID:                        str.Ptr(integrationDependencyORDID),
+		ApplicationID:                &appID,
+		ApplicationTemplateVersionID: &appTemplateVersionID,
+		PackageID:                    str.Ptr(ordPackageID),
+	}
+}
+
+func fixIntegrationDependencyInputModel(integrationDependencyORDID string) *model.IntegrationDependencyInput {
+	return &model.IntegrationDependencyInput{
+		OrdID:        str.Ptr(integrationDependencyORDID),
+		OrdPackageID: str.Ptr(ordPackageID),
+		Aspects: []*model.AspectInput{
+			{
+				Title:     "Test integration aspect name",
+				Mandatory: &mandatoryTrue,
+			},
+		},
 	}
 }
 

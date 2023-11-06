@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/common"
+
 	"github.com/mitchellh/hashstructure/v2"
 
 	"golang.org/x/mod/semver"
@@ -28,7 +30,7 @@ const (
 	// SemVerRegex represents the valid structure of the field
 	SemVerRegex = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 	// PackageOrdIDRegex represents the valid structure of the ordID of the Package
-	PackageOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+	PackageOrdIDRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(package):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// VendorOrdIDRegex represents the valid structure of the ordID of the Vendor
 	VendorOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(vendor):([a-zA-Z0-9._\\-]+):()$"
 	// ProductOrdIDRegex represents the valid structure of the ordID of the Product
@@ -38,7 +40,7 @@ const (
 	// EntityTypeOrdIDRegex represents the valid structure of the ordID of the EntityType
 	EntityTypeOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(entityType):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// TombstoneOrdIDRegex represents the valid structure of the ordID of the Tombstone
-	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource|entityType|capability):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*|)$"
+	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource|entityType|capability|integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*|)$"
 	// SystemInstanceBaseURLRegex represents the valid structure of the field
 	SystemInstanceBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?(\\/[a-zA-Z0-9-\\._~]+)*$"
 	// ConfigBaseURLRegex represents the valid structure of the field
@@ -53,8 +55,10 @@ const (
 	EventOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// CapabilityOrdIDRegex represents the valid structure of the ordID of the Capability
 	CapabilityOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(capability):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
+	// IntegrationDependencyOrdIDRegex represents the valid structure of the ordID of the Integration Dependency
+	IntegrationDependencyOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(integrationDependency):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
 	// CorrelationIDsRegex represents the valid structure of the field
-	CorrelationIDsRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
+	CorrelationIDsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
 	// LabelsKeyRegex represents the valid structure of the field
 	LabelsKeyRegex = "^[a-zA-Z0-9-_.]*$"
 	// NoNewLineRegex represents the valid structure of the field
@@ -74,10 +78,23 @@ const (
 	// ShortDescriptionSapCorePolicyRegex represents the valid structure of a short description field due to sap core policy
 	ShortDescriptionSapCorePolicyRegex = "^([a-zA-Z0-9 _\\-.(),']*(S/4HANA|country/region|G/L)*[a-zA-Z0-9 _\\-.(),']*)$"
 
+	// APISuccessorsRegex represents the valid structure of the API successors array items
+	APISuccessorsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(apiResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+	// EventSuccessorsRegex represents the valid structure of the Event successors array items
+	EventSuccessorsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+	// IntegrationDependencySuccessorsRegex represents the valid structure of the Integration Dependency successors array items
+	IntegrationDependencySuccessorsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+
 	// MinDescriptionLength represents the minimal accepted length of the Description field
 	MinDescriptionLength = 1
 	// MaxDescriptionLength represents the maximal accepted length of the Description field
 	MaxDescriptionLength = 5000
+	// MinShortDescriptionLength represents the minimal length of ShortDescription field
+	MinShortDescriptionLength = 1
+	// MaxShortDescriptionRuneLength represents the maximal length of ShortDescription field
+	MaxShortDescriptionRuneLength = 256
+	// MaxShortDescriptionLengthSapCorePolicy represents the maximal length of ShortDescription field for sap:core:v1 policy
+	MaxShortDescriptionLengthSapCorePolicy = 180
 	// MinLocalTenantIDLength represents the minimal accepted length of the LocalID field
 	MinLocalTenantIDLength = 1
 	// MaxLocalTenantIDLength represents the maximal accepted length of the LocalID field
@@ -96,6 +113,21 @@ const (
 	MaxLevelLength = 255
 	// MaxTitleLengthSAPCorePolicy represents the maximal accepted length of the Title field due to sap core policy
 	MaxTitleLengthSAPCorePolicy = 120
+	// MinOrdIDLength represents the minimal accepted length of the OrdID field
+	MinOrdIDLength = 1
+	// MaxOrdIDLength represents the maximal accepted length of the OrdID field
+	MaxOrdIDLength = 255
+	// MinOrdPackageIDLength represents the minimal accepted length of the ordPackageID field
+	MinOrdPackageIDLength = 1
+	// MaxOrdPackageIDLength represents the maximal accepted length of the ordPackageID field
+	MaxOrdPackageIDLength = 255
+	// MinResourceLinkCustomTypeLength represents the minimal accepted length of the custom type field in a resource link
+	MinResourceLinkCustomTypeLength = 1
+	// MaxResourceLinkCustomTypeLength represents the maximal accepted length of the custom type field in a resource link
+	MaxResourceLinkCustomTypeLength = 255
+
+	// IntegrationDependencyMsg represents the resource name for Integration Dependency used in error message
+	IntegrationDependencyMsg string = "integration dependency"
 )
 
 const (
@@ -160,6 +192,13 @@ const (
 	CapabilityVisibilityPrivate = private
 	// CapabilityVisibilityInternal is one of the available Capability visibility options
 	CapabilityVisibilityInternal = internal
+
+	// IntegrationDependencyVisibilityPublic is one of the available Integration Dependency visibility options
+	IntegrationDependencyVisibilityPublic = public
+	// IntegrationDependencyVisibilityPrivate is one of the available Integration Dependency visibility options
+	IntegrationDependencyVisibilityPrivate = private
+	// IntegrationDependencyVisibilityInternal is one of the available Integration Dependency visibility options
+	IntegrationDependencyVisibilityInternal = internal
 
 	// APIImplementationStandardDocumentAPI is one of the available api implementation standard options
 	APIImplementationStandardDocumentAPI string = "sap:ord-document-api:v1"
@@ -255,11 +294,11 @@ var (
 )
 
 var shortDescriptionRules = []validation.Rule{
-	validation.Required, validation.RuneLength(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+	validation.Required, validation.RuneLength(1, 256), validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"),
 }
 
 var optionalShortDescriptionRules = []validation.Rule{
-	validation.NilOrNotEmpty, validation.RuneLength(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+	validation.NilOrNotEmpty, validation.RuneLength(1, 256), validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"),
 }
 
 // ORDDocumentValidationError contains the validation errors when aggregating ord documents
@@ -304,11 +343,11 @@ func validateDocumentInput(doc *Document) error {
 
 func validatePackageInput(pkg *model.PackageInput, docPolicyLevel *string) error {
 	return validation.ValidateStruct(pkg,
-		validation.Field(&pkg.OrdID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&pkg.Title, validation.Required, validation.NewStringRule(noNewLines, "title should not contain line breaks"),
+		validation.Field(&pkg.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
+		validation.Field(&pkg.Title, validation.Required, validation.NewStringRule(common.NoNewLines, "title should not contain line breaks"),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, pkg.PolicyLevel, PolicyLevelSap), validation.Length(MinTitleLength, MaxTitleLengthSAPCorePolicy), validation.By(validateTitleDoesNotContainsTerms)),
 			validation.Length(MinTitleLength, MaxTitleLength)),
-		validation.Field(&pkg.ShortDescription, validation.Required, validation.NewStringRule(noNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
+		validation.Field(&pkg.ShortDescription, validation.Required, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, pkg.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinTitleLength, MaxTitleLength), validation.By(validateShortDescriptionDoesNotStartWithResourceName(pkg.Title)))),
 		validation.Field(&pkg.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, pkg.PolicyLevel, PolicyLevelSap) && pkg.ShortDescription != "", validation.By(validateDescriptionDoesNotContainShortDescription(&pkg.ShortDescription)))),
@@ -385,6 +424,9 @@ func validateShortDescriptionDoesNotStartWithResourceName(name string) func(valu
 		// this is need, because in the package the value is string, but in apis and events the value is *string
 		switch v := value.(type) {
 		case *string:
+			if v == nil {
+				return nil
+			}
 			shortDescription = *v
 		case string:
 			shortDescription = v
@@ -407,6 +449,9 @@ func validateDescriptionDoesNotContainShortDescription(shortDescription *string)
 		// this is need, because in the package the value is string, but in apis and events the value is *string
 		switch v := value.(type) {
 		case *string:
+			if v == nil {
+				return nil
+			}
 			description = *v
 		case string:
 			description = v
@@ -433,7 +478,7 @@ func validatePackageInputWithSuppressedErrors(pkg *model.PackageInput, packagesF
 
 func validateBundleInput(bndl *model.BundleCreateInput, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) error {
 	return validation.ValidateStruct(bndl,
-		validation.Field(&bndl.OrdID, validation.Required, validation.Match(regexp.MustCompile(BundleOrdIDRegex))),
+		validation.Field(&bndl.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(BundleOrdIDRegex))),
 		validation.Field(&bndl.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
 		validation.Field(&bndl.Name, validation.Required),
 		validation.Field(&bndl.ShortDescription, optionalShortDescriptionRules...),
@@ -442,7 +487,7 @@ func validateBundleInput(bndl *model.BundleCreateInput, credentialExchangeStrate
 		validation.Field(&bndl.Links, validation.By(validateORDLinks)),
 		validation.Field(&bndl.Labels, validation.By(validateORDLabels)),
 		validation.Field(&bndl.CredentialExchangeStrategies, validation.By(func(value interface{}) error {
-			return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
+			return common.ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
 				"type": {
 					validation.Required,
 					validation.In(custom),
@@ -471,19 +516,19 @@ func validateBundleInputWithSuppressedErrors(bndl *model.BundleCreateInput, bund
 
 func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) error {
 	return validation.ValidateStruct(api,
-		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(APIOrdIDRegex))),
+		validation.Field(&api.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(APIOrdIDRegex))),
 		validation.Field(&api.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
-		validation.Field(&api.Name, validation.Required, validation.NewStringRule(noNewLines, "title should not contain line breaks"),
+		validation.Field(&api.Name, validation.Required, validation.NewStringRule(common.NoNewLines, "title should not contain line breaks"),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, api.PolicyLevel, PolicyLevelSap), validation.Length(MinTitleLength, MaxTitleLengthSAPCorePolicy), validation.By(validateTitleDoesNotContainsTerms)),
 			validation.Length(MinTitleLength, MaxTitleLength)),
-		validation.Field(&api.ShortDescription, validation.Required, validation.NewStringRule(noNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
-			validation.When(checkResourcePolicyLevel(docPolicyLevel, api.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinTitleLength, MaxTitleLength), validation.By(validateShortDescriptionDoesNotStartWithResourceName(api.Name)))),
+		validation.Field(&api.ShortDescription, validation.Required, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
+			validation.When(checkResourcePolicyLevel(docPolicyLevel, api.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinShortDescriptionLength, MaxShortDescriptionLengthSapCorePolicy), validation.By(validateShortDescriptionDoesNotStartWithResourceName(api.Name)))),
 		validation.Field(&api.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, api.PolicyLevel, PolicyLevelSap) && api.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(api.ShortDescription)))),
 		validation.Field(&api.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom, PolicyLevelNone), validation.When(api.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
 		validation.Field(&api.CustomPolicyLevel, validation.When(api.PolicyLevel != nil && *api.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
-		validation.Field(&api.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
+		validation.Field(&api.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc, APIProtocolWebsocket, APIProtocolSAPSQLAPIV1, APIProtocolGraphql)),
 		validation.Field(&api.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
 		validation.Field(&api.PartOfProducts, validation.By(func(value interface{}) error {
@@ -523,10 +568,13 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 		validation.Field(&api.ResourceDefinitions, validation.By(func(value interface{}) error {
 			return validateAPIResourceDefinitions(value, *api, docPolicyLevel)
 		})),
-		validation.Field(&api.APIResourceLinks, validation.By(validateAPILinks)),
+		validation.Field(&api.APIResourceLinks, validation.By(validateResourceLinks)),
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate))),
+		validation.Field(&api.Successors, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(APISuccessorsRegex))
+		})),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&api.TargetURLs, validation.By(validateEntryPoints), validation.When(api.TargetURLs == nil, validation.By(notPartOfConsumptionBundles(api.PartOfConsumptionBundles)))),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
@@ -544,10 +592,11 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 		})),
 		validation.Field(&api.DocumentationLabels, validation.By(validateDocumentationLabels)),
 		validation.Field(&api.CorrelationIDs, validation.By(func(value interface{}) error {
-			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
 		validation.Field(&api.Direction, validation.In(APIDirectionInbound, APIDirectionMixed, APIDirectionOutbound)),
 		validation.Field(&api.LastUpdate, validation.When(api.LastUpdate != nil, validation.By(isValidDate))),
+		validation.Field(&api.DeprecationDate, validation.NilOrNotEmpty, validation.When(api.DeprecationDate != nil, validation.By(isValidDate))),
 	)
 }
 
@@ -561,19 +610,19 @@ func validateAPIInputWithSuppressedErrors(api *model.APIDefinitionInput, apisFro
 
 func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *string) error {
 	return validation.ValidateStruct(event,
-		validation.Field(&event.OrdID, validation.Required, validation.Match(regexp.MustCompile(EventOrdIDRegex))),
+		validation.Field(&event.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(EventOrdIDRegex))),
 		validation.Field(&event.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
-		validation.Field(&event.Name, validation.Required, validation.NewStringRule(noNewLines, "title should not contain line breaks"),
+		validation.Field(&event.Name, validation.Required, validation.NewStringRule(common.NoNewLines, "title should not contain line breaks"),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, event.PolicyLevel, PolicyLevelSap), validation.Length(MinTitleLength, MaxTitleLengthSAPCorePolicy), validation.By(validateTitleDoesNotContainsTerms)),
 			validation.Length(MinTitleLength, MaxTitleLength)),
-		validation.Field(&event.ShortDescription, validation.Required, validation.NewStringRule(noNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
-			validation.When(checkResourcePolicyLevel(docPolicyLevel, event.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinTitleLength, MaxTitleLength), validation.By(validateShortDescriptionDoesNotStartWithResourceName(event.Name)))),
+		validation.Field(&event.ShortDescription, validation.Required, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
+			validation.When(checkResourcePolicyLevel(docPolicyLevel, event.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinShortDescriptionLength, MaxShortDescriptionLengthSapCorePolicy), validation.By(validateShortDescriptionDoesNotStartWithResourceName(event.Name)))),
 		validation.Field(&event.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, event.PolicyLevel, PolicyLevelSap) && event.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(event.ShortDescription)))),
 		validation.Field(&event.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom, PolicyLevelNone), validation.When(event.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
 		validation.Field(&event.CustomPolicyLevel, validation.When(event.PolicyLevel != nil && *event.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
-		validation.Field(&event.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
+		validation.Field(&event.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&event.Visibility, validation.Required, validation.In(EventVisibilityPublic, EventVisibilityInternal, EventVisibilityPrivate)),
 		validation.Field(&event.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
@@ -608,8 +657,12 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 			return validateEventResourceDefinition(value, *event, docPolicyLevel)
 		})),
 		validation.Field(&event.Links, validation.By(validateORDLinks)),
+		validation.Field(&event.EventResourceLinks, validation.By(validateResourceLinks)),
 		validation.Field(&event.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate))),
+		validation.Field(&event.Successors, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EventSuccessorsRegex))
+		})),
 		validation.Field(&event.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&event.Labels, validation.By(validateORDLabels)),
 		validation.Field(&event.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
@@ -626,10 +679,18 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 		})),
 		validation.Field(&event.DocumentationLabels, validation.By(validateDocumentationLabels)),
 		validation.Field(&event.CorrelationIDs, validation.By(func(value interface{}) error {
-			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
 		validation.Field(&event.LastUpdate, validation.When(event.LastUpdate != nil, validation.By(isValidDate))),
+		validation.Field(&event.DeprecationDate, validation.NilOrNotEmpty, validation.When(event.DeprecationDate != nil, validation.By(isValidDate))),
 	)
+}
+
+func validateEventInputWithSuppressedErrors(event *model.EventDefinitionInput, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
+	return validation.ValidateStruct(event,
+		validation.Field(&event.VersionInput.Value, validation.By(func(value interface{}) error {
+			return validateEventDefinitionVersionInput(value, *event, eventsFromDB, eventHashes)
+		})))
 }
 
 func validateEntityTypeInputWithSuppressedErrors(entityType *model.EntityTypeInput, entityTypesFromDB map[string]*model.EntityType, entityTypeHashes map[string]uint64) error {
@@ -641,21 +702,21 @@ func validateEntityTypeInputWithSuppressedErrors(entityType *model.EntityTypeInp
 
 func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *string) error {
 	return validation.ValidateStruct(entityType,
-		validation.Field(&entityType.OrdID, validation.Required, validation.Match(regexp.MustCompile(EntityTypeOrdIDRegex))),
+		validation.Field(&entityType.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(EntityTypeOrdIDRegex))),
 		validation.Field(&entityType.LocalID, validation.Required, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
 		validation.Field(&entityType.CorrelationIDs, validation.By(func(value interface{}) error {
-			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
 		validation.Field(&entityType.Level, validation.Required, validation.Length(MinLevelLength, MaxLevelLength)),
-		validation.Field(&entityType.Title, validation.Required, validation.NewStringRule(noNewLines, "title should not contain line breaks"),
+		validation.Field(&entityType.Title, validation.Required, validation.NewStringRule(common.NoNewLines, "title should not contain line breaks"),
 			validation.Length(MinTitleLength, MaxTitleLength)),
-		validation.Field(&entityType.ShortDescription, validation.Required, validation.NewStringRule(noNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
-			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinTitleLength, MaxTitleLength))),
+		validation.Field(&entityType.ShortDescription, validation.Required, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
+			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinShortDescriptionLength, MaxShortDescriptionLengthSapCorePolicy))),
 		validation.Field(&entityType.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap) && entityType.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(entityType.ShortDescription)))),
 		validation.Field(&entityType.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&entityType.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
-		validation.Field(&entityType.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
+		validation.Field(&entityType.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&entityType.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
 		validation.Field(&entityType.Links, validation.By(validateORDLinks)),
 		validation.Field(&entityType.PartOfProducts, validation.By(func(value interface{}) error {
@@ -666,6 +727,7 @@ func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *
 		validation.Field(&entityType.CustomPolicyLevel, validation.When(entityType.PolicyLevel != nil && *entityType.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 		validation.Field(&entityType.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&entityType.SunsetDate, validation.When(entityType.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(entityType.SunsetDate != nil, validation.By(isValidDate))),
+		validation.Field(&entityType.DeprecationDate, validation.NilOrNotEmpty, validation.When(entityType.DeprecationDate != nil, validation.By(isValidDate))),
 		validation.Field(&entityType.Successors, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EntityTypeOrdIDRegex))
 		})),
@@ -680,19 +742,12 @@ func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *
 	)
 }
 
-func validateEventInputWithSuppressedErrors(event *model.EventDefinitionInput, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
-	return validation.ValidateStruct(event,
-		validation.Field(&event.VersionInput.Value, validation.By(func(value interface{}) error {
-			return validateEventDefinitionVersionInput(value, *event, eventsFromDB, eventHashes)
-		})))
-}
-
 func validateCapabilityInput(capability *model.CapabilityInput) error {
 	return validation.ValidateStruct(capability,
-		validation.Field(&capability.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
+		validation.Field(&capability.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&capability.Name, validation.Required),
 		validation.Field(&capability.Description, validation.NilOrNotEmpty, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
-		validation.Field(&capability.OrdID, validation.Required, validation.Match(regexp.MustCompile(CapabilityOrdIDRegex))),
+		validation.Field(&capability.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(CapabilityOrdIDRegex))),
 		validation.Field(&capability.Type, validation.Required, validation.In(CapabilityTypeCustom, CapabilityTypeMDICapabilityV1), validation.When(capability.CustomType != nil, validation.In(CapabilityTypeCustom))),
 		validation.Field(&capability.CustomType, validation.When(capability.Type != CapabilityTypeCustom, validation.Empty), validation.Match(regexp.MustCompile(CapabilityCustomTypeRegex))),
 		validation.Field(&capability.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
@@ -709,7 +764,7 @@ func validateCapabilityInput(capability *model.CapabilityInput) error {
 		})),
 		validation.Field(&capability.DocumentationLabels, validation.By(validateDocumentationLabels)),
 		validation.Field(&capability.CorrelationIDs, validation.By(func(value interface{}) error {
-			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
 		validation.Field(&capability.LastUpdate, validation.When(capability.LastUpdate != nil, validation.By(isValidDate))),
 		validation.Field(&capability.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
@@ -724,11 +779,56 @@ func validateCapabilityInputWithSuppressedErrors(capability *model.CapabilityInp
 		})))
 }
 
+func validateIntegrationDependencyInput(integrationDependency *model.IntegrationDependencyInput, docPolicyLevel *string) error {
+	return validation.ValidateStruct(integrationDependency,
+		validation.Field(&integrationDependency.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(IntegrationDependencyOrdIDRegex))),
+		validation.Field(&integrationDependency.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
+		validation.Field(&integrationDependency.CorrelationIDs, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
+		})),
+		validation.Field(&integrationDependency.Title, validation.Required, validation.NewStringRule(common.NoNewLines, "title should not contain line breaks"),
+			validation.When(checkResourcePolicyLevel(docPolicyLevel, nil, PolicyLevelSap), validation.Length(MinTitleLength, MaxTitleLengthSAPCorePolicy), validation.By(validateTitleDoesNotContainsTerms)),
+			validation.Length(MinTitleLength, MaxTitleLength)),
+		validation.Field(&integrationDependency.ShortDescription, validation.NilOrNotEmpty, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(MinShortDescriptionLength, MaxShortDescriptionRuneLength),
+			validation.When(checkResourcePolicyLevel(docPolicyLevel, nil, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinShortDescriptionLength, MaxShortDescriptionLengthSapCorePolicy), validation.By(validateShortDescriptionDoesNotStartWithResourceName(integrationDependency.Title)))),
+		validation.Field(&integrationDependency.Description, validation.NilOrNotEmpty, validation.Length(MinDescriptionLength, MaxDescriptionLength),
+			validation.When(checkResourcePolicyLevel(docPolicyLevel, nil, PolicyLevelSap) && integrationDependency.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(integrationDependency.ShortDescription)))),
+		validation.Field(&integrationDependency.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
+		validation.Field(&integrationDependency.LastUpdate, validation.When(integrationDependency.LastUpdate != nil, validation.By(isValidDate))),
+		validation.Field(&integrationDependency.Visibility, validation.Required, validation.In(IntegrationDependencyVisibilityPublic, IntegrationDependencyVisibilityInternal, IntegrationDependencyVisibilityPrivate)),
+		validation.Field(&integrationDependency.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
+		validation.Field(&integrationDependency.SunsetDate, validation.When(*integrationDependency.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(integrationDependency.SunsetDate != nil, validation.By(isValidDate))),
+		validation.Field(&integrationDependency.Successors, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(IntegrationDependencySuccessorsRegex))
+		})),
+		validation.Field(&integrationDependency.Mandatory, validation.By(func(value interface{}) error {
+			return common.ValidateFieldMandatory(value, IntegrationDependencyMsg)
+		})),
+		validation.Field(&integrationDependency.Aspects),
+		validation.Field(&integrationDependency.RelatedIntegrationDependencies, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(IntegrationDependencyOrdIDRegex))
+		})),
+		validation.Field(&integrationDependency.Links, validation.By(validateORDLinks)),
+		validation.Field(&integrationDependency.Tags, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
+		validation.Field(&integrationDependency.Labels, validation.By(validateORDLabels)),
+		validation.Field(&integrationDependency.DocumentationLabels, validation.By(validateDocumentationLabels)))
+}
+
+// fields with validation errors will lead to persisting of the IntegrationDependency resource
+func validateIntegrationDependencyInputWithSuppressedErrors(integrationDependency *model.IntegrationDependencyInput, integrationDependenciesFromDB map[string]*model.IntegrationDependency, integrationDependencyHashes map[string]uint64) error {
+	return validation.ValidateStruct(integrationDependency,
+		validation.Field(&integrationDependency.VersionInput.Value, validation.By(func(value interface{}) error {
+			return validateIntegrationDependencyVersionInput(value, *integrationDependency, integrationDependenciesFromDB, integrationDependencyHashes)
+		})))
+}
+
 func validateProductInput(product *model.ProductInput) error {
 	productOrdIDNamespace := strings.Split(product.OrdID, ":")[0]
 
 	return validation.ValidateStruct(product,
-		validation.Field(&product.OrdID, validation.Required, validation.Match(regexp.MustCompile(ProductOrdIDRegex))),
+		validation.Field(&product.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(ProductOrdIDRegex))),
 		validation.Field(&product.Title, validation.Length(MinTitleLength, MaxTitleLength), validation.Required),
 		validation.Field(&product.ShortDescription, shortDescriptionRules...),
 		validation.Field(&product.Description, validation.NilOrNotEmpty, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
@@ -751,7 +851,7 @@ func validateProductInput(product *model.ProductInput) error {
 
 func validateVendorInput(vendor *model.VendorInput) error {
 	return validation.ValidateStruct(vendor,
-		validation.Field(&vendor.OrdID, validation.Required, validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
+		validation.Field(&vendor.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
 		validation.Field(&vendor.Title, validation.Length(MinTitleLength, MaxTitleLength), validation.Required),
 		validation.Field(&vendor.Labels, validation.By(validateORDLabels)),
 		validation.Field(&vendor.Partners, validation.By(func(value interface{}) error {
@@ -766,7 +866,7 @@ func validateVendorInput(vendor *model.VendorInput) error {
 
 func validateTombstoneInput(tombstone *model.TombstoneInput) error {
 	return validation.ValidateStruct(tombstone,
-		validation.Field(&tombstone.OrdID, validation.Required, validation.Match(regexp.MustCompile(TombstoneOrdIDRegex))),
+		validation.Field(&tombstone.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(TombstoneOrdIDRegex))),
 		validation.Field(&tombstone.RemovalDate, validation.Required, validation.By(isValidDate)),
 		validation.Field(&tombstone.Description, validation.NilOrNotEmpty, validation.Length(MinDescriptionLength, MaxDescriptionLength)))
 }
@@ -907,7 +1007,7 @@ func validateLinks(arr interface{}) error {
 }
 
 func validateORDChangeLogEntries(value interface{}) error {
-	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
+	return common.ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"version": {
 			validation.Required,
 			validation.Match(regexp.MustCompile(SemVerRegex)),
@@ -945,7 +1045,7 @@ func validateORDLinks(value interface{}) error {
 			validation.Length(MinDescriptionLength, MaxDescriptionLength),
 		},
 	}
-	if err := validateJSONArrayOfObjects(value, elementFieldRules); err != nil {
+	if err := common.ValidateJSONArrayOfObjects(value, elementFieldRules); err != nil {
 		return err
 	}
 	if err := validateLinks(value); err != nil {
@@ -955,7 +1055,7 @@ func validateORDLinks(value interface{}) error {
 }
 
 func validatePackageLinks(value interface{}) error {
-	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
+	return common.ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"type": {
 			validation.Required,
 			validation.In("terms-of-service", "license", "client-registration", "payment", "sandbox", "service-level-agreement", "support", "custom"),
@@ -976,8 +1076,8 @@ func validatePackageLinks(value interface{}) error {
 	})
 }
 
-func validateAPILinks(value interface{}) error {
-	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
+func validateResourceLinks(value interface{}) error {
+	return common.ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"type": {
 			validation.Required,
 			validation.In("api-documentation", "authentication", "client-registration", "console", "payment", "service-level-agreement", "support", "custom"),
@@ -991,7 +1091,7 @@ func validateAPILinks(value interface{}) error {
 			if el.Get("type").String() != custom {
 				return errors.New("if customType is provided, type should be set to 'custom'")
 			} else {
-				return validation.Validate(el.Get("customType").String(), validation.Match(regexp.MustCompile(CustomImplementationStandardRegex)))
+				return validation.Validate(el.Get("customType").String(), validation.Length(MinResourceLinkCustomTypeLength, MaxResourceLinkCustomTypeLength), validation.Match(regexp.MustCompile(CustomImplementationStandardRegex)))
 			}
 		}
 		return nil
@@ -1234,6 +1334,26 @@ func validateCapabilityVersionInput(value interface{}, capability model.Capabili
 	return checkHashEquality(capabilityFromDB.Version.Value, capability.VersionInput.Value, hashDB, hashDoc)
 }
 
+func validateIntegrationDependencyVersionInput(value interface{}, integrationDependency model.IntegrationDependencyInput, integrationDependenciesFromDB map[string]*model.IntegrationDependency, integrationDependencyHashes map[string]uint64) error {
+	if value == nil {
+		return nil
+	}
+
+	if len(integrationDependenciesFromDB) == 0 {
+		return nil
+	}
+
+	integrationDependencyFromDB, ok := integrationDependenciesFromDB[str.PtrStrToStr(integrationDependency.OrdID)]
+	if !ok || isResourceHashMissing(integrationDependencyFromDB.ResourceHash) {
+		return nil
+	}
+
+	hashDB := str.PtrStrToStr(integrationDependencyFromDB.ResourceHash)
+	hashDoc := strconv.FormatUint(integrationDependencyHashes[str.PtrStrToStr(integrationDependency.OrdID)], 10)
+
+	return checkHashEquality(integrationDependencyFromDB.Version.Value, integrationDependency.VersionInput.Value, hashDB, hashDoc)
+}
+
 func normalizeAPIDefinition(api *model.APIDefinitionInput) (model.APIDefinitionInput, error) {
 	bytes, err := json.Marshal(api)
 	if err != nil {
@@ -1290,6 +1410,20 @@ func normalizeCapability(capability *model.CapabilityInput) (model.CapabilityInp
 	return normalizedCapability, nil
 }
 
+func normalizeIntegrationDependency(integrationDependency *model.IntegrationDependencyInput) (model.IntegrationDependencyInput, error) {
+	bytes, err := json.Marshal(integrationDependency)
+	if err != nil {
+		return model.IntegrationDependencyInput{}, errors.Wrapf(err, "error while marshalling integration dependency with ID %s", str.PtrStrToStr(integrationDependency.OrdID))
+	}
+
+	var normalizedIntegrationDependency model.IntegrationDependencyInput
+	if err := json.Unmarshal(bytes, &normalizedIntegrationDependency); err != nil {
+		return model.IntegrationDependencyInput{}, errors.Wrapf(err, "error while unmarshalling integration dependency with ID %s", str.PtrStrToStr(integrationDependency.OrdID))
+	}
+
+	return normalizedIntegrationDependency, nil
+}
+
 func normalizePackage(pkg *model.PackageInput) (model.PackageInput, error) {
 	bytes, err := json.Marshal(pkg)
 	if err != nil {
@@ -1321,10 +1455,6 @@ func normalizeBundle(bndl *model.BundleCreateInput) (model.BundleCreateInput, er
 func isResourceHashMissing(hash *string) bool {
 	hashStr := str.PtrStrToStr(hash)
 	return hashStr == ""
-}
-
-func noNewLines(s string) bool {
-	return !strings.Contains(s, "\\n")
 }
 
 func validateWhenPolicyLevelIsSAP(docPolicyLevel *string, resourcePolicyLevel *string, validationFunc func() error) error {
@@ -1413,49 +1543,6 @@ func validateJSONArrayOfStringsMatchPattern(arr interface{}, regexPattern *regex
 			return errors.Errorf("elements should match %q", regexPattern.String())
 		}
 	}
-	return nil
-}
-
-func validateJSONArrayOfObjects(arr interface{}, elementFieldRules map[string][]validation.Rule, crossFieldRules ...func(gjson.Result) error) error {
-	if arr == nil {
-		return nil
-	}
-
-	jsonArr, ok := arr.(json.RawMessage)
-	if !ok {
-		return errors.New("should be json")
-	}
-
-	if len(jsonArr) == 0 {
-		return nil
-	}
-
-	if !gjson.ValidBytes(jsonArr) {
-		return errors.New("should be valid json")
-	}
-
-	parsedArr := gjson.ParseBytes(jsonArr)
-	if !parsedArr.IsArray() {
-		return errors.New("should be json array")
-	}
-
-	if len(parsedArr.Array()) == 0 {
-		return nil
-	}
-
-	for _, el := range parsedArr.Array() {
-		for field, rules := range elementFieldRules {
-			if err := validation.Validate(el.Get(field).Value(), rules...); err != nil {
-				return errors.Wrapf(err, "error validating field %s", field)
-			}
-			for _, f := range crossFieldRules {
-				if err := f(el); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
 	return nil
 }
 
