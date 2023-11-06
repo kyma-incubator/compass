@@ -30,13 +30,13 @@ func (_m *AspectConverter) FromEntity(entity *aspect.Entity) *model.Aspect {
 	return r0
 }
 
-// ToEntity provides a mock function with given fields: integrationDependencyModel
-func (_m *AspectConverter) ToEntity(integrationDependencyModel *model.Aspect) *aspect.Entity {
-	ret := _m.Called(integrationDependencyModel)
+// ToEntity provides a mock function with given fields: aspectModel
+func (_m *AspectConverter) ToEntity(aspectModel *model.Aspect) *aspect.Entity {
+	ret := _m.Called(aspectModel)
 
 	var r0 *aspect.Entity
 	if rf, ok := ret.Get(0).(func(*model.Aspect) *aspect.Entity); ok {
-		r0 = rf(integrationDependencyModel)
+		r0 = rf(aspectModel)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*aspect.Entity)

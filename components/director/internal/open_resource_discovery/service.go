@@ -121,7 +121,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, entityTypeMappingService EntityTypeMappingService, capabilitySvc CapabilityService, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, entityTypeMappingSvc EntityTypeMappingService, capabilitySvc CapabilityService, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
 		config:                         config,
 		metricsCfg:                     metricsCfg,
@@ -134,7 +134,7 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		eventSvc:                       eventSvc,
 		entityTypeSvc:                  entityTypeSvc,
 		entityTypeProcessor:            entityTypeProcessor,
-		entityTypeMappingSvc:           entityTypeMappingService,
+		entityTypeMappingSvc:           entityTypeMappingSvc,
 		capabilitySvc:                  capabilitySvc,
 		integrationDependencySvc:       integrationDependencySvc,
 		integrationDependencyProcessor: integrationDependencyProcessor,

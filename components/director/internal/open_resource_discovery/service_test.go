@@ -1140,6 +1140,27 @@ func TestService_Processing(t *testing.T) {
 		return etmSvc
 	}
 
+	// successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1_2 := func() *automock.EntityTypeMappingService {
+	// 	etmSvc := &automock.EntityTypeMappingService{}
+	// 	etmSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), api1ID, resource.API).Return(fixEntityTypeMappings(api1ID, ""), nil).Once()
+	// 	etmSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.API, entityTypeMappingID).Return(nil).Once()
+	// 	etmSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, api1ID, fixEntityTypeMappingInput(api1ID, "")).Return(entityTypeMappingID, nil).Once()
+
+	// 	etmSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), event1ID, resource.EventDefinition).Return(fixEntityTypeMappings("", event1ID), nil).Once()
+	// 	etmSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.EventDefinition, entityTypeMappingID).Return(nil).Once()
+	// 	etmSvc.On("Create", txtest.CtxWithDBMatcher(), resource.EventDefinition, event1ID, fixEntityTypeMappingInput("", event1ID)).Return(entityTypeMappingID, nil).Once()
+
+	// 	etmSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), api2ID, resource.API).Return(fixEntityTypeMappings(api2ID, ""), nil).Once()
+	// 	etmSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.API, entityTypeMappingID).Return(nil).Once()
+	// 	etmSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, api2ID, fixEntityTypeMappingInput(api2ID, "")).Return(entityTypeMappingID, nil).Once()
+
+	// 	etmSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), event2ID, resource.EventDefinition).Return(fixEntityTypeMappings("", event2ID), nil).Once()
+	// 	etmSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.EventDefinition, entityTypeMappingID).Return(nil).Once()
+	// 	etmSvc.On("Create", txtest.CtxWithDBMatcher(), resource.EventDefinition, event2ID, fixEntityTypeMappingInput("", event2ID)).Return(entityTypeMappingID, nil).Once()
+
+	// 	return etmSvc
+	// }
+
 	testCases := []struct {
 		Name                             string
 		TransactionerFn                  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
@@ -5243,6 +5264,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), fixResourceHashesForDocument(fixORDDocument())).Return(nil, testErr).Once()
 				return entityTypeProcessor
 			},
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulEmptyCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
 			specSvcFn: func() *automock.SpecService {
@@ -5282,14 +5304,15 @@ func TestService_Processing(t *testing.T) {
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:        successfulAppGet,
-			tenantSvcFn:     successfulTenantSvc,
-			webhookSvcFn:    successfulWebhookList,
-			packageSvcFn:    successfulEmptyPackageList,
-			bundleSvcFn:     successfulEmptyBundleList,
-			apiSvcFn:        successfulEmptyAPIList,
-			eventSvcFn:      successfulEmptyEventList,
-			capabilitySvcFn: successfulEmptyCapabilityList,
+			appSvcFn:               successfulAppGet,
+			tenantSvcFn:            successfulTenantSvc,
+			webhookSvcFn:           successfulWebhookList,
+			packageSvcFn:           successfulEmptyPackageList,
+			bundleSvcFn:            successfulEmptyBundleList,
+			apiSvcFn:               successfulEmptyAPIList,
+			eventSvcFn:             successfulEmptyEventList,
+			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			capabilitySvcFn:        successfulEmptyCapabilityList,
 			integrationDependencySvcFn: func() *automock.IntegrationDependencyService {
 				integrationDependencySvc := &automock.IntegrationDependencyService{}
 				integrationDependencySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -5330,6 +5353,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
+			entityTypeMappingSvcFn:     successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:            successfulCapabilityUpdate,
 			integrationDependencySvcFn: successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: func() *automock.IntegrationDependencyProcessor {
@@ -5595,6 +5619,7 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
+			entityTypeMappingSvcFn:           successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
 			capabilitySvcFn:                  successfulCapabilityCreate,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
@@ -5714,7 +5739,8 @@ func TestService_Processing(t *testing.T) {
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
-			capabilitySvcFn: successfulCapabilityCreate,
+			entityTypeMappingSvcFn: successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1,
+			capabilitySvcFn:        successfulCapabilityCreate,
 			integrationDependencySvcFn: func() *automock.IntegrationDependencyService {
 				integrationDependencySvc := &automock.IntegrationDependencyService{}
 				integrationDependencySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixIntegrationDependencies(), nil).Once()

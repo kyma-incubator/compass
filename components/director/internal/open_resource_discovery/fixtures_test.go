@@ -1846,7 +1846,7 @@ func fixEntityTypes() []*model.EntityType {
 			},
 			ApplicationID:                &appID,
 			ApplicationTemplateVersionID: &appTemplateVersionID,
-			OrdID:                        ordID,
+			OrdID:                        entityType1ORDID,
 			LocalTenantID:                localTenantID,
 			CorrelationIDs:               json.RawMessage(correlationIDs),
 			Level:                        level,
