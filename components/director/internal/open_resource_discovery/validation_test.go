@@ -16,24 +16,29 @@ import (
 )
 
 const (
-	invalidOpenResourceDiscovery  = "invalidOpenResourceDiscovery"
-	invalidURL                    = "invalidURL"
-	invalidOrdID                  = "invalidOrdId"
+	invalidOpenResourceDiscovery               = "invalidOpenResourceDiscovery"
+	invalidURL                                 = "invalidURL"
+	invalidOrdID                               = "invalidOrdId"
 	validOrdIDWithVersion         = "sap.xref:package:SomePackage:v1"
 	validOrdIDNoVersion           = "sap.xref:package:SomePackage:"
-	invalidShortDescriptionLength = 257 // max allowed: 256
-	invalidTitleLength            = 256 // max allowed: 255
-	invalidLocalTenantIDLength    = 256 //max allowed: 255
-	maxDescriptionLength          = 5000
-	invalidVersion                = "invalidVersion"
-	invalidPolicyLevel            = "invalidPolicyLevel"
-	invalidVendor                 = "wrongVendor!"
-	invalidType                   = "invalidType"
-	custom                        = "custom"
-	invalidCustomType             = "wrongCustomType"
-	invalidMediaType              = "invalid/type"
-	invalidBundleOrdID            = "ns:wrongConsumptionBundle:v1"
-	invalidShortDescSapCore       = "no:colons:no&special%chars"
+	invalidPartOfPackageLength                 = 256 // max allowed: 255
+	invalidShortDescriptionLength              = 257 // max allowed: 256
+	invalidShortDescriptionLengthSapCorePolicy = 181 // max allowed: 180
+	invalidTitleLength                         = 256 // max allowed: 255
+	invalidTitleLengthSapCorePolicy            = 121 // max allowed: 120
+	invalidOrdIDLength                         = 256 // max allowed: 255
+	invalidLocalTenantIDLength                 = 256 //max allowed: 255
+	invalidLocalIDLength                       = 256 //max allowed: 255
+	maxDescriptionLength                       = 5000
+	invalidVersion                             = "invalidVersion"
+	invalidPolicyLevel                         = "invalidPolicyLevel"
+	invalidVendor                              = "wrongVendor!"
+	invalidType                                = "invalidType"
+	custom                                     = "custom"
+	invalidCustomType                          = "wrongCustomType"
+	invalidMediaType                           = "invalid/type"
+	invalidBundleOrdID                         = "ns:wrongConsumptionBundle:v1"
+	invalidShortDescSapCore                    = "no:colons:no&special%chars"
 
 	unknownVendorOrdID  = "nsUNKNOWN:vendor:id:"
 	unknownProductOrdID = "nsUNKNOWN:product:id:"
@@ -280,7 +285,7 @@ var (
         }
       ]`
 
-	invalidAPIResourceLinksDueToMissingType = `[
+	invalidResourceLinksDueToMissingType = `[
         {
           "url": "https://example.com/shell/discover"
         },
@@ -289,39 +294,39 @@ var (
           "url": "%s/shell/discover/relative"
         }
       ]`
-	invalidAPIResourceLinksDueToWrongType = `[
+	invalidResourceLinksDueToWrongType = `[
         {
           "type": "wrongType",
           "url": "https://example.com/shell/discover"
         }
       ]`
-	invalidAPIResourceLinksDueToMissingCustomValueOfType = `[
+	invalidResourceLinksDueToMissingCustomValueOfType = `[
         {
           "type": "console",
           "customType": "foo",
           "url": "https://example.com/shell/discover"
         }
       ]`
-	invalidAPIResourceLinksCustomFieldDueWrongFormat = `[
+	invalidResourceLinksCustomFieldDueWrongFormat = `[
 		{
 		  "type": "custom",
 		  "customType": "%^&wrong:{}",
 		  "url": "https://example.com/shell/discover"
 		}
 	  ]`
-	validAPIResourceLinksCustomField = `[
+	validResourceLinksCustomField = `[
 		{
 		  "type": "custom",
 		  "customType": "name.sap.com:spec.id:v1",
 		  "url": "https://example.com/shell/discover"
 		}
 	  ]`
-	invalidAPIResourceLinksDueToMissingURL = `[
+	invalidResourceLinksDueToMissingURL = `[
         {
           "type": "console"
         }
       ]`
-	invalidAPIResourceLinksDueToWrongURL = `[
+	invalidResourceLinksDueToWrongURL = `[
         {
           "type": "console",
           "url": "wrongURL"
@@ -446,6 +451,22 @@ var (
 	invalidExtensibleDueToCorrectSupportedButInvalidDescriptionLength = `{"supported":"%s", "description": "%s"}`
 
 	invalidDescriptionFieldWithExceedingMaxLength = strings.Repeat("a", maxDescriptionLength+1)
+
+	invalidSuccessorsElement          = `["foo.bar.baz:123456", "invalidValue"]`
+	invalidSuccessorsNonStringElement = `["foo.bar.baz:123456", 992]`
+
+	validAPIResourceMissingMinVersion        = `[{"ordId":"sap.s4:apiResource:FOO:v1"}]`
+	validEventResourceMissingMinVersion      = `[{"ordId":"sap.billing.sb:eventResource:FOO:v1"}]`
+	validEventResourceMissingSubset          = `[{"ordId":"sap.billing.sb:eventResource:FOO:v1", "minVersion":"1.1.1"}]`
+	invalidAPIEventResourcesMissingOrdID     = `[{"minVersion":"1.1.1"}]`
+	invalidAPIEventResourcesOrdIDTemplate    = `[{"ordId":"%s"}]`
+	invalidEventResourceMissingEventType     = `[{"ordId":"sap.billing.sb:eventResource:FOO:v1","subset":[{"eventType":""}]}]`
+	invalidEventResourceEventTypeWrongFormat = `[{"ordId":"sap.billing.sb:eventResource:FOO:v1","subset":[{"eventType":"invalid-format"}]}]`
+	invalidAPIResourceMinVersion             = `[{"ordId":"sap.s4:apiResource:FOO:v1","minVersion":"invalid-version"}]`
+	invalidEventResourceMinVersion           = `[{"ordId":"sap.billing.sb:eventResource:FOO:v1","minVersion":"invalid-version"}]`
+
+	invalidRelatedIntegrationDependenciesValue               = `["invalid-value"]`
+	invalidRelatedIntegrationDependenciesValueIntegerElement = `[10,"string"]`
 )
 
 func TestConfig_ValidateConfig(t *testing.T) {
@@ -975,6 +996,14 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].OrdID = invalidOrdID
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `ordID` field for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].OrdID = strings.Repeat("a", invalidOrdIDLength)
 
 				return []*ord.Document{doc}
 			},
@@ -1774,6 +1803,14 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Exceeded length of `ordID` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].OrdID = str.Ptr(strings.Repeat("a", invalidOrdIDLength))
+
+				return []*ord.Document{doc}
+			},
 		},
 		{
 			Name: "Missing `title` field for Bundle",
@@ -2270,6 +2307,14 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Exceeded length of `ordID` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].OrdID = str.Ptr(strings.Repeat("a", invalidOrdIDLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Missing `title` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -2347,7 +2392,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.PolicyLevel = str.Ptr(policyLevel)
-				doc.APIResources[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidShortDescriptionLength))
+				doc.APIResources[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidShortDescriptionLengthSapCorePolicy))
 
 				return []*ord.Document{doc}
 			},
@@ -2515,6 +2560,14 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].OrdPackageID = str.Ptr(invalidOrdID)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `partOfPackage` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].OrdPackageID = str.Ptr(strings.Repeat("a", invalidPartOfPackageLength))
 
 				return []*ord.Document{doc}
 			},
@@ -3115,7 +3168,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `type` field for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksDueToMissingType)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidResourceLinksDueToMissingType)
 
 				return []*ord.Document{doc}
 			},
@@ -3123,7 +3176,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `type` field for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksDueToWrongType)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidResourceLinksDueToWrongType)
 
 				return []*ord.Document{doc}
 			},
@@ -3131,7 +3184,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid field `customType` when field `type` is not `custom` for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksDueToMissingCustomValueOfType)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidResourceLinksDueToMissingCustomValueOfType)
 
 				return []*ord.Document{doc}
 			},
@@ -3139,7 +3192,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid field `customType` with format is wrong for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksCustomFieldDueWrongFormat)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidResourceLinksCustomFieldDueWrongFormat)
 
 				return []*ord.Document{doc}
 			},
@@ -3147,7 +3200,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Valid field `customType` for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(validAPIResourceLinksCustomField)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(validResourceLinksCustomField)
 
 				return []*ord.Document{doc}
 			},
@@ -3156,7 +3209,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `url` field for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksDueToMissingURL)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidResourceLinksDueToMissingURL)
 
 				return []*ord.Document{doc}
 			},
@@ -3164,7 +3217,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `url` field for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksDueToWrongURL)
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidResourceLinksDueToWrongURL)
 
 				return []*ord.Document{doc}
 			},
@@ -3259,6 +3312,47 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			},
 			ExpectedToBeValid: true,
 		}, {
+			Name: "Invalid value for `correlationIds` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it is invalid JSON for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CorrelationIDs = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CorrelationIDs = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `correlationIds` field when the JSON array is empty for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CorrelationIDs = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `correlationIds` field when it contains non string value for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsNonStringElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Missing `releaseStatus` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -3289,6 +3383,47 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
 				doc.APIResources[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
 				doc.APIResources[0].Successors = json.RawMessage(fmt.Sprintf(`["%s"]`, api2ORDID))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid value for `successors` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Successors = json.RawMessage(invalidSuccessorsElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` field when it is invalid JSON for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Successors = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Successors = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `successors` field when the JSON array is empty for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Successors = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `successors` field when it contains non string value for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Successors = json.RawMessage(invalidSuccessorsNonStringElement)
 
 				return []*ord.Document{doc}
 			},
@@ -4206,6 +4341,23 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		},
+		{
+			Name: "Invalid format of `deprecationDate` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].DeprecationDate = str.Ptr("0000-00-00T09:35:30+0000")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `deprecationDate` field value for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].DeprecationDate = str.Ptr("string value")
+
+				return []*ord.Document{doc}
+			},
+		},
 		// Test invalid entity relations
 
 		{
@@ -4286,6 +4438,14 @@ func TestDocument_ValidateCapability(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Exceeded length of `partOfPackage` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].OrdPackageID = str.Ptr(strings.Repeat("a", invalidPartOfPackageLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Missing `title` field for Capability",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -4323,6 +4483,14 @@ func TestDocument_ValidateCapability(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Capabilities[0].OrdID = str.Ptr(invalidOrdID)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `ordID` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].OrdID = str.Ptr(strings.Repeat("a", invalidOrdIDLength))
 
 				return []*ord.Document{doc}
 			},
@@ -4962,6 +5130,14 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Exceeded length of `ordID` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].OrdID = str.Ptr(strings.Repeat("a", invalidOrdIDLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Missing `title` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -5256,6 +5432,14 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Exceeded length of `partOfPackage` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].OrdPackageID = str.Ptr(strings.Repeat("a", invalidPartOfPackageLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Missing `visibility` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -5332,6 +5516,88 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Links = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Missing `type` field for `eventResourceLinks` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(invalidResourceLinksDueToMissingType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `type` field for `eventResourceLinks` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(invalidResourceLinksDueToWrongType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `customType` when field `type` is not `custom` for `eventResourceLink` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(invalidResourceLinksDueToMissingCustomValueOfType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `customType` with format is wrong for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(invalidResourceLinksCustomFieldDueWrongFormat)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `customType` field for `eventResourceLinks` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(validResourceLinksCustomField)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Missing `url` field for `eventResourceLinks` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(invalidResourceLinksDueToMissingURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `url` field for `eventResourceLinks` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(invalidResourceLinksDueToWrongURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `eventResourceLinks` field when it is invalid JSON for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `eventResourceLinks` field when it isn't a JSON array for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `eventResourceLinks` field when it is an empty JSON array for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EventResourceLinks = json.RawMessage("[]")
 
 				return []*ord.Document{doc}
 			},
@@ -5849,6 +6115,47 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Invalid value for `correlationIds` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it is invalid JSON for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].CorrelationIDs = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it isn't a JSON array for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].CorrelationIDs = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `correlationIds` field when the JSON array is empty for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].CorrelationIDs = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `correlationIds` field when it contains non string value for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsNonStringElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Missing `releaseStatus` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -5880,6 +6187,47 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc.EventResources[0].ReleaseStatus = str.Ptr("deprecated")
 				doc.EventResources[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
 				doc.EventResources[0].Successors = json.RawMessage(fmt.Sprintf(`["%s"]`, event2ORDID))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid value for `successors` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Successors = json.RawMessage(invalidSuccessorsElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` field when it is invalid JSON for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Successors = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` field when it isn't a JSON array for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Successors = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `successors` field when the JSON array is empty for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Successors = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `successors` field when it contains non string value for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Successors = json.RawMessage(invalidSuccessorsNonStringElement)
 
 				return []*ord.Document{doc}
 			},
@@ -6219,6 +6567,22 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Invalid format of `deprecationDate` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].DeprecationDate = str.Ptr("0000-00-00T09:35:30+0000")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `deprecationDate` field value for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].DeprecationDate = str.Ptr("string value")
+
+				return []*ord.Document{doc}
+			},
 		},
 
 		// Test invalid entity relations
@@ -6296,6 +6660,14 @@ func TestDocuments_ValidateEntityType(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EntityTypes[0].OrdID = invalidOrdID
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `ordID` field for Entity Type",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EntityTypes[0].OrdID = strings.Repeat("a", invalidOrdIDLength)
 
 				return []*ord.Document{doc}
 			},
@@ -6505,6 +6877,14 @@ func TestDocuments_ValidateEntityType(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EntityTypes[0].OrdPackageID = invalidOrdID
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `partOfPackage` field for Entity Type",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EntityTypes[0].OrdPackageID = strings.Repeat("a", invalidPartOfPackageLength)
 
 				return []*ord.Document{doc}
 			},
@@ -6771,6 +7151,22 @@ func TestDocuments_ValidateEntityType(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Invalid format of `deprecationDate` field for Entity Type",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EntityTypes[0].DeprecationDate = str.Ptr("0000-00-00T09:35:30+0000")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `deprecationDate` field value for Entity Type",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EntityTypes[0].DeprecationDate = str.Ptr("string value")
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Invalid `lastUpdate` field for Entity Type",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -6952,6 +7348,800 @@ func TestDocuments_ValidateEntityType(t *testing.T) {
 	}
 }
 
+func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
+	var tests = []struct {
+		Name              string
+		DocumentProvider  func() []*ord.Document
+		ExpectedToBeValid bool
+		AfterTest         func()
+	}{
+		{
+			Name: "Missing `ordID` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].OrdID = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `ordID` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].OrdID = str.Ptr(invalidOrdID)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `ordID` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].OrdID = str.Ptr(strings.Repeat("a", invalidOrdIDLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `localTenantID` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].LocalTenantID = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Exceeded length of `localTenantID` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].LocalTenantID = str.Ptr(strings.Repeat("a", invalidLocalTenantIDLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `localTenantID` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].LocalTenantID = str.Ptr("")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it is invalid JSON for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].CorrelationIDs = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it isn't a JSON array for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].CorrelationIDs = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `correlationIds` field when the JSON array is empty for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].CorrelationIDs = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `correlationIds` field when it contains non string value for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsNonStringElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `title` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Title = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceed length of `title` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = nil
+				doc.IntegrationDependencies[0].Title = strings.Repeat("a", invalidTitleLength)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `title` field contains new lines for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Title = `invalid name\n new line`
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `title` field contains terms when document policy is sap:core:v1 for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.IntegrationDependencies[0].Title = "name contains deprecated"
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceed length of `title` field when document policy is sap:core:v1 for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.IntegrationDependencies[0].Title = strings.Repeat("a", invalidTitleLengthSapCorePolicy)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid missing `shortDescription` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = nil
+				doc.IntegrationDependencies[0].ShortDescription = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Exceeded length of `shortDescription` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = nil
+				doc.IntegrationDependencies[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidShortDescriptionLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `shortDescription` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = nil
+				doc.IntegrationDependencies[0].ShortDescription = str.Ptr("")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `shortDescription` field contains new lines for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = nil
+				doc.IntegrationDependencies[0].ShortDescription = str.Ptr(`newLine\n`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `shortDescription` field when containing `name` field for Integration Dependency and document policy level is sap:core:v1",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.IntegrationDependencies[0].Title = "Test name"
+				doc.IntegrationDependencies[0].ShortDescription = str.Ptr("Test name inside short description")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `shortDescription` field when document policy level is sap:core:v1 for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.IntegrationDependencies[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidShortDescriptionLengthSapCorePolicy))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `shortDescription` field when doesn't match regex for Integration Dependency and document policy level is sap:core:v1",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.IntegrationDependencies[0].ShortDescription = str.Ptr(invalidShortDescSapCore)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid missing `description` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Description = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `description` field with exceeding max length for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Description = str.Ptr(invalidDescriptionFieldWithExceedingMaxLength)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `description` field when containing `shortDescription` field for Integration Dependency and document policy level is sap:core:v1",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.IntegrationDependencies[0].Description = str.Ptr("description contains test short description")
+				doc.IntegrationDependencies[0].ShortDescription = str.Ptr("test short description")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `partOfPackage` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].OrdPackageID = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `partOfPackage` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].OrdPackageID = str.Ptr(invalidOrdID)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `partOfPackage` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].OrdPackageID = str.Ptr(strings.Repeat("a", invalidPartOfPackageLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid format of `lastUpdate` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].LastUpdate = str.Ptr("0000-00-00T09:35:30+0000")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lastUpdate` field value for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].LastUpdate = str.Ptr("string value")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `visibility` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Visibility = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `visibility` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Visibility = "wrongVisibility"
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `releaseStatus` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].ReleaseStatus = str.Ptr("")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `releaseStatus` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].ReleaseStatus = str.Ptr("wrongValue")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `sunsetDate` field when `releaseStatus` field has value `deprecated` for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].ReleaseStatus = str.Ptr("deprecated")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `sunsetDate` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].ReleaseStatus = str.Ptr("deprecated")
+				doc.IntegrationDependencies[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid value for `successors` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Successors = json.RawMessage(invalidSuccessorsElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` field when it is invalid JSON for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Successors = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` field when it isn't a JSON array for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Successors = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `successors` field when the JSON array is empty for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Successors = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `successors` field when it contains non string value for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Successors = json.RawMessage(invalidSuccessorsNonStringElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `mandatory` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Mandatory = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `title` field for Aspect of Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].Title = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `title` field for Aspect of Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].Title = strings.Repeat("a", invalidTitleLength)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `title` field contains new line for Aspect of Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].Title = `newline\n in title`
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid missing `description` field for Aspect of Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].Description = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Exceeded length of `description` field for Aspect of Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].Description = str.Ptr(invalidDescriptionFieldWithExceedingMaxLength)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `mandatory` field for Aspect of Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].Mandatory = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid missing `apiResources` field Aspect of Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].APIResources = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Missing `ordId` field in `apiResources` in Aspect",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].APIResources = json.RawMessage(invalidAPIEventResourcesMissingOrdID)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `ordId` field in `apiResources` in Aspect",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].APIResources = json.RawMessage(fmt.Sprintf(invalidAPIEventResourcesOrdIDTemplate, strings.Repeat("a", invalidOrdIDLength)))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid format of `ordId` field in `apiResources` in Aspect",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].APIResources = json.RawMessage(fmt.Sprintf(invalidAPIEventResourcesOrdIDTemplate, invalidOrdID))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid missing `minVersion` field in `apiResources` in Aspect",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].APIResources = json.RawMessage(validAPIResourceMissingMinVersion)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `minVersion` field in `apiResources` in Aspect",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].APIResources = json.RawMessage(invalidAPIResourceMinVersion)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid missing `eventResources` field Aspect of Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].EventResources = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Missing `ordId` field in `eventResources` in Aspect",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].EventResources = json.RawMessage(invalidAPIEventResourcesMissingOrdID)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `ordId` field in `eventResources` in Aspect",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].EventResources = json.RawMessage(fmt.Sprintf(invalidAPIEventResourcesOrdIDTemplate, strings.Repeat("a", invalidOrdIDLength)))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid format of `ordId` field in `eventResources` in Aspect",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].EventResources = json.RawMessage(fmt.Sprintf(invalidAPIEventResourcesOrdIDTemplate, invalidOrdID))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid missing `minVersion` field in `eventResources` in Aspect",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].EventResources = json.RawMessage(validEventResourceMissingMinVersion)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `minVersion` field in `eventResources` in Aspect",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].EventResources = json.RawMessage(invalidEventResourceMinVersion)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid missing `subset` field in `eventResources` in Aspect",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].EventResources = json.RawMessage(validEventResourceMissingSubset)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Missing `eventType` for `subset` field in `eventResources` in Aspect",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].EventResources = json.RawMessage(invalidEventResourceMissingEventType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `eventType` format for `subset` field in `eventResources` in Aspect",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Aspects[0].EventResources = json.RawMessage(invalidEventResourceEventTypeWrongFormat)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid value for `relatedIntegrationDependencies` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].RelatedIntegrationDependencies = json.RawMessage(invalidRelatedIntegrationDependenciesValue)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `relatedIntegrationDependencies` field when it is invalid JSON for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].RelatedIntegrationDependencies = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `relatedIntegrationDependencies` field when it isn't a JSON array for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].RelatedIntegrationDependencies = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `relatedIntegrationDependencies` field when the JSON array is empty for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].RelatedIntegrationDependencies = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `relatedIntegrationDependencies` field when it contains non string value for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].RelatedIntegrationDependencies = json.RawMessage(invalidRelatedIntegrationDependenciesValueIntegerElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `title` field in `links` for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Links = json.RawMessage(invalidLinkDueToMissingTitle)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `url` field in `links` for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Links = json.RawMessage(invalidLinkDueToMissingURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `url` field in `links` for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Links = json.RawMessage(invalidLinkDueToWrongURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `description` field with exceeding length in `links` for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, invalidDescriptionFieldWithExceedingMaxLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `description` field in `links` for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, ""))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `links` field when it is invalid JSON for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Links = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `links` field when it isn't a JSON array for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Links = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `links` field when it is an empty JSON array for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Links = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid value for `tags` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Tags = json.RawMessage(invalidTagsValue)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it is invalid JSON for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Tags = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it isn't a JSON array for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Tags = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `tags` field when the JSON array is empty for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Tags = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `tags` field when it contains non string value for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Tags = json.RawMessage(invalidTagsValueIntegerElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON `labels` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Labels = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON object `labels` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Labels = json.RawMessage(`[]`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `labels` field when it isn't a JSON array for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Labels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `labels` field when it contains non string value for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Labels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid key for JSON `labels` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON `documentationLabels` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].DocumentationLabels = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON object `documentationLabels` field for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].DocumentationLabels = json.RawMessage(`[]`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `documentationLabels` field when it isn't a JSON array for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`Invalid `documentationLabels` field when it contains non string value for Integration Dependency",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return []*ord.Document{doc}
+			},
+		},
+
+		// Test invalid entity relations
+		{
+			Name: "Integration Dependency has a reference to an unknown Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.IntegrationDependencies[0].OrdPackageID = str.Ptr(unknownPackageOrdID)
+
+				return []*ord.Document{doc}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			docs := ord.Documents{test.DocumentProvider()[0]}
+			resourcesFromDB := ord.ResourcesFromDB{
+				APIs:                    apisFromDB,
+				Events:                  eventsFromDB,
+				IntegrationDependencies: integrationDependenciesFromDB,
+				Packages:                pkgsFromDB,
+				Bundles:                 bndlsFromDB,
+			}
+
+			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
+
+			if test.AfterTest != nil {
+				test.AfterTest()
+			}
+			if test.ExpectedToBeValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
 func TestDocuments_ValidateProduct(t *testing.T) {
 	var tests = []struct {
 		Name              string
@@ -6989,6 +8179,14 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Products[0].OrdID = invalidOrdID
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `ordID` field for Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Products[0].OrdID = strings.Repeat("a", invalidOrdIDLength)
 
 				return []*ord.Document{doc}
 			},
@@ -7083,7 +8281,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid value for `correlationIds` field for API",
+			Name: "Invalid value for `correlationIds` field for Product",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Products[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsElement)
@@ -7091,7 +8289,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid `correlationIds` field when it is invalid JSON for API",
+			Name: "Invalid `correlationIds` field when it is invalid JSON for Product",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Products[0].CorrelationIDs = json.RawMessage(invalidJSON)
@@ -7099,7 +8297,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid `correlationIds` field when it isn't a JSON array for API",
+			Name: "Invalid `correlationIds` field when it isn't a JSON array for Product",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Products[0].CorrelationIDs = json.RawMessage("{}")
@@ -7107,7 +8305,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Valid `correlationIds` field when the JSON array is empty for API",
+			Name: "Valid `correlationIds` field when the JSON array is empty for Product",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Products[0].CorrelationIDs = json.RawMessage("[]")
@@ -7116,7 +8314,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 			},
 			ExpectedToBeValid: true,
 		}, {
-			Name: "Invalid `correlationIds` field when it contains non string value for API",
+			Name: "Invalid `correlationIds` field when it contains non string value for Product",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Products[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsNonStringElement)
@@ -7248,6 +8446,14 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Vendors[0].OrdID = invalidOrdID
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `ordID` field for Vendor",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].OrdID = strings.Repeat("a", invalidOrdIDLength)
 
 				return []*ord.Document{doc}
 			},
@@ -7421,6 +8627,14 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = invalidOrdID
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `ordID` field for Tombstone",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Tombstones[0].OrdID = strings.Repeat("a", invalidOrdIDLength)
 
 				return []*ord.Document{doc}
 			},
