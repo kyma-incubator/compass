@@ -30,7 +30,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 	tenantName := "test-tenant-name"
 	clientID := "id-value!t12345"
 	invalidClientID := "invalid-id%"
-	authID := "test-user-name@sap.com"
+	authID := "user-name@test.com"
 	testRegion := "eu-1"
 
 	testError := errors.New("test error")
@@ -48,7 +48,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 	userCtxHeaderWithoutClientID := fmt.Sprintf(`{"tenantid":"%s","user_name":"%s"}`, consumerTenantID, authID)
 	userCtxHeaderWithoutTenantID := fmt.Sprintf(`{"client_id":"%s","user_name":"%s"}`, clientID, authID)
 	userCtxHeaderWithInvalidASCIICharacter := fmt.Sprintf(`{"client_id":"%s","tenantid":"%s","user_name":"%s"}`, invalidClientID, consumerTenantID, authID)
-	userCtxHeaderWithInvalidASCIICharacterAndMissingClientID := `{"tenantid":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","user_name":"test%UserName@sap.com"}`
+	userCtxHeaderWithInvalidASCIICharacterAndMissingClientID := `{"tenantid":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","user_name":"test%UserName@test.com"}`
 	userCtxHeaderWithInvalidASCIICharacterAndMissingTenantID := fmt.Sprintf(`{"client_id":"%s","user_name":"%s"}`, invalidClientID, authID)
 
 	reqDataFunc := func(userContextHeader string) oathkeeper.ReqData {
@@ -246,11 +246,11 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 	}
 	provider := tenantmapping.NewConsumerContextProvider(nil, consumerClaimsKeysConfig)
 
-	userCtxHeader := `{"client_id":"id-value!t12345","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"test-user-name@sap.com"}`
+	userCtxHeader := `{"client_id":"id-value!t12345","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"user-name@test.com"}`
 	userCtxHeaderWithoutUserNameProperty := `{"client_id":"id-value!t12345","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd"}`
-	userCtxHeaderWithNonASCIICharacters := `{"client_id":"test nøn asçii chå®acte®","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"test-user-name@sap.com"}`
-	userCtxHeaderWithEncodedNonASCIICharacters := `{"client_id":"test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"test-user-name@sap.com"}`
-	userCtxHeaderWithInvalidASCIICharacter := `{"client_id":"invalid-id%","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"test-user-name@sap.com"}`
+	userCtxHeaderWithNonASCIICharacters := `{"client_id":"test nøn asçii chå®acte®","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"user-name@test.com"}`
+	userCtxHeaderWithEncodedNonASCIICharacters := `{"client_id":"test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"user-name@test.com"}`
+	userCtxHeaderWithInvalidASCIICharacter := `{"client_id":"invalid-id%","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"user-name@test.com"}`
 	userCtxHeaderWithInvalidASCIICharacterAndMissingUserNameProperty := `{"client_id":"invalid-id%","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd"}`
 
 	testCases := []struct {
@@ -275,7 +275,7 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 			},
 			ExpectedMatch: true,
 			ExpectedAuthDetails: &oathkeeper.AuthDetails{
-				AuthID:   "test-user-name@sap.com",
+				AuthID:   "user-name@test.com",
 				AuthFlow: oathkeeper.ConsumerProviderFlow,
 			},
 			ExpectedErrMsg: "",
@@ -295,7 +295,7 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 			},
 			ExpectedMatch: true,
 			ExpectedAuthDetails: &oathkeeper.AuthDetails{
-				AuthID:   "test-user-name@sap.com",
+				AuthID:   "user-name@test.com",
 				AuthFlow: oathkeeper.ConsumerProviderFlow,
 			},
 			ExpectedErrMsg: "",
@@ -315,7 +315,7 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 			},
 			ExpectedMatch: true,
 			ExpectedAuthDetails: &oathkeeper.AuthDetails{
-				AuthID:   "test-user-name@sap.com",
+				AuthID:   "user-name@test.com",
 				AuthFlow: oathkeeper.ConsumerProviderFlow,
 			},
 			ExpectedErrMsg: "",
@@ -395,7 +395,7 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 			},
 			ExpectedMatch: true,
 			ExpectedAuthDetails: &oathkeeper.AuthDetails{
-				AuthID:   "test-user-name@sap.com",
+				AuthID:   "user-name@test.com",
 				AuthFlow: oathkeeper.ConsumerProviderFlow,
 			},
 			ExpectedErrMsg: "",
