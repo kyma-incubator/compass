@@ -1590,7 +1590,7 @@ func validateEntityTypeMappings(value interface{}) error {
 		for _, apiModelSelector := range apiModelSelectors {
 			err := validateAPIModelSelector(apiModelSelector)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "error while validating APIModelSelector")
 			}
 		}
 
@@ -1605,7 +1605,7 @@ func validateEntityTypeMappings(value interface{}) error {
 		for _, entityTypeTarget := range entityTypeTargets {
 			err := validateEntityTypeTarget(entityTypeTarget)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "error while validating EntityTypeTarget")
 			}
 		}
 	}

@@ -1415,11 +1415,11 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 		}
 
 		return fr, nil
-	} else {
-		err := s.resyncEntityTypeMappings(ctx, directorresource.API, apisFromDB[i].ID, api.EntityTypeMappings)
-		if err != nil {
-			return nil, err
-		}
+	}
+
+	err := s.resyncEntityTypeMappings(ctx, directorresource.API, apisFromDB[i].ID, api.EntityTypeMappings)
+	if err != nil {
+		return nil, err
 	}
 
 	allBundleIDsForAPI, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleAPIReference, &apisFromDB[i].ID)
@@ -1498,11 +1498,10 @@ func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource
 		}
 
 		return s.createSpecs(ctx, model.EventSpecReference, eventID, specs, resourceType)
-	} else {
-		err := s.resyncEntityTypeMappings(ctx, directorresource.EventDefinition, eventsFromDB[i].ID, event.EntityTypeMappings)
-		if err != nil {
-			return nil, err
-		}
+	}
+	err := s.resyncEntityTypeMappings(ctx, directorresource.EventDefinition, eventsFromDB[i].ID, event.EntityTypeMappings)
+	if err != nil {
+		return nil, err
 	}
 
 	allBundleIDsForEvent, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleEventReference, &eventsFromDB[i].ID)
