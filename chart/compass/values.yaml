@@ -732,8 +732,8 @@ global:
             enabled: false
             createRule: true
             gatewayHost: "compass-gateway-xsuaa"
-            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
-            attributes: '{"uniqueAttribute": { "key": "ns-adapter-test", "value": "ns-adapter-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" }, "clientid": { "key": "client_id" } }'
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefixes": ["prefix."], "protocol": "http"}]'
+            attributes: '{"uniqueAttribute": { "key": "ns-adapter-test", "value": "ns-adapter-flow" }, "tenants": [{ "key": "tenant" }], "identity": { "key": "identity" }, "clientid": { "key": "client_id" } }'
             path: /nsadapter/api/v1/notifications
             upstreamComponent: "compass-gateway"
             checkSuffix: true
@@ -749,8 +749,8 @@ global:
             enabled: false
             createRule: true
             gatewayHost: "compass-gateway"
-            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
-            attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefixes": ["prefix."], "protocol": "http"}]'
+            attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenants": [{ "key": "tenant" }], "identity": { "key": "identity" } }'
             path: /tenants/<.*>
             upstreamComponent: "compass-tenant-fetcher"
             checkSuffix: false
@@ -766,9 +766,26 @@ global:
             enabled: false
             createRule: false
             gatewayHost: "compass-gateway-sap-mtls"
-            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http", "region": "eu-1"}]'
-            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "user_name" }, "clientid": { "key": "client_id" } }'
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefixes": ["prefix."], "protocol": "http", "region": "eu-1"}]'
+            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenants": [{ "key": "tenant" }], "identity": { "key": "user_name" }, "clientid": { "key": "client_id" } }'
             path: /<.*>
+            checkSuffix: false
+        user-name-authenticator:
+          cfg:
+            config:
+              api:
+                url: http://compass-hydrator.compass-system.svc.cluster.local:3000/hydrators/authn-mapping/user-name-authenticator
+                retry:
+                  give_up_after: 6s
+                  max_delay: 2000ms
+          authenticator:
+            enabled: false
+            createRule: true
+            gatewayHost: "compass-gateway-user-name"
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefixes": ["prefix.", "prefix2."], "protocol": "http", "region": "eu-1"}]'
+            attributes: '{"uniqueAttribute": { "key": "unique-attr-authenticator-key", "value": "unique-attr-authenticator-value" }, "tenants": [{ "key": "ext_attr.subaccountid", "priority": 1 },{ "key": "ext_attr.globalaccountid", "priority": 2 }], "identity": { "key": "user_name" }, "clientid": { "key": "client_id" } }'
+            path: "/director/graphql"
+            upstreamComponent: "compass-gateway"
             checkSuffix: false
       tenantMappingService:
         config:
@@ -1291,6 +1308,24 @@ global:
     systemBrokerFQDN: http://compass-system-broker.compass-system.svc.cluster.local
     tenantFetcherFQDN: http://compass-tenant-fetcher.compass-system.svc.cluster.local
     hydratorFQDN: http://compass-hydrator.compass-system.svc.cluster.local
+    userNameAuthenticators:
+      gatewayHost: "compass-gateway-user-name"
+      account:
+        manage: false
+        secretName: "user-name-account-authenticator"
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
+        oauthTokenPath: "/secured/oauth/token"
+        subdomain: "compass-external-services-mock"
+      subaccount:
+        manage: false
+        secretName: "user-name-subaccount-authenticator"
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
+        oauthTokenPath: "/secured/oauth/token"
+        subdomain: "compass-external-services-mock"
     basicCredentials:
       manage: false
       secretName: "test-basic-credentials-secret"

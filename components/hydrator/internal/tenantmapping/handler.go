@@ -223,7 +223,7 @@ func (h *Handler) calculateTenants(ctx context.Context, objectContexts []ObjectC
 
 		val, ok := objCtx.Tenant.Labels[h.tenantSubstitutionLabelKey].(string)
 		if ok {
-			log.C(ctx).Infof("Found label %s with value %s of thenant wiht external ID %s", h.tenantSubstitutionLabelKey, val, objCtx.Tenant.ID)
+			log.C(ctx).Infof("Found label %s with value %s of tenant with external ID %s", h.tenantSubstitutionLabelKey, val, objCtx.Tenant.ID)
 			substituteTenantID = val
 		}
 	}

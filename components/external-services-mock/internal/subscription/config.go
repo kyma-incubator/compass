@@ -21,6 +21,7 @@ type Config struct {
 	SubscriptionProviderID                  string
 	DirectDependencySubscriptionProviderID  string
 	TenantFetcherFullRegionalURL            string `envconfig:"-"`
+	TestProviderAccountID                   string `envconfig:"APP_TENANT_CONFIG_TEST_PROVIDER_ACCOUNT_ID"`
 	TestProviderSubaccountID                string `envconfig:"APP_TENANT_CONFIG_TEST_PROVIDER_SUBACCOUNT_ID"`
 	TestConsumerAccountID                   string
 	TestConsumerSubaccountID                string `envconfig:"APP_TENANT_CONFIG_TEST_CONSUMER_SUBACCOUNT_ID"`
