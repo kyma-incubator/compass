@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/jwt"
+	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"net/http"
 	"os"
 	"strings"
@@ -79,11 +81,12 @@ import (
 const discoverSystemsOpMode = "DISCOVER_SYSTEMS"
 
 type config struct {
-	APIConfig      systemfetcher.APIConfig
-	OAuth2Config   oauth.Config
-	SystemFetcher  systemfetcher.Config
-	Database       persistence.DatabaseConfig
-	TemplateConfig appTemplateConfig
+	APIConfig           systemfetcher.APIConfig
+	OAuth2Config        oauth.Config
+	SelfSignedJwtConfig jwt.Config
+	SystemFetcher       systemfetcher.Config
+	Database            persistence.DatabaseConfig
+	TemplateConfig      appTemplateConfig
 
 	Log log.Config
 
@@ -102,6 +105,7 @@ type config struct {
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
+	JwtSelfSignCertSecretName    string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 type appTemplateConfig struct {
@@ -155,8 +159,14 @@ func main() {
 		return
 	}
 
-	if err = sf.SyncSystems(ctx); err != nil {
-		log.D().Fatal(errors.Wrap(err, "failed to sync systems"))
+	if err = sf.SyncSystems(ctx, tenantEntity.Customer); err != nil {
+		log.D().Fatal(errors.Wrap(err, "failed to sync systems for customers"))
+	}
+
+	if cfg.SystemFetcher.SyncGlobalAccounts {
+		if err = sf.SyncSystems(ctx, tenantEntity.Account); err != nil {
+			log.D().Fatal(errors.Wrap(err, "failed to sync systems for global accounts"))
+		}
 	}
 
 	if err = sf.UpsertSystemsSyncTimestamps(ctx, transact); err != nil {
@@ -263,12 +273,14 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	systemsSyncSvc := systemssync.NewService(systemsSyncRepo)
 
 	authProvider := pkgAuth.NewMtlsTokenAuthorizationProvider(cfg.OAuth2Config, cfg.ExternalClientCertSecretName, certCache, pkgAuth.DefaultMtlsClientCreator)
+	jwtAuthProvider := pkgAuth.NewSelfSignedJWTTokenAuthorizationProvider(cfg.JwtSelfSignCertSecretName, cfg.SelfSignedJwtConfig)
 	client := &http.Client{
-		Transport: httputil.NewSecuredTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport)), authProvider),
+		Transport: httputil.NewSecuredTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport)), authProvider, jwtAuthProvider),
 		Timeout:   cfg.APIConfig.Timeout,
 	}
 	oauthMtlsClient := systemfetcher.NewOauthMtlsClient(cfg.OAuth2Config, certCache, client)
-	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, oauthMtlsClient)
+	jwtTokenClient := systemfetcher.NewJwtTokenClient(certCache, cfg.JwtSelfSignCertSecretName, client)
+	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, oauthMtlsClient, jwtTokenClient)
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
