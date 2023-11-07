@@ -1020,6 +1020,7 @@ global:
     operationProcessorsQuietPeriod: 5s
   systemFetcher:
     enabled: false
+    syncGlobalAccountTenants: true
     name: "system-fetcher"
     schedule: "0 0 * * *"
     manageSecrets: true
@@ -1058,6 +1059,8 @@ global:
       tenantHeaderName: "x-zid"
       tokenRequestTimeout: 30s
       skipSSLValidation: true
+    jwt:
+      expireAfter: 60m
     secret:
       name: "compass-system-fetcher-secret"
       clientIdKey: client-id
