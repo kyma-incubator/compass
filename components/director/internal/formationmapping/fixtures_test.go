@@ -3,7 +3,7 @@ package formationmapping_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/notificationresponse"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
 	"net/http"
 	"testing"
 
@@ -257,10 +257,10 @@ func ThatFailsOnBeginInGoRoutine() (*persistenceautomock.PersistenceTx, *persist
 	return persistTx, transact
 }
 
-func fixNotificationResponseWithStateAndConfig(configuration json.RawMessage, state string) *notificationresponse.NotificationResponse {
-	return notificationresponse.NewNotificationResponse(configuration, state, "")
+func fixNotificationResponseWithStateAndConfig(configuration json.RawMessage, state string) *statusresponse.NotificationResponse {
+	return statusresponse.NewNotificationResponse(configuration, state, "")
 }
 
-func fixNotificationResponseWithStateAndError(state, error string) *notificationresponse.NotificationResponse {
-	return notificationresponse.NewNotificationResponse(nil, state, error)
+func fixNotificationResponseWithStateAndError(state, errorMessage string) *statusresponse.NotificationResponse {
+	return statusresponse.NewNotificationResponse(nil, state, errorMessage)
 }

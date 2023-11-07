@@ -3,7 +3,7 @@ package formationmapping
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/notificationresponse"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -34,9 +34,9 @@ import (
 
 //go:generate mockery --exported --name=formationAssignmentStatusService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentStatusService interface {
-	UpdateWithConstraints(ctx context.Context, notificationResponse *notificationresponse.NotificationResponse, fa *model.FormationAssignment, operation model.FormationOperation) error
-	SetAssignmentToErrorStateWithConstraints(ctx context.Context, notificationResponse *notificationresponse.NotificationResponse, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error
-	DeleteWithConstraints(ctx context.Context, id string, notificationResponse *notificationresponse.NotificationResponse) error
+	UpdateWithConstraints(ctx context.Context, notificationResponse *statusresponse.NotificationResponse, fa *model.FormationAssignment, operation model.FormationOperation) error
+	SetAssignmentToErrorStateWithConstraints(ctx context.Context, notificationResponse *statusresponse.NotificationResponse, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error
+	DeleteWithConstraints(ctx context.Context, id string, notificationResponse *statusresponse.NotificationResponse) error
 }
 
 type malformedRequest struct {
@@ -757,6 +757,6 @@ type responseError struct {
 	errorMessage string
 }
 
-func newNotificationResponseFromRequestBody(requestBody FormationAssignmentRequestBody) *notificationresponse.NotificationResponse {
-	return notificationresponse.NewNotificationResponse(requestBody.Configuration, string(requestBody.State), requestBody.Error)
+func newNotificationResponseFromRequestBody(requestBody FormationAssignmentRequestBody) *statusresponse.NotificationResponse {
+	return statusresponse.NewNotificationResponse(requestBody.Configuration, string(requestBody.State), requestBody.Error)
 }

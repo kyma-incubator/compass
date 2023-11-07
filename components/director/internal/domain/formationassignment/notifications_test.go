@@ -3,7 +3,7 @@ package formationassignment_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/notificationresponse"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
@@ -1988,7 +1988,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 		notificationBuilder     func() *automock.NotificationBuilder
 		tenantRepo              func() *automock.TenantRepository
 		runtimeCtxRepo          func() *automock.RuntimeContextRepository
-		notificationResponse    *notificationresponse.NotificationResponse
+		notificationResponse    *statusresponse.NotificationResponse
 		expectedDetails         *formationconstraint.NotificationStatusReturnedOperationDetails
 		expectedErrMsg          string
 	}{

@@ -3,7 +3,7 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/notificationresponse"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/hashicorp/go-multierror"
@@ -110,15 +110,15 @@ type constraintEngine interface {
 
 //go:generate mockery --exported --name=statusService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type statusService interface {
-	UpdateWithConstraints(ctx context.Context, notificationResponse *notificationresponse.NotificationResponse, fa *model.FormationAssignment, operation model.FormationOperation) error
-	SetAssignmentToErrorStateWithConstraints(ctx context.Context, notificationResponse *notificationresponse.NotificationResponse, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error
-	DeleteWithConstraints(ctx context.Context, id string, notificationResponse *notificationresponse.NotificationResponse) error
+	UpdateWithConstraints(ctx context.Context, notificationResponse *statusresponse.NotificationResponse, fa *model.FormationAssignment, operation model.FormationOperation) error
+	SetAssignmentToErrorStateWithConstraints(ctx context.Context, notificationResponse *statusresponse.NotificationResponse, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error
+	DeleteWithConstraints(ctx context.Context, id string, notificationResponse *statusresponse.NotificationResponse) error
 }
 
 //go:generate mockery --exported --name=faNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type faNotificationService interface {
 	GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)
-	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string, notificationResponse *notificationresponse.NotificationResponse) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)}
+	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string, notificationResponse *statusresponse.NotificationResponse) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)}
 
 type service struct {
 	repo                    FormationAssignmentRepository
@@ -1083,7 +1083,7 @@ type AssignmentErrorWrapper struct {
 	Error AssignmentError `json:"error"`
 }
 
-func newNotificationResponseFromWebhookResponse(response *webhookdir.Response) *notificationresponse.NotificationResponse {
+func newNotificationResponseFromWebhookResponse(response *webhookdir.Response) *statusresponse.NotificationResponse {
 	var configuration json.RawMessage
 	if response.Config != nil {
 		configuration = []byte(*response.Config)
@@ -1099,5 +1099,5 @@ func newNotificationResponseFromWebhookResponse(response *webhookdir.Response) *
 		errorFromResponse = *response.Error
 	}
 
-	return notificationresponse.NewNotificationResponse(configuration, state, errorFromResponse)
+	return statusresponse.NewNotificationResponse(configuration, state, errorFromResponse)
 }
