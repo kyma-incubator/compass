@@ -147,6 +147,25 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	}
 
 	ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
+
+	formation, err := h.formationService.Get(ctx, formationID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while getting formation from formation assignment with ID: %q", fa.FormationID)
+		if apperrors.IsNotFoundError(err) {
+			errResp := errors.Errorf("Formation with ID %q was not found. X-Request-Id: %s", formationID, correlationID)
+			respondWithError(ctx, w, http.StatusNotFound, errResp)
+			return
+		}
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+
+	if len(assignmentReqBody.State) > 0 && formation.State != model.ReadyFormationState {
+		log.C(ctx).WithError(err).Errorf("Cannot update formation assignment for formation with ID %q as formation is not in %q state. X-Request-Id: %s", fa.FormationID, model.ReadyFormationState, correlationID)
+		respondWithError(ctx, w, http.StatusBadRequest, errResp)
+		return
+	}
+
 	formationOperation := determineOperationBasedOnFormationAssignmentState(fa)
 	if len(assignmentReqBody.State) == 0 {
 		if assignmentReqBody.Error != "" {
@@ -161,18 +180,14 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		}
 	}
 
-	formation, err := h.formationService.Get(ctx, formationID)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while getting formation from formation assignment with ID: %q", fa.FormationID)
-		if apperrors.IsNotFoundError(err) {
-			errResp := errors.Errorf("Formation with ID %q was not found. X-Request-Id: %s", formationID, correlationID)
-			respondWithError(ctx, w, http.StatusNotFound, errResp)
+	if reset {
+		if assignmentReqBody.State != model.ReadyAssignmentState && assignmentReqBody.State != model.ConfigPendingAssignmentState {
+			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q to state %s. X-Request-Id: %s", fa.Source, fa.Target, assignmentReqBody.State, correlationID)
+			respondWithError(ctx, w, http.StatusBadRequest, errResp)
 			return
 		}
-		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
 
+<<<<<<< HEAD
 	// todo it was possible for the state from the request to be empty and in such cases we were able to update the config or error regardless of the formation state
 	if len(assignmentReqBody.State) > 0 && formation.State != model.ReadyFormationState {
 		log.C(ctx).WithError(err).Errorf("Cannot update formation assignment for formation with ID %q as formation is not in %q state. X-Request-Id: %s", fa.FormationID, model.ReadyFormationState, correlationID)
@@ -181,6 +196,8 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	}
 
 	if reset { //todo state should be ready or CP
+=======
+>>>>>>> 69696d6a3 (remove unnecessary state calculations)
 		if fa.State != string(model.ReadyAssignmentState) {
 			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q because assignment is not in %q state. X-Request-Id: %s", fa.Source, fa.Target, model.ReadyAssignmentState, correlationID)
 			respondWithError(ctx, w, http.StatusBadRequest, errResp)
