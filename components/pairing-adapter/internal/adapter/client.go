@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -38,7 +37,6 @@ func (c *ExternalClient) Do(ctx context.Context, app RequestData) (*ExternalToke
 		return nil, err
 	}
 
-	spew.Dump("Send Request Body is: ", req)
 	resp, err := c.doer.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "while performing request")
