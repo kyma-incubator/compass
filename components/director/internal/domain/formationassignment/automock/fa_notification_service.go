@@ -12,7 +12,7 @@ import (
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
-	notificationresponse "github.com/kyma-incubator/compass/components/director/internal/domain/notificationresponse"
+	notificationresponse "github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 )

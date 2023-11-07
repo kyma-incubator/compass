@@ -3,7 +3,7 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/notificationresponse"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
 	"strconv"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -33,7 +33,7 @@ func NewFormationAssignmentStatusService(repo FormationAssignmentRepository, con
 }
 
 // UpdateWithConstraints updates a Formation Assignment and enforces NotificationStatusReturned constraints before and after the update
-func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.Context, notificationResponse *notificationresponse.NotificationResponse, fa *model.FormationAssignment, operation model.FormationOperation) error {
+func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.Context, notificationResponse *statusresponse.NotificationResponse, fa *model.FormationAssignment, operation model.FormationOperation) error {
 	id := fa.ID
 
 	log.C(ctx).Infof("Updating formation assignment with ID: %q", id)
@@ -80,7 +80,7 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 
 // SetAssignmentToErrorStateWithConstraints updates Formation Assignment state to error state using the errorMessage, errorCode and state parameters.
 // Also, it enforces NotificationStatusReturned constraints before and after the update.
-func (fau *formationAssignmentStatusService) SetAssignmentToErrorStateWithConstraints(ctx context.Context, notificationResponse *notificationresponse.NotificationResponse, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error {
+func (fau *formationAssignmentStatusService) SetAssignmentToErrorStateWithConstraints(ctx context.Context, notificationResponse *statusresponse.NotificationResponse, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error {
 	assignment.State = string(state)
 	assignmentError := AssignmentErrorWrapper{AssignmentError{
 		Message:   errorMessage,
@@ -99,7 +99,7 @@ func (fau *formationAssignmentStatusService) SetAssignmentToErrorStateWithConstr
 }
 
 // DeleteWithConstraints deletes a Formation Assignment matching ID `id` and enforces NotificationStatusReturned constraints before and after delete.
-func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.Context, id string, notificationResponse *notificationresponse.NotificationResponse) error {
+func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.Context, id string, notificationResponse *statusresponse.NotificationResponse) error {
 	log.C(ctx).Infof("Deleting formation assignment with ID: %q", id)
 
 	tenantID, err := tenant.LoadFromContext(ctx)

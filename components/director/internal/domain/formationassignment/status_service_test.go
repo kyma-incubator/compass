@@ -3,7 +3,7 @@ package formationassignment_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/notificationresponse"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
 	"strconv"
 	"testing"
 
@@ -34,7 +34,7 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
 		NotificationSvc         func() *automock.FaNotificationService
 		ConstraintEngine        func() *automock.ConstraintEngine
-		NotificationResponse    *notificationresponse.NotificationResponse
+		NotificationResponse    *statusresponse.NotificationResponse
 		ExpectedErrorMsg        string
 	}{
 		{
@@ -289,7 +289,7 @@ func TestUpdater_SetAssignmentToErrorState(t *testing.T) {
 		ConstraintEngine        func() *automock.ConstraintEngine
 		NotificationSvc         func() *automock.FaNotificationService
 		FormationOperation      model.FormationOperation
-		NotificationResponse *notificationresponse.NotificationResponse
+		NotificationResponse *statusresponse.NotificationResponse
 		ExpectedErrorMsg        string
 	}{
 		{
@@ -420,7 +420,7 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
 		NotificationSvc         func() *automock.FaNotificationService
 		ConstraintEngine        func() *automock.ConstraintEngine
-		NotificationResponse *notificationresponse.NotificationResponse
+		NotificationResponse *statusresponse.NotificationResponse
 		ExpectedErrorMsg        string
 	}{
 		{
