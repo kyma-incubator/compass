@@ -100,8 +100,11 @@ type Service struct {
 	specSvc                        SpecService
 	fetchReqSvc                    FetchRequestService
 	packageSvc                     PackageService
+	packageProcessor               PackageProcessor
 	productSvc                     ProductService
+	productProcessor               ProductProcessor
 	vendorSvc                      VendorService
+	vendorProcessor                VendorProcessor
 	tombstoneProcessor             TombstoneProcessor
 	entityTypeProcessor            EntityTypeProcessor
 	integrationDependencyProcessor IntegrationDependencyProcessor
@@ -120,7 +123,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, packageProcessor PackageProcessor, productSvc ProductService, productProcessor ProductProcessor, vendorSvc VendorService, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
 		config:                         config,
 		metricsCfg:                     metricsCfg,
@@ -139,8 +142,11 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		specSvc:                        specSvc,
 		fetchReqSvc:                    fetchReqSvc,
 		packageSvc:                     packageSvc,
+		packageProcessor:               packageProcessor,
 		productSvc:                     productSvc,
+		productProcessor:               productProcessor,
 		vendorSvc:                      vendorSvc,
+		vendorProcessor:                vendorProcessor,
 		tombstoneProcessor:             tombstoneProcessor,
 		tenantSvc:                      tenantSvc,
 		globalRegistrySvc:              globalRegistrySvc,
@@ -374,21 +380,21 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		}
 
 		log.C(ctx).Infof("Starting processing vendors for %s with id: %q", resource.Type, resource.ID)
-		vendorsFromDB, err := s.processVendors(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Vendors)
+		vendorsFromDB, err := s.vendorProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Vendors)
 		if err != nil {
 			return err
 		}
 		log.C(ctx).Infof("Finished processing vendors for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing products for %s with id: %q", resource.Type, resource.ID)
-		productsFromDB, err := s.processProducts(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Products)
+		productsFromDB, err := s.productProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Products)
 		if err != nil {
 			return err
 		}
 		log.C(ctx).Infof("Finished processing products for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing packages for %s with id: %q", resource.Type, resource.ID)
-		packagesFromDB, err := s.processPackages(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Packages, resourceHashes)
+		packagesFromDB, err := s.packageProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Packages, resourceHashes)
 		if err != nil {
 			return err
 		}
@@ -731,61 +737,6 @@ func (s *Service) getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx
 	return systemVersion, tx.Commit()
 }
 
-func (s *Service) processVendors(ctx context.Context, resourceType directorresource.Type, resourceID string, vendors []*model.VendorInput) ([]*model.Vendor, error) {
-	vendorsFromDB, err := s.listVendorsInTx(ctx, resourceType, resourceID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, vendor := range vendors {
-		if err := s.resyncVendorInTx(ctx, resourceType, resourceID, vendorsFromDB, vendor); err != nil {
-			return nil, err
-		}
-	}
-
-	vendorsFromDB, err = s.listVendorsInTx(ctx, resourceType, resourceID)
-	if err != nil {
-		return nil, err
-	}
-	return vendorsFromDB, nil
-}
-
-func (s *Service) listVendorsInTx(ctx context.Context, resourceType directorresource.Type, resourceID string) ([]*model.Vendor, error) {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	var vendorsFromDB []*model.Vendor
-	switch resourceType {
-	case directorresource.Application:
-		vendorsFromDB, err = s.vendorSvc.ListByApplicationID(ctx, resourceID)
-	case directorresource.ApplicationTemplateVersion:
-		vendorsFromDB, err = s.vendorSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, errors.Wrapf(err, "error while listing vendors for %s with id %q", resourceType, resourceID)
-	}
-
-	return vendorsFromDB, tx.Commit()
-}
-
-func (s *Service) resyncVendorInTx(ctx context.Context, resourceType directorresource.Type, resourceID string, vendorsFromDB []*model.Vendor, vendor *model.VendorInput) error {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	if err := s.resyncVendor(ctx, resourceType, resourceID, vendorsFromDB, *vendor); err != nil {
-		return errors.Wrapf(err, "error while resyncing vendor with ORD ID %q", vendor.OrdID)
-	}
-	return tx.Commit()
-}
-
 func (s *Service) resyncApplicationTemplateVersionInTx(ctx context.Context, appTemplateID string, appTemplateVersionsFromDB []*model.ApplicationTemplateVersion, appTemplateVersion *model.ApplicationTemplateVersionInput) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
@@ -796,117 +747,6 @@ func (s *Service) resyncApplicationTemplateVersionInTx(ctx context.Context, appT
 
 	if err = s.resyncAppTemplateVersion(ctx, appTemplateID, appTemplateVersionsFromDB, appTemplateVersion); err != nil {
 		return errors.Wrapf(err, "error while resyncing App Template Version for App template %q", appTemplateID)
-	}
-	return tx.Commit()
-}
-
-func (s *Service) processProducts(ctx context.Context, resourceType directorresource.Type, resourceID string, products []*model.ProductInput) ([]*model.Product, error) {
-	productsFromDB, err := s.listProductsInTx(ctx, resourceType, resourceID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, product := range products {
-		if err := s.resyncProductInTx(ctx, resourceType, resourceID, productsFromDB, product); err != nil {
-			return nil, err
-		}
-	}
-
-	productsFromDB, err = s.listProductsInTx(ctx, resourceType, resourceID)
-	if err != nil {
-		return nil, err
-	}
-	return productsFromDB, nil
-}
-
-func (s *Service) listProductsInTx(ctx context.Context, resourceType directorresource.Type, resourceID string) ([]*model.Product, error) {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	var productsFromDB []*model.Product
-	switch resourceType {
-	case directorresource.Application:
-		productsFromDB, err = s.productSvc.ListByApplicationID(ctx, resourceID)
-	case directorresource.ApplicationTemplateVersion:
-		productsFromDB, err = s.productSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, errors.Wrapf(err, "error while listing products for %s with id %q", resourceType, resourceID)
-	}
-
-	return productsFromDB, tx.Commit()
-}
-
-func (s *Service) resyncProductInTx(ctx context.Context, resourceType directorresource.Type, resourceID string, productsFromDB []*model.Product, product *model.ProductInput) error {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	if err := s.resyncProduct(ctx, resourceType, resourceID, productsFromDB, *product); err != nil {
-		return errors.Wrapf(err, "error while resyncing product with ORD ID %q", product.OrdID)
-	}
-	return tx.Commit()
-}
-
-func (s *Service) processPackages(ctx context.Context, resourceType directorresource.Type, resourceID string, packages []*model.PackageInput, resourceHashes map[string]uint64) ([]*model.Package, error) {
-	packagesFromDB, err := s.listPackagesInTx(ctx, resourceType, resourceID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, pkg := range packages {
-		pkgHash := resourceHashes[pkg.OrdID]
-		if err := s.resyncPackageInTx(ctx, resourceType, resourceID, packagesFromDB, pkg, pkgHash); err != nil {
-			return nil, err
-		}
-	}
-
-	packagesFromDB, err = s.listPackagesInTx(ctx, resourceType, resourceID)
-	if err != nil {
-		return nil, err
-	}
-	return packagesFromDB, nil
-}
-
-func (s *Service) listPackagesInTx(ctx context.Context, resourceType directorresource.Type, resourceID string) ([]*model.Package, error) {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	var packagesFromDB []*model.Package
-	switch resourceType {
-	case directorresource.Application:
-		packagesFromDB, err = s.packageSvc.ListByApplicationID(ctx, resourceID)
-	case directorresource.ApplicationTemplateVersion:
-		packagesFromDB, err = s.packageSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, errors.Wrapf(err, "error while listing packages for %s with id %q", resourceType, resourceID)
-	}
-
-	return packagesFromDB, tx.Commit()
-}
-
-func (s *Service) resyncPackageInTx(ctx context.Context, resourceType directorresource.Type, resourceID string, packagesFromDB []*model.Package, pkg *model.PackageInput, pkgHash uint64) error {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	if err := s.resyncPackage(ctx, resourceType, resourceID, packagesFromDB, *pkg, pkgHash); err != nil {
-		return errors.Wrapf(err, "error while resyncing package with ORD ID %q", pkg.OrdID)
 	}
 	return tx.Commit()
 }
@@ -1332,18 +1172,6 @@ func (s *Service) resyncCapabilitiesInTx(ctx context.Context, resourceType direc
 	return fetchRequests, tx.Commit()
 }
 
-func (s *Service) resyncPackage(ctx context.Context, resourceType directorresource.Type, resourceID string, packagesFromDB []*model.Package, pkg model.PackageInput, pkgHash uint64) error {
-	ctx = addFieldToLogger(ctx, "package_ord_id", pkg.OrdID)
-	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
-		return packagesFromDB[i].OrdID == pkg.OrdID
-	}); found {
-		return s.packageSvc.Update(ctx, resourceType, packagesFromDB[i].ID, pkg, pkgHash)
-	}
-
-	_, err := s.packageSvc.Create(ctx, resourceType, resourceID, pkg, pkgHash)
-	return err
-}
-
 func (s *Service) resyncBundle(ctx context.Context, resourceType directorresource.Type, resourceID string, bundlesFromDB []*model.Bundle, bndl model.BundleCreateInput, bndlHash uint64) error {
 	ctx = addFieldToLogger(ctx, "bundle_ord_id", *bndl.OrdID)
 	if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
@@ -1353,30 +1181,6 @@ func (s *Service) resyncBundle(ctx context.Context, resourceType directorresourc
 	}
 
 	_, err := s.bundleSvc.CreateBundle(ctx, resourceType, resourceID, bndl, bndlHash)
-	return err
-}
-
-func (s *Service) resyncProduct(ctx context.Context, resourceType directorresource.Type, resourceID string, productsFromDB []*model.Product, product model.ProductInput) error {
-	ctx = addFieldToLogger(ctx, "product_ord_id", product.OrdID)
-	if i, found := searchInSlice(len(productsFromDB), func(i int) bool {
-		return productsFromDB[i].OrdID == product.OrdID
-	}); found {
-		return s.productSvc.Update(ctx, resourceType, productsFromDB[i].ID, product)
-	}
-
-	_, err := s.productSvc.Create(ctx, resourceType, resourceID, product)
-	return err
-}
-
-func (s *Service) resyncVendor(ctx context.Context, resourceType directorresource.Type, resourceID string, vendorsFromDB []*model.Vendor, vendor model.VendorInput) error {
-	ctx = addFieldToLogger(ctx, "vendor_ord_id", vendor.OrdID)
-	if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool {
-		return vendorsFromDB[i].OrdID == vendor.OrdID
-	}); found {
-		return s.vendorSvc.Update(ctx, resourceType, vendorsFromDB[i].ID, vendor)
-	}
-
-	_, err := s.vendorSvc.Create(ctx, resourceType, resourceID, vendor)
 	return err
 }
 

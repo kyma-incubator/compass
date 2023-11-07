@@ -198,6 +198,27 @@ type TombstoneProcessor interface {
 	Process(ctx context.Context, resourceType resource.Type, resourceID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error)
 }
 
+// VendorProcessor is responsible for processing of vendor entities.
+//
+//go:generate mockery --name=VendorProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type VendorProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, vendors []*model.VendorInput) ([]*model.Vendor, error)
+}
+
+// ProductProcessor is responsible for processing of product entities.
+//
+//go:generate mockery --name=ProductProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ProductProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, products []*model.ProductInput) ([]*model.Product, error)
+}
+
+// PackageProcessor is responsible for processing of package entities.
+//
+//go:generate mockery --name=PackageProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type PackageProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, packages []*model.PackageInput, resourceHashes map[string]uint64) ([]*model.Package, error)
+}
+
 // EntityTypeProcessor is responsible for processing of entity type entities.
 //
 //go:generate mockery --name=EntityTypeProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
