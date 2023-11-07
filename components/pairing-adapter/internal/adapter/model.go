@@ -67,7 +67,8 @@ type RequestData struct {
 	// in: body
 	Application graphql.Application
 	// in: body
-	Tenant     string
+	Tenant string
+	// in: body
 	TenantType tenant.Type
 	// in: body
 	ClientUser string
