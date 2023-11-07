@@ -58,6 +58,7 @@ type APIDefinition struct {
 	CorrelationIDs                          json.RawMessage
 	Direction                               *string
 	LastUpdate                              *string
+	DeprecationDate                         *string
 	*BaseEntity
 }
 
@@ -107,8 +108,8 @@ type APIDefinitionInput struct {
 	CorrelationIDs                          json.RawMessage               `json:"correlationIds,omitempty"`
 	Direction                               *string                       `json:"direction"`
 	LastUpdate                              *string                       `json:"lastUpdate"`
-
-	*VersionInput `hash:"ignore"`
+	DeprecationDate                         *string                       `json:"deprecationDate"`
+	*VersionInput                           `hash:"ignore"`
 }
 
 // APIResourceDefinition missing godoc
@@ -223,6 +224,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, resourceType resource.Ty
 		CorrelationIDs:      a.CorrelationIDs,
 		Direction:           a.Direction,
 		LastUpdate:          a.LastUpdate,
+		DeprecationDate:     a.DeprecationDate,
 		ResourceHash:        hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,

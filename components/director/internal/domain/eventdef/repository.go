@@ -25,16 +25,16 @@ var (
 	appTemplateVersionColumn = "app_template_version_id"
 	bundleColumn             = "bundle_id"
 	eventDefColumns          = []string{idColumn, appColumn, "app_template_version_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
-		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "changelog_entries", "links", "tags", "countries", "release_status",
+		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "changelog_entries", "links", "event_resource_links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description",
-		"extensible", "successors", "resource_hash", "documentation_labels", "correlation_ids", "last_update"}
+		"extensible", "successors", "resource_hash", "documentation_labels", "correlation_ids", "last_update", "deprecation_date"}
 	idColumns        = []string{idColumn}
 	updatableColumns = []string{"package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
-		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "changelog_entries", "links", "tags", "countries", "release_status",
+		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "changelog_entries", "links", "event_resource_links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description",
-		"extensible", "successors", "resource_hash", "documentation_labels", "correlation_ids", "last_update"}
+		"extensible", "successors", "resource_hash", "documentation_labels", "correlation_ids", "last_update", "deprecation_date"}
 )
 
 // EventAPIDefinitionConverter converts EventDefinitions between the model.EventDefinition service-layer representation and the repo-layer representation Entity.

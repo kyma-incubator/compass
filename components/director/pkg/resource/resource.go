@@ -74,6 +74,10 @@ const (
 	EventDefinition Type = "eventDefinition"
 	// Capability type represents capability resource.
 	Capability Type = "capability"
+	// IntegrationDependency type represents integration dependency resource.
+	IntegrationDependency Type = "integrationDependency"
+	// Aspect type represents the Aspect inside Integration Dependency resource
+	Aspect Type = "aspect"
 	// AutomaticScenarioAssigment type represents ASA resource.
 	AutomaticScenarioAssigment Type = "automaticScenarioAssigment"
 	// CertSubjectMapping type represents certificate subject mapping resource
@@ -145,6 +149,8 @@ var tenantAccessTable = map[Type]string{
 	EventDefinition:            "event_api_definitions_tenants",
 	EntityType:                 "entity_types_tenants",
 	Capability:                 "capabilities_tenants",
+	IntegrationDependency:      "integration_dependencies_tenants",
+	Aspect:                     "aspects_tenants",
 	Webhook:                    "webhooks_tenants",
 	AppWebhook:                 "application_webhooks_tenants",
 	RuntimeWebhook:             "runtime_webhooks_tenants",
