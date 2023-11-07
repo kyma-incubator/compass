@@ -15,29 +15,28 @@ func TestEntityTypeInput_ToEntityType(t *testing.T) {
 	id := "foo"
 	appID := "bar"
 	appTemplateVersionID := "naz"
-	vendor := "Sample"
-	name := "sample"
+	packageID := "pack"
 	labels := json.RawMessage("{}")
 
 	testCases := []struct {
 		Name         string
-		Input        *model.PackageInput
+		Input        *model.EntityTypeInput
 		ResourceType resource.Type
 		ResourceID   string
-		Expected     *model.Package
+		Expected     *model.EntityType
 	}{
 		{
 			Name: "All properties given for App",
-			Input: &model.PackageInput{
-				Title:  name,
-				Vendor: &vendor,
+			Input: &model.EntityTypeInput{
 				Labels: labels,
 			},
-			Expected: &model.Package{
-				ID:            id,
+			Expected: &model.EntityType{
+				BaseEntity: &model.BaseEntity{
+					ID:    id,
+					Ready: true,
+				},
 				ApplicationID: &appID,
-				Title:         name,
-				Vendor:        &vendor,
+				PackageID:     packageID,
 				Labels:        labels,
 			},
 			ResourceType: resource.Application,
@@ -45,16 +44,16 @@ func TestEntityTypeInput_ToEntityType(t *testing.T) {
 		},
 		{
 			Name: "All properties given for App Template Version",
-			Input: &model.PackageInput{
-				Title:  name,
-				Vendor: &vendor,
+			Input: &model.EntityTypeInput{
 				Labels: labels,
 			},
-			Expected: &model.Package{
-				ID:                           id,
+			Expected: &model.EntityType{
+				BaseEntity: &model.BaseEntity{
+					ID:    id,
+					Ready: true,
+				},
 				ApplicationTemplateVersionID: &appTemplateVersionID,
-				Title:                        name,
-				Vendor:                       &vendor,
+				PackageID:                    packageID,
 				Labels:                       labels,
 			},
 			ResourceType: resource.ApplicationTemplateVersion,
@@ -70,7 +69,7 @@ func TestEntityTypeInput_ToEntityType(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// WHEN
-			result := testCase.Input.ToPackage(id, testCase.ResourceType, testCase.ResourceID, 0)
+			result := testCase.Input.ToEntityType(id, testCase.ResourceType, testCase.ResourceID, packageID, 0)
 
 			// THEN
 			assert.Equal(t, testCase.Expected, result)

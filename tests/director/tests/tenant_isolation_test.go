@@ -87,21 +87,11 @@ func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 			require.NoError(t, err)
 
 			if ts.isSubaccountTenant {
-				require.Equal(t, 1, subaccountResp.TotalCount)
-				require.Len(t, subaccountResp.Data, 1)
-				require.Equal(t, app.ID, subaccountResp.Data[0].ID)
-				require.Equal(t, app.Name, subaccountResp.Data[0].Name)
-
-				require.Equal(t, 0, accountResp.TotalCount)
-				require.Len(t, accountResp.Data, 0)
+				require.True(t, assertions.DoesAppExistsInAppPageData(app.ID, subaccountResp))
+				require.False(t, assertions.DoesAppExistsInAppPageData(app.ID, accountResp))
 			} else {
-				require.Equal(t, 1, accountResp.TotalCount)
-				require.Len(t, accountResp.Data, 1)
-				require.Equal(t, app.ID, accountResp.Data[0].ID)
-				require.Equal(t, app.Name, accountResp.Data[0].Name)
-
-				require.Equal(t, 0, subaccountResp.TotalCount)
-				require.Len(t, subaccountResp.Data, 0)
+				require.True(t, assertions.DoesAppExistsInAppPageData(app.ID, accountResp))
+				require.False(t, assertions.DoesAppExistsInAppPageData(app.ID, subaccountResp))
 			}
 		})
 	}

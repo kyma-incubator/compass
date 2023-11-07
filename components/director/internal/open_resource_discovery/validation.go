@@ -40,7 +40,7 @@ const (
 	// EntityTypeOrdIDRegex represents the valid structure of the ordID of the EntityType
 	EntityTypeOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(entityType):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// TombstoneOrdIDRegex represents the valid structure of the ordID of the Tombstone
-	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource|entityType|capability|integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*|)$"
+	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource|entityType|capability|integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*|)?$"
 	// SystemInstanceBaseURLRegex represents the valid structure of the field
 	SystemInstanceBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?(\\/[a-zA-Z0-9-\\._~]+)*$"
 	// ConfigBaseURLRegex represents the valid structure of the field
@@ -125,6 +125,10 @@ const (
 	MinResourceLinkCustomTypeLength = 1
 	// MaxResourceLinkCustomTypeLength represents the maximal accepted length of the custom type field in a resource link
 	MaxResourceLinkCustomTypeLength = 255
+	// MinCorrelationIDLength represents the minimal accepted length of the Correaltion ID field
+	MinCorrelationIDLength = 1
+	// MaxCorrelationIDLength represents the maximal accepted length of the Correaltion ID field
+	MaxCorrelationIDLength = 255
 
 	// IntegrationDependencyMsg represents the resource name for Integration Dependency used in error message
 	IntegrationDependencyMsg string = "integration dependency"
@@ -236,6 +240,11 @@ const (
 	DeprecatedTerm = "deprecated"
 	// DecommissionedTerm represents a term which all titles must not contain (except link titles) due to sap core policy
 	DecommissionedTerm = "decommissioned"
+
+	// APIModelSelectorTypeODATA for odata selector tyor.
+	APIModelSelectorTypeODATA = "odata"
+	// APIModelSelectorTypeJSONPointer for json pointer selector tyor.
+	APIModelSelectorTypeJSONPointer = "json-pointer"
 )
 
 var (
@@ -361,7 +370,7 @@ func validatePackageInput(pkg *model.PackageInput, docPolicyLevel *string) error
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, pkg.PolicyLevel, PolicyLevelSap), validation.In(SapVendor)),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, pkg.PolicyLevel, PolicyLevelSapPartner), validation.NotIn(SapVendor)),
 			validation.Match(regexp.MustCompile(VendorOrdIDRegex)), validation.Length(1, 256)),
-		validation.Field(&pkg.PartOfProducts, validation.Required, validation.By(func(value interface{}) error {
+		validation.Field(&pkg.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),
 		validation.Field(&pkg.Tags, validation.By(func(value interface{}) error {
@@ -590,6 +599,7 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 		validation.Field(&api.Extensible, validation.By(func(value interface{}) error {
 			return validateExtensibleField(value, docPolicyLevel)
 		})),
+		validation.Field(&api.EntityTypeMappings, validation.By(validateEntityTypeMappings)),
 		validation.Field(&api.DocumentationLabels, validation.By(validateDocumentationLabels)),
 		validation.Field(&api.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
@@ -677,6 +687,7 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 		validation.Field(&event.Extensible, validation.By(func(value interface{}) error {
 			return validateExtensibleField(value, docPolicyLevel)
 		})),
+		validation.Field(&event.EntityTypeMappings, validation.By(validateEntityTypeMappings)),
 		validation.Field(&event.DocumentationLabels, validation.By(validateDocumentationLabels)),
 		validation.Field(&event.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
@@ -703,7 +714,7 @@ func validateEntityTypeInputWithSuppressedErrors(entityType *model.EntityTypeInp
 func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *string) error {
 	return validation.ValidateStruct(entityType,
 		validation.Field(&entityType.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(EntityTypeOrdIDRegex))),
-		validation.Field(&entityType.LocalID, validation.Required, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
+		validation.Field(&entityType.LocalTenantID, validation.Required, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
 		validation.Field(&entityType.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
@@ -754,6 +765,9 @@ func validateCapabilityInput(capability *model.CapabilityInput) error {
 		validation.Field(&capability.ShortDescription, optionalShortDescriptionRules...),
 		validation.Field(&capability.Tags, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
+		validation.Field(&capability.RelatedEntityTypes, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EntityTypeOrdIDRegex))
 		})),
 		validation.Field(&capability.Links, validation.By(validateORDLinks)),
 		validation.Field(&capability.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
@@ -1639,6 +1653,85 @@ func validateEventPartOfConsumptionBundles(value interface{}, regexPattern *rege
 		}
 	}
 	return nil
+}
+
+func validateEntityTypeMappings(value interface{}) error {
+	entityTypeMappings, ok := value.([]*model.EntityTypeMappingInput)
+	if !ok {
+		return errors.New("error while casting to EntityTypeMapping")
+	}
+
+	if entityTypeMappings != nil && len(entityTypeMappings) == 0 {
+		return errors.New("entityTypeMappings should not be empty if present")
+	}
+	for _, entityTypeMapping := range entityTypeMappings {
+		// Validate APIModelSelectors
+		var apiModelSelectors []*model.APIModelSelector
+		if err := json.Unmarshal(entityTypeMapping.APIModelSelectors, &apiModelSelectors); err != nil {
+			return errors.New("error while unmarshalling APIModelSelectors for EntityTypeMapping")
+		}
+		for _, apiModelSelector := range apiModelSelectors {
+			err := validateAPIModelSelector(apiModelSelector)
+			if err != nil {
+				return errors.Wrap(err, "error while validating APIModelSelector")
+			}
+		}
+
+		// Validate EntityTypeTargets
+		var entityTypeTargets []*model.EntityTypeTarget
+		if err := json.Unmarshal(entityTypeMapping.EntityTypeTargets, &entityTypeTargets); err != nil {
+			return errors.New("error while unmarshalling EntityTypeTarget for EntityTypeMapping")
+		}
+		if len(entityTypeTargets) == 0 {
+			return errors.New("entity type target should not be blank")
+		}
+		for _, entityTypeTarget := range entityTypeTargets {
+			err := validateEntityTypeTarget(entityTypeTarget)
+			if err != nil {
+				return errors.Wrap(err, "error while validating EntityTypeTarget")
+			}
+		}
+	}
+	return nil
+}
+
+func validateAPIModelSelector(value interface{}) error {
+	apiModelSelector, ok := value.(*model.APIModelSelector)
+	if !ok {
+		return errors.New("error while casting to APIModelSelector")
+	}
+	return validation.ValidateStruct(apiModelSelector,
+		validation.Field(&apiModelSelector.Type, validation.Required, validation.In(APIModelSelectorTypeODATA, APIModelSelectorTypeJSONPointer)),
+		validation.Field(&apiModelSelector.EntitySetName,
+			validation.When(apiModelSelector.Type == APIModelSelectorTypeODATA, validation.Required),
+			validation.When(apiModelSelector.Type == APIModelSelectorTypeJSONPointer, validation.Nil),
+		),
+		validation.Field(&apiModelSelector.JSONPointer,
+			validation.When(apiModelSelector.Type == APIModelSelectorTypeJSONPointer, validation.Required),
+			validation.When(apiModelSelector.Type == APIModelSelectorTypeODATA, validation.Nil),
+		),
+	)
+}
+
+func validateEntityTypeTarget(value interface{}) error {
+	entityTypeTarget, ok := value.(*model.EntityTypeTarget)
+	if !ok {
+		return errors.New("error while casting to EntityTypeTarget")
+	}
+	return validation.ValidateStruct(entityTypeTarget,
+		validation.Field(&entityTypeTarget.OrdID,
+			validation.When(entityTypeTarget.CorrelationID != nil, validation.Nil),
+			validation.When(entityTypeTarget.CorrelationID == nil, validation.Required),
+			validation.Length(MinOrdIDLength, MaxOrdIDLength),
+			validation.Match(regexp.MustCompile(EntityTypeOrdIDRegex)),
+		),
+		validation.Field(&entityTypeTarget.CorrelationID,
+			validation.When(entityTypeTarget.OrdID != nil, validation.Nil),
+			validation.When(entityTypeTarget.OrdID == nil, validation.Required),
+			validation.Length(MinCorrelationIDLength, MaxCorrelationIDLength),
+			validation.Match(regexp.MustCompile(CorrelationIDsRegex)),
+		),
+	)
 }
 
 func validateAPIPartOfConsumptionBundles(value interface{}, targetURLs json.RawMessage, regexPattern *regexp.Regexp) error {

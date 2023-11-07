@@ -107,6 +107,7 @@ type Service struct {
 	vendorProcessor                VendorProcessor
 	tombstoneProcessor             TombstoneProcessor
 	entityTypeProcessor            EntityTypeProcessor
+	entityTypeMappingSvc           EntityTypeMappingService
 	integrationDependencyProcessor IntegrationDependencyProcessor
 	tenantSvc                      TenantService
 	appTemplateVersionSvc          ApplicationTemplateVersionService
@@ -123,7 +124,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, packageProcessor PackageProcessor, productSvc ProductService, productProcessor ProductProcessor, vendorSvc VendorService, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, entityTypeMappingSvc EntityTypeMappingService, capabilitySvc CapabilityService, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
 		config:                         config,
 		metricsCfg:                     metricsCfg,
@@ -136,6 +137,7 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		eventSvc:                       eventSvc,
 		entityTypeSvc:                  entityTypeSvc,
 		entityTypeProcessor:            entityTypeProcessor,
+		entityTypeMappingSvc:           entityTypeMappingSvc,
 		capabilitySvc:                  capabilitySvc,
 		integrationDependencySvc:       integrationDependencySvc,
 		integrationDependencyProcessor: integrationDependencyProcessor,
@@ -346,9 +348,9 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		return errors.Wrap(err, "while sanitizing ORD documents")
 	}
 
-	ordLocalID := s.getUniqueLocalTenantID(documents)
-	if ordLocalID != "" && resource.LocalTenantID == nil {
-		if err := s.appSvc.Update(ctx, resource.ID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr(ordLocalID)}); err != nil {
+	ordLocalTenantID := s.getUniqueLocalTenantID(documents)
+	if ordLocalTenantID != "" && resource.LocalTenantID == nil {
+		if err := s.appSvc.Update(ctx, resource.ID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr(ordLocalTenantID)}); err != nil {
 			return err
 		}
 	}
@@ -1223,12 +1225,22 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 			return nil, err
 		}
 
+		err = s.resyncEntityTypeMappings(ctx, directorresource.API, apiID, api.EntityTypeMappings)
+		if err != nil {
+			return nil, err
+		}
+
 		fr, err := s.createSpecs(ctx, model.APISpecReference, apiID, specs, resourceType)
 		if err != nil {
 			return nil, err
 		}
 
 		return fr, nil
+	}
+
+	err := s.resyncEntityTypeMappings(ctx, directorresource.API, apisFromDB[i].ID, api.EntityTypeMappings)
+	if err != nil {
+		return nil, err
 	}
 
 	allBundleIDsForAPI, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleAPIReference, &apisFromDB[i].ID)
@@ -1301,7 +1313,16 @@ func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource
 		if err != nil {
 			return nil, err
 		}
+		err = s.resyncEntityTypeMappings(ctx, directorresource.EventDefinition, eventID, event.EntityTypeMappings)
+		if err != nil {
+			return nil, err
+		}
+
 		return s.createSpecs(ctx, model.EventSpecReference, eventID, specs, resourceType)
+	}
+	err := s.resyncEntityTypeMappings(ctx, directorresource.EventDefinition, eventsFromDB[i].ID, event.EntityTypeMappings)
+	if err != nil {
+		return nil, err
 	}
 
 	allBundleIDsForEvent, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleEventReference, &eventsFromDB[i].ID)
@@ -1352,6 +1373,28 @@ func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource
 	}
 
 	return fetchRequests, nil
+}
+
+func (s *Service) resyncEntityTypeMappings(ctx context.Context, resourceType directorresource.Type, resourceID string, entityTypeMappings []*model.EntityTypeMappingInput) error {
+	entityTypeMappingsFromDB, err := s.entityTypeMappingSvc.ListByOwnerResourceID(ctx, resourceID, resourceType)
+	if err != nil {
+		return errors.Wrapf(err, "error while listing entity type mappings for %s with id %q", resourceType, resourceID)
+	}
+
+	for _, entityTypeMappingFromDB := range entityTypeMappingsFromDB {
+		err := s.entityTypeMappingSvc.Delete(ctx, resourceType, entityTypeMappingFromDB.ID)
+		if err != nil {
+			return err
+		}
+	}
+	for _, entityTypeMapping := range entityTypeMappings {
+		_, err := s.entityTypeMappingSvc.Create(ctx, resourceType, resourceID, entityTypeMapping)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *Service) resyncCapability(ctx context.Context, resourceType directorresource.Type, resourceID string, capabilitiesFromDB []*model.Capability, packagesFromDB []*model.Package, capability model.CapabilityInput, capabilityHash uint64) ([]*model.FetchRequest, error) {
