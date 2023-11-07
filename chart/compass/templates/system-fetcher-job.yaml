@@ -46,6 +46,8 @@ spec:
                   value: "{{ .Values.global.systemFetcher.enableSystemDeletion }}"
                 - name: APP_OPERATIONAL_MODE
                   value: {{ .Values.global.systemFetcher.operationalMode }}
+                - name: APP_SYNC_GLOBAL_ACCOUNTS
+                  value: "{{ .Values.global.systemFetcher.syncGlobalAccountTenants }}"
                 - name: APP_SYSTEM_INFORMATION_PARALLELLISM
                   value: "{{ .Values.global.systemFetcher.fetchParallellism }}"
                 - name: APP_SYSTEM_INFORMATION_QUEUE_SIZE
@@ -92,6 +94,8 @@ spec:
                   value: {{ .Values.global.systemFetcher.oauth.tokenRequestTimeout | quote }}
                 - name: APP_OAUTH_SKIP_SSL_VALIDATION
                   value: "{{ .Values.global.systemFetcher.oauth.skipSSLValidation }}"
+                - name: APP_JWT_EXPIRE_AFTER
+                  value: "{{ .Values.global.systemFetcher.jwt.expireAfter }}"
                 - name: APP_DB_USER
                   valueFrom:
                     secretKeyRef:
