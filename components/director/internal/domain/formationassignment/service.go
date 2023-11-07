@@ -660,12 +660,11 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	} else {
 		if *response.ActualStatusCode == *response.SuccessStatusCode {
 			response.State = str.Ptr(string(model.ReadyAssignmentState))
-		} else if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
-			response.State = str.Ptr(string(model.ConfigPendingAssignmentState))
-		} else {
-			response.State = str.Ptr(string(model.CreateErrorAssignmentState))
 		}
-		// todo if we are not in either of the cases? maybe if there is an error in the response the state should be populated based on the operation to create error or delete error
+
+		if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
+			response.State = str.Ptr(string(model.ConfigPendingAssignmentState))
+		}
 	}
 
 	notificationResponse := newNotificationResponseFromWebhookResponse(response)
@@ -808,12 +807,11 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	} else {
 		if *response.ActualStatusCode == *response.SuccessStatusCode {
 			response.State = str.Ptr(string(model.ReadyAssignmentState))
-		} else if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
-			response.State = str.Ptr(string(model.ConfigPendingAssignmentState))
-		} else {
-			response.State = str.Ptr(string(model.DeleteErrorAssignmentState))
 		}
-		// todo if we are not in either of the cases? maybe if there is an error in the response the state should be populated based on the operation to create error or delete error
+
+		if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
+			response.State = str.Ptr(string(model.ConfigPendingAssignmentState))
+		}
 	}
 
 	notificationResponse := newNotificationResponseFromWebhookResponse(response)
