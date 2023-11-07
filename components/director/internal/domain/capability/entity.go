@@ -22,6 +22,7 @@ type Entity struct {
 	ShortDescription             sql.NullString `db:"short_description"`
 	SystemInstanceAware          sql.NullBool   `db:"system_instance_aware"`
 	Tags                         sql.NullString `db:"tags"`
+	RelatedEntityTypes           sql.NullString `db:"related_entity_types"`
 	Links                        sql.NullString `db:"links"`
 	ReleaseStatus                sql.NullString `db:"release_status"`
 	Labels                       sql.NullString `db:"labels"`
