@@ -2,6 +2,7 @@ package formationassignment
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/notificationresponse"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -94,7 +95,7 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 }
 
 // PrepareDetailsForNotificationStatusReturned creates NotificationStatusReturnedOperationDetails by given tenantID, formation assignment and formation operation
-func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
+func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string, notificationResponse *notificationresponse.NotificationResponse) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
 	var targetType model.ResourceType
 	switch fa.TargetType {
 	case model.FormationAssignmentTypeApplication:
@@ -138,6 +139,7 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
 		ResourceType:                         targetType,
 		ResourceSubtype:                      targetSubtype,
+		NotificationResponse:                 notificationResponse,
 		LastFormationAssignmentState:         lastFormationAssignmentState,
 		LastFormationAssignmentConfiguration: lastFormationAssignmentConfiguration,
 		Tenant:                               tenantID,

@@ -3,6 +3,8 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/notificationresponse"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -108,16 +110,15 @@ type constraintEngine interface {
 
 //go:generate mockery --exported --name=statusService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type statusService interface {
-	UpdateWithConstraints(ctx context.Context, fa *model.FormationAssignment, operation model.FormationOperation) error
-	SetAssignmentToErrorStateWithConstraints(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error
-	DeleteWithConstraints(ctx context.Context, id string) error
+	UpdateWithConstraints(ctx context.Context, notificationResponse *notificationresponse.NotificationResponse, fa *model.FormationAssignment, operation model.FormationOperation) error
+	SetAssignmentToErrorStateWithConstraints(ctx context.Context, notificationResponse *notificationresponse.NotificationResponse, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error
+	DeleteWithConstraints(ctx context.Context, id string, notificationResponse *notificationresponse.NotificationResponse) error
 }
 
 //go:generate mockery --exported --name=faNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type faNotificationService interface {
 	GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)
-	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)
-}
+	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string, notificationResponse *notificationresponse.NotificationResponse) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)}
 
 type service struct {
 	repo                    FormationAssignmentRepository
@@ -649,8 +650,26 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		return nil
 	}
 
+	if isStateInResponse(response) {
+		log.C(ctx).Info("There is a state in the response. Validating it...")
+		if isValid := validateResponseState(*response.State, assignment.State); !isValid {
+			return errors.Errorf("The provided state in the response %q is not valid.", *response.State)
+		}
+	} else {
+		if *response.ActualStatusCode == *response.SuccessStatusCode {
+			response.State = str.Ptr(string(model.ReadyAssignmentState))
+		}else if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
+			response.State = str.Ptr(string(model.ConfigPendingAssignmentState))
+		}else{
+			response.State = str.Ptr(string(model.CreateErrorAssignmentState))
+		}
+		//todo if we are not in either of the cases? maybe if there is an error in the response the state should be populated based on the operation to create error or delete error
+	}
+
+	notificationResponse := newNotificationResponseFromWebhookResponse(response)
+
 	if response.Error != nil && *response.Error != "" {
-		err = s.statusService.SetAssignmentToErrorStateWithConstraints(ctx, assignment, *response.Error, ClientError, model.CreateErrorAssignmentState, mappingPair.Operation)
+		err = s.statusService.SetAssignmentToErrorStateWithConstraints(ctx, notificationResponse, assignment, *response.Error, ClientError, model.CreateErrorAssignmentState, mappingPair.Operation)
 		if err != nil {
 			return errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
@@ -667,21 +686,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		}
 	}
 
-	if isStateInResponse(response) {
-		log.C(ctx).Info("There is a state in the response. Validating it...")
-		if isValid := validateResponseState(*response.State, assignment.State); !isValid {
-			return errors.Errorf("The provided state in the response %q is not valid.", *response.State)
-		}
-		assignment.State = *response.State
-	} else {
-		if *response.ActualStatusCode == *response.SuccessStatusCode {
-			assignment.State = string(model.ReadyAssignmentState)
-		}
-
-		if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
-			assignment.State = string(model.ConfigPendingAssignmentState)
-		}
-	}
+	assignment.State = *response.State
 
 	// Notification response has been received. The error should be cleared. The old configuration should be discarded and the new one from the response should be used.
 	if assignment.State == string(model.ReadyAssignmentState) {
@@ -698,7 +703,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		shouldSendReverseNotification = false
 	}
 
-	if err = s.statusService.UpdateWithConstraints(ctx, assignment, mappingPair.Operation); err != nil {
+	if err = s.statusService.UpdateWithConstraints(ctx, notificationResponse, assignment, mappingPair.Operation); err != nil {
 		return errors.Wrapf(err, "while updating formation assignment with constraints for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 	}
 	log.C(ctx).Infof("Assignment with ID: %q was updated with %q state", assignment.ID, assignment.State)
@@ -793,8 +798,26 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		return false, errors.Wrapf(err, "while sending notification for formation assignment with ID %q", assignment.ID)
 	}
 
+	if isStateInResponse(response) {
+		log.C(ctx).Info("There is a state in the response. Validating it...")
+		if isValid := validateResponseState(*response.State, assignment.State); !isValid {
+			return false, errors.Errorf("The provided state in the response %q is not valid.", *response.State)
+		}
+	} else {
+		if *response.ActualStatusCode == *response.SuccessStatusCode {
+			response.State = str.Ptr(string(model.ReadyAssignmentState))
+		}else if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
+			response.State = str.Ptr(string(model.ConfigPendingAssignmentState))
+		}else {
+			response.State = str.Ptr(string(model.DeleteErrorAssignmentState))
+		}
+		//todo if we are not in either of the cases? maybe if there is an error in the response the state should be populated based on the operation to create error or delete error
+	}
+
+	notificationResponse := newNotificationResponseFromWebhookResponse(response)
+
 	if response.Error != nil && *response.Error != "" {
-		if err = s.statusService.SetAssignmentToErrorStateWithConstraints(ctx, assignment, *response.Error, ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation); err != nil {
+		if err = s.statusService.SetAssignmentToErrorStateWithConstraints(ctx, notificationResponse, assignment, *response.Error, ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation); err != nil {
 			return false, errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
 		return false, errors.Errorf("Received error from response: %v", *response.Error)
@@ -808,18 +831,10 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		}
 	}
 
-	if isStateInResponse(response) {
-		log.C(ctx).Info("There is a state in the response. Validating it...")
-		if isValid := validateResponseState(*response.State, assignment.State); !isValid {
-			return false, errors.Errorf("The provided state in the response %q is not valid.", *response.State)
-		}
-	}
-
 	// if there is a state in the body - check if it is READY
 	// if there is no state in the body - check if the status code is 'success'
-	if (response.State != nil && *response.State == string(model.ReadyAssignmentState)) ||
-		(!isStateInResponse(response) && *response.ActualStatusCode == *response.SuccessStatusCode) {
-		if err = s.statusService.DeleteWithConstraints(ctx, assignment.ID); err != nil {
+	if response.State != nil && *response.State == string(model.ReadyAssignmentState) {
+		if err = s.statusService.DeleteWithConstraints(ctx, assignment.ID, notificationResponse); err != nil {
 			if apperrors.IsNotFoundError(err) {
 				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
 				return false, nil
@@ -843,7 +858,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	}
 
 	if response.State != nil && *response.State == string(model.DeleteErrorAssignmentState) {
-		if err = s.statusService.SetAssignmentToErrorStateWithConstraints(ctx, assignment, "", ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation); err != nil {
+		if err = s.statusService.SetAssignmentToErrorStateWithConstraints(ctx, notificationResponse, assignment, "", ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation); err != nil {
 			if apperrors.IsNotFoundError(err) {
 				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
 				return false, nil
@@ -852,7 +867,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		}
 	}
 
-	if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
+	if response.State != nil && *response.State == string(model.ConfigPendingAssignmentState) {
 		err = errors.New("Error while deleting assignment: config propagation is not supported on unassign notifications")
 		if updateErr := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), ClientError, model.DeleteErrorAssignmentState); updateErr != nil {
 			return false, errors.Wrapf(updateErr, "while updating error state for formation with ID %q", assignment.ID)
@@ -1066,4 +1081,23 @@ type AssignmentError struct {
 // AssignmentErrorWrapper wrapper for AssignmentError
 type AssignmentErrorWrapper struct {
 	Error AssignmentError `json:"error"`
+}
+
+func newNotificationResponseFromWebhookResponse(response *webhookdir.Response) *notificationresponse.NotificationResponse {
+	var configuration json.RawMessage
+	if response.Config != nil {
+		configuration = []byte(*response.Config)
+	}
+
+	var state string
+	if response.State != nil {
+		state = *response.State
+	}
+
+	var errorFromResponse string
+	if response.Error != nil && *response.Error != "" {
+		errorFromResponse = *response.Error
+	}
+
+	return notificationresponse.NewNotificationResponse(configuration, state, errorFromResponse)
 }
