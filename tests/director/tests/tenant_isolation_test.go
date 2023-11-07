@@ -44,9 +44,9 @@ func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, subaccountTokenURL)
 
-	// The accountToken is JWT token containing claim with account ID for tenant. In local setup that's 'TestProviderAccountID'
+	// The accountToken is JWT token containing claim with account ID for tenant. In local setup that's 'ApplicationsForRuntimeTenantName'
 	accountToken := token.GetUserToken(t, ctx, accountTokenURL, conf.UsernameAuthCfg.Account.ClientID, conf.UsernameAuthCfg.Account.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.AccountAuthenticatorClaimKey)
-	// The subaccountToken is JWT token containing claim with subaccount ID for tenant. In local setup that's 'TestConsumerSubaccount'
+	// The subaccountToken is JWT token containing claim with subaccount ID for tenant. In local setup that's 'TestTenantSubstitutionSubaccount2' and the tenant has 'customerId' label with value external tenant ID of 'ApplicationsForRuntimeTenantName'
 	subaccountToken := token.GetUserToken(t, ctx, subaccountTokenURL, conf.UsernameAuthCfg.Subaccount.ClientID, conf.UsernameAuthCfg.Subaccount.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubaccountAuthenticatorClaimKey)
 
 	accountGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accountToken, conf.DirectorUserNameAuthenticatorURL)
@@ -86,13 +86,8 @@ func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 			err = testctx.Tc.RunOperationWithoutTenant(ctx, accountGraphQLClient, accountReq, &accountResp)
 			require.NoError(t, err)
 
-			if ts.isSubaccountTenant {
-				require.True(t, assertions.DoesAppExistsInAppPageData(app.ID, subaccountResp))
-				require.False(t, assertions.DoesAppExistsInAppPageData(app.ID, accountResp))
-			} else {
-				require.True(t, assertions.DoesAppExistsInAppPageData(app.ID, accountResp))
-				require.False(t, assertions.DoesAppExistsInAppPageData(app.ID, subaccountResp))
-			}
+			require.True(t, assertions.DoesAppExistsInAppPageData(app.ID, accountResp))
+			require.False(t, assertions.DoesAppExistsInAppPageData(app.ID, subaccountResp))
 		})
 	}
 }
