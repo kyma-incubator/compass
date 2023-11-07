@@ -746,6 +746,17 @@ func AssertApplicationPageContainOnlyIDs(t *testing.T, page graphql.ApplicationP
 	}
 }
 
+func DoesAppExistsInAppPageData(appID string, page graphql.ApplicationPageExt) bool {
+	found := false
+	for _, d := range page.Data {
+		if appID == d.ID {
+			found = true
+			break
+		}
+	}
+	return found
+}
+
 func AssertNoErrorForOtherThanNotFound(t require.TestingT, err error) {
 	if err != nil && !strings.Contains(strings.ToLower(err.Error()), "not found") {
 		require.NoError(t, err)
