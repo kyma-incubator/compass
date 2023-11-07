@@ -3,8 +3,9 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
 	"strconv"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"

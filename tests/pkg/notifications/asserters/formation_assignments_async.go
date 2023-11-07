@@ -2,7 +2,7 @@ package asserters
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
+	"github.com/kyma-incubator/compass/tests/pkg/json"
 	"testing"
 	"time"
 
@@ -66,11 +66,11 @@ func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchrono
 				t.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
 				return
 			}
-			if isEqual := assertJSONStringEquality(t, assignmentExpectation.Error, assignment.Error); !isEqual {
+			if isEqual := json.AssertJSONStringEquality(t, assignmentExpectation.Error, assignment.Error); !isEqual {
 				t.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
 				return
 			}
-			if isEqual := assertJSONStringEquality(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
+			if isEqual := json.AssertJSONStringEquality(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
 				t.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
 				return
 			}
@@ -79,21 +79,4 @@ func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchrono
 		t.Logf("Successfully asserted formation asssignments asynchronously")
 		return true
 	}, a.timeout, a.tick)
-}
-
-func assertJSONStringEquality(t *testing.T, expectedValue, actualValue *string) bool {
-	expectedValueStr := str.PtrStrToStr(expectedValue)
-	actualValueStr := str.PtrStrToStr(actualValue)
-	if !isJSONStringEmpty(expectedValueStr) && !isJSONStringEmpty(actualValueStr) {
-		return assert.JSONEq(t, expectedValueStr, actualValueStr)
-	} else {
-		return assert.Equal(t, expectedValueStr, actualValueStr)
-	}
-}
-
-func isJSONStringEmpty(json string) bool {
-	if json != "" && json != "\"\"" {
-		return false
-	}
-	return true
 }

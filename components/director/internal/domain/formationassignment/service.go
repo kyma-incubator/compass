@@ -3,6 +3,7 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -118,7 +119,8 @@ type statusService interface {
 //go:generate mockery --exported --name=faNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type faNotificationService interface {
 	GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)
-	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string, notificationResponse *statusresponse.NotificationResponse) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)}
+	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string, notificationResponse *statusresponse.NotificationResponse) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)
+}
 
 type service struct {
 	repo                    FormationAssignmentRepository
@@ -658,12 +660,12 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	} else {
 		if *response.ActualStatusCode == *response.SuccessStatusCode {
 			response.State = str.Ptr(string(model.ReadyAssignmentState))
-		}else if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
+		} else if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
 			response.State = str.Ptr(string(model.ConfigPendingAssignmentState))
-		}else{
+		} else {
 			response.State = str.Ptr(string(model.CreateErrorAssignmentState))
 		}
-		//todo if we are not in either of the cases? maybe if there is an error in the response the state should be populated based on the operation to create error or delete error
+		// todo if we are not in either of the cases? maybe if there is an error in the response the state should be populated based on the operation to create error or delete error
 	}
 
 	notificationResponse := newNotificationResponseFromWebhookResponse(response)
@@ -806,12 +808,12 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	} else {
 		if *response.ActualStatusCode == *response.SuccessStatusCode {
 			response.State = str.Ptr(string(model.ReadyAssignmentState))
-		}else if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
+		} else if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
 			response.State = str.Ptr(string(model.ConfigPendingAssignmentState))
-		}else {
+		} else {
 			response.State = str.Ptr(string(model.DeleteErrorAssignmentState))
 		}
-		//todo if we are not in either of the cases? maybe if there is an error in the response the state should be populated based on the operation to create error or delete error
+		// todo if we are not in either of the cases? maybe if there is an error in the response the state should be populated based on the operation to create error or delete error
 	}
 
 	notificationResponse := newNotificationResponseFromWebhookResponse(response)

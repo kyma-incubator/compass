@@ -3,9 +3,10 @@ package formationassignment_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
 	"strconv"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment/automock"
@@ -55,7 +56,7 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation, initialStateAssignment.State, "",notificationResponse).Return(preJoinPointDetails, nil).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation, initialStateAssignment.State, "", notificationResponse).Return(preJoinPointDetails, nil).Once()
 				return notificationSvc
 			},
 			NotificationResponse: fixNotificationResponse(),
@@ -78,7 +79,7 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation, assignmentWithStateAndConfig.State, strconv.Quote(string(lastConfig)),notificationResponse).Return(preJoinPointDetails, nil).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation, assignmentWithStateAndConfig.State, strconv.Quote(string(lastConfig)), notificationResponse).Return(preJoinPointDetails, nil).Once()
 				return notificationSvc
 			},
 			NotificationResponse: fixNotificationResponse(),
@@ -94,7 +95,7 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation, initialStateAssignment.State, "",notificationResponse).Return(nil, testErr).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation, initialStateAssignment.State, "", notificationResponse).Return(nil, testErr).Once()
 				return notificationSvc
 			},
 			NotificationResponse: fixNotificationResponse(),
@@ -116,7 +117,7 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation, initialStateAssignment.State, "",notificationResponse).Return(preJoinPointDetails, nil).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation, initialStateAssignment.State, "", notificationResponse).Return(preJoinPointDetails, nil).Once()
 				return notificationSvc
 			},
 			NotificationResponse: fixNotificationResponse(),
@@ -151,7 +152,7 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation, initialStateAssignment.State, "",notificationResponse).Return(preJoinPointDetails, nil).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation, initialStateAssignment.State, "", notificationResponse).Return(preJoinPointDetails, nil).Once()
 				return notificationSvc
 			},
 			NotificationResponse: fixNotificationResponse(),
@@ -174,7 +175,7 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation, initialStateAssignment.State, "",notificationResponse).Return(preJoinPointDetails, nil).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation, initialStateAssignment.State, "", notificationResponse).Return(preJoinPointDetails, nil).Once()
 				return notificationSvc
 			},
 			NotificationResponse: fixNotificationResponse(),
@@ -198,7 +199,7 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation, initialStateAssignment.State, "",notificationResponse).Return(preJoinPointDetails, nil).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation, initialStateAssignment.State, "", notificationResponse).Return(preJoinPointDetails, nil).Once()
 				return notificationSvc
 			},
 			NotificationResponse: fixNotificationResponse(),
@@ -289,7 +290,7 @@ func TestUpdater_SetAssignmentToErrorState(t *testing.T) {
 		ConstraintEngine        func() *automock.ConstraintEngine
 		NotificationSvc         func() *automock.FaNotificationService
 		FormationOperation      model.FormationOperation
-		NotificationResponse *statusresponse.NotificationResponse
+		NotificationResponse    *statusresponse.NotificationResponse
 		ExpectedErrorMsg        string
 	}{
 		{
@@ -310,11 +311,11 @@ func TestUpdater_SetAssignmentToErrorState(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faErrorState, model.AssignFormation, initialStateAssignment.State, "",notificationResponse).Return(preJoinPointDetails, nil).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faErrorState, model.AssignFormation, initialStateAssignment.State, "", notificationResponse).Return(preJoinPointDetails, nil).Once()
 				return notificationSvc
 			},
 			NotificationResponse: fixNotificationResponse(),
-			FormationOperation: assignOperation,
+			FormationOperation:   assignOperation,
 		},
 		{
 			Name:                "Returns error when updating fails",
@@ -333,12 +334,12 @@ func TestUpdater_SetAssignmentToErrorState(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faErrorState, model.AssignFormation, initialStateAssignment.State, "",notificationResponse).Return(preJoinPointDetails, nil).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faErrorState, model.AssignFormation, initialStateAssignment.State, "", notificationResponse).Return(preJoinPointDetails, nil).Once()
 				return notificationSvc
 			},
-			FormationOperation: assignOperation,
+			FormationOperation:   assignOperation,
 			NotificationResponse: fixNotificationResponse(),
-			ExpectedErrorMsg:   testErr.Error(),
+			ExpectedErrorMsg:     testErr.Error(),
 		},
 		{
 			Name:                "Returns not found error when updating fails with not found",
@@ -357,12 +358,12 @@ func TestUpdater_SetAssignmentToErrorState(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faErrorState, model.AssignFormation, initialStateAssignment.State, "",notificationResponse).Return(preJoinPointDetails, nil).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faErrorState, model.AssignFormation, initialStateAssignment.State, "", notificationResponse).Return(preJoinPointDetails, nil).Once()
 				return notificationSvc
 			},
-			FormationOperation: assignOperation,
+			FormationOperation:   assignOperation,
 			NotificationResponse: fixNotificationResponse(),
-			ExpectedErrorMsg:   notFoundError.Error(),
+			ExpectedErrorMsg:     notFoundError.Error(),
 		},
 	}
 
@@ -420,7 +421,7 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
 		NotificationSvc         func() *automock.FaNotificationService
 		ConstraintEngine        func() *automock.ConstraintEngine
-		NotificationResponse *statusresponse.NotificationResponse
+		NotificationResponse    *statusresponse.NotificationResponse
 		ExpectedErrorMsg        string
 	}{
 		{
@@ -442,7 +443,7 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faWithReadyStateAndNoConfig, model.UnassignFormation, fa.State, strconv.Quote(string(TestConfigValueRawJSON)),notificationResponse).Return(preJoinPointDetails, nil).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faWithReadyStateAndNoConfig, model.UnassignFormation, fa.State, strconv.Quote(string(TestConfigValueRawJSON)), notificationResponse).Return(preJoinPointDetails, nil).Once()
 				return notificationSvc
 			},
 			NotificationResponse: fixNotificationResponse(),
@@ -466,17 +467,17 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faWithReadyStateAndNoConfig, model.UnassignFormation, faWithInitialStateAndNoConfig.State, "",notificationResponse).Return(preJoinPointDetails, nil).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faWithReadyStateAndNoConfig, model.UnassignFormation, faWithInitialStateAndNoConfig.State, "", notificationResponse).Return(preJoinPointDetails, nil).Once()
 				return notificationSvc
 			},
 			NotificationResponse: fixNotificationResponse(),
 		},
 		{
-			Name:             "Returns error when there is no tenant in the context",
-			Context:          emptyCtx,
-			InputID:          TestID,
+			Name:                 "Returns error when there is no tenant in the context",
+			Context:              emptyCtx,
+			InputID:              TestID,
 			NotificationResponse: fixNotificationResponse(),
-			ExpectedErrorMsg: "while loading tenant from context",
+			ExpectedErrorMsg:     "while loading tenant from context",
 		},
 		{
 			Name:    "Returns error when can't get the formation assignment",
@@ -488,7 +489,7 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 				return repo
 			},
 			NotificationResponse: fixNotificationResponse(),
-			ExpectedErrorMsg: testErr.Error(),
+			ExpectedErrorMsg:     testErr.Error(),
 		},
 		{
 			Name:    "Returns error when can't update the formation assignment",
@@ -501,7 +502,7 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 				return repo
 			},
 			NotificationResponse: fixNotificationResponse(),
-			ExpectedErrorMsg: testErr.Error(),
+			ExpectedErrorMsg:     testErr.Error(),
 		},
 		{
 			Name:    "Returns not found error when can't update the formation assignment due to conflict",
@@ -514,7 +515,7 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 				return repo
 			},
 			NotificationResponse: fixNotificationResponse(),
-			ExpectedErrorMsg: notFoundError.Error(),
+			ExpectedErrorMsg:     notFoundError.Error(),
 		},
 		{
 			Name:    "Returns error when can't enforce post constraints",
@@ -535,11 +536,11 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faWithReadyStateAndNoConfig, model.UnassignFormation, fa.State, strconv.Quote(string(TestConfigValueRawJSON)),notificationResponse).Return(preJoinPointDetails, nil).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faWithReadyStateAndNoConfig, model.UnassignFormation, fa.State, strconv.Quote(string(TestConfigValueRawJSON)), notificationResponse).Return(preJoinPointDetails, nil).Once()
 				return notificationSvc
 			},
 			NotificationResponse: fixNotificationResponse(),
-			ExpectedErrorMsg: testErr.Error(),
+			ExpectedErrorMsg:     testErr.Error(),
 		},
 		{
 			Name:    "Returns error when delete fails",
@@ -559,11 +560,11 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faWithReadyStateAndNoConfig, model.UnassignFormation, fa.State, strconv.Quote(string(TestConfigValueRawJSON)),notificationResponse).Return(preJoinPointDetails, nil).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faWithReadyStateAndNoConfig, model.UnassignFormation, fa.State, strconv.Quote(string(TestConfigValueRawJSON)), notificationResponse).Return(preJoinPointDetails, nil).Once()
 				return notificationSvc
 			},
 			NotificationResponse: fixNotificationResponse(),
-			ExpectedErrorMsg: testErr.Error(),
+			ExpectedErrorMsg:     testErr.Error(),
 		},
 		{
 			Name:    "Returns not found error when delete fails due to unauthorized",
@@ -583,11 +584,11 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faWithReadyStateAndNoConfig, model.UnassignFormation, fa.State, strconv.Quote(string(TestConfigValueRawJSON)),notificationResponse).Return(preJoinPointDetails, nil).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faWithReadyStateAndNoConfig, model.UnassignFormation, fa.State, strconv.Quote(string(TestConfigValueRawJSON)), notificationResponse).Return(preJoinPointDetails, nil).Once()
 				return notificationSvc
 			},
 			NotificationResponse: fixNotificationResponse(),
-			ExpectedErrorMsg: notFoundError.Error(),
+			ExpectedErrorMsg:     notFoundError.Error(),
 		},
 		{
 			Name:    "Returns error when can't enforce pre constraints",
@@ -606,11 +607,11 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faWithReadyStateAndNoConfig, model.UnassignFormation, fa.State, strconv.Quote(string(TestConfigValueRawJSON)),notificationResponse).Return(preJoinPointDetails, nil).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faWithReadyStateAndNoConfig, model.UnassignFormation, fa.State, strconv.Quote(string(TestConfigValueRawJSON)), notificationResponse).Return(preJoinPointDetails, nil).Once()
 				return notificationSvc
 			},
 			NotificationResponse: fixNotificationResponse(),
-			ExpectedErrorMsg: testErr.Error(),
+			ExpectedErrorMsg:     testErr.Error(),
 		},
 		{
 			Name:    "Returns error when can't prepare details",
@@ -624,11 +625,11 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faWithReadyStateAndNoConfig, model.UnassignFormation, fa.State, strconv.Quote(string(TestConfigValueRawJSON)),notificationResponse).Return(nil, testErr).Once()
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, faWithReadyStateAndNoConfig, model.UnassignFormation, fa.State, strconv.Quote(string(TestConfigValueRawJSON)), notificationResponse).Return(nil, testErr).Once()
 				return notificationSvc
 			},
 			NotificationResponse: fixNotificationResponse(),
-			ExpectedErrorMsg: testErr.Error(),
+			ExpectedErrorMsg:     testErr.Error(),
 		},
 	}
 

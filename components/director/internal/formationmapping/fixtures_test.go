@@ -3,9 +3,10 @@ package formationmapping_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
 
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 

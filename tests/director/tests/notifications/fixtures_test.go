@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	jsonutils "github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -174,11 +175,11 @@ func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx co
 				t.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
 				return
 			}
-			if isEqual := assertJSONStringEquality(t, assignmentExpectation.Error, assignment.Error); !isEqual {
+			if isEqual := jsonutils.AssertJSONStringEquality(t, assignmentExpectation.Error, assignment.Error); !isEqual {
 				t.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
 				return
 			}
-			if isEqual := assertJSONStringEquality(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
+			if isEqual := jsonutils.AssertJSONStringEquality(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
 				t.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
 				return
 			}
@@ -187,23 +188,6 @@ func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx co
 		t.Logf("Successfully asserted formation asssignments asynchronously")
 		return true
 	}, timeout, tick)
-}
-
-func assertJSONStringEquality(t *testing.T, expectedValue, actualValue *string) bool {
-	expectedValueStr := str.PtrStrToStr(expectedValue)
-	actualValueStr := str.PtrStrToStr(actualValue)
-	if !isJSONStringEmpty(expectedValueStr) && !isJSONStringEmpty(actualValueStr) {
-		return assert.JSONEq(t, expectedValueStr, actualValueStr)
-	} else {
-		return assert.Equal(t, expectedValueStr, actualValueStr)
-	}
-}
-
-func isJSONStringEmpty(json string) bool {
-	if json != "" && json != "\"\"" {
-		return false
-	}
-	return true
 }
 
 func assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationID string, expectedFormationStatus graphql.FormationStatus) {

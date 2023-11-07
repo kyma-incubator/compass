@@ -3,6 +3,7 @@ package formationmapping
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -180,7 +181,7 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		return
 	}
 
-	if reset { //todo state should be ready or CP
+	if reset { // todo state should be ready or CP
 		if fa.State != string(model.ReadyAssignmentState) {
 			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q because assignment is not in %q state. X-Request-Id: %s", fa.Source, fa.Target, model.ReadyAssignmentState, correlationID)
 			respondWithError(ctx, w, http.StatusBadRequest, errResp)

@@ -1414,7 +1414,7 @@ func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
 			},
 			faStatusSvcFn: func() *automock.FormationAssignmentStatusService {
 				updater := &automock.FormationAssignmentStatusService{}
-				updater.On("UpdateWithConstraints", txtest.CtxWithDBMatcher(),configPendingNotificationResponseWithConfig, faWithSourceAppAndTargetRuntime(model.ConfigPendingAssignmentState), model.AssignFormation).Return(nil).Once()
+				updater.On("UpdateWithConstraints", txtest.CtxWithDBMatcher(), configPendingNotificationResponseWithConfig, faWithSourceAppAndTargetRuntime(model.ConfigPendingAssignmentState), model.AssignFormation).Return(nil).Once()
 				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{

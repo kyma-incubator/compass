@@ -12,11 +12,11 @@ type NotificationResponse struct {
 }
 
 // NewNotificationResponse is a constructor for NotificationResponse
-func NewNotificationResponse(configuration json.RawMessage, state string, error string) *NotificationResponse {
+func NewNotificationResponse(configuration json.RawMessage, state string, errorMessage string) *NotificationResponse {
 	return &NotificationResponse{
 		configuration: configuration,
 		state:         state,
-		error:         error,
+		error:         errorMessage,
 	}
 }
 
