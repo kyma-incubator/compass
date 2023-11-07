@@ -441,7 +441,7 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified products")
 
 			// Verify apis
-			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$expand=entityTypeMappings&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAPIs {
 				t.Log("Missing APIs...will try again")
 				return false
@@ -492,7 +492,7 @@ func TestORDAggregator(stdT *testing.T) {
 			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicApisMap, apisField, expectedNumberOfPublicAPIs)
 
 			// Verify events
-			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$expand=entityTypeMappings&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfEvents {
 				t.Log("Missing Events...will try again")
@@ -1262,7 +1262,7 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified products")
 
 			// Verify apis
-			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$expand=entityTypeMappings&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 			if len(gjson.Get(respBody, "value").Array()) < 3 {
 				t.Log("Missing APIs...will try again")
 				return false
@@ -1313,7 +1313,7 @@ func TestORDAggregator(stdT *testing.T) {
 			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicApisMap, apisField, numberOfPublicAPIs)
 
 			// Verify events
-			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$expand=entityTypeMappings&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 			if len(gjson.Get(respBody, "value").Array()) < numberOfEvents {
 				t.Log("Missing Events...will try again")
 				return false
@@ -1332,7 +1332,7 @@ func TestORDAggregator(stdT *testing.T) {
 			eventTitlesWithEntityTypeMappingsExpectedContent["EVENT TITLE INTERNAL"] = "sap.odm:entityType:CostCenter:v2"
 
 			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE PRIVATE"] = 0
-			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfEventsInSubscription, eventTitlesWithEntityTypeMappingsCountToCheck, eventTitlesWithEntityTypeMappingsExpectedContent)
+			assertions.AssertEntityTypeMappings(t, respBody, numberOfEvents, eventTitlesWithEntityTypeMappingsCountToCheck, eventTitlesWithEntityTypeMappingsExpectedContent)
 			t.Log("Successfully verified api entity type mappings")
 
 			// Verify defaultBundle for events
