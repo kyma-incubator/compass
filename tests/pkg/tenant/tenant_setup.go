@@ -83,7 +83,7 @@ func (mgr *TestTenantsManager) Init() {
 			Name:           testDefaultSubaccountTenant,
 			ExternalTenant: "777ce47b-d901-4647-9223-14e94819830b",
 			ProviderName:   testProvider,
-			Type:           Account,
+			Type:           Subaccount,
 			Parent:         testDefaultTenant,
 			Status:         Active,
 		},

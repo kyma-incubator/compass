@@ -127,6 +127,9 @@ global:
       id: 777ce47b-d901-4647-9223-14e94819830b
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      # The "substitution" tenants should be used only in specific use cases and not as "regular" test tenants
+      # because when using them, the operation is actually executed on behalf of another tenant,
+      # the one defined in a label of the substituted tenant
     - name: Test Tenant Substitution Account
       id: baf425d1-8630-46da-bf80-f4ed5f405a27
       type: account
