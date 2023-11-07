@@ -205,6 +205,15 @@ type EntityTypeProcessor interface {
 	Process(ctx context.Context, resourceType resource.Type, resourceID string, entityTypes []*model.EntityTypeInput, packagesFromDB []*model.Package, resourceHashes map[string]uint64) ([]*model.EntityType, error)
 }
 
+// EntityTypeMappingService is responsible for processing of entity type entities.
+//
+//go:generate mockery --name=EntityTypeMappingService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type EntityTypeMappingService interface {
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, in *model.EntityTypeMappingInput) (string, error)
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
+	ListByOwnerResourceID(ctx context.Context, resourceID string, resourceType resource.Type) ([]*model.EntityTypeMapping, error)
+}
+
 // TenantService missing godoc
 //
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
