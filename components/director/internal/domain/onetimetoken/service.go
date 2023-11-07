@@ -276,7 +276,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	data := pairing.RequestData{
 		Application:    *graphqlApp,
 		Tenant:         extTenant,
-		TenantType:     tnt.Type,
+		TenantType:     tenantpkg.Subaccount,
 		ClientUser:     clientUser,
 		ScenarioGroups: scenarioGroups,
 	}

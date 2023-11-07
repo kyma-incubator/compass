@@ -38,7 +38,7 @@ func (c *ExternalClient) Do(ctx context.Context, app RequestData) (*ExternalToke
 		return nil, err
 	}
 
-	spew.Dump("Send Request Body is: ", req.Body)
+	spew.Dump("Send Request Body is: ", req)
 	resp, err := c.doer.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "while performing request")
