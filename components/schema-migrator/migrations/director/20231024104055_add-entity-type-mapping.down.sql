@@ -12,7 +12,7 @@ CREATE OR REPLACE VIEW tenants_entity_types
             (tenant_id, formation_id, id, ord_id, app_id, local_id, level, title, short_description, description, system_instance_aware, 
             changelog_entries, package_id, visibility, links, part_of_products, last_update, policy_level,
             custom_policy_level, release_status, sunset_date, successors, extensible_supported, extensible_description, tags, labels, 
-            documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal)
+            documentation_labels, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal, deprecation_date)
 AS
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.formation_id,
@@ -45,7 +45,8 @@ SELECT DISTINCT t_apps.tenant_id,
                 et.version_value,
                 et.version_deprecated,
                 et.version_deprecated_since,
-                et.version_for_removal
+                et.version_for_removal,
+                et.deprecation_date
 FROM entity_types et
          JOIN (SELECT a1.id,
                       a1.tenant_id AS tenant_id,
