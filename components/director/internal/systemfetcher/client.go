@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"io"
 	"net/http"
 	"strings"
@@ -39,26 +41,28 @@ type APIConfig struct {
 
 // Client missing godoc
 type Client struct {
-	apiConfig  APIConfig
-	httpClient APIClient
+	apiConfig      APIConfig
+	httpClient     APIClient
+	jwtTokenClient APIClient
 }
 
 // NewClient missing godoc
-func NewClient(apiConfig APIConfig, client APIClient) *Client {
+func NewClient(apiConfig APIConfig, client APIClient, tokenClient APIClient) *Client {
 	return &Client{
-		apiConfig:  apiConfig,
-		httpClient: client,
+		apiConfig:      apiConfig,
+		httpClient:     client,
+		jwtTokenClient: tokenClient,
 	}
 }
 
 var currentRPS uint64
 
 // FetchSystemsForTenant fetches systems from the service
-func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string, mutex *sync.Mutex) ([]System, error) {
+func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, mutex *sync.Mutex) ([]System, error) {
 	mutex.Lock()
 	qp := c.buildFilter()
 	mutex.Unlock()
-	log.C(ctx).Infof("Fetching systems for tenant %s with query: %s", tenant, qp)
+	log.C(ctx).Infof("Fetching systems for tenant %s of type %s with query: %s", tenant.ExternalTenant, tenant.Type, qp)
 
 	var systems []System
 
@@ -72,13 +76,20 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string, mutex
 	return systems, nil
 }
 
-func (c *Client) fetchSystemsForTenant(ctx context.Context, url, tenant string) ([]System, error) {
+func (c *Client) fetchSystemsForTenant(ctx context.Context, url string, tenant *model.BusinessTenantMapping) ([]System, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new HTTP request")
 	}
 
-	resp, err := c.httpClient.Do(req, tenant)
+	var (
+		resp *http.Response
+	)
+	if tenant.Type == tenantEntity.Customer {
+		resp, err = c.jwtTokenClient.Do(req, tenant.ExternalTenant)
+	} else {
+		resp, err = c.httpClient.Do(req, tenant.ExternalTenant)
+	}
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute HTTP request")
 	}
@@ -105,7 +116,7 @@ func (c *Client) fetchSystemsForTenant(ctx context.Context, url, tenant string) 
 	return systems, nil
 }
 
-func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, tenant string) func(string) (uint64, error) {
+func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, tenant *model.BusinessTenantMapping) func(string) (uint64, error) {
 	return func(url string) (uint64, error) {
 		err := retry.Do(
 			func() error {
