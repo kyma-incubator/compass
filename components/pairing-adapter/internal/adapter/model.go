@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -66,7 +67,8 @@ type RequestData struct {
 	// in: body
 	Application graphql.Application
 	// in: body
-	Tenant string
+	Tenant     string
+	TenantType tenant.Type
 	// in: body
 	ClientUser string
 	// in: body
