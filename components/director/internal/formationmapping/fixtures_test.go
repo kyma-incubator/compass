@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
@@ -254,4 +256,12 @@ func ThatFailsOnBeginInGoRoutine() (*persistenceautomock.PersistenceTx, *persist
 	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
 
 	return persistTx, transact
+}
+
+func fixNotificationStatusReportWithStateAndConfig(configuration json.RawMessage, state string) *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(configuration, state, "")
+}
+
+func fixNotificationStatusReportWithStateAndError(state, errorMessage string) *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(nil, state, errorMessage)
 }
