@@ -168,7 +168,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3417"
+      version: "PR-3405"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -217,7 +217,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3447"
+      version: "PR-3405"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -225,7 +225,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3451"
+      version: "PR-3405"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1259,7 +1259,7 @@ global:
     externalServicesMock:
       skipPattern: ""
       tenantMappingStatusAPI:
-        responseDelayInSeconds: 3
+        responseDelayInMilliseconds: 1
     selfRegistration:
       region: "eu-1"
       region2: "eu-2"
