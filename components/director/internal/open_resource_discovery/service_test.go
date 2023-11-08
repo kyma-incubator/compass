@@ -78,8 +78,8 @@ func TestService_Processing(t *testing.T) {
 	event2PreSanitizedHash, err := ord.HashObject(fixORDDocument().EventResources[1])
 	require.NoError(t, err)
 
-	packagePreSanitizedHash, err := ord.HashObject(fixORDDocument().Packages[0])
-	require.NoError(t, err)
+	//packagePreSanitizedHash, err := ord.HashObject(fixORDDocument().Packages[0])
+	//require.NoError(t, err)
 
 	capability1PreSanitizedHash, err := ord.HashObject(fixORDDocument().Capabilities[0])
 	require.NoError(t, err)
@@ -256,117 +256,46 @@ func TestService_Processing(t *testing.T) {
 		return bundleRefSvc
 	}
 
-	successfulVendorUpdateForApplication := func() *automock.VendorService {
-		vendorSvc := &automock.VendorService{}
-		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
-		vendorSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, vendorID, *sanitizedDoc.Vendors[0]).Return(nil).Once()
-		vendorSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, vendorID2, *sanitizedDoc.Vendors[1]).Return(nil).Once()
-		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
-		return vendorSvc
+	successfulVendorProcess := func() *automock.VendorProcessor {
+		vendorProcessor := &automock.VendorProcessor{}
+		vendorProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.Vendors).Return(fixVendors(), nil).Once()
+		return vendorProcessor
 	}
 
-	successfulVendorUpdateForStaticDoc := func() *automock.VendorService {
-		vendorSvc := &automock.VendorService{}
-		vendorSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixVendors(), nil).Once()
-		vendorSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, vendorID, *sanitizedStaticDoc.Vendors[0]).Return(nil).Once()
-		vendorSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, vendorID2, *sanitizedStaticDoc.Vendors[1]).Return(nil).Once()
-		vendorSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixVendors(), nil).Once()
-		return vendorSvc
+	successfulVendorProcessForStaticDoc := func() *automock.VendorProcessor {
+		vendorProcessor := &automock.VendorProcessor{}
+		vendorProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, sanitizedStaticDoc.Vendors).Return(fixVendors(), nil).Once()
+		return vendorProcessor
 	}
 
-	successfulVendorCreate := func() *automock.VendorService {
-		vendorSvc := &automock.VendorService{}
-		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-		vendorSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Vendors[0]).Return("", nil).Once()
-		vendorSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Vendors[1]).Return("", nil).Once()
-		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
-		return vendorSvc
+	successfulProductProcess := func() *automock.ProductProcessor {
+		productProcessor := &automock.ProductProcessor{}
+		productProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.Products).Return(fixProducts(), nil).Once()
+		return productProcessor
 	}
 
-	successfulVendorCreateForStaticDoc := func() *automock.VendorService {
-		vendorSvc := &automock.VendorService{}
-		vendorSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
-		vendorSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, *sanitizedStaticDoc.Vendors[0]).Return("", nil).Once()
-		vendorSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, *sanitizedStaticDoc.Vendors[1]).Return("", nil).Once()
-		vendorSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixVendors(), nil).Once()
-		return vendorSvc
+	successfulProductProcessForStaticDoc := func() *automock.ProductProcessor {
+		productProcessor := &automock.ProductProcessor{}
+		productProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, sanitizedStaticDoc.Products).Return(fixProducts(), nil).Once()
+		return productProcessor
 	}
 
-	successfulProductUpdateForApplication := func() *automock.ProductService {
-		productSvc := &automock.ProductService{}
-		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
-		productSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, productID, *sanitizedDoc.Products[0]).Return(nil).Once()
-		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
-		return productSvc
-	}
-
-	successfulProductUpdateForStaticDoc := func() *automock.ProductService {
-		productSvc := &automock.ProductService{}
-		productSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixProducts(), nil).Once()
-		productSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, productID, *sanitizedStaticDoc.Products[0]).Return(nil).Once()
-		productSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixProducts(), nil).Once()
-		return productSvc
-	}
-
-	successfulProductCreate := func() *automock.ProductService {
-		productSvc := &automock.ProductService{}
-		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-		productSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Products[0]).Return("", nil).Once()
-		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
-		return productSvc
-	}
-
-	successfulProductCreateForStaticDoc := func() *automock.ProductService {
-		productSvc := &automock.ProductService{}
-		productSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
-		productSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, *sanitizedStaticDoc.Products[0]).Return("", nil).Once()
-		productSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixProducts(), nil).Once()
-		return productSvc
-	}
-
-	successfulPackageCreateForProxy := func() *automock.PackageService {
+	successfulPackageList := func() *automock.PackageService {
 		packagesSvc := &automock.PackageService{}
 		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-		packagesSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDocForProxy.Packages[0], mock.Anything).Return("", nil).Once()
-		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
 		return packagesSvc
 	}
 
-	successfulPackageUpdateForApplication := func() *automock.PackageService {
-		packagesSvc := &automock.PackageService{}
-		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackagesWithHash(), nil).Once()
-		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
-		packagesSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, packageID, *sanitizedDoc.Packages[0], packagePreSanitizedHash).Return(nil).Once()
-		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
-		return packagesSvc
-	}
-
-	successfulPackageUpdateForStaticDoc := func() *automock.PackageService {
-		packagesSvc := &automock.PackageService{}
-		packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixPackagesWithHash(), nil).Once()
-		packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixPackages(), nil).Once()
-		packagesSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, packageID, *sanitizedStaticDoc.Packages[0], packagePreSanitizedHash).Return(nil).Once()
-		packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixPackages(), nil).Once()
-		return packagesSvc
-	}
-
-	successfulPackageCreate := func() *automock.PackageService {
-		packagesSvc := &automock.PackageService{}
-		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-		packagesSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Packages[0], mock.Anything).Return("", nil).Once()
-		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
-		return packagesSvc
-	}
-
-	successfulPackageCreateForStaticDoc := func() *automock.PackageService {
+	successfulPackageListForStaticDoc := func() *automock.PackageService {
 		packagesSvc := &automock.PackageService{}
 		packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
-		packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
-		packagesSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, *sanitizedStaticDoc.Packages[0], mock.Anything).Return("", nil).Once()
-		packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixPackages(), nil).Once()
 		return packagesSvc
+	}
+
+	successfulPackageProcess := func() *automock.PackageProcessor {
+		packageProcessor := &automock.PackageProcessor{}
+		packageProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.Packages, mock.Anything).Return(fixPackages(), nil).Once()
+		return packageProcessor
 	}
 
 	successfulEmptyAPIList := func() *automock.APIService {
@@ -402,13 +331,6 @@ func TestService_Processing(t *testing.T) {
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 
 		return bundlesSvc
-	}
-
-	successfulEmptyVendorList := func() *automock.VendorService {
-		vendorService := &automock.VendorService{}
-		vendorService.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Twice()
-
-		return vendorService
 	}
 
 	successfulSpecCreate := func() *automock.SpecService {
@@ -1140,27 +1062,6 @@ func TestService_Processing(t *testing.T) {
 		return etmSvc
 	}
 
-	// successfulEntityTypeMappingSvcUpdateExistingForAPI1AndEvent1_2 := func() *automock.EntityTypeMappingService {
-	// 	etmSvc := &automock.EntityTypeMappingService{}
-	// 	etmSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), api1ID, resource.API).Return(fixEntityTypeMappings(api1ID, ""), nil).Once()
-	// 	etmSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.API, entityTypeMappingID).Return(nil).Once()
-	// 	etmSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, api1ID, fixEntityTypeMappingInput(api1ID, "")).Return(entityTypeMappingID, nil).Once()
-
-	// 	etmSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), event1ID, resource.EventDefinition).Return(fixEntityTypeMappings("", event1ID), nil).Once()
-	// 	etmSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.EventDefinition, entityTypeMappingID).Return(nil).Once()
-	// 	etmSvc.On("Create", txtest.CtxWithDBMatcher(), resource.EventDefinition, event1ID, fixEntityTypeMappingInput("", event1ID)).Return(entityTypeMappingID, nil).Once()
-
-	// 	etmSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), api2ID, resource.API).Return(fixEntityTypeMappings(api2ID, ""), nil).Once()
-	// 	etmSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.API, entityTypeMappingID).Return(nil).Once()
-	// 	etmSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, api2ID, fixEntityTypeMappingInput(api2ID, "")).Return(entityTypeMappingID, nil).Once()
-
-	// 	etmSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), event2ID, resource.EventDefinition).Return(fixEntityTypeMappings("", event2ID), nil).Once()
-	// 	etmSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.EventDefinition, entityTypeMappingID).Return(nil).Once()
-	// 	etmSvc.On("Create", txtest.CtxWithDBMatcher(), resource.EventDefinition, event2ID, fixEntityTypeMappingInput("", event2ID)).Return(entityTypeMappingID, nil).Once()
-
-	// 	return etmSvc
-	// }
-
 	testCases := []struct {
 		Name                             string
 		TransactionerFn                  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
@@ -1180,8 +1081,11 @@ func TestService_Processing(t *testing.T) {
 		specSvcFn                        func() *automock.SpecService
 		fetchReqFn                       func() *automock.FetchRequestService
 		packageSvcFn                     func() *automock.PackageService
+		packageProcessorFn               func() *automock.PackageProcessor
 		productSvcFn                     func() *automock.ProductService
+		productProcessorFn               func() *automock.ProductProcessor
 		vendorSvcFn                      func() *automock.VendorService
+		vendorProcessorFn                func() *automock.VendorProcessor
 		tombstoneProcessorFn             func() *automock.TombstoneProcessor
 		tenantSvcFn                      func() *automock.TenantService
 		globalRegistrySvcFn              func() *automock.GlobalRegistryService
@@ -1196,7 +1100,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Success for Application Template webhook with Static ORD data when resources are already in db and APIs/Events last update fields are newer should Update them and resync API/Event specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(35)
+				return txGen.ThatSucceedsMultipleTimes(25)
 			},
 			webhookSvcFn:   successfulStaticWebhookListAppTemplate,
 			bundleSvcFn:    successfulBundleUpdateForStaticDoc,
@@ -1227,9 +1131,14 @@ func TestService_Processing(t *testing.T) {
 			},
 			specSvcFn:    successfulSpecRecreateAndUpdateForStaticDoc,
 			fetchReqFn:   successfulFetchRequestFetchAndUpdateForStaticDoc,
-			packageSvcFn: successfulPackageUpdateForStaticDoc,
-			productSvcFn: successfulProductUpdateForStaticDoc,
-			vendorSvcFn:  successfulVendorUpdateForStaticDoc,
+			packageSvcFn: successfulPackageListForStaticDoc,
+			packageProcessorFn: func() *automock.PackageProcessor {
+				packageProcessor := &automock.PackageProcessor{}
+				packageProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, sanitizedStaticDoc.Packages, mock.Anything).Return(fixPackages(), nil).Once()
+				return packageProcessor
+			},
+			productProcessorFn: successfulProductProcessForStaticDoc,
+			vendorProcessorFn:  successfulVendorProcessForStaticDoc,
 			tombstoneProcessorFn: func() *automock.TombstoneProcessor {
 				tombstoneProcessor := &automock.TombstoneProcessor{}
 				tombstoneProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, fixORDStaticDocument().Tombstones).Return(fixTombstones(), nil).Once()
@@ -1244,7 +1153,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Success when resources are already in db and APIs/Events last update fields are newer should Update them and resync API/Event specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(35)
+				return txGen.ThatSucceedsMultipleTimes(25)
 			},
 			appSvcFn:       successfulAppGet,
 			tenantSvcFn:    successfulTenantSvc,
@@ -1274,9 +1183,10 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecRecreateAndUpdate,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
-			packageSvcFn:                     successfulPackageUpdateForApplication,
-			productSvcFn:                     successfulProductUpdateForApplication,
-			vendorSvcFn:                      successfulVendorUpdateForApplication,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn:                successfulVendorProcess,
 			tombstoneProcessorFn:             successfulTombstoneProcessing,
 			appTemplateVersionSvcFn:          successfulAppTemplateVersionList,
 			globalRegistrySvcFn:              successfulGlobalRegistrySvc,
@@ -1287,7 +1197,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Success when resources are already in db and APIs/Events last update fields are NOT newer should Update them and refetch only failed API/Event specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(35)
+				return txGen.ThatSucceedsMultipleTimes(25)
 			},
 			appSvcFn:       successfulAppGet,
 			tenantSvcFn:    successfulTenantSvc,
@@ -1331,9 +1241,10 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecRefetch,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
-			packageSvcFn:                     successfulPackageUpdateForApplication,
-			productSvcFn:                     successfulProductUpdateForApplication,
-			vendorSvcFn:                      successfulVendorUpdateForApplication,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn:                successfulVendorProcess,
 			tombstoneProcessorFn:             successfulTombstoneProcessing,
 			appTemplateVersionSvcFn:          successfulAppTemplateVersionList,
 			globalRegistrySvcFn:              successfulGlobalRegistrySvc,
@@ -1344,7 +1255,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Success when resources are not in db should Create them",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(35)
+				return txGen.ThatSucceedsMultipleTimes(25)
 			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1365,9 +1276,10 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecCreateAndUpdate,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
-			packageSvcFn:                     successfulPackageCreate,
-			productSvcFn:                     successfulProductCreate,
-			vendorSvcFn:                      successfulVendorCreate,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn:                successfulVendorProcess,
 			tombstoneProcessorFn:             successfulTombstoneProcessing,
 			appTemplateVersionSvcFn:          successfulAppTemplateVersionList,
 			globalRegistrySvcFn:              successfulGlobalRegistrySvc,
@@ -1378,7 +1290,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Success when webhook has a proxy URL which should be used to access the document",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(34)
+				return txGen.ThatSucceedsMultipleTimes(24)
 			},
 			appSvcFn:        successfulAppWithBaseURLSvc,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1400,11 +1312,16 @@ func TestService_Processing(t *testing.T) {
 				integrationDependencyProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDocForProxy.IntegrationDependencies, mock.Anything).Return(fixIntegrationDependencies(), nil).Once()
 				return integrationDependencyProcessor
 			},
-			specSvcFn:               successfulSpecCreateAndUpdateForProxy,
-			fetchReqFn:              successfulFetchRequestFetchAndUpdateForProxy,
-			packageSvcFn:            successfulPackageCreateForProxy,
-			productSvcFn:            successfulProductCreate,
-			vendorSvcFn:             successfulVendorCreate,
+			specSvcFn:    successfulSpecCreateAndUpdateForProxy,
+			fetchReqFn:   successfulFetchRequestFetchAndUpdateForProxy,
+			packageSvcFn: successfulPackageList,
+			packageProcessorFn: func() *automock.PackageProcessor {
+				packageProcessor := &automock.PackageProcessor{}
+				packageProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDocForProxy.Packages, mock.Anything).Return(fixPackages(), nil).Once()
+				return packageProcessor
+			},
+			productProcessorFn:      successfulProductProcess,
+			vendorProcessorFn:       successfulVendorProcess,
 			tombstoneProcessorFn:    successfulTombstoneProcessing,
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
 			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
@@ -1416,7 +1333,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Success when resources are not in db should Create them for a Static document",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(35)
+				return txGen.ThatSucceedsMultipleTimes(25)
 			},
 			webhookSvcFn: successfulStaticWebhookListAppTemplate,
 			bundleSvcFn:  successfulBundleCreateForStaticDoc,
@@ -1448,9 +1365,14 @@ func TestService_Processing(t *testing.T) {
 			capabilitySvcFn:        successfulCapabilityCreateForStaticDoc,
 			specSvcFn:              successfulSpecCreateAndUpdateForStaticDoc,
 			fetchReqFn:             successfulFetchRequestFetchAndUpdateForStaticDoc,
-			packageSvcFn:           successfulPackageCreateForStaticDoc,
-			productSvcFn:           successfulProductCreateForStaticDoc,
-			vendorSvcFn:            successfulVendorCreateForStaticDoc,
+			packageSvcFn:           successfulPackageListForStaticDoc,
+			packageProcessorFn: func() *automock.PackageProcessor {
+				packageProcessor := &automock.PackageProcessor{}
+				packageProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, sanitizedStaticDoc.Packages, mock.Anything).Return(fixPackages(), nil).Once()
+				return packageProcessor
+			},
+			productProcessorFn: successfulProductProcessForStaticDoc,
+			vendorProcessorFn:  successfulVendorProcessForStaticDoc,
 			tombstoneProcessorFn: func() *automock.TombstoneProcessor {
 				tombstoneProcessor := &automock.TombstoneProcessor{}
 				tombstoneProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, fixORDStaticDocument().Tombstones).Return(fixTombstones(), nil).Once()
@@ -1688,7 +1610,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Success when there is ORD webhook on app template",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(35)
+				return txGen.ThatSucceedsMultipleTimes(25)
 			},
 			appSvcFn: successfulAppSvc,
 			tenantSvcFn: func() *automock.TenantService {
@@ -1723,9 +1645,10 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecRecreateAndUpdate,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
-			packageSvcFn:                     successfulPackageUpdateForApplication,
-			productSvcFn:                     successfulProductUpdateForApplication,
-			vendorSvcFn:                      successfulVendorUpdateForApplication,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn:                successfulVendorProcess,
 			tombstoneProcessorFn:             successfulTombstoneProcessing,
 			appTemplateSvcFn:                 successAppTemplateGetSvc,
 			appTemplateVersionSvcFn:          successfulAppTemplateVersionListForAppTemplateFlow,
@@ -1747,7 +1670,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Error when synchronizing global resources from global registry should get them from DB and proceed with the rest of the sync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(35)
+				return txGen.ThatSucceedsMultipleTimes(25)
 			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1768,9 +1691,10 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecCreateAndUpdate,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
-			packageSvcFn:                     successfulPackageCreate,
-			productSvcFn:                     successfulProductCreate,
-			vendorSvcFn:                      successfulVendorCreate,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn:                successfulVendorProcess,
 			tombstoneProcessorFn:             successfulTombstoneProcessing,
 			appTemplateVersionSvcFn:          successfulAppTemplateVersionList,
 			globalRegistrySvcFn: func() *automock.GlobalRegistryService {
@@ -1786,7 +1710,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Error when synchronizing global resources from global registry and get them from DB should proceed with the rest of the sync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(35)
+				return txGen.ThatSucceedsMultipleTimes(25)
 			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1807,9 +1731,10 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecCreateAndUpdate,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
-			packageSvcFn:                     successfulPackageCreate,
-			productSvcFn:                     successfulProductCreate,
-			vendorSvcFn:                      successfulVendorCreate,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn:                successfulVendorProcess,
 			tombstoneProcessorFn:             successfulTombstoneProcessing,
 			appTemplateVersionSvcFn:          successfulAppTemplateVersionList,
 			globalRegistrySvcFn: func() *automock.GlobalRegistryService {
@@ -2133,7 +2058,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Update application local tenant id when ord local id is unique and application does not have local tenant id",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(35)
+				return txGen.ThatSucceedsMultipleTimes(25)
 			},
 			appSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
@@ -2168,9 +2093,10 @@ func TestService_Processing(t *testing.T) {
 			capabilitySvcFn:                  successfulCapabilityUpdate,
 			specSvcFn:                        successfulSpecRecreateAndUpdate,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
-			packageSvcFn:                     successfulPackageUpdateForApplication,
-			productSvcFn:                     successfulProductUpdateForApplication,
-			vendorSvcFn:                      successfulVendorUpdateForApplication,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn:                successfulVendorProcess,
 			tombstoneProcessorFn:             successfulTombstoneProcessing,
 			globalRegistrySvcFn:              successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
@@ -2249,11 +2175,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Resync resources for invalid ORD documents when event resource name is empty",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(35)
+				persistTx.On("Commit").Return(nil).Times(25)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(34)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(34)
+				transact.On("Begin").Return(persistTx, nil).Times(24)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(24)
 
 				return persistTx, transact
 			},
@@ -2282,9 +2208,10 @@ func TestService_Processing(t *testing.T) {
 			capabilitySvcFn:        successfulCapabilityCreate,
 			specSvcFn:              successfulSpecWithOneEventCreateAndUpdate,
 			fetchReqFn:             successfulFetchRequestFetchAndUpdate,
-			packageSvcFn:           successfulPackageCreate,
-			productSvcFn:           successfulProductCreate,
-			vendorSvcFn:            successfulVendorCreate,
+			packageSvcFn:           successfulPackageList,
+			packageProcessorFn:     successfulPackageProcess,
+			productProcessorFn:     successfulProductProcess,
+			vendorProcessorFn:      successfulVendorProcess,
 			tombstoneProcessorFn:   successfulTombstoneProcessing,
 			globalRegistrySvcFn:    successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
@@ -2302,11 +2229,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Resync resources for invalid ORD documents when bundle name is empty",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(34)
+				persistTx.On("Commit").Return(nil).Times(24)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(33)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(33)
+				transact.On("Begin").Return(persistTx, nil).Times(23)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(23)
 
 				return persistTx, transact
 			},
@@ -2354,11 +2281,16 @@ func TestService_Processing(t *testing.T) {
 			capabilitySvcFn:        successfulCapabilityCreate,
 			specSvcFn:              successfulSpecCreateAndUpdate,
 			fetchReqFn:             successfulFetchRequestFetchAndUpdate,
-			packageSvcFn:           successfulPackageCreate,
-			productSvcFn:           successfulProductCreate,
-			vendorSvcFn:            successfulVendorCreate,
-			tombstoneProcessorFn:   successfulTombstoneProcessing,
-			globalRegistrySvcFn:    successfulGlobalRegistrySvc,
+			packageSvcFn:           successfulPackageList,
+			packageProcessorFn:     successfulPackageProcess,
+			productProcessorFn:     successfulProductProcess,
+			vendorProcessorFn: func() *automock.VendorProcessor {
+				vendorProcessor := &automock.VendorProcessor{}
+				vendorProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.Vendors).Return(fixVendors(), nil).Once()
+				return vendorProcessor
+			},
+			tombstoneProcessorFn: successfulTombstoneProcessing,
+			globalRegistrySvcFn:  successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -2374,11 +2306,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Resync resources for invalid ORD documents when vendor ordID is empty",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(35)
+				persistTx.On("Commit").Return(nil).Times(26)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(34)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(34)
+				transact.On("Begin").Return(persistTx, nil).Times(25)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(25)
 
 				return persistTx, transact
 			},
@@ -2405,16 +2337,15 @@ func TestService_Processing(t *testing.T) {
 				integrationDependencyProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.IntegrationDependencies, fixResourceHashesForDocument(doc)).Return(fixIntegrationDependencies(), nil).Once()
 				return integrationDependencyProcessor
 			},
-			specSvcFn:    successfulSpecCreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
-			packageSvcFn: successfulPackageCreate,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn: func() *automock.VendorService {
-				vendorSvc := &automock.VendorService{}
-				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				vendorSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Vendors[1]).Return("", nil).Once()
-				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
-				return vendorSvc
+			specSvcFn:          successfulSpecCreateAndUpdate,
+			fetchReqFn:         successfulFetchRequestFetchAndUpdate,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn: func() *automock.VendorProcessor {
+				vendorProcessor := &automock.VendorProcessor{}
+				vendorProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, []*model.VendorInput{sanitizedDoc.Vendors[1]}).Return(fixVendors(), nil).Once()
+				return vendorProcessor
 			},
 			tombstoneProcessorFn: successfulTombstoneProcessing,
 			globalRegistrySvcFn:  successfulGlobalRegistrySvc,
@@ -2433,11 +2364,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Resync resources for invalid ORD documents when product title is empty",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(35)
+				persistTx.On("Commit").Return(nil).Times(26)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(34)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(34)
+				transact.On("Begin").Return(persistTx, nil).Times(25)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(25)
 
 				return persistTx, transact
 			},
@@ -2464,15 +2395,20 @@ func TestService_Processing(t *testing.T) {
 				integrationDependencyProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.IntegrationDependencies, fixResourceHashesForDocument(doc)).Return(fixIntegrationDependencies(), nil).Once()
 				return integrationDependencyProcessor
 			},
-			specSvcFn:    successfulSpecCreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
-			packageSvcFn: successfulPackageCreate,
-			productSvcFn: func() *automock.ProductService {
-				productSvc := &automock.ProductService{}
-				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Twice()
-				return productSvc
+			specSvcFn:          successfulSpecCreateAndUpdate,
+			fetchReqFn:         successfulFetchRequestFetchAndUpdate,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			productProcessorFn: func() *automock.ProductProcessor {
+				productProcessor := &automock.ProductProcessor{}
+				productProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, []*model.ProductInput{}).Return(fixProducts(), nil).Once()
+				return productProcessor
 			},
-			vendorSvcFn:          successfulVendorCreate,
+			vendorProcessorFn: func() *automock.VendorProcessor {
+				vendorProcessor := &automock.VendorProcessor{}
+				vendorProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.Vendors).Return(fixVendors(), nil).Once()
+				return vendorProcessor
+			},
 			tombstoneProcessorFn: successfulTombstoneProcessing,
 			globalRegistrySvcFn:  successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
@@ -2523,17 +2459,6 @@ func TestService_Processing(t *testing.T) {
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				return packagesSvc
 			},
-			productSvcFn: func() *automock.ProductService {
-				productSvc := &automock.ProductService{}
-				return productSvc
-			},
-			vendorSvcFn: func() *automock.VendorService {
-				vendorSvc := &automock.VendorService{}
-				return vendorSvc
-			},
-			tombstoneProcessorFn: func() *automock.TombstoneProcessor {
-				return &automock.TombstoneProcessor{}
-			},
 			globalRegistrySvcFn: successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
@@ -2548,167 +2473,60 @@ func TestService_Processing(t *testing.T) {
 			ExpectedErr:             processingORDDocsErr,
 		},
 		{
-			Name: "Does not resync resources if vendor list fails",
+			Name: "Does not resync resources if vendors processing fail",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Times(7)
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(7)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(6)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
+			appSvcFn:     successfulAppGet,
+			tenantSvcFn:  successfulTenantSvc,
+			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulEmptyBundleList,
+			vendorProcessorFn: func() *automock.VendorProcessor {
+				vendorProcessor := &automock.VendorProcessor{}
+				vendorProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.Vendors).Return(nil, testErr).Once()
+				return vendorProcessor
+			},
+			clientFn:                   successfulClientFetch,
+			apiSvcFn:                   successfulEmptyAPIList,
+			eventSvcFn:                 successfulEmptyEventList,
+			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
+			capabilitySvcFn:            successfulEmptyCapabilityList,
+			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			packageSvcFn:               successfulEmptyPackageList,
+			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
+			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
+			labelSvcFn:                 successfulLabelGetByKey,
+			processFnName:              processApplicationFnName,
+			ExpectedErr:                testErr,
+		},
+		{
+			Name: "Does not resync resources if products processing fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				persistTx.On("Commit").Return(nil).Times(8)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(8)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(7)
+				transact.On("Begin").Return(persistTx, nil).Times(7)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(6)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn:  successfulEmptyBundleList,
-			vendorSvcFn: func() *automock.VendorService {
-				vendorSvc := &automock.VendorService{}
-				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
-				return vendorSvc
-			},
-			clientFn:                   successfulClientFetch,
-			apiSvcFn:                   successfulEmptyAPIList,
-			eventSvcFn:                 successfulEmptyEventList,
-			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			capabilitySvcFn:            successfulEmptyCapabilityList,
-			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
-			packageSvcFn:               successfulEmptyPackageList,
-			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
-			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
-			labelSvcFn:                 successfulLabelGetByKey,
-			processFnName:              processApplicationFnName,
-			ExpectedErr:                testErr,
-		},
-		{
-			Name: "Fails to list vendors after resync",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(11)
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(11)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(10)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
-				return persistTx, transact
-			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn:  successfulEmptyBundleList,
-			vendorSvcFn: func() *automock.VendorService {
-				vendorSvc := &automock.VendorService{}
-				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
-				vendorSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, vendorID, *sanitizedDoc.Vendors[0]).Return(nil).Once()
-				vendorSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, vendorID2, *sanitizedDoc.Vendors[1]).Return(nil).Once()
-				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
-				return vendorSvc
-			},
-			clientFn:                   successfulClientFetch,
-			apiSvcFn:                   successfulEmptyAPIList,
-			eventSvcFn:                 successfulEmptyEventList,
-			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			capabilitySvcFn:            successfulEmptyCapabilityList,
-			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
-			packageSvcFn:               successfulEmptyPackageList,
-			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
-			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
-			labelSvcFn:                 successfulLabelGetByKey,
-			processFnName:              processApplicationFnName,
-			ExpectedErr:                testErr,
-		},
-		{
-			Name: "Does not resync resources if vendor update fails",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(8)
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(9)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(8)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
-				return persistTx, transact
-			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn:  successfulEmptyBundleList,
-			vendorSvcFn: func() *automock.VendorService {
-				vendorSvc := &automock.VendorService{}
-				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
-				vendorSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, vendorID, *sanitizedDoc.Vendors[0]).Return(testErr).Once()
-				return vendorSvc
-			},
-			clientFn:                   successfulClientFetch,
-			apiSvcFn:                   successfulEmptyAPIList,
-			eventSvcFn:                 successfulEmptyEventList,
-			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			capabilitySvcFn:            successfulEmptyCapabilityList,
-			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
-			packageSvcFn:               successfulEmptyPackageList,
-			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
-			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
-			labelSvcFn:                 successfulLabelGetByKey,
-			processFnName:              processApplicationFnName,
-			ExpectedErr:                testErr,
-		},
-		{
-			Name: "Does not resync resources if vendor create fails",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(8)
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(9)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(8)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
-				return persistTx, transact
-			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn:  successfulEmptyBundleList,
-			vendorSvcFn: func() *automock.VendorService {
-				vendorSvc := &automock.VendorService{}
-				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				vendorSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Vendors[0]).Return("", testErr).Once()
-				return vendorSvc
-			},
-			clientFn:                   successfulClientFetch,
-			apiSvcFn:                   successfulEmptyAPIList,
-			eventSvcFn:                 successfulEmptyEventList,
-			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			capabilitySvcFn:            successfulEmptyCapabilityList,
-			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
-			packageSvcFn:               successfulEmptyPackageList,
-			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
-			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
-			labelSvcFn:                 successfulLabelGetByKey,
-			processFnName:              processApplicationFnName,
-			ExpectedErr:                testErr,
-		},
-		{
-			Name: "Does not resync resources if product list fails",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(12)
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(12)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(11)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
-				return persistTx, transact
-			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn:  successfulEmptyBundleList,
-			vendorSvcFn:  successfulVendorUpdateForApplication,
-			productSvcFn: func() *automock.ProductService {
-				productSvc := &automock.ProductService{}
-				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
-				return productSvc
+			appSvcFn:          successfulAppGet,
+			tenantSvcFn:       successfulTenantSvc,
+			webhookSvcFn:      successfulWebhookList,
+			bundleSvcFn:       successfulEmptyBundleList,
+			vendorProcessorFn: successfulVendorProcess,
+			productProcessorFn: func() *automock.ProductProcessor {
+				productProcessor := &automock.ProductProcessor{}
+				productProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.Products).Return(nil, testErr).Once()
+				return productProcessor
 			},
 			clientFn:                   successfulClientFetch,
 			apiSvcFn:                   successfulEmptyAPIList,
@@ -2724,250 +2542,36 @@ func TestService_Processing(t *testing.T) {
 			ExpectedErr:                testErr,
 		},
 		{
-			Name: "Fails to list products after resync",
+			Name: "Does not resync resources if package processing fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(14)
+				persistTx.On("Commit").Return(nil).Times(7)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(14)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(13)
+				transact.On("Begin").Return(persistTx, nil).Times(7)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(6)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn:  successfulEmptyBundleList,
-			vendorSvcFn:  successfulVendorUpdateForApplication,
-			productSvcFn: func() *automock.ProductService {
-				productSvc := &automock.ProductService{}
-				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
-				productSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, productID, *sanitizedDoc.Products[0]).Return(nil).Once()
-				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
-
-				return productSvc
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulWebhookList,
+			bundleSvcFn:        successfulEmptyBundleList,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn: func() *automock.VendorProcessor {
+				vendorProcessor := &automock.VendorProcessor{}
+				vendorProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.Vendors).Return(fixVendors(), nil).Once()
+				return vendorProcessor
 			},
-			clientFn:                   successfulClientFetch,
-			apiSvcFn:                   successfulEmptyAPIList,
-			eventSvcFn:                 successfulEmptyEventList,
-			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			capabilitySvcFn:            successfulEmptyCapabilityList,
-			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
-			packageSvcFn:               successfulEmptyPackageList,
-			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
-			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
-			labelSvcFn:                 successfulLabelGetByKey,
-			processFnName:              processApplicationFnName,
-			ExpectedErr:                testErr,
-		},
-		{
-			Name: "Does not resync resources if product update fails",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(12)
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(13)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(12)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
-				return persistTx, transact
-			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn:  successfulEmptyBundleList,
-			vendorSvcFn:  successfulVendorUpdateForApplication,
-			productSvcFn: func() *automock.ProductService {
-				productSvc := &automock.ProductService{}
-				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
-				productSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, productID, *sanitizedDoc.Products[0]).Return(testErr).Once()
-				return productSvc
-			},
-			clientFn:                   successfulClientFetch,
-			apiSvcFn:                   successfulEmptyAPIList,
-			eventSvcFn:                 successfulEmptyEventList,
-			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			capabilitySvcFn:            successfulEmptyCapabilityList,
-			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
-			packageSvcFn:               successfulEmptyPackageList,
-			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
-			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
-			labelSvcFn:                 successfulLabelGetByKey,
-			processFnName:              processApplicationFnName,
-			ExpectedErr:                testErr,
-		},
-		{
-			Name: "Does not resync resources if product create fails",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(12)
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(13)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(12)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
-				return persistTx, transact
-			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn:  successfulEmptyBundleList,
-			vendorSvcFn:  successfulVendorUpdateForApplication,
-			productSvcFn: func() *automock.ProductService {
-				productSvc := &automock.ProductService{}
-				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				productSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Products[0]).Return("", testErr).Once()
-				return productSvc
-			},
-			clientFn:                   successfulClientFetch,
-			apiSvcFn:                   successfulEmptyAPIList,
-			eventSvcFn:                 successfulEmptyEventList,
-			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			capabilitySvcFn:            successfulEmptyCapabilityList,
-			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
-			packageSvcFn:               successfulEmptyPackageList,
-			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
-			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
-			labelSvcFn:                 successfulLabelGetByKey,
-			processFnName:              processApplicationFnName,
-			ExpectedErr:                testErr,
-		},
-		{
-			Name: "Does not resync resources if package list fails",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(15)
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(15)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(14)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
-				return persistTx, transact
-			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn:  successfulEmptyBundleList,
-			productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:  successfulVendorUpdateForApplication,
 			packageSvcFn: func() *automock.PackageService {
 				packagesSvc := &automock.PackageService{}
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return packagesSvc
 			},
-			clientFn:                   successfulClientFetch,
-			apiSvcFn:                   successfulEmptyAPIList,
-			eventSvcFn:                 successfulEmptyEventList,
-			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			capabilitySvcFn:            successfulEmptyCapabilityList,
-			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
-			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
-			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
-			labelSvcFn:                 successfulLabelGetByKey,
-			processFnName:              processApplicationFnName,
-			ExpectedErr:                testErr,
-		},
-		{
-			Name: "Fails to list packages after resync",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(17)
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(17)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(16)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
-				return persistTx, transact
-			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn:  successfulEmptyBundleList,
-			productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:  successfulVendorUpdateForApplication,
-			packageSvcFn: func() *automock.PackageService {
-				packagesSvc := &automock.PackageService{}
-				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				packagesSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, packageID, *sanitizedDoc.Packages[0], packagePreSanitizedHash).Return(nil).Once()
-				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
-				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
-				return packagesSvc
-			},
-			clientFn:                   successfulClientFetch,
-			apiSvcFn:                   successfulEmptyAPIList,
-			eventSvcFn:                 successfulEmptyEventList,
-			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			capabilitySvcFn:            successfulEmptyCapabilityList,
-			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
-			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
-			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
-			labelSvcFn:                 successfulLabelGetByKey,
-			processFnName:              processApplicationFnName,
-			ExpectedErr:                testErr,
-		},
-		{
-			Name: "Does not resync resources if package update fails",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(15)
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(16)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(15)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
-				return persistTx, transact
-			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn:  successfulEmptyBundleList,
-			productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:  successfulVendorUpdateForApplication,
-			packageSvcFn: func() *automock.PackageService {
-				packagesSvc := &automock.PackageService{}
-				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
-				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
-				packagesSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, packageID, *sanitizedDoc.Packages[0], packagePreSanitizedHash).Return(testErr).Once()
-				return packagesSvc
-			},
-			clientFn:                   successfulClientFetch,
-			apiSvcFn:                   successfulEmptyAPIList,
-			eventSvcFn:                 successfulEmptyEventList,
-			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
-			capabilitySvcFn:            successfulEmptyCapabilityList,
-			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
-			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
-			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
-			labelSvcFn:                 successfulLabelGetByKey,
-			processFnName:              processApplicationFnName,
-			ExpectedErr:                testErr,
-		},
-		{
-			Name: "Does not resync resources if package create fails",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(15)
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(16)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(15)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
-				return persistTx, transact
-			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			bundleSvcFn:  successfulEmptyBundleList,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			packageSvcFn: func() *automock.PackageService {
-				packagesSvc := &automock.PackageService{}
-				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				packagesSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Packages[0], mock.Anything).Return("", testErr).Once()
-				return packagesSvc
+			packageProcessorFn: func() *automock.PackageProcessor {
+				packageProcessor := &automock.PackageProcessor{}
+				packageProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.Packages, mock.Anything).Return(nil, testErr).Once()
+				return packageProcessor
 			},
 			clientFn:                   successfulClientFetch,
 			apiSvcFn:                   successfulEmptyAPIList,
@@ -2985,20 +2589,25 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if bundle list fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(17)
+				persistTx.On("Commit").Return(nil).Times(7)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(18)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(17)
+				transact.On("Begin").Return(persistTx, nil).Times(8)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(7)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
 			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:  successfulVendorUpdateForApplication,
-			packageSvcFn: successfulPackageUpdateForApplication,
+			productProcessorFn: func() *automock.ProductProcessor {
+				productProcessor := &automock.ProductProcessor{}
+				productProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.Products).Return(fixProducts(), nil).Once()
+				return productProcessor
+			},
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -3021,21 +2630,22 @@ func TestService_Processing(t *testing.T) {
 			Name: "Fails to list bundles after resync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(20)
+				persistTx.On("Commit").Return(nil).Times(10)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(21)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(20)
+				transact.On("Begin").Return(persistTx, nil).Times(11)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(10)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion,
-			productSvcFn:  successfulProductUpdateForApplication,
-			vendorSvcFn:   successfulVendorUpdateForApplication,
-			packageSvcFn:  successfulPackageUpdateForApplication,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Twice()
@@ -3059,20 +2669,21 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if bundle update fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(18)
+				persistTx.On("Commit").Return(nil).Times(8)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(19)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(18)
+				transact.On("Begin").Return(persistTx, nil).Times(9)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(8)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:  successfulVendorUpdateForApplication,
-			packageSvcFn: successfulPackageUpdateForApplication,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulWebhookList,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -3096,20 +2707,21 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if bundle create fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(18)
+				persistTx.On("Commit").Return(nil).Times(8)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(19)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(18)
+				transact.On("Begin").Return(persistTx, nil).Times(9)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(8)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			packageSvcFn: successfulPackageCreate,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulWebhookList,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -3133,21 +2745,22 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if bundle have different tenant mapping configuration",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(19)
+				persistTx.On("Commit").Return(nil).Times(9)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(19)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(18)
+				transact.On("Begin").Return(persistTx, nil).Times(9)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(8)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			packageSvcFn: successfulPackageCreate,
-			bundleSvcFn:  successfulListTwiceAndCreateBundle,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulWebhookList,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulListTwiceAndCreateBundle,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -3178,11 +2791,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if webhooks could not be enriched",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(19)
+				persistTx.On("Commit").Return(nil).Times(9)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(19)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(18)
+				transact.On("Begin").Return(persistTx, nil).Times(9)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(8)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -3195,10 +2808,11 @@ func TestService_Processing(t *testing.T) {
 				whSvc.On("EnrichWebhooksWithTenantMappingWebhooks", whInputs).Return(nil, testErr).Once()
 				return whSvc
 			},
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			packageSvcFn: successfulPackageCreate,
-			bundleSvcFn:  successfulListTwiceAndCreateBundle,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulListTwiceAndCreateBundle,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -3229,11 +2843,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if webhooks cannot be listed for application",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(19)
+				persistTx.On("Commit").Return(nil).Times(9)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(20)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(19)
+				transact.On("Begin").Return(persistTx, nil).Times(10)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(9)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -3248,10 +2862,11 @@ func TestService_Processing(t *testing.T) {
 
 				return whSvc
 			},
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			packageSvcFn: successfulPackageCreate,
-			bundleSvcFn:  successfulListTwiceAndCreateBundle,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulListTwiceAndCreateBundle,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -3282,11 +2897,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if webhooks cannot be converted from graphql input to model input",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(19)
+				persistTx.On("Commit").Return(nil).Times(9)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(20)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(19)
+				transact.On("Begin").Return(persistTx, nil).Times(10)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(9)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -3306,10 +2921,11 @@ func TestService_Processing(t *testing.T) {
 				whConv.On("InputFromGraphQL", fixTenantMappingWebhookGraphQLInput()).Return(nil, testErr).Once()
 				return whConv
 			},
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			packageSvcFn: successfulPackageCreate,
-			bundleSvcFn:  successfulListTwiceAndCreateBundle,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulListTwiceAndCreateBundle,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -3340,11 +2956,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if webhooks cannot be created",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(19)
+				persistTx.On("Commit").Return(nil).Times(9)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(20)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(19)
+				transact.On("Begin").Return(persistTx, nil).Times(10)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(9)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -3360,11 +2976,12 @@ func TestService_Processing(t *testing.T) {
 
 				return whSvc
 			},
-			webhookConvFn: successfulWebhookConversion,
-			productSvcFn:  successfulProductCreate,
-			vendorSvcFn:   successfulVendorCreate,
-			packageSvcFn:  successfulPackageCreate,
-			bundleSvcFn:   successfulListTwiceAndCreateBundle,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulListTwiceAndCreateBundle,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -3395,11 +3012,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Resync resources if webhooks can be created successfully",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(36)
+				persistTx.On("Commit").Return(nil).Times(26)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(34)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(34)
+				transact.On("Begin").Return(persistTx, nil).Times(24)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(24)
 				return persistTx, transact
 			},
 			appSvcFn:    successfulAppGet,
@@ -3414,11 +3031,12 @@ func TestService_Processing(t *testing.T) {
 
 				return whSvc
 			},
-			webhookConvFn: successfulWebhookConversion,
-			productSvcFn:  successfulProductCreate,
-			vendorSvcFn:   successfulVendorCreate,
-			packageSvcFn:  successfulPackageCreate,
-			bundleSvcFn:   successfulBundleCreateWithGenericParam,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleCreateWithGenericParam,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -3465,11 +3083,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not recreate tenant mapping webhooks if there are no differences",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(36)
+				persistTx.On("Commit").Return(nil).Times(26)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(34)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(34)
+				transact.On("Begin").Return(persistTx, nil).Times(24)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(24)
 				return persistTx, transact
 			},
 			appSvcFn:    successfulAppGet,
@@ -3483,11 +3101,12 @@ func TestService_Processing(t *testing.T) {
 
 				return whSvc
 			},
-			webhookConvFn: successfulWebhookConversion,
-			productSvcFn:  successfulProductCreate,
-			vendorSvcFn:   successfulVendorCreate,
-			packageSvcFn:  successfulPackageCreate,
-			bundleSvcFn:   successfulBundleCreateWithGenericParam,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleCreateWithGenericParam,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -3534,11 +3153,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does recreate of tenant mapping webhooks when there are differences",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(36)
+				persistTx.On("Commit").Return(nil).Times(26)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(35)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(35)
+				transact.On("Begin").Return(persistTx, nil).Times(25)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(25)
 				return persistTx, transact
 			},
 			appSvcFn:    successfulAppGet,
@@ -3556,11 +3175,12 @@ func TestService_Processing(t *testing.T) {
 
 				return whSvc
 			},
-			webhookConvFn: successfulWebhookConversion,
-			productSvcFn:  successfulProductCreate,
-			vendorSvcFn:   successfulVendorCreate,
-			packageSvcFn:  successfulPackageCreate,
-			bundleSvcFn:   successfulBundleCreateWithGenericParam,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleCreateWithGenericParam,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -3607,11 +3227,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not recreate of tenant mapping webhooks when there are differences but deletion fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(34)
+				persistTx.On("Commit").Return(nil).Times(24)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(20)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(20)
+				transact.On("Begin").Return(persistTx, nil).Times(10)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(10)
 				return persistTx, transact
 			},
 			appSvcFn:    successfulAppGet,
@@ -3628,10 +3248,11 @@ func TestService_Processing(t *testing.T) {
 
 				return whSvc
 			},
-			webhookConvFn: successfulWebhookConversion,
-			productSvcFn:  successfulProductCreate,
-			vendorSvcFn:   successfulVendorCreate,
-			packageSvcFn:  successfulPackageCreate,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -3650,9 +3271,6 @@ func TestService_Processing(t *testing.T) {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				return apiSvc
-			},
-			tombstoneProcessorFn: func() *automock.TombstoneProcessor {
-				return &automock.TombstoneProcessor{}
 			},
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
@@ -3675,21 +3293,23 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if api list fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(22)
+				persistTx.On("Commit").Return(nil).Times(12)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(22)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(21)
+				transact.On("Begin").Return(persistTx, nil).Times(12)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(11)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:  successfulVendorUpdateForApplication,
-			packageSvcFn: successfulPackageUpdateForApplication,
-			bundleSvcFn:  successfulBundleUpdateForApplication,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -3711,23 +3331,25 @@ func TestService_Processing(t *testing.T) {
 			Name: "Fails to list apis after resync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(25)
+				persistTx.On("Commit").Return(nil).Times(15)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(25)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(24)
+				transact.On("Begin").Return(persistTx, nil).Times(15)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(14)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
-			specSvcFn:      successfulAPISpecUpdate,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			specSvcFn:          successfulAPISpecUpdate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
@@ -3753,21 +3375,23 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if fetching bundle ids for api fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(22)
+				persistTx.On("Commit").Return(nil).Times(12)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(23)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(22)
+				transact.On("Begin").Return(persistTx, nil).Times(13)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(12)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:  successfulVendorUpdateForApplication,
-			packageSvcFn: successfulPackageUpdateForApplication,
-			bundleSvcFn:  successfulBundleUpdateForApplication,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
 			bundleRefSvcFn: func() *automock.BundleReferenceService {
 				bundleRefSvc := &automock.BundleReferenceService{}
 				firstAPIID := api1ID
@@ -3797,22 +3421,24 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if api update fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(22)
+				persistTx.On("Commit").Return(nil).Times(12)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(23)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(22)
+				transact.On("Begin").Return(persistTx, nil).Times(13)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(12)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfAPIBundleIDs,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfAPIBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
@@ -3836,21 +3462,23 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if api create fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(22)
+				persistTx.On("Commit").Return(nil).Times(12)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(23)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(22)
+				transact.On("Begin").Return(persistTx, nil).Times(13)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(12)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			packageSvcFn: successfulPackageCreate,
-			bundleSvcFn:  successfulBundleCreate,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -3873,22 +3501,24 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if api spec delete fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(22)
+				persistTx.On("Commit").Return(nil).Times(12)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(23)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(22)
+				transact.On("Begin").Return(persistTx, nil).Times(13)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(12)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfAPIBundleIDs,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfAPIBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
@@ -3917,22 +3547,24 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if api spec create fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(22)
+				persistTx.On("Commit").Return(nil).Times(12)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(23)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(22)
+				transact.On("Begin").Return(persistTx, nil).Times(13)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(12)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfAPIBundleIDs,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfAPIBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
@@ -3962,22 +3594,24 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if api spec list fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(22)
+				persistTx.On("Commit").Return(nil).Times(12)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(23)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(22)
+				transact.On("Begin").Return(persistTx, nil).Times(13)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(12)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfAPIBundleIDs,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfAPIBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoNewerLastUpdate(), nil).Twice()
@@ -4005,23 +3639,24 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if api spec get fetch request fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(22)
+				persistTx.On("Commit").Return(nil).Times(12)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(23)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(22)
+				transact.On("Begin").Return(persistTx, nil).Times(13)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(12)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:       successfulAppGet,
-			tenantSvcFn:    successfulTenantSvc,
-			webhookSvcFn:   successfulTenantMappingOnlyCreation,
-			webhookConvFn:  successfulWebhookConversion,
-			productSvcFn:   successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfAPIBundleIDs,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfAPIBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoNewerLastUpdate(), nil).Twice()
@@ -4050,21 +3685,23 @@ func TestService_Processing(t *testing.T) {
 			Name: "Resync resources returns error if api spec refetch fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(35)
+				persistTx.On("Commit").Return(nil).Times(25)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(35)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(35)
+				transact.On("Begin").Return(persistTx, nil).Times(25)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(25)
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfAPIBundleIDs,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfAPIBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoNewerLastUpdate(), nil).Times(3)
@@ -4164,24 +3801,26 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if event list fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(26)
+				persistTx.On("Commit").Return(nil).Times(16)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(26)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(25)
+				transact.On("Begin").Return(persistTx, nil).Times(16)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(15)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfAPIBundleIDs,
-			apiSvcFn:       successfulAPIUpdate,
-			specSvcFn:      successfulAPISpecUpdate,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfAPIBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
+			specSvcFn:          successfulAPISpecUpdate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
@@ -4203,23 +3842,25 @@ func TestService_Processing(t *testing.T) {
 			Name: "Fails to list events after resync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(28)
+				persistTx.On("Commit").Return(nil).Times(18)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(29)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(28)
+				transact.On("Begin").Return(persistTx, nil).Times(19)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(18)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:       successfulAPIUpdate,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 
@@ -4262,21 +3903,23 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if fetching bundle ids for event fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(26)
+				persistTx.On("Commit").Return(nil).Times(16)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(27)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(26)
+				transact.On("Begin").Return(persistTx, nil).Times(17)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(16)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:  successfulVendorUpdateForApplication,
-			packageSvcFn: successfulPackageUpdateForApplication,
-			bundleSvcFn:  successfulBundleUpdateForApplication,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
 			bundleRefSvcFn: func() *automock.BundleReferenceService {
 				bundleRefSvc := &automock.BundleReferenceService{}
 				firstAPIID := api1ID
@@ -4310,24 +3953,26 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if event update fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(26)
+				persistTx.On("Commit").Return(nil).Times(16)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(27)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(26)
+				transact.On("Begin").Return(persistTx, nil).Times(17)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(16)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:       successfulAPIUpdate,
-			specSvcFn:      successfulAPISpecUpdate,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
+			specSvcFn:          successfulAPISpecUpdate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
@@ -4350,23 +3995,25 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync specification resources if event create fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(26)
+				persistTx.On("Commit").Return(nil).Times(16)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(27)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(26)
+				transact.On("Begin").Return(persistTx, nil).Times(17)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(16)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductCreate,
-			vendorSvcFn:    successfulVendorCreate,
-			packageSvcFn:   successfulPackageCreate,
-			bundleSvcFn:    successfulBundleCreate,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfAPIBundleIDs,
-			apiSvcFn:       successfulAPICreate,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleCreate,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfAPIBundleIDs,
+			apiSvcFn:           successfulAPICreate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -4420,23 +4067,25 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if event spec delete fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(26)
+				persistTx.On("Commit").Return(nil).Times(16)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(27)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(26)
+				transact.On("Begin").Return(persistTx, nil).Times(17)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(16)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:       successfulAPIUpdate,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 
@@ -4472,23 +4121,25 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if event spec create fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(26)
+				persistTx.On("Commit").Return(nil).Times(16)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(27)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(26)
+				transact.On("Begin").Return(persistTx, nil).Times(17)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(16)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:       successfulAPIUpdate,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 
@@ -4527,23 +4178,25 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if event spec list fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(26)
+				persistTx.On("Commit").Return(nil).Times(16)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(27)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(26)
+				transact.On("Begin").Return(persistTx, nil).Times(17)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(16)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:       successfulAPIUpdate,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, api1ID).Return(nil).Once()
@@ -4579,23 +4232,25 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if event spec get fetch request fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(26)
+				persistTx.On("Commit").Return(nil).Times(16)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(27)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(26)
+				transact.On("Begin").Return(persistTx, nil).Times(17)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(16)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:       successfulAPIUpdate,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, api1ID).Return(nil).Once()
@@ -4632,21 +4287,23 @@ func TestService_Processing(t *testing.T) {
 			Name: "Resync resources returns error if event spec refetch fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(35)
+				persistTx.On("Commit").Return(nil).Times(25)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(35)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(35)
+				transact.On("Begin").Return(persistTx, nil).Times(25)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(25)
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
@@ -4782,27 +4439,28 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if capability list fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(30)
+				persistTx.On("Commit").Return(nil).Times(20)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(30)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(29)
+				transact.On("Begin").Return(persistTx, nil).Times(20)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(19)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:        successfulAppGet,
-			tenantSvcFn:     successfulTenantSvc,
-			webhookSvcFn:    successfulTenantMappingOnlyCreation,
-			webhookConvFn:   successfulWebhookConversion,
-			productSvcFn:    successfulProductUpdateForApplication,
-			vendorSvcFn:     successfulVendorUpdateForApplication,
-			packageSvcFn:    successfulPackageUpdateForApplication,
-			bundleSvcFn:     successfulBundleUpdateForApplication,
-			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:        successfulAPIUpdate,
-			specSvcFn:       successfulSpecRecreateAndUpdateForApisAndEvents,
-			eventSvcFn:      successfulEventUpdate,
-			entityTypeSvcFn: successfulEntityTypeFetchForApplication,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
+			specSvcFn:          successfulSpecRecreateAndUpdateForApisAndEvents,
+			eventSvcFn:         successfulEventUpdate,
+			entityTypeSvcFn:    successfulEntityTypeFetchForApplication,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				entityTypeProcessor := &automock.EntityTypeProcessor{}
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
@@ -4827,23 +4485,25 @@ func TestService_Processing(t *testing.T) {
 			Name: "Fails to list capabilities after resync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(32)
+				persistTx.On("Commit").Return(nil).Times(22)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(33)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(32)
+				transact.On("Begin").Return(persistTx, nil).Times(23)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(22)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:       successfulAPIUpdate,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 
@@ -4907,27 +4567,28 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if capability update fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(30)
+				persistTx.On("Commit").Return(nil).Times(20)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(31)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(30)
+				transact.On("Begin").Return(persistTx, nil).Times(21)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(20)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:        successfulAppGet,
-			tenantSvcFn:     successfulTenantSvc,
-			webhookSvcFn:    successfulTenantMappingOnlyCreation,
-			webhookConvFn:   successfulWebhookConversion,
-			productSvcFn:    successfulProductUpdateForApplication,
-			vendorSvcFn:     successfulVendorUpdateForApplication,
-			packageSvcFn:    successfulPackageUpdateForApplication,
-			bundleSvcFn:     successfulBundleUpdateForApplication,
-			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:        successfulAPIUpdate,
-			specSvcFn:       successfulSpecRecreateAndUpdateForApisAndEvents,
-			eventSvcFn:      successfulEventUpdate,
-			entityTypeSvcFn: successfulEntityTypeFetchForApplication,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
+			specSvcFn:          successfulSpecRecreateAndUpdateForApisAndEvents,
+			eventSvcFn:         successfulEventUpdate,
+			entityTypeSvcFn:    successfulEntityTypeFetchForApplication,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				entityTypeProcessor := &automock.EntityTypeProcessor{}
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
@@ -4953,26 +4614,27 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync specification resources if capability create fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(30)
+				persistTx.On("Commit").Return(nil).Times(20)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(31)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(30)
+				transact.On("Begin").Return(persistTx, nil).Times(21)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(20)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:        successfulAppGet,
-			tenantSvcFn:     successfulTenantSvc,
-			webhookSvcFn:    successfulTenantMappingOnlyCreation,
-			webhookConvFn:   successfulWebhookConversion,
-			productSvcFn:    successfulProductCreate,
-			vendorSvcFn:     successfulVendorCreate,
-			packageSvcFn:    successfulPackageCreate,
-			bundleSvcFn:     successfulBundleCreate,
-			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:        successfulAPICreate,
-			eventSvcFn:      successfulEventCreate,
-			entityTypeSvcFn: successfulEntityTypeFetchForApplication,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleCreate,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPICreate,
+			eventSvcFn:         successfulEventCreate,
+			entityTypeSvcFn:    successfulEntityTypeFetchForApplication,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				entityTypeProcessor := &automock.EntityTypeProcessor{}
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
@@ -5011,24 +4673,25 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if capability spec create fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(30)
+				persistTx.On("Commit").Return(nil).Times(20)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(31)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(30)
+				transact.On("Begin").Return(persistTx, nil).Times(21)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(20)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:       successfulAppGet,
-			tenantSvcFn:    successfulTenantSvc,
-			webhookSvcFn:   successfulTenantMappingOnlyCreation,
-			webhookConvFn:  successfulWebhookConversion,
-			productSvcFn:   successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:       successfulAPIUpdate,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 
@@ -5078,24 +4741,25 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if capability spec delete fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(30)
+				persistTx.On("Commit").Return(nil).Times(20)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(31)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(30)
+				transact.On("Begin").Return(persistTx, nil).Times(21)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(20)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:       successfulAppGet,
-			tenantSvcFn:    successfulTenantSvc,
-			webhookSvcFn:   successfulTenantMappingOnlyCreation,
-			webhookConvFn:  successfulWebhookConversion,
-			productSvcFn:   successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:       successfulAPIUpdate,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 
@@ -5143,24 +4807,25 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if capability spec list fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(30)
+				persistTx.On("Commit").Return(nil).Times(20)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(31)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(30)
+				transact.On("Begin").Return(persistTx, nil).Times(21)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(20)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:       successfulAppGet,
-			tenantSvcFn:    successfulTenantSvc,
-			webhookSvcFn:   successfulTenantMappingOnlyCreation,
-			webhookConvFn:  successfulWebhookConversion,
-			productSvcFn:   successfulProductUpdateForApplication,
-			vendorSvcFn:    successfulVendorUpdateForApplication,
-			packageSvcFn:   successfulPackageUpdateForApplication,
-			bundleSvcFn:    successfulBundleUpdateForApplication,
-			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:       successfulAPIUpdate,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, api1ID).Return(nil).Once()
@@ -5240,25 +4905,26 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if entity type processing fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(29)
+				persistTx.On("Commit").Return(nil).Times(19)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(29)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(29)
+				transact.On("Begin").Return(persistTx, nil).Times(19)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(19)
 				return persistTx, transact
 			},
-			appSvcFn:        successfulAppGet,
-			tenantSvcFn:     successfulTenantSvc,
-			webhookSvcFn:    successfulTenantMappingOnlyCreation,
-			webhookConvFn:   successfulWebhookConversion,
-			productSvcFn:    successfulProductUpdateForApplication,
-			vendorSvcFn:     successfulVendorUpdateForApplication,
-			packageSvcFn:    successfulPackageUpdateForApplication,
-			bundleSvcFn:     successfulBundleUpdateForApplication,
-			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:        successfulAPIUpdate,
-			eventSvcFn:      successfulEventUpdate,
-			entityTypeSvcFn: successfulEntityTypeFetchForApplication,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
+			eventSvcFn:         successfulEventUpdate,
+			entityTypeSvcFn:    successfulEntityTypeFetchForApplication,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				entityTypeProcessor := &automock.EntityTypeProcessor{}
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), fixResourceHashesForDocument(fixORDDocument())).Return(nil, testErr).Once()
@@ -5329,25 +4995,27 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if integration dependency processing fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(32)
+				persistTx.On("Commit").Return(nil).Times(22)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(33)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(32)
+				transact.On("Begin").Return(persistTx, nil).Times(23)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(22)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:     successfulVendorUpdateForApplication,
-			packageSvcFn:    successfulPackageUpdateForApplication,
-			bundleSvcFn:     successfulBundleUpdateForApplication,
-			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:        successfulAPIUpdate,
-			eventSvcFn:      successfulEventUpdate,
-			entityTypeSvcFn: successfulEntityTypeFetchForApplication,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
+			eventSvcFn:         successfulEventUpdate,
+			entityTypeSvcFn:    successfulEntityTypeFetchForApplication,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				entityTypeProcessor := &automock.EntityTypeProcessor{}
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
@@ -5373,25 +5041,27 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if tombstone processing fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(32)
+				persistTx.On("Commit").Return(nil).Times(22)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(33)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(32)
+				transact.On("Begin").Return(persistTx, nil).Times(23)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(22)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdateForApplication,
-			vendorSvcFn:     successfulVendorUpdateForApplication,
-			packageSvcFn:    successfulPackageUpdateForApplication,
-			bundleSvcFn:     successfulBundleUpdateForApplication,
-			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:        successfulAPIUpdate,
-			eventSvcFn:      successfulEventUpdate,
-			entityTypeSvcFn: successfulEntityTypeFetchForApplication,
+			appSvcFn:           successfulAppGet,
+			tenantSvcFn:        successfulTenantSvc,
+			webhookSvcFn:       successfulTenantMappingOnlyCreation,
+			webhookConvFn:      successfulWebhookConversion,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
+			packageSvcFn:       successfulPackageList,
+			packageProcessorFn: successfulPackageProcess,
+			bundleSvcFn:        successfulBundleUpdateForApplication,
+			bundleRefSvcFn:     successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:           successfulAPIUpdate,
+			eventSvcFn:         successfulEventUpdate,
+			entityTypeSvcFn:    successfulEntityTypeFetchForApplication,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				entityTypeProcessor := &automock.EntityTypeProcessor{}
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, sanitizedDoc.EntityTypes, fixPackages(), mock.Anything).Return(fixEntityTypes(), nil).Once()
@@ -5418,11 +5088,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if api resource deletion due to tombstone fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(33)
+				persistTx.On("Commit").Return(nil).Times(23)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(34)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(33)
+				transact.On("Begin").Return(persistTx, nil).Times(24)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(23)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -5452,9 +5122,10 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecCreate,
-			packageSvcFn:                     successfulPackageCreate,
-			productSvcFn:                     successfulProductCreate,
-			vendorSvcFn:                      successfulVendorCreate,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn:                successfulVendorProcess,
 			tombstoneProcessorFn:             successfulTombstoneProcessing,
 			globalRegistrySvcFn:              successfulGlobalRegistrySvc,
 			clientFn:                         successfulClientFetch,
@@ -5467,11 +5138,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if package resource deletion due to tombstone fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(33)
+				persistTx.On("Commit").Return(nil).Times(23)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(34)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(33)
+				transact.On("Begin").Return(persistTx, nil).Times(24)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(23)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -5495,14 +5166,12 @@ func TestService_Processing(t *testing.T) {
 			packageSvcFn: func() *automock.PackageService {
 				packagesSvc := &automock.PackageService{}
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				packagesSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Packages[0], mock.Anything).Return("", nil).Once()
-				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
 				packagesSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, packageID).Return(testErr).Once()
 				return packagesSvc
 			},
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
+			packageProcessorFn: successfulPackageProcess,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
 			tombstoneProcessorFn: func() *automock.TombstoneProcessor {
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = packageORDID
@@ -5529,11 +5198,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if event resource deletion due to tombstone fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(33)
+				persistTx.On("Commit").Return(nil).Times(23)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(34)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(33)
+				transact.On("Begin").Return(persistTx, nil).Times(24)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(23)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -5563,9 +5232,10 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecCreate,
-			packageSvcFn:                     successfulPackageCreate,
-			productSvcFn:                     successfulProductCreate,
-			vendorSvcFn:                      successfulVendorCreate,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn:                successfulVendorProcess,
 			tombstoneProcessorFn: func() *automock.TombstoneProcessor {
 				doc := fixSanitizedORDDocument()
 				ts := doc.Tombstones[0]
@@ -5593,11 +5263,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if entity type resource deletion due to tombstone fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(33)
+				persistTx.On("Commit").Return(nil).Times(23)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(34)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(33)
+				transact.On("Begin").Return(persistTx, nil).Times(24)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(23)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -5624,9 +5294,10 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecCreate,
-			packageSvcFn:                     successfulPackageCreate,
-			productSvcFn:                     successfulProductCreate,
-			vendorSvcFn:                      successfulVendorCreate,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn:                successfulVendorProcess,
 			tombstoneProcessorFn: func() *automock.TombstoneProcessor {
 				doc := fixSanitizedORDDocument()
 				ts := doc.Tombstones[0]
@@ -5654,11 +5325,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if capability resource deletion due to tombstone fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(33)
+				persistTx.On("Commit").Return(nil).Times(23)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(34)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(33)
+				transact.On("Begin").Return(persistTx, nil).Times(24)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(23)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -5688,9 +5359,10 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecCreate,
-			packageSvcFn:                     successfulPackageCreate,
-			productSvcFn:                     successfulProductCreate,
-			vendorSvcFn:                      successfulVendorCreate,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn:                successfulVendorProcess,
 			tombstoneProcessorFn: func() *automock.TombstoneProcessor {
 				doc := fixSanitizedORDDocument()
 				ts := doc.Tombstones[0]
@@ -5718,11 +5390,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if integration dependency type resource deletion due to tombstone fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(33)
+				persistTx.On("Commit").Return(nil).Times(23)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(34)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(33)
+				transact.On("Begin").Return(persistTx, nil).Times(24)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(23)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -5750,9 +5422,10 @@ func TestService_Processing(t *testing.T) {
 			},
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecCreate,
-			packageSvcFn:                     successfulPackageCreate,
-			productSvcFn:                     successfulProductCreate,
-			vendorSvcFn:                      successfulVendorCreate,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn:                successfulVendorProcess,
 			tombstoneProcessorFn: func() *automock.TombstoneProcessor {
 				doc := fixSanitizedORDDocument()
 				ts := doc.Tombstones[0]
@@ -5780,11 +5453,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if vendor resource deletion due to tombstone fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(33)
+				persistTx.On("Commit").Return(nil).Times(23)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(34)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(33)
+				transact.On("Begin").Return(persistTx, nil).Times(24)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(23)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -5805,17 +5478,15 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecCreate,
-			packageSvcFn:                     successfulPackageCreate,
-			productSvcFn:                     successfulProductCreate,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
-				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				vendorSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Vendors[0]).Return("", nil).Once()
-				vendorSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Vendors[1]).Return("", nil).Once()
-				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
 				vendorSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, vendorID).Return(testErr).Once()
 				return vendorSvc
 			},
+			vendorProcessorFn: successfulVendorProcess,
 			tombstoneProcessorFn: func() *automock.TombstoneProcessor {
 				doc := fixSanitizedORDDocument()
 				ts := doc.Tombstones[0]
@@ -5843,11 +5514,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if product resource deletion due to tombstone fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(33)
+				persistTx.On("Commit").Return(nil).Times(23)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(34)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(33)
+				transact.On("Begin").Return(persistTx, nil).Times(24)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(23)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -5868,16 +5539,15 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecCreate,
-			packageSvcFn:                     successfulPackageCreate,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
 			productSvcFn: func() *automock.ProductService {
 				productSvc := &automock.ProductService{}
-				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				productSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Products[0]).Return("", nil).Once()
-				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
 				productSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, productID).Return(testErr).Once()
 				return productSvc
 			},
-			vendorSvcFn: successfulVendorCreate,
+			productProcessorFn: successfulProductProcess,
+			vendorProcessorFn:  successfulVendorProcess,
 			tombstoneProcessorFn: func() *automock.TombstoneProcessor {
 				doc := fixSanitizedORDDocument()
 				ts := doc.Tombstones[0]
@@ -5905,11 +5575,11 @@ func TestService_Processing(t *testing.T) {
 			Name: "Does not resync resources if bundle resource deletion due to tombstone fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(33)
+				persistTx.On("Commit").Return(nil).Times(23)
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(34)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(33)
+				transact.On("Begin").Return(persistTx, nil).Times(24)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(23)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -5937,9 +5607,10 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecCreate,
-			packageSvcFn:                     successfulPackageCreate,
-			productSvcFn:                     successfulProductCreate,
-			vendorSvcFn:                      successfulVendorCreate,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn:                successfulVendorProcess,
 			tombstoneProcessorFn: func() *automock.TombstoneProcessor {
 				doc := fixSanitizedORDDocument()
 				ts := doc.Tombstones[0]
@@ -5966,7 +5637,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Returns error when failing to open final transaction to commit fetched specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx, transact := txGen.ThatSucceedsMultipleTimes(34)
+				persistTx, transact := txGen.ThatSucceedsMultipleTimes(24)
 				transact.On("Begin").Return(persistTx, testErr).Once()
 				return persistTx, transact
 			},
@@ -5997,9 +5668,10 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecCreate,
 			fetchReqFn:                       successfulFetchRequestFetch,
-			packageSvcFn:                     successfulPackageCreate,
-			productSvcFn:                     successfulProductCreate,
-			vendorSvcFn:                      successfulVendorCreate,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn:                successfulVendorProcess,
 			tombstoneProcessorFn:             successfulTombstoneProcessing,
 			globalRegistrySvcFn:              successfulGlobalRegistrySvc,
 			clientFn:                         successfulClientFetch,
@@ -6011,7 +5683,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Returns error when failing to find spec in final transaction when trying to update and persist fetched specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx, transact := txGen.ThatSucceedsMultipleTimes(34)
+				persistTx, transact := txGen.ThatSucceedsMultipleTimes(24)
 				transact.On("Begin").Return(persistTx, nil).Once()
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
@@ -6073,9 +5745,10 @@ func TestService_Processing(t *testing.T) {
 				return specSvc
 			},
 			fetchReqFn:              successfulFetchRequestFetch,
-			packageSvcFn:            successfulPackageCreate,
-			productSvcFn:            successfulProductCreate,
-			vendorSvcFn:             successfulVendorCreate,
+			packageSvcFn:            successfulPackageList,
+			packageProcessorFn:      successfulPackageProcess,
+			productProcessorFn:      successfulProductProcess,
+			vendorProcessorFn:       successfulVendorProcess,
 			tombstoneProcessorFn:    successfulTombstoneProcessing,
 			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
 			clientFn:                successfulClientFetch,
@@ -6087,7 +5760,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Returns error when failing to update spec in final transaction when trying to update and persist fetched specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx, transact := txGen.ThatSucceedsMultipleTimes(34)
+				persistTx, transact := txGen.ThatSucceedsMultipleTimes(24)
 				transact.On("Begin").Return(persistTx, nil).Once()
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
@@ -6153,9 +5826,10 @@ func TestService_Processing(t *testing.T) {
 				return specSvc
 			},
 			fetchReqFn:              successfulFetchRequestFetch,
-			packageSvcFn:            successfulPackageCreate,
-			productSvcFn:            successfulProductCreate,
-			vendorSvcFn:             successfulVendorCreate,
+			packageSvcFn:            successfulPackageList,
+			packageProcessorFn:      successfulPackageProcess,
+			productProcessorFn:      successfulProductProcess,
+			vendorProcessorFn:       successfulVendorProcess,
 			tombstoneProcessorFn:    successfulTombstoneProcessing,
 			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
 			clientFn:                successfulClientFetch,
@@ -6167,7 +5841,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Returns error when failing to update fetch request in final transaction when trying to update and persist fetched specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx, transact := txGen.ThatSucceedsMultipleTimes(34)
+				persistTx, transact := txGen.ThatSucceedsMultipleTimes(24)
 				transact.On("Begin").Return(persistTx, nil).Once()
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
@@ -6243,9 +5917,10 @@ func TestService_Processing(t *testing.T) {
 
 				return fetchReqSvc
 			},
-			packageSvcFn:            successfulPackageCreate,
-			productSvcFn:            successfulProductCreate,
-			vendorSvcFn:             successfulVendorCreate,
+			packageSvcFn:            successfulPackageList,
+			packageProcessorFn:      successfulPackageProcess,
+			productProcessorFn:      successfulProductProcess,
+			vendorProcessorFn:       successfulVendorProcess,
 			tombstoneProcessorFn:    successfulTombstoneProcessing,
 			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
 			clientFn:                successfulClientFetch,
@@ -6257,7 +5932,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Success when resources are not in db and no SAP Vendor is declared in Documents should Create them as SAP Vendor is coming from the Global Registry",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(33)
+				return txGen.ThatSucceedsMultipleTimes(25)
 			},
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
@@ -6286,11 +5961,18 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecCreateAndUpdate,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
-			packageSvcFn:                     successfulPackageCreate,
-			productSvcFn:                     successfulProductCreate,
-			vendorSvcFn:                      successfulEmptyVendorList,
-			tombstoneProcessorFn:             successfulTombstoneProcessing,
-			globalRegistrySvcFn:              successfulGlobalRegistrySvc,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn: func() *automock.VendorProcessor {
+				vendorProcessor := &automock.VendorProcessor{}
+				doc := fixORDDocument()
+				doc.Vendors = nil
+				vendorProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, doc.Vendors).Return(nil, nil).Once()
+				return vendorProcessor
+			},
+			tombstoneProcessorFn: successfulTombstoneProcessing,
+			globalRegistrySvcFn:  successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -6305,7 +5987,7 @@ func TestService_Processing(t *testing.T) {
 		{
 			Name: "Success when resources are already in db and no SAP Vendor is declared in Documents should Update them as SAP Vendor is coming from the Global Registry",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(33)
+				return txGen.ThatSucceedsMultipleTimes(25)
 			},
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
@@ -6335,11 +6017,18 @@ func TestService_Processing(t *testing.T) {
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
 			specSvcFn:                        successfulSpecRecreateAndUpdate,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
-			packageSvcFn:                     successfulPackageUpdateForApplication,
-			productSvcFn:                     successfulProductUpdateForApplication,
-			vendorSvcFn:                      successfulEmptyVendorList,
-			tombstoneProcessorFn:             successfulTombstoneProcessing,
-			globalRegistrySvcFn:              successfulGlobalRegistrySvc,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn: func() *automock.VendorProcessor {
+				vendorProcessor := &automock.VendorProcessor{}
+				doc := fixORDDocument()
+				doc.Vendors = nil
+				vendorProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, doc.Vendors).Return(nil, nil).Once()
+				return vendorProcessor
+			},
+			tombstoneProcessorFn: successfulTombstoneProcessing,
+			globalRegistrySvcFn:  successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -6416,13 +6105,25 @@ func TestService_Processing(t *testing.T) {
 			if test.packageSvcFn != nil {
 				packageSvc = test.packageSvcFn()
 			}
+			packageProcessor := &automock.PackageProcessor{}
+			if test.packageProcessorFn != nil {
+				packageProcessor = test.packageProcessorFn()
+			}
 			productSvc := &automock.ProductService{}
 			if test.productSvcFn != nil {
 				productSvc = test.productSvcFn()
 			}
+			productProcessor := &automock.ProductProcessor{}
+			if test.productProcessorFn != nil {
+				productProcessor = test.productProcessorFn()
+			}
 			vendorSvc := &automock.VendorService{}
 			if test.vendorSvcFn != nil {
 				vendorSvc = test.vendorSvcFn()
+			}
+			vendorProcessor := &automock.VendorProcessor{}
+			if test.vendorProcessorFn != nil {
+				vendorProcessor = test.vendorProcessorFn()
 			}
 			tombstoneProcessor := &automock.TombstoneProcessor{}
 			if test.tombstoneProcessorFn != nil {
@@ -6464,7 +6165,7 @@ func TestService_Processing(t *testing.T) {
 			metrixCfg := ord.MetricsConfig{}
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, entityTypeSvc, entityTypeProcessor, entityTypeMappingSvc, capabilitySvc, integrationDependencySvc, integrationDependencyProcessor, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMappings, nil)
+			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, entityTypeSvc, entityTypeProcessor, entityTypeMappingSvc, capabilitySvc, integrationDependencySvc, integrationDependencyProcessor, specSvc, fetchReqSvc, packageSvc, packageProcessor, productSvc, productProcessor, vendorSvc, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMappings, nil)
 
 			var err error
 			switch test.processFnName {
@@ -6679,8 +6380,11 @@ func TestService_ProcessApplication(t *testing.T) {
 			specSvc := &automock.SpecService{}
 			fetchReqSvc := &automock.FetchRequestService{}
 			packageSvc := &automock.PackageService{}
+			packageProcessor := &automock.PackageProcessor{}
 			productSvc := &automock.ProductService{}
+			productProcessor := &automock.ProductProcessor{}
 			vendorSvc := &automock.VendorService{}
+			vendorProcessor := &automock.VendorProcessor{}
 			tombstoneProcessor := &automock.TombstoneProcessor{}
 			appTemplateVersionSvc := &automock.ApplicationTemplateVersionService{}
 			appTemplateSvc := &automock.ApplicationTemplateService{}
@@ -6688,7 +6392,7 @@ func TestService_ProcessApplication(t *testing.T) {
 			metrixCfg := ord.MetricsConfig{}
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, entityTypeSvc, nil, nil, capabilitySvc, integrationDependencySvc, integrationDependencyProcessor, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{}, nil)
+			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, entityTypeSvc, nil, nil, capabilitySvc, integrationDependencySvc, integrationDependencyProcessor, specSvc, fetchReqSvc, packageSvc, packageProcessor, productSvc, productProcessor, vendorSvc, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{}, nil)
 			err := svc.ProcessApplication(context.TODO(), test.appID)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -6802,8 +6506,11 @@ func TestService_ProcessApplicationTemplate(t *testing.T) {
 			specSvc := &automock.SpecService{}
 			fetchReqSvc := &automock.FetchRequestService{}
 			packageSvc := &automock.PackageService{}
+			packageProcessor := &automock.PackageProcessor{}
 			productSvc := &automock.ProductService{}
+			productProcessor := &automock.ProductProcessor{}
 			vendorSvc := &automock.VendorService{}
+			vendorProcessor := &automock.VendorProcessor{}
 			tombstoneProcessor := &automock.TombstoneProcessor{}
 
 			appSvc := &automock.ApplicationService{}
@@ -6845,7 +6552,7 @@ func TestService_ProcessApplicationTemplate(t *testing.T) {
 			metricsCfg := ord.MetricsConfig{}
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metricsCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, entityTypeSvc, nil, nil, capabilitySvc, integrationDependencySvc, integrationDependencyProcessor, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{}, nil)
+			svc := ord.NewAggregatorService(ordCfg, metricsCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, entityTypeSvc, nil, nil, capabilitySvc, integrationDependencySvc, integrationDependencyProcessor, specSvc, fetchReqSvc, packageSvc, packageProcessor, productSvc, productProcessor, vendorSvc, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{}, nil)
 			err := svc.ProcessApplicationTemplate(context.TODO(), test.appTemplateID)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -7080,8 +6787,11 @@ func TestService_ProcessAppInAppTemplateContext(t *testing.T) {
 			specSvc := &automock.SpecService{}
 			fetchReqSvc := &automock.FetchRequestService{}
 			packageSvc := &automock.PackageService{}
+			packageProcessor := &automock.PackageProcessor{}
 			productSvc := &automock.ProductService{}
+			productProcessor := &automock.ProductProcessor{}
 			vendorSvc := &automock.VendorService{}
+			vendorProcessor := &automock.VendorProcessor{}
 			tombstoneProcessor := &automock.TombstoneProcessor{}
 
 			appSvc := &automock.ApplicationService{}
@@ -7123,7 +6833,7 @@ func TestService_ProcessAppInAppTemplateContext(t *testing.T) {
 			metrixCfg := ord.MetricsConfig{}
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, entityTypeSvc, nil, nil, capabilitySvc, integrationDependencySvc, integrationDependencyProcessor, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{}, nil)
+			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, entityTypeSvc, nil, nil, capabilitySvc, integrationDependencySvc, integrationDependencyProcessor, specSvc, fetchReqSvc, packageSvc, packageProcessor, productSvc, productProcessor, vendorSvc, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{}, nil)
 			err := svc.ProcessAppInAppTemplateContext(context.TODO(), test.appTemplateID, test.appID)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -7160,12 +6870,6 @@ func successfulTenantSvcOnce() *automock.TenantService {
 func successfulAppGet() *automock.ApplicationService {
 	appSvc := &automock.ApplicationService{}
 	appSvc.On("Get", txtest.CtxWithDBMatcher(), appID).Return(fixApplications()[0], nil).Twice()
-	return appSvc
-}
-
-func successfulAppGetOnce() *automock.ApplicationService {
-	appSvc := &automock.ApplicationService{}
-	appSvc.On("Get", txtest.CtxWithDBMatcher(), appID).Return(fixApplications()[0], nil).Once()
 	return appSvc
 }
 
