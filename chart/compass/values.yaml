@@ -216,16 +216,16 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: dev/incubator/
-      version: "PR-3449"
+      dir: prod/incubator/
+      version: "v20231108-7623ee7dj"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: dev/incubator/
-      version: "PR-3449"
+      dir: prod/incubator/
+      version: "v20231108-7623ee7d"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
