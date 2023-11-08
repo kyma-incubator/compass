@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -258,10 +258,10 @@ func ThatFailsOnBeginInGoRoutine() (*persistenceautomock.PersistenceTx, *persist
 	return persistTx, transact
 }
 
-func fixNotificationResponseWithStateAndConfig(configuration json.RawMessage, state string) *statusresponse.NotificationResponse {
-	return statusresponse.NewNotificationResponse(configuration, state, "")
+func fixNotificationStatusReportWithStateAndConfig(configuration json.RawMessage, state string) *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(configuration, state, "")
 }
 
-func fixNotificationResponseWithStateAndError(state, errorMessage string) *statusresponse.NotificationResponse {
-	return statusresponse.NewNotificationResponse(nil, state, errorMessage)
+func fixNotificationStatusReportWithStateAndError(state, errorMessage string) *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(nil, state, errorMessage)
 }

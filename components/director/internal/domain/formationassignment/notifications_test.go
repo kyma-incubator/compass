@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 
@@ -1960,18 +1960,18 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 		ObjectType: model.RuntimeLabelableObject,
 	}
 
-	notificationResponse := fixNotificationResponse()
+	notificationStatusReport := fixNotificationStatusReport()
 
-	expectedDetailsForApp := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, reverseFaWithTargetTypeApplication, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID, notificationResponse)
+	expectedDetailsForApp := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, reverseFaWithTargetTypeApplication, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID, notificationStatusReport)
 	expectedDetailsForApp.FormationAssignmentTemplateInput = testAppNotificationReqWithTenantMappingType.Object
 
-	expectedDetailsForAppWithoutReverseAssignment := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, nil, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID, notificationResponse)
+	expectedDetailsForAppWithoutReverseAssignment := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, nil, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID, notificationStatusReport)
 	expectedDetailsForAppWithoutReverseAssignment.FormationAssignmentTemplateInput = testAppNotificationReqWithTenantMappingTypeWithoutReverseAssignment.Object
 
-	expectedDetailsForRuntime := fixNotificationStatusReturnedDetails(model.RuntimeResourceType, rtmSubtype, faWithTargetTypeRuntime, reverseFaWithTargetTypeRuntime, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID, notificationResponse)
+	expectedDetailsForRuntime := fixNotificationStatusReturnedDetails(model.RuntimeResourceType, rtmSubtype, faWithTargetTypeRuntime, reverseFaWithTargetTypeRuntime, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID, notificationStatusReport)
 	expectedDetailsForRuntime.FormationAssignmentTemplateInput = testRuntimeNotificationReqWithConfigurationChangedType.Object
 
-	expectedDetailsForRuntimeContext := fixNotificationStatusReturnedDetails(model.RuntimeContextResourceType, rtmSubtype, faWithTargetTypeRuntimeCtx, reverseFaWithTargetTypeRuntimeCtx, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID, notificationResponse)
+	expectedDetailsForRuntimeContext := fixNotificationStatusReturnedDetails(model.RuntimeContextResourceType, rtmSubtype, faWithTargetTypeRuntimeCtx, reverseFaWithTargetTypeRuntimeCtx, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID, notificationStatusReport)
 	expectedDetailsForRuntimeContext.FormationAssignmentTemplateInput = testRuntimeContextNotificationReqWithConfigurationChangedType.Object
 
 	details := &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{}
@@ -1989,7 +1989,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 		notificationBuilder     func() *automock.NotificationBuilder
 		tenantRepo              func() *automock.TenantRepository
 		runtimeCtxRepo          func() *automock.RuntimeContextRepository
-		notificationResponse    *statusresponse.NotificationResponse
+		notificationResponse    *statusreport.NotificationStatusReport
 		expectedDetails         *formationconstraint.NotificationStatusReturnedOperationDetails
 		expectedErrMsg          string
 	}{
@@ -2036,7 +2036,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 
 				return notificationsBuilder
 			},
-			notificationResponse: notificationResponse,
+			notificationResponse: notificationStatusReport,
 			expectedDetails:      expectedDetailsForApp,
 		},
 		{
@@ -2082,7 +2082,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 
 				return notificationsBuilder
 			},
-			notificationResponse: notificationResponse,
+			notificationResponse: notificationStatusReport,
 			expectedDetails:      expectedDetailsForRuntime,
 		},
 		{
@@ -2134,7 +2134,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 
 				return notificationsBuilder
 			},
-			notificationResponse: notificationResponse,
+			notificationResponse: notificationStatusReport,
 			expectedDetails:      expectedDetailsForRuntimeContext,
 		},
 		{
@@ -2180,7 +2180,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 
 				return notificationsBuilder
 			},
-			notificationResponse: notificationResponse,
+			notificationResponse: notificationStatusReport,
 			expectedDetails:      expectedDetailsForAppWithoutReverseAssignment,
 		},
 		{
@@ -2216,7 +2216,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				lblSvc.On("GetLabel", emptyCtx, TestTenantID, applicationLabelInput).Return(applicationTypeLabel, nil).Once()
 				return lblSvc
 			},
-			notificationResponse: notificationResponse,
+			notificationResponse: notificationStatusReport,
 			expectedErrMsg:       testErr.Error(),
 		},
 		{
@@ -2227,7 +2227,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				lblSvc.On("GetLabel", emptyCtx, TestTenantID, applicationLabelInput).Return(nil, testErr).Once()
 				return lblSvc
 			},
-			notificationResponse: notificationResponse,
+			notificationResponse: notificationStatusReport,
 			expectedErrMsg:       testErr.Error(),
 		},
 		{
@@ -2238,7 +2238,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				lblSvc.On("GetLabel", emptyCtx, TestTenantID, runtimeLabelInput).Return(nil, testErr).Once()
 				return lblSvc
 			},
-			notificationResponse: notificationResponse,
+			notificationResponse: notificationStatusReport,
 			expectedErrMsg:       testErr.Error(),
 		},
 		{
@@ -2254,7 +2254,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				rtmCtxRepo.On("GetByID", emptyCtx, TestTenantID, TestTarget).Return(&model.RuntimeContext{RuntimeID: TestTarget}, nil).Once()
 				return rtmCtxRepo
 			},
-			notificationResponse: notificationResponse,
+			notificationResponse: notificationStatusReport,
 			expectedErrMsg:       testErr.Error(),
 		},
 		{
@@ -2265,13 +2265,13 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				rtmCtxRepo.On("GetByID", emptyCtx, TestTenantID, TestTarget).Return(nil, testErr).Once()
 				return rtmCtxRepo
 			},
-			notificationResponse: notificationResponse,
+			notificationResponse: notificationStatusReport,
 			expectedErrMsg:       testErr.Error(),
 		},
 		{
 			name:                 "Error when the object type is unknown",
 			formationAssignment:  &model.FormationAssignment{TargetType: "unknown"},
-			notificationResponse: notificationResponse,
+			notificationResponse: notificationStatusReport,
 			expectedErrMsg:       fmt.Sprintf("unknown object type %q", "unknown"),
 		},
 	}
@@ -2329,7 +2329,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, tCase.expectedDetails, notificationStatusReturnedDetails)
-				require.Equal(t, tCase.notificationResponse, notificationStatusReturnedDetails.NotificationResponse)
+				require.Equal(t, tCase.notificationResponse, notificationStatusReturnedDetails.NotificationStatusReport)
 			}
 		})
 	}
