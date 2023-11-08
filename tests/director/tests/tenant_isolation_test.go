@@ -75,15 +75,8 @@ func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 			require.NoError(t, err)
 			require.NotEmpty(t, app.ID)
 
-			accountReq := fixtures.FixApplicationsPageableRequest(5, "")
-			var accountResp graphql.ApplicationPageExt
-			err = testctx.Tc.RunOperationWithoutTenant(ctx, accountGraphQLClient, accountReq, &accountResp)
-			require.NoError(t, err)
-
-			subaccountReq := fixtures.FixApplicationsPageableRequest(5, "")
-			var subaccountResp graphql.ApplicationPageExt
-			err = testctx.Tc.RunOperationWithoutTenant(ctx, subaccountGraphQLClient, subaccountReq, &subaccountResp)
-			require.NoError(t, err)
+			accountResp := fixtures.GetApplicationPageMinimal(t, ctx, accountGraphQLClient, "")
+			subaccountResp := fixtures.GetApplicationPageMinimal(t, ctx, subaccountGraphQLClient, "")
 
 			require.True(t, assertions.DoesAppExistsInAppPageData(app.ID, accountResp))
 			require.True(t, assertions.DoesAppExistsInAppPageData(app.ID, subaccountResp))
