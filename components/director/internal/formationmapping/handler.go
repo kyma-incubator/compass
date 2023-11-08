@@ -210,7 +210,6 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 			return
 		}
 		log.C(ctx).Infof("Resetting formation assignment with ID: %s to state: %s", fa.ID, assignmentReqBody.State)
-		// TODO the state here can be empty what do we do with it? Why do we allow empty state? Should we get the state from the FA if config is provided and determine the error based on the operation?
 		fa.State = string(assignmentReqBody.State)
 		if err = h.faService.Update(ctx, fa.ID, fa); err != nil {
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -482,7 +481,7 @@ func (h *Handler) processFormationAssignmentUnassignStatusUpdate(ctx context.Con
 }
 
 func (h *Handler) processFormationAssignmentAssignStatusUpdate(ctx context.Context, fa *model.FormationAssignment, reqBody FormationAssignmentRequestBody, correlationID string) (bool, *responseError) {
-	if len(reqBody.State) > 0 && reqBody.State != model.CreateErrorAssignmentState && reqBody.State != model.ReadyAssignmentState && reqBody.State != model.ConfigPendingAssignmentState {
+	if len(reqBody.State) > 0 && reqBody.State != model.CreateErrorAssignmentState && reqBody.State != model.ReadyAssignmentState && reqBody.State != model.ConfigPendingAssignmentState && reqBody.State != model.InitialAssignmentState {
 		log.C(ctx).Errorf("An invalid state: %q is provided for %q operation", reqBody.State, model.AssignFormation)
 		return false, &responseError{
 			statusCode:   http.StatusBadRequest,

@@ -831,8 +831,6 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		}
 	}
 
-	// if there is a state in the body - check if it is READY
-	// if there is no state in the body - check if the status code is 'success'
 	if response.State != nil && *response.State == string(model.ReadyAssignmentState) {
 		if err = s.statusService.DeleteWithConstraints(ctx, assignment.ID, notificationResponse); err != nil {
 			if apperrors.IsNotFoundError(err) {
