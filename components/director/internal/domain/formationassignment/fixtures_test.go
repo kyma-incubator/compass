@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
+
 	"k8s.io/utils/strings/slices"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -784,7 +786,7 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 	return []*webhookclient.FormationAssignmentNotificationRequest{request, requestReverse}, templateInput, templateInputReverse
 }
 
-func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation, lastFormationAssignmentState, lastFormationAssignmentConfig, tenantID string) *formationconstraint.NotificationStatusReturnedOperationDetails {
+func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation, lastFormationAssignmentState, lastFormationAssignmentConfig, tenantID string, notificationResponse *statusresponse.NotificationResponse) *formationconstraint.NotificationStatusReturnedOperationDetails {
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
 		ResourceType:                         resourceType,
 		ResourceSubtype:                      resourceSubtype,
@@ -795,6 +797,7 @@ func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resou
 		ReverseFormationAssignment:           reverseFa,
 		LastFormationAssignmentState:         lastFormationAssignmentState,
 		LastFormationAssignmentConfiguration: lastFormationAssignmentConfig,
+		NotificationResponse:                 notificationResponse,
 		Formation:                            formation,
 	}
 }
@@ -857,4 +860,16 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 		Value:       str.StringifyJSONRawMessage(formationAssignment.Value),
 		Error:       str.StringifyJSONRawMessage(formationAssignment.Error),
 	}
+}
+
+func fixNotificationResponse() *statusresponse.NotificationResponse {
+	return statusresponse.NewNotificationResponse(TestConfigValueRawJSON, readyState, "")
+}
+
+func fixNotificationResponseWithStateAndConfig(configuration json.RawMessage, state string) *statusresponse.NotificationResponse {
+	return statusresponse.NewNotificationResponse(configuration, state, "")
+}
+
+func fixNotificationResponseWithStateAndError(state, errorMessage string) *statusresponse.NotificationResponse {
+	return statusresponse.NewNotificationResponse(nil, state, errorMessage)
 }

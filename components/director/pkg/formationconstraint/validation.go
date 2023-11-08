@@ -186,10 +186,10 @@ func emptySendNotificationOperationDetails() *SendNotificationOperationDetails {
 
 func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturnedOperationDetails {
 	return &NotificationStatusReturnedOperationDetails{
-		Location: JoinPointLocation{},
-		FormationAssignment: &model.FormationAssignment{},
+		Location:                   JoinPointLocation{},
+		FormationAssignment:        &model.FormationAssignment{},
 		ReverseFormationAssignment: &model.FormationAssignment{},
-		Formation: &model.Formation{},
-		FormationTemplate: &model.FormationTemplate{},
+		Formation:                  &model.Formation{},
+		FormationTemplate:          &model.FormationTemplate{},
 	}
 }
