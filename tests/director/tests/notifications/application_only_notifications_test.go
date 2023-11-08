@@ -11,6 +11,7 @@ import (
 
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -22,7 +23,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
-	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 )
 
 func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {

@@ -19,6 +19,8 @@ const (
 	invalidOpenResourceDiscovery               = "invalidOpenResourceDiscovery"
 	invalidURL                                 = "invalidURL"
 	invalidOrdID                               = "invalidOrdId"
+	validOrdIDWithVersion                      = "sap.xref:package:SomePackage:v1"
+	validOrdIDNoVersion                        = "sap.xref:package:SomePackage:"
 	invalidPartOfPackageLength                 = 256 // max allowed: 255
 	invalidShortDescriptionLength              = 257 // max allowed: 256
 	invalidShortDescriptionLengthSapCorePolicy = 181 // max allowed: 180
@@ -169,6 +171,10 @@ var (
 	invalidTagsValue = `["invalid!@#"]`
 
 	invalidTagsValueIntegerElement = `["storage", 992]`
+
+	invalidRelatedEntityTypesValue = `["invalid!@#"]`
+
+	invalidRelatedEntityTypesValueIntegerElement = `["some-value", 992]`
 
 	invalidSupportedUseCasesValue = `["some-value"]`
 
@@ -396,6 +402,36 @@ var (
 		  "version": "1.0.0"
         }
       ]`
+
+	invalidAPIModelSelectorsWrongType = `[
+		{
+		  "type": "unknown",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonRead"
+		}
+	  ]`
+	invalidAPIModelSelectorsWrongRelations = `[
+		{
+		  "type": "odata",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonRead"
+		}
+	  ]`
+	invalidEntityTypeTargetsWrongRelations = `[
+		{
+		  "ordId": "sap.odm:entityType:CostCenter:v1",
+		  "correlationId": "sap.s4:csnEntity:CostCenter_v1"
+		}
+	  ]`
+	invalidEntityTypeTargetsWrongORDID = `[
+		{
+		  "ordId": "something",
+		}
+	  ]`
+	invalidEntityTypeTargetsWrongCorrelationID = `[
+		{
+			"correlationId": "something"
+		}
+	  ]`
+
 	validNamespace   = `foo.bar.baz`
 	invalidNamespace = `.foo.bar.baz`
 
@@ -1336,6 +1372,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Valid `partOfProducts` field when the JSON array is empty",
 			DocumentProvider: func() []*ord.Document {
@@ -3764,8 +3801,79 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		},
-		{
+		}, {
+			Name: "Empty `EntityTypeMappings` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].EntityTypeMappings = []*model.EntityTypeMappingInput{}
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid Type in APIModelSelectors in `EntityTypeMappings` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].EntityTypeMappings[0].APIModelSelectors = json.RawMessage(invalidAPIModelSelectorsWrongType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid Structure for APIModelSelectors in `EntityTypeMappings` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].EntityTypeMappings[0].APIModelSelectors = json.RawMessage("something")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid Relations for APIModelSelectors in `EntityTypeMappings` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].EntityTypeMappings[0].APIModelSelectors = json.RawMessage(invalidAPIModelSelectorsWrongRelations)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid Structure for EntityTypeTargets in `EntityTypeMappings` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].EntityTypeMappings[0].EntityTypeTargets = json.RawMessage("something")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid Relations for EntityTypeTargets in `EntityTypeMappings` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].EntityTypeMappings[0].EntityTypeTargets = json.RawMessage(invalidEntityTypeTargetsWrongRelations)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid ORDID for EntityTypeTargets in `EntityTypeMappings` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].EntityTypeMappings[0].EntityTypeTargets = json.RawMessage(invalidEntityTypeTargetsWrongORDID)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid CorrelationID for EntityTypeTargets in `EntityTypeMappings` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].EntityTypeMappings[0].EntityTypeTargets = json.RawMessage(invalidEntityTypeTargetsWrongCorrelationID)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Empty EntityTypeTargets in `EntityTypeMappings` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].EntityTypeMappings[0].EntityTypeTargets = json.RawMessage(`[]`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Missing `Extensible` field when `policyLevel` is sap for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -4514,6 +4622,47 @@ func TestDocument_ValidateCapability(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Capabilities[0].Tags = json.RawMessage(invalidTagsValueIntegerElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid value for `related_entity_types` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].RelatedEntityTypes = json.RawMessage(invalidRelatedEntityTypesValue)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `related_entity_types` field when it is invalid JSON for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].RelatedEntityTypes = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `related_entity_types` field when it isn't a JSON array for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].RelatedEntityTypes = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `related_entity_types` field when the JSON array is empty for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].RelatedEntityTypes = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `related_entity_types` field when it contains non string value for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].RelatedEntityTypes = json.RawMessage(invalidRelatedEntityTypesValueIntegerElement)
 
 				return []*ord.Document{doc}
 			},
@@ -6145,6 +6294,78 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc.EventResources[0].DefaultConsumptionBundle = str.Ptr(secondBundleORDID)
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Empty `EntityTypeMappings` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EntityTypeMappings = []*model.EntityTypeMappingInput{}
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid Type in APIModelSelectors in `EntityTypeMappings` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EntityTypeMappings[0].APIModelSelectors = json.RawMessage(invalidAPIModelSelectorsWrongType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid Structure for APIModelSelectors in `EntityTypeMappings` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EntityTypeMappings[0].APIModelSelectors = json.RawMessage("something")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid Relations for APIModelSelectors in `EntityTypeMappings` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EntityTypeMappings[0].APIModelSelectors = json.RawMessage(invalidAPIModelSelectorsWrongRelations)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid Structure for EntityTypeTargets in `EntityTypeMappings` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EntityTypeMappings[0].EntityTypeTargets = json.RawMessage("something")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid Relations for EntityTypeTargets in `EntityTypeMappings` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EntityTypeMappings[0].EntityTypeTargets = json.RawMessage(invalidEntityTypeTargetsWrongRelations)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid ORDID for EntityTypeTargets in `EntityTypeMappings` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EntityTypeMappings[0].EntityTypeTargets = json.RawMessage(invalidEntityTypeTargetsWrongORDID)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid CorrelationID for EntityTypeTargets in `EntityTypeMappings` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EntityTypeMappings[0].EntityTypeTargets = json.RawMessage(invalidEntityTypeTargetsWrongCorrelationID)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Empty EntityTypeTargets in `EntityTypeMappings` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].EntityTypeMappings[0].EntityTypeTargets = json.RawMessage(`[]`)
+
+				return []*ord.Document{doc}
+			},
 		},
 		{
 			Name: "Missing `Extensible` field when `policyLevel` is sap",
@@ -6454,7 +6675,7 @@ func TestDocuments_ValidateEntityType(t *testing.T) {
 			Name: "Exceeded length of `localID` field for Entity Type",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EntityTypes[0].LocalID = strings.Repeat("a", invalidLocalIDLength)
+				doc.EntityTypes[0].LocalTenantID = strings.Repeat("a", invalidLocalTenantIDLength)
 
 				return []*ord.Document{doc}
 			},
@@ -6462,7 +6683,7 @@ func TestDocuments_ValidateEntityType(t *testing.T) {
 			Name: "Invalid empty `localID` field for Entity Type",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EntityTypes[0].LocalID = ""
+				doc.EntityTypes[0].LocalTenantID = ""
 
 				return []*ord.Document{doc}
 			},
@@ -8417,6 +8638,24 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Valid `ordId` field for Tombstone - with version",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Tombstones[0].OrdID = validOrdIDWithVersion
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Valid `ordId` field for Tombstone - no version",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Tombstones[0].OrdID = validOrdIDNoVersion
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Missing `removalDate` field for Tombstone",
 			DocumentProvider: func() []*ord.Document {

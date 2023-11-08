@@ -58,6 +58,8 @@ const (
 	Specification Type = "specification"
 	// EntityType type represents Entity Type resource.
 	EntityType Type = "entityType"
+	// EntityTypeMapping type represents Entity Type Mapping resource.
+	EntityTypeMapping Type = "entityTypeMapping"
 	// APISpecification type represents API specification resource.
 	APISpecification Type = "apiSpecification"
 	// EventSpecification type represents Event specification resource.
@@ -148,6 +150,7 @@ var tenantAccessTable = map[Type]string{
 	API:                        "api_definitions_tenants",
 	EventDefinition:            "event_api_definitions_tenants",
 	EntityType:                 "entity_types_tenants",
+	EntityTypeMapping:          "entity_type_mappings_tenants",
 	Capability:                 "capabilities_tenants",
 	IntegrationDependency:      "integration_dependencies_tenants",
 	Aspect:                     "aspects_tenants",

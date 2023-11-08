@@ -127,6 +127,9 @@ global:
       id: 777ce47b-d901-4647-9223-14e94819830b
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      # The "substitution" tenants should be used only in specific use cases and not as "regular" test tenants
+      # because when using them, the operation is actually executed on behalf of another tenant,
+      # the one defined in a label of the substituted tenant
     - name: Test Tenant Substitution Account
       id: baf425d1-8630-46da-bf80-f4ed5f405a27
       type: account
@@ -134,24 +137,34 @@ global:
       id: 818005d6-9264-4abb-af4c-29c754630a7d
       type: subaccount
       parent: baf425d1-8630-46da-bf80-f4ed5f405a27
+    - name: Test Tenant Substitution Account 2
+      id: 46c189a1-9e04-4cbf-9c59-ba7b120492ad
+      type: account
+    - name: Test Tenant Substitution Subaccount 2
+      id: e1e2f861-2b2e-42a9-ba9f-404d292e5471
+      type: subaccount
+      parent: 46c189a1-9e04-4cbf-9c59-ba7b120492ad
   tenantsLabels:
-    - tenantID: 818005d6-9264-4abb-af4c-29c754630a7d
+    - tenantID: 818005d6-9264-4abb-af4c-29c754630a7d # TestTenantSubstitutionSubaccount
       key: customerId
       value: 777ce47b-d901-4647-9223-14e94819830b
+    - tenantID: e1e2f861-2b2e-42a9-ba9f-404d292e5471 # TestTenantSubstitutionSubaccount2
+      key: customerId
+      value: 5984a414-1eed-4972-af2c-b2b6a415c7d7 # ApplicationsForRuntimeTenantName, randomly chosen Account tenant
   images:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3429"
+      version: "PR-3417"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3429"
+      version: "PR-3417"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3429"
+      version: "PR-3417"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
@@ -159,7 +172,7 @@ global:
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3429"
+      version: "PR-3417"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
@@ -167,11 +180,11 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3429"
+      version: "PR-3417"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3429"
+      version: "PR-3417"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
@@ -179,23 +192,23 @@ global:
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
-      version: "PR-3429"
+      version: "PR-3417"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3429"
+      version: "PR-3417"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-106"
+      version: "PR-105"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3429"
+      version: "PR-3417"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
-      version: "PR-3429"
+      version: "PR-3417"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
