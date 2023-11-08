@@ -1,6 +1,7 @@
 package formationconstraint
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -155,6 +156,7 @@ type NotificationStatusReturnedOperationDetails struct {
 	ResourceType                         model.ResourceType
 	ResourceSubtype                      string
 	Location                             JoinPointLocation
+	NotificationStatusReport             *statusreport.NotificationStatusReport
 	LastFormationAssignmentState         string
 	LastFormationAssignmentConfiguration string
 	Tenant                               string
