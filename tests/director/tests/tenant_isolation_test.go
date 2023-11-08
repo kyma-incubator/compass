@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	gcli "github.com/machinebox/graphql"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 	"github.com/kyma-incubator/compass/tests/director/tests/example"
@@ -15,6 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
+	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -44,9 +43,9 @@ func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, subaccountTokenURL)
 
-	// The accountToken is JWT token containing claim with account ID for tenant. In local setup that's 'TestProviderAccountID'
+	// The accountToken is JWT token containing claim with account ID for tenant. In local setup that's 'ApplicationsForRuntimeTenantName'
 	accountToken := token.GetUserToken(t, ctx, accountTokenURL, conf.UsernameAuthCfg.Account.ClientID, conf.UsernameAuthCfg.Account.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.AccountAuthenticatorClaimKey)
-	// The subaccountToken is JWT token containing claim with subaccount ID for tenant. In local setup that's 'TestConsumerSubaccount'
+	// The subaccountToken is JWT token containing claim with subaccount ID for tenant. In local setup that's 'TestTenantSubstitutionSubaccount2' test tenant, and it has 'customerId' label with value external tenant ID of 'ApplicationsForRuntimeTenantName'
 	subaccountToken := token.GetUserToken(t, ctx, subaccountTokenURL, conf.UsernameAuthCfg.Subaccount.ClientID, conf.UsernameAuthCfg.Subaccount.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubaccountAuthenticatorClaimKey)
 
 	accountGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accountToken, conf.DirectorUserNameAuthenticatorURL)
@@ -76,23 +75,18 @@ func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 			require.NoError(t, err)
 			require.NotEmpty(t, app.ID)
 
-			subaccountReq := fixtures.FixApplicationsPageableRequest(5, "")
-			var subaccountResp graphql.ApplicationPageExt
-			err = testctx.Tc.RunOperationWithoutTenant(ctx, subaccountGraphQLClient, subaccountReq, &subaccountResp)
-			require.NoError(t, err)
-
 			accountReq := fixtures.FixApplicationsPageableRequest(5, "")
 			var accountResp graphql.ApplicationPageExt
 			err = testctx.Tc.RunOperationWithoutTenant(ctx, accountGraphQLClient, accountReq, &accountResp)
 			require.NoError(t, err)
 
-			if ts.isSubaccountTenant {
-				require.True(t, assertions.DoesAppExistsInAppPageData(app.ID, subaccountResp))
-				require.False(t, assertions.DoesAppExistsInAppPageData(app.ID, accountResp))
-			} else {
-				require.True(t, assertions.DoesAppExistsInAppPageData(app.ID, accountResp))
-				require.False(t, assertions.DoesAppExistsInAppPageData(app.ID, subaccountResp))
-			}
+			subaccountReq := fixtures.FixApplicationsPageableRequest(5, "")
+			var subaccountResp graphql.ApplicationPageExt
+			err = testctx.Tc.RunOperationWithoutTenant(ctx, subaccountGraphQLClient, subaccountReq, &subaccountResp)
+			require.NoError(t, err)
+
+			require.True(t, assertions.DoesAppExistsInAppPageData(app.ID, accountResp))
+			require.True(t, assertions.DoesAppExistsInAppPageData(app.ID, subaccountResp))
 		})
 	}
 }

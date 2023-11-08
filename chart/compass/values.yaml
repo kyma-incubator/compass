@@ -127,6 +127,9 @@ global:
       id: 777ce47b-d901-4647-9223-14e94819830b
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      # The "substitution" tenants should be used only in specific use cases and not as "regular" test tenants
+      # because when using them, the operation is actually executed on behalf of another tenant,
+      # the one defined in a label of the substituted tenant
     - name: Test Tenant Substitution Account
       id: baf425d1-8630-46da-bf80-f4ed5f405a27
       type: account
@@ -134,10 +137,20 @@ global:
       id: 818005d6-9264-4abb-af4c-29c754630a7d
       type: subaccount
       parent: baf425d1-8630-46da-bf80-f4ed5f405a27
+    - name: Test Tenant Substitution Account 2
+      id: 46c189a1-9e04-4cbf-9c59-ba7b120492ad
+      type: account
+    - name: Test Tenant Substitution Subaccount 2
+      id: e1e2f861-2b2e-42a9-ba9f-404d292e5471
+      type: subaccount
+      parent: 46c189a1-9e04-4cbf-9c59-ba7b120492ad
   tenantsLabels:
-    - tenantID: 818005d6-9264-4abb-af4c-29c754630a7d
+    - tenantID: 818005d6-9264-4abb-af4c-29c754630a7d # TestTenantSubstitutionSubaccount
       key: customerId
       value: 777ce47b-d901-4647-9223-14e94819830b
+    - tenantID: e1e2f861-2b2e-42a9-ba9f-404d292e5471 # TestTenantSubstitutionSubaccount2
+      key: customerId
+      value: 5984a414-1eed-4972-af2c-b2b6a415c7d7 # ApplicationsForRuntimeTenantName, randomly chosen Account tenant
   images:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
@@ -203,16 +216,16 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: prod/incubator/
-      version: "v20231106-af7a300a"
+      dir: dev/incubator/
+      version: "PR-3448"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: prod/incubator/
-      version: "v20231107-b21bfb82"
+      dir: dev/incubator/
+      version: "PR-3448"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
