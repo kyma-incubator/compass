@@ -14,7 +14,7 @@ import (
 const (
 	ID1            = "ID1"
 	ordID          = "com.compass.v1"
-	localID        = "BusinessPartner"
+	localTenantID  = "BusinessPartner"
 	correlationIDs = `["sap.s4:sot:BusinessPartner", "sap.s4:sot:CostCenter", "sap.s4:sot:WorkforcePerson"]`
 	level          = "aggregate"
 	title          = "BusinessPartner"
@@ -108,6 +108,30 @@ var (
 	documentationLabels = removeWhitespace(`{
         "Some Aspect": ["Markdown Documentation [with links](#)", "With multiple values"]
       }`)
+	apiModelSelectors = removeWhitespace(`[
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonRead"
+		},
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonUpdate"
+		},
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonCreate"
+		}
+	  ]`)
+
+	entityTypeTargets = removeWhitespace(`[
+		{
+		  "ordId": "sap.odm:entityType:WorkforcePerson:v1"
+		},
+		{
+		  "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v1"
+		}
+	  ]`)
+
 	errTest = errors.New("test error")
 )
 
@@ -137,7 +161,7 @@ func fixEntityTypeModel(entityTypeID string) *model.EntityType {
 		ApplicationID:                &appID,
 		ApplicationTemplateVersionID: &appTemplateVersionID,
 		OrdID:                        ordID,
-		LocalID:                      localID,
+		LocalTenantID:                localTenantID,
 		CorrelationIDs:               json.RawMessage(correlationIDs),
 		Level:                        level,
 		Title:                        title,
@@ -166,7 +190,7 @@ func fixEntityTypeModel(entityTypeID string) *model.EntityType {
 func fixEntityTypeInputModel() *model.EntityTypeInput {
 	return &model.EntityTypeInput{
 		OrdID:               ordID,
-		LocalID:             localID,
+		LocalTenantID:       localTenantID,
 		CorrelationIDs:      json.RawMessage(correlationIDs),
 		Level:               level,
 		Title:               title,
@@ -240,5 +264,27 @@ func fixPackages() []*model.Package {
 			LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
 			Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 		},
+	}
+}
+
+func fixEntityTypeMappingModel(entityTypeMappingID string) *model.EntityTypeMapping {
+	return &model.EntityTypeMapping{
+		BaseEntity: &model.BaseEntity{
+			ID:        entityTypeMappingID,
+			Ready:     true,
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+			Error:     nil,
+		},
+		APIModelSelectors: json.RawMessage(apiModelSelectors),
+		EntityTypeTargets: json.RawMessage(entityTypeTargets),
+	}
+}
+
+func fixEntityTypeMappingInputModel() *model.EntityTypeMappingInput {
+	return &model.EntityTypeMappingInput{
+		APIModelSelectors: json.RawMessage(apiModelSelectors),
+		EntityTypeTargets: json.RawMessage(entityTypeTargets),
 	}
 }

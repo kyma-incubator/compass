@@ -65,7 +65,6 @@ const (
 	tombstoneID              = "testTs"
 	localTenantID            = "localTenantID"
 	webhookID                = "webhookID"
-	localID                  = "localID"
 
 	api1spec1ID       = "api1spec1ID"
 	api1spec2ID       = "api1spec2ID"
@@ -90,12 +89,14 @@ const (
 
 	applicationTypeLabelValue = "customType"
 
-	entityTypeID     = "entity-type-id"
-	level            = "aggregate"
-	title            = "BusinessPartner"
-	publicVisibility = "public"
-	products         = `["sap:product:S4HANA_OD:"]`
-	releaseStatus    = "active"
+	entityTypeID        = "entity-type-id"
+	entityTypeMappingID = "entity-type-mapping-id"
+	ordID               = "com.compass.v1"
+	level               = "aggregate"
+	title               = "BusinessPartner"
+	publicVisibility    = "public"
+	products            = `["sap:product:S4HANA_OD:"]`
+	releaseStatus       = "active"
 )
 
 var (
@@ -238,6 +239,46 @@ var (
           "version": "1.0.0"
         }
       ]`)
+
+	apiAPIModelSelectors = removeWhitespace(`[
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonRead"
+		},
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonUpdate"
+		},
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonCreate"
+		}
+	  ]`)
+
+	apiEntityTypeTargets = removeWhitespace(`[
+		{
+		  "ordId": "sap.odm:entityType:WorkforcePerson:v1"
+		},
+		{
+		  "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v1"
+		}
+	  ]`)
+
+	eventAPIModelSelectors = removeWhitespace(`[
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/components/messages/sap_odm_finance_costobject_CostCenter_Created_v1/payload"
+		}
+	  ]`)
+
+	eventEntityTypeTargets = removeWhitespace(`[
+		{
+		  "ordId": "sap.odm:entityType:CostCenter:v1"
+		},
+		{
+		  "correlationId": "sap.s4:csnEntity:CostCenter_v1"
+		}
+	  ]`)
 
 	boolPtr = true
 
@@ -580,6 +621,12 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						DefaultTargetURL: "https://exmaple.com/test/v1",
 					},
 				},
+				EntityTypeMappings: []*model.EntityTypeMappingInput{
+					{
+						APIModelSelectors: json.RawMessage(apiAPIModelSelectors),
+						EntityTypeTargets: json.RawMessage(apiEntityTypeTargets),
+					},
+				},
 				VersionInput: &model.VersionInput{
 					Value: "2.1.2",
 				},
@@ -695,6 +742,12 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						BundleOrdID: bundleORDID,
 					},
 				},
+				EntityTypeMappings: []*model.EntityTypeMappingInput{
+					{
+						APIModelSelectors: json.RawMessage(eventAPIModelSelectors),
+						EntityTypeTargets: json.RawMessage(eventEntityTypeTargets),
+					},
+				},
 				VersionInput: &model.VersionInput{
 					Value: "2.1.2",
 				},
@@ -750,7 +803,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		EntityTypes: []*model.EntityTypeInput{
 			{
 				OrdID:               entityType1ORDID,
-				LocalID:             localID,
+				LocalTenantID:       localTenantID,
 				Level:               "aggregate",
 				Title:               "Business Partner",
 				ShortDescription:    str.Ptr("short desc"),
@@ -776,7 +829,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 			},
 			{
 				OrdID:               entityType2ORDID,
-				LocalID:             localID,
+				LocalTenantID:       localTenantID,
 				Level:               "aggregate",
 				Title:               "Workforce Person",
 				ShortDescription:    str.Ptr("short desc"),
@@ -813,6 +866,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				ShortDescription:    str.Ptr("Capability short description"),
 				SystemInstanceAware: &boolPtr,
 				Tags:                json.RawMessage(`["capabilityTestTag"]`),
+				RelatedEntityTypes:  json.RawMessage(`["ns:entityType:ENTITYTYPE_ID:v1"]`),
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				ReleaseStatus:       str.Ptr("active"),
 				Labels:              json.RawMessage(labels),
@@ -846,6 +900,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				ShortDescription:    str.Ptr("Capability short description"),
 				SystemInstanceAware: &boolPtr,
 				Tags:                json.RawMessage(`["capabilityTestTag"]`),
+				RelatedEntityTypes:  json.RawMessage(`["ns:entityType:ENTITYTYPE_ID:v1"]`),
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				ReleaseStatus:       str.Ptr("active"),
 				Labels:              json.RawMessage(labels),
@@ -1531,6 +1586,7 @@ func fixCapabilities() []*model.Capability {
 			ShortDescription:    str.Ptr("Capability short description"),
 			SystemInstanceAware: nil,
 			Tags:                json.RawMessage(`["testTag","capabilityTestTag"]`),
+			RelatedEntityTypes:  json.RawMessage(`["ns:entityType:ENTITYTYPE_ID:v1"]`),
 			Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
 			ReleaseStatus:       str.Ptr("active"),
 			Labels:              json.RawMessage(mergedLabels),
@@ -1557,6 +1613,7 @@ func fixCapabilities() []*model.Capability {
 			ShortDescription:    str.Ptr("Capability short description"),
 			SystemInstanceAware: nil,
 			Tags:                json.RawMessage(`["testTag","capabilityTestTag"]`),
+			RelatedEntityTypes:  json.RawMessage(`["ns:entityType:ENTITYTYPE_ID:v1"]`),
 			Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
 			ReleaseStatus:       str.Ptr("active"),
 			Labels:              json.RawMessage(mergedLabels),
@@ -1790,7 +1847,7 @@ func fixEntityTypes() []*model.EntityType {
 			ApplicationID:                &appID,
 			ApplicationTemplateVersionID: &appTemplateVersionID,
 			OrdID:                        entityType1ORDID,
-			LocalID:                      localID,
+			LocalTenantID:                localTenantID,
 			CorrelationIDs:               json.RawMessage(correlationIDs),
 			Level:                        level,
 			Title:                        title,
@@ -1815,6 +1872,53 @@ func fixEntityTypes() []*model.EntityType {
 			ResourceHash:                 &resourceHash,
 		},
 	}
+}
+
+func fixEntityTypeMappingInput(apiID, eventID string) *model.EntityTypeMappingInput {
+	entityTypeMapping := &model.EntityTypeMappingInput{}
+	if apiID != "" {
+		entityTypeMapping.APIModelSelectors = json.RawMessage(apiAPIModelSelectors)
+		entityTypeMapping.EntityTypeTargets = json.RawMessage(apiEntityTypeTargets)
+	} else if eventID != "" {
+		entityTypeMapping.APIModelSelectors = json.RawMessage(eventAPIModelSelectors)
+		entityTypeMapping.EntityTypeTargets = json.RawMessage(eventEntityTypeTargets)
+	}
+	return entityTypeMapping
+}
+
+func fixEntityTypeMappingInputsEmpty() []*model.EntityTypeMappingInput {
+	return []*model.EntityTypeMappingInput{}
+}
+
+func fixEntityTypeMapping(apiID, eventID string) *model.EntityTypeMapping {
+	entityTypeMapping := &model.EntityTypeMapping{
+		BaseEntity: &model.BaseEntity{
+			ID:        entityTypeMappingID,
+			Ready:     true,
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+			Error:     nil,
+		},
+	}
+	if apiID != "" {
+		entityTypeMapping.APIDefinitionID = &apiID
+		entityTypeMapping.APIModelSelectors = json.RawMessage(apiAPIModelSelectors)
+		entityTypeMapping.EntityTypeTargets = json.RawMessage(apiEntityTypeTargets)
+	} else if eventID != "" {
+		entityTypeMapping.EventDefinitionID = &eventID
+		entityTypeMapping.APIModelSelectors = json.RawMessage(eventAPIModelSelectors)
+		entityTypeMapping.EntityTypeTargets = json.RawMessage(eventEntityTypeTargets)
+	}
+	return entityTypeMapping
+}
+
+func fixEntityTypeMappings(apiID, eventID string) []*model.EntityTypeMapping {
+	return []*model.EntityTypeMapping{fixEntityTypeMapping(apiID, eventID)}
+}
+
+func fixEntityTypeMappingsEmpty() []*model.EntityTypeMapping {
+	return []*model.EntityTypeMapping{}
 }
 
 func fixVersionModel(value string, deprecated bool, deprecatedSince string, forRemoval bool) *model.Version {
