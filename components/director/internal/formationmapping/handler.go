@@ -3,7 +3,8 @@ package formationmapping
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -34,9 +35,9 @@ import (
 
 //go:generate mockery --exported --name=formationAssignmentStatusService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentStatusService interface {
-	UpdateWithConstraints(ctx context.Context, notificationResponse *statusresponse.NotificationResponse, fa *model.FormationAssignment, operation model.FormationOperation) error
-	SetAssignmentToErrorStateWithConstraints(ctx context.Context, notificationResponse *statusresponse.NotificationResponse, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error
-	DeleteWithConstraints(ctx context.Context, id string, notificationResponse *statusresponse.NotificationResponse) error
+	UpdateWithConstraints(ctx context.Context, notificationStatusReport *statusreport.NotificationStatusReport, fa *model.FormationAssignment, operation model.FormationOperation) error
+	SetAssignmentToErrorStateWithConstraints(ctx context.Context, notificationStatusReport *statusreport.NotificationStatusReport, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error
+	DeleteWithConstraints(ctx context.Context, id string, notificationStatusReport *statusreport.NotificationStatusReport) error
 }
 
 type malformedRequest struct {
@@ -187,17 +188,6 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 			return
 		}
 
-<<<<<<< HEAD
-	// todo it was possible for the state from the request to be empty and in such cases we were able to update the config or error regardless of the formation state
-	if len(assignmentReqBody.State) > 0 && formation.State != model.ReadyFormationState {
-		log.C(ctx).WithError(err).Errorf("Cannot update formation assignment for formation with ID %q as formation is not in %q state. X-Request-Id: %s", fa.FormationID, model.ReadyFormationState, correlationID)
-		respondWithError(ctx, w, http.StatusBadRequest, errResp)
-		return
-	}
-
-	if reset { //todo state should be ready or CP
-=======
->>>>>>> 69696d6a3 (remove unnecessary state calculations)
 		if fa.State != string(model.ReadyAssignmentState) {
 			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q because assignment is not in %q state. X-Request-Id: %s", fa.Source, fa.Target, model.ReadyAssignmentState, correlationID)
 			respondWithError(ctx, w, http.StatusBadRequest, errResp)
@@ -464,16 +454,16 @@ func (h *Handler) processFormationAssignmentUnassignStatusUpdate(ctx context.Con
 		return false, errors.Errorf("An invalid state: %q is provided for %q operation", reqBody.State, model.UnassignFormation)
 	}
 
-	notificationResponse := newNotificationResponseFromRequestBody(reqBody)
+	notificationStatusReport := newNotificationStatusReportFromRequestBody(reqBody)
 
 	if reqBody.State == model.DeleteErrorAssignmentState {
-		if err := h.faStatusService.SetAssignmentToErrorStateWithConstraints(ctx, notificationResponse, fa, reqBody.Error, formationassignment.ClientError, reqBody.State, model.UnassignFormation); err != nil {
+		if err := h.faStatusService.SetAssignmentToErrorStateWithConstraints(ctx, notificationStatusReport, fa, reqBody.Error, formationassignment.ClientError, reqBody.State, model.UnassignFormation); err != nil {
 			return false, errors.Wrapf(err, "while updating error state to: %s for formation assignment with ID: %q", reqBody.State, fa.ID)
 		}
 		return false, nil
 	}
 
-	if err := h.faStatusService.DeleteWithConstraints(ctx, fa.ID, notificationResponse); err != nil {
+	if err := h.faStatusService.DeleteWithConstraints(ctx, fa.ID, notificationStatusReport); err != nil {
 		log.C(ctx).WithError(err).Infof("An error occurred while deleting the assignment with ID: %q with constraints", fa.ID)
 		if apperrors.IsNotFoundError(err) {
 			log.C(ctx).Infof("Assignment with ID %q has already been deleted", fa.ID)
@@ -499,10 +489,10 @@ func (h *Handler) processFormationAssignmentAssignStatusUpdate(ctx context.Conte
 		}
 	}
 
-	notificationResponse := newNotificationResponseFromRequestBody(reqBody)
+	notificationStatusReport := newNotificationStatusReportFromRequestBody(reqBody)
 
 	if reqBody.State == model.CreateErrorAssignmentState {
-		if err := h.faStatusService.SetAssignmentToErrorStateWithConstraints(ctx, notificationResponse, fa, reqBody.Error, formationassignment.ClientError, reqBody.State, model.AssignFormation); err != nil {
+		if err := h.faStatusService.SetAssignmentToErrorStateWithConstraints(ctx, notificationStatusReport, fa, reqBody.Error, formationassignment.ClientError, reqBody.State, model.AssignFormation); err != nil {
 			log.C(ctx).WithError(err).Errorf("while updating error state to: %s for formation assignment with ID: %q", reqBody.State, fa.ID)
 			return false, &responseError{
 				statusCode:   http.StatusInternalServerError,
@@ -524,7 +514,7 @@ func (h *Handler) processFormationAssignmentAssignStatusUpdate(ctx context.Conte
 	}
 
 	log.C(ctx).Infof("Updating formation assignment with ID: %q and formation ID: %q with state: %q", fa.ID, fa.FormationID, fa.State)
-	if err := h.faStatusService.UpdateWithConstraints(ctx, notificationResponse, fa, model.AssignFormation); err != nil {
+	if err := h.faStatusService.UpdateWithConstraints(ctx, notificationStatusReport, fa, model.AssignFormation); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while updating formation assignment with ID: %q and formation ID: %q with state: %q", fa.ID, fa.FormationID, fa.State)
 		return false, &responseError{
 			statusCode:   http.StatusInternalServerError,
@@ -773,6 +763,6 @@ type responseError struct {
 	errorMessage string
 }
 
-func newNotificationResponseFromRequestBody(requestBody FormationAssignmentRequestBody) *statusresponse.NotificationResponse {
-	return statusresponse.NewNotificationResponse(requestBody.Configuration, string(requestBody.State), requestBody.Error)
+func newNotificationStatusReportFromRequestBody(requestBody FormationAssignmentRequestBody) *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(requestBody.Configuration, string(requestBody.State), requestBody.Error)
 }

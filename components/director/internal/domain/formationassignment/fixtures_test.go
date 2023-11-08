@@ -3,7 +3,8 @@ package formationassignment_test
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
 	"k8s.io/utils/strings/slices"
 
@@ -785,7 +786,7 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 	return []*webhookclient.FormationAssignmentNotificationRequest{request, requestReverse}, templateInput, templateInputReverse
 }
 
-func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation, lastFormationAssignmentState, lastFormationAssignmentConfig, tenantID string, notificationResponse *statusresponse.NotificationResponse) *formationconstraint.NotificationStatusReturnedOperationDetails {
+func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation, lastFormationAssignmentState, lastFormationAssignmentConfig, tenantID string, notificationStatusReport *statusreport.NotificationStatusReport) *formationconstraint.NotificationStatusReturnedOperationDetails {
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
 		ResourceType:                         resourceType,
 		ResourceSubtype:                      resourceSubtype,
@@ -796,7 +797,7 @@ func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resou
 		ReverseFormationAssignment:           reverseFa,
 		LastFormationAssignmentState:         lastFormationAssignmentState,
 		LastFormationAssignmentConfiguration: lastFormationAssignmentConfig,
-		NotificationResponse:                 notificationResponse,
+		NotificationStatusReport:             notificationStatusReport,
 		Formation:                            formation,
 	}
 }
@@ -861,14 +862,14 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 	}
 }
 
-func fixNotificationResponse() *statusresponse.NotificationResponse {
-	return statusresponse.NewNotificationResponse(TestConfigValueRawJSON, readyState, "")
+func fixNotificationStatusReport() *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(TestConfigValueRawJSON, readyState, "")
 }
 
-func fixNotificationResponseWithStateAndConfig(configuration json.RawMessage, state string) *statusresponse.NotificationResponse {
-	return statusresponse.NewNotificationResponse(configuration, state, "")
+func fixNotificationStatusReportWithStateAndConfig(configuration json.RawMessage, state string) *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(configuration, state, "")
 }
 
-func fixNotificationResponseWithStateAndError(state, errorMessage string) *statusresponse.NotificationResponse {
-	return statusresponse.NewNotificationResponse(nil, state, errorMessage)
+func fixNotificationStatusReportWithStateAndError(state, errorMessage string) *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(nil, state, errorMessage)
 }

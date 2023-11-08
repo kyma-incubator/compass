@@ -3,7 +3,8 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/statusresponse"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/hashicorp/go-multierror"
@@ -110,15 +111,15 @@ type constraintEngine interface {
 
 //go:generate mockery --exported --name=statusService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type statusService interface {
-	UpdateWithConstraints(ctx context.Context, notificationResponse *statusresponse.NotificationResponse, fa *model.FormationAssignment, operation model.FormationOperation) error
-	SetAssignmentToErrorStateWithConstraints(ctx context.Context, notificationResponse *statusresponse.NotificationResponse, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error
-	DeleteWithConstraints(ctx context.Context, id string, notificationResponse *statusresponse.NotificationResponse) error
+	UpdateWithConstraints(ctx context.Context, notificationStatusReport *statusreport.NotificationStatusReport, fa *model.FormationAssignment, operation model.FormationOperation) error
+	SetAssignmentToErrorStateWithConstraints(ctx context.Context, notificationStatusReport *statusreport.NotificationStatusReport, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error
+	DeleteWithConstraints(ctx context.Context, id string, notificationStatusReport *statusreport.NotificationStatusReport) error
 }
 
 //go:generate mockery --exported --name=faNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type faNotificationService interface {
 	GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)
-	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string, notificationResponse *statusresponse.NotificationResponse) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)
+	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string, notificationStatusReport *statusreport.NotificationStatusReport) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)
 }
 
 type service struct {
@@ -666,10 +667,10 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		}
 	}
 
-	notificationResponse := newNotificationResponseFromWebhookResponse(response)
+	notificationStatusReport := newNotificationStatusReportFromWebhookResponse(response)
 
 	if response.Error != nil && *response.Error != "" {
-		err = s.statusService.SetAssignmentToErrorStateWithConstraints(ctx, notificationResponse, assignment, *response.Error, ClientError, model.CreateErrorAssignmentState, mappingPair.Operation)
+		err = s.statusService.SetAssignmentToErrorStateWithConstraints(ctx, notificationStatusReport, assignment, *response.Error, ClientError, model.CreateErrorAssignmentState, mappingPair.Operation)
 		if err != nil {
 			return errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
@@ -703,7 +704,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		shouldSendReverseNotification = false
 	}
 
-	if err = s.statusService.UpdateWithConstraints(ctx, notificationResponse, assignment, mappingPair.Operation); err != nil {
+	if err = s.statusService.UpdateWithConstraints(ctx, notificationStatusReport, assignment, mappingPair.Operation); err != nil {
 		return errors.Wrapf(err, "while updating formation assignment with constraints for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 	}
 	log.C(ctx).Infof("Assignment with ID: %q was updated with %q state", assignment.ID, assignment.State)
@@ -813,10 +814,10 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		}
 	}
 
-	notificationResponse := newNotificationResponseFromWebhookResponse(response)
+	notificationStatusReport := newNotificationStatusReportFromWebhookResponse(response)
 
 	if response.Error != nil && *response.Error != "" {
-		if err = s.statusService.SetAssignmentToErrorStateWithConstraints(ctx, notificationResponse, assignment, *response.Error, ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation); err != nil {
+		if err = s.statusService.SetAssignmentToErrorStateWithConstraints(ctx, notificationStatusReport, assignment, *response.Error, ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation); err != nil {
 			return false, errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
 		return false, errors.Errorf("Received error from response: %v", *response.Error)
@@ -831,7 +832,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	}
 
 	if response.State != nil && *response.State == string(model.ReadyAssignmentState) {
-		if err = s.statusService.DeleteWithConstraints(ctx, assignment.ID, notificationResponse); err != nil {
+		if err = s.statusService.DeleteWithConstraints(ctx, assignment.ID, notificationStatusReport); err != nil {
 			if apperrors.IsNotFoundError(err) {
 				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
 				return false, nil
@@ -855,7 +856,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	}
 
 	if response.State != nil && *response.State == string(model.DeleteErrorAssignmentState) {
-		if err = s.statusService.SetAssignmentToErrorStateWithConstraints(ctx, notificationResponse, assignment, "", ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation); err != nil {
+		if err = s.statusService.SetAssignmentToErrorStateWithConstraints(ctx, notificationStatusReport, assignment, "", ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation); err != nil {
 			if apperrors.IsNotFoundError(err) {
 				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
 				return false, nil
@@ -1080,7 +1081,7 @@ type AssignmentErrorWrapper struct {
 	Error AssignmentError `json:"error"`
 }
 
-func newNotificationResponseFromWebhookResponse(response *webhookdir.Response) *statusresponse.NotificationResponse {
+func newNotificationStatusReportFromWebhookResponse(response *webhookdir.Response) *statusreport.NotificationStatusReport {
 	var configuration json.RawMessage
 	if response.Config != nil {
 		configuration = []byte(*response.Config)
@@ -1096,5 +1097,5 @@ func newNotificationResponseFromWebhookResponse(response *webhookdir.Response) *
 		errorFromResponse = *response.Error
 	}
 
-	return statusresponse.NewNotificationResponse(configuration, state, errorFromResponse)
+	return statusreport.NewNotificationStatusReport(configuration, state, errorFromResponse)
 }
