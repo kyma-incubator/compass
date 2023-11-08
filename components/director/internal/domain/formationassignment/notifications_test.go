@@ -1979,19 +1979,19 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 	var emptyRuntimeCtx *webhook.RuntimeContextWithLabels
 
 	testCases := []struct {
-		name                    string
-		formationAssignment     *model.FormationAssignment
-		webhookRepo             func() *automock.WebhookRepository
-		webhookDataInputBuilder func() *databuilderautomock.DataInputBuilder
-		formationAssignmentRepo func() *automock.FormationAssignmentRepository
-		formationRepo           func() *automock.FormationRepository
-		labelSvc                func() *automock.LabelService
-		notificationBuilder     func() *automock.NotificationBuilder
-		tenantRepo              func() *automock.TenantRepository
-		runtimeCtxRepo          func() *automock.RuntimeContextRepository
-		notificationResponse    *statusreport.NotificationStatusReport
-		expectedDetails         *formationconstraint.NotificationStatusReturnedOperationDetails
-		expectedErrMsg          string
+		name                     string
+		formationAssignment      *model.FormationAssignment
+		webhookRepo              func() *automock.WebhookRepository
+		webhookDataInputBuilder  func() *databuilderautomock.DataInputBuilder
+		formationAssignmentRepo  func() *automock.FormationAssignmentRepository
+		formationRepo            func() *automock.FormationRepository
+		labelSvc                 func() *automock.LabelService
+		notificationBuilder      func() *automock.NotificationBuilder
+		tenantRepo               func() *automock.TenantRepository
+		runtimeCtxRepo           func() *automock.RuntimeContextRepository
+		notificationStatusReport *statusreport.NotificationStatusReport
+		expectedDetails          *formationconstraint.NotificationStatusReturnedOperationDetails
+		expectedErrMsg           string
 	}{
 		{
 			name:                "Success for FA with target type application",
@@ -2036,8 +2036,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 
 				return notificationsBuilder
 			},
-			notificationResponse: notificationStatusReport,
-			expectedDetails:      expectedDetailsForApp,
+			notificationStatusReport: notificationStatusReport,
+			expectedDetails:          expectedDetailsForApp,
 		},
 		{
 			name:                "Success for FA with target type runtime",
@@ -2082,8 +2082,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 
 				return notificationsBuilder
 			},
-			notificationResponse: notificationStatusReport,
-			expectedDetails:      expectedDetailsForRuntime,
+			notificationStatusReport: notificationStatusReport,
+			expectedDetails:          expectedDetailsForRuntime,
 		},
 		{
 			name:                "Success for FA with target type runtime context",
@@ -2134,8 +2134,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 
 				return notificationsBuilder
 			},
-			notificationResponse: notificationStatusReport,
-			expectedDetails:      expectedDetailsForRuntimeContext,
+			notificationStatusReport: notificationStatusReport,
+			expectedDetails:          expectedDetailsForRuntimeContext,
 		},
 		{
 			name:                "Success for application when there is no reverse fa",
@@ -2180,8 +2180,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 
 				return notificationsBuilder
 			},
-			notificationResponse: notificationStatusReport,
-			expectedDetails:      expectedDetailsForAppWithoutReverseAssignment,
+			notificationStatusReport: notificationStatusReport,
+			expectedDetails:          expectedDetailsForAppWithoutReverseAssignment,
 		},
 		{
 			name:                "Error when can't get reverse fa",
@@ -2216,8 +2216,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				lblSvc.On("GetLabel", emptyCtx, TestTenantID, applicationLabelInput).Return(applicationTypeLabel, nil).Once()
 				return lblSvc
 			},
-			notificationResponse: notificationStatusReport,
-			expectedErrMsg:       testErr.Error(),
+			notificationStatusReport: notificationStatusReport,
+			expectedErrMsg:           testErr.Error(),
 		},
 		{
 			name:                "Error when can't get application label",
@@ -2227,8 +2227,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				lblSvc.On("GetLabel", emptyCtx, TestTenantID, applicationLabelInput).Return(nil, testErr).Once()
 				return lblSvc
 			},
-			notificationResponse: notificationStatusReport,
-			expectedErrMsg:       testErr.Error(),
+			notificationStatusReport: notificationStatusReport,
+			expectedErrMsg:           testErr.Error(),
 		},
 		{
 			name:                "Error when can't get runtime label when target type is runtime",
@@ -2238,8 +2238,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				lblSvc.On("GetLabel", emptyCtx, TestTenantID, runtimeLabelInput).Return(nil, testErr).Once()
 				return lblSvc
 			},
-			notificationResponse: notificationStatusReport,
-			expectedErrMsg:       testErr.Error(),
+			notificationStatusReport: notificationStatusReport,
+			expectedErrMsg:           testErr.Error(),
 		},
 		{
 			name:                "Error when can't get runtime label when target type is runtime context",
@@ -2254,8 +2254,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				rtmCtxRepo.On("GetByID", emptyCtx, TestTenantID, TestTarget).Return(&model.RuntimeContext{RuntimeID: TestTarget}, nil).Once()
 				return rtmCtxRepo
 			},
-			notificationResponse: notificationStatusReport,
-			expectedErrMsg:       testErr.Error(),
+			notificationStatusReport: notificationStatusReport,
+			expectedErrMsg:           testErr.Error(),
 		},
 		{
 			name:                "Error when can't get runtime context",
@@ -2265,14 +2265,14 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				rtmCtxRepo.On("GetByID", emptyCtx, TestTenantID, TestTarget).Return(nil, testErr).Once()
 				return rtmCtxRepo
 			},
-			notificationResponse: notificationStatusReport,
-			expectedErrMsg:       testErr.Error(),
+			notificationStatusReport: notificationStatusReport,
+			expectedErrMsg:           testErr.Error(),
 		},
 		{
-			name:                 "Error when the object type is unknown",
-			formationAssignment:  &model.FormationAssignment{TargetType: "unknown"},
-			notificationResponse: notificationStatusReport,
-			expectedErrMsg:       fmt.Sprintf("unknown object type %q", "unknown"),
+			name:                     "Error when the object type is unknown",
+			formationAssignment:      &model.FormationAssignment{TargetType: "unknown"},
+			notificationStatusReport: notificationStatusReport,
+			expectedErrMsg:           fmt.Sprintf("unknown object type %q", "unknown"),
 		},
 	}
 
@@ -2319,7 +2319,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 			faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(faRepo, nil, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationBuilder, rtmCtxSvc, labelSvc, rtmTypeLabelKey, appTypeLabelKey)
 
 			// WHEN
-			notificationStatusReturnedDetails, err := faNotificationSvc.PrepareDetailsForNotificationStatusReturned(emptyCtx, TestTenantID, tCase.formationAssignment, model.AssignFormation, lastFormationAssignmentState, lastFormationAssignmentConfiguration, tCase.notificationResponse)
+			notificationStatusReturnedDetails, err := faNotificationSvc.PrepareDetailsForNotificationStatusReturned(emptyCtx, TestTenantID, tCase.formationAssignment, model.AssignFormation, lastFormationAssignmentState, lastFormationAssignmentConfiguration, tCase.notificationStatusReport)
 
 			// THEN
 			if tCase.expectedErrMsg != "" {
@@ -2329,7 +2329,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, tCase.expectedDetails, notificationStatusReturnedDetails)
-				require.Equal(t, tCase.notificationResponse, notificationStatusReturnedDetails.NotificationStatusReport)
+				require.Equal(t, tCase.notificationStatusReport, notificationStatusReturnedDetails.NotificationStatusReport)
 			}
 		})
 	}

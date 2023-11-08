@@ -12,7 +12,7 @@ import (
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
-	notificationresponse "github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+	statusreport "github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 )
@@ -48,25 +48,25 @@ func (_m *FaNotificationService) GenerateFormationAssignmentNotificationExt(ctx 
 	return r0, r1
 }
 
-// PrepareDetailsForNotificationStatusReturned provides a mock function with given fields: ctx, tenantID, fa, operation, lastFormationAssignmentState, lastFormationAssignmentConfiguration, notificationResponse
-func (_m *FaNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState string, lastFormationAssignmentConfiguration string, notificationResponse *notificationresponse.NotificationStatusReport) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
-	ret := _m.Called(ctx, tenantID, fa, operation, lastFormationAssignmentState, lastFormationAssignmentConfiguration, notificationResponse)
+// PrepareDetailsForNotificationStatusReturned provides a mock function with given fields: ctx, tenantID, fa, operation, lastFormationAssignmentState, lastFormationAssignmentConfiguration, notificationStatusReport
+func (_m *FaNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState string, lastFormationAssignmentConfiguration string, notificationStatusReport *statusreport.NotificationStatusReport) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
+	ret := _m.Called(ctx, tenantID, fa, operation, lastFormationAssignmentState, lastFormationAssignmentConfiguration, notificationStatusReport)
 
 	var r0 *formationconstraint.NotificationStatusReturnedOperationDetails
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignment, model.FormationOperation, string, string, *notificationresponse.NotificationStatusReport) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)); ok {
-		return rf(ctx, tenantID, fa, operation, lastFormationAssignmentState, lastFormationAssignmentConfiguration, notificationResponse)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignment, model.FormationOperation, string, string, *statusreport.NotificationStatusReport) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)); ok {
+		return rf(ctx, tenantID, fa, operation, lastFormationAssignmentState, lastFormationAssignmentConfiguration, notificationStatusReport)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignment, model.FormationOperation, string, string, *notificationresponse.NotificationStatusReport) *formationconstraint.NotificationStatusReturnedOperationDetails); ok {
-		r0 = rf(ctx, tenantID, fa, operation, lastFormationAssignmentState, lastFormationAssignmentConfiguration, notificationResponse)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignment, model.FormationOperation, string, string, *statusreport.NotificationStatusReport) *formationconstraint.NotificationStatusReturnedOperationDetails); ok {
+		r0 = rf(ctx, tenantID, fa, operation, lastFormationAssignmentState, lastFormationAssignmentConfiguration, notificationStatusReport)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*formationconstraint.NotificationStatusReturnedOperationDetails)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, *model.FormationAssignment, model.FormationOperation, string, string, *notificationresponse.NotificationStatusReport) error); ok {
-		r1 = rf(ctx, tenantID, fa, operation, lastFormationAssignmentState, lastFormationAssignmentConfiguration, notificationResponse)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *model.FormationAssignment, model.FormationOperation, string, string, *statusreport.NotificationStatusReport) error); ok {
+		r1 = rf(ctx, tenantID, fa, operation, lastFormationAssignmentState, lastFormationAssignmentConfiguration, notificationStatusReport)
 	} else {
 		r1 = ret.Error(1)
 	}
