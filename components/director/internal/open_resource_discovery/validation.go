@@ -40,7 +40,7 @@ const (
 	// EntityTypeOrdIDRegex represents the valid structure of the ordID of the EntityType
 	EntityTypeOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(entityType):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// TombstoneOrdIDRegex represents the valid structure of the ordID of the Tombstone
-	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource|entityType|capability|integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*|)?$"
+	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource|entityType|capability|integrationDependency|dataProduct):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*|)?$"
 	// SystemInstanceBaseURLRegex represents the valid structure of the field
 	SystemInstanceBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?(\\/[a-zA-Z0-9-\\._~]+)*$"
 	// ConfigBaseURLRegex represents the valid structure of the field
@@ -129,6 +129,10 @@ const (
 	MinCorrelationIDLength = 1
 	// MaxCorrelationIDLength represents the maximal accepted length of the Correaltion ID field
 	MaxCorrelationIDLength = 255
+	// MinRuntimeRestrictionLength represents the minimal accepted length of the Runtime Restriction field
+	MinRuntimeRestrictionLength = 1
+	// MaxRuntimeRestrictionLength represents the maximal accepted length of the Runtime Restriction field
+	MaxRuntimeRestrictionLength = 255
 
 	// IntegrationDependencyMsg represents the resource name for Integration Dependency used in error message
 	IntegrationDependencyMsg string = "integration dependency"
@@ -376,6 +380,7 @@ func validatePackageInput(pkg *model.PackageInput, docPolicyLevel *string) error
 		validation.Field(&pkg.Tags, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
+		validation.Field(&pkg.RuntimeRestriction, validation.NilOrNotEmpty, validation.Length(MinRuntimeRestrictionLength, MaxRuntimeRestrictionLength)),
 		validation.Field(&pkg.Labels, validation.By(validateORDLabels)),
 		validation.Field(&pkg.Countries, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CountryRegex))

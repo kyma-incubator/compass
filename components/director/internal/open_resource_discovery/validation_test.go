@@ -29,6 +29,7 @@ const (
 	invalidOrdIDLength                         = 256 // max allowed: 255
 	invalidLocalTenantIDLength                 = 256 //max allowed: 255
 	invalidLocalIDLength                       = 256 //max allowed: 255
+	invalidRuntimeRestrictionLength            = 256 //max allowed: 255
 	maxDescriptionLength                       = 5000
 	invalidVersion                             = "invalidVersion"
 	invalidPolicyLevel                         = "invalidPolicyLevel"
@@ -1452,6 +1453,23 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Tags = json.RawMessage(invalidTagsValueIntegerElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `runtimeRestriction` field for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				emptyStr := ""
+				doc.Packages[0].RuntimeRestriction = &emptyStr
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid too large `runtimeRestriction` field for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].RuntimeRestriction = str.Ptr(strings.Repeat("a", invalidRuntimeRestrictionLength))
 
 				return []*ord.Document{doc}
 			},
