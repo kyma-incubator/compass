@@ -7,6 +7,7 @@ type Resource interface {
 	GetResourceID() string
 	GetResourceType() string
 	GetResourceURLPath() string
+	GetResourceName() string
 }
 
 // Resources provides common capabilities for all the SM resources that are used by the SM client

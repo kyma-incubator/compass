@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
 	"github.com/pkg/errors"
@@ -51,6 +52,11 @@ func (s *ServiceInstance) GetResourceURLPath() string {
 	return paths.ServiceInstancesPath
 }
 
+// GetResourceName gets the Service
+func (s *ServiceInstance) GetResourceName() string {
+	return s.Name
+}
+
 // ServiceInstances represents a collection of Service Instance
 type ServiceInstances struct {
 	NumItems int                `json:"num_items"`
@@ -89,5 +95,15 @@ func (sip *ServiceInstanceMatchParameters) Match(resources resources.Resources) 
 
 // MatchMultiple matches several ServiceInstances based on some criteria
 func (sip *ServiceInstanceMatchParameters) MatchMultiple(resources resources.Resources) ([]string, error) {
-	return nil, nil // implement me when needed
+	serviceInstances, ok := resources.(*ServiceInstances)
+	if !ok {
+		return nil, errors.New("while type asserting Resources to ServiceInstances")
+	}
+	serviceInstanceIDs := make([]string, 0, serviceInstances.NumItems)
+	for _, si := range serviceInstances.Items {
+		if strings.Contains(si.Name, sip.ServiceInstanceName) {
+			serviceInstanceIDs = append(serviceInstanceIDs, si.ID)
+		}
+	}
+	return serviceInstanceIDs, nil
 }

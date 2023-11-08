@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	httputildirector "github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"net/http"
 	"os"
 	"time"
@@ -70,7 +72,11 @@ func main() {
 	creator.Use(tenantValidationMiddleware.Handler())
 
 	smClient := client.NewClient(cfg, client.NewCallerProvider())
-	c := handler.NewHandler(smClient)
+	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	exitOnError(err, "failed to initialize certificate loader")
+
+	mtlsHTTPClient := httputildirector.PrepareMTLSClientWithSSLValidation(cfg.ClientTimeout, certCache, cfg.SkipSSLValidation, cfg.ExternalClientCertSecretName)
+	c := handler.NewHandler(smClient, mtlsHTTPClient)
 
 	creator.HandleFunc("/", c.HandlerFunc)
 	mainRouter.HandleFunc(paths.HealthzEndpoint, healthz.NewHTTPHandler())

@@ -38,6 +38,11 @@ func (s *ServiceOffering) GetResourceURLPath() string {
 	return paths.ServiceOfferingsPath
 }
 
+// GetResourceName gets the ServiceOffering Name
+func (s *ServiceOffering) GetResourceName() string {
+	return s.Name
+}
+
 // ServiceOfferings represents a collection of Service Offering
 type ServiceOfferings struct {
 	NumItems int                `json:"num_items"`

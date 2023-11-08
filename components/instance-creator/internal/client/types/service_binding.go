@@ -16,8 +16,9 @@ const (
 	ServiceBindingType = "service binding"
 )
 
+// TODO:: rename key->binding
 // ServiceKeyReqBody is the request body when a Service Key is being created
-type ServiceKeyReqBody struct {
+type ServiceKeyReqBody struct { // TODO:: check if it needs also 'bind_resource' in the request body
 	Name         string          `json:"name"`
 	ServiceKeyID string          `json:"service_instance_id"`
 	Parameters   json.RawMessage `json:"parameters,omitempty"` // TODO:: differs from service to service. Most probably the necessary data will be provided as arbitrary json in the TN notification body?
@@ -65,6 +66,11 @@ func (sk *ServiceKeys) GetType() string {
 // GetURLPath gets the URL Path of the ServiceKey
 func (sk *ServiceKeys) GetURLPath() string {
 	return paths.ServiceBindingsPath
+}
+
+// GetResourceName gets the ServiceKey Name
+func (s *ServiceKey) GetResourceName() string {
+	return s.Name
 }
 
 // ServiceKeyMatchParameters holds all the necessary fields that are used when matching ServiceKeys

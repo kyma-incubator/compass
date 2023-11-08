@@ -109,6 +109,32 @@ func (c *client) RetrieveResourceByID(ctx context.Context, region, subaccountID 
 	return resource, nil
 }
 
+// RetrieveRawResourceByID retrieves a given resource from SM by its ID and returns the raw json body response
+// Example call, delete after initial usage of the client:
+//
+// RetrieveRawResourceByID(ctx , region, subaccountID, &types.ServiceKey{ID: serviceKeyID}, &types.ServiceKeyMatchParameters{})
+func (c *client) RetrieveRawResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource) (map[string]interface{}, error) {
+	resourcePath := resource.GetResourceURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
+	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourcePath, SubaccountKey, subaccountID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while building %s URL", resource.GetResourceType())
+	}
+
+	log.C(ctx).Infof("Getting %s by ID: %s for subaccount with ID: %q", resource.GetResourceType(), resource.GetResourceID(), subaccountID)
+	body, err := c.executeSyncRequest(ctx, strURL, region)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while executing request for getting %s for subaccount with ID: %q", resource.GetResourceType(), subaccountID)
+	}
+	log.C(ctx).Infof("Successfully got %s by ID: %s for subaccount with ID: %q", resource.GetResourceType(), resource.GetResourceID(), subaccountID)
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, errors.Wrap(err, "while unmarshalling the body into map of string to interface")
+	}
+
+	return result, nil
+}
+
 // CreateResource creates a given resource in SM
 // Example call, delete after initial usage of the client:
 //

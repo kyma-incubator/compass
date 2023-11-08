@@ -38,6 +38,11 @@ func (s *ServicePlan) GetResourceURLPath() string {
 	return paths.ServicePlansPath
 }
 
+// GetResourceName gets the ServicePlan Name
+func (s *ServicePlan) GetResourceName() string {
+	return s.Name
+}
+
 // ServicePlans represents a collection of Service Plan
 type ServicePlans struct {
 	NumItems int            `json:"num_items"`

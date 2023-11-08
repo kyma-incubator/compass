@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"strings"
 	"time"
 
@@ -40,6 +41,8 @@ type Config struct {
 	OAuthTokenPath               string                    `envconfig:"APP_SM_INSTANCE_OAUTH_TOKEN_PATH"`
 	RegionToInstanceConfig       map[string]InstanceConfig `envconfig:"-"`
 	SMClientTimeout              time.Duration             `envconfig:"APP_SM_CLIENT_TIMEOUT,default=30s"`
+
+	CertLoaderConfig certloader.Config
 
 	Ticker  time.Duration `envconfig:"APP_SM_ASYNC_API_TICKER,default=3s"`
 	Timeout time.Duration `envconfig:"APP_SM_ASYNC_API_TIMEOUT,default=30s"`
