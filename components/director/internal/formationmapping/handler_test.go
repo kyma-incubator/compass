@@ -1477,7 +1477,7 @@ func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
-				State:         model.CreateErrorAssignmentState,
+				State: model.CreateErrorAssignmentState,
 			},
 			expectedStatusCode: http.StatusBadRequest,
 		},
