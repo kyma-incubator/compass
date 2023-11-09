@@ -3,6 +3,8 @@ package systemfetcher_test
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -67,6 +69,9 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	tenantID := "tenantId1"
 	syncTimestampID := "timestampId1"
 
+	tenantModel := newModelBusinessTenantMapping(tenantID, "tenantName")
+	tenantCustomerModel := newModelBusinessTenantMapping(tenantID, "tenantName")
+	tenantCustomerModel.Type = tenant.Customer
 	systemfetcher.SystemSourceKey = sourceKey
 	systemfetcher.ApplicationTemplateLabelFilter = labelFilter
 
@@ -79,12 +84,21 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		PagingSizeParam: "$top",
 		SystemSourceKey: sourceKey,
 		SystemRPSLimit:  15,
-	}, mock.httpClient)
+	}, mock.httpClient, mock.jwtClient)
 
 	t.Run("Success", func(t *testing.T) {
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
+		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, &mutex)
+		require.NoError(t, err)
+		require.Len(t, systems, 1)
+		require.Equal(t, systems[0].TemplateID, "")
+	})
+
+	t.Run("Success for customer", func(t *testing.T) {
+		mock.callNumber = 0
+		mock.pageCount = 1
+		systems, err := client.FetchSystemsForTenant(context.Background(), tenantCustomerModel, &mutex)
 		require.NoError(t, err)
 		require.Len(t, systems, 1)
 		require.Equal(t, systems[0].TemplateID, "")
@@ -121,7 +135,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
+		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, &mutex)
 		require.NoError(t, err)
 		require.Len(t, systems, 2)
 		require.Equal(t, systems[0].TemplateID, "type1")
@@ -169,7 +183,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
+		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, &mutex)
 		require.NoError(t, err)
 		require.Len(t, systems, 2)
 		require.Equal(t, systems[0].TemplateID, "type1")
@@ -206,7 +220,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 2
-		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
+		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, &mutex)
 		require.NoError(t, err)
 		require.Len(t, systems, 5)
 	})
@@ -270,7 +284,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
+		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, &mutex)
 		require.NoError(t, err)
 		require.Len(t, systems, 3)
 		require.Equal(t, systems[0].TemplateID, "type1")
@@ -282,7 +296,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		mock.callNumber = 0
 		mock.pageCount = 1
 		mock.statusCodeToReturn = http.StatusBadRequest
-		_, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
+		_, err := client.FetchSystemsForTenant(context.Background(), tenantModel, &mutex)
 		require.Contains(t, err.Error(), "unexpected status code")
 	})
 
@@ -291,7 +305,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		mock.pageCount = 1
 		mock.bodiesToReturn = [][]byte{[]byte("not a JSON")}
 		mock.statusCodeToReturn = http.StatusOK
-		_, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
+		_, err := client.FetchSystemsForTenant(context.Background(), tenantModel, &mutex)
 		require.Contains(t, err.Error(), "failed to unmarshal systems response")
 	})
 }
@@ -301,6 +315,7 @@ type mockData struct {
 	statusCodeToReturn     int
 	bodiesToReturn         [][]byte
 	httpClient             systemfetcher.APIClient
+	jwtClient              systemfetcher.APIClient
 	callNumber             int
 	pageCount              int
 }
@@ -336,6 +351,7 @@ func fixHTTPClient(t *testing.T) (*mockData, string) {
 
 	ts := httptest.NewServer(mux)
 	mock.httpClient = systemfetcher.NewOauthClient(oauth.Config{}, ts.Client())
+	mock.jwtClient = systemfetcher.NewJwtTokenClient(certloader.NewCertificateCache(), "", ts.Client())
 
 	return &mock, ts.URL
 }
