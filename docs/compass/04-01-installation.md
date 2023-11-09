@@ -138,7 +138,7 @@ extraFlags:
   # Uncomment if your database is situated in a private network inside GCP
   # - private-ip
 ```
-> **NOTE:** The overrides above use workload identity to authenticate to Google Cloud Platform(recommended by Google); another possibility is to use the Google Cloud Platform's service account JSON as explained at [gcloud-sqlproxy's installation](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy#installing-the-chart).
+> **NOTE:** The overrides above use workload identity to authenticate to Google Cloud Platform (recommended by Google); another possibility is to use the Google Cloud Platform's service account JSON as explained at [gcloud-sqlproxy's installation](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy#installing-the-chart).
 
 Afterwards, save the following YAML code with installation overrides into a file (for example: additionalOryOverrides.yaml).
 ```yaml
@@ -459,7 +459,7 @@ global:
 #      tlsCrt: ${TLS_CERT}
 #      tlsKey: ${TLS_KEY}
 ```
-Start Database installation, can be skipped if it was installed during [Ory installation with local persistence](#in-cluster-database):
+Start the Database installation, can be skipped if it was installed during [Ory installation with local persistence](#in-cluster-database):
 ```bash
 <script from ../../installation/scripts/install-db.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
 ```

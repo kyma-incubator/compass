@@ -10,7 +10,7 @@ global:
       maester:
         mode: sidecar
     hydra:
-      # Values used by `install-ory.sh`; if switched to true will not configure the DSN with the local database
+      # Values used by `install-ory.sh`; if switched to true will not configure the data source name with the local database
       persistence:
         gcloud:
           enabled: false

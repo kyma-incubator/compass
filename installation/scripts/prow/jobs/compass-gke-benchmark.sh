@@ -197,7 +197,7 @@ function installOry() {
     # Copy old JWKS secret as it is only created with "pre-install" hook
     kubectl get secret ory-hydra-credentials --namespace=ory -o yaml \
       | sed 's/name: .*/name: ory-stack-hydra/' | kubectl apply -f -
-    # Change the DSN in the copied Hydra secret as the new Ory installation uses Compass localdb
+    # Change the data source name in the copied Hydra secret as the new Ory installation uses Compass localdb
     kubectl get secret ory-stack-hydra -n ory -o json \
       | jq --arg foo "$(echo -n "postgres://postgres:postgres@compass-postgresql.compass-system.svc.cluster.local:5432/hydra?sslmode=disable&max_conn_lifetime=10s" | base64)" '.data["dsn"]=$foo' \
       | kubectl apply -f -

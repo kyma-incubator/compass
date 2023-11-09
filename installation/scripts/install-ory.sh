@@ -96,7 +96,7 @@ CLOUD_PERSISTENCE=$(yq ".global.ory.hydra.persistence.gcloud.enabled" ${OVERRIDE
 # The System secret and cookie secret, needed by Hydra, are created by the Secret component of the Helm chart
 # Rotating the secrets has to be done manually; the rotation of the Hydra Secrets should be done following this guide: https://www.ory.sh/docs/hydra/self-hosted/secrets-key-rotation
 # Hydra requires data persistence, locally the postgres DB of compass is used.
-# The connection string(DSN) has to be created
+# The data source name(DSN) has to be created
 if [ "$CLOUD_PERSISTENCE" = false ]; then
   # Hydra uses the `localdb` instance as its persistence backend
   VALUES_FILE_DB="${ROOT_PATH}"/chart/localdb/values.yaml
