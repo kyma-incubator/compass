@@ -1,3 +1,4 @@
+{{ if eq .Values.global.externalCertConfiguration.preInstallJob.enabled true }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -128,3 +129,4 @@ spec:
                   key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.clientKey }}
             - name: SKIP_SSL_VALIDATION_FLAG
               value: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.skipSSLValidationFlag }}
+{{ end }}
