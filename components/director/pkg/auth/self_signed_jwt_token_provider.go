@@ -19,6 +19,7 @@ package auth
 import (
 	"context"
 	"crypto/rsa"
+	"fmt"
 	"github.com/form3tech-oss/jwt-go"
 	directorjwt "github.com/kyma-incubator/compass/components/director/pkg/jwt"
 	"time"
@@ -33,15 +34,13 @@ const (
 
 // selfSignedJwtTokenAuthorizationProvider presents a AuthorizationProvider implementation which crafts a self-signed JWT bearer token values for the Authorization header
 type selfSignedJwtTokenAuthorizationProvider struct {
-	jwtTokenCertSecretName string
-	config                 directorjwt.Config
+	config directorjwt.Config
 }
 
 // NewSelfSignedJWTTokenAuthorizationProvider constructs an selfSignedJwtTokenAuthorizationProvider object
-func NewSelfSignedJWTTokenAuthorizationProvider(jwtTokenCertSecretName string, config directorjwt.Config) *selfSignedJwtTokenAuthorizationProvider {
+func NewSelfSignedJWTTokenAuthorizationProvider(config directorjwt.Config) *selfSignedJwtTokenAuthorizationProvider {
 	return &selfSignedJwtTokenAuthorizationProvider{
-		jwtTokenCertSecretName: jwtTokenCertSecretName,
-		config:                 config,
+		config: config,
 	}
 }
 
@@ -82,11 +81,13 @@ func (p selfSignedJwtTokenAuthorizationProvider) GetAuthorization(ctx context.Co
 		return "", err
 	}
 
+	fmt.Println("ALEX token: ", token)
+
 	return "Bearer " + token, nil
 }
 
 func (p selfSignedJwtTokenAuthorizationProvider) readPrivateKey(selfSignedJWTCredentials *SelfSignedTokenCredentials) (*rsa.PrivateKey, error) {
-	certsCache := selfSignedJWTCredentials.CertCache.Get()[selfSignedJWTCredentials.JwtSelfSignCertSecretName]
+	certsCache := selfSignedJWTCredentials.KeysCache.Get()[selfSignedJWTCredentials.JwtSelfSignCertSecretName]
 
 	pk, ok := certsCache.PrivateKey.(*rsa.PrivateKey)
 	if !ok {
@@ -101,10 +102,13 @@ func (p selfSignedJwtTokenAuthorizationProvider) buildJWTToken(privateKey *rsa.P
 	claims := token.Claims.(jwt.MapClaims)
 	for claimKey, claimValue := range jwtClaims {
 		claims[claimKey] = claimValue
+		fmt.Println("Claim", claimKey, claimValue)
 	}
 
 	claims["iat"] = time.Now().Unix()
 	claims["exp"] = time.Now().Add(p.config.ExpireAfter).Unix()
+
+	fmt.Println("ALEX buildJWTToken")
 
 	tokenString, err := token.SignedString(privateKey)
 	if err != nil {

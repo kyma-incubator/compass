@@ -19,6 +19,7 @@ package auth
 import (
 	"context"
 	"crypto/tls"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/pkg/errors"
 
@@ -81,7 +82,7 @@ type OAuthMtlsCredentials struct {
 
 // SelfSignedTokenCredentials implements the Credentials interface for the self-signed jwt token flows
 type SelfSignedTokenCredentials struct {
-	CertCache                 CertificateCache
+	KeysCache                 certloader.KeysCache
 	JwtSelfSignCertSecretName string
 	Claims                    map[string]interface{}
 }

@@ -69,10 +69,10 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant *model.Busine
 	systemsFunc := c.getSystemsPagingFunc(ctx, &systems, tenant)
 	pi := paging.NewPageIterator(c.apiConfig.Endpoint, c.apiConfig.PagingSkipParam, c.apiConfig.PagingSizeParam, qp, c.apiConfig.PageSize, systemsFunc)
 	if err := pi.FetchAll(); err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch systems for tenant %s", tenant)
+		return nil, errors.Wrapf(err, "failed to fetch systems for tenant %s", tenant.ExternalTenant)
 	}
 
-	log.C(ctx).Infof("Fetched systems for tenant %s", tenant)
+	log.C(ctx).Infof("Fetched systems for tenant %s", tenant.ExternalTenant)
 	return systems, nil
 }
 

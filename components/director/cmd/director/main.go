@@ -177,6 +177,7 @@ type config struct {
 	DataloaderWait     time.Duration `envconfig:"default=10ms"`
 
 	CertLoaderConfig certloader.Config
+	KeyLoaderConfig  certloader.KeysConfig
 
 	SubscriptionConfig subscription.Config
 
@@ -278,7 +279,7 @@ func main() {
 	adminURL, err := url.Parse(cfg.OAuth20.URL)
 	exitOnError(err, "Error while parsing Hydra URL")
 
-	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	certCache, _, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig, cfg.KeyLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
