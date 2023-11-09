@@ -55,6 +55,7 @@ type SpecService interface {
 	GetByIDGlobal(ctx context.Context, id string) (*model.Spec, error)
 }
 
+// OrdFetchRequest defines fetch request
 type OrdFetchRequest struct {
 	*model.FetchRequest
 	RefObjectOrdID string
