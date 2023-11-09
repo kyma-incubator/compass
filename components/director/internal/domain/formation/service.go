@@ -1015,16 +1015,16 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	scenarioTransactionCtx := persistence.SaveToContext(ctx, scenarioTx)
 	defer s.transact.RollbackUnlessCommitted(scenarioTransactionCtx, scenarioTx)
 
-	for participantId := range initialParticipants {
-		pendingAsyncAssignments, nerr := s.formationAssignmentService.ListFormationAssignmentsForObjectID(scenarioTransactionCtx, formationFromDB.ID, participantId)
+	for participantID := range initialParticipants {
+		pendingAsyncAssignments, nerr := s.formationAssignmentService.ListFormationAssignmentsForObjectID(scenarioTransactionCtx, formationFromDB.ID, participantID)
 		err = nerr
 		if err != nil {
-			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, participantId)
+			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, participantID)
 		}
 
 		if len(pendingAsyncAssignments) == 0 {
 			log.C(ctx).Infof("There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationFromDB.ID, objectType, objectID, formationFromDB.ID)
-			err = s.unassign(scenarioTransactionCtx, tnt, participantId, objectType, formationFromDB)
+			err = s.unassign(scenarioTransactionCtx, tnt, participantID, objectType, formationFromDB)
 			if err != nil {
 				return nil, errors.Wrapf(err, "while unassigning from formation")
 			}
