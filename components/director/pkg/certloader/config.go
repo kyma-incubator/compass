@@ -10,3 +10,10 @@ type Config struct {
 	ExtSvcClientCertCertKey string `envconfig:"APP_EXT_SVC_CLIENT_CERT_KEY"`
 	ExtSvcClientCertKeyKey  string `envconfig:"APP_EXT_SVC_CLIENT_KEY_KEY"`
 }
+
+// KeysConfig holds keys configuration available for the key loader
+type KeysConfig struct {
+	KeysSecret  string `envconfig:"APP_KEYS_SECRET"`
+	KeysPublic  string `envconfig:"APP_KEYS_PUBLIC"`
+	KeysPrivate string `envconfig:"APP_KEYS_PRIVATE"`
+}
