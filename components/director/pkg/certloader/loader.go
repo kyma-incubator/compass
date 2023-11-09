@@ -3,6 +3,7 @@ package certloader
 import (
 	"context"
 	"crypto/tls"
+	"github.com/kyma-incubator/compass/components/director/pkg/key"
 	"sync"
 	"time"
 
@@ -21,6 +22,13 @@ import (
 
 const certsListLoaderCorrelationID = "cert-loader-id"
 
+type CredentialType string
+
+const (
+	KeysCredential        CredentialType = "KeysCredentials"
+	CertificateCredential CredentialType = "CertificateCredentials"
+)
+
 // Loader provide mechanism to load certificate data into in-memory storage
 type Loader interface {
 	Run(ctx context.Context)
@@ -35,32 +43,41 @@ type Manager interface {
 
 type certificateLoader struct {
 	config            Config
+	keysConfig        KeysConfig
 	certCache         *certificateCache
-	secretManagers    []Manager
-	secretNames       []string
+	keyCache          *keyCache
+	secretManagers    map[string]Manager
+	secretNamesTypes  map[string]CredentialType
 	reconnectInterval time.Duration
 }
 
 // NewCertificateLoader creates new certificate loader which is responsible to watch a secret containing client certificate
 // and update in-memory cache with that certificate if there is any change
-func NewCertificateLoader(config Config, certCache *certificateCache, secretManagers []Manager, secretNames []string, reconnectInterval time.Duration) Loader {
+func NewCertificateLoader(config Config, keysConfig KeysConfig, certCache *certificateCache, keysCache *keyCache, secretManagers map[string]Manager, secretNames map[string]CredentialType, reconnectInterval time.Duration) Loader {
 	return &certificateLoader{
 		config:            config,
+		keysConfig:        keysConfig,
 		certCache:         certCache,
+		keyCache:          keysCache,
 		secretManagers:    secretManagers,
-		secretNames:       secretNames,
+		secretNamesTypes:  secretNames,
 		reconnectInterval: reconnectInterval,
 	}
 }
 
 // StartCertLoader prepares and run certificate loader goroutine
-func StartCertLoader(ctx context.Context, certLoaderConfig Config) (Cache, error) {
+func StartCertLoader(ctx context.Context, certLoaderConfig Config, keysLoaderConfig KeysConfig) (Cache, error) {
 	parsedCertSecret, err := namespacedname.Parse(certLoaderConfig.ExternalClientCertSecret)
 	if err != nil {
 		return nil, err
 	}
 
 	parsedExtSvcCertSecret, err := namespacedname.Parse(certLoaderConfig.ExtSvcClientCertSecret)
+	if err != nil {
+		return nil, err
+	}
+
+	parsedKeysSecret, err := namespacedname.Parse(keysLoaderConfig.KeysSecret)
 	if err != nil {
 		return nil, err
 	}
@@ -72,10 +89,19 @@ func StartCertLoader(ctx context.Context, certLoaderConfig Config) (Cache, error
 	}
 
 	certCache := NewCertificateCache()
-	secretManagers := []Manager{k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace), k8sClientSet.CoreV1().Secrets(parsedExtSvcCertSecret.Namespace)}
-	secretNames := []string{parsedCertSecret.Name, parsedExtSvcCertSecret.Name}
+	keysCache := NewKeyCache()
+	secretManagers := map[string]Manager{
+		parsedCertSecret.Namespace:       k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace),
+		parsedExtSvcCertSecret.Namespace: k8sClientSet.CoreV1().Secrets(parsedExtSvcCertSecret.Namespace),
+		parsedKeysSecret.Namespace:       k8sClientSet.CoreV1().Secrets(parsedKeysSecret.Namespace),
+	}
+	secretNames := map[string]CredentialType{
+		parsedCertSecret.Name:       CertificateCredential,
+		parsedExtSvcCertSecret.Name: CertificateCredential,
+		parsedKeysSecret.Name:       KeysCredential,
+	}
 
-	certLoader := NewCertificateLoader(certLoaderConfig, certCache, secretManagers, secretNames, time.Second)
+	certLoader := NewCertificateLoader(certLoaderConfig, keysLoaderConfig, certCache, keysCache, secretManagers, secretNames, time.Second)
 	go certLoader.Run(ctx)
 
 	return certCache, nil
@@ -101,14 +127,14 @@ func (cl *certificateLoader) startKubeWatch(ctx context.Context) {
 		log.C(ctx).Info("Starting certificate watchers for secret changes...")
 
 		wg := &sync.WaitGroup{}
-		for idx, manager := range cl.secretManagers {
+		for name, manager := range cl.secretManagers {
 			wg.Add(1)
 
-			go func(manager Manager, idx int) {
+			go func(manager Manager, name string) {
 				defer wg.Done()
 
 				watcher, err := manager.Watch(ctx, metav1.ListOptions{
-					FieldSelector: "metadata.name=" + cl.secretNames[idx],
+					FieldSelector: "metadata.name=" + name,
 					Watch:         true,
 				})
 
@@ -119,19 +145,20 @@ func (cl *certificateLoader) startKubeWatch(ctx context.Context) {
 				}
 				log.C(ctx).Info("Waiting for certificate secret events...")
 
-				cl.processEvents(ctx, watcher.ResultChan(), cl.secretNames[idx])
+				credentialType := cl.secretNamesTypes[name]
+				cl.processEvents(ctx, watcher.ResultChan(), name, credentialType)
 
 				// Cleanup any allocated resources
 				watcher.Stop()
 				time.Sleep(cl.reconnectInterval)
-			}(manager, idx)
+			}(manager, name)
 		}
 
 		wg.Wait()
 	}
 }
 
-func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan watch.Event, secretName string) {
+func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan watch.Event, secretName string, credentialType CredentialType) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -144,22 +171,35 @@ func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan wa
 			case watch.Added:
 				fallthrough
 			case watch.Modified:
-				log.C(ctx).Info("Updating the cache with certificate data...")
+				log.C(ctx).Infof("Updating the cache with %s data...", credentialType)
 				secret, ok := ev.Object.(*v1.Secret)
 				if !ok {
 					log.C(ctx).Error("Unexpected error: object is not secret. Try again")
 					continue
 				}
-				tlsCert, err := parseCertificate(ctx, secret.Data, cl.config)
-				if err != nil {
-					log.C(ctx).WithError(err).Error("Fail during certificate parsing")
+				if credentialType == CertificateCredential {
+					tlsCert, err := parseCertificate(ctx, secret.Data, cl.config)
+					if err != nil {
+						log.C(ctx).WithError(err).Error("Fail during certificate parsing")
+					}
+					cl.certCache.put(secretName, tlsCert)
+				} else {
+					keys, err := parseKeys(ctx, secret.Data, cl.keysConfig)
+					if err != nil {
+						log.C(ctx).WithError(err).Error("Fail during keys parsing")
+					}
+					cl.keyCache.put(secretName, keys)
 				}
-				cl.certCache.put(secretName, tlsCert)
 			case watch.Deleted:
-				log.C(ctx).Info("Removing certificate secret data from cache...")
-				cl.certCache.put(secretName, nil)
+				log.C(ctx).Info("Removing %s secret data from cache...", credentialType)
+
+				if credentialType == CertificateCredential {
+					cl.certCache.put(secretName, nil)
+				} else {
+					cl.keyCache.put(secretName, nil)
+				}
 			case watch.Error:
-				log.C(ctx).Error("Error event is received, stop certificate secret watcher and try again...")
+				log.C(ctx).Errorf("Error event is received, stop %s secret watcher and try again...", credentialType)
 				return
 			}
 		}
@@ -183,4 +223,16 @@ func parseCertificate(ctx context.Context, secretData map[string][]byte, config 
 	}
 
 	return nil, errors.New("There is no certificate data provided")
+}
+
+func parseKeys(ctx context.Context, secretData map[string][]byte, config KeysConfig) (*KeyStore, error) {
+	log.C(ctx).Info("Parsing provided certificate data...")
+	publicKeyBytes, existsPublicKey := secretData[config.KeysPublic]
+	privateKeyBytes, existsPrivateKey := secretData[config.KeysPrivate]
+
+	if existsPublicKey && existsPrivateKey {
+		return key.ParseKeysBytes(publicKeyBytes, privateKeyBytes)
+	}
+
+	return nil, errors.New("There is no public/private key data provided")
 }
