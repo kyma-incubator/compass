@@ -890,8 +890,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 
 	initialAssignmentsClones := make([]*model.FormationAssignment, 0, len(initialAssignmentsData))
+	initialParticipants := make(map[string]bool, len(initialAssignmentsData)*2)
 	for _, ia := range initialAssignmentsData {
 		initialAssignmentsClones = append(initialAssignmentsClones, ia.Clone())
+		initialParticipants[ia.Source] = true
+		initialParticipants[ia.Target] = true
 	}
 
 	// Flag that is used to determine whether to revert the changes made in the transaction below or not.
@@ -1012,17 +1015,19 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	scenarioTransactionCtx := persistence.SaveToContext(ctx, scenarioTx)
 	defer s.transact.RollbackUnlessCommitted(scenarioTransactionCtx, scenarioTx)
 
-	pendingAsyncAssignments, nerr := s.formationAssignmentService.ListFormationAssignmentsForObjectID(scenarioTransactionCtx, formationFromDB.ID, objectID)
-	err = nerr
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
-	}
-
-	if len(pendingAsyncAssignments) == 0 {
-		log.C(ctx).Infof("There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationFromDB.ID, objectType, objectID, formationFromDB.ID)
-		err = s.unassign(scenarioTransactionCtx, tnt, objectID, objectType, formationFromDB)
+	for participantId := range initialParticipants {
+		pendingAsyncAssignments, nerr := s.formationAssignmentService.ListFormationAssignmentsForObjectID(scenarioTransactionCtx, formationFromDB.ID, participantId)
+		err = nerr
 		if err != nil {
-			return nil, errors.Wrapf(err, "while unassigning from formation")
+			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, participantId)
+		}
+
+		if len(pendingAsyncAssignments) == 0 {
+			log.C(ctx).Infof("There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationFromDB.ID, objectType, objectID, formationFromDB.ID)
+			err = s.unassign(scenarioTransactionCtx, tnt, participantId, objectType, formationFromDB)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while unassigning from formation")
+			}
 		}
 	}
 
