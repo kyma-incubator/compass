@@ -438,22 +438,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			destinationCredentialsConfig := fmt.Sprintf("{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"%s\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"}}}}", basicDestinationURLFromCreds)
 			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
-					app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil},
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
-				},
-				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: str.Ptr(destinationDetailsConfig)},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
-				},
-			}
-			assertFormationAssignmentsWithDestinationConfig(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID, app2.ID, app1.ID)
-			// The aggregated formation status is IN_PROGRESS because of the FAs, but the Formation state should be READY
-			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-			require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
-			require.Empty(t, formation.Error)
-
-			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {
 					app2.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr(destinationCredentialsConfig)},
 					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
 				},
@@ -463,7 +447,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				},
 			}
 
-			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID)
+			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID, eventuallyTimeoutForDestinations, eventuallyTickForDestinations)
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 			t.Logf("Assert formation assignment notifications for %s operation...", assignOperation)
@@ -532,12 +516,11 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			destinationConsumerWithInstanceToken := token.GetClientCredentialsToken(t, ctx, consumerTokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationConsumerWithInstanceClaimKey)
 
 			t.Log("Assert destinations and destination certificates are created...")
-			assertNoAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, noAuthDestinationURL, "", destinationProviderToken)
-			assertBasicDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, basicDestinationName, basicDestinationURLFromCreds+basicDestinationURLPath, testDestinationInstanceID, destinationProviderWithInstanceToken)
-			assertSAMLAssertionDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationName, samlAssertionDestinationCertName, samlAssertionDestinationURL, app2BaseURL, testDestinationInstanceID, destinationConsumerWithInstanceToken)
-			assertClientCertAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationName, clientCertAuthDestinationCertName, clientCertAuthDestinationURL, "", destinationConsumerToken)
-			assertDestinationCertificate(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, testDestinationInstanceID, destinationConsumerWithInstanceToken)
-			assertDestinationCertificate(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "", destinationConsumerToken)
+			assertNoAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, noAuthDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken)
+			assertBasicDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, basicDestinationName, basicDestinationURLFromCreds+basicDestinationURLPath, testDestinationInstanceID, conf.TestProviderSubaccountID, destinationProviderWithInstanceToken, 1)
+			consumerUserTokenHeader := token.GetUserToken(t, ctx, consumerTokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
+			assertSAMLAssertionDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationName, samlAssertionDestinationCertName, samlAssertionDestinationURL, app2BaseURL, testDestinationInstanceID, conf.TestConsumerSubaccountID, destinationConsumerWithInstanceToken, consumerUserTokenHeader, map[string]bool{samlAssertionDestinationCertName + directordestinationcreator.JavaKeyStoreFileExtension: true})
+			assertClientCertAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationName, clientCertAuthDestinationCertName, clientCertAuthDestinationURL, "", conf.TestConsumerSubaccountID, destinationConsumerToken, map[string]bool{clientCertAuthDestinationCertName + directordestinationcreator.JavaKeyStoreFileExtension: true})
 			t.Log("Destinations and destination certificates have been successfully created")
 
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -552,7 +535,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			unassignDuration := time.Since(unassignStartTime)
 
 			// assert the intermediate FA state only if the unassign operation duration is within the fixed tenant mapping async delay
-			if unassignDuration < time.Second*time.Duration(conf.TenantMappingAsyncResponseDelay) {
+			if unassignDuration < time.Millisecond*time.Duration(conf.TenantMappingAsyncResponseDelay) {
 				expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 					app1.ID: {
 						app2.ID: fixtures.AssignmentState{State: "DELETING", Config: nil},
@@ -571,10 +554,10 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			}
 
 			t.Logf("Assert destinations and destination certificates are deleted as part of the unassign operation...")
-			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, "", destinationProviderToken)
-			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, basicDestinationName, testDestinationInstanceID, destinationProviderWithInstanceToken)
-			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationName, testDestinationInstanceID, destinationConsumerWithInstanceToken)
-			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationName, "", destinationConsumerToken)
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, destinationProviderToken)
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, basicDestinationName, destinationProviderWithInstanceToken)
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationName, destinationConsumerWithInstanceToken)
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationName, destinationConsumerToken)
 			assertNoDestinationCertificateIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, testDestinationInstanceID, destinationConsumerWithInstanceToken)
 			assertNoDestinationCertificateIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "", destinationConsumerToken)
 			t.Logf("Destinations and destination certificates are successfully deleted as part of the unassign operation")
@@ -584,7 +567,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
 				},
 			}
-			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignmentsBySourceID)
+			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignmentsBySourceID, eventuallyTimeoutForDestinations, eventuallyTickForDestinations)
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 			t.Logf("Assert formation assignment notifications for %s operation of the first app...", unassignOperation)

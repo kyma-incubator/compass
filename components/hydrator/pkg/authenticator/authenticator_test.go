@@ -38,12 +38,12 @@ func TestInitFromEnv(t *testing.T) {
 	authenticator2PrefixTrimmed := "prefix2!"
 	trustedIssuers := []authenticator.TrustedIssuer{
 		{
-			DomainURL:   authenticatorDomain,
-			ScopePrefix: authenticatorPrefix,
+			DomainURL:     authenticatorDomain,
+			ScopePrefixes: []string{authenticatorPrefix, authenticator2Prefix},
 		},
 		{
-			DomainURL:   authenticator2Domain,
-			ScopePrefix: authenticator2Prefix,
+			DomainURL:     authenticator2Domain,
+			ScopePrefixes: []string{authenticatorPrefix, authenticator2Prefix},
 		},
 	}
 	clientIDSufixes := []string{authenticatorPrefixTrimmed, authenticator2PrefixTrimmed}
@@ -59,8 +59,10 @@ func TestInitFromEnv(t *testing.T) {
 					Key:   "test-unique-key",
 					Value: "test-value",
 				},
-				TenantAttribute: authenticator.Attribute{
-					Key: "test-tenant-key",
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key: "test-tenant-key",
+					},
 				},
 				IdentityAttribute: authenticator.Attribute{
 					Key: "test-identity-key",
@@ -99,11 +101,11 @@ func TestInitFromEnv(t *testing.T) {
 		authenticatorPrefix2 := "prefix!2"
 		trustedIssuers2 := []authenticator.TrustedIssuer{
 			{
-				DomainURL:   authenticatorDomain2,
-				ScopePrefix: authenticatorPrefix2,
+				DomainURL:     authenticatorDomain2,
+				ScopePrefixes: []string{authenticatorPrefix, authenticatorPrefix2},
 			},
 		}
-		clientIDSufixes2 := []string{authenticatorPrefix2}
+		clientIDSufixes2 := []string{authenticatorPrefixTrimmed, authenticatorPrefix2}
 
 		expectedAuthenticator1 := authenticator.Config{
 			Name:           "TEST_AUTHN1",
@@ -113,8 +115,10 @@ func TestInitFromEnv(t *testing.T) {
 					Key:   "test-unique-key",
 					Value: "test-value",
 				},
-				TenantAttribute: authenticator.Attribute{
-					Key: "test-tenant-key",
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key: "test-tenant-key",
+					},
 				},
 				IdentityAttribute: authenticator.Attribute{
 					Key: "test-identity-key",
@@ -132,8 +136,10 @@ func TestInitFromEnv(t *testing.T) {
 					Key:   "test-unique-key",
 					Value: "test-value",
 				},
-				TenantAttribute: authenticator.Attribute{
-					Key: "test-tenant-key",
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key: "test-tenant-key",
+					},
 				},
 				IdentityAttribute: authenticator.Attribute{
 					Key: "test-identity-key",
@@ -189,8 +195,8 @@ func TestInitFromEnv(t *testing.T) {
 		authenticatorPrefix2 := "prefix!2."
 		trustedIssuers2 := []authenticator.TrustedIssuer{
 			{
-				DomainURL:   authenticatorDomain2,
-				ScopePrefix: authenticatorPrefix2,
+				DomainURL:     authenticatorDomain2,
+				ScopePrefixes: []string{authenticatorPrefix2},
 			},
 		}
 
@@ -202,8 +208,10 @@ func TestInitFromEnv(t *testing.T) {
 					Key:   "test-unique-key",
 					Value: "test-value",
 				},
-				TenantAttribute: authenticator.Attribute{
-					Key: "test-tenant-key",
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key: "test-tenant-key",
+					},
 				},
 				IdentityAttribute: authenticator.Attribute{
 					Key: "test-identity-key",
@@ -221,8 +229,10 @@ func TestInitFromEnv(t *testing.T) {
 					Key:   "test-unique-key",
 					Value: "test-value",
 				},
-				TenantAttribute: authenticator.Attribute{
-					Key: "test-tenant-key",
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key: "test-tenant-key",
+					},
 				},
 				IdentityAttribute: authenticator.Attribute{
 					Key: "test-identity-key",
@@ -287,8 +297,10 @@ func TestInitFromEnv(t *testing.T) {
 					Key:   "test-unique-key",
 					Value: "test-value",
 				},
-				TenantAttribute: authenticator.Attribute{
-					Key: "",
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key: "",
+					},
 				},
 				IdentityAttribute: authenticator.Attribute{
 					Key: "",
@@ -330,8 +342,10 @@ func TestInitFromEnv(t *testing.T) {
 					Key:   "test-unique-key",
 					Value: "",
 				},
-				TenantAttribute: authenticator.Attribute{
-					Key: "test-tenant-key",
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key: "test-tenant-key",
+					},
 				},
 				IdentityAttribute: authenticator.Attribute{
 					Key: "test-identity-key",
@@ -373,8 +387,10 @@ func TestInitFromEnv(t *testing.T) {
 					Key:   "test-unique-key",
 					Value: "test-value",
 				},
-				TenantAttribute: authenticator.Attribute{
-					Key: "test-tenant-key",
+				TenantsAttribute: []authenticator.TenantAttribute{
+					{
+						Key: "test-tenant-key",
+					},
 				},
 				IdentityAttribute: authenticator.Attribute{
 					Key: "test-identity-key",

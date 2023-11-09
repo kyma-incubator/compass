@@ -584,6 +584,7 @@ input BusinessTenantMappingInput {
 	type: String!
 	provider: String!
 	licenseType: String
+	customerId: String
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -1737,7 +1738,7 @@ type Mutation {
 	**Examples**
 	- [update application template](examples/update-application-template/update-application-template.graphql)
 	"""
-	updateApplicationTemplate(id: ID!, in: ApplicationTemplateUpdateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
+	updateApplicationTemplate(id: ID!, override: Boolean, in: ApplicationTemplateUpdateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
 	"""
 	**Examples**
 	- [delete application template](examples/delete-application-template/delete-application-template.graphql)

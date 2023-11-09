@@ -21,47 +21,50 @@ import (
 )
 
 const (
-	absoluteDocURL         = "http://config.com/open-resource-discovery/v1/documents/example1"
-	ordDocURI              = "/open-resource-discovery/v1/documents/example1"
-	proxyURL               = "http://proxy.com:8080"
-	baseURL                = "http://test.com:8080"
-	baseURL2               = "http://second.com"
-	customWebhookConfigURL = "http://custom.com/config/endpoint"
-	packageORDID           = "ns:package:PACKAGE_ID:v1"
-	productORDID           = "sap:product:id:"
-	globalProductORDID     = "sap:product:SAPCloudPlatform:"
-	product2ORDID          = "ns:product:id2:"
-	bundleORDID            = "ns:consumptionBundle:BUNDLE_ID:v1"
-	secondBundleORDID      = "ns:consumptionBundle:BUNDLE_ID:v2"
-	vendorORDID            = "sap:vendor:SAP:"
-	vendor2ORDID           = "partner:vendor:SAP:"
-	api1ORDID              = "ns:apiResource:API_ID:v2"
-	api2ORDID              = "ns:apiResource:API_ID2:v1"
-	event1ORDID            = "ns:eventResource:EVENT_ID:v1"
-	event2ORDID            = "ns2:eventResource:EVENT_ID:v1"
-	entityType1ORDID       = "ns:entityType:ENTITYTYPE_ID:v1"
-	entityType2ORDID       = "ns2:entityType:ENTITYTYPE_ID:v1"
-	capability1ORDID       = "sap.foo.bar:capability:fieldExtensibility:v1"
-	capability2ORDID       = "sap2.foo.bar:capability:fieldExtensibility:v1"
+	absoluteDocURL              = "http://config.com/open-resource-discovery/v1/documents/example1"
+	ordDocURI                   = "/open-resource-discovery/v1/documents/example1"
+	proxyURL                    = "http://proxy.com:8080"
+	baseURL                     = "http://test.com:8080"
+	baseURL2                    = "http://second.com"
+	customWebhookConfigURL      = "http://custom.com/config/endpoint"
+	packageORDID                = "ns:package:PACKAGE_ID:v1"
+	productORDID                = "sap:product:id:"
+	globalProductORDID          = "sap:product:SAPCloudPlatform:"
+	product2ORDID               = "ns:product:id2:"
+	bundleORDID                 = "ns:consumptionBundle:BUNDLE_ID:v1"
+	secondBundleORDID           = "ns:consumptionBundle:BUNDLE_ID:v2"
+	vendorORDID                 = "sap:vendor:SAP:"
+	vendor2ORDID                = "partner:vendor:SAP:"
+	api1ORDID                   = "ns:apiResource:API_ID:v2"
+	api2ORDID                   = "ns:apiResource:API_ID2:v1"
+	event1ORDID                 = "ns:eventResource:EVENT_ID:v1"
+	event2ORDID                 = "ns2:eventResource:EVENT_ID:v1"
+	entityType1ORDID            = "ns:entityType:ENTITYTYPE_ID:v1"
+	entityType2ORDID            = "ns2:entityType:ENTITYTYPE_ID:v1"
+	capability1ORDID            = "sap.foo.bar:capability:fieldExtensibility:v1"
+	capability2ORDID            = "sap2.foo.bar:capability:fieldExtensibility:v1"
+	integrationDependency1ORDID = "sap.foo.bar:integrationDependency:CustomerOrder:v1"
+	integrationDependency2ORDID = "sap2.foo.bar:integrationDependency:CustomerOrder:v1"
 
-	whID             = "testWh"
-	tenantID         = "testTenant"
-	externalTenantID = "externalTestTenant"
-	packageID        = "testPkg"
-	vendorID         = "testVendor"
-	vendorID2        = "testVendor2"
-	productID        = "testProduct"
-	bundleID         = "testBndl"
-	api1ID           = "testAPI1"
-	api2ID           = "testAPI2"
-	event1ID         = "testEvent1"
-	event2ID         = "testEvent2"
-	capability1ID    = "testCapability1"
-	capability2ID    = "testCapability2"
-	tombstoneID      = "testTs"
-	localTenantID    = "localTenantID"
-	webhookID        = "webhookID"
-	localID          = "localID"
+	whID                     = "testWh"
+	tenantID                 = "testTenant"
+	externalTenantID         = "externalTestTenant"
+	packageID                = "testPkg"
+	vendorID                 = "testVendor"
+	vendorID2                = "testVendor2"
+	productID                = "testProduct"
+	bundleID                 = "testBndl"
+	api1ID                   = "testAPI1"
+	api2ID                   = "testAPI2"
+	event1ID                 = "testEvent1"
+	event2ID                 = "testEvent2"
+	capability1ID            = "testCapability1"
+	capability2ID            = "testCapability2"
+	integrationDependency1ID = "testIntegrationDependency1"
+	integrationDependency2ID = "testIntegrationDependency2"
+	tombstoneID              = "testTs"
+	localTenantID            = "localTenantID"
+	webhookID                = "webhookID"
 
 	api1spec1ID       = "api1spec1ID"
 	api1spec2ID       = "api1spec2ID"
@@ -86,13 +89,14 @@ const (
 
 	applicationTypeLabelValue = "customType"
 
-	entityTypeID     = "entity-type-id"
-	ordID            = "com.compass.v1"
-	level            = "aggregate"
-	title            = "BusinessPartner"
-	publicVisibility = "public"
-	products         = `["sap:product:S4HANA_OD:"]`
-	releaseStatus    = "active"
+	entityTypeID        = "entity-type-id"
+	entityTypeMappingID = "entity-type-mapping-id"
+	ordID               = "com.compass.v1"
+	level               = "aggregate"
+	title               = "BusinessPartner"
+	publicVisibility    = "public"
+	products            = `["sap:product:S4HANA_OD:"]`
+	releaseStatus       = "active"
 )
 
 var (
@@ -215,7 +219,7 @@ var (
         }
       ]`)
 
-	apiResourceLinksFormat = removeWhitespace(`[
+	resourceLinksFormat = removeWhitespace(`[
         {
           "type": "console",
           "url": "https://example.com/shell/discover"
@@ -236,6 +240,46 @@ var (
         }
       ]`)
 
+	apiAPIModelSelectors = removeWhitespace(`[
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonRead"
+		},
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonUpdate"
+		},
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonCreate"
+		}
+	  ]`)
+
+	apiEntityTypeTargets = removeWhitespace(`[
+		{
+		  "ordId": "sap.odm:entityType:WorkforcePerson:v1"
+		},
+		{
+		  "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v1"
+		}
+	  ]`)
+
+	eventAPIModelSelectors = removeWhitespace(`[
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/components/messages/sap_odm_finance_costobject_CostCenter_Created_v1/payload"
+		}
+	  ]`)
+
+	eventEntityTypeTargets = removeWhitespace(`[
+		{
+		  "ordId": "sap.odm:entityType:CostCenter:v1"
+		},
+		{
+		  "correlationId": "sap.s4:csnEntity:CostCenter_v1"
+		}
+	  ]`)
+
 	boolPtr = true
 
 	apisFromDB = map[string]*model.APIDefinition{
@@ -250,6 +294,12 @@ var (
 
 	capabilitiesFromDB = map[string]*model.Capability{
 		capability1ORDID: fixCapabilitiesWithHash()[0],
+		capability2ORDID: fixCapabilitiesWithHash()[1],
+	}
+
+	integrationDependenciesFromDB = map[string]*model.IntegrationDependency{
+		integrationDependency1ORDID: fixIntegrationDependenciesWithHash()[0],
+		integrationDependency2ORDID: fixIntegrationDependenciesWithHash()[1],
 	}
 
 	pkgsFromDB = map[string]*model.Package{
@@ -283,6 +333,7 @@ var (
 	versionDeprecated      = false
 	versionDeprecatedSince = "v1.0"
 	versionForRemoval      = false
+	mandatoryTrue          = true
 
 	documentationLabels = removeWhitespace(`{
         "Some Aspect": ["Markdown Documentation [with links](#)", "With multiple values"]
@@ -304,6 +355,10 @@ func fixResourceHashesForDocument(doc *ord.Document) map[string]uint64 {
 		result[*resource.OrdID] = hash
 	}
 	for _, resource := range doc.Capabilities {
+		hash, _ := ord.HashObject(resource)
+		result[*resource.OrdID] = hash
+	}
+	for _, resource := range doc.IntegrationDependencies {
 		hash, _ := ord.HashObject(resource)
 		result[*resource.OrdID] = hash
 	}
@@ -424,6 +479,11 @@ func sanitizeResources(doc *ord.Document) {
 	doc.Capabilities[0].Labels = json.RawMessage(mergedLabels)
 	doc.Capabilities[1].Tags = json.RawMessage(`["testTag","capabilityTestTag"]`)
 	doc.Capabilities[1].Labels = json.RawMessage(mergedLabels)
+
+	doc.IntegrationDependencies[0].Tags = json.RawMessage(`["testTag","integrationDependencyTestTag"]`)
+	doc.IntegrationDependencies[0].Labels = json.RawMessage(mergedLabels)
+	doc.IntegrationDependencies[1].Tags = json.RawMessage(`["testTag","integrationDependencyTestTag"]`)
+	doc.IntegrationDependencies[1].Labels = json.RawMessage(mergedLabels)
 }
 
 func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
@@ -505,7 +565,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Tags:                                    json.RawMessage(`["apiTestTag"]`),
 				Countries:                               json.RawMessage(`["BG","US"]`),
 				Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
-				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, providedBaseURL)),
+				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(resourceLinksFormat, providedBaseURL)),
 				ReleaseStatus:                           str.Ptr("active"),
 				SunsetDate:                              nil,
 				Successors:                              nil,
@@ -561,6 +621,12 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						DefaultTargetURL: "https://exmaple.com/test/v1",
 					},
 				},
+				EntityTypeMappings: []*model.EntityTypeMappingInput{
+					{
+						APIModelSelectors: json.RawMessage(apiAPIModelSelectors),
+						EntityTypeTargets: json.RawMessage(apiEntityTypeTargets),
+					},
+				},
 				VersionInput: &model.VersionInput{
 					Value: "2.1.2",
 				},
@@ -580,7 +646,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Tags:                                    json.RawMessage(`["ZGWSAMPLE"]`),
 				Countries:                               json.RawMessage(`["BR"]`),
 				Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
-				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, providedBaseURL)),
+				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(resourceLinksFormat, providedBaseURL)),
 				ReleaseStatus:                           str.Ptr("deprecated"),
 				SunsetDate:                              str.Ptr("2020-12-08T15:47:04+0000"),
 				Successors:                              json.RawMessage(fmt.Sprintf(`["%s"]`, api1ORDID)),
@@ -597,6 +663,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				CustomImplementationStandard:            nil,
 				CustomImplementationStandardDescription: nil,
 				LastUpdate:                              str.Ptr("2022-01-26T15:47:04+00:00"),
+				DeprecationDate:                         str.Ptr("2020-11-08T15:47:04+0000"),
 				ResourceDefinitions: []*model.APIResourceDefinition{
 					{
 						Type:      "edmx",
@@ -640,6 +707,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				SystemInstanceAware:                     &boolPtr,
 				ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 				Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				EventResourceLinks:                      json.RawMessage(fmt.Sprintf(resourceLinksFormat, providedBaseURL)),
 				Tags:                                    json.RawMessage(`["eventTestTag"]`),
 				Countries:                               json.RawMessage(`["BG","US"]`),
 				ReleaseStatus:                           str.Ptr("active"),
@@ -674,6 +742,12 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						BundleOrdID: bundleORDID,
 					},
 				},
+				EntityTypeMappings: []*model.EntityTypeMappingInput{
+					{
+						APIModelSelectors: json.RawMessage(eventAPIModelSelectors),
+						EntityTypeTargets: json.RawMessage(eventEntityTypeTargets),
+					},
+				},
 				VersionInput: &model.VersionInput{
 					Value: "2.1.2",
 				},
@@ -688,6 +762,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				SystemInstanceAware: &boolPtr,
 				ChangeLogEntries:    json.RawMessage(changeLogEntries),
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				EventResourceLinks:  json.RawMessage(fmt.Sprintf(resourceLinksFormat, providedBaseURL)),
 				Tags:                json.RawMessage(`["eventTestTag2"]`),
 				Countries:           json.RawMessage(`["BR"]`),
 				ReleaseStatus:       str.Ptr("deprecated"),
@@ -702,6 +777,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
 				LastUpdate:          str.Ptr("2022-01-26T15:47:04+00:00"),
+				DeprecationDate:     str.Ptr("2020-11-08T15:47:04+0000"),
 				ResourceDefinitions: []*model.EventResourceDefinition{
 					{
 						Type:      "asyncapi-v2",
@@ -727,7 +803,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		EntityTypes: []*model.EntityTypeInput{
 			{
 				OrdID:               entityType1ORDID,
-				LocalID:             localID,
+				LocalTenantID:       localTenantID,
 				Level:               "aggregate",
 				Title:               "Business Partner",
 				ShortDescription:    str.Ptr("short desc"),
@@ -741,6 +817,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				PolicyLevel:         str.Ptr(policyLevel),
 				ReleaseStatus:       "active",
 				SunsetDate:          nil,
+				DeprecationDate:     nil,
 				Successors:          nil,
 				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
 				Tags:                json.RawMessage(`["eventTestTag"]`),
@@ -752,7 +829,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 			},
 			{
 				OrdID:               entityType2ORDID,
-				LocalID:             localID,
+				LocalTenantID:       localTenantID,
 				Level:               "aggregate",
 				Title:               "Workforce Person",
 				ShortDescription:    str.Ptr("short desc"),
@@ -766,6 +843,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				PolicyLevel:         str.Ptr(policyLevel),
 				ReleaseStatus:       "active",
 				SunsetDate:          nil,
+				DeprecationDate:     nil,
 				Successors:          nil,
 				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
 				Tags:                json.RawMessage(`["eventTestTag"]`),
@@ -782,12 +860,13 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				LocalTenantID:       str.Ptr(localTenantID),
 				OrdPackageID:        str.Ptr(packageORDID),
 				Name:                "Capability Title",
-				Description:         str.Ptr("CapabilityDescription"),
+				Description:         str.Ptr("Capability Description"),
 				Type:                "sap.mdo:mdi-capability:v1",
 				CustomType:          nil,
 				ShortDescription:    str.Ptr("Capability short description"),
 				SystemInstanceAware: &boolPtr,
 				Tags:                json.RawMessage(`["capabilityTestTag"]`),
+				RelatedEntityTypes:  json.RawMessage(`["ns:entityType:ENTITYTYPE_ID:v1"]`),
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				ReleaseStatus:       str.Ptr("active"),
 				Labels:              json.RawMessage(labels),
@@ -815,12 +894,13 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				LocalTenantID:       str.Ptr(localTenantID),
 				OrdPackageID:        str.Ptr(packageORDID),
 				Name:                "Capability Title 2",
-				Description:         str.Ptr("CapabilityDescription"),
+				Description:         str.Ptr("Capability Description"),
 				Type:                "sap.mdo:mdi-capability:v1",
 				CustomType:          nil,
 				ShortDescription:    str.Ptr("Capability short description"),
 				SystemInstanceAware: &boolPtr,
 				Tags:                json.RawMessage(`["capabilityTestTag"]`),
+				RelatedEntityTypes:  json.RawMessage(`["ns:entityType:ENTITYTYPE_ID:v1"]`),
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				ReleaseStatus:       str.Ptr("active"),
 				Labels:              json.RawMessage(labels),
@@ -838,6 +918,56 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						},
 					},
 				},
+				DocumentationLabels: json.RawMessage(documentLabels),
+				VersionInput: &model.VersionInput{
+					Value: "1.1.1",
+				},
+			},
+		},
+		IntegrationDependencies: []*model.IntegrationDependencyInput{
+			{
+				OrdID:            str.Ptr(integrationDependency1ORDID),
+				LocalTenantID:    str.Ptr(localTenantID),
+				OrdPackageID:     str.Ptr(packageORDID),
+				Title:            "Integration Dependency Title",
+				Description:      str.Ptr("Integration Dependency Description"),
+				ShortDescription: str.Ptr("Integration Dependency short description"),
+				Tags:             json.RawMessage(`["integrationDependencyTestTag"]`),
+				Links:            json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				Mandatory:        &mandatoryTrue,
+				Aspects: []*model.AspectInput{
+					{
+						Title:                    "Aspect Title",
+						Description:              str.Ptr("Description of Aspect"),
+						Mandatory:                &mandatoryTrue,
+						SupportMultipleProviders: &mandatoryTrue,
+						APIResources:             json.RawMessage("[]"),
+						EventResources:           json.RawMessage("[]"),
+					},
+				},
+				ReleaseStatus:       str.Ptr("active"),
+				Labels:              json.RawMessage(labels),
+				Visibility:          "public",
+				DocumentationLabels: json.RawMessage(documentLabels),
+				VersionInput: &model.VersionInput{
+					Value: "2.1.2",
+				},
+				LastUpdate: str.Ptr("2023-01-26T15:47:04+00:00"),
+			},
+			{
+				OrdID:               str.Ptr(integrationDependency2ORDID),
+				LocalTenantID:       str.Ptr(localTenantID),
+				OrdPackageID:        str.Ptr(packageORDID),
+				Title:               "Integration Dependency Title 2",
+				Description:         str.Ptr("Integration Dependency Description"),
+				ShortDescription:    str.Ptr("Integration Dependency short description"),
+				Tags:                json.RawMessage(`["integrationDependencyTestTag"]`),
+				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				Mandatory:           &mandatoryTrue,
+				ReleaseStatus:       str.Ptr("active"),
+				Labels:              json.RawMessage(labels),
+				Visibility:          "public",
+				LastUpdate:          str.Ptr("2022-01-26T15:47:04+00:00"),
 				DocumentationLabels: json.RawMessage(documentLabels),
 				VersionInput: &model.VersionInput{
 					Value: "1.1.1",
@@ -1228,6 +1358,18 @@ func fixCapabilitiesWithHash() []*model.Capability {
 	return capabilities
 }
 
+func fixIntegrationDependenciesWithHash() []*model.IntegrationDependency {
+	integrationDependencies := fixIntegrationDependencies()
+
+	for idx, integrationDependency := range integrationDependencies {
+		ordID := str.PtrStrToStr(integrationDependency.OrdID)
+		hash := str.Ptr(strconv.FormatUint(resourceHashes[ordID], 10))
+		integrationDependency.ResourceHash = hash
+		integrationDependency.Version.Value = fixORDDocument().IntegrationDependencies[idx].VersionInput.Value
+	}
+	return integrationDependencies
+}
+
 func fixPackagesWithHash() []*model.Package {
 	pkgs := fixPackages()
 
@@ -1266,7 +1408,7 @@ func fixAPIs() []*model.APIDefinition {
 			Tags:                                    json.RawMessage(`["testTag","apiTestTag"]`),
 			Countries:                               json.RawMessage(`["BG","EN","US"]`),
 			Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
-			APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseURL)),
+			APIResourceLinks:                        json.RawMessage(fmt.Sprintf(resourceLinksFormat, baseURL)),
 			ReleaseStatus:                           str.Ptr("active"),
 			ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 			Labels:                                  json.RawMessage(mergedLabels),
@@ -1300,7 +1442,7 @@ func fixAPIs() []*model.APIDefinition {
 			Tags:                                    json.RawMessage(`["testTag","ZGWSAMPLE"]`),
 			Countries:                               json.RawMessage(`["BG","EN","BR"]`),
 			Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
-			APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseURL)),
+			APIResourceLinks:                        json.RawMessage(fmt.Sprintf(resourceLinksFormat, baseURL)),
 			ReleaseStatus:                           str.Ptr("deprecated"),
 			SunsetDate:                              str.Ptr("2020-12-08T15:47:04+0000"),
 			Successors:                              json.RawMessage(fmt.Sprintf(`["%s"]`, api1ORDID)),
@@ -1444,6 +1586,7 @@ func fixCapabilities() []*model.Capability {
 			ShortDescription:    str.Ptr("Capability short description"),
 			SystemInstanceAware: nil,
 			Tags:                json.RawMessage(`["testTag","capabilityTestTag"]`),
+			RelatedEntityTypes:  json.RawMessage(`["ns:entityType:ENTITYTYPE_ID:v1"]`),
 			Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
 			ReleaseStatus:       str.Ptr("active"),
 			Labels:              json.RawMessage(mergedLabels),
@@ -1470,6 +1613,7 @@ func fixCapabilities() []*model.Capability {
 			ShortDescription:    str.Ptr("Capability short description"),
 			SystemInstanceAware: nil,
 			Tags:                json.RawMessage(`["testTag","capabilityTestTag"]`),
+			RelatedEntityTypes:  json.RawMessage(`["ns:entityType:ENTITYTYPE_ID:v1"]`),
 			Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
 			ReleaseStatus:       str.Ptr("active"),
 			Labels:              json.RawMessage(mergedLabels),
@@ -1636,6 +1780,59 @@ func fixTombstones() []*model.Tombstone {
 	}
 }
 
+func fixIntegrationDependencies() []*model.IntegrationDependency {
+	return []*model.IntegrationDependency{
+		{
+			ApplicationID:    &appID,
+			PackageID:        str.Ptr(packageORDID),
+			Title:            "Integration Dependency Title",
+			Description:      str.Ptr("Integration Dependency Description"),
+			OrdID:            str.Ptr(integrationDependency1ORDID),
+			LocalTenantID:    nil,
+			ShortDescription: str.Ptr("Integration Dependency short description"),
+			Tags:             json.RawMessage(`["testTag","integrationDependencyTestTag"]`),
+			Links:            json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			Mandatory:        &mandatoryTrue,
+			ReleaseStatus:    str.Ptr("active"),
+			Labels:           json.RawMessage(mergedLabels),
+			Visibility:       "public",
+			LastUpdate:       str.Ptr("2023-01-25T15:47:04+00:00"),
+			Version: &model.Version{
+				Value: "2.1.3",
+			},
+			DocumentationLabels: json.RawMessage(documentLabels),
+			BaseEntity: &model.BaseEntity{
+				ID:    integrationDependency1ID,
+				Ready: true,
+			},
+		},
+		{
+			ApplicationID:    &appID,
+			PackageID:        str.Ptr(packageORDID),
+			Title:            "Integration Dependency Title 2",
+			Description:      str.Ptr("Integration Dependency Description"),
+			OrdID:            str.Ptr(integrationDependency2ORDID),
+			LocalTenantID:    nil,
+			ShortDescription: str.Ptr("Integration Dependency short description"),
+			Tags:             json.RawMessage(`["testTag","integrationDependencyTestTag"]`),
+			Links:            json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			Mandatory:        &mandatoryTrue,
+			ReleaseStatus:    str.Ptr("active"),
+			Labels:           json.RawMessage(mergedLabels),
+			Visibility:       "public",
+			LastUpdate:       str.Ptr("2022-01-25T15:47:04+00:00"),
+			Version: &model.Version{
+				Value: "1.1.0",
+			},
+			DocumentationLabels: json.RawMessage(documentLabels),
+			BaseEntity: &model.BaseEntity{
+				ID:    integrationDependency2ID,
+				Ready: true,
+			},
+		},
+	}
+}
+
 func fixEntityTypes() []*model.EntityType {
 	return []*model.EntityType{
 		{
@@ -1649,8 +1846,8 @@ func fixEntityTypes() []*model.EntityType {
 			},
 			ApplicationID:                &appID,
 			ApplicationTemplateVersionID: &appTemplateVersionID,
-			OrdID:                        ordID,
-			LocalID:                      localID,
+			OrdID:                        entityType1ORDID,
+			LocalTenantID:                localTenantID,
 			CorrelationIDs:               json.RawMessage(correlationIDs),
 			Level:                        level,
 			Title:                        title,
@@ -1675,6 +1872,53 @@ func fixEntityTypes() []*model.EntityType {
 			ResourceHash:                 &resourceHash,
 		},
 	}
+}
+
+func fixEntityTypeMappingInput(apiID, eventID string) *model.EntityTypeMappingInput {
+	entityTypeMapping := &model.EntityTypeMappingInput{}
+	if apiID != "" {
+		entityTypeMapping.APIModelSelectors = json.RawMessage(apiAPIModelSelectors)
+		entityTypeMapping.EntityTypeTargets = json.RawMessage(apiEntityTypeTargets)
+	} else if eventID != "" {
+		entityTypeMapping.APIModelSelectors = json.RawMessage(eventAPIModelSelectors)
+		entityTypeMapping.EntityTypeTargets = json.RawMessage(eventEntityTypeTargets)
+	}
+	return entityTypeMapping
+}
+
+func fixEntityTypeMappingInputsEmpty() []*model.EntityTypeMappingInput {
+	return []*model.EntityTypeMappingInput{}
+}
+
+func fixEntityTypeMapping(apiID, eventID string) *model.EntityTypeMapping {
+	entityTypeMapping := &model.EntityTypeMapping{
+		BaseEntity: &model.BaseEntity{
+			ID:        entityTypeMappingID,
+			Ready:     true,
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+			Error:     nil,
+		},
+	}
+	if apiID != "" {
+		entityTypeMapping.APIDefinitionID = &apiID
+		entityTypeMapping.APIModelSelectors = json.RawMessage(apiAPIModelSelectors)
+		entityTypeMapping.EntityTypeTargets = json.RawMessage(apiEntityTypeTargets)
+	} else if eventID != "" {
+		entityTypeMapping.EventDefinitionID = &eventID
+		entityTypeMapping.APIModelSelectors = json.RawMessage(eventAPIModelSelectors)
+		entityTypeMapping.EntityTypeTargets = json.RawMessage(eventEntityTypeTargets)
+	}
+	return entityTypeMapping
+}
+
+func fixEntityTypeMappings(apiID, eventID string) []*model.EntityTypeMapping {
+	return []*model.EntityTypeMapping{fixEntityTypeMapping(apiID, eventID)}
+}
+
+func fixEntityTypeMappingsEmpty() []*model.EntityTypeMapping {
+	return []*model.EntityTypeMapping{}
 }
 
 func fixVersionModel(value string, deprecated bool, deprecatedSince string, forRemoval bool) *model.Version {

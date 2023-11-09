@@ -44,7 +44,8 @@ import (
 )
 
 var (
-	testLicenseType = "LICENSETYPE"
+	testLicenseType    = "LICENSETYPE"
+	customerIDLabelKey = "customerId"
 )
 
 func TestRegionalOnboardingHandler(t *testing.T) {
@@ -544,7 +545,10 @@ const (
 		"parentGuid": "%s",
 		"sourceGlobalAccountGUID": "%s",
 		"targetGlobalAccountGUID": "%s",
-		"region": "%s"
+		"region": "%s",
+		"labels": {
+			"customerId": ["%s"]
+		}
 	},
 	"globalAccountGUID": "%s",
 	"type": "Subaccount"
@@ -664,8 +668,8 @@ func TestMoveSubaccounts(t *testing.T) {
 	runtime1 := registerRuntime(t, ctx, runtimeNames[0], subaccount1.InternalID)
 	runtime2 := registerRuntime(t, ctx, runtimeNames[1], subaccount2.InternalID)
 
-	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
-	event2 := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
+	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion, "")
+	event2 := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion, "")
 	setMockTenantEvents(t, genMockPage(strings.Join([]string{event1, event2}, ","), 2), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
@@ -784,7 +788,7 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput.Name, subaccountExternalTenants[0], defaultTenantID)
 	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountExternalTenants[0], defaultTenantID)
 
-	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountExternalTenants[0], subaccountSubdomain, testLicenseType, directoryParentGUID, defaultTenantID, defaultTenantID, gaExternalTenantIDs[0], subaccountRegion)
+	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountExternalTenants[0], subaccountSubdomain, testLicenseType, directoryParentGUID, defaultTenantID, defaultTenantID, gaExternalTenantIDs[0], subaccountRegion, "")
 	setMockTenantEvents(t, genMockPage(strings.Join([]string{event1}, ","), 1), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
@@ -823,6 +827,7 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 	gaExternalTenant := "ga1"
 	subdomain1 := "ga1"
 	region := "local"
+	customerIDs := []string{"customerID1", "customerID2"}
 
 	subaccountNames := []string{"sub1", "sub2"}
 	subaccountExternalTenants := []string{"sub1", "sub2"}
@@ -860,11 +865,10 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 	// cleanup global account and subaccounts
 	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(subaccountExternalTenants, gaExternalTenant))
 
-	deleteEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, "", "", subaccountDeleteSubPath)
+	deleteEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, "", "", subaccountDeleteSubPath, customerIDs[0])
 	setMockTenantEvents(t, genMockPage(deleteEvent, 1), subaccountDeleteSubPath)
 	defer cleanupMockEvents(t, subaccountDeleteSubPath)
-
-	createEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, "", "", subaccountCreateSubPath)
+	createEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, "", "", subaccountCreateSubPath, customerIDs[1])
 	setMockTenantEvents(t, genMockPage(createEvent, 1), subaccountCreateSubPath)
 	defer cleanupMockEvents(t, subaccountCreateSubPath)
 
@@ -884,6 +888,10 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 		}
 		assert.NoError(t, err)
 		assert.Equal(t, subaccountNames[1], *subaccount2.Name)
+
+		customerIDLabel, exists := subaccount2.Labels[customerIDLabelKey]
+		assert.True(t, exists)
+		assert.Equal(t, customerIDs[1], customerIDLabel)
 
 		parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountParent)
 		if parent == nil {
@@ -926,7 +934,7 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 
 	defer cleanupTenants(t, ctx, directorInternalGQLClient, []string{subaccountExternalTenant, gaExternalTenantIDs[1]})
 
-	event := genMockSubaccountMoveEvent(subaccountExternalTenant, subaccountName, subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
+	event := genMockSubaccountMoveEvent(subaccountExternalTenant, subaccountName, subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion, "")
 	setMockTenantEvents(t, genMockPage(event, 1), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
@@ -987,8 +995,8 @@ func genMockGlobalAccountEvent(guid, displayName, customerID, subdomain, license
 	return fmt.Sprintf(mockGlobalAccountEventPattern, guid, displayName, customerID, subdomain, licenseType)
 }
 
-func genMockSubaccountMoveEvent(guid, displayName, subdomain, licenseType, directoryParentGUID, parentGuid, sourceGlobalAccountGuid, targetGlobalAccountGuid, region string) string {
-	return fmt.Sprintf(mockSubaccountEventPattern, guid, displayName, subdomain, licenseType, directoryParentGUID, sourceGlobalAccountGuid, targetGlobalAccountGuid, region, parentGuid)
+func genMockSubaccountMoveEvent(guid, displayName, subdomain, licenseType, directoryParentGUID, parentGuid, sourceGlobalAccountGuid, targetGlobalAccountGuid, region, customerID string) string {
+	return fmt.Sprintf(mockSubaccountEventPattern, guid, displayName, subdomain, licenseType, directoryParentGUID, sourceGlobalAccountGuid, targetGlobalAccountGuid, region, customerID, parentGuid)
 }
 
 func genMockPage(events string, numEvents int) string {

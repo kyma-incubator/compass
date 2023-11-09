@@ -3,6 +3,8 @@ package tests
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/authenticator"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	directorcfg "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
@@ -19,12 +21,15 @@ type DirectorConfig struct {
 	InfoUrl                                     string `envconfig:"APP_INFO_API_ENDPOINT,default=https://director.kyma.local/v1/info"`
 	DefaultNormalizationPrefix                  string `envconfig:"default=mp-"`
 	GatewayOauth                                string
+	CompassExternalMTLSGatewayURL               string `envconfig:"APP_COMPASS_EXTERNAL_MTLS_GATEWAY_URL"`
+	DirectorUserNameAuthenticatorURL            string `envconfig:"APP_DIRECTOR_USER_NAME_AUTHENTICATOR_URL"`
 	DirectorExternalCertSecuredURL              string
 	DirectorExternalCertFAAsyncStatusURL        string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL"`
 	DirectorExternalCertFAAsyncResetStatusURL   string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL"`
 	DirectorExternalCertFormationAsyncStatusURL string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL"`
 	SkipSSLValidation                           bool   `envconfig:"default=false"`
 	ConsumerID                                  string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
+	UsernameAuthCfg                             authenticator.Config
 	CertLoaderConfig                            certloader.Config
 	certprovider.ExternalCertProviderConfig
 	SubscriptionConfig                                 subscription.Config
@@ -72,5 +77,4 @@ type DirectorConfig struct {
 	CertSubjectMappingResyncInterval                   time.Duration `envconfig:"APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL"`
 	ApplicationTemplateProductLabel                    string        `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
 	DefaultTenantRegion                                string        `envconfig:"APP_DEFAULT_TENANT_REGION,default=eu-1"`
-	DirectorExternalCertURL                            string        `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_URL"`
 }

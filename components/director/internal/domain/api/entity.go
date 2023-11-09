@@ -49,6 +49,7 @@ type Entity struct {
 	CorrelationIDs                          sql.NullString `db:"correlation_ids"`
 	Direction                               sql.NullString `db:"direction"`
 	LastUpdate                              sql.NullString `db:"last_update"`
+	DeprecationDate                         sql.NullString `db:"deprecation_date"`
 
 	*repo.BaseEntity
 	version.Version

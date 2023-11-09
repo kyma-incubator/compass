@@ -516,7 +516,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	updateOutput := graphql.ApplicationTemplate{}
 
 	// WHEN
-	t.Log("Update application template")
+	t.Log("Update application template without override and one webhook")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateAppTemplateRequest, &updateOutput)
 	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": newName, "displayName": "{{display-name}}"}
 
@@ -541,6 +541,141 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	assert.True(t, time.Time(updateOutput.UpdatedAt).Add(1*time.Second).After(time.Time(updateOutput.CreatedAt)))
 
 	example.SaveExample(t, updateAppTemplateRequest.Query(), "update application template")
+}
+
+func TestUpdateApplicationTemplateWithOverride(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	appTemplateName := fixtures.CreateAppTemplateName("app-template")
+	newName := fixtures.CreateAppTemplateName("new-app-template")
+	newDescription := "new description"
+	newAppCreateInput := &graphql.ApplicationJSONInput{
+		Name:           "new-app-create-input",
+		Description:    ptr.String("{{name}} {{display-name}}"),
+		HealthCheckURL: ptr.String("http://url.valid"),
+	}
+
+	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
+
+	t.Log("Create application template")
+	appTmplInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
+	appTmplInput.Webhooks = []*graphql.WebhookInput{{
+		Type: graphql.WebhookTypeConfigurationChanged,
+		URL:  ptr.String("http://url.com"),
+	}}
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
+	require.NoError(t, err)
+	require.NotEmpty(t, appTemplate.ID)
+	require.NotEmpty(t, appTemplate.Webhooks)
+
+	newAppCreateInput.Labels = map[string]interface{}{"displayName": "{{display-name}}"}
+	appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
+	appTemplateInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+		{
+			Name: "name",
+		},
+		{
+			Name: "display-name",
+		},
+	}
+	appTemplateInput.Webhooks = []*graphql.WebhookInput{}
+
+	appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
+	require.NoError(t, err)
+
+	updateAppTemplateRequest := fixtures.FixUpdateApplicationTemplateWithOverrideRequest(appTemplate.ID, true, appTemplateGQL)
+	updateOutput := graphql.ApplicationTemplate{}
+
+	// WHEN
+	t.Log("Update application template with override and empty list of webhooks")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateAppTemplateRequest, &updateOutput)
+	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": newName, "displayName": "{{display-name}}"}
+
+	require.NoError(t, err)
+	require.NotEmpty(t, updateOutput.ID)
+	require.Empty(t, updateOutput.Webhooks)
+
+	//THEN
+	t.Log("Check if application template was updated")
+	assertions.AssertUpdateApplicationTemplate(t, appTemplateInput, updateOutput)
+
+	// Our graphql Timestamp object parses data to RFC3339 which does not include milliseconds. This may cause the test
+	// to fail if it executes in less than a second. We add 1 second in order to insure a difference in the timestamps
+	assert.True(t, time.Time(updateOutput.UpdatedAt).Add(1*time.Second).After(time.Time(updateOutput.CreatedAt)))
+}
+
+func TestUpdateApplicationTemplateWithoutOverrideWithoutWebhooks(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	appTemplateName := fixtures.CreateAppTemplateName("app-template")
+	newName := fixtures.CreateAppTemplateName("new-app-template")
+	newDescription := "new description"
+	newAppCreateInput := &graphql.ApplicationJSONInput{
+		Name:           "new-app-create-input",
+		Description:    ptr.String("{{name}} {{display-name}}"),
+		HealthCheckURL: ptr.String("http://url.valid"),
+	}
+
+	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
+
+	t.Log("Create application template")
+	appTmplInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
+	appTmplInput.Webhooks = []*graphql.WebhookInput{{
+		Type: graphql.WebhookTypeConfigurationChanged,
+		URL:  ptr.String("http://url.com"),
+	}}
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
+	require.NoError(t, err)
+	require.NotEmpty(t, appTemplate.ID)
+	require.NotEmpty(t, appTemplate.Webhooks)
+	oldWebhokCount := len(appTemplate.Webhooks)
+	oldWebhokID := appTemplate.Webhooks[0].ID
+	oldWebhokUrl := appTemplate.Webhooks[0].URL
+
+	newAppCreateInput.Labels = map[string]interface{}{"displayName": "{{display-name}}"}
+	appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
+	appTemplateInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+		{
+			Name: "name",
+		},
+		{
+			Name: "display-name",
+		},
+	}
+	appTemplateInput.Webhooks = []*graphql.WebhookInput{}
+
+	appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
+	require.NoError(t, err)
+
+	updateAppTemplateRequest := fixtures.FixUpdateApplicationTemplateRequest(appTemplate.ID, appTemplateGQL)
+	updateOutput := graphql.ApplicationTemplate{}
+
+	// WHEN
+	t.Log("Update application template without override and empty list of webhooks")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateAppTemplateRequest, &updateOutput)
+	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": newName, "displayName": "{{display-name}}"}
+
+	require.NoError(t, err)
+	require.NotEmpty(t, updateOutput.ID)
+
+	require.NotEmpty(t, updateOutput.Webhooks)
+	newWebhokCount := len(updateOutput.Webhooks)
+	newWebhokID := updateOutput.Webhooks[0].ID
+	newWebhokUrl := updateOutput.Webhooks[0].URL
+
+	require.Equal(t, oldWebhokCount, newWebhokCount)
+	require.Equal(t, oldWebhokID, newWebhokID)
+	require.Equal(t, oldWebhokUrl, newWebhokUrl)
+
+	//THEN
+	t.Log("Check if application template was updated")
+	assertions.AssertUpdateApplicationTemplate(t, appTemplateInput, updateOutput)
+
+	// Our graphql Timestamp object parses data to RFC3339 which does not include milliseconds. This may cause the test
+	// to fail if it executes in less than a second. We add 1 second in order to insure a difference in the timestamps
+	assert.True(t, time.Time(updateOutput.UpdatedAt).Add(1*time.Second).After(time.Time(updateOutput.CreatedAt)))
 }
 
 func TestUpdateLabelsOfApplicationTemplateFailsWithInsufficientScopes(t *testing.T) {

@@ -538,7 +538,7 @@ type ComplexityRoot struct {
 		UpdateAPIDefinition                          func(childComplexity int, id string, in APIDefinitionInput) int
 		UpdateAPIDefinitionForApplication            func(childComplexity int, id string, in APIDefinitionInput) int
 		UpdateApplication                            func(childComplexity int, id string, in ApplicationUpdateInput) int
-		UpdateApplicationTemplate                    func(childComplexity int, id string, in ApplicationTemplateUpdateInput) int
+		UpdateApplicationTemplate                    func(childComplexity int, id string, override *bool, in ApplicationTemplateUpdateInput) int
 		UpdateBundle                                 func(childComplexity int, id string, in BundleUpdateInput) int
 		UpdateBundleInstanceAuth                     func(childComplexity int, id string, bundleID string, in BundleInstanceAuthUpdateInput) int
 		UpdateCertificateSubjectMapping              func(childComplexity int, id string, in CertificateSubjectMappingInput) int
@@ -832,7 +832,7 @@ type MutationResolver interface {
 	UnpairApplication(ctx context.Context, id string, mode *OperationMode) (*Application, error)
 	CreateApplicationTemplate(ctx context.Context, in ApplicationTemplateInput) (*ApplicationTemplate, error)
 	RegisterApplicationFromTemplate(ctx context.Context, in ApplicationFromTemplateInput) (*Application, error)
-	UpdateApplicationTemplate(ctx context.Context, id string, in ApplicationTemplateUpdateInput) (*ApplicationTemplate, error)
+	UpdateApplicationTemplate(ctx context.Context, id string, override *bool, in ApplicationTemplateUpdateInput) (*ApplicationTemplate, error)
 	DeleteApplicationTemplate(ctx context.Context, id string) (*ApplicationTemplate, error)
 	MergeApplications(ctx context.Context, destinationID string, sourceID string) (*Application, error)
 	RegisterRuntime(ctx context.Context, in RuntimeRegisterInput) (*Runtime, error)
@@ -3721,7 +3721,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateApplicationTemplate(childComplexity, args["id"].(string), args["in"].(ApplicationTemplateUpdateInput)), true
+		return e.complexity.Mutation.UpdateApplicationTemplate(childComplexity, args["id"].(string), args["override"].(*bool), args["in"].(ApplicationTemplateUpdateInput)), true
 
 	case "Mutation.updateBundle":
 		if e.complexity.Mutation.UpdateBundle == nil {
@@ -5795,6 +5795,7 @@ input BusinessTenantMappingInput {
 	type: String!
 	provider: String!
 	licenseType: String
+	customerId: String
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -6948,7 +6949,7 @@ type Mutation {
 	**Examples**
 	- [update application template](examples/update-application-template/update-application-template.graphql)
 	"""
-	updateApplicationTemplate(id: ID!, in: ApplicationTemplateUpdateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
+	updateApplicationTemplate(id: ID!, override: Boolean, in: ApplicationTemplateUpdateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
 	"""
 	**Examples**
 	- [delete application template](examples/delete-application-template/delete-application-template.graphql)
@@ -9333,7 +9334,15 @@ func (ec *executionContext) field_Mutation_updateApplicationTemplate_args(ctx co
 		}
 	}
 	args["id"] = arg0
-	var arg1 ApplicationTemplateUpdateInput
+	var arg1 *bool
+	if tmp, ok := rawArgs["override"]; ok {
+		arg1, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["override"] = arg1
+	var arg2 ApplicationTemplateUpdateInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
 			return ec.unmarshalNApplicationTemplateUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateUpdateInput(ctx, tmp)
@@ -9350,12 +9359,12 @@ func (ec *executionContext) field_Mutation_updateApplicationTemplate_args(ctx co
 			return nil, err
 		}
 		if data, ok := tmp.(ApplicationTemplateUpdateInput); ok {
-			arg1 = data
+			arg2 = data
 		} else {
 			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationTemplateUpdateInput`, tmp)
 		}
 	}
-	args["in"] = arg1
+	args["in"] = arg2
 	return args, nil
 }
 
@@ -20121,7 +20130,7 @@ func (ec *executionContext) _Mutation_updateApplicationTemplate(ctx context.Cont
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateApplicationTemplate(rctx, args["id"].(string), args["in"].(ApplicationTemplateUpdateInput))
+			return ec.resolvers.Mutation().UpdateApplicationTemplate(rctx, args["id"].(string), args["override"].(*bool), args["in"].(ApplicationTemplateUpdateInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updateApplicationTemplate")
@@ -33429,6 +33438,12 @@ func (ec *executionContext) unmarshalInputBusinessTenantMappingInput(ctx context
 		case "licenseType":
 			var err error
 			it.LicenseType, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "customerId":
+			var err error
+			it.CustomerID, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

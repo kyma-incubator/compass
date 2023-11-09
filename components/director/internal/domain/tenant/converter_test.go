@@ -120,6 +120,8 @@ func TestConverter_ToGraphQLInput(t *testing.T) {
 
 		// WHEN
 		in := newModelBusinessTenantMappingInput(names[0], subdomain, region, &licenseType)
+		in.CustomerID = testCustomerID
+
 		res := c.ToGraphQLInput(in)
 		expected := graphql.BusinessTenantMappingInput{
 			Name:           names[0],
@@ -130,6 +132,7 @@ func TestConverter_ToGraphQLInput(t *testing.T) {
 			Type:           string(tnt.Account),
 			Provider:       testProvider,
 			LicenseType:    str.Ptr(licenseType),
+			CustomerID:     testCustomerID,
 		}
 
 		// THEN
@@ -160,6 +163,16 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 				Region:         str.Ptr(region),
 				Type:           string(tnt.Account),
 				Provider:       testProvider,
+			},
+			{
+				Name:           names[1],
+				ExternalTenant: externalTenants[1],
+				Parent:         str.Ptr(parent),
+				Subdomain:      str.Ptr(subdomain),
+				Region:         str.Ptr(region),
+				Type:           string(tnt.Subaccount),
+				Provider:       testProvider,
+				CustomerID:     testCustomerID,
 			}}
 		res := c.MultipleInputFromGraphQL(in)
 		expected := []model.BusinessTenantMappingInput{
@@ -180,6 +193,16 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 				Region:         region,
 				Type:           string(tnt.Account),
 				Provider:       testProvider,
+			},
+			{
+				Name:           names[1],
+				ExternalTenant: externalTenants[1],
+				Parent:         parent,
+				Subdomain:      subdomain,
+				Region:         region,
+				Type:           string(tnt.Subaccount),
+				Provider:       testProvider,
+				CustomerID:     testCustomerID,
 			},
 		}
 

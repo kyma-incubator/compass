@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+
 	"k8s.io/utils/strings/slices"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -410,8 +412,8 @@ func fixConvertFAFromModel(formationAssignment *model.FormationAssignment) *webh
 		Target:      formationAssignment.Target,
 		TargetType:  formationAssignment.TargetType,
 		State:       formationAssignment.State,
-		Value:       string(formationAssignment.Value),
-		Error:       string(formationAssignment.Error),
+		Value:       str.Ptr(string(formationAssignment.Value)),
+		Error:       str.Ptr(string(formationAssignment.Error)),
 	}
 }
 
@@ -784,7 +786,7 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 	return []*webhookclient.FormationAssignmentNotificationRequest{request, requestReverse}, templateInput, templateInputReverse
 }
 
-func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation, lastFormationAssignmentState, lastFormationAssignmentConfig, tenantID string) *formationconstraint.NotificationStatusReturnedOperationDetails {
+func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation, lastFormationAssignmentState, lastFormationAssignmentConfig, tenantID string, notificationStatusReport *statusreport.NotificationStatusReport) *formationconstraint.NotificationStatusReturnedOperationDetails {
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
 		ResourceType:                         resourceType,
 		ResourceSubtype:                      resourceSubtype,
@@ -795,6 +797,7 @@ func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resou
 		ReverseFormationAssignment:           reverseFa,
 		LastFormationAssignmentState:         lastFormationAssignmentState,
 		LastFormationAssignmentConfiguration: lastFormationAssignmentConfig,
+		NotificationStatusReport:             notificationStatusReport,
 		Formation:                            formation,
 	}
 }
@@ -843,7 +846,7 @@ func unusedNotificationBuilder() *automock.NotificationBuilder {
 
 func convertFormationAssignmentFromModel(formationAssignment *model.FormationAssignment) *webhook.FormationAssignment {
 	if formationAssignment == nil {
-		return &webhook.FormationAssignment{Value: "\"\"", Error: "\"\""}
+		return &webhook.FormationAssignment{}
 	}
 	return &webhook.FormationAssignment{
 		ID:          formationAssignment.ID,
@@ -857,4 +860,16 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 		Value:       str.StringifyJSONRawMessage(formationAssignment.Value),
 		Error:       str.StringifyJSONRawMessage(formationAssignment.Error),
 	}
+}
+
+func fixNotificationStatusReport() *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(TestConfigValueRawJSON, readyState, "")
+}
+
+func fixNotificationStatusReportWithStateAndConfig(configuration json.RawMessage, state string) *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(configuration, state, "")
+}
+
+func fixNotificationStatusReportWithStateAndError(state, errorMessage string) *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(nil, state, errorMessage)
 }

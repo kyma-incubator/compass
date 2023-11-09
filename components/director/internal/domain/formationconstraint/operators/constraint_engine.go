@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 	"github.com/pkg/errors"
 )
 
@@ -44,7 +45,7 @@ type destinationService interface {
 
 //go:generate mockery --exported --name=destinationCreatorService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationCreatorService interface {
-	CreateCertificate(ctx context.Context, destinationsDetails []Destination, destinationAuthType destinationcreatorpkg.AuthType, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) (*CertificateData, error)
+	CreateCertificate(ctx context.Context, destinationsDetails []Destination, destinationAuthType destinationcreatorpkg.AuthType, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation, useSelfSignedCert bool) (*CertificateData, error)
 	EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *CertificateData) (json.RawMessage, error)
 	EnrichAssignmentConfigWithSAMLCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *CertificateData) (json.RawMessage, error)
 }
@@ -208,7 +209,7 @@ func (e *ConstraintEngine) EnforceConstraints(ctx context.Context, location form
 		}
 
 		operatorInput := operatorInputConstructor()
-		if err := formationconstraintpkg.ParseInputTemplate(mc.InputTemplate, details, operatorInput); err != nil {
+		if err := templatehelper.ParseTemplate(&mc.InputTemplate, details, operatorInput); err != nil {
 			log.C(ctx).Errorf("An error occurred while parsing input template for formation constraint %q: %s", mc.Name, err.Error())
 			errs = multierror.Append(errs, formationconstraint.ConstraintError{
 				ConstraintName: mc.Name,

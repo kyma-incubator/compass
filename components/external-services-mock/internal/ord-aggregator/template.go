@@ -121,7 +121,7 @@ const ordDocument = `{
       {
          "ordId":"ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1",
          "vendor":"sap:vendor:SAP:",
-         "localId":"BusinessPartner",
+         "localTenantId":"BusinessPartner",
          "level":"aggregate",
          "title":"ENTITYTYPE 1 TITLE",
          "shortDescription":"short desc",
@@ -427,6 +427,27 @@ const ordDocument = `{
                "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
             }
          ],
+         "entityTypeMappings":[
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "odata",
+                     "entitySetName": "A_OperationalAcctgDocItemCube"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:WorkforcePerson:v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:sap.odm.JobDetails_v1"
+                  }
+               ]
+            }
+         ],
          "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
          "version":"2.1.2"
 		 {{ .additionalProperties }}
@@ -586,6 +607,46 @@ const ordDocument = `{
             {
                "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
                "defaultEntryPoint":"https://exmaple.com/test/v1"
+            }
+         ],
+         "entityTypeMappings":[
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "odata",
+                     "entitySetName": "A_OperationalAcctgDocItemCube"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:WorkforcePerson:v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:sap.odm.JobDetails_v1"
+                  }
+               ]
+            },
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "odata",
+                     "entitySetName": "B_OperationalAcctgDocItemCube"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:WorkforcePerson:v2"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v2"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:sap.odm.JobDetails_v2"
+                  }
+               ]
             }
          ],
          "resourceDefinitions":[
@@ -764,6 +825,24 @@ const ordDocument = `{
                ]
             }
          ],
+         "entityTypeMappings":[
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "json-pointer",
+                     "jsonPointer": "#/components/messages/sap_odm_finance_costobject_CostCenter_Created_v1/payload"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:CostCenter:v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:CostCenter_v1"
+                  }
+               ]
+            }
+         ],         
          "partOfConsumptionBundles":[
             {
                "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1"
@@ -890,6 +969,41 @@ const ordDocument = `{
                "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1"
             }
          ],
+         "entityTypeMappings":[
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "json-pointer",
+                     "jsonPointer": "#/components/messages/sap_odm_finance_costobject_CostCenter_Created_v1/payload"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:CostCenter:v2"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:CostCenter_v2"
+                  }
+               ]
+            },
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "json-pointer",
+                     "jsonPointer": "#/components/messages/sap_odm_finance_costobject_CostCenter_Created_v2/payload"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:CostCenter:v2"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:CostCenter_v2"
+                  }
+               ]
+            }
+
+         ],         
          "resourceDefinitions":[
             {
                "type":"asyncapi-v2",
@@ -966,6 +1080,51 @@ const ordDocument = `{
                 "customType":"",
 				"customDescription":""
 			}
+          ]
+        }
+      ]
+    }
+  ],
+	"integrationDependencies": [
+    {
+      "ordId": "sap.s4:integrationDependency:subscriptionReplication:v2",
+      "version": "2.2.3",
+      "title": "INTEGRATION DEPENDENCY TITLE",
+      "shortDescription": "Short description of an integration dependency",
+      "description": "longer description of an integration dependency",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "correlationIds": [
+		 "sap.s4:communicationScenario:SAP_COM_123"
+      ],
+      "lastUpdate": "2023-08-03T10:14:26.941Z",
+      "visibility": "public",
+      "releaseStatus": "active",
+	  "mandatory": true,
+      "aspects": [
+        {
+          "title": "ASPECT TITLE",
+          "mandatory": true,
+          "eventResources": [
+            {
+              "ordId": "ns:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
+              "subset": [
+                {
+                  "eventType": "sap.billing.sb.Subscription.Created.v1"
+                },
+                {
+                  "eventType": "sap.billing.sb.Subscription.Updated.v1"
+                },
+                {
+                  "eventType": "sap.billing.sb.Subscription.Deleted.v1"
+                }
+              ]
+            }
+          ],
+		  "apiResources": [
+            {
+              "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2",
+              "minVersion": "2.3.0"
+            }
           ]
         }
       ]

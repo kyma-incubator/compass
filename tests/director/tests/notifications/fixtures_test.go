@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	jsonutils "github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -30,21 +31,25 @@ import (
 )
 
 const (
-	assignOperation              = "assign"
-	unassignOperation            = "unassign"
-	createFormationOperation     = "createFormation"
-	deleteFormationOperation     = "deleteFormation"
-	emptyParentCustomerID        = "" // in the respective tests, the used GA tenant does not have customer parent, thus we assert that it is empty
-	supportReset                 = true
-	doesNotSupportReset          = false
-	consumerType                 = "Integration System" // should be a valid consumer type
-	exceptionSystemType          = "exception-type"
-	eventuallyTimeout            = 60 * time.Second
-	eventuallyTick               = 2 * time.Second
-	readyAssignmentState         = "READY"
-	initialAssignmentState       = "INITIAL"
-	configPendingAssignmentState = "CONFIG_PENDING"
-	deletingAssignmentState      = "DELETING"
+	assignOperation                  = "assign"
+	unassignOperation                = "unassign"
+	createFormationOperation         = "createFormation"
+	deleteFormationOperation         = "deleteFormation"
+	emptyParentCustomerID            = "" // in the respective tests, the used GA tenant does not have customer parent, thus we assert that it is empty
+	supportReset                     = true
+	doesNotSupportReset              = false
+	consumerType                     = "Integration System" // should be a valid consumer type
+	exceptionSystemType              = "exception-type"
+	eventuallyTimeoutForDestinations = 60 * time.Second
+	eventuallyTickForDestinations    = 2 * time.Second
+	eventuallyTimeout                = 8 * time.Second
+	eventuallyTick                   = 50 * time.Millisecond
+	readyAssignmentState             = "READY"
+	initialAssignmentState           = "INITIAL"
+	configPendingAssignmentState     = "CONFIG_PENDING"
+	deletingAssignmentState          = "DELETING"
+	basicAuthType                    = "Basic"
+	samlAuthType                     = "SAML2.0"
 )
 
 var (
@@ -142,36 +147,7 @@ func validateDestinationCertData(t *testing.T, assignmentConfig *string, path st
 	return modifiedConfig
 }
 
-func assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, asyncStatusAPIProcessingDelay int64) {
-	t.Logf("Sleeping for %d seconds while the async formation assignment status is proccessed...", conf.TenantMappingAsyncResponseDelay+asyncStatusAPIProcessingDelay)
-	time.Sleep(time.Second * time.Duration(conf.TenantMappingAsyncResponseDelay+asyncStatusAPIProcessingDelay))
-	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
-	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
-	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
-
-	assignments := assignmentsPage.Data
-	for _, assignment := range assignments {
-		targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
-		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q and source %q", assignment.ID, assignment.Source)
-
-		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
-		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q, source %q and target %q", assignment.ID, assignment.Source, assignment.Target)
-		require.Equal(t, assignmentExpectation.State, assignment.State, "Assignment with ID: %q has different state than expected", assignment.ID)
-
-		require.Equal(t, str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error))
-
-		expectedAssignmentConfigStr := str.PtrStrToStr(assignmentExpectation.Config)
-		actualAssignmentConfigStr := str.PtrStrToStr(assignment.Configuration)
-		if expectedAssignmentConfigStr != "" && expectedAssignmentConfigStr != "\"\"" && actualAssignmentConfigStr != "" && actualAssignmentConfigStr != "\"\"" {
-			require.JSONEq(t, expectedAssignmentConfigStr, actualAssignmentConfigStr)
-			require.JSONEq(t, str.PtrStrToStr(assignmentExpectation.Config), actualAssignmentConfigStr)
-		} else {
-			require.Equal(t, expectedAssignmentConfigStr, actualAssignmentConfigStr)
-		}
-	}
-}
-
-func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
+func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, timeout, tick time.Duration) {
 	t.Logf("Asserting formation assignments with eventually...")
 	require.Eventually(t, func() (isOkay bool) {
 		t.Logf("Getting formation assignments...")
@@ -185,12 +161,12 @@ func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx co
 
 		assignments := assignmentsPage.Data
 		for _, assignment := range assignments {
-			targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
+			sourceAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
 			if !ok {
 				t.Logf("Could not find expectations for assignment with ID: %q and source ID: %q", assignment.ID, assignment.Source)
 				return
 			}
-			assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
+			assignmentExpectation, ok := sourceAssignmentsExpectations[assignment.Target]
 			if !ok {
 				t.Logf("Could not find expectations for assignment with ID: %q, source ID: %q and target ID: %q", assignment.ID, assignment.Source, assignment.Target)
 				return
@@ -199,11 +175,11 @@ func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx co
 				t.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
 				return
 			}
-			if isEqual := assertJSONStringEquality(t, assignmentExpectation.Error, assignment.Error); !isEqual {
+			if isEqual := jsonutils.AssertJSONStringEquality(t, assignmentExpectation.Error, assignment.Error); !isEqual {
 				t.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
 				return
 			}
-			if isEqual := assertJSONStringEquality(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
+			if isEqual := jsonutils.AssertJSONStringEquality(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
 				t.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
 				return
 			}
@@ -211,24 +187,7 @@ func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx co
 
 		t.Logf("Successfully asserted formation asssignments asynchronously")
 		return true
-	}, eventuallyTimeout, eventuallyTick)
-}
-
-func assertJSONStringEquality(t *testing.T, expectedValue, actualValue *string) bool {
-	expectedValueStr := str.PtrStrToStr(expectedValue)
-	actualValueStr := str.PtrStrToStr(actualValue)
-	if !isJSONStringEmpty(expectedValueStr) && !isJSONStringEmpty(actualValueStr) {
-		return assert.JSONEq(t, expectedValueStr, actualValueStr)
-	} else {
-		return assert.Equal(t, expectedValueStr, actualValueStr)
-	}
-}
-
-func isJSONStringEmpty(json string) bool {
-	if json != "" && json != "\"\"" {
-		return false
-	}
-	return true
+	}, timeout, tick)
 }
 
 func assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationID string, expectedFormationStatus graphql.FormationStatus) {
@@ -342,72 +301,96 @@ func resetShouldFailEndpointFromExternalSvcMock(t *testing.T, client *http.Clien
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-func assertNoDestinationIsFound(t *testing.T, client *clients.DestinationClient, serviceURL, destinationName, instanceID, token string) {
-	_ = client.GetDestinationByName(t, serviceURL, destinationName, instanceID, token, http.StatusNotFound)
+func assertNoDestinationIsFound(t *testing.T, client *clients.DestinationClient, serviceURL, destinationName, token string) {
+	_ = client.FindDestinationByName(t, serviceURL, destinationName, token, "", http.StatusNotFound)
 }
 
 func assertNoDestinationCertificateIsFound(t *testing.T, client *clients.DestinationClient, serviceURL, certificateName, instanceID, token string) {
 	_ = client.GetDestinationCertificateByName(t, serviceURL, certificateName, instanceID, token, http.StatusNotFound)
 }
 
-func assertNoAuthDestination(t *testing.T, client *clients.DestinationClient, serviceURL, noAuthDestinationName, noAuthDestinationURL, instanceID, token string) {
-	noAuthDestBytes := client.GetDestinationByName(t, serviceURL, noAuthDestinationName, instanceID, token, http.StatusOK)
-	var noAuthDest esmdestinationcreator.NoAuthenticationDestination
+func assertNoAuthDestination(t *testing.T, client *clients.DestinationClient, serviceURL, noAuthDestinationName, noAuthDestinationURL, instanceID, ownerSubaccountID, authToken string) {
+	noAuthDestBytes := client.FindDestinationByName(t, serviceURL, noAuthDestinationName, authToken, "", http.StatusOK)
+	var noAuthDest esmdestinationcreator.DestinationSvcNoAuthenticationDestResponse
 	err := json.Unmarshal(noAuthDestBytes, &noAuthDest)
 	require.NoError(t, err)
-	require.Equal(t, noAuthDestinationName, noAuthDest.Name)
-	require.Equal(t, directordestinationcreator.TypeHTTP, noAuthDest.Type)
-	require.Equal(t, noAuthDestinationURL, noAuthDest.URL)
-	require.Equal(t, directordestinationcreator.AuthTypeNoAuth, noAuthDest.Authentication)
-	require.Equal(t, directordestinationcreator.ProxyTypeInternet, noAuthDest.ProxyType)
+	require.Equal(t, ownerSubaccountID, noAuthDest.Owner.SubaccountID)
+	require.Equal(t, instanceID, noAuthDest.Owner.InstanceID)
+	require.Equal(t, noAuthDestinationName, noAuthDest.DestinationConfiguration.Name)
+	require.Equal(t, directordestinationcreator.TypeHTTP, noAuthDest.DestinationConfiguration.Type)
+	require.Equal(t, noAuthDestinationURL, noAuthDest.DestinationConfiguration.URL)
+	require.Equal(t, directordestinationcreator.AuthTypeNoAuth, noAuthDest.DestinationConfiguration.Authentication)
+	require.Equal(t, directordestinationcreator.ProxyTypeInternet, noAuthDest.DestinationConfiguration.ProxyType)
 }
 
-func assertBasicDestination(t *testing.T, client *clients.DestinationClient, serviceURL, basicDestinationName, basicDestinationURL, instanceID, token string) {
-	basicDestBytes := client.GetDestinationByName(t, serviceURL, basicDestinationName, instanceID, token, http.StatusOK)
-	var basicDest esmdestinationcreator.BasicDestination
+func assertBasicDestination(t *testing.T, client *clients.DestinationClient, serviceURL, basicDestinationName, basicDestinationURL, instanceID, ownerSubaccountID, authToken string, expectedNumberOfAuthTokens int) {
+	basicDestBytes := client.FindDestinationByName(t, serviceURL, basicDestinationName, authToken, "", http.StatusOK)
+	var basicDest esmdestinationcreator.DestinationSvcBasicDestResponse
 	err := json.Unmarshal(basicDestBytes, &basicDest)
 	require.NoError(t, err)
-	require.Equal(t, basicDestinationName, basicDest.Name)
-	require.Equal(t, directordestinationcreator.TypeHTTP, basicDest.Type)
-	require.Equal(t, basicDestinationURL, basicDest.URL)
-	require.Equal(t, directordestinationcreator.AuthTypeBasic, basicDest.Authentication)
-	require.Equal(t, directordestinationcreator.ProxyTypeInternet, basicDest.ProxyType)
+	require.Equal(t, ownerSubaccountID, basicDest.Owner.SubaccountID)
+	require.Equal(t, instanceID, basicDest.Owner.InstanceID)
+	require.Equal(t, basicDestinationName, basicDest.DestinationConfiguration.Name)
+	require.Equal(t, directordestinationcreator.TypeHTTP, basicDest.DestinationConfiguration.Type)
+	require.Equal(t, basicDestinationURL, basicDest.DestinationConfiguration.URL)
+	require.Equal(t, directordestinationcreator.AuthTypeBasic, basicDest.DestinationConfiguration.Authentication)
+	require.Equal(t, directordestinationcreator.ProxyTypeInternet, basicDest.DestinationConfiguration.ProxyType)
+
+	for i := 0; i < expectedNumberOfAuthTokens; i++ {
+		require.NotEmpty(t, basicDest.AuthTokens)
+		require.NotEmpty(t, basicDest.AuthTokens[i].Type)
+		require.Equal(t, basicAuthType, basicDest.AuthTokens[i].Type)
+		require.NotEmpty(t, basicDest.AuthTokens[i].Value)
+	}
 }
 
-func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationClient, serviceURL, samlAssertionDestinationName, samlAssertionCertName, samlAssertionDestinationURL, app1BaseURL, instanceID, token string) {
-	samlAssertionDestBytes := client.GetDestinationByName(t, serviceURL, samlAssertionDestinationName, instanceID, token, http.StatusOK)
-	var samlAssertionDest esmdestinationcreator.SAMLAssertionDestination
+func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationClient, serviceURL, samlAssertionDestinationName, samlAssertionCertName, samlAssertionDestinationURL, app1BaseURL, instanceID, ownerSubaccountID, authToken, userTokenHeader string, expectedCertNames map[string]bool) {
+	samlAssertionDestBytes := client.FindDestinationByName(t, serviceURL, samlAssertionDestinationName, authToken, userTokenHeader, http.StatusOK)
+	var samlAssertionDest esmdestinationcreator.DestinationSvcSAMLAssertionDestResponse
 	err := json.Unmarshal(samlAssertionDestBytes, &samlAssertionDest)
 	require.NoError(t, err)
-	require.Equal(t, samlAssertionDestinationName, samlAssertionDest.Name)
-	require.Equal(t, directordestinationcreator.TypeHTTP, samlAssertionDest.Type)
-	require.Equal(t, samlAssertionDestinationURL, samlAssertionDest.URL)
-	require.Equal(t, directordestinationcreator.AuthTypeSAMLAssertion, samlAssertionDest.Authentication)
-	require.Equal(t, directordestinationcreator.ProxyTypeInternet, samlAssertionDest.ProxyType)
-	require.Equal(t, app1BaseURL, samlAssertionDest.Audience)
-	require.Equal(t, samlAssertionCertName+directordestinationcreator.JavaKeyStoreFileExtension, samlAssertionDest.KeyStoreLocation)
+	require.Equal(t, ownerSubaccountID, samlAssertionDest.Owner.SubaccountID)
+	require.Equal(t, instanceID, samlAssertionDest.Owner.InstanceID)
+	require.Equal(t, samlAssertionDestinationName, samlAssertionDest.DestinationConfiguration.Name)
+	require.Equal(t, directordestinationcreator.TypeHTTP, samlAssertionDest.DestinationConfiguration.Type)
+	require.Equal(t, samlAssertionDestinationURL, samlAssertionDest.DestinationConfiguration.URL)
+	require.Equal(t, directordestinationcreator.AuthTypeSAMLAssertion, samlAssertionDest.DestinationConfiguration.Authentication)
+	require.Equal(t, directordestinationcreator.ProxyTypeInternet, samlAssertionDest.DestinationConfiguration.ProxyType)
+	require.Equal(t, app1BaseURL, samlAssertionDest.DestinationConfiguration.Audience)
+	require.Equal(t, samlAssertionCertName+directordestinationcreator.JavaKeyStoreFileExtension, samlAssertionDest.DestinationConfiguration.KeyStoreLocation)
+
+	require.Equal(t, len(expectedCertNames), len(samlAssertionDest.CertificateDetails))
+	for i := 0; i < len(expectedCertNames); i++ {
+		require.True(t, expectedCertNames[samlAssertionDest.CertificateDetails[i].Name])
+		require.NotEmpty(t, samlAssertionDest.CertificateDetails[i].Content)
+	}
+
+	require.NotEmpty(t, samlAssertionDest.AuthTokens)
+	for _, token := range samlAssertionDest.AuthTokens {
+		require.Equal(t, samlAuthType, token.Type)
+		require.NotEmpty(t, token.Value)
+	}
 }
 
-func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationClient, serviceURL, clientCertAuthDestinationName, clientCertAuthCertName, clientCertAuthDestinationURL, instanceID, token string) {
-	clientCertAuthDestBytes := client.GetDestinationByName(t, serviceURL, clientCertAuthDestinationName, instanceID, token, http.StatusOK)
-	var clientCertAuthDest esmdestinationcreator.ClientCertificateAuthenticationDestination
+func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationClient, serviceURL, clientCertAuthDestinationName, clientCertAuthCertName, clientCertAuthDestinationURL, instanceID, ownerSubaccountID, authToken string, expectedCertNames map[string]bool) {
+	clientCertAuthDestBytes := client.FindDestinationByName(t, serviceURL, clientCertAuthDestinationName, authToken, "", http.StatusOK)
+	var clientCertAuthDest esmdestinationcreator.DestinationSvcClientCertDestResponse
 	err := json.Unmarshal(clientCertAuthDestBytes, &clientCertAuthDest)
 	require.NoError(t, err)
-	require.Equal(t, clientCertAuthDestinationName, clientCertAuthDest.Name)
-	require.Equal(t, directordestinationcreator.TypeHTTP, clientCertAuthDest.Type)
-	require.Equal(t, clientCertAuthDestinationURL, clientCertAuthDest.URL)
-	require.Equal(t, directordestinationcreator.AuthTypeClientCertificate, clientCertAuthDest.Authentication)
-	require.Equal(t, directordestinationcreator.ProxyTypeInternet, clientCertAuthDest.ProxyType)
-	require.Equal(t, clientCertAuthCertName+directordestinationcreator.JavaKeyStoreFileExtension, clientCertAuthDest.KeyStoreLocation)
-}
+	require.Equal(t, ownerSubaccountID, clientCertAuthDest.Owner.SubaccountID)
+	require.Equal(t, instanceID, clientCertAuthDest.Owner.InstanceID)
+	require.Equal(t, clientCertAuthDestinationName, clientCertAuthDest.DestinationConfiguration.Name)
+	require.Equal(t, directordestinationcreator.TypeHTTP, clientCertAuthDest.DestinationConfiguration.Type)
+	require.Equal(t, clientCertAuthDestinationURL, clientCertAuthDest.DestinationConfiguration.URL)
+	require.Equal(t, directordestinationcreator.AuthTypeClientCertificate, clientCertAuthDest.DestinationConfiguration.Authentication)
+	require.Equal(t, directordestinationcreator.ProxyTypeInternet, clientCertAuthDest.DestinationConfiguration.ProxyType)
+	require.Equal(t, clientCertAuthCertName+directordestinationcreator.JavaKeyStoreFileExtension, clientCertAuthDest.DestinationConfiguration.KeyStoreLocation)
 
-func assertDestinationCertificate(t *testing.T, client *clients.DestinationClient, serviceURL, certificateName, instanceID, token string) {
-	certBytes := client.GetDestinationCertificateByName(t, serviceURL, certificateName, instanceID, token, http.StatusOK)
-	var destCertificate esmdestinationcreator.DestinationSvcCertificateResponse
-	err := json.Unmarshal(certBytes, &destCertificate)
-	require.NoError(t, err)
-	require.Equal(t, certificateName, destCertificate.Name)
-	require.NotEmpty(t, destCertificate.Content)
+	require.Equal(t, len(expectedCertNames), len(clientCertAuthDest.CertificateDetails))
+	for i := 0; i < len(expectedCertNames); i++ {
+		require.True(t, expectedCertNames[clientCertAuthDest.CertificateDetails[i].Name])
+		require.NotEmpty(t, clientCertAuthDest.CertificateDetails[i].Content)
+	}
 }
 
 func assertFormationAssignmentsNotificationWithItemsStructure(t *testing.T, notification gjson.Result, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID string) {
@@ -560,8 +543,8 @@ func assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDelet
 	require.Equal(t, formationID, notificationForFormationDetails.Get("id").String())
 	require.Equal(t, formationName, notificationForFormationDetails.Get("name").String())
 
-	t.Logf("Sleeping for %d seconds while the async formation status is proccessed...", conf.TenantMappingAsyncResponseDelay+3)
-	time.Sleep(time.Second * time.Duration(conf.TenantMappingAsyncResponseDelay+3))
+	t.Logf("Sleeping for %d milliseconds while the async formation status is proccessed...", conf.TenantMappingAsyncResponseDelay+250)
+	time.Sleep(time.Millisecond * time.Duration(conf.TenantMappingAsyncResponseDelay+250))
 
 	t.Log("Assert formation lifecycle notifications are successfully processed...")
 	formationPage := fixtures.ListFormationsWithinTenant(t, ctx, tenantID, certSecuredGraphQLClient)
