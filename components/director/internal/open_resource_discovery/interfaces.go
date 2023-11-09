@@ -2,6 +2,7 @@ package ord
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -224,6 +225,20 @@ type PackageProcessor interface {
 //go:generate mockery --name=EntityTypeProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityTypeProcessor interface {
 	Process(ctx context.Context, resourceType resource.Type, resourceID string, entityTypes []*model.EntityTypeInput, packagesFromDB []*model.Package, resourceHashes map[string]uint64) ([]*model.EntityType, error)
+}
+
+// EventProcessor is responsible for processing of event entities.
+//
+//go:generate mockery --name=EventProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type EventProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, events []*model.EventDefinitionInput, resourceHashes map[string]uint64) ([]*model.EventDefinition, []*processor.OrdFetchRequest, error)
+}
+
+// APIProcessor is responsible for processing of api entities.
+//
+//go:generate mockery --name=APIProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type APIProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apis []*model.APIDefinitionInput, resourceHashes map[string]uint64) ([]*model.APIDefinition, []*processor.OrdFetchRequest, error)
 }
 
 // EntityTypeMappingService is responsible for processing of entity type entities.
