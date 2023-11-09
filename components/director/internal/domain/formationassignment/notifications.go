@@ -3,6 +3,8 @@ package formationassignment
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
@@ -94,7 +96,7 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 }
 
 // PrepareDetailsForNotificationStatusReturned creates NotificationStatusReturnedOperationDetails by given tenantID, formation assignment and formation operation
-func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
+func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string, notificationStatusReport *statusreport.NotificationStatusReport) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
 	var targetType model.ResourceType
 	switch fa.TargetType {
 	case model.FormationAssignmentTypeApplication:
@@ -125,12 +127,24 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 		log.C(ctx).Debugf("Reverse assignment with source %q and target %q in formation with ID %q is not found.", fa.Target, fa.Source, formation.ID)
 	}
 
+	notification, err := fan.GenerateFormationAssignmentNotification(ctx, fa, operation)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while generating notification for formation assignment with ID: %q and target type: %q and target ID: %q that is used by formation constraint operators", fa.ID, fa.TargetType, fa.Target)
+	}
+
+	var formationAssignmentTemplateInput webhook.FormationAssignmentTemplateInput
+	if notification != nil {
+		formationAssignmentTemplateInput = notification.Object
+	}
+
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
 		ResourceType:                         targetType,
 		ResourceSubtype:                      targetSubtype,
+		NotificationStatusReport:             notificationStatusReport,
 		LastFormationAssignmentState:         lastFormationAssignmentState,
 		LastFormationAssignmentConfiguration: lastFormationAssignmentConfiguration,
 		Tenant:                               tenantID,
+		FormationAssignmentTemplateInput:     formationAssignmentTemplateInput,
 		Operation:                            operation,
 		FormationAssignment:                  fa,
 		ReverseFormationAssignment:           reverseFa,
@@ -567,7 +581,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 
 func convertFormationAssignmentFromModel(formationAssignment *model.FormationAssignment) *webhook.FormationAssignment {
 	if formationAssignment == nil {
-		return &webhook.FormationAssignment{Value: "\"\"", Error: "\"\""}
+		return &webhook.FormationAssignment{}
 	}
 	return &webhook.FormationAssignment{
 		ID:          formationAssignment.ID,

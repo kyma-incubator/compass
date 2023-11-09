@@ -18,6 +18,32 @@ type DirectorClient struct {
 	mock.Mock
 }
 
+// GetRootTenantByExternalID provides a mock function with given fields: ctx, tenantID
+func (_m *DirectorClient) GetRootTenantByExternalID(ctx context.Context, tenantID string) (*graphql.Tenant, error) {
+	ret := _m.Called(ctx, tenantID)
+
+	var r0 *graphql.Tenant
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*graphql.Tenant, error)); ok {
+		return rf(ctx, tenantID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *graphql.Tenant); ok {
+		r0 = rf(ctx, tenantID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*graphql.Tenant)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, tenantID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetSystemAuthByID provides a mock function with given fields: ctx, authID
 func (_m *DirectorClient) GetSystemAuthByID(ctx context.Context, authID string) (*model.SystemAuth, error) {
 	ret := _m.Called(ctx, authID)

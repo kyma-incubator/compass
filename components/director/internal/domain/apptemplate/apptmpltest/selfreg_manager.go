@@ -2,6 +2,7 @@ package apptmpltest
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -14,6 +15,11 @@ const (
 	TestDistinguishLabel = "test-distinguish-label"
 	// SelfRegErrorMsg is a test error message
 	SelfRegErrorMsg = "error during self-reg prep"
+)
+
+var (
+	// NonSelfRegFlowErrorMsg is a test message for non-cert flow
+	NonSelfRegFlowErrorMsg = fmt.Sprintf("label %s is forbidden when creating Application Template in a non-cert flow.", TestDistinguishLabel)
 )
 
 // NoopSelfRegManager is a noop mock
@@ -90,11 +96,20 @@ func SelfRegManagerThatDoesNotCleanupFunc(res map[string]interface{}) func() *au
 	}
 }
 
-// SelfRegManagerOnlyGetDistinguishedLabelKey mock for GetSelfRegDistinguishingLabelKey once
-func SelfRegManagerOnlyGetDistinguishedLabelKey() func() *automock.SelfRegisterManager {
+// SelfRegManagerOnlyGetDistinguishedLabelKeyOnce mock for GetSelfRegDistinguishingLabelKey once
+func SelfRegManagerOnlyGetDistinguishedLabelKeyOnce() func() *automock.SelfRegisterManager {
 	return func() *automock.SelfRegisterManager {
 		srm := NoopSelfRegManager()
 		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
+		return srm
+	}
+}
+
+// SelfRegManagerOnlyGetDistinguishedLabelKeyTwice mock for GetSelfRegDistinguishingLabelKey twice
+func SelfRegManagerOnlyGetDistinguishedLabelKeyTwice() func() *automock.SelfRegisterManager {
+	return func() *automock.SelfRegisterManager {
+		srm := NoopSelfRegManager()
+		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Twice()
 		return srm
 	}
 }

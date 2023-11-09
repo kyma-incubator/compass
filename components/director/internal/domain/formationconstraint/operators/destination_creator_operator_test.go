@@ -60,9 +60,27 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			},
 			DestinationCreatorSvc: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("CreateCertificate", ctx, samlAssertionDests, destinationcreatorpkg.AuthTypeSAMLAssertion, fa, uint8(0), false).Return(certData, nil)
+				destCreatorSvc.On("CreateCertificate", ctx, samlAssertionDests, destinationcreatorpkg.AuthTypeSAMLAssertion, fa, uint8(0), false, true).Return(certData, nil)
 				destCreatorSvc.On("EnrichAssignmentConfigWithSAMLCertificateData", fa.Value, destinationcreatorpkg.SAMLAssertionDestPath, certData).Return(destsConfigValueRawJSON, nil)
-				destCreatorSvc.On("CreateCertificate", ctx, clientCertAuthDests, destinationcreatorpkg.AuthTypeClientCertificate, fa, uint8(0), false).Return(certData, nil)
+				destCreatorSvc.On("CreateCertificate", ctx, clientCertAuthDests, destinationcreatorpkg.AuthTypeClientCertificate, fa, uint8(0), false, false).Return(certData, nil)
+				destCreatorSvc.On("EnrichAssignmentConfigWithCertificateData", fa.Value, destinationcreatorpkg.ClientCertAuthDestPath, certData).Return(destsConfigValueRawJSON, nil)
+				return destCreatorSvc
+			},
+			ExpectedResult: true,
+		},
+		{
+			Name:  "Success when operation is 'assign' and location is 'NotificationStatusReturned' with full destination config and the input indicates to use cert svc keystore for SAML",
+			Input: inputForAssignNotificationStatusReturnedWithCertSvcKeyStore,
+			DestinationSvc: func() *automock.DestinationService {
+				destSvc := &automock.DestinationService{}
+				destSvc.On("CreateDesignTimeDestinations", ctx, designTimeDests, fa, false).Return(nil)
+				return destSvc
+			},
+			DestinationCreatorSvc: func() *automock.DestinationCreatorService {
+				destCreatorSvc := &automock.DestinationCreatorService{}
+				destCreatorSvc.On("CreateCertificate", ctx, samlAssertionDests, destinationcreatorpkg.AuthTypeSAMLAssertion, fa, uint8(0), false, false).Return(certData, nil)
+				destCreatorSvc.On("EnrichAssignmentConfigWithSAMLCertificateData", fa.Value, destinationcreatorpkg.SAMLAssertionDestPath, certData).Return(destsConfigValueRawJSON, nil)
+				destCreatorSvc.On("CreateCertificate", ctx, clientCertAuthDests, destinationcreatorpkg.AuthTypeClientCertificate, fa, uint8(0), false, false).Return(certData, nil)
 				destCreatorSvc.On("EnrichAssignmentConfigWithCertificateData", fa.Value, destinationcreatorpkg.ClientCertAuthDestPath, certData).Return(destsConfigValueRawJSON, nil)
 				return destCreatorSvc
 			},
@@ -145,7 +163,7 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			},
 			DestinationCreatorSvc: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("CreateCertificate", ctx, samlAssertionDests, destinationcreatorpkg.AuthTypeSAMLAssertion, fa, uint8(0), false).Return(nil, testErr)
+				destCreatorSvc.On("CreateCertificate", ctx, samlAssertionDests, destinationcreatorpkg.AuthTypeSAMLAssertion, fa, uint8(0), false, true).Return(nil, testErr)
 				return destCreatorSvc
 			},
 			ExpectedErrorMsg: fmt.Sprintf("while creating SAML assertion certificate: %s", testErr.Error()),
@@ -160,7 +178,7 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			},
 			DestinationCreatorSvc: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("CreateCertificate", ctx, samlAssertionDests, destinationcreatorpkg.AuthTypeSAMLAssertion, fa, uint8(0), false).Return(certData, nil)
+				destCreatorSvc.On("CreateCertificate", ctx, samlAssertionDests, destinationcreatorpkg.AuthTypeSAMLAssertion, fa, uint8(0), false, true).Return(certData, nil)
 				destCreatorSvc.On("EnrichAssignmentConfigWithSAMLCertificateData", fa.Value, destinationcreatorpkg.SAMLAssertionDestPath, certData).Return(json.RawMessage{}, testErr)
 				return destCreatorSvc
 			},
@@ -186,9 +204,9 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			},
 			DestinationCreatorSvc: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("CreateCertificate", ctx, samlAssertionDests, destinationcreatorpkg.AuthTypeSAMLAssertion, fa, uint8(0), false).Return(certData, nil)
+				destCreatorSvc.On("CreateCertificate", ctx, samlAssertionDests, destinationcreatorpkg.AuthTypeSAMLAssertion, fa, uint8(0), false, true).Return(certData, nil)
 				destCreatorSvc.On("EnrichAssignmentConfigWithSAMLCertificateData", fa.Value, destinationcreatorpkg.SAMLAssertionDestPath, certData).Return(destsConfigValueRawJSON, nil)
-				destCreatorSvc.On("CreateCertificate", ctx, clientCertAuthDests, destinationcreatorpkg.AuthTypeClientCertificate, fa, uint8(0), false).Return(nil, testErr)
+				destCreatorSvc.On("CreateCertificate", ctx, clientCertAuthDests, destinationcreatorpkg.AuthTypeClientCertificate, fa, uint8(0), false, false).Return(nil, testErr)
 				return destCreatorSvc
 			},
 			ExpectedErrorMsg: fmt.Sprintf("while creating client certificate authentication certificate: %s", testErr.Error()),
@@ -203,9 +221,9 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			},
 			DestinationCreatorSvc: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("CreateCertificate", ctx, samlAssertionDests, destinationcreatorpkg.AuthTypeSAMLAssertion, fa, uint8(0), false).Return(certData, nil)
+				destCreatorSvc.On("CreateCertificate", ctx, samlAssertionDests, destinationcreatorpkg.AuthTypeSAMLAssertion, fa, uint8(0), false, true).Return(certData, nil)
 				destCreatorSvc.On("EnrichAssignmentConfigWithSAMLCertificateData", fa.Value, destinationcreatorpkg.SAMLAssertionDestPath, certData).Return(destsConfigValueRawJSON, nil)
-				destCreatorSvc.On("CreateCertificate", ctx, clientCertAuthDests, destinationcreatorpkg.AuthTypeClientCertificate, fa, uint8(0), false).Return(certData, nil)
+				destCreatorSvc.On("CreateCertificate", ctx, clientCertAuthDests, destinationcreatorpkg.AuthTypeClientCertificate, fa, uint8(0), false, false).Return(certData, nil)
 				destCreatorSvc.On("EnrichAssignmentConfigWithCertificateData", fa.Value, destinationcreatorpkg.ClientCertAuthDestPath, certData).Return(json.RawMessage{}, testErr)
 				return destCreatorSvc
 			},

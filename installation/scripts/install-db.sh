@@ -55,6 +55,8 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 RELEASE_NS=compass-system
 kubectl create ns $RELEASE_NS --dry-run=client -o yaml | kubectl apply -f -
 kubectl label ns $RELEASE_NS istio-injection=enabled --overwrite
+# As of Kubernetes 1.25 we need to replace PodSecurityPolicies; we chose the Pod Security Standards
+kubectl label ns $RELEASE_NS pod-security.kubernetes.io/enforce=baseline --overwrite
 
 echo "Installing DB..."
 helm upgrade --install --atomic --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace "${RELEASE_NS}" localdb "${DB_CHARTS}"

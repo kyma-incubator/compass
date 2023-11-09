@@ -2,9 +2,10 @@ package director
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	authConv "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
@@ -20,6 +21,7 @@ type Client interface {
 	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetTenantByInternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetTenantByLowestOwnerForResource(ctx context.Context, resourceID, resourceType string) (string, error)
+	GetRootTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetSystemAuthByID(ctx context.Context, authID string) (*model.SystemAuth, error)
 	GetSystemAuthByToken(ctx context.Context, token string) (*model.SystemAuth, error)
 	UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAuth) (UpdateAuthResult, error)
@@ -106,6 +108,18 @@ func (c *client) GetTenantByLowestOwnerForResource(ctx context.Context, resource
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
 		return "", err
+	}
+
+	return response.Result, nil
+}
+
+func (c *client) GetRootTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error) {
+	query := GetRootTenantByExternalIDQuery(tenantID)
+	var response TenantResponse
+
+	err := c.execute(ctx, c.gqlClient, query, &response)
+	if err != nil {
+		return nil, err
 	}
 
 	return response.Result, nil

@@ -3,9 +3,12 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
+	"strconv"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"strconv"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -31,7 +34,7 @@ func NewFormationAssignmentStatusService(repo FormationAssignmentRepository, con
 }
 
 // UpdateWithConstraints updates a Formation Assignment and enforces NotificationStatusReturned constraints before and after the update
-func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.Context, fa *model.FormationAssignment, operation model.FormationOperation) error {
+func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.Context, notificationStatusReport *statusreport.NotificationStatusReport, fa *model.FormationAssignment, operation model.FormationOperation) error {
 	id := fa.ID
 
 	log.C(ctx).Infof("Updating formation assignment with ID: %q", id)
@@ -52,7 +55,7 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 	} else {
 		lastFormationAssignmentState = strconv.Quote(string(faFromDB.Value))
 	}
-	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, operation, faFromDB.State, lastFormationAssignmentState)
+	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, operation, faFromDB.State, lastFormationAssignmentState, notificationStatusReport)
 	if err != nil {
 		return errors.Wrap(err, "while preparing details for NotificationStatusReturned")
 	}
@@ -78,7 +81,7 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 
 // SetAssignmentToErrorStateWithConstraints updates Formation Assignment state to error state using the errorMessage, errorCode and state parameters.
 // Also, it enforces NotificationStatusReturned constraints before and after the update.
-func (fau *formationAssignmentStatusService) SetAssignmentToErrorStateWithConstraints(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error {
+func (fau *formationAssignmentStatusService) SetAssignmentToErrorStateWithConstraints(ctx context.Context, notificationStatusReport *statusreport.NotificationStatusReport, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error {
 	assignment.State = string(state)
 	assignmentError := AssignmentErrorWrapper{AssignmentError{
 		Message:   errorMessage,
@@ -89,7 +92,7 @@ func (fau *formationAssignmentStatusService) SetAssignmentToErrorStateWithConstr
 		return errors.Wrapf(err, "While preparing error message for assignment with ID %q", assignment.ID)
 	}
 	assignment.Error = marshaled
-	if err := fau.UpdateWithConstraints(ctx, assignment, operation); err != nil {
+	if err := fau.UpdateWithConstraints(ctx, notificationStatusReport, assignment, operation); err != nil {
 		return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 	}
 	log.C(ctx).Infof("Assignment with ID %s set to state %s", assignment.ID, assignment.State)
@@ -97,7 +100,7 @@ func (fau *formationAssignmentStatusService) SetAssignmentToErrorStateWithConstr
 }
 
 // DeleteWithConstraints deletes a Formation Assignment matching ID `id` and enforces NotificationStatusReturned constraints before and after delete.
-func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.Context, id string) error {
+func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.Context, id string, notificationStatusReport *statusreport.NotificationStatusReport) error {
 	log.C(ctx).Infof("Deleting formation assignment with ID: %q", id)
 
 	tenantID, err := tenant.LoadFromContext(ctx)
@@ -127,7 +130,7 @@ func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.C
 		return errors.Wrapf(err, "while updating formation asssignment with ID: %s to: %q state", id, model.ReadyAssignmentState)
 	}
 
-	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, model.UnassignFormation, faStateFromDB, faValueFromDB)
+	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, model.UnassignFormation, faStateFromDB, faValueFromDB, notificationStatusReport)
 	if err != nil {
 		return errors.Wrap(err, "while preparing details for NotificationStatusReturned")
 	}

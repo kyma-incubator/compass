@@ -75,6 +75,17 @@ type EventService interface {
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.EventDefinition, error)
 }
 
+// EntityTypeService is responsible for the service-layer Entity Type operations.
+//
+//go:generate mockery --name=EntityTypeService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type EntityTypeService interface {
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID string, in model.EntityTypeInput, entityTypeHash uint64) (string, error)
+	Update(ctx context.Context, resourceType resource.Type, id string, in model.EntityTypeInput, entityTypeHash uint64) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
+	ListByApplicationID(ctx context.Context, appID string) ([]*model.EntityType, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.EntityType, error)
+}
+
 // CapabilityService is responsible for the service-layer Capability operations.
 //
 //go:generate mockery --name=CapabilityService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -84,6 +95,22 @@ type CapabilityService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.CapabilityInput, spec []*model.SpecInput, capabilityHash uint64) (string, error)
 	Update(ctx context.Context, resourceType resource.Type, id string, in model.CapabilityInput, capabilityHash uint64) error
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
+}
+
+// IntegrationDependencyService is responsible for the service-layer IntegrationDependency operations.
+//
+//go:generate mockery --name=IntegrationDependencyService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type IntegrationDependencyService interface {
+	ListByApplicationID(ctx context.Context, appID string) ([]*model.IntegrationDependency, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.IntegrationDependency, error)
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
+}
+
+// IntegrationDependencyProcessor is responsible for processing of integration dependency entities.
+//
+//go:generate mockery --name=IntegrationDependencyProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type IntegrationDependencyProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, packagesFromDB []*model.Package, integrationDependencies []*model.IntegrationDependencyInput, resourceHashes map[string]uint64) ([]*model.IntegrationDependency, error)
 }
 
 // SpecService is responsible for the service-layer Specification operations.
@@ -169,6 +196,22 @@ type GlobalVendorService interface {
 //go:generate mockery --name=TombstoneProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TombstoneProcessor interface {
 	Process(ctx context.Context, resourceType resource.Type, resourceID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error)
+}
+
+// EntityTypeProcessor is responsible for processing of entity type entities.
+//
+//go:generate mockery --name=EntityTypeProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type EntityTypeProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, entityTypes []*model.EntityTypeInput, packagesFromDB []*model.Package, resourceHashes map[string]uint64) ([]*model.EntityType, error)
+}
+
+// EntityTypeMappingService is responsible for processing of entity type entities.
+//
+//go:generate mockery --name=EntityTypeMappingService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type EntityTypeMappingService interface {
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, in *model.EntityTypeMappingInput) (string, error)
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
+	ListByOwnerResourceID(ctx context.Context, resourceID string, resourceType resource.Type) ([]*model.EntityTypeMapping, error)
 }
 
 // TenantService missing godoc

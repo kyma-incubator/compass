@@ -926,6 +926,18 @@ func TestService_Update(t *testing.T) {
 			WebhookType:        model.ApplicationWebhookReference,
 			Context:            tenantCtx,
 		},
+		{
+			Name: "Returns error when the webhook is of type AppWebhook and tenant is not provided ",
+			WebhookRepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				ctx := context.TODO()
+				repo.On("GetByIDGlobal", ctx, id).Return(applicationWebhookModel, nil).Once()
+				return repo
+			},
+			ExpectedErrMessage: "cannot read tenant from context",
+			WebhookType:        model.ApplicationWebhookReference,
+			Context:            context.TODO(),
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -946,12 +958,6 @@ func TestService_Update(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
-	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil, nil, nil, "")
-		// WHEN
-		err := svc.Update(context.TODO(), givenApplicationID(), model.WebhookInput{}, model.ApplicationWebhookReference)
-		assert.True(t, apperrors.IsCannotReadTenant(err))
-	})
 }
 
 func TestService_Delete(t *testing.T) {

@@ -98,7 +98,7 @@ func (s *service) MarkAsCompleted(ctx context.Context, id string) error {
 	currentTime := time.Now()
 	op.UpdatedAt = &currentTime
 	op.Priority = int(operationsmanager.LowOperationPriority)
-	op.Error = json.RawMessage{}
+	op.Error = json.RawMessage("{}")
 
 	if err := s.opRepo.Update(ctx, op); err != nil {
 		return errors.Wrapf(err, "while updating operation with id %q", id)

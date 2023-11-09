@@ -60,8 +60,6 @@ The following table lists the configurable parameters of the postgres Exporter c
 | `config.disableDefaultMetrics`  | Specifies whether to use only metrics from `queries.yaml`| `false` |
 | `config.autoDiscoverDatabases`  | Specifies whether to autodiscover all databases | `false` |
 | `config.excludeDatabases`  | When autodiscover is enabled, list databases to exclude| `[]` |
-| `rbac.create`                   | Specifies whether RBAC resources should be created.| `true` |
-| `rbac.pspEnabled`               | Specifies whether a PodSecurityPolicy should be created.| `true` |
 | `serviceAccount.create`         | Specifies whether a service account should be created.| `true` |
 | `serviceAccount.name`           | Name of the service account.|        |
 | `tolerations`                   | Add tolerations                            | `[]`  |

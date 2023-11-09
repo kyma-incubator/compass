@@ -57,6 +57,8 @@ func TestCertServiceContextProvider(t *testing.T) {
 		},
 	}
 
+	testTenantWithOnlyExternalID := &graphql.Tenant{ID: tenantID}
+
 	testCases := []struct {
 		Name               string
 		DirectorClient     func() *automock.DirectorClient
@@ -64,8 +66,8 @@ func TestCertServiceContextProvider(t *testing.T) {
 		ReqDataInput       oathkeeper.ReqData
 		AuthDetailsInput   oathkeeper.AuthDetails
 		ExpectedScopes     string
-		ExpectedInternalID string
 		ExpectedConsumerID string
+		ExpectedTenant     *graphql.Tenant
 		ExpectedErr        error
 	}{
 		{
@@ -80,11 +82,11 @@ func TestCertServiceContextProvider(t *testing.T) {
 				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.external_certificate").Return(scopes, nil)
 				return scopesGetter
 			},
-			ReqDataInput:       reqData,
-			AuthDetailsInput:   authDetails,
-			ExpectedScopes:     scopesString,
-			ExpectedInternalID: "",
-			ExpectedErr:        nil,
+			ReqDataInput:     reqData,
+			AuthDetailsInput: authDetails,
+			ExpectedScopes:   scopesString,
+			ExpectedTenant:   testTenantWithOnlyExternalID,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Error when the error from getting the internal tenant is different from not found",
@@ -98,11 +100,11 @@ func TestCertServiceContextProvider(t *testing.T) {
 				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.external_certificate").Return(scopes, nil)
 				return scopesGetter
 			},
-			ReqDataInput:       reqData,
-			AuthDetailsInput:   authDetails,
-			ExpectedScopes:     "",
-			ExpectedInternalID: "",
-			ExpectedErr:        testError,
+			ReqDataInput:     reqData,
+			AuthDetailsInput: authDetails,
+			ExpectedScopes:   "",
+			ExpectedTenant:   testTenantWithOnlyExternalID,
+			ExpectedErr:      testError,
 		},
 		{
 			Name: "Success when internal tenant exists",
@@ -116,11 +118,11 @@ func TestCertServiceContextProvider(t *testing.T) {
 				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.external_certificate").Return(scopes, nil)
 				return scopesGetter
 			},
-			ReqDataInput:       reqData,
-			AuthDetailsInput:   authDetails,
-			ExpectedScopes:     scopesString,
-			ExpectedInternalID: internalSubaccount,
-			ExpectedErr:        nil,
+			ReqDataInput:     reqData,
+			AuthDetailsInput: authDetails,
+			ExpectedScopes:   scopesString,
+			ExpectedTenant:   testSubaccount,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Success when internal consumer ID is provided",
@@ -137,8 +139,8 @@ func TestCertServiceContextProvider(t *testing.T) {
 			ReqDataInput:       reqDataWithInternalConsumerID,
 			AuthDetailsInput:   authDetails,
 			ExpectedScopes:     scopesString,
-			ExpectedInternalID: internalSubaccount,
 			ExpectedConsumerID: internalConsumerID,
+			ExpectedTenant:     testSubaccount,
 			ExpectedErr:        nil,
 		},
 		{
@@ -156,8 +158,8 @@ func TestCertServiceContextProvider(t *testing.T) {
 			ReqDataInput:       reqDataWithInternalConsumerID,
 			AuthDetailsInput:   authDetails,
 			ExpectedScopes:     scopesString,
-			ExpectedInternalID: internalSubaccount,
 			ExpectedConsumerID: internalConsumerID,
+			ExpectedTenant:     testSubaccount,
 			ExpectedErr:        nil,
 		},
 		{
@@ -190,8 +192,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, consumer.ExternalCertificate, objectCtx.ConsumerType)
 				require.Equal(t, testCase.ExpectedConsumerID, objectCtx.ConsumerID)
-				require.Equal(t, testCase.ExpectedInternalID, objectCtx.TenantContext.TenantID)
-				require.Equal(t, tenantID, objectCtx.TenantContext.ExternalTenantID)
+				require.Equal(t, testCase.ExpectedTenant, objectCtx.Tenant)
 				require.Equal(t, testCase.ExpectedScopes, objectCtx.Scopes)
 			} else {
 				require.Error(t, err)

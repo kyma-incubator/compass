@@ -176,10 +176,6 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 
 // Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil && objectType.GetResourceType() != resource.Webhook { // If the webhook is not global
-		return err
-	}
 	webhook, err := s.Get(ctx, id, objectType)
 	if err != nil {
 		return errors.Wrap(err, "while getting Webhook")
@@ -187,6 +183,11 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput, 
 
 	if len(webhook.ObjectID) == 0 || (webhook.ObjectType != model.ApplicationWebhookReference && webhook.ObjectType != model.ApplicationTemplateWebhookReference && webhook.ObjectType != model.RuntimeWebhookReference && webhook.ObjectType != model.FormationTemplateWebhookReference) {
 		return errors.New("while updating Webhook: webhook doesn't have neither of application_id, application_template_id, runtime_id and formation_template_id")
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil && (webhook.ObjectType.GetResourceType() == resource.AppWebhook || webhook.ObjectType.GetResourceType() == resource.RuntimeWebhook) { // If the webhook is not global
+		return err
 	}
 
 	webhook = in.ToWebhook(id, webhook.ObjectID, webhook.ObjectType)

@@ -18,7 +18,10 @@ package tenantmapping
 
 import (
 	"context"
+	"math"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 
@@ -60,7 +63,7 @@ type authenticatorContextProvider struct {
 
 // GetObjectContext is the authenticatorContextProvider implementation of the ObjectContextProvider interface
 func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
-	var externalTenantID, scopes string
+	var scopes string
 
 	logger := log.C(ctx).WithFields(logrus.Fields{
 		"consumer_type": consumer.User,
@@ -71,7 +74,7 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 	authn := authDetails.Authenticator
 
 	log.C(ctx).Info("Getting scopes from token attribute")
-	userScopes, err := reqData.GetUserScopes(authDetails.ScopePrefix)
+	userScopes, err := reqData.GetUserScopes(authDetails.ScopePrefixes)
 	if err != nil {
 		return ObjectContext{}, err
 	}
@@ -84,9 +87,23 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 
 	clientID := gjson.Get(extra, authn.Attributes.ClientID.Key).String()
 
-	externalTenantID = gjson.Get(extra, authn.Attributes.TenantAttribute.Key).String()
+	var externalTenantID string
+	priority := math.MaxInt64
+	for _, ta := range authn.Attributes.TenantsAttribute {
+		currentTenant := gjson.Get(extra, ta.Key).String()
+		if currentTenant == "" {
+			log.C(ctx).Warnf("tenant attribute: %q missing from: %s authenticator token", ta.Key, authn.Name)
+			continue
+		}
+		log.C(ctx).Infof("The priority of tenant: %s is: %d", currentTenant, ta.Priority)
+		if ta.Priority < priority {
+			priority = ta.Priority
+			externalTenantID = currentTenant
+		}
+	}
+
 	if externalTenantID == "" {
-		return ObjectContext{}, errors.Errorf("tenant attribute %q missing from %s authenticator token", authn.Attributes.TenantAttribute.Key, authn.Name)
+		return ObjectContext{}, errors.Errorf("missing tenant attribute from: %q authenticator token", authn.Name)
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
@@ -97,12 +114,12 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, mergeWithOtherScopes, authDetails.Region, clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.AuthenticatorObjectContextProvider), nil
+			return NewObjectContext(&graphql.Tenant{ID: externalTenantID}, m.tenantKeys, scopes, mergeWithOtherScopes, authDetails.Region, clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.AuthenticatorObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), m.tenantKeys, scopes, mergeWithOtherScopes, authDetails.Region, clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.AuthenticatorObjectContextProvider)
+	objCtx := NewObjectContext(tenantMapping, m.tenantKeys, scopes, mergeWithOtherScopes, authDetails.Region, clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.AuthenticatorObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
 
 	return objCtx, nil
@@ -132,7 +149,7 @@ func (m *authenticatorContextProvider) Match(ctx context.Context, data oathkeepe
 			}
 
 			index := coords.Index
-			return true, &oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn, ScopePrefix: authn.TrustedIssuers[index].ScopePrefix, Region: authn.TrustedIssuers[index].Region}, nil
+			return true, &oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn, ScopePrefixes: authn.TrustedIssuers[index].ScopePrefixes, Region: authn.TrustedIssuers[index].Region}, nil
 		}
 	}
 

@@ -12,6 +12,7 @@ type ApplicationType string
 
 const (
 	AuthorizationHeader = "Authorization"
+	UserTokenHeader     = "X-user-token"
 	ContentTypeHeader   = "Content-Type"
 
 	ContentTypeApplicationJSON       = "application/json"

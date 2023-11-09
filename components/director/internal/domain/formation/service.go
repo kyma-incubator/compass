@@ -5,18 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/hashicorp/go-multierror"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
-	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
+
+	"github.com/hashicorp/go-multierror"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -235,10 +236,9 @@ func NewService(
 }
 
 // Used for testing
-//nolint
 //
 //go:generate mockery --exported --name=processFunc --output=automock --outpkg=automock --case=underscore --disable-version-string
-type processFunc interface {
+type processFunc interface { //nolint
 	ProcessScenarioFunc(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)
 }
 

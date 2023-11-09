@@ -69,10 +69,15 @@ spec:
                         value: {{ .Values.global.log.format | quote }}
                       - name: APP_DEFAULT_TENANT_REGION
                         value: {{ .Values.global.defaultTenantRegion }}
+                      - name: APP_TENANT_LABELS_PATH
+                        value: {{ .Values.global.tenantLabelsFilePath }}
                   volumeMounts:
                     - name: default-tenant-config
                       mountPath: /data/default-tenants.json
                       subPath: tenants.json
+                    - name: default-tenant-labels-config
+                      mountPath: {{ .Values.global.tenantLabelsFilePath }}
+                      subPath: tenantLabels.json
                   command:
                     - "/bin/sh"
                   args:
@@ -91,4 +96,7 @@ spec:
               - name: default-tenant-config
                 configMap:
                   name: {{ template "fullname" . }}-default-tenant-config
+              - name: default-tenant-labels-config
+                configMap:
+                  name: {{ template "fullname" . }}-default-tenant-labels-config
   {{ end }}

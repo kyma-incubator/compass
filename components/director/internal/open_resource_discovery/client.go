@@ -8,6 +8,9 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
+
+	"github.com/avast/retry-go/v4"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -84,8 +87,21 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 		tenantValue = tntFromCtx.ExternalID
 	}
 
-	log.C(ctx).Infof("Fetching ORD well-known config")
-	config, err := c.fetchConfig(ctx, resource, webhook, tenantValue, requestObject)
+	log.C(ctx).Infof("Fetching ORD well-known config with retry")
+	var config *WellKnownConfig
+	err := retry.Do(
+		func() error {
+			var err error
+			config, err = c.fetchConfig(ctx, resource, webhook, tenantValue, requestObject)
+			return err
+		},
+		retry.Attempts(3),
+		retry.Delay(time.Second),
+		retry.OnRetry(func(n uint, err error) {
+			log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
+		}),
+	)
+
 	if err != nil {
 		return nil, "", err
 	}

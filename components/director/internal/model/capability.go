@@ -26,6 +26,7 @@ type Capability struct {
 	ShortDescription             *string
 	SystemInstanceAware          *bool
 	Tags                         json.RawMessage
+	RelatedEntityTypes           json.RawMessage
 	Links                        json.RawMessage
 	ReleaseStatus                *string
 	Labels                       json.RawMessage
@@ -56,6 +57,7 @@ type CapabilityInput struct {
 	ShortDescription      *string                 `json:"shortDescription"`
 	SystemInstanceAware   *bool                   `json:"systemInstanceAware"`
 	Tags                  json.RawMessage         `json:"tags"`
+	RelatedEntityTypes    json.RawMessage         `json:"relatedEntityTypes"`
 	Links                 json.RawMessage         `json:"links"`
 	ReleaseStatus         *string                 `json:"releaseStatus"`
 	Labels                json.RawMessage         `json:"labels"`
@@ -135,6 +137,7 @@ func (a *CapabilityInput) ToCapability(id string, resourceType resource.Type, re
 		ShortDescription:    a.ShortDescription,
 		SystemInstanceAware: a.SystemInstanceAware,
 		Tags:                a.Tags,
+		RelatedEntityTypes:  a.RelatedEntityTypes,
 		Links:               a.Links,
 		ReleaseStatus:       a.ReleaseStatus,
 		Labels:              a.Labels,

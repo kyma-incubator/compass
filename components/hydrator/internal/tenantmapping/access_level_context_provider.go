@@ -3,8 +3,10 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/model"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	directorErrors "github.com/kyma-incubator/compass/components/hydrator/internal/director"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
@@ -61,7 +63,7 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 				return ObjectContext{}, err
 			}
 
-			return NewObjectContext(NewTenantContext("", ""), p.tenantKeys, scopes, mergeWithOtherScopes,
+			return NewObjectContext(&graphql.Tenant{}, p.tenantKeys, scopes, mergeWithOtherScopes,
 				"", "", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), tenantmapping.CertServiceObjectContextProvider), nil
 		}
 		return ObjectContext{}, err
@@ -74,7 +76,7 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 			// tenant not in DB yet, might be because we have not imported all subaccounts yet
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), p.tenantKeys, scopes, mergeWithOtherScopes, "",
+			return NewObjectContext(&graphql.Tenant{ID: externalTenantID}, p.tenantKeys, scopes, mergeWithOtherScopes, "",
 				"", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), tenantmapping.CertServiceObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
@@ -87,7 +89,7 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 		return ObjectContext{}, err
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), p.tenantKeys, scopes, mergeWithOtherScopes,
+	objCtx := NewObjectContext(tenantMapping, p.tenantKeys, scopes, mergeWithOtherScopes,
 		authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), tenantmapping.CertServiceObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
 	return objCtx, nil

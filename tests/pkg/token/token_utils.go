@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
@@ -90,7 +91,7 @@ func FetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL str
 	require.NoError(t, err)
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(fmt.Sprintf("response status code is %d", resp.StatusCode))
+		return nil, errors.Errorf("response status code is %d", resp.StatusCode)
 	}
 	return &hydraToken, nil
 }
@@ -125,7 +126,7 @@ func FetchHydraAccessTokenBench(b *testing.B, encodedCredentials string, tokenUR
 	require.NoError(b, err)
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(fmt.Sprintf("response status code is %d", resp.StatusCode))
+		return nil, errors.Errorf("response status code is %d", resp.StatusCode)
 	}
 	return &hydraToken, nil
 }
@@ -268,6 +269,20 @@ func FlattenTokenClaims(stdT *testing.T, consumerToken string) string {
 	}
 
 	return claims
+}
+
+func ChangeSubdomain(tokenURL, newSubdomain, oauthTokenPath string) (string, error) {
+	baseTokenURL, err := url.Parse(tokenURL)
+	if err != nil {
+		return "", errors.Errorf("failed to parse auth url '%s': %v", tokenURL, err)
+	}
+	parts := strings.Split(baseTokenURL.Hostname(), ".")
+	if len(parts) < 2 {
+		return "", errors.Errorf("auth url '%s' should have a subdomain", tokenURL)
+	}
+	originalSubdomain := parts[0]
+
+	return strings.Replace(tokenURL, originalSubdomain, newSubdomain, 1) + oauthTokenPath, nil
 }
 
 func getTokenPayload(t *testing.T, token string) string {

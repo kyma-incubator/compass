@@ -30,7 +30,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 	tenantName := "test-tenant-name"
 	clientID := "id-value!t12345"
 	invalidClientID := "invalid-id%"
-	authID := "test-user-name@sap.com"
+	authID := "user-name@test.com"
 	testRegion := "eu-1"
 
 	testError := errors.New("test error")
@@ -48,7 +48,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 	userCtxHeaderWithoutClientID := fmt.Sprintf(`{"tenantid":"%s","user_name":"%s"}`, consumerTenantID, authID)
 	userCtxHeaderWithoutTenantID := fmt.Sprintf(`{"client_id":"%s","user_name":"%s"}`, clientID, authID)
 	userCtxHeaderWithInvalidASCIICharacter := fmt.Sprintf(`{"client_id":"%s","tenantid":"%s","user_name":"%s"}`, invalidClientID, consumerTenantID, authID)
-	userCtxHeaderWithInvalidASCIICharacterAndMissingClientID := `{"tenantid":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","user_name":"test%UserName@sap.com"}`
+	userCtxHeaderWithInvalidASCIICharacterAndMissingClientID := `{"tenantid":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","user_name":"test%UserName@test.com"}`
 	userCtxHeaderWithInvalidASCIICharacterAndMissingTenantID := fmt.Sprintf(`{"client_id":"%s","user_name":"%s"}`, invalidClientID, authID)
 
 	reqDataFunc := func(userContextHeader string) oathkeeper.ReqData {
@@ -65,9 +65,9 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 		}
 	}
 
-	expectedObjectContextFunc := func(externalTenantID, internalTenantID, region, oauthClientID string) tenantmapping.ObjectContext {
+	expectedObjectContextFunc := func(expectedTenant *graphql.Tenant, region, oauthClientID string) tenantmapping.ObjectContext {
 		return tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.NewTenantContext(externalTenantID, internalTenantID),
+			Tenant: expectedTenant,
 			KeysExtra: tenantmapping.KeysExtra{
 				TenantKey:         tenantmapping_pkg.ConsumerTenantKey,
 				ExternalTenantKey: tenantmapping_pkg.ExternalTenantKey,
@@ -122,7 +122,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 				return client
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
-			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, consumerInternalTenantID, testRegion, clientID),
+			ExpectedObjectContext: expectedObjectContextFunc(testTenant, testRegion, clientID),
 		},
 		{
 			Name: "Success when unescape fails and the original header value is used successfully",
@@ -132,7 +132,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 				return client
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithInvalidASCIICharacter),
-			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, consumerInternalTenantID, testRegion, invalidClientID),
+			ExpectedObjectContext: expectedObjectContextFunc(testTenant, testRegion, invalidClientID),
 		},
 		{
 			Name:                  "Returns error when unescape fails and the client_id property from the original header value is empty",
@@ -177,7 +177,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 				return client
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
-			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, "", "", clientID),
+			ExpectedObjectContext: expectedObjectContextFunc(&graphql.Tenant{ID: consumerTenantID}, "", clientID),
 		},
 		{
 			Name: "Returns empty region when tenant is subaccount and tenant region label is missing",
@@ -187,7 +187,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 				return client
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
-			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, consumerInternalTenantID, "", clientID),
+			ExpectedObjectContext: expectedObjectContextFunc(testTenant, "", clientID),
 		},
 		{
 			Name: "Returns error when region label type is not the expected one",
@@ -223,8 +223,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 				require.Equal(t, authID, objectCtx.ConsumerID)
 				require.Equal(t, testCase.ExpectedObjectContext.OauthClientID, objectCtx.OauthClientID)
 				require.Equal(t, oathkeeper.ConsumerProviderFlow, objectCtx.AuthFlow)
-				require.Equal(t, testCase.ExpectedObjectContext.TenantContext.TenantID, objectCtx.TenantContext.TenantID)
-				require.Equal(t, consumerTenantID, objectCtx.TenantContext.ExternalTenantID)
+				require.Equal(t, testCase.ExpectedObjectContext.Tenant, objectCtx.Tenant)
 				require.Equal(t, "", objectCtx.Scopes)
 			} else {
 				require.Error(t, err)
@@ -247,11 +246,11 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 	}
 	provider := tenantmapping.NewConsumerContextProvider(nil, consumerClaimsKeysConfig)
 
-	userCtxHeader := `{"client_id":"id-value!t12345","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"test-user-name@sap.com"}`
+	userCtxHeader := `{"client_id":"id-value!t12345","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"user-name@test.com"}`
 	userCtxHeaderWithoutUserNameProperty := `{"client_id":"id-value!t12345","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd"}`
-	userCtxHeaderWithNonASCIICharacters := `{"client_id":"test nøn asçii chå®acte®","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"test-user-name@sap.com"}`
-	userCtxHeaderWithEncodedNonASCIICharacters := `{"client_id":"test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"test-user-name@sap.com"}`
-	userCtxHeaderWithInvalidASCIICharacter := `{"client_id":"invalid-id%","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"test-user-name@sap.com"}`
+	userCtxHeaderWithNonASCIICharacters := `{"client_id":"test nøn asçii chå®acte®","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"user-name@test.com"}`
+	userCtxHeaderWithEncodedNonASCIICharacters := `{"client_id":"test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"user-name@test.com"}`
+	userCtxHeaderWithInvalidASCIICharacter := `{"client_id":"invalid-id%","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"user-name@test.com"}`
 	userCtxHeaderWithInvalidASCIICharacterAndMissingUserNameProperty := `{"client_id":"invalid-id%","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd"}`
 
 	testCases := []struct {
@@ -276,7 +275,7 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 			},
 			ExpectedMatch: true,
 			ExpectedAuthDetails: &oathkeeper.AuthDetails{
-				AuthID:   "test-user-name@sap.com",
+				AuthID:   "user-name@test.com",
 				AuthFlow: oathkeeper.ConsumerProviderFlow,
 			},
 			ExpectedErrMsg: "",
@@ -296,7 +295,7 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 			},
 			ExpectedMatch: true,
 			ExpectedAuthDetails: &oathkeeper.AuthDetails{
-				AuthID:   "test-user-name@sap.com",
+				AuthID:   "user-name@test.com",
 				AuthFlow: oathkeeper.ConsumerProviderFlow,
 			},
 			ExpectedErrMsg: "",
@@ -316,7 +315,7 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 			},
 			ExpectedMatch: true,
 			ExpectedAuthDetails: &oathkeeper.AuthDetails{
-				AuthID:   "test-user-name@sap.com",
+				AuthID:   "user-name@test.com",
 				AuthFlow: oathkeeper.ConsumerProviderFlow,
 			},
 			ExpectedErrMsg: "",
@@ -396,7 +395,7 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 			},
 			ExpectedMatch: true,
 			ExpectedAuthDetails: &oathkeeper.AuthDetails{
-				AuthID:   "test-user-name@sap.com",
+				AuthID:   "user-name@test.com",
 				AuthFlow: oathkeeper.ConsumerProviderFlow,
 			},
 			ExpectedErrMsg: "",

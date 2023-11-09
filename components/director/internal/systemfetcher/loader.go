@@ -32,7 +32,7 @@ const (
 type appTmplService interface {
 	GetByNameAndRegion(ctx context.Context, name string, region interface{}) (*model.ApplicationTemplate, error)
 	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
-	Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error
+	Update(ctx context.Context, id string, override bool, in model.ApplicationTemplateUpdateInput) error
 }
 
 //go:generate mockery --name=intSysSvc --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
@@ -240,7 +240,7 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 				Labels:               appTmplInput.Labels,
 				Webhooks:             appTmplInput.Webhooks,
 			}
-			if err := d.appTmplSvc.Update(ctx, appTemplate.ID, appTemplateUpdateInput); err != nil {
+			if err := d.appTmplSvc.Update(ctx, appTemplate.ID, true, appTemplateUpdateInput); err != nil {
 				return errors.Wrapf(err, "while updating application template with id %q", appTemplate.ID)
 			}
 			log.C(ctx).Infof("Successfully updated application template with id %q", appTemplate.ID)

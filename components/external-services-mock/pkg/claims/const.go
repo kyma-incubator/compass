@@ -19,4 +19,8 @@ const (
 	DestinationConsumerClaimKey = "destinationConsumerClaims"
 	// DestinationConsumerWithInstanceClaimKey missing godoc
 	DestinationConsumerWithInstanceClaimKey = "destinationConsumerWithInstanceClaims"
+	// SubaccountAuthenticatorClaimKey missing godoc
+	SubaccountAuthenticatorClaimKey = "subaccountAuthenticatorClaims"
+	// AccountAuthenticatorClaimKey missing godoc
+	AccountAuthenticatorClaimKey = "accountAuthenticatorClaims"
 )

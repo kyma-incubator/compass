@@ -305,7 +305,7 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 
 // Update updates a given Application Template with its labels. Webhooks are deleted and re-created.
 // It also finds the Application children and updates their applicationTypeLabelKey label
-func (s *service) Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error {
+func (s *service) Update(ctx context.Context, id string, override bool, in model.ApplicationTemplateUpdateInput) error {
 	oldAppTemplate, err := s.Get(ctx, id)
 	if err != nil {
 		return err
@@ -340,16 +340,19 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 		return errors.Wrapf(err, "while updating Application Template with ID %s", id)
 	}
 
-	if err = s.webhookRepo.DeleteAllByApplicationTemplateID(ctx, appTemplate.ID); err != nil {
-		return errors.Wrapf(err, "while deleting Webhooks for applicationTemplate")
-	}
+	if override || (!override && len(in.Webhooks) != 0) {
+		if err = s.webhookRepo.DeleteAllByApplicationTemplateID(ctx, appTemplate.ID); err != nil {
+			return errors.Wrapf(err, "while deleting Webhooks for applicationTemplate")
+		}
 
-	webhooks := make([]*model.Webhook, 0, len(in.Webhooks))
-	for _, item := range in.Webhooks {
-		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), appTemplate.ID, model.ApplicationTemplateWebhookReference))
-	}
-	if err = s.webhookRepo.CreateMany(ctx, "", webhooks); err != nil {
-		return errors.Wrapf(err, "while creating Webhooks for applicationTemplate")
+		webhooks := make([]*model.Webhook, 0, len(in.Webhooks))
+		for _, item := range in.Webhooks {
+			webhookID := s.uidService.Generate()
+			webhooks = append(webhooks, item.ToWebhook(webhookID, appTemplate.ID, model.ApplicationTemplateWebhookReference))
+		}
+		if err = s.webhookRepo.CreateMany(ctx, "", webhooks); err != nil {
+			return errors.Wrapf(err, "while creating Webhooks for applicationTemplate")
+		}
 	}
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, "", model.AppTemplateLabelableObject, id, in.Labels)
