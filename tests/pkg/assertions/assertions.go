@@ -746,7 +746,7 @@ func AssertApplicationPageContainOnlyIDs(t *testing.T, page graphql.ApplicationP
 	}
 }
 
-func DoesAppExistsInAppPageData(appID string, page graphql.ApplicationPageExt) bool {
+func DoesAppExistsInAppPageData(appID string, page graphql.ApplicationPage) bool {
 	found := false
 	for _, d := range page.Data {
 		if appID == d.ID {
