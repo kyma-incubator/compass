@@ -891,7 +891,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 	initialAssignmentsClones := make([]*model.FormationAssignment, 0, len(initialAssignmentsData))
 	initialParticipants := make(map[string]bool, len(initialAssignmentsData)*2)
-	// If by any chance we are coming from the status API or are being called to cleanup the scenario label,
+	// If by any chance we are coming from the status API or are being called to clean up the scenario label,
 	// we still want to check for the object that is unassigned
 	initialParticipants[objectID] = true
 	for _, ia := range initialAssignmentsData {
