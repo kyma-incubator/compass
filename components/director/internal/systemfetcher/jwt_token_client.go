@@ -2,19 +2,20 @@ package systemfetcher
 
 import (
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"net/http"
 )
 
 type jwtTokenClient struct {
-	certCache                 auth.CertificateCache
+	keyCache                  certloader.KeysCache
 	jwtSelfSignCertSecretName string
 	c                         *http.Client
 }
 
 // NewJwtTokenClient creates a jwt token client
-func NewJwtTokenClient(certCache auth.CertificateCache, jwtSelfSignCertSecretName string, client *http.Client) *jwtTokenClient {
+func NewJwtTokenClient(keyCache certloader.KeysCache, jwtSelfSignCertSecretName string, client *http.Client) *jwtTokenClient {
 	return &jwtTokenClient{
-		certCache:                 certCache,
+		keyCache:                  keyCache,
 		jwtSelfSignCertSecretName: jwtSelfSignCertSecretName,
 		c:                         client,
 	}
@@ -23,7 +24,7 @@ func NewJwtTokenClient(certCache auth.CertificateCache, jwtSelfSignCertSecretNam
 // Do executes a request for jwtTokenClient
 func (jtc *jwtTokenClient) Do(req *http.Request, tenant string) (*http.Response, error) {
 	req = req.WithContext(auth.SaveToContext(req.Context(), &auth.SelfSignedTokenCredentials{
-		CertCache:                 jtc.certCache,
+		KeysCache:                 jtc.keyCache,
 		JwtSelfSignCertSecretName: jtc.jwtSelfSignCertSecretName,
 		Claims:                    map[string]interface{}{auth.CustomerIDClaimKey: tenant},
 	}))

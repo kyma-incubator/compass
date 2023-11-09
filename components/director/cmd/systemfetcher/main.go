@@ -98,6 +98,7 @@ type config struct {
 	ClientTimeout           time.Duration `envconfig:"default=60s"`
 
 	CertLoaderConfig certloader.Config
+	KeyLoaderConfig  certloader.KeysConfig
 
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 
@@ -105,7 +106,7 @@ type config struct {
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
-	JwtSelfSignCertSecretName    string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	JwtSelfSignCertSecretName    string `envconfig:"APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_NAME"`
 }
 
 type appTemplateConfig struct {
@@ -139,7 +140,7 @@ func main() {
 		}
 	}()
 
-	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	certCache, keyCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig, cfg.KeyLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize certificate loader"))
 	}
@@ -149,7 +150,7 @@ func main() {
 	mtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExternalClientCertSecretName)
 	extSvcMtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExtSvcClientCertSecretName)
 
-	sf, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, certCache)
+	sf, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, certCache, keyCache)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize System Fetcher"))
 	}
@@ -174,7 +175,7 @@ func main() {
 	}
 }
 
-func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient *http.Client, certCache certloader.Cache) (*systemfetcher.SystemFetcher, error) {
+func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient *http.Client, certCache certloader.Cache, keyCache certloader.KeysCache) (*systemfetcher.SystemFetcher, error) {
 	ordWebhookMapping, err := application.UnmarshalMappings(cfg.ORDWebhookMappings)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed while unmarshalling ord webhook mappings")
@@ -273,13 +274,13 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	systemsSyncSvc := systemssync.NewService(systemsSyncRepo)
 
 	authProvider := pkgAuth.NewMtlsTokenAuthorizationProvider(cfg.OAuth2Config, cfg.ExternalClientCertSecretName, certCache, pkgAuth.DefaultMtlsClientCreator)
-	jwtAuthProvider := pkgAuth.NewSelfSignedJWTTokenAuthorizationProvider(cfg.JwtSelfSignCertSecretName, cfg.SelfSignedJwtConfig)
+	jwtAuthProvider := pkgAuth.NewSelfSignedJWTTokenAuthorizationProvider(cfg.SelfSignedJwtConfig)
 	client := &http.Client{
 		Transport: httputil.NewSecuredTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport)), authProvider, jwtAuthProvider),
 		Timeout:   cfg.APIConfig.Timeout,
 	}
 	oauthMtlsClient := systemfetcher.NewOauthMtlsClient(cfg.OAuth2Config, certCache, client)
-	jwtTokenClient := systemfetcher.NewJwtTokenClient(certCache, cfg.JwtSelfSignCertSecretName, client)
+	jwtTokenClient := systemfetcher.NewJwtTokenClient(keyCache, cfg.JwtSelfSignCertSecretName, client)
 	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, oauthMtlsClient, jwtTokenClient)
 
 	tr := &http.Transport{

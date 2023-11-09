@@ -2,8 +2,11 @@ package certloader
 
 import (
 	"context"
+	"crypto/rsa"
 	"crypto/tls"
-	"github.com/kyma-incubator/compass/components/director/pkg/key"
+	"crypto/x509"
+	"encoding/json"
+	"encoding/pem"
 	"sync"
 	"time"
 
@@ -45,7 +48,7 @@ type certificateLoader struct {
 	config            Config
 	keysConfig        KeysConfig
 	certCache         *certificateCache
-	keyCache          *keyCache
+	keyCache          *KeyCache
 	secretManagers    map[string]Manager
 	secretNamesTypes  map[string]CredentialType
 	reconnectInterval time.Duration
@@ -53,7 +56,7 @@ type certificateLoader struct {
 
 // NewCertificateLoader creates new certificate loader which is responsible to watch a secret containing client certificate
 // and update in-memory cache with that certificate if there is any change
-func NewCertificateLoader(config Config, keysConfig KeysConfig, certCache *certificateCache, keysCache *keyCache, secretManagers map[string]Manager, secretNames map[string]CredentialType, reconnectInterval time.Duration) Loader {
+func NewCertificateLoader(config Config, keysConfig KeysConfig, certCache *certificateCache, keysCache *KeyCache, secretManagers map[string]Manager, secretNames map[string]CredentialType, reconnectInterval time.Duration) Loader {
 	return &certificateLoader{
 		config:            config,
 		keysConfig:        keysConfig,
@@ -66,26 +69,26 @@ func NewCertificateLoader(config Config, keysConfig KeysConfig, certCache *certi
 }
 
 // StartCertLoader prepares and run certificate loader goroutine
-func StartCertLoader(ctx context.Context, certLoaderConfig Config, keysLoaderConfig KeysConfig) (Cache, error) {
+func StartCertLoader(ctx context.Context, certLoaderConfig Config, keysLoaderConfig KeysConfig) (Cache, KeysCache, error) {
 	parsedCertSecret, err := namespacedname.Parse(certLoaderConfig.ExternalClientCertSecret)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	parsedExtSvcCertSecret, err := namespacedname.Parse(certLoaderConfig.ExtSvcClientCertSecret)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	parsedKeysSecret, err := namespacedname.Parse(keysLoaderConfig.KeysSecret)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	kubeConfig := kubernetes.Config{}
 	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, kubeConfig.PollInterval, kubeConfig.PollTimeout, kubeConfig.Timeout)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	certCache := NewCertificateCache()
@@ -104,7 +107,7 @@ func StartCertLoader(ctx context.Context, certLoaderConfig Config, keysLoaderCon
 	certLoader := NewCertificateLoader(certLoaderConfig, keysLoaderConfig, certCache, keysCache, secretManagers, secretNames, time.Second)
 	go certLoader.Run(ctx)
 
-	return certCache, nil
+	return certCache, keysCache, nil
 }
 
 // Run uses kubernetes watch mechanism to listen for resource changes and update certificate cache
@@ -227,12 +230,49 @@ func parseCertificate(ctx context.Context, secretData map[string][]byte, config 
 
 func parseKeys(ctx context.Context, secretData map[string][]byte, config KeysConfig) (*KeyStore, error) {
 	log.C(ctx).Info("Parsing provided certificate data...")
-	publicKeyBytes, existsPublicKey := secretData[config.KeysPublic]
-	privateKeyBytes, existsPrivateKey := secretData[config.KeysPrivate]
+	dataBytes, exists := secretData[config.KeysData]
 
-	if existsPublicKey && existsPrivateKey {
-		return key.ParseKeysBytes(publicKeyBytes, privateKeyBytes)
+	if exists {
+		return parseKeysBytes(dataBytes)
 	}
 
 	return nil, errors.New("There is no public/private key data provided")
+}
+
+func parseKeysBytes(dataBytes []byte) (*KeyStore, error) {
+	data := &secretData{}
+
+	if err := json.Unmarshal(dataBytes, data); err != nil {
+		return nil, errors.Wrapf(err, "while unmarashalling secret data")
+	}
+
+	privateKeyBlock, _ := pem.Decode([]byte(data.PrivateKey))
+	if privateKeyBlock == nil {
+		return nil, errors.New("Error while decoding private key")
+	}
+
+	rsaPrivateKey, err := x509.ParsePKCS8PrivateKey(privateKeyBlock.Bytes)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing private key block")
+	}
+
+	publicKeyBlock, _ := pem.Decode([]byte(data.PublicKey))
+	if publicKeyBlock == nil {
+		return nil, errors.New("Error while decoding public key")
+	}
+
+	genericPublicKey, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing private key block")
+	}
+
+	rsaPublicKey, ok := genericPublicKey.(*rsa.PublicKey)
+	if !ok {
+		return nil, errors.New("error while casting public key")
+	}
+
+	return &KeyStore{
+		PublicKey:  rsaPublicKey,
+		PrivateKey: rsaPrivateKey,
+	}, nil
 }
