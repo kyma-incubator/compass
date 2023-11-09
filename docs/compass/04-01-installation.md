@@ -115,9 +115,9 @@ Initiate the Ory installation with the following command:
 
 The script applies the necessary overrides for Ory Hydra to connect to the database (situated under `../../chart/ory/values.yaml`); the Oathkeeper Secret is created by a pre-install Helm hook.
 
-##### Google Clouad Platform database
+##### Google Cloud Platform database
 
-The Ory Hydra component can authenticate to Google Clouad Platform by using [gcloud-sqlproxy](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy). 
+The Ory Hydra component can authenticate to Google Cloud Platform by using [gcloud-sqlproxy](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy). 
 Firstly, install the `gcloud-sqlproxy` mentioned above - another useful source is [the Ory Hydra documentation (With Google Cloud SQL
 )](https://k8s.ory.sh/helm/hydra.html). An example YAML could look like this:
 ```yaml
