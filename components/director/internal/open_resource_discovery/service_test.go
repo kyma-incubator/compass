@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 	"sync"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -5427,7 +5428,6 @@ func fixEventsFetchRequests() []*processor.OrdFetchRequest {
 }
 
 func fixFailedEventsFetchRequests() []*processor.OrdFetchRequest {
-
 	fr1 := fixFailedFetchRequest()
 	fr2 := fixFailedFetchRequest()
 

@@ -3,6 +3,8 @@ package processor_test
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor/automock"
@@ -11,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestProductProcessor_Process(t *testing.T) {

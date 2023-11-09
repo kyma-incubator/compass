@@ -2,6 +2,8 @@ package processor
 
 import (
 	"context"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -9,7 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
-	"time"
 )
 
 // APIService is responsible for the service-layer API operations.

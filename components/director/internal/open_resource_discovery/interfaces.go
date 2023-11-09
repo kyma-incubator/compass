@@ -2,8 +2,9 @@ package ord
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 	"sync"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
