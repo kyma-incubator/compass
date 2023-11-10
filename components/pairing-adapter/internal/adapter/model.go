@@ -45,7 +45,7 @@ type Auth struct {
 	URL           string     `envconfig:"optional"`
 	OAuthStyle    OAuthStyle `envconfig:"optional,default=AuthDetect"`
 	SkipSSLVerify bool       `envconfig:"default=false,SKIP_SSL_VERIFY"`
-	credloader.CertConfig
+	Config        credloader.CertConfig
 }
 
 // swagger:response externalToken
