@@ -17,11 +17,13 @@ type secretData struct {
 	PrivateKey string `json:"private_key"`
 }
 
+// KeyStore is an object that keeps track of a public/private key
 type KeyStore struct {
 	PublicKey  *rsa.PublicKey
 	PrivateKey interface{}
 }
 
+// KeyCache is a mutex secured KeyStore
 type KeyCache struct {
 	keys  map[string]*KeyStore
 	mutex sync.RWMutex

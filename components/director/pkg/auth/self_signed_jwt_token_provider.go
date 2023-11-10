@@ -19,7 +19,6 @@ package auth
 import (
 	"context"
 	"crypto/rsa"
-	"fmt"
 	"time"
 
 	"github.com/form3tech-oss/jwt-go"
@@ -82,8 +81,6 @@ func (p selfSignedJwtTokenAuthorizationProvider) GetAuthorization(ctx context.Co
 		return "", err
 	}
 
-	fmt.Println("ALEX token: ", token)
-
 	return "Bearer " + token, nil
 }
 
@@ -103,7 +100,6 @@ func (p selfSignedJwtTokenAuthorizationProvider) buildJWTToken(privateKey *rsa.P
 	claims := token.Claims.(jwt.MapClaims)
 	for claimKey, claimValue := range jwtClaims {
 		claims[claimKey] = claimValue
-		fmt.Println("Claim", claimKey, claimValue)
 	}
 
 	claims["iat"] = time.Now().Unix()
