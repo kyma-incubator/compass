@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-const certsListLoaderCorrelationID = "cert-loader-id"
+const certsListLoaderCorrelationID = "creds-loader-id"
 
 type CredentialType string
 
@@ -151,11 +151,11 @@ func (cl *loader) startKubeWatch(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.C(ctx).Info("Context cancelled, stopping certificate watcher...")
+			log.C(ctx).Info("Context cancelled, stopping watcher...")
 			return
 		default:
 		}
-		log.C(ctx).Info("Starting certificate watchers for secret changes...")
+		log.C(ctx).Info("Starting watchers for secret changes...")
 
 		wg := &sync.WaitGroup{}
 		for name, manager := range cl.secretManagers {
@@ -174,7 +174,7 @@ func (cl *loader) startKubeWatch(ctx context.Context) {
 					time.Sleep(cl.reconnectInterval)
 					return
 				}
-				log.C(ctx).Info("Waiting for certificate secret events...")
+				log.C(ctx).Info("Waiting for secret events...")
 
 				credentialType := cl.secretNamesTypes[name]
 				cl.processEvents(ctx, watcher.ResultChan(), name, credentialType)
@@ -257,7 +257,7 @@ func parseCertificate(ctx context.Context, secretData map[string][]byte, config 
 }
 
 func parseKeys(ctx context.Context, secretData map[string][]byte, config KeysConfig) (*KeyStore, error) {
-	log.C(ctx).Info("Parsing provided certificate data...")
+	log.C(ctx).Info("Parsing provided keys data...")
 	dataBytes, exists := secretData[config.KeysData]
 
 	if exists {
