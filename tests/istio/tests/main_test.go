@@ -10,7 +10,6 @@ import (
 	config "github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -37,7 +36,7 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	if err := util.WaitForCache(certCache); err != nil {
+	if err = certloader.WaitForCertCache(certCache); err != nil {
 		log.D().Fatal(err)
 	}
 

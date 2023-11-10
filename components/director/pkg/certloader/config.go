@@ -13,6 +13,7 @@ type Config struct {
 
 // KeysConfig holds keys configuration available for the key loader
 type KeysConfig struct {
-	KeysSecret string `envconfig:"APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_NAME"`
-	KeysData   string `envconfig:"APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET"`
+	KeysSecretName string `envconfig:"APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_NAME"`
+	KeysSecret     string `envconfig:"APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET"`
+	KeysData       string `envconfig:"APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_DATA_KEY"`
 }

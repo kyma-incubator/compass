@@ -5,12 +5,12 @@ go 1.20
 require (
 	github.com/avast/retry-go/v4 v4.5.0
 	github.com/google/uuid v1.3.1
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20231107115329-4c71b7136c91
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20231107115329-4c71b7136c91
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231107115329-4c71b7136c91
-	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231107155410-3f648c29547c
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20231107115329-4c71b7136c91
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231107115329-4c71b7136c91
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20231106074556-74d4b29c3e0d
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20231106074556-74d4b29c3e0d
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231110063358-ce53e52e6240
+	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231106074556-74d4b29c3e0d
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20231106074556-74d4b29c3e0d
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231106074556-74d4b29c3e0d
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
@@ -35,6 +35,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
+	github.com/form3tech-oss/jwt-go v3.2.5+incompatible // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
