@@ -1,6 +1,8 @@
 package oauth
 
-import "github.com/form3tech-oss/jwt-go"
+import (
+	"github.com/form3tech-oss/jwt-go"
+)
 
 type TokenResponse struct {
 	AccessToken string `json:"access_token"`
@@ -13,4 +15,12 @@ type Claims struct {
 	Scopes   string `json:"scopes,omitempty"`
 	Tenant   string `json:"x-zid,omitempty"`
 	jwt.StandardClaims
+}
+
+func (c Claims) GetTenant() string {
+	return c.Tenant
+}
+
+func (c Claims) Valid() error {
+	return nil
 }

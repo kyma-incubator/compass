@@ -952,6 +952,10 @@ global:
         namespace: compass-system
         certKey: tls.crt
         keyKey: tls.key
+      publicPrivateKeysSecret:
+        name: "system-fetcher-external-keys"
+        namespace: compass-system
+        dataKey: "values"
     rotationCronjob:
       name: "external-certificate-rotation"
       schedule: "*/1 * * * *" # Executes every minute

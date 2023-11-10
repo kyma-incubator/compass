@@ -226,7 +226,7 @@ func TestSystemFetcherSuccessForCustomerTenant(t *testing.T) {
 	require.NoError(t, err)
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, systemFetcherJobName, systemFetcherJobNamespace)
-	//defer k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
+	defer k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 	defer k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
@@ -257,14 +257,14 @@ func TestSystemFetcherSuccessForCustomerTenant(t *testing.T) {
 		},
 	}
 
-	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
-	for _, _ = range resp.Data {
-		//defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultCustomerTenantID())
+	for _, app := range resp.Data {
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultCustomerTenantID(), app)
 	}
 
 	req := fixtures.FixGetApplicationBySystemNumberRequest("1")
 	var appResp directorSchema.ApplicationExt
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultCustomerTenantID(), req, &appResp)
 	require.NoError(t, err)
 	require.Equal(t, "name1", appResp.Name)
 

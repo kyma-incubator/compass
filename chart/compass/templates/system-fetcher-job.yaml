@@ -150,6 +150,12 @@ spec:
                   value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
                 - name: APP_EXT_SVC_CLIENT_CERT_SECRET_NAME
                   value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
+                - name: APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_NAME
+                  value: "{{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.name }}"
+                - name: APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET
+                  value: "{{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.name }}"
+                - name: APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_DATA_KEY
+                  value: "{{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.dataKey }}"
                 - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
                   value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
                 - name: APP_ORD_WEBHOOK_MAPPINGS
@@ -226,4 +232,25 @@ subjects:
 roleRef:
   kind: Role
   name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "fullname" . }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "fullname" . }}
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.name }}
   apiGroup: rbac.authorization.k8s.io
