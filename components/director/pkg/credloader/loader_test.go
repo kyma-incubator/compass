@@ -333,8 +333,15 @@ func preparation(ctx context.Context, number int, config CertConfig) (CertCache,
 		events: make(chan watch.Event, 50),
 	}
 	secretManagerMock := &automock.Manager{}
+
+	managers := map[string]Manager{
+		secretName: secretManagerMock,
+	}
+	secrets := map[string]CredentialType{
+		secretName: CertificateCredential,
+	}
 	secretManagerMock.On("Watch", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(watcher, nil).Times(number)
-	loader := NewCertificateLoader(config, cache, []Manager{secretManagerMock}, []string{secretName}, time.Millisecond)
+	loader := NewCertificateLoader(config, cache, managers, secrets, time.Millisecond)
 	go loader.Run(ctx)
 
 	return cache, watcher, secretManagerMock
