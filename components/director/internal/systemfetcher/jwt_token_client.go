@@ -1,19 +1,20 @@
 package systemfetcher
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 )
 
 type jwtTokenClient struct {
-	keyCache                  certloader.KeysCache
+	keyCache                  credloader.KeysCache
 	jwtSelfSignCertSecretName string
 	c                         *http.Client
 }
 
 // NewJwtTokenClient creates a jwt token client
-func NewJwtTokenClient(keyCache certloader.KeysCache, jwtSelfSignCertSecretName string, client *http.Client) *jwtTokenClient {
+func NewJwtTokenClient(keyCache credloader.KeysCache, jwtSelfSignCertSecretName string, client *http.Client) *jwtTokenClient {
 	return &jwtTokenClient{
 		keyCache:                  keyCache,
 		jwtSelfSignCertSecretName: jwtSelfSignCertSecretName,

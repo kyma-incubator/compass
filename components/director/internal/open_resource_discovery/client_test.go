@@ -17,7 +17,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy/automock"
@@ -402,7 +402,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			}
 			testHTTPClient := NewTestClient(test.RoundTripFunc)
 
-			certCache := certloader.NewCertificateCache()
+			certCache := credloader.NewCertificateCache()
 			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName)
 			if test.ExecutorProviderFunc != nil {
 				executorProviderMock = test.ExecutorProviderFunc()

@@ -70,7 +70,7 @@ import (
 	httputilpkg "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
@@ -107,7 +107,7 @@ type config struct {
 	SkipSSLValidation bool          `envconfig:"default=false"`
 
 	RetryConfig                   retry.Config
-	CertLoaderConfig              certloader.Config
+	CertLoaderConfig              credloader.CertConfig
 	GlobalRegistryConfig          ord.GlobalRegistryConfig
 	ElectionConfig                cronjob.ElectionConfig
 	MaintainOperationsJobInterval time.Duration `envconfig:"APP_MAINTAIN_OPERATIONS_JOB_INTERVAL,default=60m"`
@@ -172,7 +172,7 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	certCache, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
 	httpClient := &http.Client{
@@ -396,7 +396,7 @@ func main() {
 	runMainSrv()
 }
 
-func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache certloader.Cache) *ord.ORDDocumentsClient {
+func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache credloader.CertCache) *ord.ORDDocumentsClient {
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
@@ -409,7 +409,7 @@ func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, c
 	return ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithTenant)
 }
 
-func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache certloader.Cache) *ord.ORDDocumentsClient {
+func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache credloader.CertCache) *ord.ORDDocumentsClient {
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{

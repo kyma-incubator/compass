@@ -1,7 +1,7 @@
-package certloader
+package credloader
 
-// Config holds external client certificate configuration available for the certificate loader
-type Config struct {
+// CertConfig holds external client certificate configuration available for the certificate loader
+type CertConfig struct {
 	ExternalClientCertSecret  string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET"`
 	ExternalClientCertCertKey string `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
 	ExternalClientCertKeyKey  string `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`

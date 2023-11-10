@@ -4,8 +4,8 @@ go 1.20
 
 require (
 	github.com/go-logr/logr v1.2.3
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231106074556-74d4b29c3e0d
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231106074556-74d4b29c3e0d
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231110112851-e01167f9828d
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231107115329-4c71b7136c91
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.7.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.17.0
@@ -32,6 +32,7 @@ require (
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
+	github.com/form3tech-oss/jwt-go v3.2.5+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-logr/zapr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
