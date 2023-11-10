@@ -19,24 +19,6 @@ rules:
       - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: {{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.name }}
-  namespace: {{ $.Release.Namespace }}
-  labels:
-    app: {{ $.Chart.Name }}
-    release: {{ $.Release.Name }}
-    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
-    app.kubernetes.io/managed-by: {{ $.Release.Service }}
-    app.kubernetes.io/instance: {{ $.Release.Name }}
-rules:
-  - apiGroups: ["*"]
-    resources: ["secrets"]
-    resourceNames: ["{{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.name }}"]
-    verbs: ["watch"]
----
-apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ template "fullname" . }}
@@ -53,7 +35,7 @@ subjects:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "fullname" . }}-system-fetcher-ext-keys
+  name: {{ template "fullname" . }}-system-fetcher-keys
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $.Chart.Name }}

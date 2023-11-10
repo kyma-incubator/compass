@@ -287,7 +287,7 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 		},
 		{
 			key:            keyCache.Get()[cfg.KeyLoaderConfig.KeysSecretName].PublicKey,
-			validateClaims: getClaimsValidator([]string{cfg.DefaultCustomerTenant, cfg.TrustedTenant}),
+			validateClaims: getClaimsValidator([]string{cfg.DefaultCustomerTenant}),
 			Parsed:         &modelJwt.Claims{},
 		},
 	}))

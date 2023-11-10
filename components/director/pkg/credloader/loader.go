@@ -133,8 +133,8 @@ func StartKeyLoader(ctx context.Context, keysLoaderConfig KeysConfig) (KeysCache
 		parsedKeysSecret.Name: keysCredential,
 	}
 
-	certLoader := NewKeyLoader(keysLoaderConfig, keysCache, secretManagers, secretNames, time.Second)
-	go certLoader.Run(ctx)
+	keyLoader := NewKeyLoader(keysLoaderConfig, keysCache, secretManagers, secretNames, time.Second)
+	go keyLoader.Run(ctx)
 
 	return keysCache, nil
 }
