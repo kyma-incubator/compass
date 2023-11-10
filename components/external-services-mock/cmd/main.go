@@ -6,11 +6,12 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 

@@ -3,7 +3,7 @@ package accessstrategy
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 )
 
 // ExecutorProvider defines an interface for access strategy executor provider
@@ -26,7 +26,7 @@ func NewExecutorProvider(executors map[Type]Executor) *Provider {
 }
 
 // NewDefaultExecutorProvider returns a new access strategy executor provider with the default static type <-> executor mapping
-func NewDefaultExecutorProvider(certCache certloader.Cache, externalClientCertSecretName, extSvcClientCertSecretName string) *Provider {
+func NewDefaultExecutorProvider(certCache credloader.CertCache, externalClientCertSecretName, extSvcClientCertSecretName string) *Provider {
 	return &Provider{
 		executors: map[Type]Executor{
 			OpenAccessStrategy:    &openAccessStrategyExecutor{},
@@ -36,7 +36,7 @@ func NewDefaultExecutorProvider(certCache certloader.Cache, externalClientCertSe
 }
 
 // NewExecutorProviderWithTenant returns a new access strategy executor provider by given tenant provider function
-func NewExecutorProviderWithTenant(certCache certloader.Cache, tenantProviderFunc func(ctx context.Context) (string, error), externalClientCertSecretName, extSvcClientCertSecretName string) *Provider {
+func NewExecutorProviderWithTenant(certCache credloader.CertCache, tenantProviderFunc func(ctx context.Context) (string, error), externalClientCertSecretName, extSvcClientCertSecretName string) *Provider {
 	return &Provider{
 		executors: map[Type]Executor{
 			OpenAccessStrategy:    &openAccessStrategyExecutor{},

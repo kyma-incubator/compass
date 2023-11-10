@@ -20,9 +20,10 @@ import (
 	"context"
 	"crypto/rsa"
 	"fmt"
+	"time"
+
 	"github.com/form3tech-oss/jwt-go"
 	directorjwt "github.com/kyma-incubator/compass/components/director/pkg/jwt"
-	"time"
 
 	"github.com/pkg/errors"
 )

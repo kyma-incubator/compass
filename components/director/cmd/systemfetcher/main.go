@@ -4,12 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/jwt"
-	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/jwt"
+	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	directortime "github.com/kyma-incubator/compass/components/director/pkg/time"
 
@@ -64,8 +65,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	pkgAuth "github.com/kyma-incubator/compass/components/director/pkg/auth"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -97,8 +98,8 @@ type config struct {
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 	ClientTimeout           time.Duration `envconfig:"default=60s"`
 
-	CertLoaderConfig certloader.Config
-	KeyLoaderConfig  certloader.KeysConfig
+	CertLoaderConfig credloader.CertConfig
+	KeyLoaderConfig  credloader.KeysConfig
 
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 
@@ -139,21 +140,21 @@ func main() {
 		}
 	}()
 
-	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	certCache, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize certificate loader"))
 	}
 
-	keyCache, err := certloader.StartKeyLoader(ctx, cfg.KeyLoaderConfig)
+	keyCache, err := credloader.StartKeyLoader(ctx, cfg.KeyLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize key loader"))
 	}
 
-	if err = certloader.WaitForKeyCache(keyCache); err != nil {
+	if err = credloader.WaitForKeyCache(keyCache); err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to wait for key cache"))
 	}
 
-	if err = certloader.WaitForCertCache(certCache); err != nil {
+	if err = credloader.WaitForCertCache(certCache); err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to wait for cert cache"))
 	}
 
@@ -187,7 +188,7 @@ func main() {
 	}
 }
 
-func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient *http.Client, certCache certloader.Cache, keyCache certloader.KeysCache) (*systemfetcher.SystemFetcher, error) {
+func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient *http.Client, certCache credloader.CertCache, keyCache credloader.KeysCache) (*systemfetcher.SystemFetcher, error) {
 	ordWebhookMapping, err := application.UnmarshalMappings(cfg.ORDWebhookMappings)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed while unmarshalling ord webhook mappings")

@@ -1,4 +1,4 @@
-package certloader
+package credloader
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader/automock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -45,7 +45,7 @@ func (tw *testWatch) ResultChan() <-chan watch.Event {
 }
 
 func Test_CertificateLoaderWatch(t *testing.T) {
-	config := Config{
+	config := CertConfig{
 		ExternalClientCertSecret:  "namespace/resource-name",
 		ExternalClientCertCertKey: "tls.crt",
 		ExternalClientCertKeyKey:  "tls.key",
@@ -252,7 +252,7 @@ func Test_CertificateLoaderWatch(t *testing.T) {
 
 func Test_CertificateParsing(t *testing.T) {
 	ctx := context.Background()
-	config := Config{
+	config := CertConfig{
 		ExternalClientCertCertKey: "tls.crt",
 		ExternalClientCertKeyKey:  "tls.key",
 	}
@@ -264,7 +264,7 @@ func Test_CertificateParsing(t *testing.T) {
 		Name             string
 		SecretData       map[string][]byte
 		ExpectedErrorMsg string
-		Cfg              Config
+		Cfg              CertConfig
 	}{
 		{
 			Name:       "Successfully get certificate from cache",
@@ -274,7 +274,7 @@ func Test_CertificateParsing(t *testing.T) {
 		{
 			Name:       "Successfully get ext svc certificate from cache",
 			SecretData: map[string][]byte{secretCertKey: certBytes, secretKeyKey: keyBytes},
-			Cfg: Config{
+			Cfg: CertConfig{
 				ExtSvcClientCertCertKey: "tls.crt",
 				ExtSvcClientCertKeyKey:  "tls.key",
 			},
@@ -327,7 +327,7 @@ func Test_CertificateParsing(t *testing.T) {
 	}
 }
 
-func preparation(ctx context.Context, number int, config Config) (Cache, *testWatch, *automock.Manager) {
+func preparation(ctx context.Context, number int, config CertConfig) (CertCache, *testWatch, *automock.Manager) {
 	cache := NewCertificateCache()
 	watcher := &testWatch{
 		events: make(chan watch.Event, 50),

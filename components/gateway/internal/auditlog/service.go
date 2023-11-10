@@ -202,8 +202,8 @@ type graphqQuery struct {
 	Query string `json:"query"`
 }
 
-//We assume that if request payload start with `mutation` and
-//if any of response errors has path array length equal 1, that means that mutation failed
+// We assume that if request payload start with `mutation` and
+// if any of response errors has path array length equal 1, that means that mutation failed
 func isReadError(response model.GraphqlResponse, request string) (bool, error) {
 	req := strings.TrimSpace(request)
 	isMutation := strings.HasPrefix(req, "mutation")
