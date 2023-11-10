@@ -25,11 +25,11 @@ import (
 
 const certsListLoaderCorrelationID = "creds-loader-id"
 
-type CredentialType string
+type credentialType string
 
 const (
-	KeysCredential        CredentialType = "KeysCredentials"
-	CertificateCredential CredentialType = "CertificateCredentials"
+	keysCredential        credentialType = "KeysCredentials"
+	certificateCredential credentialType = "CertificateCredentials"
 )
 
 // Loader provide mechanism to load certificate data into in-memory storage
@@ -50,13 +50,13 @@ type loader struct {
 	certCache         *certificateCache
 	keyCache          *KeyCache
 	secretManagers    map[string]Manager
-	secretNamesTypes  map[string]CredentialType
+	secretNamesTypes  map[string]credentialType
 	reconnectInterval time.Duration
 }
 
 // NewCertificateLoader creates new certificate loader which is responsible to watch a secret containing client certificate
 // and update in-memory cache with that certificate if there is any change
-func NewCertificateLoader(config CertConfig, certCache *certificateCache, secretManagers map[string]Manager, secretNames map[string]CredentialType, reconnectInterval time.Duration) Loader {
+func NewCertificateLoader(config CertConfig, certCache *certificateCache, secretManagers map[string]Manager, secretNames map[string]credentialType, reconnectInterval time.Duration) Loader {
 	return &loader{
 		config:            config,
 		certCache:         certCache,
@@ -68,7 +68,7 @@ func NewCertificateLoader(config CertConfig, certCache *certificateCache, secret
 
 // NewKeyLoader creates new certificate loader which is responsible to watch a secret containing client certificate
 // and update in-memory cache with that certificate if there is any change
-func NewKeyLoader(keysConfig KeysConfig, keysCache *KeyCache, secretManagers map[string]Manager, secretNames map[string]CredentialType, reconnectInterval time.Duration) Loader {
+func NewKeyLoader(keysConfig KeysConfig, keysCache *KeyCache, secretManagers map[string]Manager, secretNames map[string]credentialType, reconnectInterval time.Duration) Loader {
 	return &loader{
 		keysConfig:        keysConfig,
 		keyCache:          keysCache,
@@ -101,9 +101,9 @@ func StartCertLoader(ctx context.Context, certLoaderConfig CertConfig) (CertCach
 		parsedCertSecret.Name:       k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace),
 		parsedExtSvcCertSecret.Name: k8sClientSet.CoreV1().Secrets(parsedExtSvcCertSecret.Namespace),
 	}
-	secretNames := map[string]CredentialType{
-		parsedCertSecret.Name:       CertificateCredential,
-		parsedExtSvcCertSecret.Name: CertificateCredential,
+	secretNames := map[string]credentialType{
+		parsedCertSecret.Name:       certificateCredential,
+		parsedExtSvcCertSecret.Name: certificateCredential,
 	}
 
 	certLoader := NewCertificateLoader(certLoaderConfig, certCache, secretManagers, secretNames, time.Second)
@@ -112,6 +112,7 @@ func StartCertLoader(ctx context.Context, certLoaderConfig CertConfig) (CertCach
 	return certCache, nil
 }
 
+// StartKeyLoader prepares and run keys loader goroutine
 func StartKeyLoader(ctx context.Context, keysLoaderConfig KeysConfig) (KeysCache, error) {
 	parsedKeysSecret, err := namespacedname.Parse(keysLoaderConfig.KeysSecret)
 	if err != nil {
@@ -128,8 +129,8 @@ func StartKeyLoader(ctx context.Context, keysLoaderConfig KeysConfig) (KeysCache
 	secretManagers := map[string]Manager{
 		parsedKeysSecret.Name: k8sClientSet.CoreV1().Secrets(parsedKeysSecret.Namespace),
 	}
-	secretNames := map[string]CredentialType{
-		parsedKeysSecret.Name: KeysCredential,
+	secretNames := map[string]credentialType{
+		parsedKeysSecret.Name: keysCredential,
 	}
 
 	certLoader := NewKeyLoader(keysLoaderConfig, keysCache, secretManagers, secretNames, time.Second)
@@ -189,7 +190,7 @@ func (cl *loader) startKubeWatch(ctx context.Context) {
 	}
 }
 
-func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, secretName string, credentialType CredentialType) {
+func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, secretName string, credentialType credentialType) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -208,7 +209,7 @@ func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, 
 					log.C(ctx).Error("Unexpected error: object is not secret. Try again")
 					continue
 				}
-				if credentialType == CertificateCredential {
+				if credentialType == certificateCredential {
 					tlsCert, err := parseCertificate(ctx, secret.Data, cl.config)
 					if err != nil {
 						log.C(ctx).WithError(err).Error("Fail during certificate parsing")
@@ -224,7 +225,7 @@ func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, 
 			case watch.Deleted:
 				log.C(ctx).Infof("Removing %s secret data from cache...", credentialType)
 
-				if credentialType == CertificateCredential {
+				if credentialType == certificateCredential {
 					cl.certCache.put(secretName, nil)
 				} else {
 					cl.keyCache.put(secretName, nil)

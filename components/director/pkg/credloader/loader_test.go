@@ -337,8 +337,8 @@ func preparation(ctx context.Context, number int, config CertConfig) (CertCache,
 	managers := map[string]Manager{
 		secretName: secretManagerMock,
 	}
-	secrets := map[string]CredentialType{
-		secretName: CertificateCredential,
+	secrets := map[string]credentialType{
+		secretName: certificateCredential,
 	}
 	secretManagerMock.On("Watch", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(watcher, nil).Times(number)
 	loader := NewCertificateLoader(config, cache, managers, secrets, time.Millisecond)
