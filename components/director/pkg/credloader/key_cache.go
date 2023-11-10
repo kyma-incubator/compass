@@ -1,4 +1,4 @@
-package certloader
+package credloader
 
 import (
 	"crypto/rsa"

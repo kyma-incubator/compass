@@ -1,12 +1,13 @@
-package certloader
+package credloader
 
 import (
 	"errors"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
-func WaitForCertCache(cache Cache) error {
+func WaitForCertCache(cache CertCache) error {
 	ticker := time.NewTicker(time.Second)
 	timeout := time.After(time.Second * 15)
 	for {

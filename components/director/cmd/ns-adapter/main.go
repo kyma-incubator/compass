@@ -65,8 +65,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/nsmodel"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	directorHandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
@@ -101,7 +101,7 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	certCache, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
+	certCache, err := credloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
 	securedHTTPClient := httputildirector.PrepareHTTPClient(conf.ClientTimeout)
