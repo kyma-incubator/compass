@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/util"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -39,7 +38,7 @@ func NewSystemBrokerTestContext(cfg config.SystemBrokerTestConfig) (*SystemBroke
 		return nil, errors.Wrap(err, "while starting cert cache")
 	}
 
-	if err := util.WaitForCache(cc); err != nil {
+	if err := certloader.WaitForCertCache(cc); err != nil {
 		return nil, err
 	}
 

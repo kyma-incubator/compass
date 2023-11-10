@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"net/http"
 	"strings"
 	"sync"
@@ -33,6 +34,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/cert"
 
+	modelJwt "github.com/kyma-incubator/compass/components/external-services-mock/internal/jwt"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/oauth"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/webhook"
@@ -72,6 +74,8 @@ type config struct {
 	DefaultCustomerTenant    string `envconfig:"APP_DEFAULT_CUSTOMER_TENANT"`
 	TrustedTenant            string `envconfig:"APP_TRUSTED_TENANT"`
 	OnDemandTenant           string `envconfig:"APP_ON_DEMAND_TENANT"`
+
+	KeyLoaderConfig certloader.KeysConfig
 
 	TenantConfig         subscription.Config
 	TenantProviderConfig subscription.ProviderConfig
@@ -146,6 +150,12 @@ func main() {
 	err := envconfig.InitWithOptions(&cfg, envconfig.Options{Prefix: "APP", AllOptional: true})
 	exitOnError(err, "while loading configuration")
 
+	keyCache, err := certloader.StartKeyLoader(ctx, cfg.KeyLoaderConfig)
+	exitOnError(err, "failed to initialize key loader")
+
+	err = certloader.WaitForKeyCache(keyCache)
+	exitOnError(err, "failed to wait key loader")
+
 	extSvcMockURL := fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port)
 	staticClaimsMapping := map[string]oauth.ClaimsGetterFunc{
 		claims.TenantFetcherClaimKey:                   claimsFunc("test", "tenant-fetcher", "client_id", cfg.TenantConfig.TestConsumerSubaccountID, "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
@@ -177,7 +187,7 @@ func main() {
 
 	destinationCreatorHandler := destinationcreator.NewHandler(cfg.DestinationCreatorConfig)
 
-	go startServer(ctx, initDefaultServer(cfg, key, staticClaimsMapping, httpClient, destinationCreatorHandler), wg)
+	go startServer(ctx, initDefaultServer(cfg, keyCache, key, staticClaimsMapping, httpClient, destinationCreatorHandler), wg)
 	go startServer(ctx, initDefaultCertServer(cfg, key, staticClaimsMapping, destinationCreatorHandler), wg)
 
 	for _, server := range ordServers {
@@ -195,7 +205,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client, destinationCreatorHandler *destinationcreator.Handler) *http.Server {
+func initDefaultServer(cfg config, keyCache certloader.KeysCache, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client, destinationCreatorHandler *destinationcreator.Handler) *http.Server {
 	logger := logrus.New()
 	router := mux.NewRouter()
 	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint))
@@ -269,7 +279,18 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
 	router.Methods(http.MethodDelete).PathPrefix("/systemfetcher/reset").HandlerFunc(systemFetcherHandler.HandleReset)
 	systemsRouter := router.PathPrefix("/systemfetcher/systems").Subrouter()
-	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator([]string{cfg.DefaultTenant, cfg.TrustedTenant})))
+	systemsRouter.Use(oauthMiddlewareMultiple([]MiddlewareArgs{
+		{
+			key:            &key.PublicKey,
+			validateClaims: getClaimsValidator([]string{cfg.DefaultTenant, cfg.TrustedTenant}),
+			Parsed:         &oauth.Claims{},
+		},
+		{
+			key:            keyCache.Get()[cfg.KeyLoaderConfig.KeysSecretName].PublicKey,
+			validateClaims: getClaimsValidator([]string{cfg.DefaultCustomerTenant, cfg.TrustedTenant}),
+			Parsed:         &modelJwt.Claims{},
+		},
+	}))
 	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
 
 	// Tenant fetcher handlers
@@ -614,7 +635,55 @@ func initOauthSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	}
 }
 
-func oauthMiddleware(key *rsa.PublicKey, validateClaims func(claims *oauth.Claims) bool) func(next http.Handler) http.Handler {
+type MiddlewareArgs struct {
+	key            *rsa.PublicKey
+	validateClaims func(claims jwt.Claims) bool
+	Parsed         jwt.Claims
+}
+
+func oauthMiddlewareMultiple(args []MiddlewareArgs) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authHeader := r.Header.Get(httphelpers.AuthorizationHeaderKey)
+			if len(authHeader) == 0 {
+				httphelpers.WriteError(w, errors.New("No Authorization header"), http.StatusUnauthorized)
+				return
+			}
+			if !strings.Contains(authHeader, "Bearer") {
+				httphelpers.WriteError(w, errors.New("No Bearer token"), http.StatusUnauthorized)
+				return
+			}
+
+			token := strings.TrimPrefix(authHeader, "Bearer ")
+			hasSucceeded := true
+
+			for _, middlewareArgs := range args {
+				if _, err := jwt.ParseWithClaims(token, middlewareArgs.Parsed, func(_ *jwt.Token) (interface{}, error) {
+					return middlewareArgs.key, nil
+				}); err != nil {
+					hasSucceeded = false
+					continue
+				}
+
+				if !middlewareArgs.validateClaims(middlewareArgs.Parsed) {
+					hasSucceeded = false
+					continue
+				}
+
+				log.C(r.Context()).Infof("Middleware authenticated successfully. Continue with request.")
+				r.Header.Set("tenant", getClaimsTenant(middlewareArgs.Parsed))
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			if !hasSucceeded {
+				httphelpers.WriteError(w, errors.New("Could not validate token"), http.StatusUnauthorized)
+			}
+		})
+	}
+}
+
+func oauthMiddleware(key *rsa.PublicKey, validateClaims func(claims Claims) bool) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get(httphelpers.AuthorizationHeaderKey)
@@ -703,17 +772,33 @@ func stopServer(server *http.Server) {
 	}
 }
 
-func noopClaimsValidator(_ *oauth.Claims) bool {
+func noopClaimsValidator(_ Claims) bool {
 	return true
 }
 
-func getClaimsValidator(trustedTenants []string) func(*oauth.Claims) bool {
-	return func(claims *oauth.Claims) bool {
+type Claims interface {
+	GetTenant() string
+}
+
+func getClaimsValidator(trustedTenants []string) func(jwt.Claims) bool {
+	return func(claims jwt.Claims) bool {
 		for _, tenant := range trustedTenants {
-			if claims.Tenant == tenant {
+			claimsTenant := getClaimsTenant(claims)
+			if claimsTenant == tenant {
 				return true
 			}
 		}
 		return false
+	}
+}
+
+func getClaimsTenant(claims jwt.Claims) string {
+	switch c := claims.(type) {
+	case *oauth.Claims:
+		return c.GetTenant()
+	case *modelJwt.Claims:
+		return c.GetTenant()
+	default:
+		return ""
 	}
 }

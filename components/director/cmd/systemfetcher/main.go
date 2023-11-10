@@ -106,7 +106,6 @@ type config struct {
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
-	JwtSelfSignCertSecretName    string `envconfig:"APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_NAME"`
 }
 
 type appTemplateConfig struct {
@@ -140,9 +139,22 @@ func main() {
 		}
 	}()
 
-	certCache, keyCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig, cfg.KeyLoaderConfig)
+	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize certificate loader"))
+	}
+
+	keyCache, err := certloader.StartKeyLoader(ctx, cfg.KeyLoaderConfig)
+	if err != nil {
+		log.D().Fatal(errors.Wrap(err, "failed to initialize key loader"))
+	}
+
+	if err = certloader.WaitForKeyCache(keyCache); err != nil {
+		log.D().Fatal(errors.Wrap(err, "failed to wait for key cache"))
+	}
+
+	if err = certloader.WaitForCertCache(certCache); err != nil {
+		log.D().Fatal(errors.Wrap(err, "failed to wait for cert cache"))
 	}
 
 	httpClient := &http.Client{Timeout: cfg.ClientTimeout}
@@ -280,7 +292,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		Timeout:   cfg.APIConfig.Timeout,
 	}
 	oauthMtlsClient := systemfetcher.NewOauthMtlsClient(cfg.OAuth2Config, certCache, client)
-	jwtTokenClient := systemfetcher.NewJwtTokenClient(keyCache, cfg.JwtSelfSignCertSecretName, client)
+	jwtTokenClient := systemfetcher.NewJwtTokenClient(keyCache, cfg.KeyLoaderConfig.KeysSecretName, client)
 	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, oauthMtlsClient, jwtTokenClient)
 
 	tr := &http.Transport{
