@@ -44,7 +44,7 @@ type Manager interface {
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
 
-type certificateLoader struct {
+type loader struct {
 	config            Config
 	keysConfig        KeysConfig
 	certCache         *certificateCache
@@ -56,11 +56,21 @@ type certificateLoader struct {
 
 // NewCertificateLoader creates new certificate loader which is responsible to watch a secret containing client certificate
 // and update in-memory cache with that certificate if there is any change
-func NewCertificateLoader(config Config, keysConfig KeysConfig, certCache *certificateCache, keysCache *KeyCache, secretManagers map[string]Manager, secretNames map[string]CredentialType, reconnectInterval time.Duration) Loader {
-	return &certificateLoader{
+func NewCertificateLoader(config Config, certCache *certificateCache, secretManagers map[string]Manager, secretNames map[string]CredentialType, reconnectInterval time.Duration) Loader {
+	return &loader{
 		config:            config,
-		keysConfig:        keysConfig,
 		certCache:         certCache,
+		secretManagers:    secretManagers,
+		secretNamesTypes:  secretNames,
+		reconnectInterval: reconnectInterval,
+	}
+}
+
+// NewKeyLoader creates new certificate loader which is responsible to watch a secret containing client certificate
+// and update in-memory cache with that certificate if there is any change
+func NewKeyLoader(keysConfig KeysConfig, keysCache *KeyCache, secretManagers map[string]Manager, secretNames map[string]CredentialType, reconnectInterval time.Duration) Loader {
+	return &loader{
+		keysConfig:        keysConfig,
 		keyCache:          keysCache,
 		secretManagers:    secretManagers,
 		secretNamesTypes:  secretNames,
@@ -69,49 +79,67 @@ func NewCertificateLoader(config Config, keysConfig KeysConfig, certCache *certi
 }
 
 // StartCertLoader prepares and run certificate loader goroutine
-func StartCertLoader(ctx context.Context, certLoaderConfig Config, keysLoaderConfig KeysConfig) (Cache, KeysCache, error) {
+func StartCertLoader(ctx context.Context, certLoaderConfig Config) (Cache, error) {
 	parsedCertSecret, err := namespacedname.Parse(certLoaderConfig.ExternalClientCertSecret)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	parsedExtSvcCertSecret, err := namespacedname.Parse(certLoaderConfig.ExtSvcClientCertSecret)
 	if err != nil {
-		return nil, nil, err
-	}
-
-	parsedKeysSecret, err := namespacedname.Parse(keysLoaderConfig.KeysSecret)
-	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	kubeConfig := kubernetes.Config{}
 	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, kubeConfig.PollInterval, kubeConfig.PollTimeout, kubeConfig.Timeout)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	certCache := NewCertificateCache()
-	keysCache := NewKeyCache()
 	secretManagers := map[string]Manager{
-		parsedCertSecret.Namespace:       k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace),
-		parsedExtSvcCertSecret.Namespace: k8sClientSet.CoreV1().Secrets(parsedExtSvcCertSecret.Namespace),
-		parsedKeysSecret.Namespace:       k8sClientSet.CoreV1().Secrets(parsedKeysSecret.Namespace),
+		parsedCertSecret.Name:       k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace),
+		parsedExtSvcCertSecret.Name: k8sClientSet.CoreV1().Secrets(parsedExtSvcCertSecret.Namespace),
 	}
 	secretNames := map[string]CredentialType{
 		parsedCertSecret.Name:       CertificateCredential,
 		parsedExtSvcCertSecret.Name: CertificateCredential,
-		parsedKeysSecret.Name:       KeysCredential,
 	}
 
-	certLoader := NewCertificateLoader(certLoaderConfig, keysLoaderConfig, certCache, keysCache, secretManagers, secretNames, time.Second)
+	certLoader := NewCertificateLoader(certLoaderConfig, certCache, secretManagers, secretNames, time.Second)
 	go certLoader.Run(ctx)
 
-	return certCache, keysCache, nil
+	return certCache, nil
+}
+
+func StartKeyLoader(ctx context.Context, keysLoaderConfig KeysConfig) (KeysCache, error) {
+	parsedKeysSecret, err := namespacedname.Parse(keysLoaderConfig.KeysSecret)
+	if err != nil {
+		return nil, err
+	}
+
+	kubeConfig := kubernetes.Config{}
+	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, kubeConfig.PollInterval, kubeConfig.PollTimeout, kubeConfig.Timeout)
+	if err != nil {
+		return nil, err
+	}
+
+	keysCache := NewKeyCache()
+	secretManagers := map[string]Manager{
+		parsedKeysSecret.Name: k8sClientSet.CoreV1().Secrets(parsedKeysSecret.Namespace),
+	}
+	secretNames := map[string]CredentialType{
+		parsedKeysSecret.Name: KeysCredential,
+	}
+
+	certLoader := NewKeyLoader(keysLoaderConfig, keysCache, secretManagers, secretNames, time.Second)
+	go certLoader.Run(ctx)
+
+	return keysCache, nil
 }
 
 // Run uses kubernetes watch mechanism to listen for resource changes and update certificate cache
-func (cl *certificateLoader) Run(ctx context.Context) {
+func (cl *loader) Run(ctx context.Context) {
 	entry := log.C(ctx)
 	entry = entry.WithField(log.FieldRequestID, certsListLoaderCorrelationID)
 	ctx = log.ContextWithLogger(ctx, entry)
@@ -119,7 +147,7 @@ func (cl *certificateLoader) Run(ctx context.Context) {
 	cl.startKubeWatch(ctx)
 }
 
-func (cl *certificateLoader) startKubeWatch(ctx context.Context) {
+func (cl *loader) startKubeWatch(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -142,7 +170,7 @@ func (cl *certificateLoader) startKubeWatch(ctx context.Context) {
 				})
 
 				if err != nil {
-					log.C(ctx).WithError(err).Errorf("Could not initialize watcher. Sleep for %s and try again... %v", cl.reconnectInterval.String(), err)
+					log.C(ctx).WithError(err).Errorf("Could not initialize watcher for resource name %q. Sleep for %s and try again... %v", name, cl.reconnectInterval.String(), err)
 					time.Sleep(cl.reconnectInterval)
 					return
 				}
@@ -161,7 +189,7 @@ func (cl *certificateLoader) startKubeWatch(ctx context.Context) {
 	}
 }
 
-func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan watch.Event, secretName string, credentialType CredentialType) {
+func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, secretName string, credentialType CredentialType) {
 	for {
 		select {
 		case <-ctx.Done():
