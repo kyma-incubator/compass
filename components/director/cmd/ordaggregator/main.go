@@ -313,6 +313,7 @@ func main() {
 	eventProcessor := processor.NewEventProcessor(transact, eventAPISvc, entityTypeSvc, entityTypeMappingSvc, bundleReferenceSvc, specSvc)
 	integrationDependencyProcessor := processor.NewIntegrationDependencyProcessor(transact, integrationDependencySvc, aspectSvc)
 	entityTypeProcessor := processor.NewEntityTypeProcessor(transact, entityTypeSvc)
+	capabilityProcessor := processor.NewCapabilityProcessor(transact, capabilitySvc, specSvc)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
 	appTemplateVersionSvc := apptemplateversion.NewService(appTemplateVersionRepo, appTemplateSvc, uidSvc, timeSvc)
 
@@ -346,7 +347,7 @@ func main() {
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
 	ordConfig := ord.NewServiceConfig(cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
-	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, apiProcessor, eventAPISvc, eventProcessor, entityTypeSvc, entityTypeProcessor, capabilitySvc, integrationDependencySvc, integrationDependencyProcessor, specSvc, fetchRequestSvc, packageSvc, packageProcessor, productSvc, productProcessor, vendorSvc, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping, opSvc)
+	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, apiProcessor, eventAPISvc, eventProcessor, entityTypeSvc, entityTypeProcessor, capabilitySvc, capabilityProcessor, integrationDependencySvc, integrationDependencyProcessor, specSvc, fetchRequestSvc, packageSvc, packageProcessor, productSvc, productProcessor, vendorSvc, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping, opSvc)
 	ordOpProcessor := &ord.OperationsProcessor{
 		OrdSvc: ordSvc,
 	}

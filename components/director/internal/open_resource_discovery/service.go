@@ -95,6 +95,7 @@ type Service struct {
 	eventProcessor                 EventProcessor
 	entityTypeSvc                  EntityTypeService
 	capabilitySvc                  CapabilityService
+	capabilityProcessor            CapabilityProcessor
 	integrationDependencySvc       IntegrationDependencyService
 	specSvc                        SpecService
 	fetchReqSvc                    FetchRequestService
@@ -122,7 +123,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, apiProcessor APIProcessor, eventSvc EventService, eventProcessor EventProcessor, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, packageProcessor PackageProcessor, productSvc ProductService, productProcessor ProductProcessor, vendorSvc VendorService, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, apiProcessor APIProcessor, eventSvc EventService, eventProcessor EventProcessor, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, capabilityProcessor CapabilityProcessor, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, packageProcessor PackageProcessor, productSvc ProductService, productProcessor ProductProcessor, vendorSvc VendorService, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
 		config:                         config,
 		metricsCfg:                     metricsCfg,
@@ -138,6 +139,7 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		entityTypeSvc:                  entityTypeSvc,
 		entityTypeProcessor:            entityTypeProcessor,
 		capabilitySvc:                  capabilitySvc,
+		capabilityProcessor:            capabilityProcessor,
 		integrationDependencySvc:       integrationDependencySvc,
 		integrationDependencyProcessor: integrationDependencyProcessor,
 		specSvc:                        specSvc,
@@ -430,7 +432,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		log.C(ctx).Infof("Finished processing entity types for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing capabilities for %s with id: %q", resource.Type, resource.ID)
-		capabilitiesFromDB, capabilitiesFetchRequests, err := s.processCapabilities(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.Capabilities, resourceHashes)
+		capabilitiesFromDB, capabilitiesFetchRequests, err := s.capabilityProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.Capabilities, resourceHashes)
 		if err != nil {
 			return err
 		}
@@ -968,78 +970,6 @@ func (s *Service) processEnrichedWebhooks(enrichedWebhooks []*graphql.WebhookInp
 	return tenantMappingRelatedWebhooksFromDB, enrichedWebhookModels, enrichedWebhookModelInputs, nil
 }
 
-func (s *Service) processCapabilities(ctx context.Context, resourceType directorresource.Type, resourceID string, packagesFromDB []*model.Package, capabilities []*model.CapabilityInput, resourceHashes map[string]uint64) ([]*model.Capability, []*processor.OrdFetchRequest, error) {
-	capabilitiesFromDB, err := s.listCapabilitiesInTx(ctx, resourceType, resourceID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	fetchRequests := make([]*processor.OrdFetchRequest, 0)
-	for _, capability := range capabilities {
-		capabilityHash := resourceHashes[str.PtrStrToStr(capability.OrdID)]
-		capabilityFetchRequests, err := s.resyncCapabilitiesInTx(ctx, resourceType, resourceID, capabilitiesFromDB, packagesFromDB, capability, capabilityHash)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		for i := range capabilityFetchRequests {
-			fetchRequests = append(fetchRequests, &processor.OrdFetchRequest{
-				FetchRequest:   capabilityFetchRequests[i],
-				RefObjectOrdID: *capability.OrdID,
-			})
-		}
-	}
-
-	capabilitiesFromDB, err = s.listCapabilitiesInTx(ctx, resourceType, resourceID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return capabilitiesFromDB, fetchRequests, nil
-}
-
-func (s *Service) listCapabilitiesInTx(ctx context.Context, resourceType directorresource.Type, resourceID string) ([]*model.Capability, error) {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	var capabilitiesFromDB []*model.Capability
-
-	switch resourceType {
-	case directorresource.Application:
-		capabilitiesFromDB, err = s.capabilitySvc.ListByApplicationID(ctx, resourceID)
-	case directorresource.ApplicationTemplateVersion:
-		capabilitiesFromDB, err = s.capabilitySvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, errors.Wrapf(err, "error while listing capabilities for %s with id %q", resourceType, resourceID)
-	}
-
-	return capabilitiesFromDB, nil
-}
-
-func (s *Service) resyncCapabilitiesInTx(ctx context.Context, resourceType directorresource.Type, resourceID string, capabilitiesFromDB []*model.Capability, packagesFromDB []*model.Package, capability *model.CapabilityInput, capabilityHash uint64) ([]*model.FetchRequest, error) {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	fetchRequests, err := s.resyncCapability(ctx, resourceType, resourceID, capabilitiesFromDB, packagesFromDB, *capability, capabilityHash)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error while resyncing capability with ORD ID %q", *capability.OrdID)
-	}
-	return fetchRequests, tx.Commit()
-}
-
 func (s *Service) resyncBundle(ctx context.Context, resourceType directorresource.Type, resourceID string, bundlesFromDB []*model.Bundle, bndl model.BundleCreateInput, bndlHash uint64) error {
 	ctx = addFieldToLogger(ctx, "bundle_ord_id", *bndl.OrdID)
 	if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
@@ -1062,137 +992,6 @@ func (s *Service) resyncAppTemplateVersion(ctx context.Context, appTemplateID st
 
 	_, err := s.appTemplateVersionSvc.Create(ctx, appTemplateID, appTemplateVersion)
 	return err
-}
-
-func (s *Service) resyncCapability(ctx context.Context, resourceType directorresource.Type, resourceID string, capabilitiesFromDB []*model.Capability, packagesFromDB []*model.Package, capability model.CapabilityInput, capabilityHash uint64) ([]*model.FetchRequest, error) {
-	ctx = addFieldToLogger(ctx, "capability_ord_id", *capability.OrdID)
-	i, isCapabilityFound := searchInSlice(len(capabilitiesFromDB), func(i int) bool {
-		return equalStrings(capabilitiesFromDB[i].OrdID, capability.OrdID)
-	})
-
-	var packageID *string
-	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
-		return equalStrings(&packagesFromDB[i].OrdID, capability.OrdPackageID)
-	}); found {
-		packageID = &packagesFromDB[i].ID
-	}
-
-	specs := make([]*model.SpecInput, 0, len(capability.CapabilityDefinitions))
-	for _, resourceDef := range capability.CapabilityDefinitions {
-		specs = append(specs, resourceDef.ToSpec())
-	}
-
-	if !isCapabilityFound {
-		capabilityID, err := s.capabilitySvc.Create(ctx, resourceType, resourceID, packageID, capability, nil, capabilityHash)
-		if err != nil {
-			return nil, err
-		}
-
-		fetchRequests, err := s.createSpecs(ctx, model.CapabilitySpecReference, capabilityID, specs, resourceType)
-		if err != nil {
-			return nil, err
-		}
-
-		return fetchRequests, nil
-	}
-
-	err := s.capabilitySvc.Update(ctx, resourceType, capabilitiesFromDB[i].ID, capability, capabilityHash)
-	if err != nil {
-		return nil, err
-	}
-
-	var fetchRequests []*model.FetchRequest
-	shouldFetchSpecs, err := checkIfShouldFetchSpecs(capability.LastUpdate, capabilitiesFromDB[i].LastUpdate)
-	if err != nil {
-		return nil, err
-	}
-
-	if shouldFetchSpecs {
-		fetchRequests, err = s.resyncSpecs(ctx, model.CapabilitySpecReference, capabilitiesFromDB[i].ID, specs, resourceType)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		fetchRequests, err = s.refetchFailedSpecs(ctx, resourceType, model.CapabilitySpecReference, capabilitiesFromDB[i].ID)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return fetchRequests, nil
-}
-
-func checkIfShouldFetchSpecs(lastUpdateValueFromDoc, lastUpdateValueFromDB *string) (bool, error) {
-	if lastUpdateValueFromDoc == nil || lastUpdateValueFromDB == nil {
-		return true, nil
-	}
-
-	lastUpdateTimeFromDoc, err := time.Parse(time.RFC3339, str.PtrStrToStr(lastUpdateValueFromDoc))
-	if err != nil {
-		return false, err
-	}
-
-	lastUpdateTimeFromDB, err := time.Parse(time.RFC3339, str.PtrStrToStr(lastUpdateValueFromDB))
-	if err != nil {
-		return false, err
-	}
-
-	return lastUpdateTimeFromDoc.After(lastUpdateTimeFromDB), nil
-}
-
-func (s *Service) createSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput, resourceType directorresource.Type) ([]*model.FetchRequest, error) {
-	fetchRequests := make([]*model.FetchRequest, 0)
-	for _, spec := range specs {
-		if spec == nil {
-			continue
-		}
-
-		_, fr, err := s.specSvc.CreateByReferenceObjectIDWithDelayedFetchRequest(ctx, *spec, resourceType, objectType, objectID)
-		if err != nil {
-			return nil, err
-		}
-		fetchRequests = append(fetchRequests, fr)
-	}
-	return fetchRequests, nil
-}
-
-func (s *Service) resyncSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput, resourceType directorresource.Type) ([]*model.FetchRequest, error) {
-	if err := s.specSvc.DeleteByReferenceObjectID(ctx, resourceType, objectType, objectID); err != nil {
-		return nil, err
-	}
-	return s.createSpecs(ctx, objectType, objectID, specs, resourceType)
-}
-
-func (s *Service) refetchFailedSpecs(ctx context.Context, resourceType directorresource.Type, objectType model.SpecReferenceObjectType, objectID string) ([]*model.FetchRequest, error) {
-	specIDsFromDB, err := s.specSvc.ListIDByReferenceObjectID(ctx, resourceType, objectType, objectID)
-	if err != nil {
-		return nil, err
-	}
-
-	var (
-		fetchRequestsFromDB []*model.FetchRequest
-		tnt                 string
-	)
-	if resourceType.IsTenantIgnorable() {
-		fetchRequestsFromDB, err = s.specSvc.ListFetchRequestsByReferenceObjectIDsGlobal(ctx, specIDsFromDB, objectType)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		fetchRequestsFromDB, err = s.specSvc.ListFetchRequestsByReferenceObjectIDs(ctx, tnt, specIDsFromDB, objectType)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	fetchRequests := make([]*model.FetchRequest, 0)
-	for _, fr := range fetchRequestsFromDB {
-		if fr.Status != nil && fr.Status.Condition != model.FetchRequestStatusConditionSucceeded {
-			fetchRequests = append(fetchRequests, fr)
-		}
-	}
-	return fetchRequests, nil
 }
 
 func (s *Service) fetchAPIDefFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.APIDefinition, error) {
@@ -1892,22 +1691,6 @@ func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUp
 		CredentialExchangeStrategies:   in.CredentialExchangeStrategies,
 		CorrelationIDs:                 in.CorrelationIDs,
 	}
-}
-
-// extractDefaultConsumptionBundle converts the defaultConsumptionBundle which is bundle ORD_ID into internal bundle_id
-func extractDefaultConsumptionBundle(bundlesFromDB []*model.Bundle, defaultConsumptionBundle *string) string {
-	var bundleID string
-	if defaultConsumptionBundle == nil {
-		return bundleID
-	}
-
-	for _, bndl := range bundlesFromDB {
-		if equalStrings(bndl.OrdID, defaultConsumptionBundle) {
-			bundleID = bndl.ID
-			break
-		}
-	}
-	return bundleID
 }
 
 func equalStrings(first, second *string) bool {

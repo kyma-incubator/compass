@@ -242,6 +242,13 @@ type APIProcessor interface {
 	Process(ctx context.Context, resourceType resource.Type, resourceID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apis []*model.APIDefinitionInput, resourceHashes map[string]uint64) ([]*model.APIDefinition, []*processor.OrdFetchRequest, error)
 }
 
+// CapabilityProcessor is responsible for processing of capability entities.
+//
+//go:generate mockery --name=CapabilityProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type CapabilityProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, packagesFromDB []*model.Package, capabilities []*model.CapabilityInput, resourceHashes map[string]uint64) ([]*model.Capability, []*processor.OrdFetchRequest, error)
+}
+
 // EntityTypeMappingService is responsible for processing of entity type entities.
 //
 //go:generate mockery --name=EntityTypeMappingService --output=automock --outpkg=automock --case=underscore --disable-version-string
