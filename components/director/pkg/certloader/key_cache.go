@@ -7,7 +7,7 @@ import (
 
 // KeysCache missing godoc
 //
-//go:generate mockery --name=CertificateCache --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=KeysCache --output=automock --outpkg=automock --case=underscore --disable-version-string
 type KeysCache interface {
 	Get() map[string]*KeyStore
 }
