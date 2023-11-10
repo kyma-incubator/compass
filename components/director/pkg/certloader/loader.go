@@ -1,4 +1,4 @@
-package certloader
+package credloader
 
 import (
 	"context"
@@ -45,7 +45,7 @@ type Manager interface {
 }
 
 type loader struct {
-	config            Config
+	config            CertConfig
 	keysConfig        KeysConfig
 	certCache         *certificateCache
 	keyCache          *KeyCache
@@ -56,7 +56,7 @@ type loader struct {
 
 // NewCertificateLoader creates new certificate loader which is responsible to watch a secret containing client certificate
 // and update in-memory cache with that certificate if there is any change
-func NewCertificateLoader(config Config, certCache *certificateCache, secretManagers map[string]Manager, secretNames map[string]CredentialType, reconnectInterval time.Duration) Loader {
+func NewCertificateLoader(config CertConfig, certCache *certificateCache, secretManagers map[string]Manager, secretNames map[string]CredentialType, reconnectInterval time.Duration) Loader {
 	return &loader{
 		config:            config,
 		certCache:         certCache,
@@ -79,7 +79,7 @@ func NewKeyLoader(keysConfig KeysConfig, keysCache *KeyCache, secretManagers map
 }
 
 // StartCertLoader prepares and run certificate loader goroutine
-func StartCertLoader(ctx context.Context, certLoaderConfig Config) (Cache, error) {
+func StartCertLoader(ctx context.Context, certLoaderConfig CertConfig) (CertCache, error) {
 	parsedCertSecret, err := namespacedname.Parse(certLoaderConfig.ExternalClientCertSecret)
 	if err != nil {
 		return nil, err
@@ -222,7 +222,7 @@ func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, 
 					cl.keyCache.put(secretName, keys)
 				}
 			case watch.Deleted:
-				log.C(ctx).Info("Removing %s secret data from cache...", credentialType)
+				log.C(ctx).Infof("Removing %s secret data from cache...", credentialType)
 
 				if credentialType == CertificateCredential {
 					cl.certCache.put(secretName, nil)
@@ -237,7 +237,7 @@ func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, 
 	}
 }
 
-func parseCertificate(ctx context.Context, secretData map[string][]byte, config Config) (*tls.Certificate, error) {
+func parseCertificate(ctx context.Context, secretData map[string][]byte, config CertConfig) (*tls.Certificate, error) {
 	log.C(ctx).Info("Parsing provided certificate data...")
 	certChainBytes, existsCertKey := secretData[config.ExternalClientCertCertKey]
 	privateKeyBytes, existsKeyKey := secretData[config.ExternalClientCertKeyKey]

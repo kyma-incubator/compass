@@ -3,13 +3,14 @@ package systemfetcher_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
-	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"net/http"
 	"net/http/httptest"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -351,7 +352,7 @@ func fixHTTPClient(t *testing.T) (*mockData, string) {
 
 	ts := httptest.NewServer(mux)
 	mock.httpClient = systemfetcher.NewOauthClient(oauth.Config{}, ts.Client())
-	mock.jwtClient = systemfetcher.NewJwtTokenClient(certloader.NewCertificateCache(), "", ts.Client())
+	mock.jwtClient = systemfetcher.NewJwtTokenClient(credloader.NewKeyCache(), "", ts.Client())
 
 	return &mock, ts.URL
 }
