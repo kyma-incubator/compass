@@ -23,7 +23,6 @@ require (
 	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231106074556-74d4b29c3e0d
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231107115329-4c71b7136c91
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231107115329-4c71b7136c91
-	github.com/kyma-incubator/compass/tests v0.0.0-20231108160703-3552b83825eb
 	github.com/lestrrat-go/iter v1.0.2
 	github.com/lestrrat-go/jwx v1.2.26
 	github.com/lib/pq v1.10.9
