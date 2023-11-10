@@ -79,7 +79,7 @@ func NewKeyLoader(keysConfig KeysConfig, keysCache *KeyCache, secretManagers map
 }
 
 // StartCertLoader prepares and run certificate loader goroutine
-func StartCertLoader(ctx context.Context, certLoaderConfig CertConfig) (Cache, error) {
+func StartCertLoader(ctx context.Context, certLoaderConfig CertConfig) (CertCache, error) {
 	parsedCertSecret, err := namespacedname.Parse(certLoaderConfig.ExternalClientCertSecret)
 	if err != nil {
 		return nil, err
@@ -222,7 +222,7 @@ func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, 
 					cl.keyCache.put(secretName, keys)
 				}
 			case watch.Deleted:
-				log.C(ctx).Info("Removing %s secret data from cache...", credentialType)
+				log.C(ctx).Infof("Removing %s secret data from cache...", credentialType)
 
 				if credentialType == CertificateCredential {
 					cl.certCache.put(secretName, nil)

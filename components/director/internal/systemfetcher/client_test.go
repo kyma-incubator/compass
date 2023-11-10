@@ -352,7 +352,7 @@ func fixHTTPClient(t *testing.T) (*mockData, string) {
 
 	ts := httptest.NewServer(mux)
 	mock.httpClient = systemfetcher.NewOauthClient(oauth.Config{}, ts.Client())
-	mock.jwtClient = systemfetcher.NewJwtTokenClient(credloader.NewCertificateCache(), "", ts.Client())
+	mock.jwtClient = systemfetcher.NewJwtTokenClient(credloader.NewKeyCache(), "", ts.Client())
 
 	return &mock, ts.URL
 }
