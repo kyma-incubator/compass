@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
@@ -21,7 +21,7 @@ type Config struct {
 	DirectorExternalCertSecuredURL string
 	GatewayOauth                   string `envconfig:"APP_GATEWAY_OAUTH"`
 	SkipSSLValidation              bool   `envconfig:"default=false"`
-	CertLoaderConfig               certloader.Config
+	CertLoaderConfig               credloader.CertConfig
 
 	SelfRegDistinguishLabelKey   string
 	SelfRegDistinguishLabelValue string
@@ -46,12 +46,12 @@ func TestMain(m *testing.M) {
 	tenant.TestTenants.Init()
 
 	ctx := context.Background()
-	cc, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	cc, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	if err = certloader.WaitForCertCache(cc); err != nil {
+	if err = credloader.WaitForCertCache(cc); err != nil {
 		log.D().Fatal(err)
 	}
 

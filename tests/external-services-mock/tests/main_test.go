@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	pkgConfig "github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -26,7 +26,7 @@ type config struct {
 	AppClientID                               string
 	AppClientSecret                           string
 	SkipSSLValidation                         bool
-	CertLoaderConfig                          certloader.Config
+	CertLoaderConfig                          credloader.CertConfig
 	ConsumerID                                string
 	AppSelfRegDistinguishLabelKey             string
 	AppSelfRegDistinguishLabelValue           string
@@ -46,12 +46,12 @@ func TestMain(m *testing.M) {
 	}
 
 	ctx := context.Background()
-	cc, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
+	cc, err := credloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	if err = certloader.WaitForCertCache(cc); err != nil {
+	if err = credloader.WaitForCertCache(cc); err != nil {
 		log.D().Fatal(err)
 	}
 

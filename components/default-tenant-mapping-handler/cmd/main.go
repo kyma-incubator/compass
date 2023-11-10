@@ -2,12 +2,10 @@ package main
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"net/http"
 	"os"
 	"time"
-
-	httputildirector "github.com/kyma-incubator/compass/components/director/pkg/auth"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/default-tenant-mapping-handler/internal/claims"
@@ -15,6 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/default-tenant-mapping-handler/internal/handler"
 	"github.com/kyma-incubator/compass/components/default-tenant-mapping-handler/internal/healthz"
 	"github.com/kyma-incubator/compass/components/default-tenant-mapping-handler/internal/tenant"
+	httputildirector "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	authmiddleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
@@ -66,7 +65,7 @@ func main() {
 	defaultTMHandler.Use(tokenValidationMiddleware.Handler())
 	defaultTMHandler.Use(tenantValidationMiddleware.Handler())
 
-	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	certCache, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	exitOnError(err, "failed to initialize certificate loader")
 
 	mtlsHTTPClient := httputildirector.PrepareMTLSClientWithSSLValidation(cfg.ClientTimeout, certCache, cfg.SkipSSLValidation, cfg.ExternalClientCertSecretName)

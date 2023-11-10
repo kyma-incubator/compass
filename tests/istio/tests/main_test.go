@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	config "github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -17,7 +17,7 @@ import (
 var (
 	conf = &config.IstioConfig{}
 
-	certCache                certloader.Cache
+	certCache                credloader.CertCache
 	certSecuredGraphQLClient *graphql.Client
 )
 
@@ -31,12 +31,12 @@ func TestMain(m *testing.M) {
 	config.ReadConfig(conf)
 
 	ctx := context.Background()
-	certCache, err = certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
+	certCache, err = credloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	if err = certloader.WaitForCertCache(certCache); err != nil {
+	if err = credloader.WaitForCertCache(certCache); err != nil {
 		log.D().Fatal(err)
 	}
 

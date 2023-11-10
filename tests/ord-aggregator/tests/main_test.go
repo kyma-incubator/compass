@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
@@ -60,7 +60,7 @@ type config struct {
 	ExternalClientCertSecretName                          string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName                            string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 	SubscriptionProviderAppNameProperty                   string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY"`
-	CertLoaderConfig                                      certloader.Config
+	CertLoaderConfig                                      credloader.CertConfig
 	ClientTimeout                                         time.Duration `envconfig:"default=60s"`
 	SkipSSLValidation                                     bool          `envconfig:"default=false"`
 	SubscriptionConfig                                    subscription.Config
@@ -72,7 +72,7 @@ var (
 	testConfig config
 
 	certSecuredGraphQLClient *graphql.Client
-	certCache                certloader.Cache
+	certCache                credloader.CertCache
 )
 
 func TestMain(m *testing.M) {
@@ -83,12 +83,12 @@ func TestMain(m *testing.M) {
 
 	ctx := context.Background()
 
-	certCache, err = certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
+	certCache, err = credloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	if err = certloader.WaitForCertCache(certCache); err != nil {
+	if err = credloader.WaitForCertCache(certCache); err != nil {
 		log.D().Fatal(err)
 	}
 
