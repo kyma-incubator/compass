@@ -3,8 +3,6 @@ package config
 import (
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 

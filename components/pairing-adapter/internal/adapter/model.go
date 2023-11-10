@@ -3,7 +3,7 @@ package adapter
 import (
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -45,7 +45,7 @@ type Auth struct {
 	URL           string     `envconfig:"optional"`
 	OAuthStyle    OAuthStyle `envconfig:"optional,default=AuthDetect"`
 	SkipSSLVerify bool       `envconfig:"default=false,SKIP_SSL_VERIFY"`
-	certloader.Config
+	credloader.CertConfig
 }
 
 // swagger:response externalToken

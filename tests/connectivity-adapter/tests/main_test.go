@@ -9,7 +9,7 @@ import (
 
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/pkg/errors"
@@ -29,7 +29,7 @@ type config struct {
 	DirectorReadyzUrl              string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/readyz"`
 	ApplicationTypeLabelKey        string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 	GatewayOauth                   string `envconfig:"APP_GATEWAY_OAUTH"`
-	CertLoaderConfig               certloader.Config
+	CertLoaderConfig               credloader.CertConfig
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
@@ -46,12 +46,12 @@ func TestMain(m *testing.M) {
 	}
 
 	ctx := context.Background()
-	cc, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
+	cc, err := credloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	if err = certloader.WaitForCertCache(cc); err != nil {
+	if err = credloader.WaitForCertCache(cc); err != nil {
 		log.D().Fatal(err)
 	}
 

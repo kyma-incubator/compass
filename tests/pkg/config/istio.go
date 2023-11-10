@@ -1,6 +1,6 @@
 package config
 
-import "github.com/kyma-incubator/compass/components/director/pkg/certloader"
+import "github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 type IstioConfig struct {
 	CompassGatewayURL              string `envconfig:"default=compass-gateway.kyma.local"`
@@ -8,7 +8,7 @@ type IstioConfig struct {
 	DirectorExternalCertSecuredURL string `envconfig:"default=http://compass-director-external-mtls.compass-system.svc.cluster.local:3000/graphql"`
 	RequestPayloadLimit            int    `envconfig:"default=2097152"` //2 MB
 	SkipSSLValidation              bool   `envconfig:"default=false"`
-	CertLoaderConfig               certloader.Config
+	CertLoaderConfig               credloader.CertConfig
 	DefaultTenant                  string
 	ExternalClientCertSecretName   string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }

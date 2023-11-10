@@ -6,12 +6,11 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
@@ -76,7 +75,7 @@ type config struct {
 	TrustedTenant            string `envconfig:"APP_TRUSTED_TENANT"`
 	OnDemandTenant           string `envconfig:"APP_ON_DEMAND_TENANT"`
 
-	KeyLoaderConfig certloader.KeysConfig
+	KeyLoaderConfig credloader.KeysConfig
 
 	TenantConfig         subscription.Config
 	TenantProviderConfig subscription.ProviderConfig
@@ -151,10 +150,10 @@ func main() {
 	err := envconfig.InitWithOptions(&cfg, envconfig.Options{Prefix: "APP", AllOptional: true})
 	exitOnError(err, "while loading configuration")
 
-	keyCache, err := certloader.StartKeyLoader(ctx, cfg.KeyLoaderConfig)
+	keyCache, err := credloader.StartKeyLoader(ctx, cfg.KeyLoaderConfig)
 	exitOnError(err, "failed to initialize key loader")
 
-	err = certloader.WaitForKeyCache(keyCache)
+	err = credloader.WaitForKeyCache(keyCache)
 	exitOnError(err, "failed to wait key loader")
 
 	extSvcMockURL := fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port)
@@ -206,7 +205,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func initDefaultServer(cfg config, keyCache certloader.KeysCache, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client, destinationCreatorHandler *destinationcreator.Handler) *http.Server {
+func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client, destinationCreatorHandler *destinationcreator.Handler) *http.Server {
 	logger := logrus.New()
 	router := mux.NewRouter()
 	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint))
