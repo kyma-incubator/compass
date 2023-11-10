@@ -39,7 +39,7 @@ type service struct {
 	uidService     UIDService
 }
 
-// NewService missing godoc
+// NewService returns a new service instance
 func NewService(entityTypeRepo EntityTypeRepository, uidService UIDService) *service {
 	return &service{
 		entityTypeRepo: entityTypeRepo,
@@ -77,7 +77,7 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 	return nil
 }
 
-// Delete missing godoc
+// Delete deletes an Entity Type by ID
 func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
 	if err := s.deleteEntityType(ctx, id, resourceType); err != nil {
 		return errors.Wrapf(err, "while deleting Entity Type with id %s", id)
@@ -88,7 +88,7 @@ func (s *service) Delete(ctx context.Context, resourceType resource.Type, id str
 	return nil
 }
 
-// Exist missing godoc
+// Exist checks if an Entity Type with ID exists
 func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -103,7 +103,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
-// Get missing godoc
+// Get returns an Entity Type by ID
 func (s *service) Get(ctx context.Context, id string) (*model.EntityType, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -118,7 +118,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.EntityType, error)
 	return entityType, nil
 }
 
-// ListByApplicationID missing godoc
+// ListByApplicationID lists entity types by ApplicationID
 func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.EntityType, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
