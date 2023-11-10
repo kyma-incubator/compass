@@ -101,7 +101,7 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	certCache, _, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig, conf.KeyLoaderConfig)
+	certCache, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
 	securedHTTPClient := httputildirector.PrepareHTTPClient(conf.ClientTimeout)

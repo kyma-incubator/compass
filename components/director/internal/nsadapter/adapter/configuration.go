@@ -20,7 +20,6 @@ type Configuration struct {
 	Log                *log.Config
 
 	CertLoaderConfig certloader.Config
-	KeyLoaderConfig  certloader.KeysConfig
 
 	Database persistence.DatabaseConfig
 

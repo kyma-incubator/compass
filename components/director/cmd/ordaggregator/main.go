@@ -109,7 +109,6 @@ type config struct {
 
 	RetryConfig                   retry.Config
 	CertLoaderConfig              certloader.Config
-	KeyLoaderConfig               certloader.KeysConfig
 	GlobalRegistryConfig          ord.GlobalRegistryConfig
 	ElectionConfig                cronjob.ElectionConfig
 	MaintainOperationsJobInterval time.Duration `envconfig:"APP_MAINTAIN_OPERATIONS_JOB_INTERVAL,default=60m"`
@@ -174,7 +173,7 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	certCache, _, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig, cfg.KeyLoaderConfig)
+	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
 	httpClient := &http.Client{

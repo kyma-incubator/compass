@@ -108,8 +108,6 @@ func (p selfSignedJwtTokenAuthorizationProvider) buildJWTToken(privateKey *rsa.P
 	claims["iat"] = time.Now().Unix()
 	claims["exp"] = time.Now().Add(p.config.ExpireAfter).Unix()
 
-	fmt.Println("ALEX buildJWTToken")
-
 	tokenString, err := token.SignedString(privateKey)
 	if err != nil {
 		return "", errors.Wrap(err, "while signing a jwt token")

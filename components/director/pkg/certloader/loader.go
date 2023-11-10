@@ -174,7 +174,7 @@ func (cl *loader) startKubeWatch(ctx context.Context) {
 					time.Sleep(cl.reconnectInterval)
 					return
 				}
-				log.C(ctx).Info("Waiting for secret events...")
+				log.C(ctx).Infof("Waiting for secret %s events...", name)
 
 				credentialType := cl.secretNamesTypes[name]
 				cl.processEvents(ctx, watcher.ResultChan(), name, credentialType)
