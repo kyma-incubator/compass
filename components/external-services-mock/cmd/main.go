@@ -283,12 +283,12 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 		{
 			key:            &key.PublicKey,
 			validateClaims: getClaimsValidator([]string{cfg.DefaultTenant, cfg.TrustedTenant}),
-			Parsed:         &oauth.Claims{},
+			Claims:         &oauth.Claims{},
 		},
 		{
 			key:            keyCache.Get()[cfg.KeyLoaderConfig.KeysSecretName].PublicKey,
-			validateClaims: getClaimsValidator([]string{cfg.DefaultCustomerTenant}),
-			Parsed:         &modelJwt.Claims{},
+			validateClaims: getClaimsValidator([]string{cfg.DefaultCustomerTenant, cfg.TrustedTenant}),
+			Claims:         &modelJwt.Claims{},
 		},
 	}))
 	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
@@ -638,7 +638,7 @@ func initOauthSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 type MiddlewareArgs struct {
 	key            *rsa.PublicKey
 	validateClaims func(claims jwt.Claims) bool
-	Parsed         jwt.Claims
+	Claims         jwt.Claims
 }
 
 func oauthMiddlewareMultiple(args []MiddlewareArgs) func(next http.Handler) http.Handler {
@@ -655,30 +655,28 @@ func oauthMiddlewareMultiple(args []MiddlewareArgs) func(next http.Handler) http
 			}
 
 			token := strings.TrimPrefix(authHeader, "Bearer ")
-			hasSucceeded := true
 
 			for _, middlewareArgs := range args {
-				if _, err := jwt.ParseWithClaims(token, middlewareArgs.Parsed, func(_ *jwt.Token) (interface{}, error) {
+				if _, err := jwt.ParseWithClaims(token, middlewareArgs.Claims, func(_ *jwt.Token) (interface{}, error) {
 					return middlewareArgs.key, nil
 				}); err != nil {
-					hasSucceeded = false
 					continue
 				}
 
-				if !middlewareArgs.validateClaims(middlewareArgs.Parsed) {
-					hasSucceeded = false
+				if !middlewareArgs.validateClaims(middlewareArgs.Claims) {
 					continue
 				}
 
 				log.C(r.Context()).Infof("Middleware authenticated successfully. Continue with request.")
-				r.Header.Set("tenant", getClaimsTenant(middlewareArgs.Parsed))
+				r.Header.Set("tenant", getClaimsTenant(middlewareArgs.Claims))
+				log.C(r.Context()).Infof("Setting tenant %s for tenant header", getClaimsTenant(middlewareArgs.Claims))
+
 				next.ServeHTTP(w, r)
 				return
 			}
 
-			if !hasSucceeded {
-				httphelpers.WriteError(w, errors.New("Could not validate token"), http.StatusUnauthorized)
-			}
+			httphelpers.WriteError(w, errors.New("Could not validate token"), http.StatusUnauthorized)
+			return
 		})
 	}
 }

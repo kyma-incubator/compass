@@ -32,7 +32,7 @@ const (
 	certificateCredential credentialType = "CertificateCredentials"
 )
 
-// Loader provide mechanism to load certificate data into in-memory storage
+// Loader provide mechanism to load credential data into in-memory storage
 type Loader interface {
 	Run(ctx context.Context)
 }
@@ -66,8 +66,8 @@ func NewCertificateLoader(config CertConfig, certCache *certificateCache, secret
 	}
 }
 
-// NewKeyLoader creates new certificate loader which is responsible to watch a secret containing client certificate
-// and update in-memory cache with that certificate if there is any change
+// NewKeyLoader creates new certificate loader which is responsible to watch a secret containing public/private keys
+// and update in-memory cache with that keys if there is any change
 func NewKeyLoader(keysConfig KeysConfig, keysCache *KeyCache, secretManagers map[string]Manager, secretNames map[string]credentialType, reconnectInterval time.Duration) Loader {
 	return &loader{
 		keysConfig:        keysConfig,
@@ -139,7 +139,7 @@ func StartKeyLoader(ctx context.Context, keysLoaderConfig KeysConfig) (KeysCache
 	return keysCache, nil
 }
 
-// Run uses kubernetes watch mechanism to listen for resource changes and update certificate cache
+// Run uses kubernetes watch mechanism to listen for resource changes and update credential cache
 func (cl *loader) Run(ctx context.Context) {
 	entry := log.C(ctx)
 	entry = entry.WithField(log.FieldRequestID, certsListLoaderCorrelationID)
