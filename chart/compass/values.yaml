@@ -164,11 +164,11 @@ global:
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3417"
+      version: "PR-3443"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3405"
+      version: "PR-3443"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -180,7 +180,7 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3417"
+      version: "PR-3443"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
