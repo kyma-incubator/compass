@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"sync"
 	"time"
 
@@ -260,6 +261,9 @@ func parseCertificate(ctx context.Context, secretData map[string][]byte, config 
 func parseKeys(ctx context.Context, secretData map[string][]byte, config KeysConfig) (*KeyStore, error) {
 	log.C(ctx).Info("Parsing provided keys data...")
 	dataBytes, exists := secretData[config.KeysData]
+	fmt.Println(secretData)
+	fmt.Println(config.KeysSecretName)
+	fmt.Println(config.KeysData)
 
 	if exists {
 		return parseKeysBytes(dataBytes)
@@ -272,7 +276,13 @@ func parseKeysBytes(dataBytes []byte) (*KeyStore, error) {
 	data := &secretData{}
 
 	if err := json.Unmarshal(dataBytes, data); err != nil {
+		fmt.Println(err)
 		return nil, errors.Wrapf(err, "while unmarashalling secret data")
+	}
+
+	if data != nil {
+		fmt.Println(data.PublicKey)
+		fmt.Println(data.PrivateKey)
 	}
 
 	privateKeyBlock, _ := pem.Decode([]byte(data.PrivateKey))
