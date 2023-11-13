@@ -14,32 +14,38 @@ import (
 )
 
 const (
-	ID1              = "ID1"
-	ordID            = "com.compass.v1"
-	localTenantID    = "BusinessPartner"
-	correlationIDs   = `["sap.s4:sot:BusinessPartner", "sap.s4:sot:CostCenter", "sap.s4:sot:WorkforcePerson"]`
-	level            = "aggregate"
-	title            = "BusinessPartner"
-	ordPackageID     = "sap.xref:package:SomePackage:v1"
-	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
-	vendorORDID      = "sap:vendor:SAP:"
-	baseURL          = "http://test.com:8080"
-	event1ID         = "testEvent1"
+	ordID = "com.compass.v1"
+
+	apiID        = "api-id"
+	eventID      = "event-id"
+	capabilityID = "capability-id"
+	vendorID     = "vendor-id"
+	entityTypeID = "entity-type-id"
+	packageID    = "package-id"
+
 	tenantID         = "testTenant"
 	externalTenantID = "externalTestTenant"
+
+	vendorORDID      = "sap:vendor:SAP:"
+	packageORDID     = "ns:package:PACKAGE_ID:v1"
+	productORDID     = "sap:product:id:"
+	bundleORDID      = "ns:consumptionBundle:BUNDLE_ID:v1"
+	apiORDID         = "ns:apiResource:API_ID:v1"
+	apiORDID2        = "ns:apiResource:API_ID:v2"
+	eventORDID       = "ns:eventResource:EVENT_ID:v1"
+	eventORDID2      = "ns:eventResource:EVENT_ID:v2"
+	capabilityORDID  = "sap.foo.bar:capability:fieldExtensibility:v1"
+	capabilityORDID2 = "sap.foo.bar:capability:fieldExtensibility:v2"
 
 	publicVisibility = "public"
 	products         = `["sap:product:S4HANA_OD:"]`
 	releaseStatus    = "active"
-
-	packageORDID = "ns:package:PACKAGE_ID:v1"
-	productORDID = "sap:product:id:"
-	bundleORDID  = "ns:consumptionBundle:BUNDLE_ID:v1"
-	apiORDID     = "ns:apiResource:API_ID:v1"
-	apiORDID2    = "ns:apiResource:API_ID:v2"
-	eventORDID   = "ns:eventResource:EVENT_ID:v1"
-	eventORDID2  = "ns:eventResource:EVENT_ID:v2"
-	custom       = "custom"
+	custom           = "custom"
+	localTenantID    = "BusinessPartner"
+	correlationIDs   = `["sap.s4:sot:BusinessPartner", "sap.s4:sot:CostCenter", "sap.s4:sot:WorkforcePerson"]`
+	level            = "aggregate"
+	title            = "BusinessPartner"
+	baseURL          = "http://test.com:8080"
 )
 
 var (
@@ -224,7 +230,7 @@ var (
 		}
 	  ]`)
 
-	errTest = errors.New("test error")
+	testErr = errors.New("test error")
 )
 
 func removeWhitespace(s string) string {
@@ -261,7 +267,7 @@ func fixEntityTypeModel(entityTypeID string) *model.EntityType {
 		Description:                  &description,
 		SystemInstanceAware:          &systemInstanceAware,
 		ChangeLogEntries:             json.RawMessage(changeLogEntries),
-		PackageID:                    ordPackageID,
+		PackageID:                    packageORDID,
 		Visibility:                   publicVisibility,
 		Links:                        json.RawMessage(links),
 		PartOfProducts:               json.RawMessage(products),
@@ -290,7 +296,7 @@ func fixEntityTypeInputModel() *model.EntityTypeInput {
 		Description:         &description,
 		SystemInstanceAware: &systemInstanceAware,
 		ChangeLogEntries:    json.RawMessage(changeLogEntries),
-		OrdPackageID:        ordPackageID,
+		OrdPackageID:        packageORDID,
 		Visibility:          publicVisibility,
 		Links:               json.RawMessage(links),
 		PartOfProducts:      json.RawMessage(products),
@@ -315,14 +321,14 @@ func fixIntegrationDependencyModel(integrationDependencyID, integrationDependenc
 		OrdID:                        str.Ptr(integrationDependencyORDID),
 		ApplicationID:                &appID,
 		ApplicationTemplateVersionID: &appTemplateVersionID,
-		PackageID:                    str.Ptr(ordPackageID),
+		PackageID:                    str.Ptr(packageORDID),
 	}
 }
 
 func fixIntegrationDependencyInputModel(integrationDependencyORDID string) *model.IntegrationDependencyInput {
 	return &model.IntegrationDependencyInput{
 		OrdID:        str.Ptr(integrationDependencyORDID),
-		OrdPackageID: str.Ptr(ordPackageID),
+		OrdPackageID: str.Ptr(packageORDID),
 		Aspects: []*model.AspectInput{
 			{
 				Title:     "Test integration aspect name",
@@ -530,6 +536,97 @@ func fixEvent(id string, ordID *string) *model.EventDefinition {
 			ID:    id,
 			Ready: true,
 		},
+	}
+}
+
+func fixCapability(id string, ordID *string) *model.Capability {
+	return &model.Capability{
+		ApplicationID:       &appID,
+		PackageID:           str.Ptr(packageORDID),
+		Name:                "Capability Title",
+		Description:         str.Ptr("Capability Description"),
+		OrdID:               ordID,
+		Type:                "sap.mdo:mdi-capability:v1",
+		CustomType:          nil,
+		LocalTenantID:       nil,
+		ShortDescription:    str.Ptr("Capability short description"),
+		SystemInstanceAware: nil,
+		Tags:                json.RawMessage(`["testTag","capabilityTestTag"]`),
+		RelatedEntityTypes:  json.RawMessage(`["ns:entityType:ENTITYTYPE_ID:v1"]`),
+		Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+		ReleaseStatus:       str.Ptr("active"),
+		Labels:              json.RawMessage(mergedLabels),
+		Visibility:          str.Ptr("public"),
+		LastUpdate:          str.Ptr("2023-01-25T15:47:04+00:00"),
+		Version: &model.Version{
+			Value: "2.1.3",
+		},
+		DocumentationLabels: json.RawMessage(documentLabels),
+		BaseEntity: &model.BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
+	}
+}
+
+func fixCapabilityInput() *model.CapabilityInput {
+	return &model.CapabilityInput{
+		OrdID:               str.Ptr(capabilityORDID),
+		LocalTenantID:       str.Ptr(localTenantID),
+		OrdPackageID:        str.Ptr(packageORDID),
+		Name:                "Capability Title",
+		Description:         str.Ptr("Capability Description"),
+		Type:                "sap.mdo:mdi-capability:v1",
+		CustomType:          nil,
+		ShortDescription:    str.Ptr("Capability short description"),
+		SystemInstanceAware: &boolPtr,
+		Tags:                json.RawMessage(`["capabilityTestTag"]`),
+		RelatedEntityTypes:  json.RawMessage(`["ns:entityType:ENTITYTYPE_ID:v1"]`),
+		Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+		ReleaseStatus:       str.Ptr("active"),
+		Labels:              json.RawMessage(labels),
+		Visibility:          str.Ptr("public"),
+		CapabilityDefinitions: []*model.CapabilityDefinition{
+			{
+				Type:      "sap.mdo:mdi-capability-definition:v1",
+				MediaType: "application/json",
+				URL:       "http://localhost:8080/Capability.json",
+				AccessStrategy: []accessstrategy.AccessStrategy{
+					{
+						Type: "open",
+					},
+				},
+			},
+		},
+		DocumentationLabels: json.RawMessage(documentLabels),
+		VersionInput: &model.VersionInput{
+			Value: "2.1.2",
+		},
+		LastUpdate: str.Ptr("2023-01-26T15:47:04+00:00"),
+	}
+}
+
+func fixAPIsNoNewerLastUpdate() []*model.APIDefinition {
+	api := fixAPI(apiID, str.Ptr(apiORDID))
+	api.LastUpdate = fixAPIInput().LastUpdate
+	return []*model.APIDefinition{
+		api,
+	}
+}
+
+func fixEventsNoNewerLastUpdate() []*model.EventDefinition {
+	event := fixEvent(eventID, str.Ptr(eventORDID))
+	event.LastUpdate = fixEventInput().LastUpdate
+	return []*model.EventDefinition{
+		event,
+	}
+}
+
+func fixCapabilitiesNoNewerLastUpdate() []*model.Capability {
+	capability := fixCapability(capabilityID, str.Ptr(capabilityORDID))
+	capability.LastUpdate = fixCapabilityInput().LastUpdate
+	return []*model.Capability{
+		capability,
 	}
 }
 

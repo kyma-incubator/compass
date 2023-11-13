@@ -17,14 +17,14 @@ import (
 )
 
 func TestAPIProcessor_Process(t *testing.T) {
-	txGen := txtest.NewTransactionContextGenerator(errTest)
+	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	fixAPIDef := []*model.APIDefinition{
-		fixAPI(ID1, str.Ptr(apiORDID)),
+		fixAPI(apiID, str.Ptr(apiORDID)),
 	}
 
 	fixAPIDef2 := []*model.APIDefinition{
-		fixAPI(ID1, str.Ptr(apiORDID2)),
+		fixAPI(apiID, str.Ptr(apiORDID2)),
 	}
 
 	fixAPIInputs := []*model.APIDefinitionInput{
@@ -39,9 +39,9 @@ func TestAPIProcessor_Process(t *testing.T) {
 
 	successfulEntityTypeMapping := func() *automock.EntityTypeMappingService {
 		entityTypeMappingSvc := &automock.EntityTypeMappingService{}
-		entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.API).Return([]*model.EntityTypeMapping{fixEntityTypeMappingModel(ID1)}, nil).Once()
-		entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, ID1, fixAPIInput().EntityTypeMappings[0]).Return("", nil).Once()
-		entityTypeMappingSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.API, ID1).Return(nil).Once()
+		entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), apiID, resource.API).Return([]*model.EntityTypeMapping{fixEntityTypeMappingModel(apiID)}, nil).Once()
+		entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, apiID, fixAPIInput().EntityTypeMappings[0]).Return("", nil).Once()
+		entityTypeMappingSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.API, apiID).Return(nil).Once()
 		return entityTypeMappingSvc
 	}
 
@@ -102,10 +102,10 @@ func TestAPIProcessor_Process(t *testing.T) {
 				spec1 := fixAPIInputs[0].ResourceDefinitions[0].ToSpec()
 				spec2 := fixAPIInputs[0].ResourceDefinitions[1].ToSpec()
 				spec3 := fixAPIInputs[0].ResourceDefinitions[2].ToSpec()
-				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, ID1).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec1, resource.Application, model.APISpecReference, ID1).Return("", nil, nil).Once()
-				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec2, resource.Application, model.APISpecReference, ID1).Return("", nil, nil).Once()
-				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec3, resource.Application, model.APISpecReference, ID1).Return("", nil, nil).Once()
+				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, apiID).Return(nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec1, resource.Application, model.APISpecReference, apiID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec2, resource.Application, model.APISpecReference, apiID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec3, resource.Application, model.APISpecReference, apiID).Return("", nil, nil).Once()
 				return specSvc
 			},
 			InputResource:              resource.Application,
@@ -124,12 +124,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			},
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
-				api := fixAPI(ID1, str.Ptr(apiORDID))
-				api.LastUpdate = str.Ptr("2024-01-25T15:47:04+00:00")
-				apiModelsWithChangedLastUpdate := []*model.APIDefinition{
-					api,
-				}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(apiModelsWithChangedLastUpdate, nil).Once()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoNewerLastUpdate(), nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef, nil).Once()
 				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
 				return apiSvc
@@ -138,7 +133,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			BundleReferenceSvcFn:   successfulBundleReferenceGet,
 			SpecSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
-				specSvc.On("ListIDByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, ID1).Return([]string{}, nil).Once()
+				specSvc.On("ListIDByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, apiID).Return([]string{}, nil).Once()
 				specSvc.On("ListFetchRequestsByReferenceObjectIDs", txtest.CtxWithDBMatcher(), tenantID, []string{}, model.APISpecReference).Return([]*model.FetchRequest{fixSuccessfulFetchRequest()}, nil).Once()
 				return specSvc
 			},
@@ -159,13 +154,13 @@ func TestAPIProcessor_Process(t *testing.T) {
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef2, nil).Twice()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, str.Ptr(packageID), *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(ID1, nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, str.Ptr(packageID), *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(apiID, nil).Once()
 				return apiSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
 				entityTypeMappingSvc := &automock.EntityTypeMappingService{}
-				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.API).Return([]*model.EntityTypeMapping{}, nil).Once()
-				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, ID1, fixAPIInput().EntityTypeMappings[0]).Return("", nil).Once()
+				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), apiID, resource.API).Return([]*model.EntityTypeMapping{}, nil).Once()
+				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, apiID, fixAPIInput().EntityTypeMappings[0]).Return("", nil).Once()
 				return entityTypeMappingSvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -175,9 +170,9 @@ func TestAPIProcessor_Process(t *testing.T) {
 				spec1 := apiInput.ResourceDefinitions[0].ToSpec()
 				spec2 := apiInput.ResourceDefinitions[1].ToSpec()
 				spec3 := apiInput.ResourceDefinitions[2].ToSpec()
-				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec1, resource.Application, model.APISpecReference, ID1).Return("", nil, nil).Once()
-				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec2, resource.Application, model.APISpecReference, ID1).Return("", nil, nil).Once()
-				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec3, resource.Application, model.APISpecReference, ID1).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec1, resource.Application, model.APISpecReference, apiID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec2, resource.Application, model.APISpecReference, apiID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec3, resource.Application, model.APISpecReference, apiID).Return("", nil, nil).Once()
 				return specSvc
 			},
 			InputResource:              resource.Application,
@@ -200,7 +195,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputPackagesFromDB: fixEmptyPackages(),
 			APIInput:            []*model.APIDefinitionInput{},
 			InputResourceHashes: resourceHashes,
-			ExpectedErr:         errTest,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name: "Fail while listing APIs by application id from DB",
@@ -209,7 +204,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			},
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, errTest).Once()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return apiSvc
 			},
 			InputResource:       resource.Application,
@@ -218,7 +213,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputPackagesFromDB: fixEmptyPackages(),
 			APIInput:            []*model.APIDefinitionInput{},
 			InputResourceHashes: resourceHashes,
-			ExpectedErr:         errTest,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name: "Fail while listing APIs by application id from DB after resync",
@@ -228,7 +223,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef, nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, errTest).Once()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return apiSvc
 			},
 			InputResource:       resource.Application,
@@ -237,7 +232,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputPackagesFromDB: fixEmptyPackages(),
 			APIInput:            []*model.APIDefinitionInput{},
 			InputResourceHashes: resourceHashes,
-			ExpectedErr:         errTest,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name: "Fail while listing APIs by Application Template Version id from DB",
@@ -246,7 +241,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			},
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, errTest).Once()
+				apiSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, testErr).Once()
 				return apiSvc
 			},
 			InputResource:       resource.ApplicationTemplateVersion,
@@ -255,7 +250,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputPackagesFromDB: fixEmptyPackages(),
 			APIInput:            []*model.APIDefinitionInput{},
 			InputResourceHashes: resourceHashes,
-			ExpectedErr:         errTest,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name: "Fail while updating in many bundles API",
@@ -269,13 +264,13 @@ func TestAPIProcessor_Process(t *testing.T) {
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef, nil).Once()
-				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(errTest).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(testErr).Once()
 				return apiSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
 				entityTypeMappingSvc := &automock.EntityTypeMappingService{}
-				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.API).Return([]*model.EntityTypeMapping{}, nil).Once()
-				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, ID1, fixAPIInput().EntityTypeMappings[0]).Return("", nil).Once()
+				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), apiID, resource.API).Return([]*model.EntityTypeMapping{}, nil).Once()
+				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, apiID, fixAPIInput().EntityTypeMappings[0]).Return("", nil).Once()
 				return entityTypeMappingSvc
 			},
 			BundleReferenceSvcFn: successfulBundleReferenceGet,
@@ -285,7 +280,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputPackagesFromDB:  fixEmptyPackages(),
 			APIInput:             fixAPIInputs,
 			InputResourceHashes:  resourceHashes,
-			ExpectedErr:          errTest,
+			ExpectedErr:          testErr,
 		},
 		{
 			Name: "Fail while creating api",
@@ -299,7 +294,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef2, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return("", errTest).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return("", testErr).Once()
 				return apiSvc
 			},
 			InputResource:       resource.Application,
@@ -308,7 +303,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputPackagesFromDB: fixEmptyPackages(),
 			APIInput:            fixAPIInputs,
 			InputResourceHashes: resourceHashes,
-			ExpectedErr:         errTest,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name: "Fail while listing by owner resource id",
@@ -322,12 +317,12 @@ func TestAPIProcessor_Process(t *testing.T) {
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef2, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(ID1, nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(apiID, nil).Once()
 				return apiSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
 				entityTypeMappingSvc := &automock.EntityTypeMappingService{}
-				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.API).Return(nil, errTest).Once()
+				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), apiID, resource.API).Return(nil, testErr).Once()
 				return entityTypeMappingSvc
 			},
 			InputResource:       resource.Application,
@@ -336,7 +331,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputPackagesFromDB: fixEmptyPackages(),
 			APIInput:            fixAPIInputs,
 			InputResourceHashes: resourceHashes,
-			ExpectedErr:         errTest,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name: "Fail while creating entity type mapping",
@@ -350,13 +345,13 @@ func TestAPIProcessor_Process(t *testing.T) {
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef2, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(ID1, nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(apiID, nil).Once()
 				return apiSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
 				entityTypeMappingSvc := &automock.EntityTypeMappingService{}
-				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.API).Return([]*model.EntityTypeMapping{}, nil).Once()
-				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, ID1, fixAPIInput().EntityTypeMappings[0]).Return("", errTest).Once()
+				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), apiID, resource.API).Return([]*model.EntityTypeMapping{}, nil).Once()
+				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, apiID, fixAPIInput().EntityTypeMappings[0]).Return("", testErr).Once()
 				return entityTypeMappingSvc
 			},
 			InputResource:       resource.Application,
@@ -365,7 +360,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputPackagesFromDB: fixEmptyPackages(),
 			APIInput:            fixAPIInputs,
 			InputResourceHashes: resourceHashes,
-			ExpectedErr:         errTest,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name: "Fail while deleting entity type mapping",
@@ -379,13 +374,13 @@ func TestAPIProcessor_Process(t *testing.T) {
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef2, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(ID1, nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(apiID, nil).Once()
 				return apiSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
 				entityTypeMappingSvc := &automock.EntityTypeMappingService{}
-				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.API).Return([]*model.EntityTypeMapping{fixEntityTypeMappingModel(ID1)}, nil).Once()
-				entityTypeMappingSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.API, ID1).Return(errTest).Once()
+				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), apiID, resource.API).Return([]*model.EntityTypeMapping{fixEntityTypeMappingModel(apiID)}, nil).Once()
+				entityTypeMappingSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.API, apiID).Return(testErr).Once()
 				return entityTypeMappingSvc
 			},
 			InputResource:       resource.Application,
@@ -394,7 +389,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputPackagesFromDB: fixEmptyPackages(),
 			APIInput:            fixAPIInputs,
 			InputResourceHashes: resourceHashes,
-			ExpectedErr:         errTest,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name: "Fail while creating spec by reference object id with delayed fetch request",
@@ -408,13 +403,13 @@ func TestAPIProcessor_Process(t *testing.T) {
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef2, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(ID1, nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(apiID, nil).Once()
 				return apiSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
 				entityTypeMappingSvc := &automock.EntityTypeMappingService{}
-				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.API).Return([]*model.EntityTypeMapping{}, nil).Once()
-				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, ID1, fixAPIInput().EntityTypeMappings[0]).Return("", nil).Once()
+				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), apiID, resource.API).Return([]*model.EntityTypeMapping{}, nil).Once()
+				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, apiID, fixAPIInput().EntityTypeMappings[0]).Return("", nil).Once()
 				return entityTypeMappingSvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -422,7 +417,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 				apiInput := fixAPIInput()
 				apiInput.OrdID = str.Ptr(apiORDID2)
 				spec1 := apiInput.ResourceDefinitions[0].ToSpec()
-				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec1, resource.Application, model.APISpecReference, ID1).Return("", nil, errTest).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec1, resource.Application, model.APISpecReference, apiID).Return("", nil, testErr).Once()
 				return specSvc
 			},
 			InputResource:       resource.Application,
@@ -431,7 +426,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputPackagesFromDB: fixEmptyPackages(),
 			APIInput:            fixAPIInputs,
 			InputResourceHashes: resourceHashes,
-			ExpectedErr:         errTest,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name: "Fail while deleting spec by reference object id",
@@ -452,7 +447,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			BundleReferenceSvcFn:   successfulBundleReferenceGet,
 			SpecSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
-				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, ID1).Return(errTest).Once()
+				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, apiID).Return(testErr).Once()
 				return specSvc
 			},
 			InputResource:       resource.Application,
@@ -461,7 +456,69 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputPackagesFromDB: fixEmptyPackages(),
 			APIInput:            fixAPIInputs,
 			InputResourceHashes: resourceHashes,
-			ExpectedErr:         errTest,
+			ExpectedErr:         testErr,
+		},
+		{
+			Name: "Fail while listing fetch requests by reference object ids",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx, transact := txGen.ThatSucceeds()
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+
+				return persistTx, transact
+			},
+			APISvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoNewerLastUpdate(), nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
+				return apiSvc
+			},
+			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
+			BundleReferenceSvcFn:   successfulBundleReferenceGet,
+			SpecSvcFn: func() *automock.SpecService {
+				specSvc := &automock.SpecService{}
+				specSvc.On("ListIDByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, apiID).Return([]string{}, nil).Once()
+				specSvc.On("ListFetchRequestsByReferenceObjectIDs", txtest.CtxWithDBMatcher(), tenantID, []string{}, model.APISpecReference).Return(nil, testErr).Once()
+				return specSvc
+			},
+			InputResource:       resource.Application,
+			InputResourceID:     appID,
+			InputBundlesFromDB:  fixEmptyBundles(),
+			InputPackagesFromDB: fixEmptyPackages(),
+			APIInput:            fixAPIInputs,
+			InputResourceHashes: resourceHashes,
+			ExpectedErr:         testErr,
+		},
+		{
+			Name: "Fail while listing fetch requests by reference object ids for application template version",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx, transact := txGen.ThatSucceeds()
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+
+				return persistTx, transact
+			},
+			APISvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixAPIsNoNewerLastUpdate(), nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, fixAPIDef[0].ID, *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
+				return apiSvc
+			},
+			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
+			BundleReferenceSvcFn:   successfulBundleReferenceGet,
+			SpecSvcFn: func() *automock.SpecService {
+				specSvc := &automock.SpecService{}
+				specSvc.On("ListIDByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, model.APISpecReference, apiID).Return([]string{}, nil).Once()
+				specSvc.On("ListFetchRequestsByReferenceObjectIDsGlobal", txtest.CtxWithDBMatcher(), []string{}, model.APISpecReference).Return(nil, testErr).Once()
+				return specSvc
+			},
+			InputResource:       resource.ApplicationTemplateVersion,
+			InputResourceID:     appTemplateVersionID,
+			InputBundlesFromDB:  fixEmptyBundles(),
+			InputPackagesFromDB: fixEmptyPackages(),
+			APIInput:            fixAPIInputs,
+			InputResourceHashes: resourceHashes,
+			ExpectedErr:         testErr,
 		},
 	}
 

@@ -23,7 +23,7 @@ func TestVendorProcessor_Process(t *testing.T) {
 
 	vendorModels := []*model.Vendor{
 		{
-			ID:                           "vendor-id",
+			ID:                           vendorID,
 			OrdID:                        "ord:vendor",
 			ApplicationID:                &applicationID,
 			ApplicationTemplateVersionID: &applicationTemplateVersionID,
