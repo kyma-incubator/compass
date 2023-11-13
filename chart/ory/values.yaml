@@ -115,7 +115,7 @@ oathkeeper:
   # Any version above does not pass the liveness check as it expects at least one rule, our rules are deployed later with compass Helm chart
   # https://github.com/ory/k8s/issues/595
   image:
-    tag: v0.40.1
+    tag: v0.39.4
   sidecar:
     # Previously was hardcoded by the Kyma chart
     envs:
