@@ -75,10 +75,6 @@ do
             shift
             shift
             ;;
-        --dump-db)
-            DUMP_DB="--dump-db"
-            shift
-            ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
@@ -91,10 +87,13 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+export ARTIFACTS="/var/log/prow_artifacts"
+mkdir -p "${ARTIFACTS}"
+
 log::info "Triggering the compass installation"
-${COMPASS_SOURCE_DIR}/installation/scripts/prow/provision.sh ${DUMP_DB}
+${COMPASS_SOURCE_DIR}/installation/cmd/run.sh --k3d-memory 12288MB
 log::info "Compass provisioning done"
 
 log::info "Triggering the tests"
-${COMPASS_SOURCE_DIR}/installation/scripts/prow/execute-tests.sh ${DUMP_DB}
+ARTIFACTS=${ARTIFACTS} ${COMPASS_SOURCE_DIR}/installation/scripts/testing.sh
 log::info "Test execution completed"

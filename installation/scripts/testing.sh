@@ -22,12 +22,6 @@ do
     key="$1"
 
     case ${key} in
-        --dump-db)
-            checkInputParameterValue "${2}"
-            DUMP_DB="$2"
-            shift
-            shift
-        ;;
         --benchmark)
             checkInputParameterValue "${2}"
             BENCHMARK="$2"
@@ -73,13 +67,6 @@ fi
 # match all tests
 if [ -z "$testDefinitionName" ]
 then
-  if [[ "${DUMP_DB}" == "true" ]]
-  then
-    labelSelector=',!disable-db-dump'
-  elif [[ "${DUMP_DB}" == "false" ]]
-  then
-    labelSelector=',disable-db-dump'
-  fi
   if [[ "${BENCHMARK}" == "true" ]]
   then
     benchmarkLabelSelector='benchmark'
@@ -96,7 +83,7 @@ then
         concurrency: 1
         selectors:
           matchLabelExpressions:
-            - "${benchmarkLabelSelector}${labelSelector}"
+            - "${benchmarkLabelSelector}"
 EOF
 
 else
