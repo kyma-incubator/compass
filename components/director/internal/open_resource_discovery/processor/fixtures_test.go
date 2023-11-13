@@ -4,26 +4,29 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
 const (
-	ID1            = "ID1"
-	ordID          = "com.compass.v1"
-	localTenantID  = "BusinessPartner"
-	correlationIDs = `["sap.s4:sot:BusinessPartner", "sap.s4:sot:CostCenter", "sap.s4:sot:WorkforcePerson"]`
-	level          = "aggregate"
-	title          = "BusinessPartner"
-	ordPackageID   = "sap.xref:package:SomePackage:v1"
-	packageID      = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
-	vendorORDID    = "sap:vendor:SAP:"
-	baseURL        = "http://test.com:8080"
-	event1ID       = "testEvent1"
+	ID1              = "ID1"
+	ordID            = "com.compass.v1"
+	localTenantID    = "BusinessPartner"
+	correlationIDs   = `["sap.s4:sot:BusinessPartner", "sap.s4:sot:CostCenter", "sap.s4:sot:WorkforcePerson"]`
+	level            = "aggregate"
+	title            = "BusinessPartner"
+	ordPackageID     = "sap.xref:package:SomePackage:v1"
+	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
+	vendorORDID      = "sap:vendor:SAP:"
+	baseURL          = "http://test.com:8080"
+	event1ID         = "testEvent1"
+	tenantID         = "testTenant"
+	externalTenantID = "externalTestTenant"
 
 	publicVisibility = "public"
 	products         = `["sap:product:S4HANA_OD:"]`

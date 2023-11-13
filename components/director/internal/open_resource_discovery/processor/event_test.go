@@ -2,6 +2,8 @@ package processor_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
@@ -12,7 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestEventProcessor_Process(t *testing.T) {
@@ -22,7 +23,7 @@ func TestEventProcessor_Process(t *testing.T) {
 		fixEvent(event1ID, str.Ptr(eventORDID)),
 	}
 
-	eventModels2 := []*model.EventDefinition{
+	fixEventDef2 := []*model.EventDefinition{
 		fixEvent(event1ID, str.Ptr(eventORDID2)),
 	}
 
@@ -135,7 +136,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			SpecSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("ListIDByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.EventSpecReference, event1ID).Return([]string{}, nil).Once()
-				specSvc.On("ListFetchRequestsByReferenceObjectIDs", txtest.CtxWithDBMatcher(), "internalID", []string{}, model.EventSpecReference).Return([]*model.FetchRequest{fixSuccessfulFetchRequest()}, nil).Once()
+				specSvc.On("ListFetchRequestsByReferenceObjectIDs", txtest.CtxWithDBMatcher(), tenantID, []string{}, model.EventSpecReference).Return([]*model.FetchRequest{fixSuccessfulFetchRequest()}, nil).Once()
 				return specSvc
 			},
 			InputResource:              resource.Application,
@@ -154,7 +155,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			},
 			EventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(eventModels2, nil).Twice()
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef2, nil).Twice()
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, str.Ptr(packageID), *fixEventInputs[0], nilSpecInputSlice, []string{}, emptyHash, "").Return(ID1, nil).Once()
 				return eventSvc
 			},
@@ -178,7 +179,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			InputPackagesFromDB:        fixPackages(),
 			EventInput:                 fixEventInputs,
 			InputResourceHashes:        resourceHashes,
-			ExpectedEventDefOutput:     eventModels2,
+			ExpectedEventDefOutput:     fixEventDef2,
 			ExpectedFetchRequestOutput: []*processor.OrdFetchRequest{{FetchRequest: nil, RefObjectOrdID: eventORDID}},
 		},
 		{
@@ -290,7 +291,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			},
 			EventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(eventModels2, nil).Once()
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef2, nil).Once()
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixEventInputs[0], nilSpecInputSlice, []string{}, emptyHash, "").Return("", errTest).Once()
 				return eventSvc
 			},
@@ -313,7 +314,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			},
 			EventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(eventModels2, nil).Once()
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef2, nil).Once()
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixEventInputs[0], nilSpecInputSlice, []string{}, emptyHash, "").Return(ID1, nil).Once()
 				return eventSvc
 			},
@@ -341,7 +342,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			},
 			EventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(eventModels2, nil).Once()
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef2, nil).Once()
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixEventInputs[0], nilSpecInputSlice, []string{}, emptyHash, "").Return(ID1, nil).Once()
 				return eventSvc
 			},
@@ -370,7 +371,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			},
 			EventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(eventModels2, nil).Once()
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef2, nil).Once()
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixEventInputs[0], nilSpecInputSlice, []string{}, emptyHash, "").Return(ID1, nil).Once()
 				return eventSvc
 			},
@@ -399,7 +400,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			},
 			EventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(eventModels2, nil).Once()
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef2, nil).Once()
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixEventInputs[0], nilSpecInputSlice, []string{}, emptyHash, "").Return(ID1, nil).Once()
 				return eventSvc
 			},
@@ -486,8 +487,10 @@ func TestEventProcessor_Process(t *testing.T) {
 				specSvc = test.SpecSvcFn()
 			}
 
+			ctx := context.TODO()
+			ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 			apiProcessor := processor.NewEventProcessor(tx, eventSvc, entityTypeSvc, entityTypeMappingSvc, bundleReferenceSvc, specSvc)
-			events, fetchReq, err := apiProcessor.Process(tenant.SaveToContext(context.TODO(), "internalID", "externalID"), test.InputResource, test.InputResourceID, test.InputBundlesFromDB, test.InputPackagesFromDB, test.EventInput, test.InputResourceHashes)
+			events, fetchReq, err := apiProcessor.Process(ctx, test.InputResource, test.InputResourceID, test.InputBundlesFromDB, test.InputPackagesFromDB, test.EventInput, test.InputResourceHashes)
 
 			if test.ExpectedErr != nil {
 				require.Error(t, err)

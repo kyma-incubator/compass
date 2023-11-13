@@ -2,6 +2,8 @@ package processor_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
@@ -12,7 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestAPIProcessor_Process(t *testing.T) {
@@ -138,7 +139,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			SpecSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("ListIDByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, ID1).Return([]string{}, nil).Once()
-				specSvc.On("ListFetchRequestsByReferenceObjectIDs", txtest.CtxWithDBMatcher(), "internalID", []string{}, model.APISpecReference).Return([]*model.FetchRequest{fixSuccessfulFetchRequest()}, nil).Once()
+				specSvc.On("ListFetchRequestsByReferenceObjectIDs", txtest.CtxWithDBMatcher(), tenantID, []string{}, model.APISpecReference).Return([]*model.FetchRequest{fixSuccessfulFetchRequest()}, nil).Once()
 				return specSvc
 			},
 			InputResource:              resource.Application,
@@ -493,8 +494,10 @@ func TestAPIProcessor_Process(t *testing.T) {
 				specSvc = test.SpecSvcFn()
 			}
 
+			ctx := context.TODO()
+			ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 			apiProcessor := processor.NewAPIProcessor(tx, apiSvc, entityTypeSvc, entityTypeMappingSvc, bundleReferenceSvc, specSvc)
-			apis, fetchReq, err := apiProcessor.Process(tenant.SaveToContext(context.TODO(), "internalID", "externalID"), test.InputResource, test.InputResourceID, test.InputBundlesFromDB, test.InputPackagesFromDB, test.APIInput, test.InputResourceHashes)
+			apis, fetchReq, err := apiProcessor.Process(ctx, test.InputResource, test.InputResourceID, test.InputBundlesFromDB, test.InputPackagesFromDB, test.APIInput, test.InputResourceHashes)
 
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
