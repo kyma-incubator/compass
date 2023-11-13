@@ -15,32 +15,32 @@ import (
 	"testing"
 )
 
-func TestAPIProcessor_Process(t *testing.T) {
+func TestEventProcessor_Process(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(errTest)
 
-	fixAPIDef := []*model.APIDefinition{
-		fixAPI(ID1, str.Ptr(apiORDID)),
+	fixEventDef := []*model.EventDefinition{
+		fixEvent(event1ID, str.Ptr(eventORDID)),
 	}
 
-	fixAPIDef2 := []*model.APIDefinition{
-		fixAPI(ID1, str.Ptr(apiORDID2)),
+	eventModels2 := []*model.EventDefinition{
+		fixEvent(event1ID, str.Ptr(eventORDID2)),
 	}
 
-	fixAPIInputs := []*model.APIDefinitionInput{
-		fixAPIInput(),
+	fixEventInputs := []*model.EventDefinitionInput{
+		fixEventInput(),
 	}
 
 	successfulBundleReferenceGet := func() *automock.BundleReferenceService {
 		bundleReferenceSvc := &automock.BundleReferenceService{}
-		bundleReferenceSvc.On("GetBundleIDsForObject", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &fixAPIDef[0].ID).Return([]string{}, nil).Once()
+		bundleReferenceSvc.On("GetBundleIDsForObject", txtest.CtxWithDBMatcher(), model.BundleEventReference, &fixEventDef[0].ID).Return([]string{}, nil).Once()
 		return bundleReferenceSvc
 	}
 
 	successfulEntityTypeMapping := func() *automock.EntityTypeMappingService {
 		entityTypeMappingSvc := &automock.EntityTypeMappingService{}
-		entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.API).Return([]*model.EntityTypeMapping{fixEntityTypeMappingModel(ID1)}, nil).Once()
-		entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, ID1, fixAPIInput().EntityTypeMappings[0]).Return("", nil).Once()
-		entityTypeMappingSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.API, ID1).Return(nil).Once()
+		entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), event1ID, resource.EventDefinition).Return([]*model.EntityTypeMapping{fixEntityTypeMappingModel(ID1)}, nil).Once()
+		entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.EventDefinition, event1ID, fixEventInput().EntityTypeMappings[0]).Return("", nil).Once()
+		entityTypeMappingSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.EventDefinition, ID1).Return(nil).Once()
 		return entityTypeMappingSvc
 	}
 
@@ -49,7 +49,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 	testCases := []struct {
 		Name                       string
 		TransactionerFn            func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		APISvcFn                   func() *automock.APIService
+		EventSvcFn                 func() *automock.EventService
 		EntityTypeSvcFn            func() *automock.EntityTypeService
 		EntityTypeMappingSvcFn     func() *automock.EntityTypeMappingService
 		BundleReferenceSvcFn       func() *automock.BundleReferenceService
@@ -58,29 +58,29 @@ func TestAPIProcessor_Process(t *testing.T) {
 		InputResourceID            string
 		InputBundlesFromDB         []*model.Bundle
 		InputPackagesFromDB        []*model.Package
-		APIInput                   []*model.APIDefinitionInput
+		EventInput                 []*model.EventDefinitionInput
 		InputResourceHashes        map[string]uint64
-		ExpectedAPIDefOutput       []*model.APIDefinition
+		ExpectedEventDefOutput     []*model.EventDefinition
 		ExpectedFetchRequestOutput []*processor.OrdFetchRequest
 		ExpectedErr                error
 	}{
 		{
-			Name: "Success empty API inputs",
+			Name: "Success empty Event inputs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsTwice()
 			},
-			APISvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef, nil).Twice()
-				return apiSvc
+			EventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef, nil).Twice()
+				return eventSvc
 			},
 			InputResource:              resource.Application,
 			InputResourceID:            appID,
 			InputBundlesFromDB:         fixEmptyBundles(),
 			InputPackagesFromDB:        fixEmptyPackages(),
-			APIInput:                   []*model.APIDefinitionInput{},
+			EventInput:                 []*model.EventDefinitionInput{},
 			InputResourceHashes:        resourceHashes,
-			ExpectedAPIDefOutput:       fixAPIDef,
+			ExpectedEventDefOutput:     fixEventDef,
 			ExpectedFetchRequestOutput: []*processor.OrdFetchRequest{},
 		},
 		{
@@ -88,108 +88,101 @@ func TestAPIProcessor_Process(t *testing.T) {
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(3)
 			},
-			APISvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef, nil).Twice()
-				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
-				return apiSvc
+			EventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef, nil).Twice()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixEventDef[0].ID, *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(nil).Once()
+
+				return eventSvc
 			},
 			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
 			BundleReferenceSvcFn:   successfulBundleReferenceGet,
 			SpecSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
-				spec1 := fixAPIInputs[0].ResourceDefinitions[0].ToSpec()
-				spec2 := fixAPIInputs[0].ResourceDefinitions[1].ToSpec()
-				spec3 := fixAPIInputs[0].ResourceDefinitions[2].ToSpec()
-				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, ID1).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec1, resource.Application, model.APISpecReference, ID1).Return("", nil, nil).Once()
-				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec2, resource.Application, model.APISpecReference, ID1).Return("", nil, nil).Once()
-				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec3, resource.Application, model.APISpecReference, ID1).Return("", nil, nil).Once()
+				spec := fixEventInputs[0].ResourceDefinitions[0].ToSpec()
+				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.EventSpecReference, event1ID).Return(nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec, resource.Application, model.EventSpecReference, event1ID).Return("", nil, nil).Once()
 				return specSvc
 			},
 			InputResource:              resource.Application,
 			InputResourceID:            appID,
 			InputBundlesFromDB:         fixEmptyBundles(),
 			InputPackagesFromDB:        fixEmptyPackages(),
-			APIInput:                   fixAPIInputs,
+			EventInput:                 fixEventInputs,
 			InputResourceHashes:        resourceHashes,
-			ExpectedAPIDefOutput:       fixAPIDef,
-			ExpectedFetchRequestOutput: []*processor.OrdFetchRequest{{FetchRequest: nil, RefObjectOrdID: apiORDID}, {FetchRequest: nil, RefObjectOrdID: apiORDID}, {FetchRequest: nil, RefObjectOrdID: apiORDID}},
+			ExpectedEventDefOutput:     fixEventDef,
+			ExpectedFetchRequestOutput: []*processor.OrdFetchRequest{{FetchRequest: nil, RefObjectOrdID: eventORDID}},
 		},
 		{
 			Name: "Success - refetch specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(3)
 			},
-			APISvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				api := fixAPI(ID1, str.Ptr(apiORDID))
-				api.LastUpdate = str.Ptr("2024-01-25T15:47:04+00:00")
-				apiModelsWithChangedLastUpdate := []*model.APIDefinition{
-					api,
+			EventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				event := fixEvent(event1ID, str.Ptr(eventORDID))
+				event.LastUpdate = str.Ptr("2024-01-25T15:47:04+00:00")
+				eventModelsWithChangedLastUpdate := []*model.EventDefinition{
+					event,
 				}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(apiModelsWithChangedLastUpdate, nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef, nil).Once()
-				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
-				return apiSvc
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(eventModelsWithChangedLastUpdate, nil).Once()
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef, nil).Once()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixEventDef[0].ID, *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(nil).Once()
+				return eventSvc
 			},
 			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
 			BundleReferenceSvcFn:   successfulBundleReferenceGet,
 			SpecSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
-				specSvc.On("ListIDByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, ID1).Return([]string{}, nil).Once()
-				specSvc.On("ListFetchRequestsByReferenceObjectIDs", txtest.CtxWithDBMatcher(), "internalID", []string{}, model.APISpecReference).Return([]*model.FetchRequest{fixSuccessfulFetchRequest()}, nil).Once()
+				specSvc.On("ListIDByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.EventSpecReference, event1ID).Return([]string{}, nil).Once()
+				specSvc.On("ListFetchRequestsByReferenceObjectIDs", txtest.CtxWithDBMatcher(), "internalID", []string{}, model.EventSpecReference).Return([]*model.FetchRequest{fixSuccessfulFetchRequest()}, nil).Once()
 				return specSvc
 			},
 			InputResource:              resource.Application,
 			InputResourceID:            appID,
 			InputBundlesFromDB:         fixEmptyBundles(),
 			InputPackagesFromDB:        fixEmptyPackages(),
-			APIInput:                   fixAPIInputs,
+			EventInput:                 fixEventInputs,
 			InputResourceHashes:        resourceHashes,
-			ExpectedAPIDefOutput:       fixAPIDef,
+			ExpectedEventDefOutput:     fixEventDef,
 			ExpectedFetchRequestOutput: []*processor.OrdFetchRequest{},
 		},
 		{
-			Name: "Success - API not found",
+			Name: "Success - Event not found",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(3)
 			},
-			APISvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef2, nil).Twice()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, str.Ptr(packageID), *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(ID1, nil).Once()
-				return apiSvc
+			EventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(eventModels2, nil).Twice()
+				eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, str.Ptr(packageID), *fixEventInputs[0], nilSpecInputSlice, []string{}, emptyHash, "").Return(ID1, nil).Once()
+				return eventSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
 				entityTypeMappingSvc := &automock.EntityTypeMappingService{}
-				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.API).Return([]*model.EntityTypeMapping{}, nil).Once()
-				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, ID1, fixAPIInput().EntityTypeMappings[0]).Return("", nil).Once()
+				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.EventDefinition).Return(fixEntityTypeMappingsEmpty(), nil).Once()
+				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.EventDefinition, ID1, fixEventInput().EntityTypeMappings[0]).Return("", nil).Once()
 				return entityTypeMappingSvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
-				apiInput := fixAPIInput()
-				apiInput.OrdID = str.Ptr(apiORDID2)
-				spec1 := apiInput.ResourceDefinitions[0].ToSpec()
-				spec2 := apiInput.ResourceDefinitions[1].ToSpec()
-				spec3 := apiInput.ResourceDefinitions[2].ToSpec()
-				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec1, resource.Application, model.APISpecReference, ID1).Return("", nil, nil).Once()
-				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec2, resource.Application, model.APISpecReference, ID1).Return("", nil, nil).Once()
-				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec3, resource.Application, model.APISpecReference, ID1).Return("", nil, nil).Once()
+				eventInput := fixEventInput()
+				eventInput.OrdID = str.Ptr(apiORDID2)
+				spec1 := eventInput.ResourceDefinitions[0].ToSpec()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec1, resource.Application, model.EventSpecReference, ID1).Return("", nil, nil).Once()
 				return specSvc
 			},
 			InputResource:              resource.Application,
 			InputResourceID:            appID,
 			InputBundlesFromDB:         fixEmptyBundles(),
 			InputPackagesFromDB:        fixPackages(),
-			APIInput:                   fixAPIInputs,
+			EventInput:                 fixEventInputs,
 			InputResourceHashes:        resourceHashes,
-			ExpectedAPIDefOutput:       fixAPIDef2,
-			ExpectedFetchRequestOutput: []*processor.OrdFetchRequest{{FetchRequest: nil, RefObjectOrdID: apiORDID}, {FetchRequest: nil, RefObjectOrdID: apiORDID}, {FetchRequest: nil, RefObjectOrdID: apiORDID}},
+			ExpectedEventDefOutput:     eventModels2,
+			ExpectedFetchRequestOutput: []*processor.OrdFetchRequest{{FetchRequest: nil, RefObjectOrdID: eventORDID}},
 		},
 		{
-			Name: "Fail while beginning transaction for listing APIs from DB",
+			Name: "Fail while beginning transaction for listing Events from DB",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatFailsOnBegin()
 			},
@@ -197,62 +190,62 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputResourceID:     appID,
 			InputBundlesFromDB:  fixEmptyBundles(),
 			InputPackagesFromDB: fixEmptyPackages(),
-			APIInput:            []*model.APIDefinitionInput{},
+			EventInput:          []*model.EventDefinitionInput{},
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         errTest,
 		},
 		{
-			Name: "Fail while listing APIs by application id from DB",
+			Name: "Fail while listing Events by application id from DB",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatDoesntExpectCommit()
 			},
-			APISvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, errTest).Once()
-				return apiSvc
+			EventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, errTest).Once()
+				return eventSvc
 			},
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
 			InputBundlesFromDB:  fixEmptyBundles(),
 			InputPackagesFromDB: fixEmptyPackages(),
-			APIInput:            []*model.APIDefinitionInput{},
+			EventInput:          []*model.EventDefinitionInput{},
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         errTest,
 		},
 		{
-			Name: "Fail while listing APIs by application id from DB after resync",
+			Name: "Fail while listing Events by application id from DB after resync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsTwice()
 			},
-			APISvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef, nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, errTest).Once()
-				return apiSvc
+			EventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef, nil).Once()
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, errTest).Once()
+				return eventSvc
 			},
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
 			InputBundlesFromDB:  fixEmptyBundles(),
 			InputPackagesFromDB: fixEmptyPackages(),
-			APIInput:            []*model.APIDefinitionInput{},
+			EventInput:          []*model.EventDefinitionInput{},
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         errTest,
 		},
 		{
-			Name: "Fail while listing APIs by Application Template Version id from DB",
+			Name: "Fail while listing Events by Application Template Version id from DB",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatDoesntExpectCommit()
 			},
-			APISvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, errTest).Once()
-				return apiSvc
+			EventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, errTest).Once()
+				return eventSvc
 			},
 			InputResource:       resource.ApplicationTemplateVersion,
 			InputResourceID:     appTemplateVersionID,
 			InputBundlesFromDB:  fixEmptyBundles(),
 			InputPackagesFromDB: fixEmptyPackages(),
-			APIInput:            []*model.APIDefinitionInput{},
+			EventInput:          []*model.EventDefinitionInput{},
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         errTest,
 		},
@@ -265,16 +258,16 @@ func TestAPIProcessor_Process(t *testing.T) {
 
 				return persistTx, transact
 			},
-			APISvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef, nil).Once()
-				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(errTest).Once()
-				return apiSvc
+			EventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef, nil).Once()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixEventDef[0].ID, *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(errTest).Once()
+				return eventSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
 				entityTypeMappingSvc := &automock.EntityTypeMappingService{}
-				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.API).Return([]*model.EntityTypeMapping{}, nil).Once()
-				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, ID1, fixAPIInput().EntityTypeMappings[0]).Return("", nil).Once()
+				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), event1ID, resource.EventDefinition).Return(fixEntityTypeMappingsEmpty(), nil).Once()
+				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.EventDefinition, event1ID, fixEventInput().EntityTypeMappings[0]).Return("", nil).Once()
 				return entityTypeMappingSvc
 			},
 			BundleReferenceSvcFn: successfulBundleReferenceGet,
@@ -282,12 +275,12 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputResourceID:      appID,
 			InputBundlesFromDB:   fixEmptyBundles(),
 			InputPackagesFromDB:  fixEmptyPackages(),
-			APIInput:             fixAPIInputs,
+			EventInput:           fixEventInputs,
 			InputResourceHashes:  resourceHashes,
 			ExpectedErr:          errTest,
 		},
 		{
-			Name: "Fail while creating api",
+			Name: "Fail while creating event",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx, transact := txGen.ThatSucceeds()
 				transact.On("Begin").Return(persistTx, nil).Once()
@@ -295,17 +288,17 @@ func TestAPIProcessor_Process(t *testing.T) {
 
 				return persistTx, transact
 			},
-			APISvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef2, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return("", errTest).Once()
-				return apiSvc
+			EventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(eventModels2, nil).Once()
+				eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixEventInputs[0], nilSpecInputSlice, []string{}, emptyHash, "").Return("", errTest).Once()
+				return eventSvc
 			},
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
 			InputBundlesFromDB:  fixEmptyBundles(),
 			InputPackagesFromDB: fixEmptyPackages(),
-			APIInput:            fixAPIInputs,
+			EventInput:          fixEventInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         errTest,
 		},
@@ -318,22 +311,22 @@ func TestAPIProcessor_Process(t *testing.T) {
 
 				return persistTx, transact
 			},
-			APISvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef2, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(ID1, nil).Once()
-				return apiSvc
+			EventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(eventModels2, nil).Once()
+				eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixEventInputs[0], nilSpecInputSlice, []string{}, emptyHash, "").Return(ID1, nil).Once()
+				return eventSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
 				entityTypeMappingSvc := &automock.EntityTypeMappingService{}
-				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.API).Return(nil, errTest).Once()
+				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.EventDefinition).Return(nil, errTest).Once()
 				return entityTypeMappingSvc
 			},
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
 			InputBundlesFromDB:  fixEmptyBundles(),
 			InputPackagesFromDB: fixEmptyPackages(),
-			APIInput:            fixAPIInputs,
+			EventInput:          fixEventInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         errTest,
 		},
@@ -346,23 +339,23 @@ func TestAPIProcessor_Process(t *testing.T) {
 
 				return persistTx, transact
 			},
-			APISvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef2, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(ID1, nil).Once()
-				return apiSvc
+			EventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(eventModels2, nil).Once()
+				eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixEventInputs[0], nilSpecInputSlice, []string{}, emptyHash, "").Return(ID1, nil).Once()
+				return eventSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
 				entityTypeMappingSvc := &automock.EntityTypeMappingService{}
-				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.API).Return([]*model.EntityTypeMapping{}, nil).Once()
-				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, ID1, fixAPIInput().EntityTypeMappings[0]).Return("", errTest).Once()
+				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.EventDefinition).Return(fixEntityTypeMappingsEmpty(), nil).Once()
+				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.EventDefinition, ID1, fixEventInput().EntityTypeMappings[0]).Return("", errTest).Once()
 				return entityTypeMappingSvc
 			},
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
 			InputBundlesFromDB:  fixEmptyBundles(),
 			InputPackagesFromDB: fixEmptyPackages(),
-			APIInput:            fixAPIInputs,
+			EventInput:          fixEventInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         errTest,
 		},
@@ -375,23 +368,23 @@ func TestAPIProcessor_Process(t *testing.T) {
 
 				return persistTx, transact
 			},
-			APISvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef2, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(ID1, nil).Once()
-				return apiSvc
+			EventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(eventModels2, nil).Once()
+				eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixEventInputs[0], nilSpecInputSlice, []string{}, emptyHash, "").Return(ID1, nil).Once()
+				return eventSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
 				entityTypeMappingSvc := &automock.EntityTypeMappingService{}
-				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.API).Return([]*model.EntityTypeMapping{fixEntityTypeMappingModel(ID1)}, nil).Once()
-				entityTypeMappingSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.API, ID1).Return(errTest).Once()
+				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.EventDefinition).Return([]*model.EntityTypeMapping{fixEntityTypeMappingModel(ID1)}, nil).Once()
+				entityTypeMappingSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.EventDefinition, ID1).Return(errTest).Once()
 				return entityTypeMappingSvc
 			},
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
 			InputBundlesFromDB:  fixEmptyBundles(),
 			InputPackagesFromDB: fixEmptyPackages(),
-			APIInput:            fixAPIInputs,
+			EventInput:          fixEventInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         errTest,
 		},
@@ -404,31 +397,31 @@ func TestAPIProcessor_Process(t *testing.T) {
 
 				return persistTx, transact
 			},
-			APISvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef2, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(ID1, nil).Once()
-				return apiSvc
+			EventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(eventModels2, nil).Once()
+				eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, nilString, *fixEventInputs[0], nilSpecInputSlice, []string{}, emptyHash, "").Return(ID1, nil).Once()
+				return eventSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
 				entityTypeMappingSvc := &automock.EntityTypeMappingService{}
-				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.API).Return([]*model.EntityTypeMapping{}, nil).Once()
-				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.API, ID1, fixAPIInput().EntityTypeMappings[0]).Return("", nil).Once()
+				entityTypeMappingSvc.On("ListByOwnerResourceID", txtest.CtxWithDBMatcher(), ID1, resource.EventDefinition).Return(fixEntityTypeMappingsEmpty(), nil).Once()
+				entityTypeMappingSvc.On("Create", txtest.CtxWithDBMatcher(), resource.EventDefinition, ID1, fixEventInput().EntityTypeMappings[0]).Return("", nil).Once()
 				return entityTypeMappingSvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
-				apiInput := fixAPIInput()
-				apiInput.OrdID = str.Ptr(apiORDID2)
-				spec1 := apiInput.ResourceDefinitions[0].ToSpec()
-				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec1, resource.Application, model.APISpecReference, ID1).Return("", nil, errTest).Once()
+				eventInput := fixEventInput()
+				eventInput.OrdID = str.Ptr(eventORDID2)
+				spec1 := eventInput.ResourceDefinitions[0].ToSpec()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec1, resource.Application, model.EventSpecReference, ID1).Return("", nil, errTest).Once()
 				return specSvc
 			},
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
 			InputBundlesFromDB:  fixEmptyBundles(),
 			InputPackagesFromDB: fixEmptyPackages(),
-			APIInput:            fixAPIInputs,
+			EventInput:          fixEventInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         errTest,
 		},
@@ -441,24 +434,24 @@ func TestAPIProcessor_Process(t *testing.T) {
 
 				return persistTx, transact
 			},
-			APISvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef, nil).Once()
-				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
-				return apiSvc
+			EventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef, nil).Once()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixEventDef[0].ID, *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(nil).Once()
+				return eventSvc
 			},
 			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
 			BundleReferenceSvcFn:   successfulBundleReferenceGet,
 			SpecSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
-				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, ID1).Return(errTest).Once()
+				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.EventSpecReference, event1ID).Return(errTest).Once()
 				return specSvc
 			},
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
 			InputBundlesFromDB:  fixEmptyBundles(),
 			InputPackagesFromDB: fixEmptyPackages(),
-			APIInput:            fixAPIInputs,
+			EventInput:          fixEventInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         errTest,
 		},
@@ -468,9 +461,9 @@ func TestAPIProcessor_Process(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			_, tx := test.TransactionerFn()
 
-			apiSvc := &automock.APIService{}
-			if test.APISvcFn != nil {
-				apiSvc = test.APISvcFn()
+			eventSvc := &automock.EventService{}
+			if test.EventSvcFn != nil {
+				eventSvc = test.EventSvcFn()
 			}
 
 			entityTypeSvc := &automock.EntityTypeService{}
@@ -493,19 +486,19 @@ func TestAPIProcessor_Process(t *testing.T) {
 				specSvc = test.SpecSvcFn()
 			}
 
-			apiProcessor := processor.NewAPIProcessor(tx, apiSvc, entityTypeSvc, entityTypeMappingSvc, bundleReferenceSvc, specSvc)
-			apis, fetchReq, err := apiProcessor.Process(tenant.SaveToContext(context.TODO(), "internalID", "externalID"), test.InputResource, test.InputResourceID, test.InputBundlesFromDB, test.InputPackagesFromDB, test.APIInput, test.InputResourceHashes)
+			apiProcessor := processor.NewEventProcessor(tx, eventSvc, entityTypeSvc, entityTypeMappingSvc, bundleReferenceSvc, specSvc)
+			events, fetchReq, err := apiProcessor.Process(tenant.SaveToContext(context.TODO(), "internalID", "externalID"), test.InputResource, test.InputResourceID, test.InputBundlesFromDB, test.InputPackagesFromDB, test.EventInput, test.InputResourceHashes)
 
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), test.ExpectedErr.Error())
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, test.ExpectedAPIDefOutput, apis)
+				require.Equal(t, test.ExpectedEventDefOutput, events)
 				require.Equal(t, test.ExpectedFetchRequestOutput, fetchReq)
 			}
 
-			mock.AssertExpectationsForObjects(t, tx, apiSvc, entityTypeSvc, entityTypeMappingSvc, bundleReferenceSvc, specSvc)
+			mock.AssertExpectationsForObjects(t, tx, eventSvc, entityTypeSvc, entityTypeMappingSvc, bundleReferenceSvc, specSvc)
 		})
 	}
 }

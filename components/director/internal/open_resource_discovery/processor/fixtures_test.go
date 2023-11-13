@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"strings"
 	"time"
 
@@ -22,10 +23,20 @@ const (
 	packageID      = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 	vendorORDID    = "sap:vendor:SAP:"
 	baseURL        = "http://test.com:8080"
+	event1ID       = "testEvent1"
 
 	publicVisibility = "public"
 	products         = `["sap:product:S4HANA_OD:"]`
 	releaseStatus    = "active"
+
+	packageORDID = "ns:package:PACKAGE_ID:v1"
+	productORDID = "sap:product:id:"
+	bundleORDID  = "ns:consumptionBundle:BUNDLE_ID:v1"
+	apiORDID     = "ns:apiResource:API_ID:v1"
+	apiORDID2    = "ns:apiResource:API_ID:v2"
+	eventORDID   = "ns:eventResource:EVENT_ID:v1"
+	eventORDID2  = "ns:eventResource:EVENT_ID:v2"
+	custom       = "custom"
 )
 
 var (
@@ -48,7 +59,13 @@ var (
 	versionDeprecatedSince = "v1.0"
 	versionForRemoval      = false
 	mandatoryTrue          = true
-	changeLogEntries       = removeWhitespace(`[
+	boolPtr                = true
+	nilString              *string
+	nilSpecInput           *model.SpecInput
+	nilSpecInputSlice      []*model.SpecInput
+	emptyHash              uint64
+
+	changeLogEntries = removeWhitespace(`[
         {
 		  "date": "2020-04-29",
 		  "description": "lorem ipsum dolor sit amet",
@@ -129,6 +146,78 @@ var (
 		},
 		{
 		  "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v1"
+		}
+	  ]`)
+
+	supportedUseCases = removeWhitespace(`[
+        "mass-extraction"
+      ]`)
+
+	documentLabels = removeWhitespace(`{
+        "Some Aspect": ["Markdown Documentation [with links](#)", "With multiple values"]
+      }`)
+
+	apiAPIModelSelectors = removeWhitespace(`[
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonRead"
+		},
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonUpdate"
+		},
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/objects/schemas/WorkForcePersonCreate"
+		}
+	  ]`)
+
+	apiEntityTypeTargets = removeWhitespace(`[
+		{
+		  "ordId": "sap.odm:entityType:WorkforcePerson:v1"
+		},
+		{
+		  "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v1"
+		}
+	  ]`)
+
+	resourceLinksFormat = removeWhitespace(`[
+        {
+          "type": "console",
+          "url": "https://example.com/shell/discover"
+        },
+		{
+          "type": "console",
+          "url": "%s/shell/discover/relative"
+        }
+      ]`)
+
+	apiImplementationStandard = "cff:open-service-broker:v2"
+
+	mergedLabels = removeWhitespace(`{
+        "label-key-1": [
+          "label-val",
+		  "label-value-1",
+          "label-value-2"
+        ],
+		"pkg-label": [
+          "label-val"
+        ]
+      }`)
+
+	eventAPIModelSelectors = removeWhitespace(`[
+		{
+		  "type": "json-pointer",
+		  "jsonPointer": "#/components/messages/sap_odm_finance_costobject_CostCenter_Created_v1/payload"
+		}
+	  ]`)
+
+	eventEntityTypeTargets = removeWhitespace(`[
+		{
+		  "ordId": "sap.odm:entityType:CostCenter:v1"
+		},
+		{
+		  "correlationId": "sap.s4:csnEntity:CostCenter_v1"
 		}
 	  ]`)
 
@@ -245,7 +334,7 @@ func fixPackages() []*model.Package {
 		{
 			ID:                  packageID,
 			ApplicationID:       &appID,
-			OrdID:               ordPackageID,
+			OrdID:               packageORDID,
 			Vendor:              str.Ptr(vendorORDID),
 			Title:               "PACKAGE 1 TITLE",
 			ShortDescription:    "lorem ipsum",
@@ -287,4 +376,234 @@ func fixEntityTypeMappingInputModel() *model.EntityTypeMappingInput {
 		APIModelSelectors: json.RawMessage(apiModelSelectors),
 		EntityTypeTargets: json.RawMessage(entityTypeTargets),
 	}
+}
+
+func fixAPI(id string, ordID *string) *model.APIDefinition {
+	return &model.APIDefinition{
+		ApplicationID:                           &appID,
+		PackageID:                               str.Ptr(packageORDID),
+		Name:                                    "API TITLE",
+		Description:                             str.Ptr("lorem ipsum dolor sit amet"),
+		TargetURLs:                              json.RawMessage(`["/test/v1"]`),
+		OrdID:                                   ordID,
+		ShortDescription:                        str.Ptr("lorem ipsum"),
+		APIProtocol:                             str.Ptr("odata-v2"),
+		Tags:                                    json.RawMessage(`["testTag","apiTestTag"]`),
+		Countries:                               json.RawMessage(`["BG","EN","US"]`),
+		Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+		APIResourceLinks:                        json.RawMessage(fmt.Sprintf(resourceLinksFormat, baseURL)),
+		ReleaseStatus:                           str.Ptr("active"),
+		ChangeLogEntries:                        json.RawMessage(changeLogEntries),
+		Labels:                                  json.RawMessage(mergedLabels),
+		Visibility:                              str.Ptr("public"),
+		Disabled:                                &boolPtr,
+		PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+		LineOfBusiness:                          json.RawMessage(`["Finance","Sales"]`),
+		Industry:                                json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+		ImplementationStandard:                  str.Ptr(apiImplementationStandard),
+		CustomImplementationStandard:            nil,
+		CustomImplementationStandardDescription: nil,
+		LastUpdate:                              str.Ptr("2023-01-25T15:47:04+00:00"),
+		Version: &model.Version{
+			Value: "2.1.3",
+		},
+		DocumentationLabels: json.RawMessage(documentLabels),
+		BaseEntity: &model.BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
+	}
+}
+
+func fixAPIInput() *model.APIDefinitionInput {
+	return &model.APIDefinitionInput{
+		OrdID:                                   str.Ptr(apiORDID),
+		LocalTenantID:                           str.Ptr(localTenantID),
+		OrdPackageID:                            str.Ptr(packageORDID),
+		Name:                                    "API TITLE",
+		Description:                             str.Ptr("long desc"),
+		TargetURLs:                              json.RawMessage(`["https://exmaple.com/test/v1","https://exmaple.com/test/v2"]`),
+		ShortDescription:                        str.Ptr("short desc"),
+		SystemInstanceAware:                     &boolPtr,
+		APIProtocol:                             str.Ptr("odata-v2"),
+		Tags:                                    json.RawMessage(`["apiTestTag"]`),
+		Countries:                               json.RawMessage(`["BG","US"]`),
+		Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+		APIResourceLinks:                        json.RawMessage(fmt.Sprintf(resourceLinksFormat, baseURL)),
+		ReleaseStatus:                           str.Ptr("active"),
+		SunsetDate:                              nil,
+		Successors:                              nil,
+		ChangeLogEntries:                        json.RawMessage(changeLogEntries),
+		Labels:                                  json.RawMessage(labels),
+		SupportedUseCases:                       json.RawMessage(supportedUseCases),
+		DocumentationLabels:                     json.RawMessage(documentLabels),
+		Visibility:                              str.Ptr("public"),
+		Disabled:                                &boolPtr,
+		PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+		LineOfBusiness:                          json.RawMessage(`["Finance","Sales"]`),
+		Industry:                                json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+		ImplementationStandard:                  str.Ptr(apiImplementationStandard),
+		CustomImplementationStandard:            nil,
+		CustomImplementationStandardDescription: nil,
+		Extensible:                              json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
+		LastUpdate:                              str.Ptr("2023-01-26T15:47:04+00:00"),
+		ResourceDefinitions: []*model.APIResourceDefinition{
+			{
+				Type:      "openapi-v3",
+				MediaType: "application/json",
+				URL:       fmt.Sprintf("%s/external-api/unsecured/spec/flapping", baseURL),
+				AccessStrategy: []accessstrategy.AccessStrategy{
+					{
+						Type: "open",
+					},
+				},
+			},
+			{
+				Type:      "openapi-v3",
+				MediaType: "text/yaml",
+				URL:       "https://test.com/odata/1.0/catalog",
+				AccessStrategy: []accessstrategy.AccessStrategy{
+					{
+						Type: "open",
+					},
+				},
+			},
+			{
+				Type:      "edmx",
+				MediaType: "application/xml",
+				URL:       "https://TEST:443//odata/$metadata",
+				AccessStrategy: []accessstrategy.AccessStrategy{
+					{
+						Type: "open",
+					},
+				},
+			},
+		},
+		PartOfConsumptionBundles: []*model.ConsumptionBundleReference{
+			{
+				BundleOrdID:      bundleORDID,
+				DefaultTargetURL: "https://exmaple.com/test/v1",
+			},
+		},
+		EntityTypeMappings: []*model.EntityTypeMappingInput{
+			{
+				APIModelSelectors: json.RawMessage(apiAPIModelSelectors),
+				EntityTypeTargets: json.RawMessage(apiEntityTypeTargets),
+			},
+		},
+		VersionInput: &model.VersionInput{
+			Value: "2.1.2",
+		},
+		Direction: str.Ptr("mixed"),
+	}
+}
+
+func fixEvent(id string, ordID *string) *model.EventDefinition {
+	return &model.EventDefinition{
+
+		ApplicationID:       &appID,
+		PackageID:           str.Ptr(packageORDID),
+		Name:                "EVENT TITLE",
+		Description:         str.Ptr("lorem ipsum dolor sit amet"),
+		OrdID:               ordID,
+		ShortDescription:    str.Ptr("lorem ipsum"),
+		ChangeLogEntries:    json.RawMessage(changeLogEntries),
+		Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+		Tags:                json.RawMessage(`["testTag","eventTestTag"]`),
+		Countries:           json.RawMessage(`["BG","EN","US"]`),
+		ReleaseStatus:       str.Ptr("active"),
+		Labels:              json.RawMessage(mergedLabels),
+		DocumentationLabels: json.RawMessage(documentLabels),
+		Visibility:          str.Ptr("public"),
+		Disabled:            &boolPtr,
+		PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+		LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
+		Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+		LastUpdate:          str.Ptr("2023-01-25T15:47:04+00:00"),
+		Version: &model.Version{
+			Value: "2.1.3",
+		},
+		BaseEntity: &model.BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
+	}
+}
+
+func fixEventInput() *model.EventDefinitionInput {
+	return &model.EventDefinitionInput{
+		OrdID:                                   str.Ptr(eventORDID),
+		LocalTenantID:                           str.Ptr(localTenantID),
+		OrdPackageID:                            str.Ptr(packageORDID),
+		Name:                                    "EVENT TITLE",
+		Description:                             str.Ptr("long desc"),
+		ShortDescription:                        str.Ptr("short desc"),
+		SystemInstanceAware:                     &boolPtr,
+		ChangeLogEntries:                        json.RawMessage(changeLogEntries),
+		Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+		EventResourceLinks:                      json.RawMessage(fmt.Sprintf(resourceLinksFormat, baseURL)),
+		Tags:                                    json.RawMessage(`["eventTestTag"]`),
+		Countries:                               json.RawMessage(`["BG","US"]`),
+		ReleaseStatus:                           str.Ptr("active"),
+		SunsetDate:                              nil,
+		Successors:                              nil,
+		Labels:                                  json.RawMessage(labels),
+		DocumentationLabels:                     json.RawMessage(documentLabels),
+		Visibility:                              str.Ptr("public"),
+		Disabled:                                &boolPtr,
+		PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+		LineOfBusiness:                          json.RawMessage(`["Finance","Sales"]`),
+		Industry:                                json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+		Extensible:                              json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
+		ImplementationStandard:                  str.Ptr(custom),
+		CustomImplementationStandard:            str.Ptr("sap.foo.bar:some-event-contract:v1"),
+		CustomImplementationStandardDescription: str.Ptr("description"),
+		LastUpdate:                              str.Ptr("2023-01-26T15:47:04+00:00"),
+		ResourceDefinitions: []*model.EventResourceDefinition{
+			{
+				Type:      "asyncapi-v2",
+				MediaType: "application/json",
+				URL:       "http://localhost:8080/asyncApi2.json",
+				AccessStrategy: []accessstrategy.AccessStrategy{
+					{
+						Type: "open",
+					},
+				},
+			},
+		},
+		PartOfConsumptionBundles: []*model.ConsumptionBundleReference{
+			{
+				BundleOrdID: bundleORDID,
+			},
+		},
+		EntityTypeMappings: []*model.EntityTypeMappingInput{
+			{
+				APIModelSelectors: json.RawMessage(eventAPIModelSelectors),
+				EntityTypeTargets: json.RawMessage(eventEntityTypeTargets),
+			},
+		},
+		VersionInput: &model.VersionInput{
+			Value: "2.1.2",
+		},
+	}
+}
+
+func fixSuccessfulFetchRequest() *model.FetchRequest {
+	return &model.FetchRequest{
+		Status: &model.FetchRequestStatus{
+			Condition: model.FetchRequestStatusConditionSucceeded,
+		},
+	}
+}
+
+func fixEntityTypeMappingsEmpty() []*model.EntityTypeMapping {
+	return []*model.EntityTypeMapping{}
+}
+
+func fixEmptyPackages() []*model.Package {
+	return []*model.Package{}
+}
+
+func fixEmptyBundles() []*model.Bundle {
+	return []*model.Bundle{}
 }
