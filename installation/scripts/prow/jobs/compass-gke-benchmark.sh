@@ -352,9 +352,8 @@ for POD in $PODS; do
     log::info "Performance comparison statistics"
     echo "$STATS"
 
-    # Delta - difference between performance - a positive value denotes performance degradation
-    DELTA=$(echo -n "$STATS" | tail +2 | { grep -v '~' || true; } | awk '{print $(NF-2)}' | grep '^+')
-    if [[ -n "$DELTA" ]]; then # grep will only catch positive values that indicate degradation
+    DELTA=$(echo -n "$STATS" | tail +2 | { grep -v '~' || true; } | awk '{print $(NF-2)}')
+    if [[ $DELTA == +* ]]; then # If delta is positive
       log::error "There is significant performance degradation in the new release!"
       CHECK_FAILED=true
       FAILED_TESTS="$CONTAINER\\n$FAILED_TESTS"
