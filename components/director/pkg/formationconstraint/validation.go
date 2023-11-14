@@ -3,6 +3,8 @@ package formationconstraint
 import (
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -189,6 +191,7 @@ func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturn
 		Location:                   JoinPointLocation{},
 		FormationAssignment:        &model.FormationAssignment{},
 		ReverseFormationAssignment: &model.FormationAssignment{},
+		NotificationStatusReport:   &statusreport.NotificationStatusReport{},
 		Formation:                  &model.Formation{},
 		FormationTemplate:          &model.FormationTemplate{},
 	}
