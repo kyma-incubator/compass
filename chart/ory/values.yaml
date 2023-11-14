@@ -117,7 +117,7 @@ oathkeeper:
   # v0.39.4 is used as v0.40.0 introduces performance regression, which is fixed in 0.40.2, but we can not use it as specified above
   # https://github.com/ory/oathkeeper/issues/1033
   image:
-    tag: v0.39.4
+    tag: v0.40.6
   sidecar:
     # Previously was hardcoded by the Kyma chart
     envs:
