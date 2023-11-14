@@ -69,6 +69,11 @@ spec:
         - name: {{ include "oathkeeper.name" . }}-secrets-volume
           secret:
             secretName: {{ include "oathkeeper.secretname" . }}
+        # Custom implementation needed to bypass a bug (https://github.com/ory/k8s/issues/595)
+        # Mounts the config map with generic access rule to pass liveliness check
+        - name: {{ include "oathkeeper.name" . }}-generic-rules-volume
+          configMap:
+            name: {{ include "oathkeeper.fullname" . }}-rules
       initContainers:
         - name: init
           image: "{{ .Values.image.initContainer.repository }}:{{ .Values.image.initContainer.tag }}"
@@ -82,6 +87,9 @@ spec:
             - |
               touch /etc/rules/access-rules.json
               chmod 666 /etc/rules/access-rules.json
+
+              # Custom logic added to create directory for the generic access rule to fix bug (https://github.com/ory/k8s/issues/595)
+              mkdir /etc/rules/generic
           {{- if .Values.deployment.securityContext.anonymous }}
           securityContext:
             # Custom implementation as there are different security contexts in the default values.yaml
@@ -115,6 +123,11 @@ spec:
               readOnly: true
             - name: {{ include "oathkeeper.name" . }}-secrets-volume
               mountPath: {{ .Values.secret.mountPath }}
+              readOnly: true
+            # Custom implementation needed to bypass a bug (https://github.com/ory/k8s/issues/595)
+            # Mounts the config map with generic access rule to pass liveliness check
+            - name: {{ include "oathkeeper.name" . }}-generic-rules-volume
+              mountPath: /etc/rules/generic
               readOnly: true
           ports:
             - name: http-api
