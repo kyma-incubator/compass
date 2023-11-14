@@ -1028,7 +1028,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if len(pendingAsyncAssignments) == 0 {
 			log.C(ctx).Infof("There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationFromDB.ID, objectType, objectID, formationFromDB.ID)
 			err = s.unassign(scenarioTransactionCtx, tnt, participantID, objectType, formationFromDB)
-			if err != nil {
+			if err != nil && !apperrors.IsNotFoundError(err) {
 				return nil, errors.Wrapf(err, "while unassigning from formation")
 			}
 		}
@@ -1540,13 +1540,25 @@ func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID, f
 	// can not set scenario label to empty value, violates the scenario label definition
 	if len(formations) == 0 {
 		log.C(ctx).Infof("After the modifications, the %q label is empty. Deleting empty label...", model.ScenariosKey)
-		return s.labelRepository.Delete(ctx, tnt, objectType, objectID, model.ScenariosKey)
+		if err = s.labelRepository.Delete(ctx, tnt, objectType, objectID, model.ScenariosKey); err != nil {
+			if apperrors.IsUnauthorizedError(err) {
+				return apperrors.NewNotFoundError(resource.Label, existingLabel.ID)
+			}
+			return err
+		}
+		return nil
 	}
 
 	labelInput.Value = formations
 	labelInput.Version = existingLabel.Version
 	log.C(ctx).Infof("Updating formations list to %q", formations)
-	return s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput)
+	if err = s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput); err != nil {
+		if apperrors.IsUnauthorizedError(err) || apperrors.IsNewInvalidOperationError(err) {
+			return apperrors.NewNotFoundError(resource.Label, existingLabel.ID)
+		}
+		return err
+	}
+	return nil
 }
 
 type modificationFunc func(formationNames []string, formationName string) []string
