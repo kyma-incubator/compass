@@ -19,6 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	directorTenant "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -104,6 +105,7 @@ func TestGettingTokenWithMTLSThroughFQN(t *testing.T) {
 			},
 		},
 		Tenant:     conf.TestTenant,
+		TenantType: directorTenant.Subaccount,
 		ClientUser: conf.TestClientUser,
 	}
 	jsonReqData, err := json.Marshal(reqData)
