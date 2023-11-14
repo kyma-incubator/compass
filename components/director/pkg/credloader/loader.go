@@ -264,6 +264,7 @@ func parseKeys(ctx context.Context, secretData map[string][]byte, config KeysCon
 	fmt.Println(secretData)
 	fmt.Println(config.KeysSecretName)
 	fmt.Println(config.KeysData)
+	fmt.Println(dataBytes)
 
 	if exists {
 		return parseKeysBytes(dataBytes)
