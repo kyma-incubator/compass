@@ -162,12 +162,13 @@ oathkeeper:
         }
       ]
     config:
+      # Also added due to bug (https://github.com/ory/k8s/issues/595) to create a generic access rule
+      # to pass the liveliness check.
+      # We have custom logic in the deployment that mounts the generic access rule to this directory
       access_rules:
         repositories:
-          # Also added due to bug (https://github.com/ory/k8s/issues/595) to create a generic access rule
-          # to pass the liveliness check.
-          # We have custom logic in the deployment that mounts the generic access rule to this directory
           - file:///etc/rules/generic/access-rules.json
+          - file:///etc/rules/access-rules.json
       authenticators:
         noop:
           enabled: true
