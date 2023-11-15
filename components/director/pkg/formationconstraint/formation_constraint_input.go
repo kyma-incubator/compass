@@ -41,7 +41,7 @@ type DestinationCreatorInput struct {
 	Operation                              model.FormationOperation `json:"operation"`
 	ResourceType                           model.ResourceType       `json:"resource_type"`
 	ResourceSubtype                        string                   `json:"resource_subtype"`
-	NotificationStatusReportAddress        uintptr                  `json:"notification_status_report_address"`
+	NotificationStatusReportMemoryAddress  uintptr                  `json:"notification_status_report_memory_address"`
 	JoinPointDetailsFAMemoryAddress        uintptr                  `json:"details_formation_assignment_memory_address"`         // contains the memory address of the join point details' formation assignment in form of an integer
 	JoinPointDetailsReverseFAMemoryAddress uintptr                  `json:"details_reverse_formation_assignment_memory_address"` // contains the memory address of the join point details' reverse formation assignment in form of an integer
 	FAMemoryAddress                        uintptr                  `json:"formation_assignment_memory_address"`                 // contains the memory address of the join point details' formation assignment in form of an integer
@@ -60,7 +60,7 @@ type ConfigMutatorInput struct {
 	Operation                              model.FormationOperation `json:"operation"`
 	ResourceType                           model.ResourceType       `json:"resource_type"`
 	ResourceSubtype                        string                   `json:"resource_subtype"`
-	NotificationStatusReportAddress        uintptr                  `json:"notification_status_report_address"`
+	NotificationStatusReportMemoryAddress  uintptr                  `json:"notification_status_report_memory_address"`
 	JoinPointDetailsFAMemoryAddress        uintptr                  `json:"details_formation_assignment_memory_address"`         // contains the memory address of the join point details' formation assignment in form of an integer
 	JoinPointDetailsReverseFAMemoryAddress uintptr                  `json:"details_reverse_formation_assignment_memory_address"` // contains the memory address of the join point details' reverse formation assignment in form of an integer
 	FAMemoryAddress                        uintptr                  `json:"formation_assignment_memory_address"`                 // contains the memory address of the join point details' formation assignment in form of an integer
