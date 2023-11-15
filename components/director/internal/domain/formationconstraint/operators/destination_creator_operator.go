@@ -3,8 +3,9 @@ package operators
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 	"runtime/debug"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 

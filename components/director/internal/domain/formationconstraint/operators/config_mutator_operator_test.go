@@ -2,9 +2,10 @@ package operators_test
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 	"github.com/stretchr/testify/require"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -86,7 +87,7 @@ func TestConstraintOperators_ConfigMutator(t *testing.T) {
 				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, sourceID, applicationTypeLabel).Return(&model.Label{Value: subtype}, nil).Once()
 				return svc
 			},
-			StatusReport:   fixNotificationStatusReport(),
+			StatusReport: fixNotificationStatusReport(),
 		},
 		{
 			Name:                  "Error while getting label",

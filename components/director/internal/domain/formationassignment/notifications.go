@@ -138,15 +138,15 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 	}
 
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		ResourceType:                         targetType,
-		ResourceSubtype:                      targetSubtype,
-		NotificationStatusReport:             notificationStatusReport,
-		Tenant:                               tenantID,
-		FormationAssignmentTemplateInput:     formationAssignmentTemplateInput,
-		Operation:                            operation,
-		FormationAssignment:                  fa,
-		ReverseFormationAssignment:           reverseFa,
-		Formation:                            formation,
+		ResourceType:                     targetType,
+		ResourceSubtype:                  targetSubtype,
+		NotificationStatusReport:         notificationStatusReport,
+		Tenant:                           tenantID,
+		FormationAssignmentTemplateInput: formationAssignmentTemplateInput,
+		Operation:                        operation,
+		FormationAssignment:              fa,
+		ReverseFormationAssignment:       reverseFa,
+		Formation:                        formation,
 	}, nil
 }
 

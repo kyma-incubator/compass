@@ -3,6 +3,7 @@ package formationmapping
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
@@ -172,7 +173,7 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	formationOperation := determineOperationBasedOnFormationAssignmentState(fa)
 	notificationStatusReport := newNotificationStatusReportFromRequestBody(assignmentReqBody, fa)
 	stateFromStatusReport := notificationStatusReport.State
-	if !isStateSupportedForOperation(model.FormationAssignmentState(stateFromStatusReport), formationOperation, reset){
+	if !isStateSupportedForOperation(model.FormationAssignmentState(stateFromStatusReport), formationOperation, reset) {
 		log.C(ctx).Errorf("An invalid state: %q is provided for %q operation with reset option %t", stateFromStatusReport, formationOperation, reset)
 		errResp := errors.Errorf("An invalid state: %s is provided for %s operation. X-Request-Id: %s", stateFromStatusReport, formationOperation, correlationID)
 		respondWithError(ctx, w, http.StatusBadRequest, errResp)

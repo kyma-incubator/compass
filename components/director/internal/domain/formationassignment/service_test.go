@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -41,8 +42,8 @@ var (
 	assignOperation   = model.AssignFormation
 	unassignOperation = model.UnassignFormation
 
-	first             = 2
-	after             = "test"
+	first = 2
+	after = "test"
 
 	readyState         = string(model.ReadyAssignmentState)
 	configPendingState = string(model.ConfigPendingAssignmentState)
@@ -3579,7 +3580,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				return updater
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithUnassignOperation(configAssignmentWithTenantAndID, req),
-			ExpectedErrorMsg:"Received DELETE_ERROR assignment state and error: Test Error",
+			ExpectedErrorMsg: "Received DELETE_ERROR assignment state and error: Test Error",
 		},
 		{
 			Name:    "response contains error - no state in response",
@@ -3601,7 +3602,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				return updater
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithUnassignOperation(configAssignmentWithTenantAndID, req),
-			ExpectedErrorMsg:"Received DELETE_ERROR assignment state and error: Test Error",
+			ExpectedErrorMsg: "Received DELETE_ERROR assignment state and error: Test Error",
 		},
 		{
 			Name:    "response contains error fails on update",
@@ -3625,7 +3626,6 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithUnassignOperation(configAssignmentWithTenantAndID, req),
 			ExpectedErrorMsg: testErr.Error(),
 		},
-
 
 		{
 			Name:    "error when can't generate extended formation assignment notification",

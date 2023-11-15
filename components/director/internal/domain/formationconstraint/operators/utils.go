@@ -2,9 +2,10 @@ package operators
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 	"runtime/debug"
 	"unsafe"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 

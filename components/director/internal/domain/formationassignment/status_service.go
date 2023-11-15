@@ -3,6 +3,7 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationassignment"
 

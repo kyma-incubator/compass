@@ -5,12 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
@@ -150,7 +151,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				Configuration: json.RawMessage(testValidConfig),
 			},
 			expectedStatusCode: http.StatusBadRequest,
-			context: context.TODO(),
+			context:            context.TODO(),
 			expectedErrOutput:  "while fetching consumer info from context",
 		},
 		// Business logic unit tests for assign operation

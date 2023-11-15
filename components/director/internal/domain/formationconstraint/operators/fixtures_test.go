@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -128,10 +129,10 @@ var (
 		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"clientCertificateAuthentication":{"certificate":"cert-chain-data","destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, clientCertAuthDestName, destinationURL, basicDestName, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
 	)
 
-	statusReportWithConfigAndReadyState = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), destsConfigValueRawJSON)
-    statusReportWitInvalidConfig        = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), invalidFAConfig)
-	statusRportWitSAMLCertData          = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), destsConfigWithSAMLCertDataRawJSON)
-	statusRportWitClientCertAuthCertData          = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), destsConfigWithClientCertauthCertDataRawJSON)
+	statusReportWithConfigAndReadyState  = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), destsConfigValueRawJSON)
+	statusReportWitInvalidConfig         = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), invalidFAConfig)
+	statusRportWitSAMLCertData           = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), destsConfigWithSAMLCertDataRawJSON)
+	statusRportWitClientCertAuthCertData = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), destsConfigWithClientCertauthCertDataRawJSON)
 
 	fa                           = fixFormationAssignmentWithConfig(destsConfigValueRawJSON)
 	reverseFa                    = fixFormationAssignmentWithConfig(destsReverseConfigValueRawJSON)
@@ -150,9 +151,9 @@ var (
 		FAMemoryAddress: faWithInitialState.GetAddress(),
 	}
 
-	inputWithAssignmentWithSAMLCertData                                 = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithSAMLCertData, preNotificationStatusReturnedLocation, statusRportWitSAMLCertData)
-	inputWithAssignmentWithClientCertAuthCertData                       = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithClientCertAuthCertData, preNotificationStatusReturnedLocation, statusRportWitClientCertAuthCertData)
-	inputForAssignNotificationStatusReturned                            = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, fa, preNotificationStatusReturnedLocation, statusReportWithConfigAndReadyState)
+	inputWithAssignmentWithSAMLCertData           = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithSAMLCertData, preNotificationStatusReturnedLocation, statusRportWitSAMLCertData)
+	inputWithAssignmentWithClientCertAuthCertData = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithClientCertAuthCertData, preNotificationStatusReturnedLocation, statusRportWitClientCertAuthCertData)
+	inputForAssignNotificationStatusReturned      = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, fa, preNotificationStatusReturnedLocation, statusReportWithConfigAndReadyState)
 	//inputForAssignNotificationStatusReturnedWithReverse                 = fixDestinationCreatorInputWithAssignmentAndReverseFAMemoryAddress(model.AssignFormation, fa, reverseFa, preNotificationStatusReturnedLocation, statusReportWithConfigAndReadyState)
 	inputForAssignNotificationStatusReturnedWithCertSvcKeyStore         = fixDestinationCreatorInputWithAssignmentMemoryAddressAndCertSvcKeystore(model.AssignFormation, fa, preNotificationStatusReturnedLocation, true, statusReportWithConfigAndReadyState)
 	inputForAssignNotificationStatusReturnedWithInvalidFAConfig         = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithInvalidConfig, preNotificationStatusReturnedLocation, statusReportWitInvalidConfig)
@@ -461,7 +462,7 @@ func fixNotificationStatusReport() *statusreport.NotificationStatusReport {
 
 func fixNotificationStatusReportWithStateAndConfig(state string, config json.RawMessage) *statusreport.NotificationStatusReport {
 	return &statusreport.NotificationStatusReport{
-		State: state,
+		State:         state,
 		Configuration: config,
 	}
 }
