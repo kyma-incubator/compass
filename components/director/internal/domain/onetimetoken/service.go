@@ -426,6 +426,7 @@ func (s *service) IsTokenValid(systemAuth *pkgmodel.SystemAuth) (bool, error) {
 	return true, nil
 }
 
+// UnmarshalScenarioGroups parses rawScenarioGroups into a slice of pairing.ScenarioGroup
 func UnmarshalScenarioGroups(rawScenarioGroups []string) ([]pairing.ScenarioGroup, error) {
 	scenarioGroups := make([]pairing.ScenarioGroup, 0)
 	for _, gr := range rawScenarioGroups {
