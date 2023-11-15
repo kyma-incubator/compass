@@ -2,6 +2,7 @@ package formationconstraint
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -191,6 +192,7 @@ func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturn
 	return &NotificationStatusReturnedOperationDetails{
 		Location:            JoinPointLocation{},
 		FormationAssignment: &model.FormationAssignment{},
+		NotificationStatusReport: &statusreport.NotificationStatusReport{},
 		FormationAssignmentTemplateInput: &webhook.ApplicationTenantMappingInput{
 			Operation: model.AssignFormation,
 			Formation: &model.Formation{},

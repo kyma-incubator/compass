@@ -157,8 +157,6 @@ type NotificationStatusReturnedOperationDetails struct {
 	ResourceSubtype                      string
 	Location                             JoinPointLocation
 	NotificationStatusReport             *statusreport.NotificationStatusReport
-	LastFormationAssignmentState         string
-	LastFormationAssignmentConfiguration string
 	Tenant                               string
 	FormationAssignmentTemplateInput     webhook.FormationAssignmentTemplateInput
 	Operation                            model.FormationOperation
