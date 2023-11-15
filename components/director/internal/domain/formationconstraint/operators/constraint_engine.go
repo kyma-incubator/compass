@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 	"github.com/pkg/errors"
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 )
 
 //go:generate mockery --exported --name=formationConstraintSvc --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -48,6 +49,11 @@ type destinationCreatorService interface {
 	CreateCertificate(ctx context.Context, destinationsDetails []Destination, destinationAuthType destinationcreatorpkg.AuthType, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation, useSelfSignedCert bool) (*CertificateData, error)
 	EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *CertificateData) (json.RawMessage, error)
 	EnrichAssignmentConfigWithSAMLCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *CertificateData) (json.RawMessage, error)
+}
+
+//go:generate mockery --exported --name=systemAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type systemAuthService interface {
+	ListForObject(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string) ([]pkgmodel.SystemAuth, error)
 }
 
 //go:generate mockery --exported --name=formationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -111,6 +117,7 @@ type ConstraintEngine struct {
 	asaSvc                    automaticScenarioAssignmentService
 	destinationSvc            destinationService
 	destinationCreatorSvc     destinationCreatorService
+	systemAuthSvc             systemAuthService
 	formationRepo             formationRepository
 	labelRepo                 labelRepository
 	labelService              labelService
@@ -125,7 +132,7 @@ type ConstraintEngine struct {
 }
 
 // NewConstraintEngine returns new ConstraintEngine
-func NewConstraintEngine(transact persistence.Transactioner, constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc destinationService, destinationCreatorSvc destinationCreatorService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, formationAssignmentRepo formationAssignmentRepository, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
+func NewConstraintEngine(transact persistence.Transactioner, constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc destinationService, destinationCreatorSvc destinationCreatorService, systemAuthSvc systemAuthService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, formationAssignmentRepo formationAssignmentRepository, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
 	ce := &ConstraintEngine{
 		transact:                transact,
 		constraintSvc:           constraintSvc,
@@ -133,6 +140,7 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 		asaSvc:                  asaSvc,
 		destinationSvc:          destinationSvc,
 		destinationCreatorSvc:   destinationCreatorSvc,
+		systemAuthSvc:           systemAuthSvc,
 		formationRepo:           formationRepo,
 		labelRepo:               labelRepo,
 		labelService:            labelService,
