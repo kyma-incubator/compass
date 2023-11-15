@@ -101,9 +101,7 @@ type Service struct {
 	fetchReqSvc                    FetchRequestService
 	packageSvc                     PackageService
 	packageProcessor               PackageProcessor
-	productSvc                     ProductService
 	productProcessor               ProductProcessor
-	vendorSvc                      VendorService
 	vendorProcessor                VendorProcessor
 	tombstoneProcessor             TombstoneProcessor
 	entityTypeProcessor            EntityTypeProcessor
@@ -111,6 +109,7 @@ type Service struct {
 	tenantSvc                      TenantService
 	appTemplateVersionSvc          ApplicationTemplateVersionService
 	appTemplateSvc                 ApplicationTemplateService
+	tombstonedResourcesDeleter     TombstonedResourcesDeleter
 	labelSvc                       LabelService
 	opSvc                          operationsmanager.OperationService
 
@@ -123,7 +122,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, apiProcessor APIProcessor, eventSvc EventService, eventProcessor EventProcessor, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, capabilityProcessor CapabilityProcessor, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, packageProcessor PackageProcessor, productSvc ProductService, productProcessor ProductProcessor, vendorSvc VendorService, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, apiProcessor APIProcessor, eventSvc EventService, eventProcessor EventProcessor, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, capabilityProcessor CapabilityProcessor, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, packageProcessor PackageProcessor, productProcessor ProductProcessor, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, tombstonedResourcesDeleter TombstonedResourcesDeleter, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
 		config:                         config,
 		metricsCfg:                     metricsCfg,
@@ -146,9 +145,7 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		fetchReqSvc:                    fetchReqSvc,
 		packageSvc:                     packageSvc,
 		packageProcessor:               packageProcessor,
-		productSvc:                     productSvc,
 		productProcessor:               productProcessor,
-		vendorSvc:                      vendorSvc,
 		vendorProcessor:                vendorProcessor,
 		tombstoneProcessor:             tombstoneProcessor,
 		tenantSvc:                      tenantSvc,
@@ -157,6 +154,7 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		webhookConverter:               webhookConverter,
 		appTemplateVersionSvc:          appTemplateVersionSvc,
 		appTemplateSvc:                 appTemplateSvc,
+		tombstonedResourcesDeleter:     tombstonedResourcesDeleter,
 		labelSvc:                       labelService,
 		ordWebhookMapping:              ordWebhookMapping,
 		opSvc:                          opSvc,
@@ -454,7 +452,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 
 		fetchRequests := appendFetchRequests(apiFetchRequests, eventFetchRequests, capabilitiesFetchRequests)
 		log.C(ctx).Infof("Starting deleting tombstoned resources for %s with id: %q", resource.Type, resource.ID)
-		fetchRequests, err = s.deleteTombstonedResources(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, tombstonesFromDB, fetchRequests)
+		fetchRequests, err = s.tombstonedResourcesDeleter.Delete(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, tombstonesFromDB, fetchRequests)
 		if err != nil {
 			return err
 		}
@@ -598,90 +596,6 @@ func (s *Service) processFetchRequestResultGlobal(ctx context.Context, result *f
 
 	result.fetchRequest.Status = result.status
 	return s.fetchReqSvc.UpdateGlobal(ctx, result.fetchRequest)
-}
-
-func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType directorresource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, entityTypesFromDB []*model.EntityType, capabilitiesFromDB []*model.Capability, integrationDependenciesFromDB []*model.IntegrationDependency, tombstonesFromDB []*model.Tombstone, fetchRequests []*processor.OrdFetchRequest) ([]*processor.OrdFetchRequest, error) {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	frIdxToExclude := make([]int, 0)
-	for _, ts := range tombstonesFromDB {
-		if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
-			return packagesFromDB[i].OrdID == ts.OrdID
-		}); found {
-			if err := s.packageSvc.Delete(ctx, resourceType, packagesFromDB[i].ID); err != nil {
-				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
-			}
-		}
-		if i, found := searchInSlice(len(apisFromDB), func(i int) bool {
-			return equalStrings(apisFromDB[i].OrdID, &ts.OrdID)
-		}); found {
-			if err := s.apiSvc.Delete(ctx, resourceType, apisFromDB[i].ID); err != nil {
-				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
-			}
-		}
-		if i, found := searchInSlice(len(eventsFromDB), func(i int) bool {
-			return equalStrings(eventsFromDB[i].OrdID, &ts.OrdID)
-		}); found {
-			if err := s.eventSvc.Delete(ctx, resourceType, eventsFromDB[i].ID); err != nil {
-				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
-			}
-		}
-		if i, found := searchInSlice(len(entityTypesFromDB), func(i int) bool {
-			return equalStrings(&entityTypesFromDB[i].OrdID, &ts.OrdID)
-		}); found {
-			if err := s.entityTypeSvc.Delete(ctx, resourceType, entityTypesFromDB[i].ID); err != nil {
-				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
-			}
-		}
-		if i, found := searchInSlice(len(capabilitiesFromDB), func(i int) bool {
-			return equalStrings(capabilitiesFromDB[i].OrdID, &ts.OrdID)
-		}); found {
-			if err := s.capabilitySvc.Delete(ctx, resourceType, capabilitiesFromDB[i].ID); err != nil {
-				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
-			}
-		}
-		if i, found := searchInSlice(len(integrationDependenciesFromDB), func(i int) bool {
-			return equalStrings(integrationDependenciesFromDB[i].OrdID, &ts.OrdID)
-		}); found {
-			if err := s.integrationDependencySvc.Delete(ctx, resourceType, integrationDependenciesFromDB[i].ID); err != nil {
-				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
-			}
-		}
-		if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
-			return equalStrings(bundlesFromDB[i].OrdID, &ts.OrdID)
-		}); found {
-			if err := s.bundleSvc.Delete(ctx, resourceType, bundlesFromDB[i].ID); err != nil {
-				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
-			}
-		}
-		if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool {
-			return vendorsFromDB[i].OrdID == ts.OrdID
-		}); found {
-			if err := s.vendorSvc.Delete(ctx, resourceType, vendorsFromDB[i].ID); err != nil {
-				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
-			}
-		}
-		if i, found := searchInSlice(len(productsFromDB), func(i int) bool {
-			return productsFromDB[i].OrdID == ts.OrdID
-		}); found {
-			if err := s.productSvc.Delete(ctx, resourceType, productsFromDB[i].ID); err != nil {
-				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
-			}
-		}
-		for i := range fetchRequests {
-			if equalStrings(&fetchRequests[i].RefObjectOrdID, &ts.OrdID) {
-				frIdxToExclude = append(frIdxToExclude, i)
-			}
-		}
-	}
-
-	return excludeUnnecessaryFetchRequests(fetchRequests, frIdxToExclude), tx.Commit()
 }
 
 func (s *Service) processDescribedSystemVersions(ctx context.Context, resource Resource, documents Documents) ([]*model.ApplicationTemplateVersion, error) {
@@ -1551,25 +1465,6 @@ func (s *Service) getORDConfigForApplication(ctx context.Context, appID string) 
 	}
 
 	return ordWebhookMapping, nil
-}
-
-func excludeUnnecessaryFetchRequests(fetchRequests []*processor.OrdFetchRequest, frIdxToExclude []int) []*processor.OrdFetchRequest {
-	finalFetchRequests := make([]*processor.OrdFetchRequest, 0)
-	for i := range fetchRequests {
-		shouldExclude := false
-		for _, idxToExclude := range frIdxToExclude {
-			if i == idxToExclude {
-				shouldExclude = true
-				break
-			}
-		}
-
-		if !shouldExclude {
-			finalFetchRequests = append(finalFetchRequests, fetchRequests[i])
-		}
-	}
-
-	return finalFetchRequests
 }
 
 func hashResources(docs Documents) (map[string]uint64, error) {
