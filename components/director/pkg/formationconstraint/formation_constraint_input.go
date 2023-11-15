@@ -30,7 +30,7 @@ type ContainsScenarioGroupsInput struct {
 	ResourceSubtype        string             `json:"resource_subtype"`
 	ResourceID             string             `json:"resource_id"`
 	Tenant                 string             `json:"tenant"`
-	RequiredScenarioGroups []string           `json:"exceptSystemTypes"`
+	RequiredScenarioGroups []string           `json:"requiredScenarioGroups"`
 }
 
 // DoNotGenerateFormationAssignmentNotificationInput input for DoNotGenerateFormationAssignmentNotification operator
