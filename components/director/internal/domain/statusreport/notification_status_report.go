@@ -8,8 +8,8 @@ import (
 // NotificationStatusReport represents the response to the notification in bot SYNC and ASYNC flows
 type NotificationStatusReport struct {
 	Configuration json.RawMessage
-	State string
-	Error string
+	State         string
+	Error         string
 }
 
 // NewNotificationStatusReport is a constructor for NotificationStatusReport

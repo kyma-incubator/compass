@@ -85,6 +85,7 @@ const (
 
 	// Formation Assignment constants
 	FormationAssignmentID          = "FormationAssignmentID"
+	FormationAssignmentID2         = "FormationAssignment2ID"
 	FormationAssignmentFormationID = "FormationAssignmentFormationID"
 	FormationAssignmentTenantID    = "FormationAssignmentTenantID"
 	FormationAssignmentSource      = "FormationAssignmentSource"
@@ -854,6 +855,21 @@ var (
 	thirdFormationStatusParams  = dataloader.ParamFormationStatus{ID: FormationID + "3", State: string(model.ReadyFormationState)}
 	fourthPageFormations        = dataloader.ParamFormationStatus{ID: FormationID + "4", State: string(model.ReadyFormationState)}
 )
+
+func formationAssignmentsWithSourceAndTarget(objectID string, assignments []*model.FormationAssignment) []*model.FormationAssignment {
+	newAssignments := make([]*model.FormationAssignment, 0, len(assignments))
+	for _, assignment := range assignments {
+		newAssignments = append(newAssignments, formationAssignmentWithSourceAndTarget(objectID, assignment))
+	}
+	return newAssignments
+}
+
+func formationAssignmentWithSourceAndTarget(objectID string, assignment *model.FormationAssignment) *model.FormationAssignment {
+	newAssignment := assignment.Clone()
+	newAssignment.Source = objectID
+	newAssignment.Target = objectID
+	return newAssignment
+}
 
 func unusedApplicationRepository() *automock.ApplicationRepository {
 	return &automock.ApplicationRepository{}

@@ -190,8 +190,8 @@ func emptySendNotificationOperationDetails() *SendNotificationOperationDetails {
 
 func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturnedOperationDetails {
 	return &NotificationStatusReturnedOperationDetails{
-		Location:            JoinPointLocation{},
-		FormationAssignment: &model.FormationAssignment{},
+		Location:                 JoinPointLocation{},
+		FormationAssignment:      &model.FormationAssignment{},
 		NotificationStatusReport: &statusreport.NotificationStatusReport{},
 		FormationAssignmentTemplateInput: &webhook.ApplicationTenantMappingInput{
 			Operation: model.AssignFormation,
