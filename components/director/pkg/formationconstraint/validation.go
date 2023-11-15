@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -189,8 +191,9 @@ func emptySendNotificationOperationDetails() *SendNotificationOperationDetails {
 
 func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturnedOperationDetails {
 	return &NotificationStatusReturnedOperationDetails{
-		Location:            JoinPointLocation{},
-		FormationAssignment: &model.FormationAssignment{},
+		Location:                 JoinPointLocation{},
+		FormationAssignment:      &model.FormationAssignment{},
+		NotificationStatusReport: &statusreport.NotificationStatusReport{},
 		FormationAssignmentTemplateInput: &webhook.ApplicationTenantMappingInput{
 			Operation: model.AssignFormation,
 			Formation: &model.Formation{},
