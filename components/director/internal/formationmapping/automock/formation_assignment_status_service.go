@@ -5,8 +5,6 @@ package automock
 import (
 	context "context"
 
-	formationassignment "github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
-
 	mock "github.com/stretchr/testify/mock"
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
@@ -26,20 +24,6 @@ func (_m *FormationAssignmentStatusService) DeleteWithConstraints(ctx context.Co
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *statusreport.NotificationStatusReport) error); ok {
 		r0 = rf(ctx, id, notificationStatusReport)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// SetAssignmentToErrorStateWithConstraints provides a mock function with given fields: ctx, notificationStatusReport, assignment, errorMessage, errorCode, state, operation
-func (_m *FormationAssignmentStatusService) SetAssignmentToErrorStateWithConstraints(ctx context.Context, notificationStatusReport *statusreport.NotificationStatusReport, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error {
-	ret := _m.Called(ctx, notificationStatusReport, assignment, errorMessage, errorCode, state, operation)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *statusreport.NotificationStatusReport, *model.FormationAssignment, string, formationassignment.AssignmentErrorCode, model.FormationAssignmentState, model.FormationOperation) error); ok {
-		r0 = rf(ctx, notificationStatusReport, assignment, errorMessage, errorCode, state, operation)
 	} else {
 		r0 = ret.Error(0)
 	}
