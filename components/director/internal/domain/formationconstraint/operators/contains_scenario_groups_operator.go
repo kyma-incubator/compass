@@ -12,6 +12,7 @@ import (
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"k8s.io/utils/strings/slices"
+	"github.com/davecgh/go-spew/spew"
 )
 
 const (
@@ -19,21 +20,21 @@ const (
 	ContainsScenarioGroupsOperator = "ContainsScenarioGroups"
 )
 
-// ContainsScenarioGroupsInput is input constructor for ContainsScenarioGroupsOperator operator. It returns empty OperatorInput.
-func ContainsScenarioGroupsInput() OperatorInput {
+// NewContainsScenarioGroupsInput is input constructor for ContainsScenarioGroupsOperator operator. It returns empty OperatorInput.
+func NewContainsScenarioGroupsInput() OperatorInput {
 	return &formationconstraint.ContainsScenarioGroupsInput{}
 }
 
 // ContainsScenarioGroups is a constraint operator. It checks if the resource from the OperatorInput is already part of formation of the type that the operator is associated with
 func (e *ConstraintEngine) ContainsScenarioGroups(ctx context.Context, input OperatorInput) (bool, error) {
-	log.C(ctx).Infof("Executing operator: %s", IsNotAssignedToAnyFormationOfTypeOperator)
+	log.C(ctx).Infof("Executing operator: %s", ContainsScenarioGroupsOperator)
 
 	i, ok := input.(*formationconstraint.ContainsScenarioGroupsInput)
 	if !ok {
 		return false, errors.New("Incompatible input")
 	}
 
-	log.C(ctx).Infof("Enforcing %q constraint on resource of type: %q, subtype: %q and ID: %q", IsNotAssignedToAnyFormationOfTypeOperator, i.ResourceType, i.ResourceSubtype, i.ResourceID)
+	log.C(ctx).Infof("Enforcing %q constraint on resource of type: %q, subtype: %q and ID: %q", ContainsScenarioGroupsOperator, i.ResourceType, i.ResourceSubtype, i.ResourceID)
 
 	switch i.ResourceType {
 	case model.ApplicationResourceType:
@@ -55,9 +56,7 @@ func (e *ConstraintEngine) ContainsScenarioGroups(ctx context.Context, input Ope
 		return false, errors.Errorf("Unsupported resource type %q", i.ResourceType)
 	}
 
-
-
-	hasCorrectScenarioGroups, err := e.hasCorrectScenarioGroups(ctx, i.ResourceID, i.Tenant, i.FormationTemplateID, i.RequiredScenarioGroups)
+	hasCorrectScenarioGroups, err := e.hasCorrectScenarioGroups(ctx, i.ResourceID, i.Tenant, i.RequiredScenarioGroups)
 	if err != nil {
 		return false, err
 	}
@@ -65,7 +64,8 @@ func (e *ConstraintEngine) ContainsScenarioGroups(ctx context.Context, input Ope
 	return hasCorrectScenarioGroups, nil
 }
 
-func (e *ConstraintEngine) hasCorrectScenarioGroups(ctx context.Context, applicationID, tenant, formationTemplateID string, requiredScenarioGroups []string) (bool, error) {
+func (e *ConstraintEngine) hasCorrectScenarioGroups(ctx context.Context, applicationID, tenant string, requiredScenarioGroups []string) (bool, error) {
+	spew.Dump(requiredScenarioGroups)
 	if len(requiredScenarioGroups) == 0 {
 		return true, nil
 	}
@@ -77,24 +77,27 @@ func (e *ConstraintEngine) hasCorrectScenarioGroups(ctx context.Context, applica
 	}
 
 	auths, err := e.systemAuthSvc.ListForObject(ctx, pkgmodel.ApplicationReference, applicationID)
+	spew.Dump(auths)
 	if err != nil {
-		return false, err
+		return false, errors.Errorf("While getting system auths for application with ID %q", applicationID)
 	}
 
 	for _, auth := range auths {
 		if auth.Value == nil || auth.Value.OneTimeToken == nil {
 			continue
 		}
-		if !auth.Value.OneTimeToken.Used {
+		if auth.Value.OneTimeToken.Used {
 			continue
 		}
 		scenarioGroups, err := onetimetoken.UnmarshalScenarioGroups(auth.Value.OneTimeToken.ScenarioGroups)
+		spew.Dump(scenarioGroups)
 		if err != nil {
 			for _, scenarioGroup := range auth.Value.OneTimeToken.ScenarioGroups {
 				if slices.Contains(requiredScenarioGroups, scenarioGroup) {
 					return true, nil
 				}
 			}
+			continue
 		}
 		for _, scenarioGroup := range scenarioGroups {
 			if slices.Contains(requiredScenarioGroups, scenarioGroup.Key) {
@@ -103,5 +106,6 @@ func (e *ConstraintEngine) hasCorrectScenarioGroups(ctx context.Context, applica
 		}
 	}
 
+	spew.Dump("----END-----")
 	return false, nil
 }

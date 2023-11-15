@@ -93,6 +93,8 @@ spec:
               value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: APP_CLIENT_ID_HTTP_HEADER
+              value: {{ $.Values.global.director.clientIDHeaderKey }}
             - name: TEST_EXTERNAL_CERT_CN
               value: {{ .Values.global.externalCertConfiguration.commonName }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
@@ -455,6 +457,8 @@ spec:
               value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: APP_CLIENT_ID_HTTP_HEADER
+              value: {{ $.Values.global.director.clientIDHeaderKey }}
             - name: TEST_EXTERNAL_CERT_CN
               value: {{ .Values.global.externalCertConfiguration.commonName }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
@@ -817,6 +821,8 @@ spec:
               value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: APP_CLIENT_ID_HTTP_HEADER
+              value: {{ $.Values.global.director.clientIDHeaderKey }}
             - name: TEST_EXTERNAL_CERT_CN
               value: {{ .Values.global.externalCertConfiguration.commonName }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
@@ -1179,6 +1185,8 @@ spec:
               value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: APP_CLIENT_ID_HTTP_HEADER
+              value: {{ $.Values.global.director.clientIDHeaderKey }}
             - name: TEST_EXTERNAL_CERT_CN
               value: {{ .Values.global.externalCertConfiguration.commonName }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
@@ -1541,6 +1549,8 @@ spec:
               value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: APP_CLIENT_ID_HTTP_HEADER
+              value: {{ $.Values.global.director.clientIDHeaderKey }}
             - name: TEST_EXTERNAL_CERT_CN
               value: {{ .Values.global.externalCertConfiguration.commonName }}
             - name: TEST_EXTERNAL_CERT_SUBJECT

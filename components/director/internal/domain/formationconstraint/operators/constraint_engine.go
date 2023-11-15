@@ -151,6 +151,7 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 		operatorInputConstructors: map[OperatorName]OperatorInputConstructor{
 			IsNotAssignedToAnyFormationOfTypeOperator:                    NewIsNotAssignedToAnyFormationOfTypeInput,
 			DoesNotContainResourceOfSubtypeOperator:                      NewDoesNotContainResourceOfSubtypeInput,
+			ContainsScenarioGroupsOperator:                               NewContainsScenarioGroupsInput,
 			DoNotGenerateFormationAssignmentNotificationOperator:         NewDoNotGenerateFormationAssignmentNotificationInput,
 			DoNotGenerateFormationAssignmentNotificationForLoopsOperator: NewDoNotGenerateFormationAssignmentNotificationForLoopsInput,
 			DestinationCreatorOperator:                                   NewDestinationCreatorInput,
@@ -163,6 +164,7 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 	ce.operators = map[OperatorName]OperatorFunc{
 		IsNotAssignedToAnyFormationOfTypeOperator:                    ce.IsNotAssignedToAnyFormationOfType,
 		DoesNotContainResourceOfSubtypeOperator:                      ce.DoesNotContainResourceOfSubtype,
+		ContainsScenarioGroupsOperator:                               ce.ContainsScenarioGroups,
 		DoNotGenerateFormationAssignmentNotificationOperator:         ce.DoNotGenerateFormationAssignmentNotification,
 		DoNotGenerateFormationAssignmentNotificationForLoopsOperator: ce.DoNotGenerateFormationAssignmentNotificationForLoops,
 		DestinationCreatorOperator:                                   ce.DestinationCreator,

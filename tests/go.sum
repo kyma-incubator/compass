@@ -134,11 +134,14 @@ github.com/kyma-incubator/compass/components/connector v0.0.0-20231107115329-4c7
 github.com/kyma-incubator/compass/components/connector v0.0.0-20231107115329-4c71b7136c91/go.mod h1:c67YLFuyhR2Tel7/L21131GCO1e89EzBZE6hvYKdRdQ=
 github.com/kyma-incubator/compass/components/director v0.0.0-20231107115329-4c71b7136c91 h1:bS+LxdYQwf5A0exA/8F1bk8DX2hHef8MDpxplPyrsOU=
 github.com/kyma-incubator/compass/components/director v0.0.0-20231107115329-4c71b7136c91/go.mod h1:87F7vGiqwbPskVIPHRu0o7TtR6+4QsbIm7eOFFIR4Cw=
+github.com/kyma-incubator/compass/components/director v0.0.0-20231115092411-d78f86cff8ee h1:n1JnwyZf1iOh/4S+U3s8Mf3jODUPfjSbshgnxTb13PQ=
+github.com/kyma-incubator/compass/components/director v0.0.0-20231115092411-d78f86cff8ee/go.mod h1:5kOv+Q0x/eLdfu1KBRu0Gm3FwUtsJ/iOHJjnzY5BM8E=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231107155410-3f648c29547c h1:09/8Oh+SNtt/17RhH82quOukTv83Vqm0/6Ylryt1F3Y=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231107155410-3f648c29547c/go.mod h1:fUL5+nm9Vxbz3u02pDqXDl0xxYtjleU/Ib/QSmOuNLk=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20231107115329-4c71b7136c91 h1:mlE1WkctgvB8BX08Cd57UEBlYkkW7EQFnMlVuaIwEw4=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20231107115329-4c71b7136c91/go.mod h1:L8dNkDeCszd8VaBf788MT5uB7d61s6vJ+BM8ofMy4vQ=
 github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231107115042-f026e5e67c3b h1:NoKNSm+DMm9XQID1SFNsiCuOVjctIt59UmqJGKlVzyc=
+github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231107115329-4c71b7136c91 h1:Aa+ZILGixn8Sf2mGvlmP+PjQZNz6+y2LJYB9wXpnCLE=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231107115329-4c71b7136c91 h1:jce6xaEJDqjyt1jOq6sN3KM9wAJmeZ/L7XmJIyr/Yuc=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231107115329-4c71b7136c91/go.mod h1:IFUIaY5ZN1SZ27YgDBzzw9VzzS6EFN03TIG60obYqQk=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231107115329-4c71b7136c91 h1:TtEFeyY1prb9D8XJT+F7V9nMwAEQo3KTb1s1H+mGovs=
