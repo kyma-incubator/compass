@@ -131,9 +131,6 @@ var (
 	}
 	applicationTypeLabel = &model.Label{Value: appSubtype}
 	runtimeTypeLabel     = &model.Label{Value: rtmSubtype}
-
-	lastFormationAssignmentState         = configPendingState
-	lastFormationAssignmentConfiguration = "{}"
 )
 
 func Test_GenerateFormationAssignmentNotification(t *testing.T) {
@@ -1962,16 +1959,16 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 
 	notificationStatusReport := fixNotificationStatusReport()
 
-	expectedDetailsForApp := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, reverseFaWithTargetTypeApplication, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID, notificationStatusReport)
+	expectedDetailsForApp := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, reverseFaWithTargetTypeApplication, formationconstraint.JoinPointLocation{}, TestTenantID, notificationStatusReport)
 	expectedDetailsForApp.FormationAssignmentTemplateInput = testAppNotificationReqWithTenantMappingType.Object
 
-	expectedDetailsForAppWithoutReverseAssignment := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, nil, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID, notificationStatusReport)
+	expectedDetailsForAppWithoutReverseAssignment := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, nil, formationconstraint.JoinPointLocation{}, TestTenantID, notificationStatusReport)
 	expectedDetailsForAppWithoutReverseAssignment.FormationAssignmentTemplateInput = testAppNotificationReqWithTenantMappingTypeWithoutReverseAssignment.Object
 
-	expectedDetailsForRuntime := fixNotificationStatusReturnedDetails(model.RuntimeResourceType, rtmSubtype, faWithTargetTypeRuntime, reverseFaWithTargetTypeRuntime, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID, notificationStatusReport)
+	expectedDetailsForRuntime := fixNotificationStatusReturnedDetails(model.RuntimeResourceType, rtmSubtype, faWithTargetTypeRuntime, reverseFaWithTargetTypeRuntime, formationconstraint.JoinPointLocation{}, TestTenantID, notificationStatusReport)
 	expectedDetailsForRuntime.FormationAssignmentTemplateInput = testRuntimeNotificationReqWithConfigurationChangedType.Object
 
-	expectedDetailsForRuntimeContext := fixNotificationStatusReturnedDetails(model.RuntimeContextResourceType, rtmSubtype, faWithTargetTypeRuntimeCtx, reverseFaWithTargetTypeRuntimeCtx, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID, notificationStatusReport)
+	expectedDetailsForRuntimeContext := fixNotificationStatusReturnedDetails(model.RuntimeContextResourceType, rtmSubtype, faWithTargetTypeRuntimeCtx, reverseFaWithTargetTypeRuntimeCtx, formationconstraint.JoinPointLocation{}, TestTenantID, notificationStatusReport)
 	expectedDetailsForRuntimeContext.FormationAssignmentTemplateInput = testRuntimeContextNotificationReqWithConfigurationChangedType.Object
 
 	details := &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{}
@@ -2319,7 +2316,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 			faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(faRepo, nil, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationBuilder, rtmCtxSvc, labelSvc, rtmTypeLabelKey, appTypeLabelKey)
 
 			// WHEN
-			notificationStatusReturnedDetails, err := faNotificationSvc.PrepareDetailsForNotificationStatusReturned(emptyCtx, TestTenantID, tCase.formationAssignment, model.AssignFormation, lastFormationAssignmentState, lastFormationAssignmentConfiguration, tCase.notificationStatusReport)
+			notificationStatusReturnedDetails, err := faNotificationSvc.PrepareDetailsForNotificationStatusReturned(emptyCtx, TestTenantID, tCase.formationAssignment, model.AssignFormation, tCase.notificationStatusReport)
 
 			// THEN
 			if tCase.expectedErrMsg != "" {
