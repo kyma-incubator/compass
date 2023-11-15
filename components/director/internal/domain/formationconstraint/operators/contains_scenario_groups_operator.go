@@ -69,9 +69,12 @@ func (e *ConstraintEngine) hasCorrectScenarioGroups(ctx context.Context, applica
 	}
 
 	application, err := e.applicationRepository.GetByID(ctx, tenant, applicationID)
+	if err != nil {
+		return false, errors.Errorf("While getting application with ID %q", applicationID)
+	}
 
 	if application.Status == nil || string(application.Status.Condition) != string(graphql.ApplicationStatusConditionConnected) {
-		return false, errors.Errorf("Applicaiton with ID %q is not in status %s", applicationID, graphql.ApplicationStatusConditionConnected)
+		return false, errors.Errorf("Application with ID %q is not in status %s", applicationID, graphql.ApplicationStatusConditionConnected)
 	}
 
 	auths, err := e.systemAuthSvc.ListForObject(ctx, pkgmodel.ApplicationReference, applicationID)
