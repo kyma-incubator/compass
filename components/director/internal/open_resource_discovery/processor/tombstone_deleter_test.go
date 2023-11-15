@@ -2,6 +2,8 @@ package processor_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor/automock"
@@ -11,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
