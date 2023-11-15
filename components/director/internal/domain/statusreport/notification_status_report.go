@@ -21,6 +21,8 @@ func NewNotificationStatusReport(configuration json.RawMessage, state string, er
 	}
 }
 
+// GetAddress returns the memory address of the NotificationStatusReport in the form of an uninterpreted type(integer number)
+// Currently, it's used in some formation constraints input templates, so we could propagate the memory address to the formation constraints operators and later on to modify/update it.
 func (n *NotificationStatusReport) GetAddress() uintptr {
 	return uintptr(unsafe.Pointer(n))
 }

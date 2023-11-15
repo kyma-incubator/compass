@@ -787,5 +787,4 @@ func isStateSupportedForOperation(state model.FormationAssignmentState, operatio
 	}
 
 	return isSupportedForOperation
-
 }

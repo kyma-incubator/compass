@@ -662,7 +662,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		return errors.Wrapf(err, "The provided response is not valid: ")
 	}
 
-	notificationStatusReport := newNotificationStatusReportFromWebhookResponse(response, mappingPair.Operation, assignment, webhookMode)
+	notificationStatusReport := newNotificationStatusReportFromWebhookResponse(response, mappingPair.Operation, webhookMode)
 
 	if webhookMode == graphql.WebhookModeAsyncCallback && !isErrorState(model.FormationAssignmentState(notificationStatusReport.State)) {
 		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Waiting for the receiver to report the status on the status API...", assignmentReqMappingClone.Request.Webhook.ID, graphql.WebhookModeAsyncCallback)
@@ -782,7 +782,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		return false, errors.Wrapf(err, "The provided response is not valid: ")
 	}
 
-	notificationStatusReport := newNotificationStatusReportFromWebhookResponse(response, mappingPair.Operation, assignment, webhookMode)
+	notificationStatusReport := newNotificationStatusReportFromWebhookResponse(response, mappingPair.Operation, webhookMode)
 	stateFromReport := notificationStatusReport.State
 
 	if isErrorState(model.FormationAssignmentState(stateFromReport)) {
@@ -1036,7 +1036,7 @@ type AssignmentErrorWrapper struct {
 	Error AssignmentError `json:"error"`
 }
 
-func newNotificationStatusReportFromWebhookResponse(response *webhookdir.Response, operation model.FormationOperation, assignment *model.FormationAssignment, webhookMode graphql.WebhookMode) *statusreport.NotificationStatusReport {
+func newNotificationStatusReportFromWebhookResponse(response *webhookdir.Response, operation model.FormationOperation, webhookMode graphql.WebhookMode) *statusreport.NotificationStatusReport {
 	var configuration json.RawMessage
 	if response.Config != nil {
 		configuration = []byte(*response.Config)
@@ -1047,10 +1047,10 @@ func newNotificationStatusReportFromWebhookResponse(response *webhookdir.Respons
 		errorFromResponse = *response.Error
 	}
 
-	return statusreport.NewNotificationStatusReport(configuration, calculateState(response, operation, assignment, webhookMode), errorFromResponse)
+	return statusreport.NewNotificationStatusReport(configuration, calculateState(response, operation, webhookMode), errorFromResponse)
 }
 
-func calculateState(response *webhookdir.Response, operation model.FormationOperation, assignment *model.FormationAssignment, webhookMode graphql.WebhookMode) string {
+func calculateState(response *webhookdir.Response, operation model.FormationOperation, webhookMode graphql.WebhookMode) string {
 	if response.State != nil && *response.State != "" {
 		return *response.State
 	}
