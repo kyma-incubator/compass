@@ -12,7 +12,6 @@ import (
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"k8s.io/utils/strings/slices"
-	"github.com/davecgh/go-spew/spew"
 )
 
 const (
@@ -65,7 +64,6 @@ func (e *ConstraintEngine) ContainsScenarioGroups(ctx context.Context, input Ope
 }
 
 func (e *ConstraintEngine) hasCorrectScenarioGroups(ctx context.Context, applicationID, tenant string, requiredScenarioGroups []string) (bool, error) {
-	spew.Dump(requiredScenarioGroups)
 	if len(requiredScenarioGroups) == 0 {
 		return true, nil
 	}
@@ -77,7 +75,6 @@ func (e *ConstraintEngine) hasCorrectScenarioGroups(ctx context.Context, applica
 	}
 
 	auths, err := e.systemAuthSvc.ListForObject(ctx, pkgmodel.ApplicationReference, applicationID)
-	spew.Dump(auths)
 	if err != nil {
 		return false, errors.Errorf("While getting system auths for application with ID %q", applicationID)
 	}
@@ -90,7 +87,6 @@ func (e *ConstraintEngine) hasCorrectScenarioGroups(ctx context.Context, applica
 			continue
 		}
 		scenarioGroups, err := onetimetoken.UnmarshalScenarioGroups(auth.Value.OneTimeToken.ScenarioGroups)
-		spew.Dump(scenarioGroups)
 		if err != nil {
 			for _, scenarioGroup := range auth.Value.OneTimeToken.ScenarioGroups {
 				if slices.Contains(requiredScenarioGroups, scenarioGroup) {
@@ -106,6 +102,5 @@ func (e *ConstraintEngine) hasCorrectScenarioGroups(ctx context.Context, applica
 		}
 	}
 
-	spew.Dump("----END-----")
 	return false, nil
 }
