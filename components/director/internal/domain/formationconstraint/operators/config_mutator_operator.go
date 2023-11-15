@@ -3,7 +3,6 @@ package operators
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
@@ -32,7 +31,7 @@ func (e *ConstraintEngine) MutateConfig(ctx context.Context, input OperatorInput
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q for location with constraint type: %q and operation name: %q during %q operation", i.ResourceType, i.ResourceSubtype, i.Location.ConstraintType, i.Location.OperationName, i.Operation)
 
-	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, i.JoinPointDetailsFAMemoryAddress)
+	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, i.FAMemoryAddress)
 	if err != nil {
 		return false, err
 	}
@@ -56,14 +55,18 @@ func (e *ConstraintEngine) MutateConfig(ctx context.Context, input OperatorInput
 		}
 	}
 
+	notificationStatusReport, err := RetrieveNotificationStatusReportPointer(ctx, i.NotificationStatusReportMemoryAddress)
+	if err != nil {
+		return false, err
+	}
 	if i.State != nil {
-		log.C(ctx).Infof("Updating formation assignment state for formation assignment with ID: %s from: %s, to: %s", formationAssignment.ID, formationAssignment.State, *i.State)
-		formationAssignment.State = *i.State
+		log.C(ctx).Infof("Updating state in notification status report from: %s, to: %s", notificationStatusReport.State, *i.State)
+		notificationStatusReport.State = *i.State
 	}
 
 	if i.ModifiedConfiguration != nil {
-		log.C(ctx).Infof("Updating formation assignment configuration for formation assignment with ID: %s", formationAssignment.ID)
-		formationAssignment.Value = json.RawMessage(*i.ModifiedConfiguration)
+		log.C(ctx).Infof("Updating configuration in notification status report")
+		notificationStatusReport.Configuration = json.RawMessage(*i.ModifiedConfiguration)
 	}
 
 	return true, nil
