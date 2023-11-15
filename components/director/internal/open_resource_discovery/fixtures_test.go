@@ -66,12 +66,6 @@ const (
 	localTenantID            = "localTenantID"
 	webhookID                = "webhookID"
 
-	api1spec1ID       = "api1spec1ID"
-	api1spec2ID       = "api1spec2ID"
-	api1spec3ID       = "api1spec3ID"
-	capability1SpecID = "capability1SpecID"
-	capability2SpecID = "capability2SpecID"
-
 	cursor                    = "cursor"
 	apiImplementationStandard = "cff:open-service-broker:v2"
 	correlationIDs            = `["foo.bar.baz:foo:123456","foo.bar.baz:bar:654321"]`
