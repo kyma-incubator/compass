@@ -5,7 +5,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -35,23 +34,7 @@ func (e *ConstraintEngine) ContainsScenarioGroups(ctx context.Context, input Ope
 
 	log.C(ctx).Infof("Enforcing %q constraint on resource of type: %q, subtype: %q and ID: %q", ContainsScenarioGroupsOperator, i.ResourceType, i.ResourceSubtype, i.ResourceID)
 
-	switch i.ResourceType {
-	case model.ApplicationResourceType:
-		applicationTypeLabel, err := e.labelRepo.GetByKey(ctx, i.Tenant, model.ApplicationLabelableObject, i.ResourceID, e.applicationTypeLabelKey)
-		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				return true, nil
-			}
-			return false, err
-		}
-		applicationType, ok := applicationTypeLabel.Value.(string)
-		if !ok {
-			return false, err
-		}
-		if applicationType != "SAP S/4HANA Cloud" {
-			return false, errors.Errorf("Unsupported resource subtype %q", i.ResourceSubtype)
-		}
-	default:
+	if i.ResourceType != model.ApplicationResourceType {
 		return false, errors.Errorf("Unsupported resource type %q", i.ResourceType)
 	}
 
@@ -70,7 +53,7 @@ func (e *ConstraintEngine) hasCorrectScenarioGroups(ctx context.Context, applica
 
 	application, err := e.applicationRepository.GetByID(ctx, tenant, applicationID)
 	if err != nil {
-		return false, errors.Errorf("While getting application with ID %q", applicationID)
+		return false, errors.Wrapf(err, "while getting application with ID %q", applicationID)
 	}
 
 	if application.Status == nil || string(application.Status.Condition) != string(graphql.ApplicationStatusConditionConnected) {
@@ -79,14 +62,11 @@ func (e *ConstraintEngine) hasCorrectScenarioGroups(ctx context.Context, applica
 
 	auths, err := e.systemAuthSvc.ListForObject(ctx, pkgmodel.ApplicationReference, applicationID)
 	if err != nil {
-		return false, errors.Errorf("While getting system auths for application with ID %q", applicationID)
+		return false, errors.Wrapf(err, "while getting system auths for application with ID %q", applicationID)
 	}
 
 	for _, auth := range auths {
-		if auth.Value == nil || auth.Value.OneTimeToken == nil {
-			continue
-		}
-		if auth.Value.OneTimeToken.Used {
+		if auth.Value == nil || auth.Value.OneTimeToken == nil || auth.Value.OneTimeToken.Used {
 			continue
 		}
 		scenarioGroups, err := onetimetoken.UnmarshalScenarioGroups(auth.Value.OneTimeToken.ScenarioGroups)
