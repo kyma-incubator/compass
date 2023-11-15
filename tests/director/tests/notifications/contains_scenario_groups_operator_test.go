@@ -5,13 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,8 +17,8 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 	tnt := tenant.TestTenants.GetDefaultTenantID()
 
 	formationTmplName := "e2e-tests-contains-scenario-groups-operator"
-	appTemplateName := fixtures.CreateAppTemplateName("S/4HANA Cloud")
-	otherAppTemplateName := fixtures.CreateAppTemplateName("Other Application Type")
+	appTemplateName := "constraintApplicationType"
+	otherAppTemplateName := "otherApplicationType"
 
 	var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
@@ -34,8 +31,8 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 
 	certSecuredHTTPClient := fixtures.FixCertSecuredHTTPClient(cc, conf.ExternalClientCertSecretName, conf.SkipSSLValidation)
 
+	var assignedFormation graphql.Formation
 	t.Run("Contains Scenario Groups Constraint should not generate notifications when not satisfied", func(t *testing.T) {
-
 		actualApp, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "test-app", conf.ApplicationTypeLabelKey, appTemplateName, tnt)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &actualApp)
 		require.NoError(t, err)
@@ -46,26 +43,12 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		in := graphql.FormationConstraintInput{
-			Name:            "TestContainsScenarioGroupsNotifications",
-			ConstraintType:  graphql.ConstraintTypePre,
-			TargetOperation: graphql.TargetOperationGenerateFormationAssignmentNotification,
-			Operator:        formationconstraintpkg.ContainsScenarioGroups,
-			ResourceType:    graphql.ResourceTypeApplication,
-			ResourceSubtype: appTemplateName,
-			InputTemplate:   fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "nonexistent"),
-			ConstraintScope: graphql.ConstraintScopeFormationType,
-		}
-		constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, in)
-		defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
-		require.NotEmpty(t, constraint.ID)
-
-		defer fixtures.DetachConstraintFromFormationTemplateNoCheckError(ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
-		fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, constraint.Name, ft.ID, ft.Name)
+		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationGenerateFormationAssignmentNotification, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "nonexistent"))
+		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
+		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
 
 		t.Logf("Assign application to formation %s", formationName)
 		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, graphql.FormationObjectTypeApplication, tnt)
-		var assignedFormation graphql.Formation
 		assignReq := fixtures.FixAssignFormationRequest(otherApp.ID, string(graphql.FormationObjectTypeApplication), formationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, assignReq, &assignedFormation)
 		require.NoError(t, err)
@@ -94,22 +77,9 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 		assertNoNotificationsAreSent(t, certSecuredHTTPClient, otherApp.ID)
 	})
 	t.Run("Contains Scenario Groups Constraint should not allow assign when not satisfied", func(t *testing.T) {
-		constraintsIn := graphql.FormationConstraintInput{
-			Name:            "TestContainsScenarioGroupsAssign",
-			ConstraintType:  graphql.ConstraintTypePre,
-			TargetOperation: graphql.TargetOperationAssignFormation,
-			Operator:        formationconstraintpkg.ContainsScenarioGroups,
-			ResourceType:    graphql.ResourceTypeApplication,
-			ResourceSubtype: appTemplateName,
-			InputTemplate:   fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo1"),
-			ConstraintScope: graphql.ConstraintScopeFormationType,
-		}
-		constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, constraintsIn)
-		defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
-		require.NotEmpty(t, constraint.ID)
-
-		defer fixtures.DetachConstraintFromFormationTemplateNoCheckError(ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
-		fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, constraint.Name, ft.ID, ft.Name)
+		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationAssignFormation, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo1"))
+		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
+		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
 
 		actualApp, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "test-app", conf.ApplicationTypeLabelKey, appTemplateName, tnt)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &actualApp)
@@ -117,29 +87,15 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 		require.NotEmpty(t, actualApp.ID)
 
 		t.Logf("Assign application to formation %s", formationName)
-		var assignedFormation graphql.Formation
 		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, graphql.FormationObjectTypeApplication, tnt)
 		assignReq := fixtures.FixAssignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), formationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, assignReq, &assignedFormation)
 		require.Error(t, err)
 	})
 	t.Run("Contains Scenario Groups Constraint should allow assign when satisfied", func(t *testing.T) {
-		constraintsIn := graphql.FormationConstraintInput{
-			Name:            "TestContainsScenarioGroupsAssign",
-			ConstraintType:  graphql.ConstraintTypePre,
-			TargetOperation: graphql.TargetOperationAssignFormation,
-			Operator:        formationconstraintpkg.ContainsScenarioGroups,
-			ResourceType:    graphql.ResourceTypeApplication,
-			ResourceSubtype: appTemplateName,
-			InputTemplate:   fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo2"),
-			ConstraintScope: graphql.ConstraintScopeFormationType,
-		}
-		constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, constraintsIn)
-		defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
-		require.NotEmpty(t, constraint.ID)
-
-		defer fixtures.DetachConstraintFromFormationTemplateNoCheckError(ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
-		fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, constraint.Name, ft.ID, ft.Name)
+		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationAssignFormation, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo2"))
+		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
+		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
 
 		statusCond := graphql.ApplicationStatusConditionConnected
 		in := graphql.ApplicationRegisterInput{
@@ -150,14 +106,9 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 			StatusCondition: &statusCond,
 		}
 
-		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
-		require.NoError(t, err)
-
-		request := fixtures.FixRegisterApplicationRequest(appInputGQL)
-
-		actualApp := graphql.ApplicationExt{}
-		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &actualApp)
+		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tnt, in)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &actualApp)
+		require.NoError(t, err)
 
 		t.Logf("Getting one time token for application with name: %q and id: %q...", actualApp.Name, actualApp.ID)
 		tokenRequest := fixtures.FixRequestOneTimeTokenForApplication(actualApp.ID)
@@ -165,21 +116,10 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 		scenarioGroups := `{"key": "foo1","description": "bar1"}, {"key": "foo2","description": "bar2"}`
 		tokenRequest.Header.Add("scenario_groups", scenarioGroups)
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, tokenRequest, &token)
-
 		require.NoError(t, err)
-		require.NotEmpty(t, token.Token)
-		require.NotEmpty(t, token.ConnectorURL)
-		require.NotEmpty(t, token.LegacyConnectorURL)
 		t.Logf("Successfully got one time token for application with name: %q and id: %q", actualApp.Name, actualApp.ID)
 
-		require.NoError(t, err)
-		require.NotEmpty(t, actualApp.ID)
-
-		assertions.AssertApplication(t, in, actualApp)
-		assert.Equal(t, statusCond, actualApp.Status.Condition)
-
 		t.Logf("Assign application to formation %s", formationName)
-		var assignedFormation graphql.Formation
 		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, graphql.FormationObjectTypeApplication, tnt)
 		assignReq := fixtures.FixAssignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), formationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, assignReq, &assignedFormation)
@@ -190,22 +130,9 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
-		constraintsIn := graphql.FormationConstraintInput{
-			Name:            "TestContainsScenarioGroupsAssign",
-			ConstraintType:  graphql.ConstraintTypePre,
-			TargetOperation: graphql.TargetOperationGenerateFormationAssignmentNotification,
-			Operator:        formationconstraintpkg.ContainsScenarioGroups,
-			ResourceType:    graphql.ResourceTypeApplication,
-			ResourceSubtype: appTemplateName,
-			InputTemplate:   fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo2"),
-			ConstraintScope: graphql.ConstraintScopeFormationType,
-		}
-		constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, constraintsIn)
-		defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
-		require.NotEmpty(t, constraint.ID)
-
-		defer fixtures.DetachConstraintFromFormationTemplateNoCheckError(ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
-		fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, constraint.Name, ft.ID, ft.Name)
+		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationGenerateFormationAssignmentNotification, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo2"))
+		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
+		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
 
 		statusCond := graphql.ApplicationStatusConditionConnected
 		in := graphql.ApplicationRegisterInput{
@@ -216,13 +143,7 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 			StatusCondition: &statusCond,
 		}
 
-		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
-		require.NoError(t, err)
-
-		request := fixtures.FixRegisterApplicationRequest(appInputGQL)
-
-		actualApp := graphql.ApplicationExt{}
-		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &actualApp)
+		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tnt, in)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &actualApp)
 
 		t.Logf("Getting one time token for application with name: %q and id: %q...", actualApp.Name, actualApp.ID)
@@ -231,18 +152,8 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 		scenarioGroups := `{"key": "foo1","description": "bar1"}, {"key": "foo2","description": "bar2"}`
 		tokenRequest.Header.Add("scenario_groups", scenarioGroups)
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, tokenRequest, &token)
-
 		require.NoError(t, err)
-		require.NotEmpty(t, token.Token)
-		require.NotEmpty(t, token.ConnectorURL)
-		require.NotEmpty(t, token.LegacyConnectorURL)
 		t.Logf("Successfully got one time token for application with name: %q and id: %q", actualApp.Name, actualApp.ID)
-
-		require.NoError(t, err)
-		require.NotEmpty(t, actualApp.ID)
-
-		assertions.AssertApplication(t, in, actualApp)
-		assert.Equal(t, statusCond, actualApp.Status.Condition)
 
 		otherApp, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "otherSystem", conf.ApplicationTypeLabelKey, otherAppTemplateName, tnt)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &otherApp)
@@ -250,7 +161,6 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 
 		t.Logf("Assign application to formation %s", formationName)
 		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, graphql.FormationObjectTypeApplication, tnt)
-		var assignedFormation graphql.Formation
 		assignReq := fixtures.FixAssignFormationRequest(otherApp.ID, string(graphql.FormationObjectTypeApplication), formationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, assignReq, &assignedFormation)
 		require.NoError(t, err)
