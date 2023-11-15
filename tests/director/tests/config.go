@@ -28,7 +28,6 @@ type DirectorConfig struct {
 	DirectorExternalCertFAAsyncResetStatusURL   string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL"`
 	DirectorExternalCertFormationAsyncStatusURL string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL"`
 	SkipSSLValidation                           bool   `envconfig:"default=false"`
-	ClientIDHeader                              string `envconfig:"APP_CLIENT_ID_HTTP_HEADER,default=client_user"`
 	ConsumerID                                  string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
 	UsernameAuthCfg                             authenticator.Config
 	CertLoaderConfig                            certloader.Config
