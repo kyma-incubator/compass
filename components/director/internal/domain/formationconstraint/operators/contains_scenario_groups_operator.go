@@ -3,14 +3,14 @@ package operators
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/pkg/errors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
+	"github.com/pkg/errors"
 	"k8s.io/utils/strings/slices"
 )
 

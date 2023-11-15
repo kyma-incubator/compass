@@ -68,13 +68,13 @@ import (
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	oauth "github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 )
 
 const discoverSystemsOpMode = "DISCOVER_SYSTEMS"

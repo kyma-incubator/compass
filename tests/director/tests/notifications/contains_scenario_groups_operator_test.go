@@ -1,17 +1,18 @@
 package notifications
 
 import (
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-	"github.com/stretchr/testify/require"
-	"github.com/kyma-incubator/compass/tests/pkg/assertions"
-	"testing"
 	"context"
-	"github.com/stretchr/testify/assert"
-	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"fmt"
+	"testing"
+
+	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestContainsScenarioGroupsOperator(t *testing.T) {
@@ -20,7 +21,7 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 
 	formationTmplName := "e2e-tests-contains-scenario-groups-operator"
 	appTemplateName := fixtures.CreateAppTemplateName("S/4HANA Cloud")
-	otherAppTemplateName:= fixtures.CreateAppTemplateName("Other Application Type")
+	otherAppTemplateName := fixtures.CreateAppTemplateName("Other Application Type")
 
 	var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
@@ -142,7 +143,7 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 
 		statusCond := graphql.ApplicationStatusConditionConnected
 		in := graphql.ApplicationRegisterInput{
-			Name:           "test-s4-system",
+			Name: "test-s4-system",
 			Labels: graphql.Labels{
 				conf.ApplicationTypeLabelKey: appTemplateName,
 			},
@@ -208,7 +209,7 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 
 		statusCond := graphql.ApplicationStatusConditionConnected
 		in := graphql.ApplicationRegisterInput{
-			Name:           "test-s4-system",
+			Name: "test-s4-system",
 			Labels: graphql.Labels{
 				conf.ApplicationTypeLabelKey: appTemplateName,
 			},
@@ -279,4 +280,3 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 		assertNoNotificationsAreSent(t, certSecuredHTTPClient, otherApp.ID)
 	})
 }
-

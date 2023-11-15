@@ -22,6 +22,7 @@ import (
 	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
@@ -31,7 +32,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 )
 
 type synchronizerBuilder struct {
