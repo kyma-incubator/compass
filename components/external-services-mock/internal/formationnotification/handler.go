@@ -77,13 +77,13 @@ type FormationRequestBody struct {
 
 // FormationAssignmentResponseBody contains the synchronous formation assignment notification response body
 type FormationAssignmentResponseBody struct {
-	Config FormationAssignmentResponseConfig
+	Config *FormationAssignmentResponseConfig `json:"config,omitempty"`
 	Error  string `json:"error,omitempty"`
 }
 
 // FormationAssignmentResponseBodyWithState contains the synchronous formation assignment notification response body with state in it
 type FormationAssignmentResponseBodyWithState struct {
-	Config FormationAssignmentResponseConfig
+	Config *FormationAssignmentResponseConfig `json:"config,omitempty"`
 	Error  string                   `json:"error,omitempty"`
 	State  FormationAssignmentState `json:"state"`
 }
@@ -198,7 +198,7 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func([]byte) {
 		response := FormationAssignmentResponseBody{
-			Config: FormationAssignmentResponseConfig{
+			Config: &FormationAssignmentResponseConfig{
 				Key: "value",
 				Key2: struct {
 					Key string `json:"key"`
@@ -218,7 +218,7 @@ func (h *Handler) PatchWithState(writer http.ResponseWriter, r *http.Request) {
 	responseFunc := func([]byte) {
 		response := FormationAssignmentResponseBodyWithState{
 			State: ConfigPendingAssignmentState,
-			Config: FormationAssignmentResponseConfig{
+			Config: &FormationAssignmentResponseConfig{
 				Key: "value",
 				Key2: struct {
 					Key string `json:"key"`
@@ -255,7 +255,7 @@ func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Requ
 			return
 		}
 		response := FormationAssignmentResponseBody{
-			Config: FormationAssignmentResponseConfig{
+			Config: &FormationAssignmentResponseConfig{
 				Key: "value",
 				Key2: struct {
 					Key string `json:"key"`
@@ -531,6 +531,20 @@ func (h *Handler) AsyncOld(writer http.ResponseWriter, r *http.Request) {
 	}
 
 	h.asyncFAResponse(ctx, writer, r, Assign, `{"asyncKey": "asyncValue", "asyncKey2": {"asyncNestedKey": "asyncNestedValue"}}`, responseFunc)
+}
+
+// AsyncOldNoConfig handles asynchronous formation assignment notification requests for Assign operation using old request body format
+// Should minimize/restrict the usage of this one and migrate to the new handler and request body format
+func (h *Handler) AsyncOldNoConfig(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID); err != nil {
+			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
+		}
+	}
+
+	h.asyncFAResponse(ctx, writer, r, Assign, "", responseFunc)
 }
 
 // AsyncDestinationPatch handles asynchronous formation assignment notification requests for destination creation during Assign operation
