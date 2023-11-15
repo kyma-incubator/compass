@@ -18,20 +18,20 @@ import (
 
 func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 	in := &formationconstraintpkg.ContainsScenarioGroupsInput{
-		ResourceType:    model.ApplicationResourceType,
-		ResourceSubtype: inputAppType,
-		ResourceID:      inputAppID,
-		Tenant:          testTenantID,
+		ResourceType:           model.ApplicationResourceType,
+		ResourceSubtype:        inputAppType,
+		ResourceID:             inputAppID,
+		Tenant:                 testTenantID,
 		RequiredScenarioGroups: []string{testScenarioGroup},
 	}
 
 	testCases := []struct {
-		Name             string
-		Input            operators.OperatorInput
-		ApplicationRepo  func() *automock.ApplicationRepository
+		Name              string
+		Input             operators.OperatorInput
+		ApplicationRepo   func() *automock.ApplicationRepository
 		SystemAuthService func() *automock.SystemAuthService
-		ExpectedResult   bool
-		ExpectedErrorMsg string
+		ExpectedResult    bool
+		ExpectedErrorMsg  string
 	}{
 		{
 			Name:  "Success for an application which has requested scenario group and is connected",
@@ -39,8 +39,8 @@ func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 			SystemAuthService: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("ListForObject", ctx, pkgmodel.ApplicationReference, inputAppID).Return([]pkgmodel.SystemAuth{{
-					Value:               &model.Auth{
-						OneTimeToken:          &model.OneTimeToken{
+					Value: &model.Auth{
+						OneTimeToken: &model.OneTimeToken{
 							ScenarioGroups: []string{`{"key": "scenarioGroup","description": "bar1"}`, `{"key": "scenarioGroup2","description": "bar2"}`},
 						},
 					},
@@ -61,8 +61,8 @@ func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 			SystemAuthService: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("ListForObject", ctx, pkgmodel.ApplicationReference, inputAppID).Return([]pkgmodel.SystemAuth{{
-					Value:               &model.Auth{
-						OneTimeToken:          &model.OneTimeToken{
+					Value: &model.Auth{
+						OneTimeToken: &model.OneTimeToken{
 							ScenarioGroups: []string{"scenarioGroup"},
 						},
 					},
@@ -83,8 +83,8 @@ func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 			SystemAuthService: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("ListForObject", ctx, pkgmodel.ApplicationReference, inputAppID).Return([]pkgmodel.SystemAuth{{
-					Value:               &model.Auth{
-						OneTimeToken:          &model.OneTimeToken{
+					Value: &model.Auth{
+						OneTimeToken: &model.OneTimeToken{
 							ScenarioGroups: []string{"someOtherGroup"},
 						},
 					},
@@ -105,9 +105,9 @@ func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 			SystemAuthService: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("ListForObject", ctx, pkgmodel.ApplicationReference, inputAppID).Return([]pkgmodel.SystemAuth{{
-					Value:               &model.Auth{
-						OneTimeToken:          &model.OneTimeToken{
-							Used: true,
+					Value: &model.Auth{
+						OneTimeToken: &model.OneTimeToken{
+							Used:           true,
 							ScenarioGroups: []string{"someOtherGroup"},
 						},
 					},
@@ -155,8 +155,8 @@ func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
-			Name:  "Error for application that is still in initial state",
-			Input: in,
+			Name:              "Error for application that is still in initial state",
+			Input:             in,
 			SystemAuthService: unusedSystemAuthService,
 			ApplicationRepo: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
@@ -167,8 +167,8 @@ func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 			ExpectedErrorMsg: fmt.Sprintf("Application with ID %q is not in status %s", inputAppID, graphql.ApplicationStatusConditionConnected),
 		},
 		{
-			Name:  "Error when getting application",
-			Input: in,
+			Name:              "Error when getting application",
+			Input:             in,
 			SystemAuthService: unusedSystemAuthService,
 			ApplicationRepo: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
@@ -179,26 +179,26 @@ func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
-			Name:             "Success when the operator input is has no required scenario groups",
-			Input:           &formationconstraintpkg.ContainsScenarioGroupsInput{
-				ResourceType:    model.ApplicationResourceType,
-				ResourceSubtype: inputAppType,
-				ResourceID:      inputAppID,
-				Tenant:          testTenantID,
+			Name: "Success when the operator input is has no required scenario groups",
+			Input: &formationconstraintpkg.ContainsScenarioGroupsInput{
+				ResourceType:           model.ApplicationResourceType,
+				ResourceSubtype:        inputAppType,
+				ResourceID:             inputAppID,
+				Tenant:                 testTenantID,
 				RequiredScenarioGroups: nil,
 			},
-			SystemAuthService:         unusedSystemAuthService,
-			ApplicationRepo:  unusedApplicationRepo,
-			ExpectedResult:   true,
-			ExpectedErrorMsg: "",
+			SystemAuthService: unusedSystemAuthService,
+			ApplicationRepo:   unusedApplicationRepo,
+			ExpectedResult:    true,
+			ExpectedErrorMsg:  "",
 		},
 		{
-			Name:             "Returns error when the operator input is incompatible",
-			Input:            "incompatible",
-			SystemAuthService:         unusedSystemAuthService,
-			ApplicationRepo: 	 unusedApplicationRepo,
-			ExpectedResult:   false,
-			ExpectedErrorMsg: "Incompatible input",
+			Name:              "Returns error when the operator input is incompatible",
+			Input:             "incompatible",
+			SystemAuthService: unusedSystemAuthService,
+			ApplicationRepo:   unusedApplicationRepo,
+			ExpectedResult:    false,
+			ExpectedErrorMsg:  "Incompatible input",
 		},
 		{
 			Name: "Returns error when the resource type is unknown",
@@ -208,10 +208,10 @@ func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 				ResourceID:      inputAppID,
 				Tenant:          testTenantID,
 			},
-			SystemAuthService:        unusedSystemAuthService,
-			ApplicationRepo:  unusedApplicationRepo,
-			ExpectedResult:   false,
-			ExpectedErrorMsg: "Unsupported resource type",
+			SystemAuthService: unusedSystemAuthService,
+			ApplicationRepo:   unusedApplicationRepo,
+			ExpectedResult:    false,
+			ExpectedErrorMsg:  "Unsupported resource type",
 		},
 	}
 	for _, testCase := range testCases {
