@@ -1077,14 +1077,27 @@ func calculateState(response *webhookdir.Response, operation model.FormationOper
 }
 
 func validateNotificationResponse(response *webhookdir.Response, assignment *model.FormationAssignment, operation model.FormationOperation, webhookMode graphql.WebhookMode) error {
+	var actualCode int
+	if response.ActualStatusCode != nil {
+		actualCode = *response.ActualStatusCode
+	}
+	var incompleteCode int
+	if response.IncompleteStatusCode != nil {
+		incompleteCode = *response.IncompleteStatusCode
+	}
+	var successCode int
+	if response.SuccessStatusCode != nil {
+		successCode = *response.SuccessStatusCode
+	}
+
 	var fieldRules []*validation.FieldRules
 	fieldRules = append(
 		fieldRules,
 		validation.Field(&response.State, validation.When(response.State != nil && *response.State != "",
 			validation.When(isErrorNotEmpty(response.Error), validation.In(string(model.CreateErrorAssignmentState), string(model.DeleteErrorAssignmentState))),
 			validation.When(isConfigNotEmpty(response.Config), validation.In(string(model.ReadyAssignmentState), string(model.ConfigPendingAssignmentState))),
-			validation.When(response.ActualStatusCode == response.IncompleteStatusCode, validation.In(string(model.ConfigPendingAssignmentState))),
-			validation.When(response.ActualStatusCode != response.IncompleteStatusCode && response.ActualStatusCode != response.SuccessStatusCode, validation.In(string(model.DeleteErrorAssignmentState), string(model.CreateErrorAssignmentState))),
+			validation.When(actualCode == incompleteCode, validation.In(string(model.ConfigPendingAssignmentState))),
+			validation.When(actualCode != incompleteCode && actualCode != successCode, validation.In(string(model.DeleteErrorAssignmentState), string(model.CreateErrorAssignmentState))),
 			// in case of empty error and configuration
 			validation.In(string(model.ReadyAssignmentState), string(model.CreateErrorAssignmentState), string(model.DeleteErrorAssignmentState), string(model.ConfigPendingAssignmentState)),
 		)),

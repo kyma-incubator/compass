@@ -2384,8 +2384,8 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				notificationSvc := &automock.NotificationService{}
 				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
 					SuccessStatusCode:    &ok,
-					IncompleteStatusCode: &incomplete,
-					ActualStatusCode:     &incomplete,
+					IncompleteStatusCode: nil,
+					ActualStatusCode:     &ok,
 					State:                &configPendingState,
 					Config:               &config,
 				}, nil)
