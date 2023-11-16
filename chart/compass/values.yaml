@@ -167,8 +167,8 @@ global:
       version: "v20231106-af7a300a"
       name: compass-pairing-adapter
     director:
-      dir: dev/incubator/
-      version: "PR-3466"
+      dir: prod/incubator/
+      version: "v20231115-65178201"
       name: compass-director
     hydrator:
       dir: prod/incubator/
