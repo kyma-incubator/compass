@@ -40,6 +40,20 @@ func (_m *IntegrationDependencyService) Create(ctx context.Context, resourceType
 	return r0, r1
 }
 
+// Delete provides a mock function with given fields: ctx, resourceType, id
+func (_m *IntegrationDependencyService) Delete(ctx context.Context, resourceType resource.Type, id string) error {
+	ret := _m.Called(ctx, resourceType, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string) error); ok {
+		r0 = rf(ctx, resourceType, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // ListByApplicationID provides a mock function with given fields: ctx, appID
 func (_m *IntegrationDependencyService) ListByApplicationID(ctx context.Context, appID string) ([]*model.IntegrationDependency, error) {
 	ret := _m.Called(ctx, appID)
