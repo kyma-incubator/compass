@@ -41,6 +41,7 @@ func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 				svc.On("ListForObject", ctx, pkgmodel.ApplicationReference, inputAppID).Return([]pkgmodel.SystemAuth{{
 					Value: &model.Auth{
 						OneTimeToken: &model.OneTimeToken{
+							Used:           true,
 							ScenarioGroups: []string{`{"key": "scenarioGroup","description": "bar1"}`, `{"key": "scenarioGroup2","description": "bar2"}`},
 						},
 					},
@@ -63,6 +64,7 @@ func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 				svc.On("ListForObject", ctx, pkgmodel.ApplicationReference, inputAppID).Return([]pkgmodel.SystemAuth{{
 					Value: &model.Auth{
 						OneTimeToken: &model.OneTimeToken{
+							Used:           true,
 							ScenarioGroups: []string{},
 						},
 					},
@@ -85,6 +87,7 @@ func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 				svc.On("ListForObject", ctx, pkgmodel.ApplicationReference, inputAppID).Return([]pkgmodel.SystemAuth{{
 					Value: &model.Auth{
 						OneTimeToken: &model.OneTimeToken{
+							Used:           true,
 							ScenarioGroups: []string{"scenarioGroup"},
 						},
 					},
@@ -107,6 +110,7 @@ func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 				svc.On("ListForObject", ctx, pkgmodel.ApplicationReference, inputAppID).Return([]pkgmodel.SystemAuth{{
 					Value: &model.Auth{
 						OneTimeToken: &model.OneTimeToken{
+							Used:           true,
 							ScenarioGroups: []string{"someOtherGroup"},
 						},
 					},
@@ -122,14 +126,14 @@ func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 			ExpectedErrorMsg: "",
 		},
 		{
-			Name:  "Error for an application which has scenario groups, but the one time token is already used",
+			Name:  "Error for an application which has scenario groups, but the one time token not used",
 			Input: in,
 			SystemAuthService: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("ListForObject", ctx, pkgmodel.ApplicationReference, inputAppID).Return([]pkgmodel.SystemAuth{{
 					Value: &model.Auth{
 						OneTimeToken: &model.OneTimeToken{
-							Used:           true,
+							Used:           false,
 							ScenarioGroups: []string{"someOtherGroup"},
 						},
 					},

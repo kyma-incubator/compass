@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/director/tests"
-
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	"github.com/kyma-incubator/compass/tests/director/tests"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -26,6 +26,7 @@ var (
 	conf                      = &tests.DirectorConfig{}
 	certSecuredGraphQLClient  *graphql.Client
 	directorInternalGQLClient *graphql.Client
+	hydratorClient            *clients.HydratorClient
 	cc                        certloader.Cache
 )
 
@@ -66,6 +67,7 @@ func TestMain(m *testing.M) {
 	directorInternalGQLClient.Log = func(s string) {
 		log.D().Info(s)
 	}
+	hydratorClient = clients.NewHydratorClient(conf.HydratorURL)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

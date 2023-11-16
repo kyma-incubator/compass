@@ -66,7 +66,7 @@ func (e *ConstraintEngine) hasCorrectScenarioGroups(ctx context.Context, applica
 	}
 
 	for _, auth := range auths {
-		if auth.Value == nil || auth.Value.OneTimeToken == nil || auth.Value.OneTimeToken.Used {
+		if auth.Value == nil || auth.Value.OneTimeToken == nil || !auth.Value.OneTimeToken.Used {
 			continue
 		}
 		if len(auth.Value.OneTimeToken.ScenarioGroups) == 0 {

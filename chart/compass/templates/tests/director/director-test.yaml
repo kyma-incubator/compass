@@ -55,6 +55,8 @@ spec:
               value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
             - name: APP_HEALTH_URL
               value: "https://director.{{ .Values.global.ingress.domainName }}/healthz"
+            - name: APP_HYDRATOR_URL
+              value: '{{ .Values.global.tests.hydratorFQDN }}:{{ .Values.global.hydrator.port }}{{ .Values.global.hydrator.prefix}}'
             - name: APP_WEBHOOK_URL
               value: "https://kyma-project.io"
             - name: APP_DEFAULT_SCENARIO
@@ -417,6 +419,8 @@ spec:
               value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
             - name: APP_HEALTH_URL
               value: "https://director.{{ .Values.global.ingress.domainName }}/healthz"
+            - name: APP_HYDRATOR_URL
+              value: '{{ .Values.global.tests.hydratorFQDN }}:{{ .Values.global.hydrator.port }}{{ .Values.global.hydrator.prefix}}'
             - name: APP_WEBHOOK_URL
               value: "https://kyma-project.io"
             - name: APP_DEFAULT_SCENARIO
@@ -779,6 +783,8 @@ spec:
               value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
             - name: APP_HEALTH_URL
               value: "https://director.{{ .Values.global.ingress.domainName }}/healthz"
+            - name: APP_HYDRATOR_URL
+              value: '{{ .Values.global.tests.hydratorFQDN }}:{{ .Values.global.hydrator.port }}{{ .Values.global.hydrator.prefix}}'
             - name: APP_WEBHOOK_URL
               value: "https://kyma-project.io"
             - name: APP_DEFAULT_SCENARIO
@@ -1141,6 +1147,8 @@ spec:
               value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
             - name: APP_HEALTH_URL
               value: "https://director.{{ .Values.global.ingress.domainName }}/healthz"
+            - name: APP_HYDRATOR_URL
+              value: '{{ .Values.global.tests.hydratorFQDN }}:{{ .Values.global.hydrator.port }}{{ .Values.global.hydrator.prefix}}'
             - name: APP_WEBHOOK_URL
               value: "https://kyma-project.io"
             - name: APP_DEFAULT_SCENARIO
@@ -1503,6 +1511,8 @@ spec:
               value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
             - name: APP_HEALTH_URL
               value: "https://director.{{ .Values.global.ingress.domainName }}/healthz"
+            - name: APP_HYDRATOR_URL
+              value: '{{ .Values.global.tests.hydratorFQDN }}:{{ .Values.global.hydrator.port }}{{ .Values.global.hydrator.prefix}}'
             - name: APP_WEBHOOK_URL
               value: "https://kyma-project.io"
             - name: APP_DEFAULT_SCENARIO
