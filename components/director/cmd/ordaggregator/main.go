@@ -304,14 +304,19 @@ func main() {
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
+	entityTypeMappingSvc := entitytypemapping.NewService(entityTypeMappingRepo, uidSvc)
 	tombstoneProcessor := processor.NewTombstoneProcessor(transact, tombstoneSvc)
+	vendorProcessor := processor.NewVendorProcessor(transact, vendorSvc)
+	packageProcessor := processor.NewPackageProcessor(transact, packageSvc)
+	productProcessor := processor.NewProductProcessor(transact, productSvc)
+	apiProcessor := processor.NewAPIProcessor(transact, apiSvc, entityTypeSvc, entityTypeMappingSvc, bundleReferenceSvc, specSvc)
+	eventProcessor := processor.NewEventProcessor(transact, eventAPISvc, entityTypeSvc, entityTypeMappingSvc, bundleReferenceSvc, specSvc)
 	integrationDependencyProcessor := processor.NewIntegrationDependencyProcessor(transact, integrationDependencySvc, aspectSvc)
 	entityTypeProcessor := processor.NewEntityTypeProcessor(transact, entityTypeSvc)
+	capabilityProcessor := processor.NewCapabilityProcessor(transact, capabilitySvc, specSvc)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
 	appTemplateVersionSvc := apptemplateversion.NewService(appTemplateVersionRepo, appTemplateSvc, uidSvc, timeSvc)
-
-	entityTypeMappingSvc := entitytypemapping.NewService(entityTypeMappingRepo, uidSvc)
-
+	tombstonedResourcesDeleter := processor.NewTombstonedResourcesDeleter(transact, packageSvc, apiSvc, eventAPISvc, entityTypeSvc, capabilitySvc, integrationDependencySvc, vendorSvc, productSvc, bundleSvc)
 	opRepo := operation.NewRepository(operation.NewConverter())
 	opSvc := operation.NewService(opRepo, uuid.NewService())
 
@@ -342,7 +347,7 @@ func main() {
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
 	ordConfig := ord.NewServiceConfig(cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
-	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, entityTypeSvc, entityTypeProcessor, entityTypeMappingSvc, capabilitySvc, integrationDependencySvc, integrationDependencyProcessor, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping, opSvc)
+	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, apiProcessor, eventAPISvc, eventProcessor, entityTypeSvc, entityTypeProcessor, capabilitySvc, capabilityProcessor, integrationDependencySvc, integrationDependencyProcessor, specSvc, fetchRequestSvc, packageSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, ordWebhookMapping, opSvc)
 	ordOpProcessor := &ord.OperationsProcessor{
 		OrdSvc: ordSvc,
 	}

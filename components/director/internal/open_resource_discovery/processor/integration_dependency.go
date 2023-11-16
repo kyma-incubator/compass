@@ -18,6 +18,7 @@ type IntegrationDependencyService interface {
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.IntegrationDependency, error)
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) (string, error)
 	Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 }
 
 // AspectService is responsible for the service-layer Aspect operations.
