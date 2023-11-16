@@ -52,6 +52,11 @@ func (s *ServiceKey) GetResourceURLPath() string {
 	return paths.ServiceBindingsPath
 }
 
+// GetResourceName gets the ServiceKey Name
+func (s *ServiceKey) GetResourceName() string {
+	return s.Name
+}
+
 // ServiceKeys represents a collection of Service Key
 type ServiceKeys struct {
 	NumItems int           `json:"num_items"`
@@ -68,14 +73,19 @@ func (sk *ServiceKeys) GetURLPath() string {
 	return paths.ServiceBindingsPath
 }
 
-// GetResourceName gets the ServiceKey Name
-func (s *ServiceKey) GetResourceName() string {
-	return s.Name
+// GetIDs gets the IDs of all ServiceKeys
+func (sks *ServiceKeys) GetIDs() []string {
+	ids := make([]string, 0, sks.NumItems)
+	for _, sk := range sks.Items {
+		ids = append(ids, sk.ID)
+	}
+	return ids
 }
 
 // ServiceKeyMatchParameters holds all the necessary fields that are used when matching ServiceKeys
 type ServiceKeyMatchParameters struct {
-	ServiceInstanceID string
+	ServiceInstanceID   string
+	ServiceInstancesIDs []string
 }
 
 // Match matches a ServiceKey based on some criteria
@@ -90,9 +100,21 @@ func (skp *ServiceKeyMatchParameters) MatchMultiple(resources resources.Resource
 		return nil, errors.New("while type asserting Resources to ServiceKeys")
 	}
 	serviceKeyIDs := make([]string, 0, serviceKeys.NumItems)
-	for _, sk := range serviceKeys.Items {
-		if sk.ServiceInstanceID == skp.ServiceInstanceID {
-			serviceKeyIDs = append(serviceKeyIDs, sk.ID)
+	if skp.ServiceInstanceID != "" {
+		for _, sk := range serviceKeys.Items {
+			if sk.ServiceInstanceID == skp.ServiceInstanceID {
+				serviceKeyIDs = append(serviceKeyIDs, sk.ID)
+			}
+		}
+	}
+	if len(skp.ServiceInstancesIDs) > 0 {
+		// Add all service bindings for all skp.serviceInstancesIDs
+		for _, serviceInstanceID := range skp.ServiceInstancesIDs {
+			for _, sk := range serviceKeys.Items {
+				if sk.ServiceInstanceID == serviceInstanceID {
+					serviceKeyIDs = append(serviceKeyIDs, sk.ID)
+				}
+			}
 		}
 	}
 	return serviceKeyIDs, nil

@@ -59,6 +59,15 @@ func (sp *ServicePlans) GetURLPath() string {
 	return paths.ServicePlansPath
 }
 
+// GetIDs gets the IDs of all ServicePlans
+func (sps *ServicePlans) GetIDs() []string {
+	ids := make([]string, 0, sps.NumItems)
+	for _, sp := range sps.Items {
+		ids = append(ids, sp.ID)
+	}
+	return ids
+}
+
 // ServicePlanMatchParameters holds all the necessary fields that are used when matching ServicePlans
 type ServicePlanMatchParameters struct {
 	PlanName   string

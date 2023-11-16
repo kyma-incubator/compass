@@ -16,6 +16,7 @@ type Resource interface {
 type Resources interface {
 	GetType() string
 	GetURLPath() string
+	GetIDs() []string
 }
 
 // ResourceMatchParameters holds all specific parameters needed for matching resources and provides the specific URL Path of each one

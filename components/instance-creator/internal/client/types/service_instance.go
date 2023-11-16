@@ -2,8 +2,6 @@ package types
 
 import (
 	"encoding/json"
-	"strings"
-
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
 	"github.com/pkg/errors"
 
@@ -19,9 +17,10 @@ const (
 
 // ServiceInstanceReqBody is the request body when a Service Instance is being created
 type ServiceInstanceReqBody struct {
-	Name          string          `json:"name"`
-	ServicePlanID string          `json:"service_plan_id"`
-	Parameters    json.RawMessage `json:"parameters,omitempty"` // TODO:: differs from service to service. Most probably the necessary data will be provided as arbitrary json in the TM notification body?
+	Name          string              `json:"name"`
+	ServicePlanID string              `json:"service_plan_id"`
+	Parameters    json.RawMessage     `json:"parameters,omitempty"` // TODO:: differs from service to service. Most probably the necessary data will be provided as arbitrary json in the TM notification body?
+	Labels        map[string][]string `json:"labels,omitempty"`
 }
 
 // GetResourceName gets the ServiceInstance name from the request body
@@ -73,6 +72,15 @@ func (si *ServiceInstances) GetURLPath() string {
 	return paths.ServiceInstancesPath
 }
 
+// GetIDs gets the IDs of all ServiceInstances
+func (sis *ServiceInstances) GetIDs() []string {
+	ids := make([]string, 0, sis.NumItems)
+	for _, si := range sis.Items {
+		ids = append(ids, si.ID)
+	}
+	return ids
+}
+
 // ServiceInstanceMatchParameters holds all the necessary fields that are used when matching ServiceInstances
 type ServiceInstanceMatchParameters struct {
 	ServiceInstanceName string
@@ -95,15 +103,5 @@ func (sip *ServiceInstanceMatchParameters) Match(resources resources.Resources) 
 
 // MatchMultiple matches several ServiceInstances based on some criteria
 func (sip *ServiceInstanceMatchParameters) MatchMultiple(resources resources.Resources) ([]string, error) {
-	serviceInstances, ok := resources.(*ServiceInstances)
-	if !ok {
-		return nil, errors.New("while type asserting Resources to ServiceInstances")
-	}
-	serviceInstanceIDs := make([]string, 0, serviceInstances.NumItems)
-	for _, si := range serviceInstances.Items {
-		if strings.Contains(si.Name, sip.ServiceInstanceName) {
-			serviceInstanceIDs = append(serviceInstanceIDs, si.ID)
-		}
-	}
-	return serviceInstanceIDs, nil
+	return nil, nil // implement me when needed
 }

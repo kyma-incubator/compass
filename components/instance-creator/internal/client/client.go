@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
@@ -107,6 +108,32 @@ func (c *client) RetrieveResourceByID(ctx context.Context, region, subaccountID 
 	}
 
 	return resource, nil
+}
+
+// RetrieveMultipleResourcesIDsByLabels retrieves resources IDs from SM by labels
+// Example call, delete after initial usage of the client:
+//
+// RetrieveResourceIDByLabels(ctx , region, subaccountID, &types.ServiceKey{ID: serviceKeyID}, &types.ServiceKeyMatchParameters{})
+func (c *client) RetrieveMultipleResourcesIDsByLabels(ctx context.Context, region, subaccountID string, resources resources.Resources, labels map[string][]string) ([]string, error) {
+	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resources.GetURLPath(), SubaccountKey, subaccountID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while building %s URL", resources.GetType())
+	}
+	strURL += createLabelsQuery(labels)
+
+	log.C(ctx).Infof("Getting %s by labels: %v for subaccount with ID: %q", resources.GetType(), labels, subaccountID)
+	body, err := c.executeSyncRequest(ctx, strURL, region)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while executing request for getting %s for subaccount with ID: %q", resources.GetType(), subaccountID)
+	}
+	log.C(ctx).Infof("Successfully got %s by labels: %v for subaccount with ID: %q", resources.GetType(), labels, subaccountID)
+
+	err = json.Unmarshal(body, &resources)
+	if err != nil {
+		return nil, errors.Errorf("failed to unmarshal %s: %v", resources.GetType(), err)
+	}
+
+	return resources.GetIDs(), nil
 }
 
 // RetrieveRawResourceByID retrieves a given resource from SM by its ID and returns the raw json body response
@@ -259,11 +286,29 @@ func (c *client) DeleteResource(ctx context.Context, region, subaccountID string
 //
 // DeleteMultipleResources(ctx, region, subaccountID, &types.ServiceKeys{}, &types.ServiceKeyMatchParameters{ServiceInstanceID: id})
 func (c *client) DeleteMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) error {
-	resourceIDs, err := c.retrieveMultipleResources(ctx, region, subaccountID, resources, resourceMatchParams)
+	resourceIDs, err := c.RetrieveMultipleResources(ctx, region, subaccountID, resources, resourceMatchParams)
 	if err != nil {
 		return err
 	}
 
+	for _, resourceID := range resourceIDs {
+		resource, err := c.prepareResourceForDeletion(resources.GetType(), resourceID)
+		if err != nil {
+			return err
+		}
+		err = c.DeleteResource(ctx, region, subaccountID, resource)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DeleteMultipleResourcesByIDs deletes multiple resources from SM by IDs
+// Example call, delete after initial usage of the client:
+//
+// DeleteMultipleResourcesByIDs(ctx, region, subaccountID, &types.ServiceKeys{}, []string{"resource-id"})
+func (c *client) DeleteMultipleResourcesByIDs(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceIDs []string) error {
 	for _, resourceID := range resourceIDs {
 		resource, err := c.prepareResourceForDeletion(resources.GetType(), resourceID)
 		if err != nil {
@@ -410,7 +455,7 @@ func (c *client) executeAsyncRequest(ctx context.Context, resp *http.Response, c
 	}
 }
 
-func (c *client) retrieveMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) ([]string, error) {
+func (c *client) RetrieveMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) ([]string, error) {
 	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resources.GetURLPath(), SubaccountKey, subaccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building %s URL", resources.GetType())
@@ -435,4 +480,17 @@ func (c *client) retrieveMultipleResources(ctx context.Context, region, subaccou
 	log.C(ctx).Infof("%d %s are found", len(resourceIDs), resources.GetType())
 
 	return resourceIDs, nil
+}
+
+func createLabelsQuery(labels map[string][]string) string {
+	labelsQuery := "?fieldQuery="
+
+	operators := make([]string, 0, len(labels))
+	for key, values := range labels {
+		operators = append(operators, fmt.Sprintf("%s in ('%s')", key, strings.Join(values, "', '")))
+	}
+
+	labelsQuery += strings.Join(operators, " and ")
+
+	return labelsQuery
 }
