@@ -527,12 +527,12 @@ func TestORDService(stdT *testing.T) {
 
 			params.Add("$expand", "apis($top=10)")
 			params.Add("$format", "json")
-			respBody := MakeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
+			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, totalCount, len(gjson.Get(respBody, "value.0.apis").Array()))
 
 			expectedItemCount := 1
 			params.Set("$expand", fmt.Sprintf("apis($top=10;$skip=%d)", totalCount-expectedItemCount))
-			respBody = MakeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
+			respBody = makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, expectedItemCount, len(gjson.Get(respBody, "value").Array()))
 		})
 
@@ -542,12 +542,12 @@ func TestORDService(stdT *testing.T) {
 
 			params.Add("$expand", "events($top=10)")
 			params.Add("$format", "json")
-			respBody := MakeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
+			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, totalCount, len(gjson.Get(respBody, "value.0.events").Array()))
 
 			expectedItemCount := 1
 			params.Set("$expand", fmt.Sprintf("events($top=10;$skip=%d)", totalCount-expectedItemCount))
-			respBody = MakeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
+			respBody = makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, expectedItemCount, len(gjson.Get(respBody, "value").Array()))
 		})
 
@@ -760,7 +760,7 @@ func makeRequestWithHeaders(t require.TestingT, httpClient *http.Client, url str
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, conf.ORDServiceDefaultResponseType)
 }
 
-func MakeRequestWithHeadersAndQueryParams(t require.TestingT, httpClient *http.Client, url string, headers map[string][]string, params urlpkg.Values) string {
+func makeRequestWithHeadersAndQueryParams(t require.TestingT, httpClient *http.Client, url string, headers map[string][]string, params urlpkg.Values) string {
 	url = url + params.Encode()
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, conf.ORDServiceDefaultResponseType)
 }
