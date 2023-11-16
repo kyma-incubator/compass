@@ -283,12 +283,12 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 		{
 			key:            &key.PublicKey,
 			validateClaims: getClaimsValidator([]string{cfg.DefaultTenant, cfg.TrustedTenant}),
-			Claims:         &oauth.Claims{},
+			ClaimGetter:    func() jwt.Claims { return &oauth.Claims{} },
 		},
 		{
 			key:            keyCache.Get()[cfg.KeyLoaderConfig.KeysSecretName].PublicKey,
 			validateClaims: getClaimsValidator([]string{cfg.DefaultCustomerTenant, cfg.TrustedTenant}),
-			Claims:         &modelJwt.Claims{},
+			ClaimGetter:    func() jwt.Claims { return &modelJwt.Claims{} },
 		},
 	}))
 	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
@@ -638,7 +638,7 @@ func initOauthSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 type MiddlewareArgs struct {
 	key            *rsa.PublicKey
 	validateClaims func(claims jwt.Claims) bool
-	Claims         jwt.Claims
+	ClaimGetter    func() jwt.Claims
 }
 
 func oauthMiddlewareMultiple(args []MiddlewareArgs) func(next http.Handler) http.Handler {
@@ -657,19 +657,22 @@ func oauthMiddlewareMultiple(args []MiddlewareArgs) func(next http.Handler) http
 			token := strings.TrimPrefix(authHeader, "Bearer ")
 
 			for _, middlewareArgs := range args {
-				if _, err := jwt.ParseWithClaims(token, middlewareArgs.Claims, func(_ *jwt.Token) (interface{}, error) {
+				claims := middlewareArgs.ClaimGetter()
+				if _, err := jwt.ParseWithClaims(token, claims, func(_ *jwt.Token) (interface{}, error) {
 					return middlewareArgs.key, nil
 				}); err != nil {
 					continue
 				}
 
-				if !middlewareArgs.validateClaims(middlewareArgs.Claims) {
+				if !middlewareArgs.validateClaims(claims) {
 					continue
 				}
 
+				tenant := getClaimsTenant(claims)
+
 				log.C(r.Context()).Infof("Middleware authenticated successfully. Continue with request.")
-				r.Header.Set("tenant", getClaimsTenant(middlewareArgs.Claims))
-				log.C(r.Context()).Infof("Setting tenant %s for tenant header", getClaimsTenant(middlewareArgs.Claims))
+				r.Header.Set("tenant", tenant)
+				log.C(r.Context()).Infof("Setting tenant %s for tenant header", tenant)
 
 				next.ServeHTTP(w, r)
 				return

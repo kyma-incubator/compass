@@ -956,6 +956,7 @@ global:
         name: "system-fetcher-external-keys"
         namespace: compass-system
         dataKey: data
+        manage: false
     rotationCronjob:
       name: "external-certificate-rotation"
       schedule: "*/1 * * * *" # Executes every minute
