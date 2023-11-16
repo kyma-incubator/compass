@@ -20,7 +20,7 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 	appTemplateName := "constraintApplicationType"
 	otherAppTemplateName := "otherApplicationType"
 
-	var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	var ft graphql.FormationTemplate
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
 	ft = fixtures.CreateAppOnlyFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, formationTmplName, []string{appTemplateName, otherAppTemplateName}, nil, supportReset)
 
@@ -37,8 +37,9 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &actualApp)
 		require.NoError(t, err)
 
-		otherApp, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "otherSystem", conf.ApplicationTypeLabelKey, otherAppTemplateName, tnt)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &otherApp)
+		otherApplicationTemplateInput := fixtures.FixApplicationTemplateWithStatusAndType(otherAppTemplateName, graphql.ApplicationStatusConditionInitial)
+		otherApplicationTemplate, otherApp, err := fixtures.CreateApplicationTemplateFromInputWithApplication(t, ctx, certSecuredGraphQLClient, tnt, otherApplicationTemplateInput, "otherSystem")
+		defer fixtures.CleanupApplicationTemplateWithApplication(t, ctx, certSecuredGraphQLClient, tnt, otherApplicationTemplate, &otherApp)
 		require.NoError(t, err)
 
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -81,10 +82,10 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
 		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
 
-		actualApp, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "test-app", conf.ApplicationTypeLabelKey, appTemplateName, tnt)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &actualApp)
+		applicationTemplateInput := fixtures.FixApplicationTemplateWithStatusAndType(appTemplateName, graphql.ApplicationStatusConditionInitial)
+		applicationTemplate, actualApp, err := fixtures.CreateApplicationTemplateFromInputWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplateInput, "constraint-system-in-initial")
+		defer fixtures.CleanupApplicationTemplateWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplate, &actualApp)
 		require.NoError(t, err)
-		require.NotEmpty(t, actualApp.ID)
 
 		t.Logf("Assign application to formation %s", formationName)
 		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, graphql.FormationObjectTypeApplication, tnt)
@@ -97,17 +98,9 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
 		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
 
-		statusCond := graphql.ApplicationStatusConditionConnected
-		in := graphql.ApplicationRegisterInput{
-			Name: "test-s4-system",
-			Labels: graphql.Labels{
-				conf.ApplicationTypeLabelKey: appTemplateName,
-			},
-			StatusCondition: &statusCond,
-		}
-
-		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tnt, in)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &actualApp)
+		applicationTemplateInput := fixtures.FixApplicationTemplateWithStatusAndType(appTemplateName, graphql.ApplicationStatusConditionConnected)
+		applicationTemplate, actualApp, err := fixtures.CreateApplicationTemplateFromInputWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplateInput, "constraint-system-connected")
+		defer fixtures.CleanupApplicationTemplateWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplate, &actualApp)
 		require.NoError(t, err)
 
 		t.Logf("Getting one time token for application with name: %q and id: %q...", actualApp.Name, actualApp.ID)
@@ -134,17 +127,10 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
 		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
 
-		statusCond := graphql.ApplicationStatusConditionConnected
-		in := graphql.ApplicationRegisterInput{
-			Name: "test-s4-system",
-			Labels: graphql.Labels{
-				conf.ApplicationTypeLabelKey: appTemplateName,
-			},
-			StatusCondition: &statusCond,
-		}
-
-		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tnt, in)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &actualApp)
+		applicationTemplateInput := fixtures.FixApplicationTemplateWithStatusAndType(appTemplateName, graphql.ApplicationStatusConditionConnected)
+		applicationTemplate, actualApp, err := fixtures.CreateApplicationTemplateFromInputWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplateInput, "constraint-system-connected")
+		defer fixtures.CleanupApplicationTemplateWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplate, &actualApp)
+		require.NoError(t, err)
 
 		t.Logf("Getting one time token for application with name: %q and id: %q...", actualApp.Name, actualApp.ID)
 		tokenRequest := fixtures.FixRequestOneTimeTokenForApplication(actualApp.ID)
@@ -155,8 +141,9 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 		require.NoError(t, err)
 		t.Logf("Successfully got one time token for application with name: %q and id: %q", actualApp.Name, actualApp.ID)
 
-		otherApp, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "otherSystem", conf.ApplicationTypeLabelKey, otherAppTemplateName, tnt)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &otherApp)
+		otherApplicationTemplateInput := fixtures.FixApplicationTemplateWithStatusAndType(otherAppTemplateName, graphql.ApplicationStatusConditionInitial)
+		otherApplicationTemplate, otherApp, err := fixtures.CreateApplicationTemplateFromInputWithApplication(t, ctx, certSecuredGraphQLClient, tnt, otherApplicationTemplateInput, "otherSystem")
+		defer fixtures.CleanupApplicationTemplateWithApplication(t, ctx, certSecuredGraphQLClient, tnt, otherApplicationTemplate, &otherApp)
 		require.NoError(t, err)
 
 		t.Logf("Assign application to formation %s", formationName)
