@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"runtime/debug"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -46,13 +48,21 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q for location with constraint type: %q and operation name: %q during %q operation", di.ResourceType, di.ResourceSubtype, di.Location.ConstraintType, di.Location.OperationName, di.Operation)
 
-	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsFAMemoryAddress)
+	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.FAMemoryAddress)
 	if err != nil {
 		return false, err
 	}
 
+	var notificationStatusReport *statusreport.NotificationStatusReport
+	if di.Location.OperationName == model.NotificationStatusReturned {
+		notificationStatusReport, err = RetrieveNotificationStatusReportPointer(ctx, di.NotificationStatusReportMemoryAddress)
+		if err != nil {
+			return false, err
+		}
+	}
+
 	if di.Operation == model.UnassignFormation {
-		if di.Location.OperationName == model.NotificationStatusReturned && formationAssignment != nil && formationAssignment.State == string(model.ReadyAssignmentState) {
+		if di.Location.OperationName == model.NotificationStatusReturned && notificationStatusReport != nil && notificationStatusReport.State == string(model.ReadyAssignmentState) {
 			log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.UnassignFormation, formationAssignment.ID)
 			if err := e.destinationSvc.DeleteDestinations(ctx, formationAssignment, di.SkipSubaccountValidation); err != nil {
 				return false, err
@@ -62,18 +72,12 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		return true, nil
 	}
 
-	isAssignmentCfgEmpty := isFormationAssignmentConfigEmpty(formationAssignment)
-	if formationAssignment != nil && (formationAssignment.State == string(model.InitialAssignmentState) || isAssignmentCfgEmpty) {
-		log.C(ctx).Infof("The formation assignment with ID: %s has either %s state or empty configuration. Returning without executing the destination creator operator.", formationAssignment.ID, model.InitialAssignmentState)
-		return true, nil
-	}
-
-	if formationAssignment != nil && !isAssignmentCfgEmpty && di.Location.OperationName == model.NotificationStatusReturned {
+	if di.Location.OperationName == model.NotificationStatusReturned && notificationStatusReport != nil && !isNotificationStatusReportConfigEmpty(notificationStatusReport) {
 		log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
 
 		var assignmentConfig Configuration
-		if err := json.Unmarshal(formationAssignment.Value, &assignmentConfig); err != nil {
-			return false, errors.Wrapf(err, "while unmarshalling tenant mapping response configuration from assignment with ID: %q", formationAssignment.ID)
+		if err := json.Unmarshal(notificationStatusReport.Configuration, &assignmentConfig); err != nil {
+			return false, errors.Wrapf(err, "while unmarshalling tenant mapping response configuration for assignment with ID: %q", formationAssignment.ID)
 		}
 
 		if len(assignmentConfig.Destinations) > 0 {
@@ -102,11 +106,11 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 					return false, errors.Wrap(err, "while creating SAML assertion certificate")
 				}
 
-				config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithSAMLCertificateData(formationAssignment.Value, destinationcreatorpkg.SAMLAssertionDestPath, certData)
+				config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithSAMLCertificateData(notificationStatusReport.Configuration, destinationcreatorpkg.SAMLAssertionDestPath, certData)
 				if err != nil {
 					return false, err
 				}
-				formationAssignment.Value = config
+				notificationStatusReport.Configuration = config
 			}
 
 			if clientCertDetails := assignmentConfig.Credentials.InboundCommunicationDetails.ClientCertificateAuthenticationDetails; clientCertDetails != nil && len(clientCertDetails.Destinations) > 0 {
@@ -122,11 +126,11 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 					return false, errors.Wrap(err, "while creating client certificate authentication certificate")
 				}
 
-				config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithCertificateData(formationAssignment.Value, destinationcreatorpkg.ClientCertAuthDestPath, certData)
+				config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithCertificateData(notificationStatusReport.Configuration, destinationcreatorpkg.ClientCertAuthDestPath, certData)
 				if err != nil {
 					return false, err
 				}
-				formationAssignment.Value = config
+				notificationStatusReport.Configuration = config
 			}
 		}
 
@@ -134,7 +138,13 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		return true, nil
 	}
 
-	reverseFormationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsReverseFAMemoryAddress)
+	isAssignmentCfgEmpty := isFormationAssignmentConfigEmpty(formationAssignment)
+	if formationAssignment != nil && (formationAssignment.State == string(model.InitialAssignmentState) || isAssignmentCfgEmpty) {
+		log.C(ctx).Infof("The formation assignment with ID: %s has either %s state or empty configuration. Returning without executing the destination creator operator.", formationAssignment.ID, model.InitialAssignmentState)
+		return true, nil
+	}
+
+	reverseFormationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.ReverseFAMemoryAddress)
 	if err != nil {
 		return false, err
 	}
@@ -198,12 +208,16 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 	return true, nil
 }
 
-func isFormationAssignmentConfigEmpty(assignment *model.FormationAssignment) bool {
-	if assignment != nil && (string(assignment.Value) == "" || string(assignment.Value) == "{}" || string(assignment.Value) == "\"\"" || string(assignment.Value) == "null") {
-		return true
-	}
+func isConfigEmpty(config string) bool {
+	return config == "" || config == "{}" || config == "\"\"" || config == "null"
+}
 
-	return false
+func isFormationAssignmentConfigEmpty(assignment *model.FormationAssignment) bool {
+	return assignment != nil && isConfigEmpty(string(assignment.Value))
+}
+
+func isNotificationStatusReportConfigEmpty(notificationStatusReport *statusreport.NotificationStatusReport) bool {
+	return notificationStatusReport != nil && isConfigEmpty(string(notificationStatusReport.Configuration))
 }
 
 // Destination Creator Operator types
