@@ -56,6 +56,28 @@ func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 			ExpectedErrorMsg: "",
 		},
 		{
+			Name:  "Success for an application which has empty scenario groups array and is connected",
+			Input: in,
+			SystemAuthService: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", ctx, pkgmodel.ApplicationReference, inputAppID).Return([]pkgmodel.SystemAuth{{
+					Value: &model.Auth{
+						OneTimeToken: &model.OneTimeToken{
+							ScenarioGroups: []string{},
+						},
+					},
+				}}, nil)
+				return svc
+			},
+			ApplicationRepo: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, testTenantID, inputAppID).Return(&model.Application{BaseEntity: &model.BaseEntity{ID: appID}, Status: &model.ApplicationStatus{Condition: model.ApplicationStatusConditionConnected}}, nil).Once()
+				return repo
+			},
+			ExpectedResult:   true,
+			ExpectedErrorMsg: "",
+		},
+		{
 			Name:  "Success for an application which has requested scenario group and is connected and scenario groups are in legacy string array format",
 			Input: in,
 			SystemAuthService: func() *automock.SystemAuthService {

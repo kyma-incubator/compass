@@ -69,6 +69,11 @@ func (e *ConstraintEngine) hasCorrectScenarioGroups(ctx context.Context, applica
 		if auth.Value == nil || auth.Value.OneTimeToken == nil || auth.Value.OneTimeToken.Used {
 			continue
 		}
+		if len(auth.Value.OneTimeToken.ScenarioGroups) == 0 {
+			// If scenario groups are empty, this means that these are legacy tokens,
+			// which should be interpreted as unrestricted
+			return true, nil
+		}
 		scenarioGroups, err := onetimetoken.UnmarshalScenarioGroups(auth.Value.OneTimeToken.ScenarioGroups)
 		if err != nil {
 			for _, scenarioGroup := range auth.Value.OneTimeToken.ScenarioGroups {
