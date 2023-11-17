@@ -16,16 +16,16 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 	tnt := tenant.TestTenants.GetDefaultTenantID()
 
 	formationTmplName := "e2e-tests-contains-scenario-groups-operator"
-	appTemplateName := "constraintApplicationType"
-	otherAppTemplateName := "otherApplicationType"
-	appName := "constraint-system-scenario-groups-operator"
-	otherAppName := "other-constraint-system-scenario-groups-operator"
+	generateFANotificationsApplicationType := "constraintGenerateApplicationType"
+	assignApplication := "constraintAssignApplicationType"
+	appName := "constraint-system-scenario-groups-operator-notifications"
+	otherAppName := "constraint-system-scenario-groups-operator-assign"
 
 	var ft graphql.FormationTemplate
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
-	ft = fixtures.CreateAppOnlyFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, formationTmplName, []string{appTemplateName, otherAppTemplateName}, nil, supportReset)
+	ft = fixtures.CreateAppOnlyFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, formationTmplName, []string{generateFANotificationsApplicationType, assignApplication}, nil, supportReset)
 
-	formationName := "app-to-app-formation-name"
+	formationName := "containsScenarioGroupsFormationE2ETest"
 	t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName)
 	_ = fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName, &formationTmplName)
@@ -39,164 +39,97 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 
 	applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplate, inputTemplate, outputTemplate)
 
-	scenarioGroups := `{"key": "foo1","description": "bar1"}, {"key": "foo2","description": "bar2"}`
+	scenarioGroup := "testScenarioGroup"
+	scenarioGroup2 := "testScenarioGroup2"
+	scenarioGroups := fmt.Sprintf(`{"key": "%s","description": "some description for key"}, {"key": "%s","description": "some description for key 2"}`, scenarioGroup, scenarioGroup2)
 
-	t.Run("Contains Scenario Groups Constraint should not generate notifications when not satisfied", func(t *testing.T) {
-		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+	t.Logf("Creating application template %q along with application %q", generateFANotificationsApplicationType, appName)
+	applicationTemplateInput := fixtures.FixApplicationTemplateWithStatusAndType(generateFANotificationsApplicationType, graphql.ApplicationStatusConditionConnected)
+	applicationTemplate, actualApp := fixtures.CreateApplicationTemplateFromInputWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplateInput, appName)
+	defer fixtures.CleanupApplicationTemplateWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplate, &actualApp)
+	t.Logf("Successfully created application template %q with ID %q along with application %q with ID %q", generateFANotificationsApplicationType, applicationTemplate.ID, appName, actualApp.ID)
 
-		t.Logf("Creating application template %q along with application %q", appTemplateName, appName)
-		applicationTemplateInput := fixtures.FixApplicationTemplateWithStatusAndType(appTemplateName, graphql.ApplicationStatusConditionInitial)
-		applicationTemplate, actualApp := fixtures.CreateApplicationTemplateFromInputWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplateInput, appName)
-		defer fixtures.CleanupApplicationTemplateWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplate, &actualApp)
-		t.Logf("Successfully created application template %q with ID %q along with application %q with ID %q", appTemplateName, applicationTemplate.ID, appName, actualApp.ID)
+	t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookType, webhookMode, actualApp.ID)
+	actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, actualApp.ID)
+	defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID)
 
-		t.Logf("Creating application template %q along with application %q", otherAppTemplateName, otherAppName)
-		otherApplicationTemplateInput := fixtures.FixApplicationTemplateWithStatusAndType(otherAppTemplateName, graphql.ApplicationStatusConditionInitial)
-		otherApplicationTemplate, otherApp := fixtures.CreateApplicationTemplateFromInputWithApplication(t, ctx, certSecuredGraphQLClient, tnt, otherApplicationTemplateInput, otherAppName)
-		defer fixtures.CleanupApplicationTemplateWithApplication(t, ctx, certSecuredGraphQLClient, tnt, otherApplicationTemplate, &otherApp)
-		t.Logf("Successfully created application template %q with ID %q along with application %q with ID %q", otherAppTemplateName, otherApplicationTemplate.ID, otherAppName, otherApp.ID)
+	t.Logf("Creating application template %q along with application %q", assignApplication, otherAppName)
+	otherApplicationTemplateInput := fixtures.FixApplicationTemplateWithStatusAndType(assignApplication, graphql.ApplicationStatusConditionConnected)
+	otherApplicationTemplate, otherApp := fixtures.CreateApplicationTemplateFromInputWithApplication(t, ctx, certSecuredGraphQLClient, tnt, otherApplicationTemplateInput, otherAppName)
+	defer fixtures.CleanupApplicationTemplateWithApplication(t, ctx, certSecuredGraphQLClient, tnt, otherApplicationTemplate, &otherApp)
+	t.Logf("Successfully created application template %q with ID %q along with application %q with ID %q", assignApplication, otherApplicationTemplate.ID, otherAppName, otherApp.ID)
 
-		t.Logf("Creating constraint with target operation %q for application type %q and attach it to formation template %q with ID %q", graphql.TargetOperationAssignFormation, appTemplateName, formationTmplName, ft.ID)
-		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationGenerateFormationAssignmentNotification, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "nonexistent"))
-		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
-		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
-		t.Logf("Successfully created and attached constraint with ID %q to formation template %q with ID %q", constraint.ID, formationTmplName, ft.ID)
+	t.Logf("Creating constraint with target operation %q for application type %q and attach it to formation template %q with ID %q", graphql.TargetOperationAssignFormation, assignApplication, formationTmplName, ft.ID)
+	assignConstraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(assignApplication, graphql.TargetOperationAssignFormation, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", scenarioGroup))
+	assignConstraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, assignConstraintsInput, ft.ID, ft.Name)
+	defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, assignConstraint.ID, ft.ID)
+	t.Logf("Successfully created and attached constraint with ID %q to formation template %q with ID %q", assignConstraint.ID, formationTmplName, ft.ID)
 
-		t.Logf("Assign application to formation %s", formationName)
-		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, graphql.FormationObjectTypeApplication, tnt)
-		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, tnt)
+	t.Logf("Creating constraint with target operation %q for application type %q and attach it to formation template %q with ID %q", graphql.TargetOperationGenerateFormationAssignmentNotification, generateFANotificationsApplicationType, formationTmplName, ft.ID)
+	generateFANotificationsConstraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(generateFANotificationsApplicationType, graphql.TargetOperationGenerateFormationAssignmentNotification, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", scenarioGroup2))
+	generateFANotificationsConstraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, generateFANotificationsConstraintsInput, ft.ID, ft.Name)
+	defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, generateFANotificationsConstraint.ID, ft.ID)
+	t.Logf("Successfully created and attached constraint with ID %q to formation template %q with ID %q", generateFANotificationsConstraint.ID, formationTmplName, ft.ID)
 
-		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookType, webhookMode, actualApp.ID)
-		actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, actualApp.ID)
-		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID)
+	t.Logf("Getting one time token for application with name: %q and id: %q...", actualApp.Name, actualApp.ID)
+	tokenForGenerateApp := fixtures.GenerateOneTimeTokenForApplicationWithCustomHeaders(t, ctx, certSecuredGraphQLClient, tnt, actualApp.ID, map[string]string{"scenario_groups": scenarioGroups})
+	t.Logf("Successfully got one time token for application with name: %q and id: %q", actualApp.Name, actualApp.ID)
 
-		t.Logf("Assign application to formation %s", formationName)
-		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, graphql.FormationObjectTypeApplication, tnt)
-		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, tnt)
-		t.Logf("Successfully assigned application %q with ID %q to formation %s", appName, actualApp.ID, formationName)
+	t.Logf("Getting one time token for application with name: %q and id: %q...", otherApp.Name, otherApp.ID)
+	tokenForAssignApp := fixtures.GenerateOneTimeTokenForApplicationWithCustomHeaders(t, ctx, certSecuredGraphQLClient, tnt, otherApp.ID, map[string]string{"scenario_groups": scenarioGroups})
+	t.Logf("Successfully got one time token for application with name: %q and id: %q", otherApp.Name, otherApp.ID)
 
-		assertNoNotificationsAreSent(t, certSecuredHTTPClient, actualApp.ID)
-		assertNoNotificationsAreSent(t, certSecuredHTTPClient, otherApp.ID)
-	})
-	t.Run("Contains Scenario Groups Constraint should not allow assign when not satisfied", func(t *testing.T) {
-		t.Logf("Creating constraint with target operation %q for application type %q and attach it to formation template %q with ID %q", graphql.TargetOperationAssignFormation, appTemplateName, formationTmplName, ft.ID)
-		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationAssignFormation, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo1"))
-		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
-		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
-		t.Logf("Successfully created and attached constraint with ID %q to formation template %q with ID %q", constraint.ID, formationTmplName, ft.ID)
+	t.Logf("Assign application application %q with ID %q to formation %s", appName, otherApp.ID, formationName)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, graphql.FormationObjectTypeApplication, tnt)
+	fixtures.AssignFormationWithApplicationObjectTypeExpectError(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, tnt)
 
-		t.Logf("Creating application template %q along with application %q", appTemplateName, appName)
-		applicationTemplateInput := fixtures.FixApplicationTemplateWithStatusAndType(appTemplateName, graphql.ApplicationStatusConditionInitial)
-		applicationTemplate, actualApp := fixtures.CreateApplicationTemplateFromInputWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplateInput, appName)
-		defer fixtures.CleanupApplicationTemplateWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplate, &actualApp)
-		t.Logf("Successfully created application template %q with ID %q along with application %q with ID %q", appTemplateName, applicationTemplate.ID, appName, actualApp.ID)
+	t.Logf("Getting one time token for application with name: %q and id: %q...", otherApp.Name, otherApp.ID)
+	invalidTokenForAssignApp := fixtures.GenerateOneTimeTokenForApplicationWithCustomHeaders(t, ctx, certSecuredGraphQLClient, tnt, otherApp.ID, map[string]string{"scenario_groups": `{"key": "someOtherGroup", "description": "someOtherDescription"}`})
+	t.Logf("Successfully got one time token for application with name: %q and id: %q", otherApp.Name, otherApp.ID)
 
-		t.Logf("Assign application application %q with ID %q to formation %s", appName, actualApp.ID, formationName)
-		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, graphql.FormationObjectTypeApplication, tnt)
-		fixtures.AssignFormationWithApplicationObjectTypeExpectError(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, tnt)
-	})
-	t.Run("Contains Scenario Groups Constraint should not allow assign when there is valid OTT but with wrong scenario groups and valid OTT is not used", func(t *testing.T) {
-		t.Logf("Creating constraint with target operation %q for application type %q and attach it to formation template %q with ID %q", graphql.TargetOperationAssignFormation, appTemplateName, formationTmplName, ft.ID)
-		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationAssignFormation, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo1"))
-		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
-		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
-		t.Logf("Successfully created and attached constraint with ID %q to formation template %q with ID %q", constraint.ID, formationTmplName, ft.ID)
+	headers := map[string][]string{
+		oathkeeper.ConnectorTokenHeader: {invalidTokenForAssignApp.Token},
+	}
+	hydratorClient.ResolveToken(t, headers)
 
-		t.Logf("Creating application template %q along with application %q", appTemplateName, appName)
-		applicationTemplateInput := fixtures.FixApplicationTemplateWithStatusAndType(appTemplateName, graphql.ApplicationStatusConditionConnected)
-		applicationTemplate, actualApp := fixtures.CreateApplicationTemplateFromInputWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplateInput, appName)
-		defer fixtures.CleanupApplicationTemplateWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplate, &actualApp)
-		t.Logf("Successfully created application template %q with ID %q along with application %q with ID %q", appTemplateName, applicationTemplate.ID, appName, actualApp.ID)
+	t.Logf("Assign application application %q with ID %q to formation %s", appName, otherApp.ID, formationName)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, graphql.FormationObjectTypeApplication, tnt)
+	fixtures.AssignFormationWithApplicationObjectTypeExpectError(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, tnt)
 
-		t.Logf("Getting one time token for application with name: %q and id: %q...", actualApp.Name, actualApp.ID)
-		t.Logf("Successfully got one time token for application with name: %q and id: %q", actualApp.Name, actualApp.ID)
-		fixtures.GenerateOneTimeTokenForApplicationWithCustomHeaders(t, ctx, certSecuredGraphQLClient, tnt, actualApp.ID, map[string]string{"scenario_groups": scenarioGroups})
-		t.Logf("Getting one time token for application with name: %q and id: %q...", actualApp.Name, actualApp.ID)
-		token := fixtures.GenerateOneTimeTokenForApplicationWithCustomHeaders(t, ctx, certSecuredGraphQLClient, tnt, actualApp.ID, map[string]string{"scenario_groups": `{"key": "someOtherGroup","description": "someOtherGroupDesc"}`})
-		headers := map[string][]string{
-			oathkeeper.ConnectorTokenHeader: {token.Token},
-		}
-		hydratorClient.ResolveToken(t, headers)
-		t.Logf("Successfully got one time token for application with name: %q and id: %q", actualApp.Name, actualApp.ID)
+	headers = map[string][]string{
+		oathkeeper.ConnectorTokenHeader: {tokenForAssignApp.Token},
+	}
+	hydratorClient.ResolveToken(t, headers)
 
-		t.Logf("Assign application application %q with ID %q to formation %s", appName, actualApp.ID, formationName)
-		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, graphql.FormationObjectTypeApplication, tnt)
-		fixtures.AssignFormationWithApplicationObjectTypeExpectError(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, tnt)
-	})
-	t.Run("Contains Scenario Groups Constraint should allow assign when satisfied", func(t *testing.T) {
-		t.Logf("Creating constraint with target operation %q for application type %q and attach it to formation template %q with ID %q", graphql.TargetOperationAssignFormation, appTemplateName, formationTmplName, ft.ID)
-		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationAssignFormation, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo2"))
-		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
-		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
-		t.Logf("Successfully created and attached constraint with ID %q to formation template %q with ID %q", constraint.ID, formationTmplName, ft.ID)
+	t.Logf("Assign application application %q with ID %q to formation %s", appName, otherApp.ID, formationName)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, graphql.FormationObjectTypeApplication, tnt)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, tnt)
+	t.Logf("Successfully assigned application %q with ID %q to formation %s", appName, otherApp.ID, formationName)
 
-		t.Logf("Creating application template %q along with application %q", appTemplateName, appName)
-		applicationTemplateInput := fixtures.FixApplicationTemplateWithStatusAndType(appTemplateName, graphql.ApplicationStatusConditionConnected)
-		applicationTemplate, actualApp := fixtures.CreateApplicationTemplateFromInputWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplateInput, appName)
-		defer fixtures.CleanupApplicationTemplateWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplate, &actualApp)
-		t.Logf("Successfully created application template %q with ID %q along with application %q with ID %q", appTemplateName, applicationTemplate.ID, appName, actualApp.ID)
+	cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+	defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
-		t.Logf("Getting one time token for application with name: %q and id: %q...", actualApp.Name, actualApp.ID)
-		token := fixtures.GenerateOneTimeTokenForApplicationWithCustomHeaders(t, ctx, certSecuredGraphQLClient, tnt, actualApp.ID, map[string]string{"scenario_groups": scenarioGroups})
-		headers := map[string][]string{
-			oathkeeper.ConnectorTokenHeader: {token.Token},
-		}
-		hydratorClient.ResolveToken(t, headers)
-		t.Logf("Successfully got one time token for application with name: %q and id: %q", actualApp.Name, actualApp.ID)
+	t.Logf("Assign application to formation %s", formationName)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, graphql.FormationObjectTypeApplication, tnt)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, tnt)
 
-		t.Logf("Assign application application %q with ID %q to formation %s", appName, actualApp.ID, formationName)
-		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, graphql.FormationObjectTypeApplication, tnt)
-		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, tnt)
-		t.Logf("Successfully assigned application %q with ID %q to formation %s", appName, actualApp.ID, formationName)
-	})
-	t.Run("Contains Scenario Groups Constraint should generate notifications when satisfied", func(t *testing.T) {
-		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+	assertNoNotificationsAreSent(t, certSecuredHTTPClient, actualApp.ID)
+	assertNoNotificationsAreSent(t, certSecuredHTTPClient, otherApp.ID)
 
-		t.Logf("Creating constraint with target operation %q for application type %q and attach it to formation template %q with ID %q", graphql.TargetOperationGenerateFormationAssignmentNotification, appTemplateName, formationTmplName, ft.ID)
-		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationGenerateFormationAssignmentNotification, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo2"))
-		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
-		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
-		t.Logf("Successfully created and attached constraint with ID %q to formation template %q with ID %q", constraint.ID, formationTmplName, ft.ID)
+	t.Logf("Unassign application to formation %s", formationName)
+	fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, tnt)
 
-		t.Logf("Creating application template %q along with application %q", appTemplateName, appName)
-		applicationTemplateInput := fixtures.FixApplicationTemplateWithStatusAndType(appTemplateName, graphql.ApplicationStatusConditionConnected)
-		applicationTemplate, actualApp := fixtures.CreateApplicationTemplateFromInputWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplateInput, appName)
-		defer fixtures.CleanupApplicationTemplateWithApplication(t, ctx, certSecuredGraphQLClient, tnt, applicationTemplate, &actualApp)
-		t.Logf("Successfully created application template %q with ID %q along with application %q with ID %q", appTemplateName, applicationTemplate.ID, appName, actualApp.ID)
+	headers = map[string][]string{
+		oathkeeper.ConnectorTokenHeader: {tokenForGenerateApp.Token},
+	}
+	hydratorClient.ResolveToken(t, headers)
 
-		t.Logf("Getting one time token for application with name: %q and id: %q...", actualApp.Name, actualApp.ID)
-		token := fixtures.GenerateOneTimeTokenForApplicationWithCustomHeaders(t, ctx, certSecuredGraphQLClient, tnt, actualApp.ID, map[string]string{"scenario_groups": scenarioGroups})
-		headers := map[string][]string{
-			oathkeeper.ConnectorTokenHeader: {token.Token},
-		}
-		hydratorClient.ResolveToken(t, headers)
-		t.Logf("Successfully got one time token for application with name: %q and id: %q", actualApp.Name, actualApp.ID)
+	t.Logf("Assign application application %q with ID %q to formation %s", appName, actualApp.ID, formationName)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, graphql.FormationObjectTypeApplication, tnt)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, tnt)
+	t.Logf("Successfully assigned application %q with ID %q to formation %s", appName, actualApp.ID, formationName)
 
-		t.Logf("Creating application template %q along with application %q", otherAppTemplateName, otherAppName)
-		otherApplicationTemplateInput := fixtures.FixApplicationTemplateWithStatusAndType(otherAppTemplateName, graphql.ApplicationStatusConditionInitial)
-		otherApplicationTemplate, otherApp := fixtures.CreateApplicationTemplateFromInputWithApplication(t, ctx, certSecuredGraphQLClient, tnt, otherApplicationTemplateInput, otherAppName)
-		defer fixtures.CleanupApplicationTemplateWithApplication(t, ctx, certSecuredGraphQLClient, tnt, otherApplicationTemplate, &otherApp)
-		t.Logf("Successfully created application template %q with ID %q along with application %q with ID %q", otherAppTemplateName, otherApplicationTemplate.ID, otherAppName, otherApp.ID)
-
-		t.Logf("Assign application application %q with ID %q to formation %s", otherAppName, otherApp.ID, formationName)
-		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, graphql.FormationObjectTypeApplication, tnt)
-		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, tnt)
-		t.Logf("Successfully assigned application %q with ID %q to formation %s", otherAppName, otherApp.ID, formationName)
-
-		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookType, webhookMode, actualApp.ID)
-		actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, actualApp.ID)
-		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID)
-		t.Logf("Successfully added webhook to application with ID %q", actualApp.ID)
-
-		t.Logf("Assign application application %q with ID %q to formation %s", appName, actualApp.ID, formationName)
-		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, graphql.FormationObjectTypeApplication, tnt)
-		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, tnt)
-		t.Logf("Successfully assigned application %q with ID %q to formation %s", appName, actualApp.ID, formationName)
-
-		body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		assertNotificationsCountForTenant(t, body, actualApp.ID, 1)
-		assertNoNotificationsAreSent(t, certSecuredHTTPClient, otherApp.ID)
-	})
+	body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+	assertNotificationsCountForTenant(t, body, actualApp.ID, 1)
+	assertNoNotificationsAreSent(t, certSecuredHTTPClient, otherApp.ID)
 }
