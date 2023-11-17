@@ -67,7 +67,6 @@ func TestMain(m *testing.M) {
 	directorInternalGQLClient.Log = func(s string) {
 		log.D().Info(s)
 	}
-	hydratorClient = clients.NewHydratorClient(conf.HydratorURL)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

@@ -16,7 +16,6 @@ import (
 type DirectorConfig struct {
 	DirectorUrl                                 string
 	DirectorInternalGatewayUrl                  string
-	HydratorURL                                 string `envconfig:"default=http://compass-hydrator:3000"`
 	HealthUrl                                   string `envconfig:"default=https://director.kyma.local/healthz"`
 	WebhookUrl                                  string `envconfig:"default=https://kyma-project.io"`
 	InfoUrl                                     string `envconfig:"APP_INFO_API_ENDPOINT,default=https://director.kyma.local/v1/info"`
