@@ -58,7 +58,7 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 		t.Logf("Successfully created application template %q with ID %q along with application %q with ID %q", otherAppTemplateName, otherApplicationTemplate.ID, otherAppName, otherApp.ID)
 
 		t.Logf("Creating constraint with target operation %q for application type %q and attach it to formation template %q with ID %q", graphql.TargetOperationAssignFormation, appTemplateName, formationTmplName, ft.ID)
-		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationGenerateFormationAssignmentNotification, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "nonexistent"))
+		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationGenerateFormationAssignmentNotification, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "nonexistent"))
 		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
 		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
 		t.Logf("Successfully created and attached constraint with ID %q to formation template %q with ID %q", constraint.ID, formationTmplName, ft.ID)
@@ -81,7 +81,7 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 	})
 	t.Run("Contains Scenario Groups Constraint should not allow assign when not satisfied", func(t *testing.T) {
 		t.Logf("Creating constraint with target operation %q for application type %q and attach it to formation template %q with ID %q", graphql.TargetOperationAssignFormation, appTemplateName, formationTmplName, ft.ID)
-		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationAssignFormation, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo1"))
+		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationAssignFormation, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo1"))
 		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
 		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
 		t.Logf("Successfully created and attached constraint with ID %q to formation template %q with ID %q", constraint.ID, formationTmplName, ft.ID)
@@ -98,7 +98,7 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 	})
 	t.Run("Contains Scenario Groups Constraint should not allow assign when there is valid OTT but with wrong scenario groups and valid OTT is not used", func(t *testing.T) {
 		t.Logf("Creating constraint with target operation %q for application type %q and attach it to formation template %q with ID %q", graphql.TargetOperationAssignFormation, appTemplateName, formationTmplName, ft.ID)
-		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationAssignFormation, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo1"))
+		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationAssignFormation, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo1"))
 		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
 		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
 		t.Logf("Successfully created and attached constraint with ID %q to formation template %q with ID %q", constraint.ID, formationTmplName, ft.ID)
@@ -126,7 +126,7 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 	})
 	t.Run("Contains Scenario Groups Constraint should allow assign when satisfied", func(t *testing.T) {
 		t.Logf("Creating constraint with target operation %q for application type %q and attach it to formation template %q with ID %q", graphql.TargetOperationAssignFormation, appTemplateName, formationTmplName, ft.ID)
-		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationAssignFormation, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo2"))
+		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationAssignFormation, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo2"))
 		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
 		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
 		t.Logf("Successfully created and attached constraint with ID %q to formation template %q with ID %q", constraint.ID, formationTmplName, ft.ID)
@@ -155,7 +155,7 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 		t.Logf("Creating constraint with target operation %q for application type %q and attach it to formation template %q with ID %q", graphql.TargetOperationGenerateFormationAssignmentNotification, appTemplateName, formationTmplName, ft.ID)
-		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationGenerateFormationAssignmentNotification, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo2"))
+		constraintsInput := fixtures.FixFormationConstraintInputContainsScenarioGroups(appTemplateName, graphql.TargetOperationGenerateFormationAssignmentNotification, fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", "foo2"))
 		constraint := fixtures.CreateFormationConstraintAndAttach(t, ctx, certSecuredGraphQLClient, constraintsInput, ft.ID, ft.Name)
 		defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, constraint.ID, ft.ID)
 		t.Logf("Successfully created and attached constraint with ID %q to formation template %q with ID %q", constraint.ID, formationTmplName, ft.ID)
