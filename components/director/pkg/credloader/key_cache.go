@@ -36,6 +36,13 @@ func NewKeyCache() *KeyCache {
 	}
 }
 
+// NewKeyCacheWithKeys is responsible for in-memory managing of a TLS certificate
+func NewKeyCacheWithKeys(keys map[string]*KeyStore) *KeyCache {
+	return &KeyCache{
+		keys: keys,
+	}
+}
+
 // Get returns a map of parsed TLS certificates
 func (cc *KeyCache) Get() map[string]*KeyStore {
 	cc.mutex.RLock()
