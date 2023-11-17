@@ -25,7 +25,6 @@ type DoesNotContainResourceOfSubtypeInput struct {
 
 // ContainsScenarioGroupsInput input for ContainsScenarioGroups operator
 type ContainsScenarioGroupsInput struct {
-	FormationTemplateID    string             `json:"formation_template_id"`
 	ResourceType           model.ResourceType `json:"resource_type"`
 	ResourceSubtype        string             `json:"resource_subtype"`
 	ResourceID             string             `json:"resource_id"`
