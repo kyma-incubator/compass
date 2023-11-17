@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
@@ -71,12 +70,13 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 	defer fixtures.CleanupFormationConstraintAndDetach(t, ctx, certSecuredGraphQLClient, generateFANotificationsConstraint.ID, ft.ID)
 	t.Logf("Successfully created and attached constraint with ID %q to formation template %q with ID %q", generateFANotificationsConstraint.ID, formationTmplName, ft.ID)
 
-	t.Logf("Getting one time token for application with name: %q and id: %q...", actualApp.Name, actualApp.ID)
-	tokenForGenerateApp := fixtures.GenerateOneTimeTokenForApplicationWithCustomHeaders(t, ctx, certSecuredGraphQLClient, tnt, actualApp.ID, map[string]string{"scenario_groups": scenarioGroups})
-	t.Logf("Successfully got one time token for application with name: %q and id: %q", actualApp.Name, actualApp.ID)
+
+	t.Logf("Assign application application %q with ID %q to formation %s", appName, otherApp.ID, formationName)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, graphql.FormationObjectTypeApplication, tnt)
+	fixtures.AssignFormationWithApplicationObjectTypeExpectError(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, tnt)
 
 	t.Logf("Getting one time token for application with name: %q and id: %q...", otherApp.Name, otherApp.ID)
-	tokenForAssignApp := fixtures.GenerateOneTimeTokenForApplicationWithCustomHeaders(t, ctx, certSecuredGraphQLClient, tnt, otherApp.ID, map[string]string{"scenario_groups": scenarioGroups})
+	fixtures.GenerateOneTimeTokenForApplicationWithCustomHeaders(t, ctx, certSecuredGraphQLClient, tnt, otherApp.ID, map[string]string{"scenario_groups": `{"key": "someOtherGroup", "description": "someOtherDescription"}`})
 	t.Logf("Successfully got one time token for application with name: %q and id: %q", otherApp.Name, otherApp.ID)
 
 	t.Logf("Assign application application %q with ID %q to formation %s", appName, otherApp.ID, formationName)
@@ -84,22 +84,8 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 	fixtures.AssignFormationWithApplicationObjectTypeExpectError(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, tnt)
 
 	t.Logf("Getting one time token for application with name: %q and id: %q...", otherApp.Name, otherApp.ID)
-	invalidTokenForAssignApp := fixtures.GenerateOneTimeTokenForApplicationWithCustomHeaders(t, ctx, certSecuredGraphQLClient, tnt, otherApp.ID, map[string]string{"scenario_groups": `{"key": "someOtherGroup", "description": "someOtherDescription"}`})
+	fixtures.GenerateOneTimeTokenForApplicationWithCustomHeaders(t, ctx, certSecuredGraphQLClient, tnt, otherApp.ID, map[string]string{"scenario_groups": scenarioGroups})
 	t.Logf("Successfully got one time token for application with name: %q and id: %q", otherApp.Name, otherApp.ID)
-
-	headers := map[string][]string{
-		oathkeeper.ConnectorTokenHeader: {invalidTokenForAssignApp.Token},
-	}
-	hydratorClient.ResolveToken(t, headers)
-
-	t.Logf("Assign application application %q with ID %q to formation %s", appName, otherApp.ID, formationName)
-	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, graphql.FormationObjectTypeApplication, tnt)
-	fixtures.AssignFormationWithApplicationObjectTypeExpectError(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, tnt)
-
-	headers = map[string][]string{
-		oathkeeper.ConnectorTokenHeader: {tokenForAssignApp.Token},
-	}
-	hydratorClient.ResolveToken(t, headers)
 
 	t.Logf("Assign application application %q with ID %q to formation %s", appName, otherApp.ID, formationName)
 	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, otherApp.ID, graphql.FormationObjectTypeApplication, tnt)
@@ -119,10 +105,9 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 	t.Logf("Unassign application to formation %s", formationName)
 	fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, tnt)
 
-	headers = map[string][]string{
-		oathkeeper.ConnectorTokenHeader: {tokenForGenerateApp.Token},
-	}
-	hydratorClient.ResolveToken(t, headers)
+	t.Logf("Getting one time token for application with name: %q and id: %q...", actualApp.Name, actualApp.ID)
+	fixtures.GenerateOneTimeTokenForApplicationWithCustomHeaders(t, ctx, certSecuredGraphQLClient, tnt, actualApp.ID, map[string]string{"scenario_groups": scenarioGroups})
+	t.Logf("Successfully got one time token for application with name: %q and id: %q", actualApp.Name, actualApp.ID)
 
 	t.Logf("Assign application application %q with ID %q to formation %s", appName, actualApp.ID, formationName)
 	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, graphql.FormationObjectTypeApplication, tnt)

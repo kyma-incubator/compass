@@ -3,6 +3,7 @@ package operators
 import (
 	"context"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
@@ -65,30 +66,45 @@ func (e *ConstraintEngine) hasCorrectScenarioGroups(ctx context.Context, applica
 		return false, errors.Wrapf(err, "while getting system auths for application with ID %q", applicationID)
 	}
 
-	for _, auth := range auths {
-		if auth.Value == nil || auth.Value.OneTimeToken == nil || !auth.Value.OneTimeToken.Used {
-			continue
-		}
-		if len(auth.Value.OneTimeToken.ScenarioGroups) == 0 {
-			// If scenario groups are empty, this means that these are legacy tokens,
-			// which should be interpreted as unrestricted
-			return true, nil
-		}
-		scenarioGroups, err := onetimetoken.UnmarshalScenarioGroups(auth.Value.OneTimeToken.ScenarioGroups)
-		if err != nil {
-			for _, scenarioGroup := range auth.Value.OneTimeToken.ScenarioGroups {
-				if slices.Contains(requiredScenarioGroups, scenarioGroup) {
-					return true, nil
-				}
-			}
-			continue
-		}
-		for _, scenarioGroup := range scenarioGroups {
-			if slices.Contains(requiredScenarioGroups, scenarioGroup.Key) {
+	latestOTT := getLatestToken(auths)
+	if latestOTT == nil {
+		return false, nil
+	}
+	spew.Dump(auths)
+	spew.Dump(latestOTT)
+	if len(latestOTT.ScenarioGroups) == 0 {
+		// If scenario groups are empty, this means that these are legacy tokens,
+		// which should be interpreted as unrestricted
+		return true, nil
+	}
+	scenarioGroups, err := onetimetoken.UnmarshalScenarioGroups(latestOTT.ScenarioGroups)
+	if err != nil {
+		for _, scenarioGroup := range latestOTT.ScenarioGroups {
+			if slices.Contains(requiredScenarioGroups, scenarioGroup) {
 				return true, nil
 			}
+		}
+		return false, nil
+	}
+	for _, scenarioGroup := range scenarioGroups {
+		if slices.Contains(requiredScenarioGroups, scenarioGroup.Key) {
+			return true, nil
 		}
 	}
 
 	return false, nil
+}
+
+func getLatestToken(auths []pkgmodel.SystemAuth) *model.OneTimeToken {
+	var latestToken *model.OneTimeToken = nil
+	for _, auth := range auths {
+		if auth.Value == nil || auth.Value.OneTimeToken == nil {
+			continue
+		}
+		if latestToken == nil || latestToken.CreatedAt.Before(auth.Value.OneTimeToken.CreatedAt) {
+			latestToken = auth.Value.OneTimeToken
+		}
+	}
+
+	return latestToken
 }
