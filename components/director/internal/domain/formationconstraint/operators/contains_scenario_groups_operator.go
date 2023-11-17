@@ -3,7 +3,6 @@ package operators
 import (
 	"context"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
@@ -70,8 +69,6 @@ func (e *ConstraintEngine) hasCorrectScenarioGroups(ctx context.Context, applica
 	if latestOTT == nil {
 		return false, nil
 	}
-	spew.Dump(auths)
-	spew.Dump(latestOTT)
 	if len(latestOTT.ScenarioGroups) == 0 {
 		// If scenario groups are empty, this means that these are legacy tokens,
 		// which should be interpreted as unrestricted
