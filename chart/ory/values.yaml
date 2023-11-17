@@ -17,7 +17,7 @@ global:
   containerRegistry:
     path: eu.gcr.io/kyma-project
   images:
-    job: bitnami/kubectl:1.25.10
+    job: bitnami/kubectl:1.22.4
 # Overrides for the Hydra chart
 hydra:
   maester:

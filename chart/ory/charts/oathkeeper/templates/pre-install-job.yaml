@@ -61,9 +61,7 @@ spec:
     metadata:
       name: {{ include "oathkeeper.fullname" . }}-pre-install-secret
       labels:
-      {{ include "oathkeeper.labels" . | indent 8 }}
-      annotations:
-        sidecar.istio.io/inject: "false"
+        {{ include "oathkeeper.labels" . | indent 8 }}
     spec:
       initContainers:
       - name: keys-generator
@@ -86,6 +84,8 @@ spec:
           - -c
           - |
             set -e
+            until wget -q --spider http://127.0.0.1:15021/healthz/ready 2>/dev/null; do echo "Waiting for Istio sidecar..."; sleep 3; done;
+            echo \"Sidecar available. Running...\";
 
             if [ ! "$(kubectl get secret {{ include "oathkeeper.secretname" . }} -n {{ .Release.Namespace }})" ]; then
               echo "Creating JWKS Secret for Oathkeeper..."
@@ -95,6 +95,7 @@ spec:
             else
               echo "Secret exists, skipping creation..."
             fi
+            x=$?; wget -q --post-data='' -S -O /dev/null http://127.0.0.1:15020/quitquitquit && exit $x
         securityContext:
           {{- toYaml .Values.deployment.securityContext.anonymous | nindent 10 }}
         volumeMounts:

@@ -42,15 +42,14 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: oathkeeper-jwks-rotator
+  labels:
+    {{ include "oathkeeper.labels" . | indent 4 }}
 spec:
   schedule: "0 0 1 * *"
   successfulJobsHistoryLimit: 1
   jobTemplate:
     spec:
       template:
-        metadata:
-          annotations:
-            sidecar.istio.io/inject: "false"
         spec:
           initContainers:
           - name: keys-generator
@@ -73,6 +72,9 @@ spec:
             - -c
             - |
               set -e
+              until wget -q --spider http://127.0.0.1:15021/healthz/ready 2>/dev/null; do echo "Waiting for Istio sidecar..."; sleep 3; done;
+              echo \"Sidecar available. Running...\";
+
               keepJWKS=$(kubectl get secret {{ include "oathkeeper.secretname" . }} -n {{ .Release.Namespace }} -o json \
               | jq -r '.data."jwks.json"' | base64 -d | jq -r '.keys[-1]')
 
@@ -81,6 +83,8 @@ spec:
               kubectl create secret generic {{ include "oathkeeper.secretname" . }} \
               --from-file=/tmp/jwks.json \
               -n {{ .Release.Namespace }} -o yaml --dry-run=client | kubectl apply -f -
+
+              x=$?; wget -q --post-data='' -S -O /dev/null http://127.0.0.1:15020/quitquitquit && exit $x
             securityContext:
               {{- toYaml .Values.deployment.securityContext.anonymous | nindent 14 }}
             volumeMounts:

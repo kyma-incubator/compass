@@ -7,7 +7,7 @@ ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 VALUES_FILE_ORY="${ROOT_PATH}"/chart/ory/values.yaml
 OVERRIDE_TEMP_ORY=ory-temp-values.yaml
 
-TIMEOUT=30m
+TIMEOUT=10m
 
 # Always create temporary override file, which is used whether "--overrides-file" is used or not
 cp "$VALUES_FILE_ORY" "$OVERRIDE_TEMP_ORY"
