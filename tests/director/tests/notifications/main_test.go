@@ -8,12 +8,10 @@ import (
 	"testing"
 	"time"
 
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
-	"github.com/kyma-incubator/compass/tests/director/tests"
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/tests/director/tests"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
@@ -26,7 +24,6 @@ var (
 	conf                      = &tests.DirectorConfig{}
 	certSecuredGraphQLClient  *graphql.Client
 	directorInternalGQLClient *graphql.Client
-	hydratorClient            *clients.HydratorClient
 	cc                        certloader.Cache
 )
 
