@@ -2,6 +2,8 @@ BEGIN;
 
 -- drop views
 DROP VIEW IF EXISTS tenants_specifications; -- this one won't be changed but it uses tenants_apis/events and it has to be dropped so the other two can be as well
+DROP VIEW IF EXISTS tenants_entity_type_mappings; -- this one won't be changed but it uses tenants_apis/events and it has to be dropped so the other two can be as well
+DROP VIEW IF EXISTS entity_type_mappings_tenants; -- this one won't be changed but it uses tenants_apis/events and it has to be dropped so the other two can be as well
 DROP VIEW IF EXISTS tenants_apps;
 DROP VIEW IF EXISTS tenants_apis;
 DROP VIEW IF EXISTS tenants_aspects;
@@ -14,7 +16,6 @@ DROP VIEW IF EXISTS tenants_packages;
 DROP VIEW IF EXISTS tenants_products;
 DROP VIEW IF EXISTS tenants_tombstones;
 DROP VIEW IF EXISTS tenants_vendors;
-
 DROP VIEW IF EXISTS apps_formations_id;
 
 -- drop formations index on tenant_id column
