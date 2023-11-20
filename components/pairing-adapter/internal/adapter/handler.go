@@ -23,14 +23,15 @@ type Handler struct {
 
 // swagger:route POST /adapter adapter
 // Request token from external solution
-// 		Consumes:
-//		- application/json
-//   	Produces:
-//		- application/json
-//		Responses:
-// 		200: externalToken
-//		400:
-// 		500:
+//
+//			Consumes:
+//			- application/json
+//	  	Produces:
+//			- application/json
+//			Responses:
+//			200: externalToken
+//			400:
+//			500:
 func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	logger := log.C(ctx)

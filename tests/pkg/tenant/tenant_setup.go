@@ -310,6 +310,10 @@ func (mgr TestTenantsManager) GetIDByName(t require.TestingT, name string) strin
 	return val.ExternalTenant
 }
 
+func (mgr TestTenantsManager) GetDefaultCustomerTenantID() string {
+	return mgr.tenantsByName[TestDefaultCustomerTenant].ExternalTenant
+}
+
 func (mgr TestTenantsManager) GetDefaultTenantID() string {
 	return mgr.tenantsByName[testDefaultTenant].ExternalTenant
 }

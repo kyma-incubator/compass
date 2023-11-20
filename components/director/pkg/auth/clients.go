@@ -5,17 +5,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 )
 
 // PrepareMTLSClient creates a mtls secured http client with given timeout and cert cache
-func PrepareMTLSClient(timeout time.Duration, cache certloader.Cache, secretName string) *http.Client {
+func PrepareMTLSClient(timeout time.Duration, cache credloader.CertCache, secretName string) *http.Client {
 	return PrepareMTLSClientWithSSLValidation(timeout, cache, false, secretName)
 }
 
 // PrepareMTLSClientWithSSLValidation creates a mtls secured http client with given timeout, SSL validation and cert cache
-func PrepareMTLSClientWithSSLValidation(timeout time.Duration, cache certloader.Cache, skipSSLValidation bool, secretName string) *http.Client {
+func PrepareMTLSClientWithSSLValidation(timeout time.Duration, cache credloader.CertCache, skipSSLValidation bool, secretName string) *http.Client {
 	basicTransport := http.DefaultTransport.(*http.Transport).Clone()
 	basicTransport.TLSClientConfig.InsecureSkipVerify = skipSSLValidation
 	basicTransport.TLSClientConfig.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {

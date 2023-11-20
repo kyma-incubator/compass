@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
@@ -30,7 +30,7 @@ func TestOpenAccessStrategy(t *testing.T) {
 		return expectedResp, nil
 	})
 
-	cerCache := certloader.NewCertificateCache()
+	cerCache := credloader.NewCertificateCache()
 	provider := accessstrategy.NewDefaultExecutorProvider(cerCache, externalClientCertSecretName, extSvcClientCertSecretName)
 	executor, err := provider.Provide(accessstrategy.OpenAccessStrategy)
 	require.NoError(t, err)

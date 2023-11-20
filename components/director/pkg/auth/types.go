@@ -20,6 +20,8 @@ import (
 	"context"
 	"crypto/tls"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -38,6 +40,8 @@ const (
 	OAuthCredentialType CredentialType = "OAuthCredentials"
 	// OAuthMtlsCredentialType is requesting OAuth token using Mtls
 	OAuthMtlsCredentialType CredentialType = "OAuthMtlsCredentials"
+	// SelfSignedTokenCredentialType is requesting building a JWT, signed with a provided certificate
+	SelfSignedTokenCredentialType CredentialType = "SelfSignedTokenCredentials"
 )
 
 // CredentialType specifies a dedicated string type to differentiate every Credentials type
@@ -75,6 +79,13 @@ type OAuthMtlsCredentials struct {
 	TokenURL          string
 	Scopes            string
 	AdditionalHeaders map[string]string
+}
+
+// SelfSignedTokenCredentials implements the Credentials interface for the self-signed jwt token flows
+type SelfSignedTokenCredentials struct {
+	KeysCache                 credloader.KeysCache
+	JwtSelfSignCertSecretName string
+	Claims                    map[string]interface{}
 }
 
 // NewOAuthMtlsCredentials creates OAuthMtlsCredentials based on the provided credentials and url
@@ -124,6 +135,16 @@ func (oc *OAuthMtlsCredentials) Get() interface{} {
 // Type returns the specified Credentials implementation type
 func (oc *OAuthMtlsCredentials) Type() CredentialType {
 	return OAuthMtlsCredentialType
+}
+
+// Get returns the specified Credentials implementation
+func (oc *SelfSignedTokenCredentials) Get() interface{} {
+	return oc
+}
+
+// Type returns the specified Credentials implementation type
+func (oc *SelfSignedTokenCredentials) Type() CredentialType {
+	return SelfSignedTokenCredentialType
 }
 
 // LoadFromContext retrieves the credentials from the provided context

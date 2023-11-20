@@ -49,7 +49,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/internal/info"
 
@@ -176,7 +176,7 @@ type config struct {
 	DataloaderMaxBatch int           `envconfig:"default=200"`
 	DataloaderWait     time.Duration `envconfig:"default=10ms"`
 
-	CertLoaderConfig certloader.Config
+	CertLoaderConfig credloader.CertConfig
 
 	SubscriptionConfig subscription.Config
 
@@ -278,7 +278,7 @@ func main() {
 	adminURL, err := url.Parse(cfg.OAuth20.URL)
 	exitOnError(err, "Error while parsing Hydra URL")
 
-	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	certCache, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
@@ -851,7 +851,7 @@ func appTemplateSvc() claims.ApplicationTemplateService {
 	return apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, appRepo, timeSvc)
 }
 
-func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client, certCache certloader.Cache, ordWebhookMapping []application.ORDWebhookMapping) claims.ApplicationService {
+func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client, certCache credloader.CertCache, ordWebhookMapping []application.ORDWebhookMapping) claims.ApplicationService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	webhookConverter := webhook.NewConverter(authConverter)

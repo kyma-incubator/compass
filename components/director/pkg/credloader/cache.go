@@ -1,12 +1,12 @@
-package certloader
+package credloader
 
 import (
 	"crypto/tls"
 	"sync"
 )
 
-// Cache returns a client certificate stored in-memory
-type Cache interface {
+// CertCache returns a client certificate stored in-memory
+type CertCache interface {
 	Get() map[string]*tls.Certificate
 }
 

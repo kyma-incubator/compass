@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -49,7 +49,7 @@ func main() {
 		}
 		client = cc.Client(ctx)
 	case adapter.AuthTypeMTLS:
-		certCache, err := certloader.StartCertLoader(ctx, conf.Auth.Config)
+		certCache, err := credloader.StartCertLoader(ctx, conf.Auth.Config)
 		exitOnError(err, "Failed to initialize certificate loader")
 		transport.TLSClientConfig = &tls.Config{
 			InsecureSkipVerify: conf.Auth.SkipSSLVerify,
