@@ -1,6 +1,6 @@
 package config
 
-import "github.com/kyma-incubator/compass/components/director/pkg/certloader"
+import "github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 type PairingAdapterConfig struct {
 	FQDNPairingAdapterURL          string
@@ -10,7 +10,7 @@ type PairingAdapterConfig struct {
 	TestApplicationName            string
 	ClientIDHeader                 string `envconfig:"APP_CLIENT_ID_HTTP_HEADER"`
 	DirectorExternalCertSecuredURL string
-	CertLoaderConfig               certloader.Config
+	CertLoaderConfig               credloader.CertConfig
 	SkipSSLValidation              bool `envconfig:"default=true"`
 	IsLocalEnv                     bool
 	TemplateName                   string

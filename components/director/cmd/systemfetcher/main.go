@@ -9,6 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/jwt"
+	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	directortime "github.com/kyma-incubator/compass/components/director/pkg/time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
@@ -62,8 +65,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	pkgAuth "github.com/kyma-incubator/compass/components/director/pkg/auth"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -79,11 +82,12 @@ import (
 const discoverSystemsOpMode = "DISCOVER_SYSTEMS"
 
 type config struct {
-	APIConfig      systemfetcher.APIConfig
-	OAuth2Config   oauth.Config
-	SystemFetcher  systemfetcher.Config
-	Database       persistence.DatabaseConfig
-	TemplateConfig appTemplateConfig
+	APIConfig           systemfetcher.APIConfig
+	OAuth2Config        oauth.Config
+	SelfSignedJwtConfig jwt.Config
+	SystemFetcher       systemfetcher.Config
+	Database            persistence.DatabaseConfig
+	TemplateConfig      appTemplateConfig
 
 	Log log.Config
 
@@ -94,7 +98,8 @@ type config struct {
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 	ClientTimeout           time.Duration `envconfig:"default=60s"`
 
-	CertLoaderConfig certloader.Config
+	CertLoaderConfig credloader.CertConfig
+	KeyLoaderConfig  credloader.KeysConfig
 
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 
@@ -135,9 +140,22 @@ func main() {
 		}
 	}()
 
-	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	certCache, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize certificate loader"))
+	}
+
+	keyCache, err := credloader.StartKeyLoader(ctx, cfg.KeyLoaderConfig)
+	if err != nil {
+		log.D().Fatal(errors.Wrap(err, "failed to initialize key loader"))
+	}
+
+	if err = credloader.WaitForKeyCache(keyCache); err != nil {
+		log.D().Fatal(errors.Wrap(err, "failed to wait for key cache"))
+	}
+
+	if err = credloader.WaitForCertCache(certCache); err != nil {
+		log.D().Fatal(errors.Wrap(err, "failed to wait for cert cache"))
 	}
 
 	httpClient := &http.Client{Timeout: cfg.ClientTimeout}
@@ -145,7 +163,7 @@ func main() {
 	mtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExternalClientCertSecretName)
 	extSvcMtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExtSvcClientCertSecretName)
 
-	sf, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, certCache)
+	sf, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, certCache, keyCache)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize System Fetcher"))
 	}
@@ -155,8 +173,14 @@ func main() {
 		return
 	}
 
-	if err = sf.SyncSystems(ctx); err != nil {
-		log.D().Fatal(errors.Wrap(err, "failed to sync systems"))
+	if err = sf.SyncSystems(ctx, tenantEntity.Customer); err != nil {
+		log.D().Fatal(errors.Wrap(err, "failed to sync systems for customers"))
+	}
+
+	if cfg.SystemFetcher.SyncGlobalAccounts {
+		if err = sf.SyncSystems(ctx, tenantEntity.Account); err != nil {
+			log.D().Fatal(errors.Wrap(err, "failed to sync systems for global accounts"))
+		}
 	}
 
 	if err = sf.UpsertSystemsSyncTimestamps(ctx, transact); err != nil {
@@ -164,7 +188,7 @@ func main() {
 	}
 }
 
-func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient *http.Client, certCache certloader.Cache) (*systemfetcher.SystemFetcher, error) {
+func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient *http.Client, certCache credloader.CertCache, keyCache credloader.KeysCache) (*systemfetcher.SystemFetcher, error) {
 	ordWebhookMapping, err := application.UnmarshalMappings(cfg.ORDWebhookMappings)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed while unmarshalling ord webhook mappings")
@@ -263,12 +287,14 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	systemsSyncSvc := systemssync.NewService(systemsSyncRepo)
 
 	authProvider := pkgAuth.NewMtlsTokenAuthorizationProvider(cfg.OAuth2Config, cfg.ExternalClientCertSecretName, certCache, pkgAuth.DefaultMtlsClientCreator)
+	jwtAuthProvider := pkgAuth.NewSelfSignedJWTTokenAuthorizationProvider(cfg.SelfSignedJwtConfig)
 	client := &http.Client{
-		Transport: httputil.NewSecuredTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport)), authProvider),
+		Transport: httputil.NewSecuredTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport)), authProvider, jwtAuthProvider),
 		Timeout:   cfg.APIConfig.Timeout,
 	}
 	oauthMtlsClient := systemfetcher.NewOauthMtlsClient(cfg.OAuth2Config, certCache, client)
-	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, oauthMtlsClient)
+	jwtTokenClient := systemfetcher.NewJwtTokenClient(keyCache, cfg.KeyLoaderConfig.KeysSecretName, client)
+	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, oauthMtlsClient, jwtTokenClient)
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{

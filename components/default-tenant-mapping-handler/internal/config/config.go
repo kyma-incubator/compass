@@ -1,9 +1,8 @@
 package config
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
@@ -27,7 +26,7 @@ type Config struct {
 	AuthorizationHeaderKey    string        `envconfig:"APP_AUTHORIZATION_HEADER_KEY,default=Authorization"`
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
 
-	CertLoaderConfig             certloader.Config
+	CertLoaderConfig             credloader.CertConfig
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 
 	Log        log.Config

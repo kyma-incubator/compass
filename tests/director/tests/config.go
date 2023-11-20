@@ -5,8 +5,8 @@ import (
 
 	"github.com/kyma-incubator/compass/tests/pkg/authenticator"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	directorcfg "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
@@ -30,7 +30,7 @@ type DirectorConfig struct {
 	SkipSSLValidation                           bool   `envconfig:"default=false"`
 	ConsumerID                                  string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
 	UsernameAuthCfg                             authenticator.Config
-	CertLoaderConfig                            certloader.Config
+	CertLoaderConfig                            credloader.CertConfig
 	certprovider.ExternalCertProviderConfig
 	SubscriptionConfig                                 subscription.Config
 	DestinationAPIConfig                               clients.DestinationServiceAPIConfig
