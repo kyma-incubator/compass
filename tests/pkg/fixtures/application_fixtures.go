@@ -82,6 +82,38 @@ func FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, regi
 	}
 }
 
+func FixApplicationTemplateWithStatusAndType(applicationType string, condition graphql.ApplicationStatusCondition) graphql.ApplicationTemplateInput {
+	localTenantID := "local-tenant-id"
+	region := "test-region"
+	appNamespace := "compass.test"
+	return graphql.ApplicationTemplateInput{
+		Name:        applicationType,
+		Description: &applicationType,
+		ApplicationInput: &graphql.ApplicationJSONInput{
+			Name:            fmt.Sprintf("{{%s}}", "name"),
+			ProviderName:    str.Ptr("compass"),
+			Description:     ptr.String(fmt.Sprintf("test {{%s}}", "name")),
+			LocalTenantID:   &localTenantID,
+			StatusCondition: &condition,
+			Labels: graphql.Labels{
+				"applicationType": applicationType,
+				"region":          region,
+				"displayName":     fmt.Sprintf("{{%s}}", "display-name"),
+			},
+		},
+		Placeholders: []*graphql.PlaceholderDefinitionInput{
+			{
+				Name: "name",
+			},
+			{
+				Name: "display-name",
+			},
+		},
+		ApplicationNamespace: &appNamespace,
+		AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
 func FixApplicationFromTemplateInput(applicationType, namePlaceholder, namePlaceholderValue, displayNamePlaceholder, displayNamePlaceholderValue string) graphql.ApplicationFromTemplateInput {
 	return graphql.ApplicationFromTemplateInput{
 		TemplateName: applicationType,

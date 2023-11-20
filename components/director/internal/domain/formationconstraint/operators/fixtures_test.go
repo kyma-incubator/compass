@@ -65,6 +65,7 @@ const (
 	applicationTypeLabel    = "applicationType"
 	runtimeTypeLabel        = "runtimeType"
 	inputAppType            = "input-type"
+	testScenarioGroup       = "scenarioGroup"
 	testJSONConfig          = `{"key": "val"}`
 )
 
@@ -536,6 +537,10 @@ func unusedLabelService() *automock.LabelService {
 
 func unusedDestinationService() *automock.DestinationService {
 	return &automock.DestinationService{}
+}
+
+func unusedSystemAuthService() *automock.SystemAuthService {
+	return &automock.SystemAuthService{}
 }
 
 func unusedDestinationCreatorService() *automock.DestinationCreatorService {

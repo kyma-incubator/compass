@@ -23,6 +23,15 @@ type DoesNotContainResourceOfSubtypeInput struct {
 	Tenant          string             `json:"tenant"`
 }
 
+// ContainsScenarioGroupsInput input for ContainsScenarioGroups operator
+type ContainsScenarioGroupsInput struct {
+	ResourceType           model.ResourceType `json:"resource_type"`
+	ResourceSubtype        string             `json:"resource_subtype"`
+	ResourceID             string             `json:"resource_id"`
+	Tenant                 string             `json:"tenant"`
+	RequiredScenarioGroups []string           `json:"requiredScenarioGroups"`
+}
+
 // DoNotGenerateFormationAssignmentNotificationInput input for DoNotGenerateFormationAssignmentNotification operator
 type DoNotGenerateFormationAssignmentNotificationInput struct {
 	ResourceType         model.ResourceType `json:"resource_type"`
