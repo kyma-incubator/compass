@@ -18,6 +18,8 @@ const (
 	IsNotAssignedToAnyFormationOfType string = "IsNotAssignedToAnyFormationOfType"
 	// DoesNotContainResourceOfSubtype contains the name of the DoesNotContainResourceOfSubtype operator
 	DoesNotContainResourceOfSubtype = "DoesNotContainResourceOfSubtype"
+	// ContainsScenarioGroups contains the name of the ContainsScenarioGroups operator
+	ContainsScenarioGroups = "ContainsScenarioGroups"
 	// DoNotGenerateFormationAssignmentNotificationOperator represents the DoNotGenerateFormationAssignmentNotification operator
 	DoNotGenerateFormationAssignmentNotificationOperator = "DoNotGenerateFormationAssignmentNotification"
 	// DoNotGenerateFormationAssignmentNotificationForLoopsOperator represents the DoNotGenerateFormationAssignmentNotificationForLoops operator
@@ -37,6 +39,7 @@ type OperatorInput interface{}
 var FormationConstraintInputByOperator = map[string]OperatorInput{
 	IsNotAssignedToAnyFormationOfType:                            &IsNotAssignedToAnyFormationOfTypeInput{},
 	DoesNotContainResourceOfSubtype:                              &DoesNotContainResourceOfSubtypeInput{},
+	ContainsScenarioGroups:                                       &ContainsScenarioGroupsInput{},
 	DoNotGenerateFormationAssignmentNotificationOperator:         &DoNotGenerateFormationAssignmentNotificationInput{},
 	DoNotGenerateFormationAssignmentNotificationForLoopsOperator: &DoNotGenerateFormationAssignmentNotificationInput{},
 	DestinationCreator:                                           &DestinationCreatorInput{},

@@ -295,6 +295,23 @@ func GenerateOneTimeTokenForApplication(t require.TestingT, ctx context.Context,
 	return oneTimeToken
 }
 
+func GenerateOneTimeTokenForApplicationWithCustomHeaders(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string, headers map[string]string) graphql.OneTimeTokenForApplicationExt {
+	req := FixRequestOneTimeTokenForApplication(id)
+	oneTimeToken := graphql.OneTimeTokenForApplicationExt{}
+	for key, value := range headers {
+		req.Header.Add(key, value)
+	}
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &oneTimeToken)
+	require.NoError(t, err)
+
+	require.NotEmpty(t, oneTimeToken.ConnectorURL)
+	require.NotEmpty(t, oneTimeToken.Token)
+	require.NotEmpty(t, oneTimeToken.Raw)
+	require.NotEmpty(t, oneTimeToken.RawEncoded)
+	require.NotEmpty(t, oneTimeToken.LegacyConnectorURL)
+	return oneTimeToken
+}
+
 func GenerateOneTimeTokenForApplicationWithSuggestedToken(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.OneTimeTokenForApplicationExt {
 	req := FixRequestOneTimeTokenForApplication(id)
 	oneTimeToken := graphql.OneTimeTokenForApplicationExt{}
