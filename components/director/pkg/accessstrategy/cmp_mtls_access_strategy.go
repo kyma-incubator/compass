@@ -12,7 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 )
 
 // HTTPRoundTripper missing godoc
@@ -25,14 +25,14 @@ type HTTPRoundTripper interface {
 const tenantHeader = "Tenant_Id"
 
 type cmpMTLSAccessStrategyExecutor struct {
-	certCache                    certloader.Cache
+	certCache                    credloader.CertCache
 	tenantProviderFunc           func(ctx context.Context) (string, error)
 	externalClientCertSecretName string
 	extSvcClientCertSecretName   string
 }
 
 // NewCMPmTLSAccessStrategyExecutor creates a new Executor for the CMP mTLS Access Strategy
-func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProviderFunc func(ctx context.Context) (string, error), externalClientCertSecretName, extSvcClientCertSecretName string) *cmpMTLSAccessStrategyExecutor {
+func NewCMPmTLSAccessStrategyExecutor(certCache credloader.CertCache, tenantProviderFunc func(ctx context.Context) (string, error), externalClientCertSecretName, extSvcClientCertSecretName string) *cmpMTLSAccessStrategyExecutor {
 	return &cmpMTLSAccessStrategyExecutor{
 		certCache:                    certCache,
 		tenantProviderFunc:           tenantProviderFunc,

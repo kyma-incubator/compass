@@ -1,6 +1,6 @@
 package config
 
-import "github.com/kyma-incubator/compass/components/director/pkg/certloader"
+import "github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 type SystemBrokerTestConfig struct {
 	Tenant                         string
@@ -9,6 +9,6 @@ type SystemBrokerTestConfig struct {
 	ConnectorURL                   string
 	ORDServiceURL                  string
 	SkipSSLValidation              bool
-	CertLoaderConfig               certloader.Config
+	CertLoaderConfig               credloader.CertConfig
 	ExternalClientCertSecretName   string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }

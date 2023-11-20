@@ -107,7 +107,7 @@ func TestConstraintOperators_ConfigMutator(t *testing.T) {
 			if testCase.LabelSvcFn != nil {
 				labelService = testCase.LabelSvcFn()
 			}
-			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, labelService, nil, nil, nil, nil, runtimeType, applicationType)
+			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, nil, labelService, nil, nil, nil, nil, runtimeType, applicationType)
 
 			// WHEN
 			fa := testCase.InputFa
@@ -132,7 +132,7 @@ func TestConstraintOperators_ConfigMutator(t *testing.T) {
 	t.Run("Error when incorrect input is provided", func(t *testing.T) {
 		// GIVEN
 
-		engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 		// WHEN
 		input := &formationconstraintpkg.DestinationCreatorInput{}

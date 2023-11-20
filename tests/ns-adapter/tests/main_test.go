@@ -16,12 +16,10 @@ import (
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/tests/pkg/util"
-
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
@@ -50,7 +48,7 @@ type config struct {
 	AdapterURL                     string        `envconfig:"ADAPTER_URL"`
 	Timeout                        time.Duration `envconfig:"default=60s"`
 	X509Config                     oauth.X509Config
-	CertLoaderConfig               certloader.Config
+	CertLoaderConfig               credloader.CertConfig
 	DirectorExternalCertSecuredURL string
 	SkipSSLValidation              bool   `envconfig:"default=false"`
 	UseClone                       bool   `envconfig:"default=false,USE_CLONE"`
@@ -72,12 +70,12 @@ func TestMain(m *testing.M) {
 
 	ctx := context.Background()
 
-	cc, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
+	cc, err := credloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	if err := util.WaitForCache(cc); err != nil {
+	if err = credloader.WaitForCertCache(cc); err != nil {
 		log.D().Fatal(err)
 	}
 

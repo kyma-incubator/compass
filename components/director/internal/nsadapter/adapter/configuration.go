@@ -5,7 +5,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -19,7 +19,7 @@ type Configuration struct {
 	Address            string        `envconfig:"default=127.0.0.1:8080"`
 	Log                *log.Config
 
-	CertLoaderConfig certloader.Config
+	CertLoaderConfig credloader.CertConfig
 
 	Database persistence.DatabaseConfig
 
