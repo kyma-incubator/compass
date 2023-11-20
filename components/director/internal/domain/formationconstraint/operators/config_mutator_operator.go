@@ -44,7 +44,7 @@ func (e *ConstraintEngine) MutateConfig(ctx context.Context, input OperatorInput
 			}
 		}
 		if !sourceSubtypeIsSupported {
-			log.C(ctx).Infof("Skipping configuration and state mutation of notification report for source resourse with type: %q and subtype: %q", i.SourceResourceType, sourceSubType)
+			log.C(ctx).Infof("Skipping configuration and state mutation of notification report for source resource with type: %q and subtype: %q", i.SourceResourceType, sourceSubType)
 			return true, nil
 		}
 	}
