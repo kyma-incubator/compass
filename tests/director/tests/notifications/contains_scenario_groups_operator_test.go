@@ -93,10 +93,10 @@ func TestContainsScenarioGroupsOperator(t *testing.T) {
 	cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 	defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
-	t.Logf("Assign application %q with ID %q to formation %s", actualApp, actualApp.ID, formationName)
+	t.Logf("Assign application %q with ID %q to formation %s", appName, actualApp.ID, formationName)
 	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, graphql.FormationObjectTypeApplication, tnt)
 	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, tnt)
-	t.Logf("Successfully assigned application %q with ID %q to formation %s", actualApp, actualApp.ID, formationName)
+	t.Logf("Successfully assigned application %q with ID %q to formation %s", appName, actualApp.ID, formationName)
 
 	assertNoNotificationsAreSent(t, certSecuredHTTPClient, actualApp.ID)
 	assertNoNotificationsAreSent(t, certSecuredHTTPClient, otherApp.ID)
