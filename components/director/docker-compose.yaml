@@ -18,12 +18,7 @@ services:
       - app-network
     ports:
       - "5432:5432"
-    command: >
-      postgres &
-      && sleep 2000
-      && psql -U "${POSTGRES_USER}" -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -d "${POSTGRES_DB}" -f /tmp/repl/init-primary.sql
-      && for file in /tmp/migrations/director/*.up.sql; do; psql -U "${POSTGRES_USER}" -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -d "${POSTGRES_DB}" -f "${file}"; done;
-      && for file in /tmp/director/*.sql; do; psql -U "${POSTGRES_USER}" -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -d "${POSTGRES_DB}" -f "${file}"; done;
+    entrypoint:  ["/tmp/repl/entrypoint.sh", "/tmp/repl/init-primary.sql"]
   secondary:
     image: postgres:15
     container_name: test-postgres-replica
@@ -47,12 +42,7 @@ services:
       - app-network
     ports:
       - "6432:6432"
-    command: >
-      postgres &
-      && sleep 2000
-      && psql -U "${POSTGRES_USER}" -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -d "${POSTGRES_DB}" -f /tmp/repl/init-replica.sql
-      && for file in /tmp/migrations/director/*.up.sql; do; psql -U "${POSTGRES_USER}" -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -d "${POSTGRES_DB}" -f "${file}"; done;
-      && for file in /tmp/director/*.sql; do; psql -U "${POSTGRES_USER}" -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -d "${POSTGRES_DB}" -f "${file}"; done;
+    entrypoint:  ["/tmp/repl/entrypoint.sh", "/tmp/repl/init-replica.sql"]
 networks:
   app-network:
     driver: bridge
