@@ -27,7 +27,7 @@ services:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "pgsql@12345"
       POSTGRES_DB: "compass"
-      POSTGRES_PORT: "6432"
+      POSTGRES_PORT: "5432"
       POSTGRES_REPLICATION_MODE: slave
       POSTGRES_REPLICATION_USER: replicator
       POSTGRES_REPLICATION_PASSWORD: repl123
@@ -41,7 +41,7 @@ services:
     networks:
       - app-network
     ports:
-      - "6432:6432"
+      - "6432:5432"
     entrypoint:  ["/tmp/repl/entrypoint.sh", "/tmp/repl/init-replica.sql"]
 networks:
   app-network:
