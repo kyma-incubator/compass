@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 
@@ -210,7 +210,7 @@ func FixDeleteTenantsRequest(t require.TestingT, tenants []graphql.BusinessTenan
 	return gcli.NewRequest(tenantsQuery)
 }
 
-func FixCertSecuredHTTPClient(cc certloader.Cache, externalClientCertSecretName string, skipSSLValidation bool) *http.Client {
+func FixCertSecuredHTTPClient(cc credloader.CertCache, externalClientCertSecretName string, skipSSLValidation bool) *http.Client {
 	certSecuredHTTPClient := &http.Client{
 		Timeout: 10 * time.Second,
 		Transport: &http.Transport{

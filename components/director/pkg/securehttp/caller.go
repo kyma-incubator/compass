@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 
@@ -20,7 +20,7 @@ type CallerConfig struct {
 	ClientTimeout time.Duration
 
 	SkipSSLValidation            bool
-	Cache                        certloader.Cache
+	Cache                        credloader.CertCache
 	ExternalClientCertSecretName string
 }
 
