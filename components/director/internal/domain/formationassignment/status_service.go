@@ -73,10 +73,8 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 	}
 
 	if !isErrorState(model.FormationAssignmentState(stateFromReport)) {
-		// todo alternative is to clear the error and overwrite the config only if the new one is not empty
 		ResetAssignmentConfigAndError(fa)
 		configFromReport := notificationStatusReport.Configuration
-		// todo if there is a config in the form of \"\" or {} do we still want to update it
 		if configFromReport != nil && !formationconstraintpkg.IsConfigEmpty(string(configFromReport)) {
 			fa.Value = configFromReport
 		}

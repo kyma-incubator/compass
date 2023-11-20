@@ -762,8 +762,7 @@ func isSupportedStateForReset(state model.FormationAssignmentState) bool {
 func isSupportedStateForStatusUpdateWithAssignOperation(state model.FormationAssignmentState) bool {
 	return state == model.CreateErrorAssignmentState ||
 		state == model.ReadyAssignmentState ||
-		state == model.ConfigPendingAssignmentState ||
-		state == model.InitialAssignmentState
+		state == model.ConfigPendingAssignmentState
 }
 
 func isSupportedStateForStatusUpdateWithUnassignOperation(state model.FormationAssignmentState) bool {

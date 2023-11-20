@@ -429,12 +429,13 @@ func fixCertificateData() *operators.CertificateData {
 func fixConfigMutatorInput(fa *model.FormationAssignment, notificationStatusReport *statusreport.NotificationStatusReport, state, config *string, onlyForSourceSubtypes []string) *formationconstraintpkg.ConfigMutatorInput {
 	return &formationconstraintpkg.ConfigMutatorInput{
 		Operation:                             model.UnassignFormation,
-		FAMemoryAddress:                       fa.GetAddress(),
 		NotificationStatusReportMemoryAddress: notificationStatusReport.GetAddress(),
 		Location: formationconstraintpkg.JoinPointLocation{
 			OperationName:  model.NotificationStatusReturned,
 			ConstraintType: model.PreOperation,
 		},
+		SourceResourceType:    model.ResourceType(fa.SourceType),
+		SourceResourceID:      fa.Source,
 		ModifiedConfiguration: config,
 		State:                 state,
 		Tenant:                testTenantID,
