@@ -2202,6 +2202,27 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
+	configAndErrorProvidedError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
+		Error: formationassignment.AssignmentError{
+			Message:  "config: Configuration and Error can not be provided at the same time; error: Configuration and Error can not be provided at the same time; state: must be a valid value.",
+			ErrorCode: 2,
+		},
+	})
+	require.NoError(t, err)
+	invalidStateError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
+		Error: formationassignment.AssignmentError{
+			Message:  "state: must be a valid value.",
+			ErrorCode: 2,
+		},
+	})
+	require.NoError(t, err)
+	invalidStateTransitionError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
+		Error: formationassignment.AssignmentError{
+			Message:  "Invalid transition from state \"INITIAL\" to state DELETE_ERROR.",
+			ErrorCode: 2,
+		},
+	})
+	require.NoError(t, err)
 
 	createErrorStateAssignment := &model.FormationAssignment{
 		ID:          TestID,
@@ -2215,6 +2236,16 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		Value:       nil,
 		Error:       marshaledErrTechnicalError,
 	}
+
+	validationErrorAssignment := createErrorStateAssignment.Clone()
+	validationErrorAssignment.Error=configAndErrorProvidedError
+
+	invalidStateErrorAssignment := createErrorStateAssignment.Clone()
+	invalidStateErrorAssignment.Error=invalidStateError
+
+	invalidStateTransitionErrorAssignment := createErrorStateAssignment.Clone()
+	invalidStateTransitionErrorAssignment.Error=invalidStateTransitionError
+
 	initialStateSelfReferencingAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestSource, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.InitialAssignmentState), nil, nil)
 	initialStateAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.InitialAssignmentState), nil, nil)
 	reverseInitialStateAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestTarget, TestSource, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.InitialAssignmentState), nil, nil)
@@ -2622,10 +2653,15 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhookWithAsyncCallbackMode),
 		},
-
 		{
 			Name:    "FAIL: config and error in resp",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, validationErrorAssignment).Return(nil).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
 				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
@@ -2650,6 +2686,12 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		{
 			Name:    "FAIL: invalid state in response body for incomplete code, sync",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, invalidStateErrorAssignment).Return(nil).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
 				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
@@ -2673,6 +2715,12 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		{
 			Name:    "FAIL: invalid transition from INITIAL to new state",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, invalidStateTransitionErrorAssignment).Return(nil).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
 				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
@@ -2695,6 +2743,12 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		{
 			Name:    "FAIL: invalid state in response body for incomplete code, async",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, invalidStateErrorAssignment).Return(nil).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
 				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
@@ -2718,6 +2772,12 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		{
 			Name:    "FAIL: invalid state in response body, error code, sync",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, invalidStateErrorAssignment).Return(nil).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
 				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
@@ -2741,6 +2801,12 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		{
 			Name:    "FAIL: invalid state in response body, error code, async",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, invalidStateErrorAssignment).Return(nil).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
 				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
@@ -2762,7 +2828,6 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			ExpectedErrorMsg:                     "The provided response is not valid:",
 		},
 		//++ validate state to previous state
-
 		{
 			Name:    "Success: update self-referenced assignment to ready state without sending reverse notification",
 			Context: ctxWithTenant,
@@ -2819,6 +2884,12 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		{
 			Name:    "Error: state in body is not valid",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, invalidStateErrorAssignment).Return(nil).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
 				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
@@ -2841,6 +2912,12 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		{
 			Name:    "Error: state in body is INITIAL, but the previous assignment state is DELETING",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, invalidStateErrorAssignment).Return(nil).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
 				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, deletingStateAssignment)).Return(&webhook.Response{
@@ -2863,6 +2940,12 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		{
 			Name:    "Error: state in body is DELETE_ERROR, but the previous assignment state is INITIAL",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, invalidStateErrorAssignment).Return(nil).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
 				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
@@ -3390,7 +3473,39 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
+	invalidStateTransitionError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
+		Error: formationassignment.AssignmentError{
+			Message:  "Invalid transition from state \"DELETE_ERROR\" to state CREATE_ERROR.",
+			ErrorCode: 2,
+		},
+	})
+	require.NoError(t, err)
+	invalidStateTransitionFromDeletingError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
+		Error: formationassignment.AssignmentError{
+			Message:  "Invalid transition from state \"DELETING\" to state CREATE_ERROR.",
+			ErrorCode: 2,
+		},
+	})
+	require.NoError(t, err)
+	configPropagationNotSupportedError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
+		Error: formationassignment.AssignmentError{
+			Message:  "Config propagation is not supported on unassign notifications",
+			ErrorCode: 2,
+		},
+	})
+	require.NoError(t, err)
+	invalidStateError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
+		Error: formationassignment.AssignmentError{
+			Message:  "state: must be a valid value.",
+			ErrorCode: 2,
+		},
+	})
+	require.NoError(t, err)
 
+	invalidStateErrorAssignment := fixFormationAssignmentModelWithParameters(TestID, formation.ID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.DeleteErrorFormationState), nil, invalidStateError)
+	invalidStateTransitionErrorAssignment := fixFormationAssignmentModelWithParameters(TestID, formation.ID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.DeleteErrorFormationState), nil, invalidStateTransitionError)
+	invalidStateTransitionFromDeletingErrorAssignment := fixFormationAssignmentModelWithParameters(TestID, formation.ID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.DeleteErrorFormationState), nil, invalidStateTransitionFromDeletingError)
+	configPropagationNotSupportedErrorAssignment := fixFormationAssignmentModelWithParameters(TestID, formation.ID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.DeleteErrorFormationState), nil, configPropagationNotSupportedError)
 	configAssignmentWithoutConfig := fixFormationAssignmentModelWithParameters(TestID, formation.ID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ReadyAssignmentState), nil, nil)
 	configAssignmentWithTenantAndID := fixFormationAssignmentModelWithParameters(TestID, formation.ID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ReadyAssignmentState), []byte(config), nil)
 	deleteErrorStateAssignmentDeleteErr := fixFormationAssignmentModelWithParameters(TestID, formation.ID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.DeleteErrorFormationState), nil, marshaledDeleteError)
@@ -3495,6 +3610,12 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 		{
 			Name:    "error config propagation is not supported for unassign - response contains config",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, configPropagationNotSupportedErrorAssignment).Return(nil).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
 				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithoutConfig)).Return(incompleteResponse, nil).Once()
@@ -3517,6 +3638,12 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithoutConfig)).Return(incompleteResponse, nil).Once()
 				return svc
 			},
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, configPropagationNotSupportedErrorAssignment).Return(nil).Once()
+				return repo
+			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithUnassignOperation(configAssignmentWithoutConfig, req)
@@ -3529,6 +3656,12 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 		{
 			Name:    "error transition from DELETE_ERROR to new state is not valid",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, invalidStateTransitionErrorAssignment).Return(nil).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
 				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithoutConfig)).Return(createErrorResponse, nil).Once()
@@ -3536,16 +3669,22 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
-				assignmentMapping := fixAssignmentMappingPairWithUnassignOperation(deleteErrorStateAssignmentDeleteErr, req)
+				assignmentMapping := fixAssignmentMappingPairWithUnassignOperation(deleteErrorStateAssignmentDeleteErr.Clone(), req)
 				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.UnassignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithoutConfig), nil).Once()
 				return faNotificationSvc
 			},
-			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithUnassignOperation(deleteErrorStateAssignmentDeleteErr, req),
-			ExpectedErrorMsg: "The provided state in the response \"CREATE_ERROR\" is not valid.",
+			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithUnassignOperation(deleteErrorStateAssignmentDeleteErr.Clone(), req),
+			ExpectedErrorMsg: "Invalid transition from state \"DELETE_ERROR\" to state CREATE_ERROR.",
 		},
 		{
 			Name:    "error transition from DELETING to new state is not valid",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, invalidStateTransitionFromDeletingErrorAssignment).Return(nil).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
 				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithoutConfig)).Return(createErrorResponse, nil).Once()
@@ -3558,7 +3697,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithUnassignOperation(deletingErrorStateAssignmentDeleteErr, req),
-			ExpectedErrorMsg: "The provided state in the response \"CREATE_ERROR\" is not valid.",
+			ExpectedErrorMsg: "Invalid transition from state \"DELETING\" to state CREATE_ERROR.",
 		},
 		{
 			Name:    "response contains error",
@@ -3626,7 +3765,6 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithUnassignOperation(configAssignmentWithTenantAndID, req),
 			ExpectedErrorMsg: testErr.Error(),
 		},
-
 		{
 			Name:    "error when can't generate extended formation assignment notification",
 			Context: ctxWithTenant,
@@ -3651,7 +3789,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
-				repo.On("Update", ctxWithTenant, deleteErrorStateAssignmentDeleteErr).Return(nil).Once()
+				repo.On("Update", ctxWithTenant, deleteErrorStateAssignmentDeleteErr.Clone()).Return(nil).Once()
 				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(testErr).Once()
 				return repo
 			},
@@ -3664,7 +3802,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
-				repo.On("Update", ctxWithTenant, deleteErrorStateAssignmentDeleteErr).Return(testErr).Once()
+				repo.On("Update", ctxWithTenant, deleteErrorStateAssignmentDeleteErr.Clone()).Return(testErr).Once()
 				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(testErr).Once()
 				return repo
 			},
@@ -3834,18 +3972,24 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 		{
 			Name:    "error when state in body is invalid",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, invalidStateErrorAssignment).Return(nil).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(responseWithInvalidStateInBody, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithoutConfig)).Return(responseWithInvalidStateInBody, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
-				assignmentMapping := fixAssignmentMappingPairWithUnassignOperation(configAssignmentWithTenantAndID, req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.UnassignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
+				assignmentMapping := fixAssignmentMappingPairWithUnassignOperation(configAssignmentWithoutConfig, req)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.UnassignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithoutConfig), nil).Once()
 				return faNotificationSvc
 			},
-			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithUnassignOperation(configAssignmentWithTenantAndID, req),
+			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithUnassignOperation(configAssignmentWithoutConfig, req),
 			ExpectedErrorMsg: "The provided response is not valid",
 		},
 		{

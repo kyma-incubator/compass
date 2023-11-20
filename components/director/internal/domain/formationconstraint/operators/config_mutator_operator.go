@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
@@ -32,15 +30,10 @@ func (e *ConstraintEngine) MutateConfig(ctx context.Context, input OperatorInput
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q for location with constraint type: %q and operation name: %q during %q operation", i.ResourceType, i.ResourceSubtype, i.Location.ConstraintType, i.Location.OperationName, i.Operation)
 
-	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, i.FAMemoryAddress)
-	if err != nil {
-		return false, err
-	}
-
 	if len(i.OnlyForSourceSubtypes) != 0 {
-		sourceSubType, err := e.getObjectSubtype(ctx, i.Tenant, model.ResourceType(formationAssignment.SourceType), formationAssignment.Source)
+		sourceSubType, err := e.getObjectSubtype(ctx, i.Tenant, i.SourceResourceType, i.SourceResourceID)
 		if err != nil {
-			return false, errors.Wrapf(err, "while getting subtype of resource with type: %q and id: %q", formationAssignment.SourceType, formationAssignment.Source)
+			return false, errors.Wrapf(err, "while getting subtype of resource with type: %q and id: %q", i.SourceResourceType, i.SourceResourceID)
 		}
 
 		sourceSubtypeIsSupported := false
@@ -51,7 +44,7 @@ func (e *ConstraintEngine) MutateConfig(ctx context.Context, input OperatorInput
 			}
 		}
 		if !sourceSubtypeIsSupported {
-			log.C(ctx).Infof("Skipping configuration and state mutation of assignment with ID: %q source resource of type: %q, subtype: %q, ID: %q, and target resource of type: %q and ID: %q", formationAssignment.ID, formationAssignment.SourceType, sourceSubType, formationAssignment.Source, formationAssignment.TargetType, formationAssignment.Target)
+			log.C(ctx).Infof("Skipping configuration and state mutation of notification report for source resourse with type: %q and subtype: %q", i.SourceResourceType, sourceSubType)
 			return true, nil
 		}
 	}

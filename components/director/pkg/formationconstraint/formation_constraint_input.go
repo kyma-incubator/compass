@@ -59,8 +59,8 @@ type ConfigMutatorInput struct {
 	ResourceType                          model.ResourceType       `json:"resource_type"`
 	ResourceSubtype                       string                   `json:"resource_subtype"`
 	NotificationStatusReportMemoryAddress uintptr                  `json:"notification_status_report_memory_address"`
-	FAMemoryAddress                       uintptr                  `json:"formation_assignment_memory_address"`         // contains the memory address of the join point details' formation assignment in form of an integer
-	ReverseFAMemoryAddress                uintptr                  `json:"reverse_formation_assignment_memory_address"` // contains the memory address of the join point details' reverse formation assignment in form of an integer
+	SourceResourceType                    model.ResourceType       `json:"source_resource_type"`
+	SourceResourceID                      string                   `json:"source_resource_id"`
 	Location                              JoinPointLocation        `json:"join_point_location"`
 }
 

@@ -658,7 +658,14 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		}
 	}
 
-	if err := validateNotificationResponse(response, assignment, mappingPair.Operation, webhookMode); err != nil {
+	if err = validateNotificationResponse(response, assignment, mappingPair.Operation, webhookMode); err != nil {
+		updateError := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), ClientError, model.CreateErrorAssignmentState)
+		if updateError != nil {
+			return errors.Wrapf(
+				updateError,
+				"while updating error state: %s",
+				errors.Wrapf(err, "while validating notification response for formation assignment with ID %q", assignment.ID).Error())
+		}
 		return errors.Wrapf(err, "The provided response is not valid: ")
 	}
 
@@ -777,8 +784,13 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		}
 	}
 
-	// todo should we update the fa with error in case of invalid response
-	if err := validateNotificationResponse(response, assignment, mappingPair.Operation, webhookMode); err != nil {
+	if err = validateNotificationResponse(response, assignment, mappingPair.Operation, webhookMode); err != nil {
+		if updateError := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), ClientError, model.DeleteErrorAssignmentState); updateError != nil {
+			return false, errors.Wrapf(
+				updateError,
+				"while updating error state: %s",
+				errors.Wrapf(err, "while validating notification response for formation assignment with ID %q", assignment.ID).Error())
+		}
 		return false, errors.Wrapf(err, "The provided response is not valid: ")
 	}
 
@@ -829,7 +841,6 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	return false, nil
 }
 
-// todo refactor to return meaningfull error
 func validateResponseState(newState, previousState string) bool {
 	if !model.SupportedFormationAssignmentStates[newState] {
 		return false
@@ -1128,7 +1139,7 @@ func validateNotificationResponse(response *webhookdir.Response, assignment *mod
 
 	if response.State != nil && *response.State != "" {
 		if isValid := validateResponseState(*response.State, assignment.State); !isValid {
-			return errors.Errorf("The provided state in the response %q is not valid.", *response.State)
+			return errors.Errorf("Invalid transition from state %q to state %s.", assignment.State, *response.State)
 		}
 	}
 	return nil
