@@ -11,7 +11,7 @@ apt-get install ca-certificates -y
 if [[ $2 == 12 ]]; then
   wget -O install-package.deb http://apt.postgresql.org/pub/repos/apt/pool/main/p/pglogical/postgresql-12-pglogical_2.4.4-1.pgdg%2B1_amd64.deb
 else
-  wget -O http://apt.postgresql.org/pub/repos/apt/pool/main/p/pglogical/postgresql-14-pglogical-dbgsym_2.4.4-1.pgdg100%2B1_amd64.deb
+  wget -O install-package.deb http://apt.postgresql.org/pub/repos/apt/pool/main/p/pglogical/postgresql-14-pglogical_2.4.4-1.pgdg23.04%2B1_amd64.deb
 fi
 
 dpkg -i install-package.deb
