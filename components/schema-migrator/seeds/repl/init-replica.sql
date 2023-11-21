@@ -14,3 +14,4 @@ SELECT pglogical.create_subscription(
 SELECT pglogical.wait_for_subscription_sync_complete('subscription1');
 
 -- SELECT * FROM pglogical.show_subscription_status();
+-- SELECT * FROM pglogical.drop_subscription('subscription1') ;
