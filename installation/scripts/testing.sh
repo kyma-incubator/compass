@@ -28,7 +28,7 @@ do
         --dump-db)
             DUMP_DB=true
             shift
-            ;;
+        ;;
         --benchmark)
             checkInputParameterValue "${2}"
             BENCHMARK="$2"
