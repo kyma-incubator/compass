@@ -1,7 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS pglogical;
 SELECT pglogical.create_node(
                node_name := 'replica',
-               dsn := 'host=test-postgres-replica port=5432 dbname=compass'
+               dsn := 'host=test-postgres-replica port=5432 dbname=compass password=pgsql@12345'
        );
 
 SELECT pglogical.create_subscription(

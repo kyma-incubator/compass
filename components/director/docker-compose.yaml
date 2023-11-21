@@ -30,11 +30,6 @@ services:
       POSTGRES_PASSWORD: "pgsql@12345"
       POSTGRES_DB: "compass"
       POSTGRES_PORT: "5432"
-      POSTGRES_REPLICATION_MODE: slave
-      POSTGRES_REPLICATION_USER: replicator
-      POSTGRES_REPLICATION_PASSWORD: repl123
-      POSTGRES_REPLICATION_HOST: test-postgres
-      POSTGRES_REPLICATION_PORT: 5432
       PGDATA: /var/lib/postgresql/data
     volumes:
       - /Users/i537925/SAPDevelop/go/src/github.com/kyma-incubator/compass/components/schema-migrator/migrations/:/tmp/migrations
