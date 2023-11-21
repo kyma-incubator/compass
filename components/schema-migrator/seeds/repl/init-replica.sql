@@ -6,7 +6,9 @@ SELECT pglogical.create_node(
 
 SELECT pglogical.create_subscription(
                subscription_name := 'subscription1',
-               provider_dsn := 'host=test-postgres port=5432 dbname=compass password=pgsql@12345'
+               provider_dsn := 'host=test-postgres port=5432 dbname=compass password=pgsql@12345',
+               synchronize_structure := true,
+               synchronize_data := true
        );
 
 SELECT pglogical.wait_for_subscription_sync_complete('subscription1');

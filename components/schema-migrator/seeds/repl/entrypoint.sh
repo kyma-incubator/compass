@@ -52,6 +52,8 @@ done
 for file in /tmp/director/*.sql; do
   psql -U "${POSTGRES_USER}" -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -d "${POSTGRES_DB}" -f "${file}"
 done
+
+#The subscription must be created after all tables are created
 psql -U "${POSTGRES_USER}" -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -d "${POSTGRES_DB}" -f $1
 
 wait $pid_to_wait
