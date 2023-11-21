@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+# Currently not used but kept for easier transition to enable db dump
+DUMP_DB=false
 
 source ${ROOT_PATH}/kyma-scripts/testing-common.sh
 
@@ -22,6 +24,11 @@ do
     key="$1"
 
     case ${key} in
+        # Currently not used but kept for easier transition to enable db dump
+        --dump-db)
+            DUMP_DB=true
+            shift
+            ;;
         --benchmark)
             checkInputParameterValue "${2}"
             BENCHMARK="$2"
