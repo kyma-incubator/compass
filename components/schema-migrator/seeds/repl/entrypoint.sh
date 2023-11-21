@@ -1,24 +1,21 @@
 #!/bin/bash
 
 apt-get update
-apt-get install curl -y
-apt-get install wget -y
-apt-get install gnupg2 -y
 apt-get install lsb-release -y
 
-curl https://techsupport.enterprisedb.com/api/repository/dl/default/release/deb | bash
-sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
 apt-get update
+apt-get install wget -y
+apt-get install curl -y
+apt-get install ca-certificates -y
 
-apt-get install -y "postgresql-$2" postgresql-client
-apt-get install -y "postgresql-$2-pglogical"
 
-# copy required assets to bitnami's postgreSQL directory
-cp -r "/usr/share/postgresql/$2/extension/pglogical*" /opt/bitnami/postgresql/share/extension/
-cp -r "/usr/lib/postgresql/$2/lib/pglogical*" /opt/bitnami/postgresql/lib/
+if [[ $2 == 12 ]]; then
+ wget -O install-package.deb http://apt.postgresql.org/pub/repos/apt/pool/main/p/pglogical/postgresql-12-pglogical_2.4.4-1.pgdg%2B1_amd64.deb
+else
+ wget -O install-package.deb http://apt.postgresql.org/pub/repos/apt/pool/main/p/pglogical/postgresql-15-pglogical_2.4.4-1.pgdg100%2B1_amd64.deb
+fi
 
-#Needed for installing postgresql packages
-gpg-agent --daemon
+dpkg -i install-package.deb
 
 docker-entrypoint.sh postgres &
 pid_to_wait=$!
