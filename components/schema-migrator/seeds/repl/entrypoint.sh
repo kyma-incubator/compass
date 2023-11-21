@@ -45,7 +45,6 @@ pid_to_wait=$!
 echo "Sleeping 10 sec for postgresql to start-up 2"
 sleep 10
 
-psql -U "${POSTGRES_USER}" -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -d "${POSTGRES_DB}" -f $1
 for file in /tmp/migrations/director/*.up.sql; do
   psql -U "${POSTGRES_USER}" -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -d "${POSTGRES_DB}" -f "${file}"
 done
@@ -53,5 +52,6 @@ done
 for file in /tmp/director/*.sql; do
   psql -U "${POSTGRES_USER}" -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -d "${POSTGRES_DB}" -f "${file}"
 done
+psql -U "${POSTGRES_USER}" -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -d "${POSTGRES_DB}" -f $1
 
 wait $pid_to_wait
