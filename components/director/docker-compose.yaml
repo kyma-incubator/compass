@@ -40,12 +40,14 @@ services:
     ports:
       - "6432:5432"
     entrypoint:  ["/tmp/repl/entrypoint.sh", "/tmp/repl/init-replica.sql", "14"]
-  ev-writer:
+  ev-reader:
     image: ubuntu
     container_name: ubuntu-events
     networks:
       - app-network
-    entrypoint:  ["sleep", "1500000"]
+    entrypoint:  ["/tmp/repl/ubuntu.sh"]
+    volumes:
+      - /Users/i537925/SAPDevelop/go/src/github.com/kyma-incubator/compass/components/schema-migrator/seeds:/tmp
 networks:
   app-network:
     driver: bridge
