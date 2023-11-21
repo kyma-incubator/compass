@@ -34,6 +34,8 @@ const (
 	Folder Type = "folder"
 	// ResourceGroup tenants must have a parent of type Folder or Organization.
 	ResourceGroup Type = "resource-group"
+	// CostObject tenants must have a parent of type Folder or Organization.
+	CostObject Type = "cost-object"
 )
 
 // Status is used to determine if a tenant is currently being used or not.
@@ -75,6 +77,8 @@ func StrToType(value string) Type {
 		return Folder
 	case string(ResourceGroup):
 		return ResourceGroup
+	case string(CostObject):
+		return CostObject
 	default:
 		return Unknown
 	}
@@ -95,6 +99,8 @@ func TypeToStr(value Type) string {
 		return string(Folder)
 	case ResourceGroup:
 		return string(ResourceGroup)
+	case CostObject:
+		return string(CostObject)
 	default:
 		return string(Unknown)
 	}

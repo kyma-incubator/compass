@@ -21,8 +21,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	cfg "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -30,20 +30,19 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )
 
 var (
-	certCache                certloader.Cache
+	certCache                credloader.CertCache
 	certSecuredGraphQLClient *graphql.Client
 )
 
 type config struct {
 	TFConfig           subscription.TenantFetcherConfig
-	CertLoaderConfig   certloader.Config
+	CertLoaderConfig   credloader.CertConfig
 	SubscriptionConfig subscription.Config
 	certprovider.ExternalCertProviderConfig
 	ExternalServicesMockBaseURL         string
@@ -92,12 +91,12 @@ func TestMain(m *testing.M) {
 
 	ctx := context.Background()
 
-	certCache, err = certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
+	certCache, err = credloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	if err := util.WaitForCache(certCache); err != nil {
+	if err = credloader.WaitForCertCache(certCache); err != nil {
 		log.D().Fatal(err)
 	}
 	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, certCache.Get()[conf.ExternalClientCertSecretName].PrivateKey, certCache.Get()[conf.ExternalClientCertSecretName].Certificate, conf.SkipSSLValidation)

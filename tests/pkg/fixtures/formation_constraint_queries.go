@@ -11,6 +11,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func CreateFormationConstraintAndAttach(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationConstraintInput, formationTemplateID, formationTemplateName string) *graphql.FormationConstraint {
+	formationConstraint := CreateFormationConstraint(t, ctx, gqlClient, in)
+	require.NotEmpty(t, formationConstraint.ID)
+	AttachConstraintToFormationTemplate(t, ctx, gqlClient, formationConstraint.ID, formationConstraint.Name, formationTemplateID, formationTemplateName)
+	return formationConstraint
+}
+
+func CleanupFormationConstraintAndDetach(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, constraintID, formationTemplateID string) *graphql.FormationConstraint {
+	DetachConstraintFromFormationTemplateNoCheckError(ctx, gqlClient, constraintID, formationTemplateID)
+	formationConstraint := CleanupFormationConstraint(t, ctx, gqlClient, constraintID)
+	require.NotEmpty(t, formationConstraint.ID)
+	return formationConstraint
+}
+
 func CreateFormationConstraint(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationConstraintInput) *graphql.FormationConstraint {
 	t.Logf("Creating formation constraint with name: %s", in.Name)
 	formationConstraintInputGQLString, err := testctx.Tc.Graphqlizer.FormationConstraintInputToGQL(in)

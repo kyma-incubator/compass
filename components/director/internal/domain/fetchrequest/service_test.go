@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	accessstrategyautomock "github.com/kyma-incubator/compass/components/director/pkg/accessstrategy/automock"
@@ -476,7 +476,7 @@ func TestService_HandleSpec(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			certCache := certloader.NewCertificateCache()
+			certCache := credloader.NewCertificateCache()
 			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName)
 			if testCase.ExecutorProviderFunc != nil {
 				executorProviderMock = testCase.ExecutorProviderFunc()
@@ -513,7 +513,7 @@ func TestService_HandleSpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
 	frRepo := &automock.FetchRequestRepository{}
 	frRepo.On("Update", ctx, tenantID, mock.Anything).Return(errors.New("error")).Once()
 
-	certCache := certloader.NewCertificateCache()
+	certCache := credloader.NewCertificateCache()
 	svc := fetchrequest.NewService(frRepo, NewTestClient(func(req *http.Request) *http.Response {
 		return &http.Response{
 			StatusCode: http.StatusOK,
@@ -543,7 +543,7 @@ func TestService_HandleSpec_SucceedsAfterRetryMechanismIsLeveraged(t *testing.T)
 	frRepo := &automock.FetchRequestRepository{}
 	frRepo.On("Update", ctx, tenantID, mock.Anything).Return(nil).Once()
 
-	certCache := certloader.NewCertificateCache()
+	certCache := credloader.NewCertificateCache()
 	retryConfig := &retry.Config{
 		Attempts: 3,
 		Delay:    100 * time.Millisecond,
@@ -590,7 +590,7 @@ func TestService_HandleSpec_FailsAfterRetryMechanismIsExhausted(t *testing.T) {
 	frRepo := &automock.FetchRequestRepository{}
 	frRepo.On("Update", ctx, tenantID, mock.Anything).Return(nil).Once()
 
-	certCache := certloader.NewCertificateCache()
+	certCache := credloader.NewCertificateCache()
 	retryConfig := &retry.Config{
 		Attempts: 3,
 		Delay:    100 * time.Millisecond,

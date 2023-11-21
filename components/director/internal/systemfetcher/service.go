@@ -75,7 +75,7 @@ type tenantBusinessTypeService interface {
 
 //go:generate mockery --name=systemsAPIClient --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type systemsAPIClient interface {
-	FetchSystemsForTenant(ctx context.Context, tenant string, mutex *sync.Mutex) ([]System, error)
+	FetchSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, mutex *sync.Mutex) ([]System, error)
 }
 
 //go:generate mockery --name=directorClient --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
@@ -90,6 +90,8 @@ type templateRenderer interface {
 
 // Config holds the configuration available for the SystemFetcher.
 type Config struct {
+	SyncGlobalAccounts bool `envconfig:"APP_SYNC_GLOBAL_ACCOUNTS"`
+
 	SystemsQueueSize          int           `envconfig:"default=100,APP_SYSTEM_INFORMATION_QUEUE_SIZE"`
 	FetcherParallellism       int           `envconfig:"default=30,APP_SYSTEM_INFORMATION_PARALLELLISM"`
 	DirectorGraphqlURL        string        `envconfig:"APP_DIRECTOR_GRAPHQL_URL"`
@@ -159,8 +161,8 @@ func splitBusinessTenantMappingsToChunks(slice []*model.BusinessTenantMapping, c
 
 // SyncSystems synchronizes applications between Compass and external source. It deletes the applications with deleted state in the external source from Compass,
 // and creates any new applications present in the external source.
-func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
-	tenants, err := s.listTenants(ctx)
+func (s *SystemFetcher) SyncSystems(ctx context.Context, tenantType tenantEntity.Type) error {
+	tenants, err := s.listTenants(ctx, tenantType)
 	if err != nil {
 		return errors.Wrap(err, "failed to list tenants")
 	}
@@ -238,15 +240,15 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 					<-s.workers
 				}()
 				currentTime := time.Now()
-				systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant, &mutex)
+				systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t, &mutex)
 				if err != nil {
-					log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", t.ExternalTenant)))
+					log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s of type %s", t.ExternalTenant, t.Type)))
 					return
 				}
 
-				log.C(ctx).Infof("found %d systems for tenant %s", len(systems), t.ExternalTenant)
+				log.C(ctx).Infof("Found %d systems for tenant %s of type %s", len(systems), t.ExternalTenant, t.Type)
 				if len(s.config.VerifyTenant) > 0 {
-					log.C(ctx).Infof("systems: %#v", systems)
+					log.C(ctx).Infof("Systems: %#v", systems)
 				}
 
 				if len(systems) > 0 {
@@ -310,7 +312,7 @@ func (s *SystemFetcher) upsertSystemsSyncTimestampsForTenant(ctx context.Context
 	return nil
 }
 
-func (s *SystemFetcher) listTenants(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
+func (s *SystemFetcher) listTenants(ctx context.Context, tenantType tenantEntity.Type) ([]*model.BusinessTenantMapping, error) {
 	tx, err := s.transaction.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to begin transaction")
@@ -327,7 +329,8 @@ func (s *SystemFetcher) listTenants(ctx context.Context) ([]*model.BusinessTenan
 		}
 		tenants = append(tenants, singleTenant)
 	} else {
-		tenants, err = s.tenantService.ListByType(ctx, tenantEntity.Account)
+		log.C(ctx).Infof("Listing tenants for type %s", tenantType)
+		tenants, err = s.tenantService.ListByType(ctx, tenantType)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to retrieve tenants")
 		}

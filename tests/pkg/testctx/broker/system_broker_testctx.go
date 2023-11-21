@@ -4,12 +4,11 @@ import (
 	"context"
 	"crypto/rsa"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/util"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -34,12 +33,12 @@ func NewSystemBrokerTestContext(cfg config.SystemBrokerTestConfig) (*SystemBroke
 	}
 
 	ctx := context.Background()
-	cc, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	cc, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "while starting cert cache")
 	}
 
-	if err := util.WaitForCache(cc); err != nil {
+	if err := credloader.WaitForCertCache(cc); err != nil {
 		return nil, err
 	}
 
