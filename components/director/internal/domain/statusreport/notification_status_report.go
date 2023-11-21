@@ -2,35 +2,42 @@ package statusreport
 
 import (
 	"encoding/json"
+	"unsafe"
 )
 
 // NotificationStatusReport represents the response to the notification in bot SYNC and ASYNC flows
 type NotificationStatusReport struct {
-	configuration json.RawMessage
-	state         string
-	error         string
+	Configuration json.RawMessage
+	State         string
+	Error         string
 }
 
 // NewNotificationStatusReport is a constructor for NotificationStatusReport
 func NewNotificationStatusReport(configuration json.RawMessage, state string, errorMessage string) *NotificationStatusReport {
 	return &NotificationStatusReport{
-		configuration: configuration,
-		state:         state,
-		error:         errorMessage,
+		Configuration: configuration,
+		State:         state,
+		Error:         errorMessage,
 	}
 }
 
-// GetState returns the state from the NotificationStatusReport
+// GetState returns the State from the NotificationStatusReport
 func (n *NotificationStatusReport) GetState() string {
-	return n.state
+	return n.State
 }
 
-// GetConfiguration returns the configuration from the NotificationStatusReport
+// GetConfiguration returns the Configuration from the NotificationStatusReport
 func (n *NotificationStatusReport) GetConfiguration() json.RawMessage {
-	return n.configuration
+	return n.Configuration
 }
 
-// GetError returns the error from the NotificationStatusReport
+// GetError returns the Error from the NotificationStatusReport
 func (n *NotificationStatusReport) GetError() string {
-	return n.error
+	return n.Error
+}
+
+// GetAddress returns the memory address of the NotificationStatusReport in form of an uninterpreted type(integer number)
+// Currently, it's used in some formation constraints input templates, so we could propagate the memory address to the formation constraints operators and later on to modify/update it.
+func (n *NotificationStatusReport) GetAddress() uintptr {
+	return uintptr(unsafe.Pointer(n))
 }
