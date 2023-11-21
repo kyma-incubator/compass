@@ -53,6 +53,7 @@ var SupportedAccessLevels = map[string]bool{
 	string(tenantEntity.Organization):  true,
 	string(tenantEntity.Folder):        true,
 	string(tenantEntity.ResourceGroup): true,
+	string(tenantEntity.CostObject):    true,
 	string(GlobalAccessLevel):          true,
 }
 
