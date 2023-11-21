@@ -2,8 +2,20 @@
 
 apt-get update
 apt-get install curl -y
+apt-get -y install gnupg2
+
 curl https://techsupport.enterprisedb.com/api/repository/dl/default/release/deb | bash
-apt-get install $2
+apt-get update
+
+apt-get install -y "postgresql-$2" postgresql-client
+apt-get install -y "postgresql-$2-pglogical"
+
+# copy required assets to bitnami's postgreSQL directory
+cp -r "/usr/share/postgresql/$2/extension/pglogical*" /opt/bitnami/postgresql/share/extension/
+cp -r "/usr/lib/postgresql/$2/lib/pglogical*" /opt/bitnami/postgresql/lib/
+
+#Needed for installing postgresql packages
+gpg-agent --daemon
 
 docker-entrypoint.sh postgres &
 pid_to_wait=$!

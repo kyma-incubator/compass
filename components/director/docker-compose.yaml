@@ -2,6 +2,7 @@ version: '3.1'
 services:
   primary:
     image: postgres:12
+    user: root
     container_name: test-postgres
     environment:
       POSTGRES_HOST: "127.0.0.1"
@@ -18,9 +19,10 @@ services:
       - app-network
     ports:
       - "5432:5432"
-    entrypoint:  ["/tmp/repl/entrypoint.sh", "/tmp/repl/init-primary.sql", "postgresql-12-pglogical"]
+    entrypoint:  ["/tmp/repl/entrypoint.sh", "/tmp/repl/init-primary.sql", "12"]
   secondary:
     image: postgres:15
+    user: root
     container_name: test-postgres-replica
     environment:
       POSTGRES_HOST: "127.0.0.1"
@@ -42,7 +44,7 @@ services:
       - app-network
     ports:
       - "6432:5432"
-    entrypoint:  ["/tmp/repl/entrypoint.sh", "/tmp/repl/init-replica.sql", "postgresql-15-pglogical"]
+    entrypoint:  ["/tmp/repl/entrypoint.sh", "/tmp/repl/init-replica.sql", "15"]
 networks:
   app-network:
     driver: bridge
