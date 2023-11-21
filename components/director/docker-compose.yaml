@@ -14,7 +14,6 @@ services:
     volumes:
       - /Users/i537925/SAPDevelop/go/src/github.com/kyma-incubator/compass/components/schema-migrator/migrations/:/tmp/migrations
       - /Users/i537925/SAPDevelop/go/src/github.com/kyma-incubator/compass/components/schema-migrator/seeds:/tmp
-      - /Users/i537925/SAPDevelop/go/src/github.com/kyma-incubator/compass/components/schema-migrator/repl:/tmp
     networks:
       - app-network
     ports:
@@ -34,7 +33,6 @@ services:
     volumes:
       - /Users/i537925/SAPDevelop/go/src/github.com/kyma-incubator/compass/components/schema-migrator/migrations/:/tmp/migrations
       - /Users/i537925/SAPDevelop/go/src/github.com/kyma-incubator/compass/components/schema-migrator/seeds:/tmp
-      - /Users/i537925/SAPDevelop/go/src/github.com/kyma-incubator/compass/components/schema-migrator/repl/*:/tmp
     networks:
       - app-network
     ports:

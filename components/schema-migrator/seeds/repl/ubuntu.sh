@@ -10,7 +10,7 @@ chmod 0600 ./.pgpass
 export PGPASSFILE='/.pgpass'
 
 echo "Sleep while databases get set-up"
-sleep 30
+sleep 40
 
 pg_recvlogical -h test-postgres-replica -d compass -U postgres --slot test_slot --create-slot -P wal2json
 pg_recvlogical -h test-postgres-replica -d compass  -U postgres --slot test_slot --start -o pretty-print=1 -o add-msg-prefixes=wal2json -f -
