@@ -8,11 +8,10 @@ apt-get install wget -y
 apt-get install curl -y
 apt-get install ca-certificates -y
 
-
 if [[ $2 == 12 ]]; then
- wget -O install-package.deb http://apt.postgresql.org/pub/repos/apt/pool/main/p/pglogical/postgresql-12-pglogical_2.4.4-1.pgdg%2B1_amd64.deb
+  wget -O install-package.deb http://apt.postgresql.org/pub/repos/apt/pool/main/p/pglogical/postgresql-12-pglogical_2.4.4-1.pgdg%2B1_amd64.deb
 else
- wget -O install-package.deb http://apt.postgresql.org/pub/repos/apt/pool/main/p/pglogical/postgresql-15-pglogical_2.4.4-1.pgdg100%2B1_amd64.deb
+  wget -O install-package.deb http://apt.postgresql.org/pub/repos/apt/pool/main/p/pglogical/postgresql-15-pglogical_2.4.4-1.pgdg100%2B1_amd64.deb
 fi
 
 dpkg -i install-package.deb
@@ -30,11 +29,11 @@ if [ ! -d "$PGDATA" ]; then
 fi
 
 # Add the configuration to the postgresql.conf file
-echo "wal_level = 'logical'" >> "$PGDATA/postgresql.conf"
-echo "max_worker_processes = 10" >> "$PGDATA/postgresql.conf"
-echo "max_replication_slots = 10" >> "$PGDATA/postgresql.conf"
-echo "max_wal_senders = 10" >> "$PGDATA/postgresql.conf"
-echo "shared_preload_libraries = 'pglogical'" >> "$PGDATA/postgresql.conf"
+echo "wal_level = 'logical'" >>"$PGDATA/postgresql.conf"
+echo "max_worker_processes = 10" >>"$PGDATA/postgresql.conf"
+echo "max_replication_slots = 10" >>"$PGDATA/postgresql.conf"
+echo "max_wal_senders = 10" >>"$PGDATA/postgresql.conf"
+echo "shared_preload_libraries = 'pglogical'" >>"$PGDATA/postgresql.conf"
 
 # Restart postgresql
 kill -9 $pid_to_wait
@@ -54,6 +53,10 @@ for file in /tmp/director/*.sql; do
 done
 
 #The subscription must be created after all tables are created
+if [[ $2 == 15 ]]; then
+  echo "Sleeping 10 sec for primary instance to get ready and create subscription"
+  sleep 10
+fi
 psql -U "${POSTGRES_USER}" -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -d "${POSTGRES_DB}" -f $1
 
 wait $pid_to_wait
