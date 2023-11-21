@@ -104,10 +104,10 @@ func TestConstraintOperators_ConfigMutator(t *testing.T) {
 			ExpectedErrorMsg: "while getting subtype of resource with type:",
 		},
 		{
-			Name:           "Error when status report is missing",
-			InputFa:        faInInput,
-			NewState:       &state,
-			NewConfig:      &cfg,
+			Name:             "Error when status report is missing",
+			InputFa:          faInInput,
+			NewState:         &state,
+			NewConfig:        &cfg,
 			ExpectedErrorMsg: "The join point details' notification status report memory address cannot be 0",
 		},
 	}

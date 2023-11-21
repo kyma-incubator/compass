@@ -181,7 +181,7 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	}
 
 	if reset {
-		if assignmentReqBody.State != model.ReadyAssignmentState && assignmentReqBody.State != model.ConfigPendingAssignmentState {
+		if notificationStatusReport.State != string(model.ReadyAssignmentState) && notificationStatusReport.State != string(model.ConfigPendingAssignmentState) {
 			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q to state %s. X-Request-Id: %s", fa.Source, fa.Target, assignmentReqBody.State, correlationID)
 			respondWithError(ctx, w, http.StatusBadRequest, errResp)
 			return

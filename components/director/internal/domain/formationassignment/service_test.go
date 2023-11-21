@@ -2204,21 +2204,21 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 	require.NoError(t, err)
 	configAndErrorProvidedError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
 		Error: formationassignment.AssignmentError{
-			Message:  "config: Configuration and Error can not be provided at the same time; error: Configuration and Error can not be provided at the same time; state: must be a valid value.",
+			Message:   "config: Configuration and Error can not be provided at the same time; error: Configuration and Error can not be provided at the same time; state: must be a valid value.",
 			ErrorCode: 2,
 		},
 	})
 	require.NoError(t, err)
 	invalidStateError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
 		Error: formationassignment.AssignmentError{
-			Message:  "state: must be a valid value.",
+			Message:   "state: must be a valid value.",
 			ErrorCode: 2,
 		},
 	})
 	require.NoError(t, err)
 	invalidStateTransitionError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
 		Error: formationassignment.AssignmentError{
-			Message:  "Invalid transition from state \"INITIAL\" to state DELETE_ERROR.",
+			Message:   "Invalid transition from state \"INITIAL\" to state DELETE_ERROR.",
 			ErrorCode: 2,
 		},
 	})
@@ -2238,13 +2238,13 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 	}
 
 	validationErrorAssignment := createErrorStateAssignment.Clone()
-	validationErrorAssignment.Error=configAndErrorProvidedError
+	validationErrorAssignment.Error = configAndErrorProvidedError
 
 	invalidStateErrorAssignment := createErrorStateAssignment.Clone()
-	invalidStateErrorAssignment.Error=invalidStateError
+	invalidStateErrorAssignment.Error = invalidStateError
 
 	invalidStateTransitionErrorAssignment := createErrorStateAssignment.Clone()
-	invalidStateTransitionErrorAssignment.Error=invalidStateTransitionError
+	invalidStateTransitionErrorAssignment.Error = invalidStateTransitionError
 
 	initialStateSelfReferencingAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestSource, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.InitialAssignmentState), nil, nil)
 	initialStateAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.InitialAssignmentState), nil, nil)
@@ -3475,28 +3475,28 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 	require.NoError(t, err)
 	invalidStateTransitionError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
 		Error: formationassignment.AssignmentError{
-			Message:  "Invalid transition from state \"DELETE_ERROR\" to state CREATE_ERROR.",
+			Message:   "Invalid transition from state \"DELETE_ERROR\" to state CREATE_ERROR.",
 			ErrorCode: 2,
 		},
 	})
 	require.NoError(t, err)
 	invalidStateTransitionFromDeletingError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
 		Error: formationassignment.AssignmentError{
-			Message:  "Invalid transition from state \"DELETING\" to state CREATE_ERROR.",
+			Message:   "Invalid transition from state \"DELETING\" to state CREATE_ERROR.",
 			ErrorCode: 2,
 		},
 	})
 	require.NoError(t, err)
 	configPropagationNotSupportedError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
 		Error: formationassignment.AssignmentError{
-			Message:  "Config propagation is not supported on unassign notifications",
+			Message:   "Config propagation is not supported on unassign notifications",
 			ErrorCode: 2,
 		},
 	})
 	require.NoError(t, err)
 	invalidStateError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
 		Error: formationassignment.AssignmentError{
-			Message:  "state: must be a valid value.",
+			Message:   "state: must be a valid value.",
 			ErrorCode: 2,
 		},
 	})
