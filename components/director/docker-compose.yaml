@@ -18,7 +18,7 @@ services:
       - app-network
     ports:
       - "5432:5432"
-    entrypoint:  ["/tmp/repl/entrypoint.sh", "/tmp/repl/init-primary.sql"]
+    entrypoint:  ["/tmp/repl/entrypoint.sh", "/tmp/repl/init-primary.sql", "postgresql-12-pglogical"]
   secondary:
     image: postgres:15
     container_name: test-postgres-replica
@@ -42,7 +42,7 @@ services:
       - app-network
     ports:
       - "6432:5432"
-    entrypoint:  ["/tmp/repl/entrypoint.sh", "/tmp/repl/init-replica.sql"]
+    entrypoint:  ["/tmp/repl/entrypoint.sh", "/tmp/repl/init-replica.sql", "postgresql-15-pglogical"]
 networks:
   app-network:
     driver: bridge

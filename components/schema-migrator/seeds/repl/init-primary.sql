@@ -1,3 +1,11 @@
-CREATE USER replicator REPLICATION PASSWORD 'repl123';
-GRANT CONNECT ON DATABASE compass TO replicator;
-GRANT replication TO replicator;
+CREATE EXTENSION IF NOT EXISTS pglogical;
+SELECT pglogical.create_node(
+               node_name := 'primary',
+               dsn := 'host=test-postgres-replica port=5432 dbname=compass'
+       );
+SELECT pglogical.create_subscription(
+               subscription_name := 'subscription1',
+               provider_dsn := 'host=test-postgres port=5432 dbname=compass'
+       );
+
+SELECT pglogical.wait_for_subscription_sync_complete('subscription1');

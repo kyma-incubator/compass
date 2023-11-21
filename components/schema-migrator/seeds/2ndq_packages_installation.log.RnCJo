@@ -1,0 +1,9 @@
++ SECONDQ_TIMEOUT=30
++ '[' '!' -d /etc/apt/sources.list.d/ ']'
++ apt-key add -
+Warning: apt-key is deprecated. Manage keyring files in trusted.gpg.d instead (see apt-key(8)).
+gpg: error running '/usr/bin/gpg-agent': exit status 2
+gpg: failed to start agent '/usr/bin/gpg-agent': General error
+gpg: can't connect to the agent: General error
+++ installation_failed
+++ set +x
