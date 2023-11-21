@@ -132,7 +132,7 @@ func (s *service) ListsByExternalIDs(ctx context.Context, ids []string) ([]*mode
 	return s.tenantMappingRepo.ListByExternalTenants(ctx, ids)
 }
 
-// ListsByType returns all tenants for provided external IDs.
+// ListByType returns all tenants for a provided Type.
 func (s *service) ListByType(ctx context.Context, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error) {
 	return s.tenantMappingRepo.ListByType(ctx, tenantType)
 }
