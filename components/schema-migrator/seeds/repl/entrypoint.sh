@@ -11,10 +11,12 @@ apt-get install ca-certificates -y
 if [[ $2 == 12 ]]; then
   wget -O install-package.deb http://apt.postgresql.org/pub/repos/apt/pool/main/p/pglogical/postgresql-12-pglogical_2.4.4-1.pgdg%2B1_amd64.deb
 else
-  wget -O install-package.deb http://apt.postgresql.org/pub/repos/apt/pool/main/p/pglogical/postgresql-15-pglogical_2.4.4-1.pgdg100%2B1_amd64.deb
+  wget -O http://apt.postgresql.org/pub/repos/apt/pool/main/p/pglogical/postgresql-14-pglogical-dbgsym_2.4.4-1.pgdg100%2B1_amd64.deb
 fi
 
 dpkg -i install-package.deb
+
+apt-get install "postgresql-$2-wal2json" -y
 
 docker-entrypoint.sh postgres &
 pid_to_wait=$!
@@ -53,7 +55,7 @@ for file in /tmp/director/*.sql; do
 done
 
 #The subscription must be created after all tables are created
-if [[ $2 == 15 ]]; then
+if [[ $2 == 14 ]]; then
   echo "Sleeping 10 sec for primary instance to get ready and create subscription"
   sleep 10
 fi

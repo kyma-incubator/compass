@@ -21,7 +21,7 @@ services:
       - "5432:5432"
     entrypoint:  ["/tmp/repl/entrypoint.sh", "/tmp/repl/init-primary.sql", "12"]
   secondary:
-    image: postgres:15
+    image: postgres:14
     user: root
     container_name: test-postgres-replica
     environment:
@@ -39,7 +39,13 @@ services:
       - app-network
     ports:
       - "6432:5432"
-    entrypoint:  ["/tmp/repl/entrypoint.sh", "/tmp/repl/init-replica.sql", "15"]
+    entrypoint:  ["/tmp/repl/entrypoint.sh", "/tmp/repl/init-replica.sql", "14"]
+  ev-writer:
+    image: ubuntu
+    container_name: ubuntu-events
+    networks:
+      - app-network
+    entrypoint:  ["sleep", "1500000"]
 networks:
   app-network:
     driver: bridge
