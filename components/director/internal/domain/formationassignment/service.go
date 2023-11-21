@@ -671,6 +671,8 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 
 	notificationStatusReport := newNotificationStatusReportFromWebhookResponse(response, mappingPair.Operation, webhookMode)
 
+	// We are skipping further notification processing in case the webhook has ASYNC CALLBACK mode and the client accepted the notification as we are
+	//waiting for async response and will keep the FA state as is. In case of error we want to update the FA with the error.
 	if webhookMode == graphql.WebhookModeAsyncCallback && !isErrorState(model.FormationAssignmentState(notificationStatusReport.State)) {
 		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Waiting for the receiver to report the status on the status API...", assignmentReqMappingClone.Request.Webhook.ID, graphql.WebhookModeAsyncCallback)
 		return nil
@@ -680,6 +682,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		return errors.Wrapf(err, "while updating formation assignment with constraints for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 	}
 
+	// In case of an error state we should not proceed with processing the reverse notification
 	if isErrorState(model.FormationAssignmentState(notificationStatusReport.State)) {
 		log.C(ctx).Error(errors.Errorf("Received error from response: %v", notificationStatusReport.Error).Error())
 		return nil
@@ -1077,6 +1080,7 @@ func calculateState(response *webhookdir.Response, operation model.FormationOper
 	if *response.ActualStatusCode == *response.SuccessStatusCode && webhookMode != graphql.WebhookModeAsyncCallback {
 		return string(model.ReadyAssignmentState)
 	}
+
 	if operation == model.AssignFormation && webhookMode == graphql.WebhookModeAsyncCallback {
 		return string(model.InitialAssignmentState)
 	}
@@ -1105,7 +1109,8 @@ func validateNotificationResponse(response *webhookdir.Response, assignment *mod
 	fieldRules = append(
 		fieldRules,
 		validation.Field(&response.State, validation.When(response.State != nil && *response.State != "",
-			validation.When(isErrorNotEmpty(response.Error), validation.In(string(model.CreateErrorAssignmentState), string(model.DeleteErrorAssignmentState))),
+			validation.When(isErrorNotEmpty(response.Error) && operation == model.AssignFormation, validation.In(string(model.CreateErrorAssignmentState))),
+			validation.When(isErrorNotEmpty(response.Error) && operation == model.UnassignFormation, validation.In(string(model.DeleteErrorAssignmentState))),
 			validation.When(isConfigNotEmpty(response.Config), validation.In(string(model.ReadyAssignmentState), string(model.ConfigPendingAssignmentState))),
 			validation.When(actualCode == incompleteCode, validation.In(string(model.ConfigPendingAssignmentState))),
 			validation.When(actualCode != incompleteCode && actualCode != successCode, validation.In(string(model.DeleteErrorAssignmentState), string(model.CreateErrorAssignmentState))),
