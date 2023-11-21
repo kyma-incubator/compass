@@ -327,7 +327,7 @@ func TestORDAggregator(stdT *testing.T) {
 		httpClientWithoutVisibilityScope.Timeout = 20 * time.Second
 
 		httpClientWithoutVisibilityScopeCapabilities := cfgWithoutScopes.Client(ctx)
-		httpClientWithoutVisibilityScopeCapabilities.Timeout = 60 * time.Second
+		httpClientWithoutVisibilityScopeCapabilities.Timeout = 40 * time.Second
 
 		// create client to call Director graphql api with internal_visibility:read scope
 		accessTokenWithInternalVisibility := token.GetAccessToken(t, oauthCredentialData, token.IntegrationSystemScopes)
@@ -1191,7 +1191,7 @@ func TestORDAggregator(stdT *testing.T) {
 		httpClientWithoutVisibilityScope.Timeout = 20 * time.Second
 
 		httpClientWithoutVisibilityScopeCapabilities := cfgWithoutScopes.Client(ctx)
-		httpClientWithoutVisibilityScopeCapabilities.Timeout = 60 * time.Second
+		httpClientWithoutVisibilityScopeCapabilities.Timeout = 40 * time.Second
 
 		// create client to call Director graphql api with internal_visibility:read scope
 		accessTokenWithInternalVisibility := token.GetAccessToken(t, oauthCredentialData, token.IntegrationSystemScopes)
