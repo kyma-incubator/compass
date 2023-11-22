@@ -812,6 +812,8 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		return false, errors.Errorf("Received %s assignment state and error: %v", stateFromReport, notificationStatusReport.Error)
 	}
 
+	// We are skipping further notification processing in case the webhook has ASYNC CALLBACK mode and the client accepted the notification as we are
+	// waiting for async response and will keep the FA state as is.
 	if webhookMode == graphql.WebhookModeAsyncCallback {
 		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Waiting for the receiver to report the status on the status API...", mappingPair.AssignmentReqMapping.Request.Webhook.ID, graphql.WebhookModeAsyncCallback)
 		return false, nil
