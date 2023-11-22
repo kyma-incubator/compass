@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -51,13 +51,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
 
 	log.C(ctx).Infof("Processing tenant mapping notification...")
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.C(ctx).Errorf("Failed to read request body: %v", err)
 		httputil.RespondWithError(ctx, w, http.StatusBadRequest, errors.New("Failed to read request body"))
 		return
 	}
-	log.C(ctx).Infof("Tenant mapping request body: %s", reqBody)
 
 	formationID := gjson.Get(string(reqBody), "context.uclFormationId").String()
 	if formationID == "" {
@@ -171,7 +170,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	//}
 	//defer closeResponseBody(ctx, resp)
 	//
-	//body, err := ioutil.ReadAll(resp.Body)
+	//body, err := io.ReadAll(resp.Body)
 	//if err != nil {
 	//	log.C(ctx).Errorf("Failed to read response body from beeceptor mock API request: %v", err)
 	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -220,9 +219,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	body := fmt.Sprintf(`{"state":"CONFIG_PENDING","configuration":%s}`, modifiedReceiverTntCfg)
-
-	// todo::: remove
-	log.C(ctx).Infof("Modified resp config3: %s", body)
 
 	t, err := template.New("").Parse(body)
 	if err != nil {
@@ -372,7 +368,7 @@ func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName strin
 	}
 	defer closeResponseBody(ctx, resp)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.Errorf("Failed to read service offerings response body: %v", err)
 	}
@@ -423,7 +419,7 @@ func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID 
 	}
 	defer closeResponseBody(ctx, resp)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.Errorf("Failed to read service plans response body: %v", err)
 	}
@@ -490,7 +486,7 @@ func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName
 	}
 	defer closeResponseBody(ctx, resp)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.Errorf("Failed to read response body from service instance creation request: %v", err)
 	}
@@ -528,7 +524,7 @@ func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName
 				}
 				defer closeResponseBody(ctx, opResp)
 
-				opBody, err := ioutil.ReadAll(opResp.Body)
+				opBody, err := io.ReadAll(opResp.Body)
 				if err != nil {
 					return "", errors.Errorf("Failed to read operation response body from asynchronous service instance creation request: %v", err)
 				}
@@ -606,7 +602,7 @@ func (h *Handler) deleteServiceKeys(ctx context.Context, serviceInstanceID, serv
 		}
 		defer closeResponseBody(ctx, resp)
 
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return errors.Errorf("Failed to read response body from service binding deletion request: %v", err)
 		}
@@ -644,7 +640,7 @@ func (h *Handler) deleteServiceKeys(ctx context.Context, serviceInstanceID, serv
 					}
 					defer closeResponseBody(ctx, opResp)
 
-					opBody, err := ioutil.ReadAll(opResp.Body)
+					opBody, err := io.ReadAll(opResp.Body)
 					if err != nil {
 						return errors.Errorf("Failed to read operation response body from asynchronous service binding deletion request: %v", err)
 					}
@@ -701,7 +697,7 @@ func (h *Handler) deleteServiceInstance(ctx context.Context, serviceInstanceID, 
 	}
 	defer closeResponseBody(ctx, resp)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return errors.Errorf("Failed to read response body from service instance deletion request: %v", err)
 	}
@@ -739,7 +735,7 @@ func (h *Handler) deleteServiceInstance(ctx context.Context, serviceInstanceID, 
 				}
 				defer closeResponseBody(ctx, opResp)
 
-				opBody, err := ioutil.ReadAll(opResp.Body)
+				opBody, err := io.ReadAll(opResp.Body)
 				if err != nil {
 					return errors.Errorf("Failed to read operation response body from asynchronous service instance deletion request: %v", err)
 				}
@@ -795,7 +791,7 @@ func (h *Handler) retrieveServiceInstanceIDByName(ctx context.Context, serviceIn
 	}
 	defer closeResponseBody(ctx, resp)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.Errorf("Failed to read service instances response body: %v", err)
 	}
@@ -849,7 +845,7 @@ func (h *Handler) retrieveServiceInstanceByID(ctx context.Context, serviceInstan
 	}
 	defer closeResponseBody(ctx, resp)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.Errorf("Failed to read service instance response body: %v", err)
 	}
@@ -903,7 +899,7 @@ func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceI
 	}
 	defer closeResponseBody(ctx, resp)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.Errorf("Failed to read response body from service key creation request: %v", err)
 	}
@@ -941,7 +937,7 @@ func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceI
 				}
 				defer closeResponseBody(ctx, opResp)
 
-				opBody, err := ioutil.ReadAll(opResp.Body)
+				opBody, err := io.ReadAll(opResp.Body)
 				if err != nil {
 					return "", errors.Errorf("Failed to read operation response body from asynchronous service key creation request: %v", err)
 				}
@@ -1014,7 +1010,7 @@ func (h *Handler) retrieveServiceKeyByName(ctx context.Context, serviceKeyName s
 	}
 	defer closeResponseBody(ctx, resp)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Errorf("Failed to read service binding response body: %v", err)
 	}
@@ -1061,7 +1057,7 @@ func (h *Handler) retrieveServiceKeysIDByInstanceID(ctx context.Context, service
 	}
 	defer closeResponseBody(ctx, resp)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Errorf("Failed to read service binding response body: %v", err)
 	}
@@ -1108,7 +1104,7 @@ func (h *Handler) retrieveServiceKeyByID(ctx context.Context, serviceKeyID strin
 	}
 	defer closeResponseBody(ctx, resp)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Errorf("Failed to read service binding response body: %v", err)
 	}
