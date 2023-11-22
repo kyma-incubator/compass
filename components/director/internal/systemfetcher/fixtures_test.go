@@ -56,7 +56,7 @@ func fixAppInputBySystem(t *testing.T, system systemfetcher.System) model.Applic
 	systemPayload, err := json.Marshal(system.SystemPayload)
 	require.NoError(t, err)
 
-	initStatusCond := model.ApplicationStatusConditionInitial
+	initStatusCond := model.ApplicationStatusConditionConnected
 	return model.ApplicationRegisterInput{
 		Name:            gjson.GetBytes(systemPayload, "displayName").String(),
 		Description:     str.Ptr(gjson.GetBytes(systemPayload, "productDescription").String()),
