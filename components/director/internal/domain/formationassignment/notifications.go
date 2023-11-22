@@ -96,7 +96,7 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 }
 
 // PrepareDetailsForNotificationStatusReturned creates NotificationStatusReturnedOperationDetails by given tenantID, formation assignment and formation operation
-func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string, notificationStatusReport *statusreport.NotificationStatusReport) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
+func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, notificationStatusReport *statusreport.NotificationStatusReport) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
 	var targetType model.ResourceType
 	switch fa.TargetType {
 	case model.FormationAssignmentTypeApplication:
@@ -138,17 +138,15 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 	}
 
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		ResourceType:                         targetType,
-		ResourceSubtype:                      targetSubtype,
-		NotificationStatusReport:             notificationStatusReport,
-		LastFormationAssignmentState:         lastFormationAssignmentState,
-		LastFormationAssignmentConfiguration: lastFormationAssignmentConfiguration,
-		Tenant:                               tenantID,
-		FormationAssignmentTemplateInput:     formationAssignmentTemplateInput,
-		Operation:                            operation,
-		FormationAssignment:                  fa,
-		ReverseFormationAssignment:           reverseFa,
-		Formation:                            formation,
+		ResourceType:                     targetType,
+		ResourceSubtype:                  targetSubtype,
+		NotificationStatusReport:         notificationStatusReport,
+		Tenant:                           tenantID,
+		FormationAssignmentTemplateInput: formationAssignmentTemplateInput,
+		Operation:                        operation,
+		FormationAssignment:              fa,
+		ReverseFormationAssignment:       reverseFa,
+		Formation:                        formation,
 	}, nil
 }
 

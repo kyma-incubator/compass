@@ -32,7 +32,7 @@ const (
 	TestFormationTemplateID = "jjc0bd01-2441-4ca1-9b5e-a54e74fd7773"
 	TestTenantID            = "b4d1bd32-dd07-4141-9655-42bc33a4ae37"
 	TestSource              = "05e10560-2259-4adf-bb3e-6aee0518f573"
-	TestSourceType          = "application"
+	TestSourceType          = "APPLICATION"
 	TestTarget              = "1c22035a-72e4-4a78-9025-bbcb1f87760b"
 	TestTargetType          = "runtimeContext"
 	TestStateInitial        = "INITIAL"
@@ -348,6 +348,14 @@ func fixAssignmentMappingPairWithAssignment(assignment *model.FormationAssignmen
 }
 
 func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
+	return fixAssignmentMappingPair(assignment, req, model.AssignFormation)
+}
+
+func fixAssignmentMappingPairWithUnassignOperation(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
+	return fixAssignmentMappingPair(assignment, req, model.UnassignFormation)
+}
+
+func fixAssignmentMappingPair(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest, operation model.FormationOperation) *formationassignment.AssignmentMappingPairWithOperation {
 	return &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 			AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
@@ -356,7 +364,7 @@ func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.Formatio
 			},
 			ReverseAssignmentReqMapping: nil,
 		},
-		Operation: model.AssignFormation,
+		Operation: operation,
 	}
 }
 
@@ -786,19 +794,17 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 	return []*webhookclient.FormationAssignmentNotificationRequest{request, requestReverse}, templateInput, templateInputReverse
 }
 
-func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation, lastFormationAssignmentState, lastFormationAssignmentConfig, tenantID string, notificationStatusReport *statusreport.NotificationStatusReport) *formationconstraint.NotificationStatusReturnedOperationDetails {
+func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation, tenantID string, notificationStatusReport *statusreport.NotificationStatusReport) *formationconstraint.NotificationStatusReturnedOperationDetails {
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		ResourceType:                         resourceType,
-		ResourceSubtype:                      resourceSubtype,
-		Location:                             location,
-		Tenant:                               tenantID,
-		Operation:                            assignOperation,
-		FormationAssignment:                  fa,
-		ReverseFormationAssignment:           reverseFa,
-		LastFormationAssignmentState:         lastFormationAssignmentState,
-		LastFormationAssignmentConfiguration: lastFormationAssignmentConfig,
-		NotificationStatusReport:             notificationStatusReport,
-		Formation:                            formation,
+		ResourceType:               resourceType,
+		ResourceSubtype:            resourceSubtype,
+		Location:                   location,
+		Tenant:                     tenantID,
+		Operation:                  assignOperation,
+		FormationAssignment:        fa,
+		ReverseFormationAssignment: reverseFa,
+		NotificationStatusReport:   notificationStatusReport,
+		Formation:                  formation,
 	}
 }
 
