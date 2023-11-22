@@ -1200,7 +1200,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 					errs = multierror.Append(errs, err)
 				}
 				if isReverseProcessed {
-					alreadyProcessedFAs[fa.ID] = true
+					alreadyProcessedFAs[assignmentPair.ReverseAssignmentReqMapping.FormationAssignment.ID] = true
 				}
 			case model.UnassignFormation:
 				if _, err := s.formationAssignmentService.CleanupFormationAssignment(ctxWithTransact, &assignmentPair); err != nil {
