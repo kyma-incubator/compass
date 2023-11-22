@@ -56,14 +56,14 @@ func fixAppInputBySystem(t *testing.T, system systemfetcher.System) model.Applic
 	systemPayload, err := json.Marshal(system.SystemPayload)
 	require.NoError(t, err)
 
-	initStatusCond := model.ApplicationStatusConditionConnected
+	connectedStatusCond := model.ApplicationStatusConditionConnected
 	return model.ApplicationRegisterInput{
 		Name:            gjson.GetBytes(systemPayload, "displayName").String(),
 		Description:     str.Ptr(gjson.GetBytes(systemPayload, "productDescription").String()),
 		BaseURL:         str.Ptr(gjson.GetBytes(systemPayload, "baseUrl").String()),
 		ProviderName:    str.Ptr(gjson.GetBytes(systemPayload, "infrastructureProvider").String()),
 		SystemNumber:    str.Ptr(gjson.GetBytes(systemPayload, "systemNumber").String()),
-		StatusCondition: &initStatusCond,
+		StatusCondition: &connectedStatusCond,
 		Labels: map[string]interface{}{
 			"managed": "true",
 		},
