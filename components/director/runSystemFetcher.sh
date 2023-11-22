@@ -156,6 +156,8 @@ export APP_EXTERNAL_CLIENT_KEY_VALUE=$(kubectl get secret -n compass-system ${CL
 export APP_EXT_SVC_CLIENT_CERT_VALUE=$(kubectl get secret -n compass-system ${EXT_SVC_CERT_SECRET_NAME} -o json | jq -r '.data."tls.crt"' | base64 --decode)
 export APP_EXT_SVC_CLIENT_KEY_VALUE=$(kubectl get secret -n compass-system ${EXT_SVC_CERT_SECRET_NAME} -o json | jq -r '.data."tls.key"' | base64 --decode)
 export APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_VALUE=$(kubectl get secret -n compass-system ${SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_NAME} -o json | jq -r '.data.data' | base64 --decode)
+export APP_JWT_EXPIRE_AFTER="60m"
+export APP_SYNC_GLOBAL_ACCOUNTS="true"
 
 ENV_VARS=$(kubectl get cronjob -n compass-system compass-system-fetcher -o=jsonpath='{.spec.jobTemplate.spec.template.spec.containers[?(@.name=="system-fetcher")]}' | jq -r '.env')
 
