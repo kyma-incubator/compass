@@ -672,7 +672,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	notificationStatusReport := newNotificationStatusReportFromWebhookResponse(response, mappingPair.Operation, webhookMode)
 
 	// We are skipping further notification processing in case the webhook has ASYNC CALLBACK mode and the client accepted the notification as we are
-	//waiting for async response and will keep the FA state as is. In case of error we want to update the FA with the error.
+	// waiting for async response and will keep the FA state as is. In case of error we want to update the FA with the error.
 	if webhookMode == graphql.WebhookModeAsyncCallback && !isErrorState(model.FormationAssignmentState(notificationStatusReport.State)) {
 		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Waiting for the receiver to report the status on the status API...", assignmentReqMappingClone.Request.Webhook.ID, graphql.WebhookModeAsyncCallback)
 		return nil
