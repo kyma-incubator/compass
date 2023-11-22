@@ -2608,9 +2608,14 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-
 			assertNotificationsCountForTenant(t, body, app1.ID, 3)
-			assertNotificationsCountForTenant(t, body, app2.ID, 2)
+			// Due to the lowered external services mock response,
+			// in this test it is possible that the resync operation
+			// takes more time than the response to process the resync fully.
+			// This resync operation  sends 5 notifications in in bulk,
+			// and depending on the speed and order of them, it could lead to a duplicate notification,
+			// sent from the status API when processing the reverse assignment
+			assertNotificationsCountMoreThanForTenant(t, body, app2.ID, 2)
 
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 

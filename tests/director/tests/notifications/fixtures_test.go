@@ -421,12 +421,27 @@ func assertNoNotificationsAreSent(t *testing.T, client *http.Client, objectID st
 	require.Len(t, notifications.Array(), 0)
 }
 
+func assertNotificationsCountMoreThanForTenant(t *testing.T, body []byte, tenantID string, count int) {
+	assertNotificationsCountMoreThan(t, body, tenantID, count)
+}
+
 func assertNotificationsCountForTenant(t *testing.T, body []byte, tenantID string, count int) {
 	assertNotificationsCount(t, body, tenantID, count)
 }
 
 func assertNotificationsCountForFormationID(t *testing.T, body []byte, formationID string, count int) {
 	assertNotificationsCount(t, body, formationID, count)
+}
+
+func assertNotificationsCountMoreThan(t *testing.T, body []byte, objectID string, count int) {
+	notifications := gjson.GetBytes(body, objectID)
+	if count > 0 {
+		require.True(t, notifications.Exists())
+		length := len(notifications.Array())
+		require.GreaterOrEqual(t, length, count)
+	} else {
+		require.False(t, notifications.Exists())
+	}
 }
 
 func assertNotificationsCount(t *testing.T, body []byte, objectID string, count int) {
