@@ -23,6 +23,9 @@ SELECT pglogical.wait_for_subscription_sync_complete('subscription1');
 -- SELECT 'init' FROM pg_create_logical_replication_slot('test_slot_2', 'wal2json');
 -- SELECT data FROM pg_logical_slot_get_changes('test_slot_2', NULL, NULL, 'format-version', '2', 'add-msg-prefixes', 'wal2json');
 
+-- Read without deleting
+-- SELECT data FROM pg_logical_slot_peek_changes('test_slot_2', NULL, NULL, 'format-version', '2', 'add-msg-prefixes', 'wal2json');
+
 -- SELECT * FROM pglogical.show_subscription_status();
 -- SELECT * FROM pglogical.drop_subscription('subscription1') ;
 -- SELECT * FROM pglogical.events;
