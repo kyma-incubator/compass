@@ -169,6 +169,7 @@ global:
     director:
       dir: dev/incubator/
       version: "PR-3485"
+
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -217,7 +218,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3478"
+      version: "PR-3484"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/

@@ -5,6 +5,8 @@ import (
 	"runtime/debug"
 	"unsafe"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -47,4 +49,22 @@ func RetrieveWebhookPointerFromMemoryAddress(ctx context.Context, webhookMemoryA
 	joinPointWebhookPointer := (*graphql.Webhook)(unsafe.Pointer(webhookMemoryAddress))
 
 	return joinPointWebhookPointer, nil
+}
+
+// RetrieveNotificationStatusReportPointer converts the provided memory address in form of an integer back to the statusreport.NotificationStatusReport pointer structure
+// It's important the provided memory address to stores information about model.FormationAssignment entity, otherwise the result could be very abnormal
+func RetrieveNotificationStatusReportPointer(ctx context.Context, notificationStatusReportMemoryAddress uintptr) (*statusreport.NotificationStatusReport, error) {
+	if notificationStatusReportMemoryAddress == 0 { // the default value of uintptr is 0
+		return nil, errors.New("The join point details' notification status report memory address cannot be 0")
+	}
+
+	defer func() {
+		if err := recover(); err != nil {
+			log.C(ctx).WithField(logrus.ErrorKey, err).Panicf("A panic occurred while converting join point details' notification status report memory address: %d to type: %T", notificationStatusReportMemoryAddress, &model.FormationAssignment{})
+			debug.PrintStack()
+		}
+	}()
+	notificationStatusReport := (*statusreport.NotificationStatusReport)(unsafe.Pointer(notificationStatusReportMemoryAddress))
+
+	return notificationStatusReport, nil
 }
