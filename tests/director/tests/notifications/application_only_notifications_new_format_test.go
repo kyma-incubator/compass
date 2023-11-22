@@ -92,7 +92,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 	applicationType1 := "app-type-1"
 
 	t.Logf("Create application template for type: %q", applicationType1)
-	appTemplateProvider := resource_providers.NewApplicationTemplateProvider(applicationType1, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder, tnt, nil)
+	appTemplateProvider := resource_providers.NewApplicationTemplateProvider(applicationType1, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder, tnt, nil, graphql.ApplicationStatusConditionConnected)
 	defer appTemplateProvider.Cleanup(t, ctx, oauthGraphQLClient)
 	appTplID := appTemplateProvider.Provide(t, ctx, oauthGraphQLClient)
 	internalConsumerID := appTplID // add application templated ID as certificate subject mapping internal consumer to satisfy the authorization checks in the formation assignment status API
@@ -121,7 +121,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 	localTenantID2 := "local-tenant-id2"
 	applicationType2 := "app-type-2"
 	t.Logf("Create application template for type: %q", applicationType2)
-	appTemplateProvider2 := resource_providers.NewApplicationTemplateProvider(applicationType2, localTenantID2, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder, tnt, nil)
+	appTemplateProvider2 := resource_providers.NewApplicationTemplateProvider(applicationType2, localTenantID2, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder, tnt, nil, graphql.ApplicationStatusConditionConnected)
 	defer appTemplateProvider2.Cleanup(t, ctx, oauthGraphQLClient)
 	appTemplateProvider2.Provide(t, ctx, oauthGraphQLClient)
 
@@ -230,7 +230,87 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 	})
+	t.Run("Contains Scenario Groups Operator", func(t *testing.T) {
+		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
+		scenarioGroup := "testScenarioGroup"
+		scenarioGroup2 := "testScenarioGroup2"
+		scenarioGroups := fmt.Sprintf(`{"key": "%s","description": "some description for key"}, {"key": "%s","description": "some description for key 2"}`, scenarioGroup, scenarioGroup2)
+
+		op := operations.NewAddConstraintOperation("TestContainsScenarioGroupsFANotification").
+			WithTargetOperation(graphql.TargetOperationGenerateFormationAssignmentNotification).
+			WithOperator(formationconstraintpkg.ContainsScenarioGroups).
+			WithResourceType(graphql.ResourceTypeApplication).
+			WithResourceSubtype(applicationType1).
+			WithInputTemplate(fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", scenarioGroup2)).
+			WithTenant(tnt).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		op = operations.NewAddConstraintOperation("TestContainsScenarioGroupsAssign").
+			WithTargetOperation(graphql.TargetOperationAssignFormation).
+			WithOperator(formationconstraintpkg.ContainsScenarioGroups).
+			WithResourceType(graphql.ResourceTypeApplication).
+			WithResourceSubtype(applicationType2).
+			WithInputTemplate(fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\", \\\"requiredScenarioGroups\\\": [\\\"%s\\\"]}", scenarioGroup)).
+			WithTenant(tnt).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		op = operations.NewAssignAppToFormationErrorOperation(app2ID, tnt).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		op = operations.NewGenerateOnetimeTokenForApplicationOperation(app2ID, tnt).WithScenarioGroups(`{"key": "someOtherGroup", "description": "someOtherDescription"}`).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		op = operations.NewAssignAppToFormationErrorOperation(app2ID, tnt).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		op = operations.NewGenerateOnetimeTokenForApplicationOperation(app2ID, tnt).WithScenarioGroups(scenarioGroups).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		op = operations.NewAssignAppToFormationOperation(app2ID, tnt).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Add webhook with type: %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app1ID)
+		op = operations.NewAddWebhookToApplicationOperation(graphql.WebhookTypeApplicationTenantMapping, app1ID, tnt).
+			WithWebhookMode(graphql.WebhookModeSync).
+			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/with-state/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
+			WithInputTemplate("{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}").
+			WithOutputTemplate("{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"state\\\":\\\"{{.Body.state}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200}").Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		notificationsCountAsserter := asserters.NewNotificationsCountAsserter(0, assignOperation, app1ID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		notificationsCountAsserter2 := asserters.NewNotificationsCountAsserter(0, assignOperation, app2ID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(notificationsCountAsserter, notificationsCountAsserter2).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		op = operations.NewUnassignAppToFormationOperation(app1ID, tnt).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Cleanup notifications")
+		op = operations.NewCleanupNotificationsOperation().WithExternalServicesMockMtlsSecuredURL(conf.ExternalServicesMockMtlsSecuredURL).WithHTTPClient(certSecuredHTTPClient).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		op = operations.NewGenerateOnetimeTokenForApplicationOperation(app1ID, tnt).WithScenarioGroups(scenarioGroups).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		notificationsCountAsserter = asserters.NewNotificationsCountAsserter(1, assignOperation, app1ID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(notificationsCountAsserter, notificationsCountAsserter2).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+	})
 	t.Run("Config mutator operator test", func(t *testing.T) {
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
