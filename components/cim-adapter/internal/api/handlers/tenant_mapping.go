@@ -1069,12 +1069,12 @@ func (h *Handler) buildTemplateData(serviceKeyCredentials json.RawMessage) (map[
 	if !ok {
 		return nil, errors.New("could not find 'uaa.url' property")
 	}
-	//tokenPath := "/oauth/token" // todo::: check do we need the suffix in the destination
+	tokenPath := "/oauth/token"
 
 	data := map[string]string{
 		"SystemID":     systemID,
 		"URL":          svcKeyURI,
-		"TokenURL":     svcKeyTokenURL,
+		"TokenURL":     svcKeyTokenURL+tokenPath,
 		"ClientID":     svcKeyClientID,
 		"ClientSecret": svcKeyClientSecret,
 	}
