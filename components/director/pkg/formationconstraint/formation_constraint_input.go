@@ -60,17 +60,17 @@ type DestinationCreatorInput struct {
 
 // ConfigMutatorInput input for ConfigMutator operator
 type ConfigMutatorInput struct {
-	State                                  *string                  `json:"state"`
-	Tenant                                 string                   `json:"tenant"`
-	OnlyForSourceSubtypes                  []string                 `json:"only_for_source_subtypes"`
-	ModifiedConfiguration                  *string                  `json:"modified_configuration"`
-	Operation                              model.FormationOperation `json:"operation"`
-	ResourceType                           model.ResourceType       `json:"resource_type"`
-	ResourceSubtype                        string                   `json:"resource_subtype"`
-	NotificationStatusReportMemoryAddress  uintptr                  `json:"notification_status_report_memory_address"`
+	State                                 *string                  `json:"state"`
+	Tenant                                string                   `json:"tenant"`
+	OnlyForSourceSubtypes                 []string                 `json:"only_for_source_subtypes"`
+	ModifiedConfiguration                 *string                  `json:"modified_configuration"`
+	Operation                             model.FormationOperation `json:"operation"`
+	ResourceType                          model.ResourceType       `json:"resource_type"`
+	ResourceSubtype                       string                   `json:"resource_subtype"`
+	NotificationStatusReportMemoryAddress uintptr                  `json:"notification_status_report_memory_address"`
 	SourceResourceType                    model.ResourceType       `json:"source_resource_type"`
 	SourceResourceID                      string                   `json:"source_resource_id"`
-	Location                               JoinPointLocation        `json:"join_point_location"`
+	Location                              JoinPointLocation        `json:"join_point_location"`
 }
 
 // RedirectNotificationInput is an input for RedirectNotification operator
