@@ -91,7 +91,7 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-export ARTIFACTS="/var/log/prow_artifacts"
+ARTIFACTS="/var/log/prow_artifacts"
 mkdir -p "${ARTIFACTS}"
 
 log::info "Triggering the compass installation"
