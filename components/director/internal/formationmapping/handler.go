@@ -173,7 +173,7 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	formationOperation := determineOperationBasedOnFormationAssignmentState(fa)
 	notificationStatusReport := newNotificationStatusReportFromRequestBody(assignmentReqBody, fa)
 	stateFromStatusReport := notificationStatusReport.State
-	if !isStateSupportedForOperation(model.FormationAssignmentState(stateFromStatusReport), formationOperation, reset) {
+	if !isStateSupportedForOperation(ctx, model.FormationAssignmentState(stateFromStatusReport), formationOperation, reset) {
 		log.C(ctx).Errorf("An invalid state: %q is provided for %q operation with reset option %t", stateFromStatusReport, formationOperation, reset)
 		errResp := errors.Errorf("An invalid state: %s is provided for %s operation. X-Request-Id: %s", stateFromStatusReport, formationOperation, correlationID)
 		respondWithError(ctx, w, http.StatusBadRequest, errResp)
@@ -490,7 +490,8 @@ func (h *Handler) processFormationAssignmentAssignStatusUpdate(ctx context.Conte
 		}
 	}
 
-	shouldSendReverseNotification := model.FormationAssignmentState(statusReport.State) != model.CreateErrorAssignmentState
+	state := model.FormationAssignmentState(statusReport.State)
+	shouldSendReverseNotification := state != model.CreateErrorAssignmentState && state != model.InitialAssignmentState
 
 	return shouldSendReverseNotification, nil
 }
@@ -770,7 +771,7 @@ func isSupportedStateForStatusUpdateWithUnassignOperation(state model.FormationA
 		state == model.ReadyAssignmentState
 }
 
-func isStateSupportedForOperation(state model.FormationAssignmentState, operation model.FormationOperation, isReset bool) bool {
+func isStateSupportedForOperation(ctx context.Context, state model.FormationAssignmentState, operation model.FormationOperation, isReset bool) bool {
 	isSupportedForOperation := false
 
 	if operation == model.AssignFormation {
@@ -783,6 +784,15 @@ func isStateSupportedForOperation(state model.FormationAssignmentState, operatio
 
 	if isReset {
 		return isSupportedForOperation && isSupportedStateForReset(state)
+	}
+
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return isSupportedForOperation
+	}
+
+	if consumerInfo.ConsumerType == consumer.BusinessIntegration {
+		isSupportedForOperation = isSupportedForOperation || (operation == model.AssignFormation && state == model.InitialAssignmentState)
 	}
 
 	return isSupportedForOperation
