@@ -167,8 +167,8 @@ global:
       version: "v20231121-e91239f0"
       name: compass-pairing-adapter
     director:
-      dir: dev/incubator/
-      version: "PR-3493"
+      dir: prod/incubator/
+      version: "v20231123-8663f27e"
       name: compass-director
     hydrator:
       dir: prod/incubator/
@@ -199,8 +199,8 @@ global:
       version: "v20231121-e91239f0"
       name: compass-operations-controller
     ord_service:
-      dir: dev/incubator/
-      version: "PR-112"
+      dir: prod/incubator/
+      version: "v20231123-7a85e46c"
       name: compass-ord-service
     schema_migrator:
       dir: prod/incubator/
