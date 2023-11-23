@@ -25,7 +25,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
+func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testing.T) {
 	ctx := context.Background()
 	tnt := tenant.TestTenants.GetDefaultTenantID()
 	tntParentCustomer := tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant) // parent of `tenant.TestTenants.GetDefaultTenantID()` above
@@ -2608,13 +2608,15 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-			assertNotificationsCountForTenant(t, body, app1.ID, 3)
-			// Due to the lowered wait time for the external services mock response,
-			// in this test it is possible that the resync operation
-			// takes more time than the response to process the resync fully.
-			// This resync operation sends 5 notifications in in bulk,
+			// Now we are not sending duplicate notifications duplicate always.
+			// If the synchronous notification is sent first (1), we will process the reverse (2)
+			// and not return send another one.
+			assertNotificationsCountMoreThanForTenant(t, body, app1.ID, 2)
+			// If the asynchronous notification is sent first, we will process it once and send a notification (1),
+			// then we will process the synchronous one (2) and process the asynchronous one again (3)
+			// This resync operation sometimes sends 5 notifications in bulk (the 3 above, and 2 for self-referenced assignments),
 			// and depending on the speed and order of them, it could lead to a duplicate notification,
-			// sent from the status API when processing the reverse assignment
+			// sent from the status API when processing the reverse assignment, making them 6 in total.
 			assertNotificationsCountMoreThanForTenant(t, body, app2.ID, 2)
 
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
