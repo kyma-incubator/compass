@@ -199,12 +199,12 @@ global:
       version: "v20231121-e91239f0"
       name: compass-operations-controller
     ord_service:
-      dir: prod/incubator/
-      version: "v20231110-4f59bcba"
+      dir: dev/incubator/
+      version: "PR-111"
       name: compass-ord-service
     schema_migrator:
-      dir: prod/incubator/
-      version: "v20231121-e91239f0"
+      dir: dev/incubator/
+      version: "PR-3490"
       name: compass-schema-migrator
     system_broker:
       dir: prod/incubator/
@@ -224,8 +224,8 @@ global:
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: prod/incubator/
-      version: "v20231123-94083bbe"
+      dir: dev/incubator/
+      version: "PR-3490"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
