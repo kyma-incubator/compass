@@ -533,13 +533,16 @@ func assertFormationNotificationFromCreationOrDeletion(t *testing.T, body []byte
 }
 
 func assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, timeout, tick time.Duration) {
-	t.Logf("Assert asynchronous formation lifecycle notifications are sent for %q operation...", formationOperation)
 	var shouldExpectDeleted bool
 	if formationOperation == createFormationOperation || formationState == "DELETE_ERROR" {
 		shouldExpectDeleted = false
 	} else {
 		shouldExpectDeleted = true
 	}
+	assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEventually(t, ctx, body, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID, shouldExpectDeleted, timeout, tick)
+}
+func assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEventually(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, shouldExpectDeleted bool, timeout, tick time.Duration) {
+	t.Logf("Assert asynchronous formation lifecycle notifications are sent for %q operation...", formationOperation)
 	notificationsForFormation := gjson.GetBytes(body, formationID)
 	require.True(t, notificationsForFormation.Exists())
 	require.Len(t, notificationsForFormation.Array(), 1)
@@ -589,16 +592,6 @@ func assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t *tes
 		t.Logf("Asynchronous formation lifecycle notifications are successfully validated for %q operation.", formationOperation)
 		return true
 	}, timeout, tick)
-}
-
-func assertAsyncFormationNotificationFromCreationOrDeletion(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string) {
-	var shouldExpectDeleted bool
-	if formationOperation == createFormationOperation || formationState == "DELETE_ERROR" {
-		shouldExpectDeleted = false
-	} else {
-		shouldExpectDeleted = true
-	}
-	assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDeleted(t, ctx, body, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID, shouldExpectDeleted)
 }
 
 func assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDeleted(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, shouldExpectDeleted bool) {

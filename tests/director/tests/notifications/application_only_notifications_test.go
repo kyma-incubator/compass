@@ -1444,7 +1444,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForFormationID(t, body, formation.ID, 1)
-		assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDeleted(t, ctx, body, formation.ID, formation.Name, "DELETING", deleteFormationOperation, tnt, tntParentCustomer, false)
+		assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEventually(t, ctx, body, formation.ID, formation.Name, "DELETING", deleteFormationOperation, tnt, tntParentCustomer, false, eventuallyTimeout, eventuallyTick)
 
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
