@@ -75,7 +75,7 @@ fi
 if [ -z "$testDefinitionName" ]
 then
   labelSelector=''
-  if [[ "${DUMP_DB}" ]]
+  if [ "$DUMP_DB" = true ]
   then
     labelSelector=',!disable-db-dump'
   fi
