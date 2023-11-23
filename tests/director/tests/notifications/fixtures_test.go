@@ -532,6 +532,65 @@ func assertFormationNotificationFromCreationOrDeletion(t *testing.T, body []byte
 	t.Logf("Synchronous formation lifecycle notifications are successfully validated for %q operation.", formationOperation)
 }
 
+func assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, timeout, tick time.Duration) {
+	t.Logf("Assert asynchronous formation lifecycle notifications are sent for %q operation...", formationOperation)
+	var shouldExpectDeleted bool
+	if formationOperation == createFormationOperation || formationState == "DELETE_ERROR" {
+		shouldExpectDeleted = false
+	} else {
+		shouldExpectDeleted = true
+	}
+	notificationsForFormation := gjson.GetBytes(body, formationID)
+	require.True(t, notificationsForFormation.Exists())
+	require.Len(t, notificationsForFormation.Array(), 1)
+
+	notificationForFormation := notificationsForFormation.Array()[0]
+	require.Equal(t, formationOperation, notificationForFormation.Get("Operation").String())
+	require.Equal(t, tenantID, notificationForFormation.Get("RequestBody.globalAccountId").String())
+	require.Equal(t, parentTenantID, notificationForFormation.Get("RequestBody.crmId").String())
+
+	notificationForFormationDetails := notificationForFormation.Get("RequestBody.details")
+	require.True(t, notificationForFormationDetails.Exists())
+	require.Equal(t, formationID, notificationForFormationDetails.Get("id").String())
+	require.Equal(t, formationName, notificationForFormationDetails.Get("name").String())
+
+	t.Logf("Asserting formation with eventually...")
+	require.Eventually(t, func() (isOkay bool) {
+		t.Log("Assert formation lifecycle notifications are successfully processed...")
+		formationPage := fixtures.ListFormationsWithinTenant(t, ctx, tenantID, certSecuredGraphQLClient)
+		if shouldExpectDeleted {
+			if formationPage.TotalCount != 0 {
+				t.Logf("Formation lifecycle notification is expected to have deleted formation with ID %q, but it is still there", formationID)
+				return
+			}
+			if formationPage.Data != nil && len(formationPage.Data) > 0 {
+				t.Logf("Formation lifecycle notification is expected to have deleted formation with ID %q, but it is still there", formationID)
+				return
+			}
+		} else {
+			if formationPage.TotalCount != 1 {
+				t.Log("Formation count does not match")
+				return
+			}
+			if formationPage.Data[0].State != formationState {
+				t.Logf("Formation state for formation with ID %q is %q, expected; %q", formationID, formationPage.Data[0].State, formationState)
+				return
+			}
+			if formationPage.Data[0].ID != formationID {
+				t.Logf("Formation ID is %q, expected; %q", formationPage.Data[0].ID, formationID)
+				return
+			}
+			if formationPage.Data[0].Name != formationName {
+				t.Logf("Formation name is %q, expected; %q", formationPage.Data[0].Name, formationName)
+				return
+			}
+		}
+
+		t.Logf("Asynchronous formation lifecycle notifications are successfully validated for %q operation.", formationOperation)
+		return true
+	}, timeout, tick)
+}
+
 func assertAsyncFormationNotificationFromCreationOrDeletion(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string) {
 	var shouldExpectDeleted bool
 	if formationOperation == createFormationOperation || formationState == "DELETE_ERROR" {

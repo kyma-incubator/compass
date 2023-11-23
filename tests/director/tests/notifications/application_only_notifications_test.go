@@ -772,7 +772,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 		// As part of the formation status API request, formation assignment synchronization will be executed.
-		assertAsyncFormationNotificationFromCreationOrDeletion(t, ctx, body, formation.ID, formation.Name, "READY", createFormationOperation, tnt, tntParentCustomer)
+		assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t, ctx, body, formation.ID, formation.Name, "READY", createFormationOperation, tnt, tntParentCustomer, eventuallyTimeout, eventuallyTick)
 
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
@@ -915,7 +915,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForFormationID(t, body, formation.ID, 1)
-		assertAsyncFormationNotificationFromCreationOrDeletion(t, ctx, body, formation.ID, formation.Name, "READY", deleteFormationOperation, tnt, tntParentCustomer)
+		assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t, ctx, body, formation.ID, formation.Name, "READY", deleteFormationOperation, tnt, tntParentCustomer, eventuallyTimeout, eventuallyTick)
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 		t.Logf("Verify the formation with name: %q is successfully deleted after READY status is reported on the status API...", formationName)
@@ -1316,7 +1316,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.Equal(t, formation.ID, gotFormation.ID)
 		require.Equal(t, "INITIAL", gotFormation.State)
 
-		assertAsyncFormationNotificationFromCreationOrDeletion(t, ctx, body, formation.ID, formation.Name, "INITIAL", createFormationOperation, tnt, tntParentCustomer)
+		assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t, ctx, body, formation.ID, formation.Name, "INITIAL", createFormationOperation, tnt, tntParentCustomer, eventuallyTimeout, eventuallyTick)
 
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
@@ -1347,7 +1347,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.Empty(t, formation.Error)
 
 		// As part of the formation status API request, formation assignment synchronization will be executed.
-		assertAsyncFormationNotificationFromCreationOrDeletion(t, ctx, body, formation.ID, formation.Name, "CREATE_ERROR", createFormationOperation, tnt, tntParentCustomer)
+		assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t, ctx, body, formation.ID, formation.Name, "CREATE_ERROR", createFormationOperation, tnt, tntParentCustomer, eventuallyTimeout, eventuallyTick)
 		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{
 			Condition: graphql.FormationStatusConditionError,
@@ -1385,7 +1385,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			},
 		}
 
-		assertAsyncFormationNotificationFromCreationOrDeletion(t, ctx, body, formation.ID, formation.Name, "READY", createFormationOperation, tnt, tntParentCustomer)
+		assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t, ctx, body, formation.ID, formation.Name, "READY", createFormationOperation, tnt, tntParentCustomer, eventuallyTimeout, eventuallyTick)
 		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
@@ -1462,7 +1462,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForFormationID(t, body, formation.ID, 1)
-		assertAsyncFormationNotificationFromCreationOrDeletion(t, ctx, body, formation.ID, formation.Name, "DELETE_ERROR", deleteFormationOperation, tnt, tntParentCustomer)
+		assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t, ctx, body, formation.ID, formation.Name, "DELETE_ERROR", deleteFormationOperation, tnt, tntParentCustomer, eventuallyTimeout, eventuallyTick)
 
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
@@ -1476,7 +1476,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForFormationID(t, body, formation.ID, 1)
-		assertAsyncFormationNotificationFromCreationOrDeletion(t, ctx, body, formation.ID, formation.Name, delFormation.State, deleteFormationOperation, tnt, tntParentCustomer)
+		assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t, ctx, body, formation.ID, formation.Name, delFormation.State, deleteFormationOperation, tnt, tntParentCustomer, eventuallyTimeout, eventuallyTick)
 
 		t.Logf("Should fail while getting formation with name: %q by ID: %q because it is already deleted", formation.Name, formation.ID)
 		var nonexistentFormation *graphql.Formation
