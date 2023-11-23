@@ -199,8 +199,8 @@ global:
       version: "v20231121-e91239f0"
       name: compass-operations-controller
     ord_service:
-      dir: prod/incubator/
-      version: "v20231122-10e8057b"
+      dir: dev/incubator/
+      version: "PR-112"
       name: compass-ord-service
     schema_migrator:
       dir: prod/incubator/
