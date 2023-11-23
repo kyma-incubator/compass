@@ -169,7 +169,6 @@ global:
     director:
       dir: dev/incubator/
       version: "PR-3485"
-
       name: compass-director
     hydrator:
       dir: dev/incubator/

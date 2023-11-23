@@ -95,6 +95,8 @@ func (r *renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc 
 		return nil, errors.Wrapf(err, "while preparing ApplicationRegisterInput model from Application Template with name %s", appTemplate.Name)
 	}
 
+	appRegisterInput.StatusCondition = &sc.StatusCondition
+
 	return &appRegisterInput, nil
 }
 
