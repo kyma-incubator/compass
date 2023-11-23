@@ -74,12 +74,10 @@ fi
 # match all tests
 if [ -z "$testDefinitionName" ]
 then
-  if [[ "${DUMP_DB}" == "true" ]]
-    then
-      labelSelector=',!disable-db-dump'
-  elif [[ "${DUMP_DB}" == "false" ]]
-    then
-      labelSelector=''
+  labelSelector=''
+  if [[ "${DUMP_DB}" ]]
+  then
+    labelSelector=',!disable-db-dump'
   fi
   if [[ "${BENCHMARK}" == "true" ]]
   then
