@@ -80,7 +80,8 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 			"baseUrl":                "http://test",
 			"infrastructureProvider": "test",
 		},
-		TemplateID: "123",
+		TemplateID:      "123",
+		StatusCondition: model.ApplicationStatusConditionConnected,
 	}
 
 	appTemplateSvcNoErrors := func(testSystem systemfetcher.System, _ error) *automock.ApplicationTemplateService {
