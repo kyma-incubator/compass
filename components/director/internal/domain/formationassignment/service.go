@@ -952,7 +952,8 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 		sourceToTargetToMapping[mapping.FormationAssignment.Source][mapping.FormationAssignment.Target] = mapping
 	}
 	// Make mapping
-	assignmentMappingPairs := make([]*AssignmentMappingPair, 0, len(assignments))
+	assignmentMappingSyncPairs := make([]*AssignmentMappingPair, 0, len(assignments))
+	assignmentMappingAsyncPairs := make([]*AssignmentMappingPair, 0, len(assignments))
 
 	for _, mapping := range formationAssignmentMapping {
 		var reverseMapping *FormationAssignmentRequestMapping
@@ -961,10 +962,6 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 				reverseMapping = actualReverseMapping
 			}
 		}
-		assignmentMappingPairs = append(assignmentMappingPairs, &AssignmentMappingPair{
-			AssignmentReqMapping:        mapping,
-			ReverseAssignmentReqMapping: reverseMapping,
-		})
 		if mapping.Request != nil {
 			mapping.Request.Object.SetAssignment(mapping.FormationAssignment)
 			if reverseMapping != nil {
@@ -975,8 +972,21 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 			reverseMapping.Request.Object.SetAssignment(reverseMapping.FormationAssignment)
 			reverseMapping.Request.Object.SetReverseAssignment(mapping.FormationAssignment)
 		}
+		if mapping.Request != nil && mapping.Request.Webhook != nil && mapping.Request.Webhook.Mode != nil && *mapping.Request.Webhook.Mode == graphql.WebhookModeAsyncCallback {
+			assignmentMappingAsyncPairs = append(assignmentMappingAsyncPairs, &AssignmentMappingPair{
+				AssignmentReqMapping:        mapping,
+				ReverseAssignmentReqMapping: reverseMapping,
+			})
+		} else {
+			assignmentMappingSyncPairs = append(assignmentMappingSyncPairs, &AssignmentMappingPair{
+				AssignmentReqMapping:        mapping,
+				ReverseAssignmentReqMapping: reverseMapping,
+			})
+		}
+
 	}
-	return assignmentMappingPairs
+
+	return append(assignmentMappingSyncPairs, assignmentMappingAsyncPairs...)
 }
 
 // ResetAssignmentConfigAndError sets the configuration and the error fields of the formation assignment to nil
