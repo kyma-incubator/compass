@@ -361,12 +361,6 @@ func (s *Service) createOAuth2ClientCredentialsDestinations(ctx context.Context,
 		return err
 	}
 
-	// todo::: do we need this because it is done in destinationCreatorSvc
-	//basicReqBody, err := s.destinationCreatorSvc.PrepareBasicRequestBody(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs)
-	//if err != nil {
-	//	return err
-	//}
-
 	destModel := &model.Destination{
 		ID:                    s.uidSvc.Generate(),
 		Name:                  destinationDetails.Name,
