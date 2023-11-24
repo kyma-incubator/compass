@@ -1056,7 +1056,7 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 
 	formation, err := s.formationRepository.Get(ctx, formationID, tenantID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
+		return nil, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", formationID, tenantID)
 	}
 
 	if formation.State != model.ReadyFormationState {
@@ -1290,7 +1290,7 @@ func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenan
 
 	formation, err = s.formationRepository.Get(formationResyncTransactionCtx, formationID, tenantID)
 	if err != nil {
-		return nil, false, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
+		return nil, false, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", formationID, tenantID)
 	}
 
 	err = formationResyncTx.Commit()
