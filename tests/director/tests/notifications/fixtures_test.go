@@ -421,12 +421,27 @@ func assertNoNotificationsAreSent(t *testing.T, client *http.Client, objectID st
 	require.Len(t, notifications.Array(), 0)
 }
 
+func assertNotificationsCountMoreThanForTenant(t *testing.T, body []byte, tenantID string, count int) {
+	assertNotificationsCountMoreThan(t, body, tenantID, count)
+}
+
 func assertNotificationsCountForTenant(t *testing.T, body []byte, tenantID string, count int) {
 	assertNotificationsCount(t, body, tenantID, count)
 }
 
 func assertNotificationsCountForFormationID(t *testing.T, body []byte, formationID string, count int) {
 	assertNotificationsCount(t, body, formationID, count)
+}
+
+func assertNotificationsCountMoreThan(t *testing.T, body []byte, objectID string, count int) {
+	notifications := gjson.GetBytes(body, objectID)
+	if count > 0 {
+		require.True(t, notifications.Exists())
+		length := len(notifications.Array())
+		require.GreaterOrEqual(t, length, count)
+	} else {
+		require.False(t, notifications.Exists())
+	}
 }
 
 func assertNotificationsCount(t *testing.T, body []byte, objectID string, count int) {
@@ -517,17 +532,16 @@ func assertFormationNotificationFromCreationOrDeletion(t *testing.T, body []byte
 	t.Logf("Synchronous formation lifecycle notifications are successfully validated for %q operation.", formationOperation)
 }
 
-func assertAsyncFormationNotificationFromCreationOrDeletion(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string) {
+func assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, timeout, tick time.Duration) {
 	var shouldExpectDeleted bool
 	if formationOperation == createFormationOperation || formationState == "DELETE_ERROR" {
 		shouldExpectDeleted = false
 	} else {
 		shouldExpectDeleted = true
 	}
-	assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDeleted(t, ctx, body, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID, shouldExpectDeleted)
+	assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEventually(t, ctx, body, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID, shouldExpectDeleted, timeout, tick)
 }
-
-func assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDeleted(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, shouldExpectDeleted bool) {
+func assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEventually(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, shouldExpectDeleted bool, timeout, tick time.Duration) {
 	t.Logf("Assert asynchronous formation lifecycle notifications are sent for %q operation...", formationOperation)
 	notificationsForFormation := gjson.GetBytes(body, formationID)
 	require.True(t, notificationsForFormation.Exists())
@@ -543,22 +557,41 @@ func assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDelet
 	require.Equal(t, formationID, notificationForFormationDetails.Get("id").String())
 	require.Equal(t, formationName, notificationForFormationDetails.Get("name").String())
 
-	t.Logf("Sleeping for %d milliseconds while the async formation status is proccessed...", conf.TenantMappingAsyncResponseDelay+250)
-	time.Sleep(time.Millisecond * time.Duration(conf.TenantMappingAsyncResponseDelay+250))
+	t.Logf("Asserting formation with eventually...")
+	require.Eventually(t, func() (isOkay bool) {
+		t.Log("Assert formation lifecycle notifications are successfully processed...")
+		formationPage := fixtures.ListFormationsWithinTenant(t, ctx, tenantID, certSecuredGraphQLClient)
+		if shouldExpectDeleted {
+			if formationPage.TotalCount != 0 {
+				t.Logf("Formation lifecycle notification is expected to have deleted formation with ID %q, but it is still there", formationID)
+				return
+			}
+			if formationPage.Data != nil && len(formationPage.Data) > 0 {
+				t.Logf("Formation lifecycle notification is expected to have deleted formation with ID %q, but it is still there", formationID)
+				return
+			}
+		} else {
+			if formationPage.TotalCount != 1 {
+				t.Log("Formation count does not match")
+				return
+			}
+			if formationPage.Data[0].State != formationState {
+				t.Logf("Formation state for formation with ID %q is %q, expected; %q", formationID, formationPage.Data[0].State, formationState)
+				return
+			}
+			if formationPage.Data[0].ID != formationID {
+				t.Logf("Formation ID is %q, expected; %q", formationPage.Data[0].ID, formationID)
+				return
+			}
+			if formationPage.Data[0].Name != formationName {
+				t.Logf("Formation name is %q, expected: %q", formationPage.Data[0].Name, formationName)
+				return
+			}
+		}
 
-	t.Log("Assert formation lifecycle notifications are successfully processed...")
-	formationPage := fixtures.ListFormationsWithinTenant(t, ctx, tenantID, certSecuredGraphQLClient)
-	if shouldExpectDeleted {
-		require.Equal(t, 0, formationPage.TotalCount)
-		require.Empty(t, formationPage.Data)
-	} else {
-		require.Equal(t, 1, formationPage.TotalCount)
-		require.Equal(t, formationState, formationPage.Data[0].State)
-		require.Equal(t, formationID, formationPage.Data[0].ID)
-		require.Equal(t, formationName, formationPage.Data[0].Name)
-	}
-
-	t.Logf("Asynchronous formation lifecycle notifications are successfully validated for %q operation.", formationOperation)
+		t.Logf("Asynchronous formation lifecycle notifications are successfully validated for %q operation.", formationOperation)
+		return true
+	}, timeout, tick)
 }
 
 func assertSeveralFormationAssignmentsNotifications(t *testing.T, notificationsForConsumerTenant gjson.Result, rtCtx *graphql.RuntimeContextExt, formationID, region, operationType, expectedTenant, expectedCustomerID string, expectedNumberOfNotifications int) {
