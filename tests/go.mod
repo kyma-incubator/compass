@@ -7,8 +7,8 @@ require (
 	github.com/google/uuid v1.3.1
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20231120121524-9ee5c58d6fb0
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20231120121524-9ee5c58d6fb0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231120121524-9ee5c58d6fb0
-	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231120121524-9ee5c58d6fb0
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231124150138-ae399364d1bc
+	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231124150138-ae399364d1bc
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20231120121524-9ee5c58d6fb0
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231120121524-9ee5c58d6fb0
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
@@ -19,7 +19,7 @@ require (
 	github.com/tidwall/sjson v1.2.5
 	github.com/vrischmann/envconfig v1.3.0
 	golang.org/x/net v0.17.0
-	golang.org/x/oauth2 v0.8.0
+	golang.org/x/oauth2 v0.11.0
 	k8s.io/api v0.26.9
 	k8s.io/apimachinery v0.26.9
 	k8s.io/client-go v0.26.9
