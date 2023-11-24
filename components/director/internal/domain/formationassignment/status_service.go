@@ -57,7 +57,6 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 	fa.State = stateFromReport
 
 	if isErrorState(model.FormationAssignmentState(stateFromReport)) {
-		assignmentError := json.RawMessage{}
 		if notificationStatusReport.Error != "" {
 			assignmentErrorWrapper := AssignmentErrorWrapper{AssignmentError{
 				Message:   notificationStatusReport.Error,
@@ -67,9 +66,8 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 			if err != nil {
 				return errors.Wrapf(err, "While preparing error message for assignment with ID %q", fa.ID)
 			}
-			assignmentError = marshaled
+			fa.Error = marshaled
 		}
-		fa.Error = assignmentError
 	}
 
 	if !isErrorState(model.FormationAssignmentState(stateFromReport)) {
