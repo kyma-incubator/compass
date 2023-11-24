@@ -77,4 +77,7 @@ type DirectorConfig struct {
 	CertSubjectMappingResyncInterval                   time.Duration `envconfig:"APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL"`
 	ApplicationTemplateProductLabel                    string        `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
 	DefaultTenantRegion                                string        `envconfig:"APP_DEFAULT_TENANT_REGION,default=eu-1"`
+	DestinationServiceTokenURL                         string        `envconfig:"APP_DESTINATION_TOKEN_SERVICE_URL"`
+	DestinationClientID                                string        `envconfig:"APP_DESTINATION_CLIENT_ID"`
+	DestinationClientSecret                            string        `envconfig:"APP_DESTINATION_CLIENT_SECRET"`
 }

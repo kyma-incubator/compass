@@ -50,6 +50,7 @@ const (
 	deletingAssignmentState          = "DELETING"
 	basicAuthType                    = "Basic"
 	samlAuthType                     = "SAML2.0"
+	oauth2AuthType                   = "bearer"
 )
 
 var (
@@ -390,6 +391,27 @@ func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationCl
 	for i := 0; i < len(expectedCertNames); i++ {
 		require.True(t, expectedCertNames[clientCertAuthDest.CertificateDetails[i].Name])
 		require.NotEmpty(t, clientCertAuthDest.CertificateDetails[i].Content)
+	}
+}
+
+func assertOAuth2ClientCredsDestination(t *testing.T, client *clients.DestinationClient, serviceURL, oauth2ClientCredsDestinationName, oauth2ClientCredsDestinationURL, instanceID, ownerSubaccountID, authToken string, expectedNumberOfAuthTokens int) {
+	oauth2ClientCredsDestBytes := client.FindDestinationByName(t, serviceURL, oauth2ClientCredsDestinationName, authToken, "", http.StatusOK)
+	var oauth2ClientCredsDest esmdestinationcreator.DestinationSvcOAuth2ClientCredsDestResponse
+	err := json.Unmarshal(oauth2ClientCredsDestBytes, &oauth2ClientCredsDest)
+	require.NoError(t, err)
+	require.Equal(t, ownerSubaccountID, oauth2ClientCredsDest.Owner.SubaccountID)
+	require.Equal(t, instanceID, oauth2ClientCredsDest.Owner.InstanceID)
+	require.Equal(t, oauth2ClientCredsDestinationName, oauth2ClientCredsDest.DestinationConfiguration.Name)
+	require.Equal(t, directordestinationcreator.TypeHTTP, oauth2ClientCredsDest.DestinationConfiguration.Type)
+	require.Equal(t, oauth2ClientCredsDestinationURL, oauth2ClientCredsDest.DestinationConfiguration.URL)
+	require.Equal(t, directordestinationcreator.AuthTypeOAuth2ClientCredentials, oauth2ClientCredsDest.DestinationConfiguration.Authentication)
+	require.Equal(t, directordestinationcreator.ProxyTypeInternet, oauth2ClientCredsDest.DestinationConfiguration.ProxyType)
+
+	for i := 0; i < expectedNumberOfAuthTokens; i++ {
+		require.NotEmpty(t, oauth2ClientCredsDest.AuthTokens)
+		require.NotEmpty(t, oauth2ClientCredsDest.AuthTokens[i].Type)
+		require.Equal(t, oauth2AuthType, oauth2ClientCredsDest.AuthTokens[i].Type)
+		require.NotEmpty(t, oauth2ClientCredsDest.AuthTokens[i].Value)
 	}
 }
 
