@@ -989,7 +989,6 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 				ReverseAssignmentReqMapping: reverseMapping,
 			})
 		}
-
 	}
 
 	return append(assignmentMappingNoNotificationPairs, append(assignmentMappingSyncPairs, assignmentMappingAsyncPairs...)...)
