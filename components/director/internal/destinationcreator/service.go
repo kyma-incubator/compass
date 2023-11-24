@@ -391,6 +391,92 @@ func (s *Service) CreateClientCertificateDestination(ctx context.Context, destin
 	return nil
 }
 
+// CreateOauth2ClientCredentialsDestinations is responsible to create an oauth2 client credentials destination resource in the remote destination service
+func (s *Service) CreateOauth2ClientCredentialsDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2ClientCredsCredentials operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error {
+	subaccountID := destinationDetails.SubaccountID
+	region, err := s.getRegionLabel(ctx, subaccountID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
+	}
+
+	destinationName := destinationDetails.Name
+	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
+		EntityName:   destinationName,
+		Region:       region,
+		SubaccountID: subaccountID,
+		InstanceID:   destinationDetails.InstanceID,
+	}, false)
+	if err != nil {
+		return errors.Wrapf(err, "while building destination URL")
+	}
+
+	reqBody := &OAuth2ClientCredsDestinationRequestBody{
+		BaseDestinationRequestBody: BaseDestinationRequestBody{
+			Name:               destinationDetails.Name,
+			Type:               destinationcreatorpkg.TypeHTTP,
+			ProxyType:          destinationcreatorpkg.ProxyTypeInternet,
+			AuthenticationType: destinationcreatorpkg.AuthTypeOAuth2ClientCredentials,
+		},
+		ClientID:        oauth2ClientCredsCredentials.ClientID,
+		ClientSecret:    oauth2ClientCredsCredentials.ClientSecret,
+		TokenServiceURL: oauth2ClientCredsCredentials.TokenServiceURL,
+	}
+
+	enrichedProperties, err := enrichDestinationAdditionalPropertiesWithCorrelationIDs(s.config, correlationIDs, destinationDetails.AdditionalProperties)
+	if err != nil {
+		return err
+	}
+	reqBody.AdditionalProperties = enrichedProperties
+
+	u, err := s.calculateDestinationURL(ctx, destinationDetails.URL, oauth2ClientCredsCredentials.URL, destinationcreatorpkg.AuthTypeOAuth2ClientCredentials, formationAssignment.TenantID, formationAssignment.Target)
+	if err != nil {
+		return errors.Wrapf(err, "while calculating destination URL")
+	}
+	reqBody.URL = u
+
+	if destinationDetails.Type != "" {
+		reqBody.Type = destinationcreatorpkg.Type(destinationDetails.Type)
+	}
+
+	if destinationDetails.ProxyType != "" {
+		reqBody.ProxyType = destinationcreatorpkg.ProxyType(destinationDetails.ProxyType)
+	}
+
+	if destinationDetails.TokenServiceURLType != "" {
+		reqBody.TokenServiceURLType = destinationDetails.TokenServiceURLType
+	}
+
+	if destinationDetails.Authentication != "" && destinationcreatorpkg.AuthType(destinationDetails.Authentication) != destinationcreatorpkg.AuthTypeOAuth2ClientCredentials {
+		return errors.Errorf("The provided authentication type: %s in the destination details is invalid. It should be %s", destinationDetails.Authentication, destinationcreatorpkg.AuthTypeOAuth2ClientCredentials)
+	}
+
+	if err := reqBody.Validate(); err != nil {
+		return errors.Wrapf(err, "while validating oauth2 client credentials destination request body")
+	}
+
+	log.C(ctx).Infof("Creating inbound oauth2 client credentials destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
+	_, statusCode, err := s.executeCreateRequest(ctx, strURL, reqBody, destinationName)
+	if err != nil {
+		return errors.Wrapf(err, "while creating inbound oauth2 client credentials destination with name: %q in the destination service", destinationName)
+	}
+
+	if statusCode == http.StatusConflict {
+		log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destinationName)
+		depth++
+		if depth > DepthLimit {
+			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
+		}
+
+		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment, skipSubaccountValidation); err != nil {
+			return errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
+		}
+
+		return s.CreateOauth2ClientCredentialsDestinations(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	}
+
+	return nil
+}
+
 // CreateCertificate is responsible to create certificate resource in the remote destination service
 func (s *Service) CreateCertificate(ctx context.Context, destinationsDetails []operators.Destination, destinationAuthType destinationcreatorpkg.AuthType, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation, useSelfSignedCert bool) (*operators.CertificateData, error) {
 	if err := s.EnsureDestinationSubaccountIDsCorrectness(ctx, destinationsDetails, formationAssignment, skipSubaccountValidation); err != nil {
@@ -908,12 +994,7 @@ func (s *Service) validateRuntimeContextProviderSubaccount(ctx context.Context, 
 	return s.validateRuntimeProviderSubaccount(ctx, rtmCtx.RuntimeID, externalDestSubaccountID)
 }
 
-func (s *Service) executeCreateRequest(
-	ctx context.Context,
-	url string,
-	reqBody interface{},
-	entityName string,
-) (defaultRespBody []byte, defaultStatusCode int, err error) {
+func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody interface{}, entityName string) (defaultRespBody []byte, defaultStatusCode int, err error) {
 	reqBodyBytes, err := json.Marshal(reqBody)
 	if err != nil {
 		return defaultRespBody, defaultStatusCode, errors.Wrapf(err, "while marshalling request body")

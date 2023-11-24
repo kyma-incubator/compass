@@ -190,6 +190,15 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			}
 		}
 
+		oauth2ClientCredsDetails := assignmentConfig.Credentials.InboundCommunicationDetails.OAuth2ClientCredentialsDetails
+		oauth2ClientCredsCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.OAuth2ClientCredentialsAuthentication
+		if oauth2ClientCredsDetails != nil && oauth2ClientCredsCreds != nil && len(oauth2ClientCredsDetails.Destinations) > 0 {
+			log.C(ctx).Infof("There is/are %d inbound oauth2 client credentials destination(s) details available in the configuration", len(oauth2ClientCredsDetails.Destinations))
+			if err := e.destinationSvc.CreateOAuth2ClientCredentialsDestinations(ctx, oauth2ClientCredsDetails.Destinations, *oauth2ClientCredsCreds, formationAssignment, oauth2ClientCredsDetails.CorrelationIDs, di.SkipSubaccountValidation); err != nil {
+				return false, errors.Wrap(err, "while creating oauth2 client credentials destinations")
+			}
+		}
+
 		log.C(ctx).Infof("Finished executing operator: %q for location with constraint type: %q and operation name: %q during %q operation", DestinationCreatorOperator, di.Location.ConstraintType, di.Location.OperationName, model.AssignFormation)
 		return true, nil
 	}
@@ -286,6 +295,7 @@ type InboundCommunicationDetails struct {
 	SAMLAssertionDetails                   *InboundSAMLAssertionDetails             `json:"samlAssertion,omitempty"`
 	OAuth2SAMLBearerAssertionDetails       *InboundOAuth2SAMLBearerAssertionDetails `json:"oauth2SamlBearerAssertion,omitempty"`
 	ClientCertificateAuthenticationDetails *InboundClientCertAuthenticationDetails  `json:"clientCertificateAuthentication,omitempty"`
+	OAuth2ClientCredentialsDetails         *InboundOAuth2ClientCredentialsDetails   `json:"oauth2ClientCredentials,omitempty"`
 }
 
 // InboundBasicAuthenticationDetails represents inbound communication configuration details for basic authentication
@@ -317,6 +327,12 @@ type InboundClientCertAuthenticationDetails struct {
 	Certificate    *string       `json:"certificate,omitempty"`
 }
 
+// InboundOAuth2ClientCredentialsDetails represents inbound communication configuration details for oauth2 client credentials authentication
+type InboundOAuth2ClientCredentialsDetails struct {
+	CorrelationIDs []string      `json:"correlationIds"`
+	Destinations   []Destination `json:"destinations"`
+}
+
 // Destination holds different destination types properties
 type Destination struct {
 	Name                 string          `json:"name"`
@@ -328,6 +344,7 @@ type Destination struct {
 	SubaccountID         string          `json:"subaccountId,omitempty"`
 	InstanceID           string          `json:"instanceId,omitempty"`
 	AdditionalProperties json.RawMessage `json:"additionalProperties,omitempty"`
+	TokenServiceURLType  string          `json:"tokenServiceURLType,omitempty"`
 }
 
 // CertificateData contains the data for the certificate resource from the destination creator component

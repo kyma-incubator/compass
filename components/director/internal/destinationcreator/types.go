@@ -65,6 +65,15 @@ type ClientCertAuthDestinationRequestBody struct {
 	KeyStoreLocation string `json:"keyStoreLocation"`
 }
 
+// OAuth2ClientCredsDestinationRequestBody contains the necessary fields for the destination request body with authentication type OAuth2ClientCredentials
+type OAuth2ClientCredsDestinationRequestBody struct {
+	BaseDestinationRequestBody
+	TokenServiceURL     string `json:"tokenServiceURL"`
+	ClientID            string `json:"clientId"`
+	ClientSecret        string `json:"clientSecret"`
+	TokenServiceURLType string `json:"tokenServiceURLType,omitempty"`
+}
+
 // CertificateRequestBody contains the necessary fields for the destination creator certificate request body
 type CertificateRequestBody struct {
 	Name       string `json:"name"`
@@ -74,7 +83,7 @@ type CertificateRequestBody struct {
 // reqBodyNameRegex is a regex defined by the destination creator API specifying what destination names are allowed
 var reqBodyNameRegex = "[a-zA-Z0-9_-]{1,64}"
 
-// Validate validates that the AuthTypeNoAuth request body contains the required fields and they are valid
+// Validate validates that the AuthTypeNoAuth request body contains the required fields, and they are valid
 func (n *NoAuthDestinationRequestBody) Validate() error {
 	return validation.ValidateStruct(n,
 		validation.Field(&n.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
@@ -85,7 +94,7 @@ func (n *NoAuthDestinationRequestBody) Validate() error {
 	)
 }
 
-// Validate validates that the AuthTypeBasic request body contains the required fields and they are valid
+// Validate validates that the AuthTypeBasic request body contains the required fields, and they are valid
 func (b *BasicAuthDestinationRequestBody) Validate() error {
 	return validation.ValidateStruct(b,
 		validation.Field(&b.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
@@ -97,7 +106,7 @@ func (b *BasicAuthDestinationRequestBody) Validate() error {
 	)
 }
 
-// Validate validates that the AuthTypeSAMLAssertion request body contains the required fields and they are valid
+// Validate validates that the AuthTypeSAMLAssertion request body contains the required fields, and they are valid
 func (s *SAMLAssertionDestinationRequestBody) Validate() error {
 	return validation.ValidateStruct(s,
 		validation.Field(&s.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
@@ -110,7 +119,7 @@ func (s *SAMLAssertionDestinationRequestBody) Validate() error {
 	)
 }
 
-// Validate validates that the AuthTypeClientCertificate request body contains the required fields and they are valid
+// Validate validates that the AuthTypeClientCertificate request body contains the required fields, and they are valid
 func (s *ClientCertAuthDestinationRequestBody) Validate() error {
 	return validation.ValidateStruct(s,
 		validation.Field(&s.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
@@ -122,14 +131,29 @@ func (s *ClientCertAuthDestinationRequestBody) Validate() error {
 	)
 }
 
-// Validate validates that the SAML assertion certificate request body contains the required fields and they are valid
+// Validate validates that the AuthTypeBasic request body contains the required fields, and they are valid
+func (b *OAuth2ClientCredsDestinationRequestBody) Validate() error {
+	return validation.ValidateStruct(b,
+		validation.Field(&b.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
+		validation.Field(&b.URL, validation.Required),
+		validation.Field(&b.Type, validation.In(destinationcreatorpkg.TypeHTTP, destinationcreatorpkg.TypeRFC, destinationcreatorpkg.TypeLDAP, destinationcreatorpkg.TypeMAIL)),
+		validation.Field(&b.ProxyType, validation.In(destinationcreatorpkg.ProxyTypeInternet, destinationcreatorpkg.ProxyTypeOnPremise, destinationcreatorpkg.ProxyTypePrivateLink)),
+		validation.Field(&b.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeOAuth2ClientCredentials)),
+		validation.Field(&b.ClientID, validation.Required),
+		validation.Field(&b.ClientSecret, validation.Required),
+		validation.Field(&b.TokenServiceURL, validation.Required),
+		validation.Field(&b.TokenServiceURLType, validation.In(destinationcreatorpkg.DedicatedTokenServiceURLType, destinationcreatorpkg.CommonTokenServiceURLType)),
+	)
+}
+
+// Validate validates that the SAML assertion certificate request body contains the required fields, and they are valid
 func (c *CertificateRequestBody) Validate() error {
 	return validation.ValidateStruct(c,
 		validation.Field(&c.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 	)
 }
 
-// Validate validates that the SAML assertion certificate response body contains the required fields and they are valid
+// Validate validates that the SAML assertion certificate response body contains the required fields, and they are valid
 func (cr *CertificateResponse) Validate() error {
 	return validation.ValidateStruct(cr,
 		validation.Field(&cr.FileName, validation.Required),
