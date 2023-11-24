@@ -326,9 +326,6 @@ func TestORDAggregator(stdT *testing.T) {
 		httpClientWithoutVisibilityScope := cfgWithoutScopes.Client(ctx)
 		httpClientWithoutVisibilityScope.Timeout = 20 * time.Second
 
-		httpClientWithoutVisibilityScopeCapabilities := cfgWithoutScopes.Client(ctx)
-		httpClientWithoutVisibilityScopeCapabilities.Timeout = 60 * time.Second
-
 		// create client to call Director graphql api with internal_visibility:read scope
 		accessTokenWithInternalVisibility := token.GetAccessToken(t, oauthCredentialData, token.IntegrationSystemScopes)
 		oauthGraphQLClientWithInternalVisibility := gql.NewAuthorizedGraphQLClientWithCustomURL(accessTokenWithInternalVisibility, testConfig.DirectorGraphqlOauthURL)
@@ -561,7 +558,7 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified capability spec")
 
 			// verify public capabilities via ORD Service
-			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScopeCapabilities, publicCapabilitiesMap, capabilitiesField, expectedNumberOfPublicCapabilities)
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicCapabilitiesMap, capabilitiesField, expectedNumberOfPublicCapabilities)
 
 			// Verify integration dependencies
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/integrationDependencies?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
@@ -1190,9 +1187,6 @@ func TestORDAggregator(stdT *testing.T) {
 		httpClientWithoutVisibilityScope := cfgWithoutScopes.Client(ctx)
 		httpClientWithoutVisibilityScope.Timeout = 20 * time.Second
 
-		httpClientWithoutVisibilityScopeCapabilities := cfgWithoutScopes.Client(ctx)
-		httpClientWithoutVisibilityScopeCapabilities.Timeout = 60 * time.Second
-
 		// create client to call Director graphql api with internal_visibility:read scope
 		accessTokenWithInternalVisibility := token.GetAccessToken(t, oauthCredentialData, token.IntegrationSystemScopes)
 		oauthGraphQLClientWithInternalVisibility := gql.NewAuthorizedGraphQLClientWithCustomURL(accessTokenWithInternalVisibility, testConfig.DirectorGraphqlOauthURL)
@@ -1394,7 +1388,7 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified capability spec")
 
 			// verify public capabilities via ORD Service
-			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScopeCapabilities, publicCapabilitiesMap, capabilitiesField, numberOfPublicCapabilities)
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicCapabilitiesMap, capabilitiesField, numberOfPublicCapabilities)
 
 			// Verify integration dependencies
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/integrationDependencies?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
