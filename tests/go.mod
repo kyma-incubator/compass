@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/avast/retry-go/v4 v4.5.0
 	github.com/google/uuid v1.3.1
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20231120121524-9ee5c58d6fb0
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20231124153642-13a4704c40cf
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20231120121524-9ee5c58d6fb0
 	github.com/kyma-incubator/compass/components/director v0.0.0-20231124150138-ae399364d1bc
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231124150138-ae399364d1bc
