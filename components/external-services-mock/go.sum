@@ -2,8 +2,6 @@ cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMT
 github.com/99designs/gqlgen v0.11.3 h1:oFSxl1DFS9X///uHV3y6CEfpcXWrDUxVblR4Xib2bs4=
 github.com/99designs/gqlgen v0.11.3/go.mod h1:RgX5GRRdDWNkh4pBrdzNpNPFVsdoUFY2+adM6nb1N+4=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/PuerkitoBio/purell v1.1.1/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
-github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=
 github.com/agnivade/levenshtein v1.0.3/go.mod h1:4SFRZbbXWLF4MU1T9Qg0pGgH3Pjs+t6ie5efyrwRJXs=
 github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883 h1:bvNMNQO63//z+xNgfBlViaCIJKLlCJ6/fmUseuG0wVQ=
@@ -100,8 +98,6 @@ github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
 github.com/kyma-incubator/compass/components/director v0.0.0-20231120121524-9ee5c58d6fb0 h1:C4/i82PXIpiYhqHcV0w8JLBEIar71GKGhYlat+s92Sk=
 github.com/kyma-incubator/compass/components/director v0.0.0-20231120121524-9ee5c58d6fb0/go.mod h1:e38rK7ggp6z3wztnwzYKuBIzqKeZPez6TGXKALvbW+A=
-github.com/kyma-incubator/compass/components/director v0.0.0-20231124150138-ae399364d1bc h1:QInbVbG4aSZ9bKatquDHv1h8Hbzt0nrEYQ9/4j6KeG4=
-github.com/kyma-incubator/compass/components/director v0.0.0-20231124150138-ae399364d1bc/go.mod h1:yRzGhOVE0t/ORiHPLLeVHN0P24cJ91NPVqnTDNFY6Ok=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20231120121524-9ee5c58d6fb0 h1:aWWboEJuEqEEX3wNd9vBAOZ77pQN+6zRt0c6k+o54qk=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20231120121524-9ee5c58d6fb0/go.mod h1:J2eSb/ghFiGt7OjWpw/POUYuuJOcvPSoGNwwKYQ/O0k=
 github.com/lestrrat-go/backoff/v2 v2.0.8 h1:oNb5E5isby2kiro9AgdHLv5N5tint1AnDVVf2E2un5A=
