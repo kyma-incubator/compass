@@ -426,9 +426,9 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			testDestinationInstanceID := conf.TestDestinationInstanceID
 			oauth2ClientCredsDestinationName := "e2e-oauth2-client-creds-destination-name"
 			oauth2ClientCredsDestinationURL := "http://e2e-oauth2-client-creds-url-example.com"
-			oauth2ClientCredsDestinationTokenURL := conf.DestinationServiceTokenURL
-			oauth2ClientCredsDestinationClientID := conf.DestinationClientID
-			oauth2ClientCredsDestinationClientSecret := conf.DestinationClientSecret
+			oauth2ClientCredsDestinationTokenURL := conf.ProviderDestinationConfig.TokenURL + conf.ProviderDestinationConfig.TokenPath
+			oauth2ClientCredsDestinationClientID := conf.ProviderDestinationConfig.ClientID
+			oauth2ClientCredsDestinationClientSecret := conf.ProviderClientSecret
 
 			samlAssertionDestinationCertName := fmt.Sprintf("%s-%s", directordestinationcreator.AuthTypeSAMLAssertion, assignmentWithDestDetails.ID)
 			clientCertAuthDestinationCertName := fmt.Sprintf("%s-%s", directordestinationcreator.AuthTypeClientCertificate, assignmentWithDestDetails.ID)
