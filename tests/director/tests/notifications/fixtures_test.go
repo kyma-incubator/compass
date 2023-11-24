@@ -584,7 +584,7 @@ func assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEven
 				return
 			}
 			if formationPage.Data[0].Name != formationName {
-				t.Logf("Formation name is %q, expected; %q", formationPage.Data[0].Name, formationName)
+				t.Logf("Formation name is %q, expected: %q", formationPage.Data[0].Name, formationName)
 				return
 			}
 		}
@@ -592,40 +592,6 @@ func assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEven
 		t.Logf("Asynchronous formation lifecycle notifications are successfully validated for %q operation.", formationOperation)
 		return true
 	}, timeout, tick)
-}
-
-func assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDeleted(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, shouldExpectDeleted bool) {
-	t.Logf("Assert asynchronous formation lifecycle notifications are sent for %q operation...", formationOperation)
-	notificationsForFormation := gjson.GetBytes(body, formationID)
-	require.True(t, notificationsForFormation.Exists())
-	require.Len(t, notificationsForFormation.Array(), 1)
-
-	notificationForFormation := notificationsForFormation.Array()[0]
-	require.Equal(t, formationOperation, notificationForFormation.Get("Operation").String())
-	require.Equal(t, tenantID, notificationForFormation.Get("RequestBody.globalAccountId").String())
-	require.Equal(t, parentTenantID, notificationForFormation.Get("RequestBody.crmId").String())
-
-	notificationForFormationDetails := notificationForFormation.Get("RequestBody.details")
-	require.True(t, notificationForFormationDetails.Exists())
-	require.Equal(t, formationID, notificationForFormationDetails.Get("id").String())
-	require.Equal(t, formationName, notificationForFormationDetails.Get("name").String())
-
-	t.Logf("Sleeping for %d milliseconds while the async formation status is proccessed...", conf.TenantMappingAsyncResponseDelay+250)
-	time.Sleep(time.Millisecond * time.Duration(conf.TenantMappingAsyncResponseDelay+250))
-
-	t.Log("Assert formation lifecycle notifications are successfully processed...")
-	formationPage := fixtures.ListFormationsWithinTenant(t, ctx, tenantID, certSecuredGraphQLClient)
-	if shouldExpectDeleted {
-		require.Equal(t, 0, formationPage.TotalCount)
-		require.Empty(t, formationPage.Data)
-	} else {
-		require.Equal(t, 1, formationPage.TotalCount)
-		require.Equal(t, formationState, formationPage.Data[0].State)
-		require.Equal(t, formationID, formationPage.Data[0].ID)
-		require.Equal(t, formationName, formationPage.Data[0].Name)
-	}
-
-	t.Logf("Asynchronous formation lifecycle notifications are successfully validated for %q operation.", formationOperation)
 }
 
 func assertSeveralFormationAssignmentsNotifications(t *testing.T, notificationsForConsumerTenant gjson.Result, rtCtx *graphql.RuntimeContextExt, formationID, region, operationType, expectedTenant, expectedCustomerID string, expectedNumberOfNotifications int) {
