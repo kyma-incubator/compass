@@ -952,6 +952,7 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 		sourceToTargetToMapping[mapping.FormationAssignment.Source][mapping.FormationAssignment.Target] = mapping
 	}
 	// Make mapping
+	assignmentMappingNoNotificationPairs := make([]*AssignmentMappingPair, 0, len(assignments))
 	assignmentMappingSyncPairs := make([]*AssignmentMappingPair, 0, len(assignments))
 	assignmentMappingAsyncPairs := make([]*AssignmentMappingPair, 0, len(assignments))
 
@@ -972,7 +973,12 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 			reverseMapping.Request.Object.SetAssignment(reverseMapping.FormationAssignment)
 			reverseMapping.Request.Object.SetReverseAssignment(mapping.FormationAssignment)
 		}
-		if mapping.Request != nil && mapping.Request.Webhook != nil && mapping.Request.Webhook.Mode != nil && *mapping.Request.Webhook.Mode == graphql.WebhookModeAsyncCallback {
+		if mapping.Request == nil {
+			assignmentMappingNoNotificationPairs = append(assignmentMappingNoNotificationPairs, &AssignmentMappingPair{
+				AssignmentReqMapping:        mapping,
+				ReverseAssignmentReqMapping: reverseMapping,
+			})
+		} else if mapping.Request != nil && mapping.Request.Webhook != nil && mapping.Request.Webhook.Mode != nil && *mapping.Request.Webhook.Mode == graphql.WebhookModeAsyncCallback {
 			assignmentMappingAsyncPairs = append(assignmentMappingAsyncPairs, &AssignmentMappingPair{
 				AssignmentReqMapping:        mapping,
 				ReverseAssignmentReqMapping: reverseMapping,
@@ -986,7 +992,7 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 
 	}
 
-	return append(assignmentMappingSyncPairs, assignmentMappingAsyncPairs...)
+	return append(assignmentMappingNoNotificationPairs, append(assignmentMappingSyncPairs, assignmentMappingAsyncPairs...)...)
 }
 
 // ResetAssignmentConfigAndError sets the configuration and the error fields of the formation assignment to nil

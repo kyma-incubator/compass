@@ -1079,6 +1079,7 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Context, tenantID string, formation *model.Formation, shouldReset bool) (*model.Formation, error) {
 	resyncableFormationAssignments := make([]*model.FormationAssignment, 0)
 	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0)
+	assignmentMappingNoNotificationPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
 	assignmentMappingSyncPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
 	assignmentMappingAsyncPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
 
@@ -1178,12 +1179,12 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				Operation: operation,
 			}
 
-			if assignmentPair.AssignmentMappingPair != nil &&
-				assignmentPair.AssignmentMappingPair.AssignmentReqMapping != nil &&
-				assignmentPair.AssignmentMappingPair.AssignmentReqMapping.Request != nil &&
-				assignmentPair.AssignmentMappingPair.AssignmentReqMapping.Request.Webhook != nil &&
-				assignmentPair.AssignmentMappingPair.AssignmentReqMapping.Request.Webhook.Mode != nil &&
-				*assignmentPair.AssignmentMappingPair.AssignmentReqMapping.Request.Webhook.Mode == graphql.WebhookModeAsyncCallback {
+			if notificationForFA == nil {
+				assignmentMappingNoNotificationPairs = append(assignmentMappingNoNotificationPairs, &assignmentPair)
+			} else if notificationForFA != nil &&
+				notificationForFA.Webhook != nil &&
+				notificationForFA.Webhook.Mode != nil &&
+				*notificationForFA.Webhook.Mode == graphql.WebhookModeAsyncCallback {
 				assignmentMappingAsyncPairs = append(assignmentMappingAsyncPairs, &assignmentPair)
 			} else {
 				assignmentMappingSyncPairs = append(assignmentMappingSyncPairs, &assignmentPair)
@@ -1196,7 +1197,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 	}
 
 	alreadyProcessedFAs := make(map[string]bool, 0)
-	assignmentMappingPairs := append(assignmentMappingSyncPairs, assignmentMappingAsyncPairs...)
+	assignmentMappingPairs := append(assignmentMappingNoNotificationPairs, append(assignmentMappingSyncPairs, assignmentMappingAsyncPairs...)...)
 	var errs *multierror.Error
 	if err := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
 		for _, assignmentPair := range assignmentMappingPairs {
