@@ -203,8 +203,8 @@ global:
       version: "v20231123-7a85e46c"
       name: compass-ord-service
     schema_migrator:
-      dir: dev/incubator/
-      version: "PR-3503"
+      dir: prod/incubator/
+      version: "v20231127-92222a1d"
       name: compass-schema-migrator
     system_broker:
       dir: prod/incubator/
