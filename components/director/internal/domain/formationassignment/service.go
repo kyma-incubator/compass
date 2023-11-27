@@ -1076,20 +1076,20 @@ type AssignmentErrorWrapper struct {
 }
 
 func newNotificationStatusReportFromWebhookResponse(response *webhookdir.Response, operation model.FormationOperation, webhookMode graphql.WebhookMode) *statusreport.NotificationStatusReport {
-	var configuration json.RawMessage
+	var respConfig json.RawMessage
 	if response.Config != nil {
-		configuration = []byte(*response.Config)
+		respConfig = []byte(*response.Config)
 	}
 
-	var errorFromResponse string
+	var respError string
 	if response.Error != nil && *response.Error != "" {
-		errorFromResponse = *response.Error
+		respError = *response.Error
 	}
 
-	return statusreport.NewNotificationStatusReport(configuration, calculateState(response, operation, webhookMode), errorFromResponse)
+	return statusreport.NewNotificationStatusReport(respConfig, calculateStateFromWebhookResponse(response, operation, webhookMode), respError)
 }
 
-func calculateState(response *webhookdir.Response, operation model.FormationOperation, webhookMode graphql.WebhookMode) string {
+func calculateStateFromWebhookResponse(response *webhookdir.Response, operation model.FormationOperation, webhookMode graphql.WebhookMode) string {
 	if response.State != nil && *response.State != "" {
 		return *response.State
 	}

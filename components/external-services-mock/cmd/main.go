@@ -6,11 +6,12 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
@@ -409,6 +410,8 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/async-fail-once/{tenantId}/{applicationId}", notificationHandler.AsyncFailOnce).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async-fail/{tenantId}", notificationHandler.AsyncFail).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-fail/{tenantId}/{applicationId}", notificationHandler.AsyncFail).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/async-fail-no-error/{tenantId}", notificationHandler.AsyncFailNoError).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/async-fail-no-error/{tenantId}/{applicationId}", notificationHandler.AsyncFailNoError).Methods(http.MethodDelete)
 	// formation assignment notifications handler for the destination creation/deletion
 	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}", notificationHandler.RespondWithIncompleteAndDestinationDetails).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}/{applicationId}", notificationHandler.DestinationDelete).Methods(http.MethodDelete)
