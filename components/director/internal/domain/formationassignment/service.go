@@ -973,6 +973,14 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 			reverseMapping.Request.Object.SetAssignment(reverseMapping.FormationAssignment)
 			reverseMapping.Request.Object.SetReverseAssignment(mapping.FormationAssignment)
 		}
+		// We separate the assignment pairs in 3 groups
+		// 1. With no requests for the assignment
+		// 2. With synchronous webhook requests for the assignments
+		// 3. With asynchronous webhook requests for the assignments
+		// We do this, so that we can order the processing of the formation assignments
+		// This makes the notification count deterministic (we don't send asynchronous notifications before synchronous ones),
+		// and we assure that the notification receivers always receive the reverse as READY,
+		// if it has no request associated, rather than being sometimes INITIAL, sometimes READY.
 		if mapping.Request == nil {
 			assignmentMappingNoNotificationPairs = append(assignmentMappingNoNotificationPairs, &AssignmentMappingPair{
 				AssignmentReqMapping:        mapping,
