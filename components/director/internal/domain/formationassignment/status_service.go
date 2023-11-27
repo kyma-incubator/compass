@@ -36,7 +36,6 @@ func NewFormationAssignmentStatusService(repo FormationAssignmentRepository, con
 // UpdateWithConstraints updates a Formation Assignment and enforces NotificationStatusReturned constraints before and after the update
 func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.Context, notificationStatusReport *statusreport.NotificationStatusReport, fa *model.FormationAssignment, operation model.FormationOperation) error {
 	id := fa.ID
-
 	log.C(ctx).Infof("Updating formation assignment with ID: %q", id)
 
 	tenantID, err := tenant.LoadFromContext(ctx)
