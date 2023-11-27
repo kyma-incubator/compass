@@ -1185,14 +1185,22 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 		return nil, err
 	}
 
+	alreadyProcessedFAs := make(map[string]bool, 0)
 	var errs *multierror.Error
 	if err := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
 		for _, fa := range resyncableFormationAssignments {
+			if alreadyProcessedFAs[fa.ID] {
+				continue
+			}
 			assignmentPair := assignmentIDToAssignmentPair[fa.ID]
 			switch assignmentPair.Operation {
 			case model.AssignFormation:
-				if _, err := s.formationAssignmentService.ProcessFormationAssignmentPair(ctxWithTransact, &assignmentPair); err != nil {
+				isReverseProcessed, err := s.formationAssignmentService.ProcessFormationAssignmentPair(ctxWithTransact, &assignmentPair)
+				if err != nil {
 					errs = multierror.Append(errs, err)
+				}
+				if isReverseProcessed && assignmentPair.ReverseAssignmentReqMapping != nil && assignmentPair.ReverseAssignmentReqMapping.FormationAssignment != nil {
+					alreadyProcessedFAs[assignmentPair.ReverseAssignmentReqMapping.FormationAssignment.ID] = true
 				}
 			case model.UnassignFormation:
 				if _, err := s.formationAssignmentService.CleanupFormationAssignment(ctxWithTransact, &assignmentPair); err != nil {
