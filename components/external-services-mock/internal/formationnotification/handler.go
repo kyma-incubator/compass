@@ -627,9 +627,7 @@ func (h *Handler) AsyncNoResponseUnassign(writer http.ResponseWriter, r *http.Re
 func (h *Handler) AsyncFailOnce(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	operation := Assign
-	if r.Method == http.MethodPatch {
-		operation = Assign
-	} else if r.Method == http.MethodDelete {
+	if r.Method == http.MethodDelete {
 		operation = Unassign
 	}
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
@@ -659,9 +657,7 @@ func (h *Handler) AsyncFailOnce(writer http.ResponseWriter, r *http.Request) {
 func (h *Handler) AsyncFail(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	operation := Assign
-	if r.Method == http.MethodPatch {
-		operation = Assign
-	} else if r.Method == http.MethodDelete {
+	if r.Method == http.MethodDelete {
 		operation = Unassign
 	}
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
@@ -683,9 +679,7 @@ func (h *Handler) AsyncFail(writer http.ResponseWriter, r *http.Request) {
 func (h *Handler) AsyncFailNoError(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	operation := Assign
-	if r.Method == http.MethodPatch {
-		operation = Assign
-	} else if r.Method == http.MethodDelete {
+	if r.Method == http.MethodDelete {
 		operation = Unassign
 	}
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
