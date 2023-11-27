@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -152,8 +151,8 @@ func main() {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize key loader"))
 	}
 
-	fmt.Println("MAIN keyCache len", len(keyCache.Get()))
-	fmt.Println("MAIN keyCache", keyCache.Get()[cfg.KeyLoaderConfig.KeysSecretName])
+	log.D().Infof("MAIN keyCache len %+v\n\n", len(keyCache.Get()))
+	log.D().Infof("MAIN keyCache %+v\n\n", keyCache.Get()[cfg.KeyLoaderConfig.KeysSecretName])
 
 	if err = credloader.WaitForKeyCache(keyCache); err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to wait for key cache"))

@@ -19,7 +19,7 @@ package auth
 import (
 	"context"
 	"crypto/rsa"
-	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"time"
 
 	"github.com/form3tech-oss/jwt-go"
@@ -87,9 +87,9 @@ func (p selfSignedJwtTokenAuthorizationProvider) GetAuthorization(ctx context.Co
 
 func (p selfSignedJwtTokenAuthorizationProvider) readPrivateKey(selfSignedJWTCredentials *SelfSignedTokenCredentials) (*rsa.PrivateKey, error) {
 	certsCache := selfSignedJWTCredentials.KeysCache.Get()[selfSignedJWTCredentials.JwtSelfSignCertSecretName]
-	fmt.Println("selfSignedJWTCredentials.KeysCache.Get() len", len(selfSignedJWTCredentials.KeysCache.Get()))
+	log.D().Infof("selfSignedJWTCredentials.KeysCache.Get() len %+v\n\n", len(selfSignedJWTCredentials.KeysCache.Get()))
 
-	fmt.Println("certsCache", certsCache)
+	log.D().Infof("certsCache %+v\n\n", certsCache)
 
 	pk, ok := certsCache.PrivateKey.(*rsa.PrivateKey)
 	if !ok {
