@@ -19,6 +19,7 @@ package auth
 import (
 	"context"
 	"crypto/rsa"
+	"fmt"
 	"time"
 
 	"github.com/form3tech-oss/jwt-go"
@@ -86,6 +87,9 @@ func (p selfSignedJwtTokenAuthorizationProvider) GetAuthorization(ctx context.Co
 
 func (p selfSignedJwtTokenAuthorizationProvider) readPrivateKey(selfSignedJWTCredentials *SelfSignedTokenCredentials) (*rsa.PrivateKey, error) {
 	certsCache := selfSignedJWTCredentials.KeysCache.Get()[selfSignedJWTCredentials.JwtSelfSignCertSecretName]
+	fmt.Println("selfSignedJWTCredentials.KeysCache.Get() len", len(selfSignedJWTCredentials.KeysCache.Get()))
+
+	fmt.Println("certsCache", certsCache)
 
 	pk, ok := certsCache.PrivateKey.(*rsa.PrivateKey)
 	if !ok {
