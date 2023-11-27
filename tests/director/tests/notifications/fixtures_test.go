@@ -54,10 +54,7 @@ const (
 )
 
 var (
-	samlDestinationAssertionIssuerPath     = directordestinationcreator.SAMLAssertionDestPath + ".assertionIssuer"
-	samlDestinationCertChainPath           = directordestinationcreator.SAMLAssertionDestPath + ".certificate"
-	clientCertAuthDestinationCertChainPath = directordestinationcreator.ClientCertAuthDestPath + ".certificate"
-	tenantAccessLevels                     = []string{"account", "global"} // should be a valid tenant access level
+	tenantAccessLevels = []string{"account", "global"} // should be a valid tenant access level
 )
 
 func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
@@ -88,64 +85,6 @@ func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, for
 		}
 		require.Equal(t, str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error))
 	}
-}
-
-func assertFormationAssignmentsWithDestinationConfig(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, sourceAppID, targetAppID string) {
-	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
-	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
-	assignments := assignmentsPage.Data
-	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
-
-	assertStateAndConfigFunc := func(assignment *graphql.FormationAssignment, assignmentConfig string) {
-		targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
-		require.Truef(t, ok, "Could not find expectations for assignment with source %q", assignment.Source)
-
-		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
-		require.Truef(t, ok, "Could not find expectations for assignment with source %q and target %q", assignment.Source, assignment.Target)
-
-		require.Equal(t, assignmentExpectation.State, assignment.State)
-
-		expectedAssignmentConfigStr := str.PtrStrToStr(assignmentExpectation.Config)
-		if expectedAssignmentConfigStr != "" && expectedAssignmentConfigStr != "\"\"" && assignmentConfig != "" && assignmentConfig != "\"\"" {
-			require.JSONEq(t, expectedAssignmentConfigStr, assignmentConfig)
-		} else {
-			require.Equal(t, expectedAssignmentConfigStr, assignmentConfig)
-		}
-	}
-
-	for _, assignment := range assignments {
-		// this is required because during SAML destination creation, the formation assignment config is enriched with destination certificate data
-		// and one of the properties is the cert chain itself that we cannot assert because it's dynamically created
-		if assignment.Source == sourceAppID && assignment.Target == targetAppID {
-			modifiedConfig := validateSamlAssertionDestinationCertData(t, assignment.Value)
-			modifiedConfig = validateClientCertAuthDestinationCertData(t, &modifiedConfig)
-
-			assertStateAndConfigFunc(assignment, modifiedConfig)
-			continue
-		}
-
-		assertStateAndConfigFunc(assignment, str.PtrStrToStr(assignment.Value))
-	}
-}
-
-func validateSamlAssertionDestinationCertData(t *testing.T, assignmentConfig *string) string {
-	modifiedConfig := validateDestinationCertData(t, assignmentConfig, samlDestinationCertChainPath)
-	return validateDestinationCertData(t, &modifiedConfig, samlDestinationAssertionIssuerPath)
-}
-
-func validateClientCertAuthDestinationCertData(t *testing.T, assignmentConfig *string) string {
-	return validateDestinationCertData(t, assignmentConfig, clientCertAuthDestinationCertChainPath)
-}
-
-func validateDestinationCertData(t *testing.T, assignmentConfig *string, path string) string {
-	require.NotEmpty(t, assignmentConfig)
-	destinationCertDataResult := gjson.Get(*assignmentConfig, path)
-	require.True(t, destinationCertDataResult.Exists())
-	require.NotEmpty(t, destinationCertDataResult.String())
-	modifiedConfig, err := sjson.Delete(*assignmentConfig, path)
-	require.NoError(t, err)
-
-	return modifiedConfig
 }
 
 func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, timeout, tick time.Duration) {
@@ -598,11 +537,11 @@ func assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEven
 				return
 			}
 			if formationPage.Data[0].State != formationState {
-				t.Logf("Formation state for formation with ID %q is %q, expected; %q", formationID, formationPage.Data[0].State, formationState)
+				t.Logf("Formation state for formation with ID %q is %q, expected: %q", formationID, formationPage.Data[0].State, formationState)
 				return
 			}
 			if formationPage.Data[0].ID != formationID {
-				t.Logf("Formation ID is %q, expected; %q", formationPage.Data[0].ID, formationID)
+				t.Logf("Formation ID is %q, expected: %q", formationPage.Data[0].ID, formationID)
 				return
 			}
 			if formationPage.Data[0].Name != formationName {
