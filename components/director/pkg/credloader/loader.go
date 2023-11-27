@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"sync"
 	"time"
 
@@ -132,6 +133,8 @@ func StartKeyLoader(ctx context.Context, keysLoaderConfig KeysConfig) (KeysCache
 	secretNames := map[string]credentialType{
 		parsedKeysSecret.Name: keysCredential,
 	}
+
+	fmt.Println("StartKeyLoader", parsedKeysSecret.Name)
 
 	keyLoader := NewKeyLoader(keysLoaderConfig, keysCache, secretManagers, secretNames, time.Second)
 	go keyLoader.Run(ctx)
