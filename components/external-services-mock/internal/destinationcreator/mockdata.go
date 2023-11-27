@@ -109,20 +109,20 @@ var FindAPIOAuth2ClientCredsDestResponseTemplate = `
     "URL": "%s",
     "Authentication": "%s",
     "ProxyType": "%s",
-	"clientId": "%s",
-	"clientSecret": "%s",
-	"tokenServiceURL": "%s",
+    "clientId": "%s",
+    "clientSecret": "%s",
+    "tokenServiceURL": "%s"
   },
-	"authTokens": [
-		{
-		  "type": "bearer",
-		  "value": "eyJhbGc",
-		  "http_header": {
-		  	"key": "Authorization",
-		  	"value": "Bearer eyJhbGc"
-		  },
-		  "expires_in": "43199",
-		  "scope": "test.scope"
-		}
-	]
+  "authTokens": [
+    {
+      "type": "bearer",
+      "value": "eyJhbGc",
+      "http_header": {
+        "key": "Authorization",
+        "value": "Bearer eyJhbGc"
+      },
+      "expires_in": "43199",
+      "scope": "test.scope"
+    }
+  ]
 }`
