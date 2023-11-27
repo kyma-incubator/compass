@@ -89,7 +89,9 @@ func (p selfSignedJwtTokenAuthorizationProvider) readPrivateKey(selfSignedJWTCre
 	certsCache := selfSignedJWTCredentials.KeysCache.Get()[selfSignedJWTCredentials.JwtSelfSignCertSecretName]
 	log.D().Infof("selfSignedJWTCredentials.KeysCache.Get() len %+v\n\n", len(selfSignedJWTCredentials.KeysCache.Get()))
 
-	log.D().Infof("certsCache %+v\n\n", certsCache)
+	for s, store := range selfSignedJWTCredentials.KeysCache.Get() {
+		log.D().Infof("\n%+v %+v\n\n", s, store)
+	}
 
 	pk, ok := certsCache.PrivateKey.(*rsa.PrivateKey)
 	if !ok {
