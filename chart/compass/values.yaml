@@ -225,7 +225,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3485"
+      version: "PR-3500"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false

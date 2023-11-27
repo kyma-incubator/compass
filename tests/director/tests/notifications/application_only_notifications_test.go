@@ -2609,14 +2609,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 			// Now we are not sending duplicate notifications duplicate always.
-			// If the synchronous notification is sent first (1), we will process the reverse (2)
+			// The synchronous notification is sent first (1), we will process the reverse (2)
 			// and not return send another one.
-			assertNotificationsCountMoreThanForTenant(t, body, app1.ID, 2)
-			// If the asynchronous notification is sent first, we will process it once and send a notification (1),
-			// then we will process the synchronous one (2) and process the asynchronous one again (3)
-			// This resync operation sometimes sends 5 notifications in bulk (the 3 above, and 2 for self-referenced assignments),
+			assertNotificationsCountForTenant(t, body, app1.ID, 2)
+			// This resync operation sends 4 notifications in bulk (the 2 above, and 2 for self-referenced assignments),
 			// and depending on the speed and order of them, it could lead to a duplicate notification,
-			// sent from the status API when processing the reverse assignment, making them 6 in total.
+			// sent from the status API when processing the reverse assignment, making them 5 in total.
 			assertNotificationsCountMoreThanForTenant(t, body, app2.ID, 2)
 
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
