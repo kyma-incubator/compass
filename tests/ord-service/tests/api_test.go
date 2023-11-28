@@ -22,6 +22,8 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"net/http"
 	urlpkg "net/url"
 	"strings"
@@ -30,8 +32,6 @@ import (
 
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
-	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
-
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -39,7 +39,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )
@@ -524,23 +523,31 @@ func TestORDService(stdT *testing.T) {
 
 		t.Run(fmt.Sprintf("Requesting paging of Bundle APIs for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			totalCount := len(testData.appInput.Bundles[0].APIDefinitions)
+			params := urlpkg.Values{}
 
-			respBody := makeRequestWithHeaders(t, testData.client, testData.url+"/consumptionBundles?$expand=apis($top=10;$skip=0)&$format=json", testData.headers)
+			params.Add("$expand", "apis($top=10)")
+			params.Add("$format", "json")
+			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, totalCount, len(gjson.Get(respBody, "value.0.apis").Array()))
 
 			expectedItemCount := 1
-			respBody = makeRequestWithHeaders(t, testData.client, fmt.Sprintf("%s/consumptionBundles?$expand=apis($top=10;$skip=%d)&$format=json", testData.url, totalCount-expectedItemCount), testData.headers)
+			params.Set("$expand", fmt.Sprintf("apis($top=10;$skip=%d)", totalCount-expectedItemCount))
+			respBody = makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, expectedItemCount, len(gjson.Get(respBody, "value").Array()))
 		})
 
 		t.Run(fmt.Sprintf("Requesting paging of Bundle Events for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			totalCount := len(testData.appInput.Bundles[0].EventDefinitions)
+			params := urlpkg.Values{}
 
-			respBody := makeRequestWithHeaders(t, testData.client, testData.url+"/consumptionBundles?$expand=events($top=10;$skip=0)&$format=json", testData.headers)
+			params.Add("$expand", "events($top=10)")
+			params.Add("$format", "json")
+			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, totalCount, len(gjson.Get(respBody, "value.0.events").Array()))
 
 			expectedItemCount := 1
-			respBody = makeRequestWithHeaders(t, testData.client, fmt.Sprintf("%s/consumptionBundles?$expand=events($top=10;$skip=%d)&$format=json", testData.url, totalCount-expectedItemCount), testData.headers)
+			params.Set("$expand", fmt.Sprintf("events($top=10;$skip=%d)", totalCount-expectedItemCount))
+			respBody = makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, expectedItemCount, len(gjson.Get(respBody, "value").Array()))
 		})
 
@@ -750,6 +757,11 @@ func TestORDService(stdT *testing.T) {
 }
 
 func makeRequestWithHeaders(t require.TestingT, httpClient *http.Client, url string, headers map[string][]string) string {
+	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, conf.ORDServiceDefaultResponseType)
+}
+
+func makeRequestWithHeadersAndQueryParams(t require.TestingT, httpClient *http.Client, url string, headers map[string][]string, params urlpkg.Values) string {
+	url = url + params.Encode()
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, conf.ORDServiceDefaultResponseType)
 }
 

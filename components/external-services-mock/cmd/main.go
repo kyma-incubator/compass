@@ -6,11 +6,12 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
@@ -402,12 +403,15 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/async-old/{tenantId}/{applicationId}", notificationHandler.AsyncDelete).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async/{tenantId}", notificationHandler.Async).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async/{tenantId}/{applicationId}", notificationHandler.AsyncDelete).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/async-no-config/{tenantId}", notificationHandler.AsyncNoConfig).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-no-response/{tenantId}", notificationHandler.AsyncNoResponseAssign).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-no-response/{tenantId}/{applicationId}", notificationHandler.AsyncNoResponseUnassign).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async-fail-once/{tenantId}", notificationHandler.AsyncFailOnce).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-fail-once/{tenantId}/{applicationId}", notificationHandler.AsyncFailOnce).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async-fail/{tenantId}", notificationHandler.AsyncFail).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-fail/{tenantId}/{applicationId}", notificationHandler.AsyncFail).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/async-fail-no-error/{tenantId}", notificationHandler.AsyncFailNoError).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/async-fail-no-error/{tenantId}/{applicationId}", notificationHandler.AsyncFailNoError).Methods(http.MethodDelete)
 	// formation assignment notifications handler for the destination creation/deletion
 	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}", notificationHandler.RespondWithIncompleteAndDestinationDetails).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}/{applicationId}", notificationHandler.DestinationDelete).Methods(http.MethodDelete)
