@@ -73,7 +73,7 @@ func TestCreateTenantAccessForNewTenants(t *testing.T) {
 		{
 			Name:           "test-new-tenant",
 			ExternalTenant: newExternalTenantID,
-			Parent:         &parent.InternalID,
+			Parents:        []*string{&parent.InternalID},
 			Type:           string(tenant.Account),
 			Provider:       "provide",
 		},
@@ -131,7 +131,7 @@ func TestCreateTenantAccessForNewTenant(t *testing.T) {
 	newTenant := graphql.BusinessTenantMappingInput{
 		Name:           "test-new-tenant",
 		ExternalTenant: newExternalTenantID,
-		Parent:         &parent.InternalID,
+		Parents:        []*string{&parent.InternalID},
 		Type:           string(tenant.Account),
 		Provider:       "provide",
 	}
