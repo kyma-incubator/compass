@@ -103,12 +103,16 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID string, re
 
 	var condition repo.Condition
 	var err error
-	if resourceType == resource.Application {
+	switch resourceType {
+	case resource.Application:
 		condition = repo.NewEqualCondition("app_id", resourceID)
 		err = r.lister.ListWithSelectForUpdate(ctx, resource.IntegrationDependency, tenantID, &integrationDependencyCollection, condition)
-	} else {
+	case resource.ApplicationTemplateVersion:
 		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
 		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &integrationDependencyCollection, condition)
+	case resource.Package:
+		condition = repo.NewEqualCondition("package_id", resourceID)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.IntegrationDependency, tenantID, &integrationDependencyCollection, condition)
 	}
 	if err != nil {
 		return nil, err

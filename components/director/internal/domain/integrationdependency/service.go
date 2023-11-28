@@ -81,6 +81,16 @@ func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTem
 	return s.repo.ListByResourceID(ctx, "", resource.ApplicationTemplateVersion, appTemplateVersionID)
 }
 
+// ListByPackageID lists all Integration Dependencies for a given package ID.
+func (s *service) ListByPackageID(ctx context.Context, packageID string) ([]*model.IntegrationDependency, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.ListByResourceID(ctx, tnt, resource.Package, packageID)
+}
+
 // Create creates integration dependency for a resource with given id.
 func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) (string, error) {
 	id := s.uidService.Generate()

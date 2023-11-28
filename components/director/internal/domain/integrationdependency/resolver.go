@@ -31,6 +31,7 @@ const (
 //go:generate mockery --name=IntegrationDependencyService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationDependencyService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) (string, error)
+	ListByPackageID(ctx context.Context, packageID string) ([]*model.IntegrationDependency, error)
 	Get(ctx context.Context, id string) (*model.IntegrationDependency, error)
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
 }
@@ -72,6 +73,7 @@ type ApplicationTemplateService interface {
 type PackageService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.PackageInput, pkgHash uint64) (string, error)
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Package, error)
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 }
 
 // Resolver is an object responsible for resolver-layer Integration Dependency operations
@@ -108,9 +110,9 @@ func (r *Resolver) AddIntegrationDependencyToApplication(ctx context.Context, ap
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	log.C(ctx).Infof("Adding Integration Dependency to application with id %s", appID)
+	log.C(ctx).Infof("Adding Integration Dependency to application with id %q", appID)
 
-	log.C(ctx).Infof("Getting application namespace for application with id %s", appID)
+	log.C(ctx).Infof("Getting application namespace for application with id %q", appID)
 	appNamespace, err := r.getApplicationNamespace(ctx, appID)
 	if err != nil {
 		return nil, err
@@ -129,7 +131,7 @@ func (r *Resolver) AddIntegrationDependencyToApplication(ctx context.Context, ap
 	var packageID string
 	if in.PartOfPackage == nil {
 		pkgOrdID := fmt.Sprintf("%s:%s:%s", appNamespace, manuallyAddedIntegrationDependenciesPackageOrdID, versionValue)
-		log.C(ctx).Infof("Part of package field is missing. Creating a package with ordID %q for application with id %s", pkgOrdID, appID)
+		log.C(ctx).Infof("Part of package field is missing. Creating a package with ordID %q for application with id %q", pkgOrdID, appID)
 
 		packageID, err = r.createPackage(ctx, appID, pkgOrdID)
 		if err != nil {
@@ -137,7 +139,7 @@ func (r *Resolver) AddIntegrationDependencyToApplication(ctx context.Context, ap
 		}
 		in.PartOfPackage = &pkgOrdID
 	} else {
-		log.C(ctx).Infof("Part of package field is provided. Getting a package with ordID %q for application with id %s", *in.PartOfPackage, appID)
+		log.C(ctx).Infof("Part of package field is provided. Getting a package with ordID %q for application with id %q", *in.PartOfPackage, appID)
 		packageID, err = r.getPackageID(ctx, appID, in.PartOfPackage)
 		if err != nil {
 			return nil, err
@@ -149,13 +151,13 @@ func (r *Resolver) AddIntegrationDependencyToApplication(ctx context.Context, ap
 		return nil, errors.Wrap(err, "while converting GraphQL input to Integration Dependency input")
 	}
 
-	log.C(ctx).Infof("Creating integration dependency for application with id %s", appID)
+	log.C(ctx).Infof("Creating integration dependency for application with id %q", appID)
 	integrationDependencyID, err := r.integrationDependencySvc.Create(ctx, resource.Application, appID, &packageID, *convertedIn, 0)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error occurred while creating Integration Dependency for application with id %s", appID)
+		return nil, errors.Wrapf(err, "error occurred while creating Integration Dependency for application with id %q", appID)
 	}
 
-	log.C(ctx).Infof("Creating aspects for integration dependency with id %q and application with id %s", integrationDependencyID, appID)
+	log.C(ctx).Infof("Creating aspects for integration dependency with id %q and application with id %q", integrationDependencyID, appID)
 	if err = r.createAspects(ctx, resource.Application, appID, integrationDependencyID, convertedIn.Aspects); err != nil {
 		return nil, errors.Wrapf(err, "error occurred while creating Aspects for Integration Dependency with id %q in the context of an application with id %q", integrationDependencyID, appID)
 	}
@@ -179,7 +181,7 @@ func (r *Resolver) AddIntegrationDependencyToApplication(ctx context.Context, ap
 		return nil, err
 	}
 
-	log.C(ctx).Infof("Integration Depenedncy with id %s successfully added to application with id %s", integrationDependencyID, appID)
+	log.C(ctx).Infof("Integration Depenedncy with id %q successfully added to application with id %q", integrationDependencyID, appID)
 	return gqlIntegrationDependency, nil
 }
 
@@ -191,7 +193,7 @@ func (r *Resolver) DeleteIntegrationDependency(ctx context.Context, id string) (
 	}
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
-	log.C(ctx).Infof("Deleting Integration Dependency with id %s", id)
+	log.C(ctx).Infof("Deleting Integration Dependency with id %q", id)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -210,9 +212,21 @@ func (r *Resolver) DeleteIntegrationDependency(ctx context.Context, id string) (
 		return nil, errors.Wrapf(err, "while converting Integration Dependency with id %q to graphQL", id)
 	}
 
-	err = r.integrationDependencySvc.Delete(ctx, resource.Application, id)
+	integrationDependencies, err := r.integrationDependencySvc.ListByPackageID(ctx, *integrationDependency.PackageID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while listing Integration Dependencies for package with id %q", *integrationDependency.PackageID)
+	}
+
+	if len(integrationDependencies) == 1 {
+		log.C(ctx).Infof("Deleting package with id %q for Integration Dependency with id %q", *integrationDependency.PackageID, id)
+		// the deletion of the package will delete the integration dependency as well
+		if err = r.packageSvc.Delete(ctx, resource.Application, *integrationDependency.PackageID); err != nil {
+			return nil, errors.Wrapf(err, "while deleting package with id %q for Integration Dependency with id %q", *integrationDependency.PackageID, id)
+		}
+	} else {
+		if err = r.integrationDependencySvc.Delete(ctx, resource.Application, id); err != nil {
+			return nil, errors.Wrapf(err, "while deleting Integration Dependency with id %q", id)
+		}
 	}
 
 	err = tx.Commit()
@@ -220,7 +234,7 @@ func (r *Resolver) DeleteIntegrationDependency(ctx context.Context, id string) (
 		return nil, err
 	}
 
-	log.C(ctx).Infof("Integration Dependency with id %s successfully deleted.", id)
+	log.C(ctx).Infof("Integration Dependency with id %q successfully deleted.", id)
 	return gqlIntegrationDependency, nil
 }
 
