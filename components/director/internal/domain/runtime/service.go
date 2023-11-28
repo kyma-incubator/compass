@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"k8s.io/utils/strings/slices"
 	"regexp"
 	"strings"
 	"time"
@@ -356,21 +357,18 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 		return errors.Wrapf(err, "while getting tenant with id %s", rtmTenant)
 	}
 
-	if len(tnt.Parent) == 0 {
-		return nil
+	for _, parentTenantID := range tnt.Parents {
+		ctxWithParentTenant := tenant.SaveToContext(ctx, parentTenantID, "")
+
+		mergedScenarios, err := s.formationService.MergeScenariosFromInputLabelsAndAssignments(ctxWithParentTenant, map[string]interface{}{}, id)
+		if err != nil {
+			return errors.Wrap(err, "while merging scenarios from input and assignments")
+		}
+
+		if err := s.assignRuntimeScenarios(ctxWithParentTenant, parentTenantID, id, mergedScenarios); err != nil {
+			return errors.Wrapf(err, "while assigning merged formations")
+		}
 	}
-
-	ctxWithParentTenant := tenant.SaveToContext(ctx, tnt.Parent, "")
-
-	mergedScenarios, err := s.formationService.MergeScenariosFromInputLabelsAndAssignments(ctxWithParentTenant, map[string]interface{}{}, id)
-	if err != nil {
-		return errors.Wrap(err, "while merging scenarios from input and assignments")
-	}
-
-	if err := s.assignRuntimeScenarios(ctxWithParentTenant, tnt.Parent, id, mergedScenarios); err != nil {
-		return errors.Wrapf(err, "while assigning merged formations")
-	}
-
 	return nil
 }
 
@@ -713,7 +711,7 @@ func (s *service) extractTenantFromSubaccountLabel(ctx context.Context, value in
 		return nil, errors.Wrapf(err, "while getting tenant %s", sa)
 	}
 
-	if callingTenant != tnt.ID && callingTenant != tnt.Parent {
+	if callingTenant != tnt.ID && !slices.Contains(tnt.Parents, callingTenant) {
 		log.C(ctx).Errorf("Caller tenant %s is not parent of the subaccount %s in the %s label", callingTenant, sa, scenarioassignment.SubaccountIDKey)
 		return nil, apperrors.NewInvalidOperationError(fmt.Sprintf("Tenant provided in %s label should be child of the caller tenant", scenarioassignment.SubaccountIDKey))
 	}

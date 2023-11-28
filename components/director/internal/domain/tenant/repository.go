@@ -726,6 +726,30 @@ func (r *pgRepository) ListByType(ctx context.Context, tenantType tenant.Type) (
 	return btms, nil
 }
 
+// ListByIdsAndType list tenants by ids that are of the specified type
+func (r *pgRepository) ListByIdsAndType(ctx context.Context, ids []string, tenantType tenant.Type) ([]*model.BusinessTenantMapping, error) {
+	var entityCollection tenant.EntityCollection
+
+	conditions := repo.Conditions{
+		repo.NewInConditionForStringValues(idColumn, ids),
+		repo.NewEqualCondition(typeColumn, tenantType),
+	}
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	btms := r.multipleFromEntities(entityCollection)
+	for _, btm := range btms {
+		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
+		if err != nil {
+			return nil, err
+		}
+		btm.Parents = parents
+	}
+	return btms, nil
+}
+
 func (r *pgRepository) multipleFromEntities(entities tenant.EntityCollection) []*model.BusinessTenantMapping {
 	items := make([]*model.BusinessTenantMapping, 0, len(entities))
 

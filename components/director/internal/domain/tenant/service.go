@@ -44,6 +44,7 @@ type TenantMappingRepository interface {
 	ListByParentAndType(ctx context.Context, parentID string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
 	ListByType(ctx context.Context, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
 	ListByIds(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
+	ListByIdsAndType(ctx context.Context, ids []string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
 	GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error)
 	GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error)
 }
@@ -292,6 +293,11 @@ func (s *service) GetTenantAccessForResource(ctx context.Context, tenantID, reso
 // ListByParentAndType list tenants by parent ID and tenant.Type
 func (s *service) ListByParentAndType(ctx context.Context, parentID string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error) {
 	return s.tenantMappingRepo.ListByParentAndType(ctx, parentID, tenantType)
+}
+
+// ListByIDsAndType list tenants by IDs and tenant.Type
+func (s *service) ListByIDsAndType(ctx context.Context, ids []string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error) {
+	return s.tenantMappingRepo.ListByIdsAndType(ctx, ids, tenantType)
 }
 
 // ExtractTenantIDForTenantScopedFormationTemplates returns the tenant ID based on its type:

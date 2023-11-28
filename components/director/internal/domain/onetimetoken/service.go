@@ -60,6 +60,7 @@ type ApplicationService interface {
 //go:generate mockery --name=ExternalTenantsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ExternalTenantsService interface {
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+	ListByIDsAndType(ctx context.Context, ids []string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
 }
 
 // HTTPDoer missing godoc
@@ -254,10 +255,12 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 
 	extTenant := tnt.ExternalTenant
 	if tnt.Type == tenantpkg.Subaccount {
-		if tnt, err = s.extTenantsSvc.GetTenantByID(ctx, tnt.Parent); err != nil {
-			return nil, errors.Wrapf(err, "while getting parent tenant with internal tenant %q", tnt.Parent)
+		parentTenants, err := s.extTenantsSvc.ListByIDsAndType(ctx, tnt.Parents, tenantpkg.Account)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting parent tenant of type %s for tenant %s", tenantpkg.Account, tnt.ID)
 		}
-		extTenant = tnt.ExternalTenant
+		// the subaccount has exactly one parent of type GA
+		extTenant = parentTenants[0].ExternalTenant
 	}
 
 	clientUser, err := client.LoadFromContext(ctx)

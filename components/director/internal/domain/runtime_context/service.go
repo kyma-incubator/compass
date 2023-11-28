@@ -137,8 +137,8 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 		return "", errors.Wrapf(err, "while getting tenant with id %s", rtmCtxTenant)
 	}
 
-	if len(tnt.Parent) != 0 {
-		ctxWithParentTenant := tenant.SaveToContext(ctx, tnt.Parent, "")
+	for _, parentTenantID := range tnt.Parents{
+		ctxWithParentTenant := tenant.SaveToContext(ctx, parentTenantID, "")
 		scenariosFromAssignments, err := s.formationService.GetScenariosFromMatchingASAs(ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext)
 		if err != nil {
 			return "", errors.Wrapf(err, "while getting formations from automatic scenario assignments")
@@ -158,12 +158,12 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 		}
 
 		for _, scenario := range scenariosFromAssignments {
-			if _, err := s.formationService.AssignFormation(ctxWithParentTenant, tnt.Parent, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}); err != nil {
+			if _, err := s.formationService.AssignFormation(ctxWithParentTenant, parentTenantID, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}); err != nil {
 				return "", errors.Wrapf(err, "while assigning formation with name %q for runtime context", scenario)
 			}
 
 			if ownedRuntimeExists {
-				if _, err := s.formationService.UnassignFormation(ctxWithParentTenant, tnt.Parent, in.RuntimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+				if _, err := s.formationService.UnassignFormation(ctxWithParentTenant, parentTenantID, in.RuntimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
 					return "", errors.Wrapf(err, "while assigning formation with name %q for runtime context", scenario)
 				}
 			}
