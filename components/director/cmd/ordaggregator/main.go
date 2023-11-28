@@ -180,7 +180,8 @@ func main() {
 
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
-		Transport: &http.Transport{
+		Transport: &http2.Transport{
+			AllowHTTP: true,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
