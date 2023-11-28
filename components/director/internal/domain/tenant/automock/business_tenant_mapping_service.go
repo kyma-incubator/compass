@@ -106,20 +106,20 @@ func (_m *BusinessTenantMappingService) GetLowestOwnerForResource(ctx context.Co
 	return r0, r1
 }
 
-// GetParentRecursivelyByExternalTenant provides a mock function with given fields: ctx, externalTenant
-func (_m *BusinessTenantMappingService) GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
+// GetParentsRecursivelyByExternalTenant provides a mock function with given fields: ctx, externalTenant
+func (_m *BusinessTenantMappingService) GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx, externalTenant)
 
-	var r0 *model.BusinessTenantMapping
+	var r0 []*model.BusinessTenantMapping
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.BusinessTenantMapping, error)); ok {
 		return rf(ctx, externalTenant)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, externalTenant)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.BusinessTenantMapping)
+			r0 = ret.Get(0).([]*model.BusinessTenantMapping)
 		}
 	}
 

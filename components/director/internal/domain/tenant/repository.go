@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantparentmapping"
 	"math"
 	"strings"
 	"text/template"
@@ -39,13 +40,12 @@ var (
 	idColumnCasted            = "id::text"
 	externalNameColumn        = "external_name"
 	externalTenantColumn      = "external_tenant"
-	parentColumn              = "parent"
 	typeColumn                = "type"
 	providerNameColumn        = "provider_name"
 	statusColumn              = "status"
 	initializedComputedColumn = "initialized"
 
-	insertColumns      = []string{idColumn, externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}
+	insertColumns      = []string{idColumn, externalNameColumn, externalTenantColumn, typeColumn, providerNameColumn, statusColumn}
 	conflictingColumns = []string{externalTenantColumn}
 	updateColumns      = []string{externalNameColumn}
 	searchColumns      = []string{idColumnCasted, externalNameColumn, externalTenantColumn}
@@ -87,6 +87,7 @@ type pgRepository struct {
 	labelsQueryBuilder               repo.QueryBuilderGlobal
 	applicationQueryBuilder          repo.QueryBuilderGlobal
 	tenantApplicationsQueryBuilder   repo.QueryBuilderGlobal
+	tenantParentRepo                 tenantparentmapping.TenantParentRepository
 
 	conv Converter
 }
@@ -102,12 +103,13 @@ func NewRepository(conv Converter) *pgRepository {
 		pageableQuerierGlobal:               repo.NewPageableQuerierGlobal(resource.Tenant, tableName, insertColumns),
 		listerGlobal:                        repo.NewListerGlobal(resource.Tenant, tableName, insertColumns),
 		conditionTreeLister:                 repo.NewConditionTreeListerGlobal(tableName, insertColumns),
-		updaterGlobal:                       repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}, []string{idColumn}),
+		updaterGlobal:                       repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, typeColumn, providerNameColumn, statusColumn}, []string{idColumn}),
 		deleterGlobal:                       repo.NewDeleterGlobal(resource.Tenant, tableName),
 		tenantRuntimeContextQueryBuilder:    repo.NewQueryBuilderGlobal(resource.RuntimeContext, tenantRuntimeContextTable, tenantRuntimeContextSelectedColumns),
 		labelsQueryBuilder:                  repo.NewQueryBuilderGlobal(resource.Label, labelsTable, labelsSelectedColumns),
 		applicationQueryBuilder:             repo.NewQueryBuilderGlobal(resource.Application, applicationTable, applicationsSelectedColumns),
 		tenantApplicationsQueryBuilder:      repo.NewQueryBuilderGlobal(resource.Application, tenantApplicationsTable, tenantApplicationsSelectedColumns),
+		tenantParentRepo:                    tenantparentmapping.NewRepository(),
 		conv:                                conv,
 	}
 }
@@ -115,12 +117,18 @@ func NewRepository(conv Converter) *pgRepository {
 // UnsafeCreate adds a new tenant in the Compass DB in case it does not exist. If it already exists, no action is taken.
 // It is not guaranteed that the provided tenant ID is the same as the tenant ID in the database.
 func (r *pgRepository) UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) error {
-	return r.unsafeCreator.UnsafeCreate(ctx, r.conv.ToEntity(&item))
+	if err := r.unsafeCreator.UnsafeCreate(ctx, r.conv.ToEntity(&item)); err != nil {
+		return errors.Wrapf(err, "while creating business tenant mapping")
+	}
+	return r.tenantParentRepo.CreateMultiple(ctx, item.ID, item.Parents)
 }
 
 // Upsert adds the provided tenant into the Compass storage if it does not exist, or updates it if it does.
 func (r *pgRepository) Upsert(ctx context.Context, item model.BusinessTenantMapping) error {
-	return r.upserter.UpsertGlobal(ctx, r.conv.ToEntity(&item))
+	if err := r.upserter.UpsertGlobal(ctx, r.conv.ToEntity(&item)); err != nil {
+		return errors.Wrapf(err, "while upserting business tenant mapping")
+	}
+	return r.tenantParentRepo.CreateMultiple(ctx, item.ID, item.Parents)
 }
 
 // Get retrieves the active tenant with matching internal ID from the Compass storage.
@@ -133,7 +141,15 @@ func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenan
 		return nil, err
 	}
 
-	return r.conv.FromEntity(&entity), nil
+	//TODO optimise
+	parents, err := r.tenantParentRepo.ListParents(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	btm := r.conv.FromEntity(&entity)
+	btm.Parents = parents
+
+	return btm, nil
 }
 
 // GetByExternalTenant retrieves the active tenant with matching external ID from the Compass storage.
@@ -145,7 +161,14 @@ func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenant s
 	if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
-	return r.conv.FromEntity(&entity), nil
+
+	btm := r.conv.FromEntity(&entity)
+	parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
+	if err != nil {
+		return nil, err
+	}
+	btm.Parents = parents
+	return btm, nil
 }
 
 // Exists checks if tenant with the provided internal ID exists in the Compass storage.
@@ -218,7 +241,16 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 		return nil, errors.Wrap(err, "while listing tenants from DB")
 	}
 
-	return r.multipleFromEntities(entityCollection), nil
+	btms := r.multipleFromEntities(entityCollection)
+	for _, btm := range btms {
+		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
+		if err != nil {
+			return nil, err
+		}
+		btm.Parents = parents
+	}
+
+	return btms, nil
 }
 
 // ListPageBySearchTerm retrieves a page of tenants from the Compass storage filtered by a search term.
@@ -241,6 +273,13 @@ func (r *pgRepository) ListPageBySearchTerm(ctx context.Context, searchTerm stri
 	}
 
 	items := r.multipleFromEntities(entityCollection)
+	for _, btm := range items {
+		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
+		if err != nil {
+			return nil, err
+		}
+		btm.Parents = parents
+	}
 
 	return &model.BusinessTenantMappingPage{
 		Data:       items,
@@ -277,7 +316,15 @@ func (r *pgRepository) listByExternalTenantIDs(ctx context.Context, externalTena
 		return nil, err
 	}
 
-	return r.multipleFromEntities(entityCollection), nil
+	btms := r.multipleFromEntities(entityCollection)
+	for _, btm := range btms {
+		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
+		if err != nil {
+			return nil, err
+		}
+		btm.Parents = parents
+	}
+	return btms, nil
 }
 
 // Update updates the values of tenant with matching internal, and external IDs.
@@ -286,63 +333,62 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
-	tntFromDB, err := r.Get(ctx, model.ID)
-	if err != nil {
-		return err
-	}
-
 	entity := r.conv.ToEntity(model)
-
 	if err := r.updaterGlobal.UpdateSingleGlobal(ctx, entity); err != nil {
 		return err
-	}
-
-	if tntFromDB.Parent != model.Parent {
-		for topLevelEntity := range resource.TopLevelEntities {
-			if _, ok := topLevelEntity.IgnoredTenantAccessTable(); ok {
-				log.C(ctx).Debugf("top level entity %s does not need a tenant access table", topLevelEntity)
-				continue
-			}
-
-			m2mTable, ok := topLevelEntity.TenantAccessTable()
-			if !ok {
-				return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
-			}
-
-			tenantAccesses := repo.TenantAccessCollection{}
-
-			tenantAccessLister := repo.NewListerGlobal(resource.TenantAccess, m2mTable, repo.M2MColumns)
-			if err := tenantAccessLister.ListGlobal(ctx, &tenantAccesses, repo.NewEqualCondition(repo.M2MTenantIDColumn, model.ID), repo.NewEqualCondition(repo.M2MOwnerColumn, true)); err != nil {
-				return errors.Wrapf(err, "while listing tenant access records for tenant with id %s", model.ID)
-			}
-
-			for _, ta := range tenantAccesses {
-				tenantAccess := &repo.TenantAccess{
-					TenantID:   model.Parent,
-					ResourceID: ta.ResourceID,
-					Owner:      true,
-				}
-				if err := repo.CreateTenantAccessRecursively(ctx, m2mTable, tenantAccess); err != nil {
-					return errors.Wrapf(err, "while creating tenant acccess record for resource %s for parent %s of tenant %s", ta.ResourceID, model.Parent, model.ID)
-				}
-			}
-
-			if len(tntFromDB.Parent) > 0 && len(tenantAccesses) > 0 {
-				resourceIDs := make([]string, 0, len(tenantAccesses))
-				for _, ta := range tenantAccesses {
-					resourceIDs = append(resourceIDs, ta.ResourceID)
-				}
-
-				if err := repo.DeleteTenantAccessRecursively(ctx, m2mTable, tntFromDB.Parent, resourceIDs); err != nil {
-					return errors.Wrapf(err, "while deleting tenant accesses for the old parent %s of the tenant %s", tntFromDB.Parent, model.ID)
-				}
-			}
-		}
 	}
 
 	return nil
 }
 
+// TODO
+func (r *pgRepository) AddParent(ctx context.Context, model *model.BusinessTenantMapping) error {
+	//if tntFromDB.Parent != model.Parent {
+	//	for topLevelEntity := range resource.TopLevelEntities {
+	//		if _, ok := topLevelEntity.IgnoredTenantAccessTable(); ok {
+	//			log.C(ctx).Debugf("top level entity %s does not need a tenant access table", topLevelEntity)
+	//			continue
+	//		}
+	//
+	//		m2mTable, ok := topLevelEntity.TenantAccessTable()
+	//		if !ok {
+	//			return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
+	//		}
+	//
+	//		tenantAccesses := repo.TenantAccessCollection{}
+	//
+	//		tenantAccessLister := repo.NewListerGlobal(resource.TenantAccess, m2mTable, repo.M2MColumns)
+	//		if err := tenantAccessLister.ListGlobal(ctx, &tenantAccesses, repo.NewEqualCondition(repo.M2MTenantIDColumn, model.ID), repo.NewEqualCondition(repo.M2MOwnerColumn, true)); err != nil {
+	//			return errors.Wrapf(err, "while listing tenant access records for tenant with id %s", model.ID)
+	//		}
+	//
+	//		for _, ta := range tenantAccesses {
+	//			tenantAccess := &repo.TenantAccess{
+	//				TenantID:   model.Parent,
+	//				ResourceID: ta.ResourceID,
+	//				Owner:      true, //TODO
+	//			}
+	//			if err := repo.CreateTenantAccessRecursively(ctx, m2mTable, tenantAccess); err != nil {
+	//				return errors.Wrapf(err, "while creating tenant acccess record for resource %s for parent %s of tenant %s", ta.ResourceID, model.Parent, model.ID)
+	//			}
+	//		}
+	//
+	//		if len(tntFromDB.Parent) > 0 && len(tenantAccesses) > 0 {
+	//			resourceIDs := make([]string, 0, len(tenantAccesses))
+	//			for _, ta := range tenantAccesses {
+	//				resourceIDs = append(resourceIDs, ta.ResourceID)
+	//			}
+	//
+	//			if err := repo.DeleteTenantAccessRecursively(ctx, m2mTable, tntFromDB.Parent, resourceIDs); err != nil {
+	//				return errors.Wrapf(err, "while deleting tenant accesses for the old parent %s of the tenant %s", tntFromDB.Parent, model.ID)
+	//			}
+	//		}
+	//	}
+	//}
+	return nil
+}
+
+// TODO try to delete subaccount with existing app in it to see if the cascade will work
 // DeleteByExternalTenant removes a tenant with matching external ID from the Compass storage.
 // It also deletes all the accesses for resources that the tenant is owning for its parents.
 func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenant string) error {
@@ -354,6 +400,11 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 		return err
 	}
 
+	//1. Delete tenant record from model.BusinessTenantMapping
+	//2. Delete all records from tenant_parent mapping - ON CASCADE DELETE
+	//3. Tenant access?
+
+	// TODO adaptation is needed here
 	for topLevelEntity, topLevelEntityTable := range resource.TopLevelEntities {
 		if _, ok := topLevelEntity.IgnoredTenantAccessTable(); ok {
 			log.C(ctx).Debugf("top level entity %s does not need a tenant access table", topLevelEntity)
@@ -385,6 +436,12 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 		}
 	}
 
+	if tnt.Type != tenant.CostObject {
+		if err = r.deleteChildTenantsRecursively(ctx, tnt.ID); err != nil {
+			return err
+		}
+	}
+
 	conditions := repo.Conditions{
 		repo.NewEqualCondition(externalTenantColumn, externalTenant),
 	}
@@ -392,13 +449,33 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 	return r.deleterGlobal.DeleteManyGlobal(ctx, conditions)
 }
 
+func (r *pgRepository) deleteChildTenantsRecursively(ctx context.Context, parentID string) error {
+	childTenants, err := r.tenantParentRepo.ListByParent(ctx, parentID)
+	if err != nil {
+		return err
+	}
+	for _, childTenant := range childTenants {
+		if err := r.deleteChildTenantsRecursively(ctx, childTenant); err != nil {
+			return err
+		}
+
+		conditions := repo.Conditions{
+			repo.NewEqualCondition(idColumn, childTenant),
+		}
+		if err = r.deleterGlobal.DeleteOneGlobal(ctx, conditions); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // GetLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
 func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
 	rawStmt := `(SELECT {{ .m2mTenantID }} FROM {{ .m2mTable }} ta WHERE ta.{{ .m2mID }} = ? AND ta.{{ .owner }} = true` +
-		` AND (NOT EXISTS(SELECT 1 FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }})` + // the tenant has no children
+		` AND (NOT EXISTS(SELECT 1 FROM {{ .tenantsTable }} JOIN {{ .tenantParentsTable }} ON {{ .tenantsTable }}.{{ .id }} = {{ .tenantParentsTable }}.{{ .tenantID }} WHERE {{ .parentID }} = ta.{{ .m2mTenantID }})` + // the tenant has no children
 		` OR (NOT EXISTS(SELECT 1 FROM {{ .m2mTable }} ta2` +
 		` WHERE ta2.{{ .m2mID }} = ? AND ta2.{{ .owner }} = true AND` +
-		` ta2.{{ .m2mTenantID }} IN (SELECT {{ .id }} FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }})))))` // there is no child that has owner access
+		` ta2.{{ .m2mTenantID }} IN (SELECT {{ .id }} FROM {{ .tenantsTable }} JOIN {{ .tenantParentsTable }} ON {{ .tenantsTable }}.{{ .id }} = {{ .tenantParentsTable }}.{{ .tenantID }} WHERE {{ .parentID }} = ta.{{ .m2mTenantID }})))))` // there is no child that has owner access
 
 	t, err := template.New("").Parse(rawStmt)
 	if err != nil {
@@ -411,13 +488,15 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
 	}
 
 	data := map[string]string{
-		"m2mTenantID":  repo.M2MTenantIDColumn,
-		"m2mTable":     m2mTable,
-		"m2mID":        repo.M2MResourceIDColumn,
-		"owner":        repo.M2MOwnerColumn,
-		"tenantsTable": tableName,
-		"parent":       parentColumn,
-		"id":           idColumn,
+		"m2mTenantID":        repo.M2MTenantIDColumn,
+		"m2mTable":           m2mTable,
+		"m2mID":              repo.M2MResourceIDColumn,
+		"owner":              repo.M2MOwnerColumn,
+		"tenantsTable":       tableName,
+		"tenantParentsTable": "tenant_parents",
+		"parentID":           "parent_id",
+		"tenantID":           "tenant_id",
+		"id":                 idColumn,
 	}
 
 	res := new(bytes.Buffer)
@@ -446,17 +525,18 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
 	return dest.TenantID, nil
 }
 
+// TODO delete if still unused
 // GetCustomerIDParentRecursively gets the top parent external ID (customer_id) for a given tenant ID (internal id)
 func (r *pgRepository) GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error) {
 	recursiveQuery := `WITH RECURSIVE parents AS
-                   (SELECT t1.id, t1.parent, t1.external_tenant, t1.type
-                    FROM business_tenant_mappings t1
+                   (SELECT t1.id, t1.external_tenant, t1.type, tp1.parent_id
+                    FROM business_tenant_mappings t1 JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
                     WHERE id = $1
                     UNION ALL
-                    SELECT t2.id, t2.parent, t2.external_tenant, t2.type
-                    FROM business_tenant_mappings t2
-                             INNER JOIN parents p on p.parent = t2.id)
-			SELECT external_tenant, type FROM parents WHERE parent is null`
+                    SELECT t2.id, t2.external_tenant, t2.type, tp2.parent_id
+                    FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
+                                                     INNER JOIN parents p on p.parent_id = t2.id)
+			SELECT external_tenant, type FROM parents WHERE parent_id is NULL AND type='customer'`
 
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
@@ -467,15 +547,13 @@ func (r *pgRepository) GetCustomerIDParentRecursively(ctx context.Context, tenan
 
 	dest := struct {
 		ExternalCustomerTenant string `db:"external_tenant"`
-		Type                   string `db:"type"`
 	}{}
 
 	if err := persist.GetContext(ctx, &dest, recursiveQuery, tenantID); err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return "", nil
+		}
 		return "", persistence.MapSQLError(ctx, err, resource.Tenant, resource.Get, "while getting parent external customer ID for internal tenant: %q", tenantID)
-	}
-
-	if dest.Type != tenant.TypeToStr(tenant.Customer) {
-		return "", nil
 	}
 
 	if dest.ExternalCustomerTenant == "" {
@@ -485,17 +563,18 @@ func (r *pgRepository) GetCustomerIDParentRecursively(ctx context.Context, tenan
 	return dest.ExternalCustomerTenant, nil
 }
 
-// GetParentRecursivelyByExternalTenant gets the top parent for a given external tenant
-func (r *pgRepository) GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
+// GetParentsRecursivelyByExternalTenant gets the top parent for a given external tenant
+func (r *pgRepository) GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error) {
 	recursiveQuery := `WITH RECURSIVE parents AS
-                   (SELECT t1.id, t1.external_name, t1.external_tenant, t1.provider_name, t1.status, t1.parent, t1.type
-                    FROM business_tenant_mappings t1
+                   (SELECT t1.id, t1.external_name, t1.external_tenant, t1.provider_name, t1.status, t1.type, tp1.parent_id, 0 AS depth
+                    FROM business_tenant_mappings t1 JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
                     WHERE external_tenant = $1
                     UNION ALL
-                    SELECT t2.id, t2.external_name, t2.external_tenant, t2.provider_name, t2.status, t2.parent, t2.type
-                    FROM business_tenant_mappings t2
-                             INNER JOIN parents p on p.parent = t2.id)
-			SELECT id, external_name, external_tenant, provider_name, status, parent, type FROM parents WHERE parent is null`
+                    SELECT t2.id, t2.external_name, t2.external_tenant, t2.provider_name, t2.status, t2.type, tp2.parent_id, p.depth+ 1
+                    FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
+                                                     INNER JOIN parents p on p.parent_id = t2.id)
+			SELECT id, external_name, external_tenant, provider_name, status, depth, type FROM parents WHERE parent_id is NULL AND (type != 'cost-object'
+                                                                                              OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')))`
 
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
@@ -504,13 +583,21 @@ func (r *pgRepository) GetParentRecursivelyByExternalTenant(ctx context.Context,
 
 	log.C(ctx).Debugf("Executing DB query: %s", recursiveQuery)
 
-	var entity tenant.Entity
+	var entityCollection tenant.EntityCollection
 
-	if err := persist.GetContext(ctx, &entity, recursiveQuery, externalTenant); err != nil {
-		return nil, persistence.MapSQLError(ctx, err, resource.Tenant, resource.Get, "while getting parent external customer ID for external tenant: %q", externalTenant)
+	if err := persist.GetContext(ctx, &entityCollection, recursiveQuery, externalTenant); err != nil {
+		return nil, persistence.MapSQLError(ctx, err, resource.Tenant, resource.List, "while listing parents for external tenant: %q", externalTenant)
 	}
 
-	return r.conv.FromEntity(&entity), nil
+	btms := r.multipleFromEntities(entityCollection)
+	for _, btm := range btms {
+		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
+		if err != nil {
+			return nil, err
+		}
+		btm.Parents = parents
+	}
+	return btms, nil
 }
 
 func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx context.Context, selfRegDistinguishLabel string) ([]*model.BusinessTenantMapping, error) {
@@ -554,23 +641,66 @@ func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx conte
 		return nil, err
 	}
 
-	return r.multipleFromEntities(entityCollection), nil
+	btms := r.multipleFromEntities(entityCollection)
+	for _, btm := range btms {
+		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
+		if err != nil {
+			return nil, err
+		}
+		btm.Parents = parents
+	}
+	return btms, nil
 }
 
 // ListByParentAndType list tenants by parent ID and tenant.Type
 func (r *pgRepository) ListByParentAndType(ctx context.Context, parentID string, tenantType tenant.Type) ([]*model.BusinessTenantMapping, error) {
+	tenantIDs, err := r.tenantParentRepo.ListByParent(ctx, parentID)
+	if err != nil {
+		return nil, err
+	}
+
+	conditions := repo.Conditions{
+		repo.NewInConditionForStringValues(idColumn, tenantIDs),
+		repo.NewEqualCondition(typeColumn, tenantType),
+	}
+
+	var entityCollection tenant.EntityCollection
+	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	btms := r.multipleFromEntities(entityCollection)
+	for _, btm := range btms {
+		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
+		if err != nil {
+			return nil, err
+		}
+		btm.Parents = parents
+	}
+	return btms, nil
+}
+
+// ListByIds list tenants by ids
+func (r *pgRepository) ListByIds(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error) {
 	var entityCollection tenant.EntityCollection
 
 	conditions := repo.Conditions{
-		repo.NewEqualCondition(parentColumn, parentID),
-		repo.NewEqualCondition(typeColumn, tenantType),
+		repo.NewInConditionForStringValues(idColumn, ids),
 	}
 
 	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
 		return nil, err
 	}
 
-	return r.multipleFromEntities(entityCollection), nil
+	btms := r.multipleFromEntities(entityCollection)
+	for _, btm := range btms {
+		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
+		if err != nil {
+			return nil, err
+		}
+		btm.Parents = parents
+	}
+	return btms, nil
 }
 
 // ListByType list tenants by tenant.Type
@@ -585,7 +715,15 @@ func (r *pgRepository) ListByType(ctx context.Context, tenantType tenant.Type) (
 		return nil, err
 	}
 
-	return r.multipleFromEntities(entityCollection), nil
+	btms := r.multipleFromEntities(entityCollection)
+	for _, btm := range btms {
+		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
+		if err != nil {
+			return nil, err
+		}
+		btm.Parents = parents
+	}
+	return btms, nil
 }
 
 func (r *pgRepository) multipleFromEntities(entities tenant.EntityCollection) []*model.BusinessTenantMapping {

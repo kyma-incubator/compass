@@ -147,7 +147,7 @@ func (c *universalCreator) createTopLevelEntity(ctx context.Context, id string, 
 	return CreateTenantAccessRecursively(ctx, m2mTable, &TenantAccess{
 		TenantID:   tenant,
 		ResourceID: id,
-		Owner:      true,
+		Owner:      true, //TODO no change needed?
 	})
 }
 

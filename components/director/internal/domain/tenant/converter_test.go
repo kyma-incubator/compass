@@ -103,7 +103,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			InternalID:  ids[0],
 			Name:        &names[0],
 			Type:        string(tnt.Account),
-			ParentID:    "",
+			Parents:     []string{},
 			Initialized: nil,
 			Labels:      nil,
 			Provider:    testProvider,
@@ -126,13 +126,43 @@ func TestConverter_ToGraphQLInput(t *testing.T) {
 		expected := graphql.BusinessTenantMappingInput{
 			Name:           names[0],
 			ExternalTenant: testExternal,
-			Parent:         str.Ptr(parent),
+			Parents:        []*string{},
 			Subdomain:      str.Ptr(subdomain),
 			Region:         str.Ptr(region),
 			Type:           string(tnt.Account),
 			Provider:       testProvider,
 			LicenseType:    str.Ptr(licenseType),
 			CustomerID:     testCustomerID,
+		}
+
+		// THEN
+		require.Equal(t, expected, res)
+	})
+}
+
+func TestConverter_InputFromGraphQL(t *testing.T) {
+	t.Run("all fields", func(t *testing.T) {
+		c := tenant.NewConverter()
+
+		// WHEN
+		in := graphql.BusinessTenantMappingInput{
+			Name:           names[0],
+			ExternalTenant: externalTenants[0],
+			Parents:        []*string{str.Ptr(parent)},
+			Subdomain:      str.Ptr(subdomain),
+			Region:         str.Ptr(region),
+			Type:           string(tnt.Account),
+			Provider:       testProvider,
+		}
+		res := c.InputFromGraphQL(in)
+		expected := model.BusinessTenantMappingInput{
+			Name:           names[0],
+			ExternalTenant: externalTenants[0],
+			Parents:        []string{parent},
+			Subdomain:      subdomain,
+			Region:         region,
+			Type:           string(tnt.Account),
+			Provider:       testProvider,
 		}
 
 		// THEN
@@ -149,7 +179,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			{
 				Name:           names[0],
 				ExternalTenant: externalTenants[0],
-				Parent:         str.Ptr(parent),
+				Parents:        []*string{str.Ptr(parent)},
 				Subdomain:      str.Ptr(subdomain),
 				Region:         str.Ptr(region),
 				Type:           string(tnt.Account),
@@ -158,7 +188,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			{
 				Name:           names[1],
 				ExternalTenant: externalTenants[1],
-				Parent:         str.Ptr(parent),
+				Parents:        []*string{str.Ptr(parent)},
 				Subdomain:      str.Ptr(subdomain),
 				Region:         str.Ptr(region),
 				Type:           string(tnt.Account),
@@ -167,7 +197,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			{
 				Name:           names[1],
 				ExternalTenant: externalTenants[1],
-				Parent:         str.Ptr(parent),
+				Parents:        []*string{str.Ptr(parent)},
 				Subdomain:      str.Ptr(subdomain),
 				Region:         str.Ptr(region),
 				Type:           string(tnt.Subaccount),
@@ -179,7 +209,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			{
 				Name:           names[0],
 				ExternalTenant: externalTenants[0],
-				Parent:         parent,
+				Parents:        []string{parent},
 				Subdomain:      subdomain,
 				Region:         region,
 				Type:           string(tnt.Account),
@@ -188,7 +218,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			{
 				Name:           names[1],
 				ExternalTenant: externalTenants[1],
-				Parent:         parent,
+				Parents:        []string{parent},
 				Subdomain:      subdomain,
 				Region:         region,
 				Type:           string(tnt.Account),
@@ -197,7 +227,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			{
 				Name:           names[1],
 				ExternalTenant: externalTenants[1],
-				Parent:         parent,
+				Parents:        []string{parent},
 				Subdomain:      subdomain,
 				Region:         region,
 				Type:           string(tnt.Subaccount),
@@ -222,7 +252,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 				ID:             ids[0],
 				Name:           names[0],
 				ExternalTenant: externalTenants[0],
-				Parent:         parent,
+				Parents:        []string{parent},
 				Type:           tnt.Account,
 				Provider:       testProvider,
 				Status:         "",
@@ -237,7 +267,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 				InternalID:  ids[0],
 				Name:        &names[0],
 				Type:        string(tnt.Account),
-				ParentID:    "",
+				Parents:     []string{parent},
 				Initialized: nil,
 				Labels:      nil,
 				Provider:    testProvider,
@@ -257,7 +287,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 				ID:             ids[0],
 				Name:           names[0],
 				ExternalTenant: externalTenants[0],
-				Parent:         parent,
+				Parents:        []string{parent},
 				Type:           tnt.Account,
 				Provider:       testProvider,
 				Status:         "",
@@ -267,7 +297,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 				ID:             ids[1],
 				Name:           names[1],
 				ExternalTenant: externalTenants[1],
-				Parent:         parent,
+				Parents:        []string{parent},
 				Type:           tnt.Account,
 				Provider:       testProvider,
 				Status:         "",
@@ -281,7 +311,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 				InternalID:  ids[0],
 				Name:        &names[0],
 				Type:        string(tnt.Account),
-				ParentID:    parent,
+				Parents:     []string{parent},
 				Initialized: nil,
 				Labels:      nil,
 				Provider:    testProvider,
@@ -291,7 +321,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 				InternalID:  ids[1],
 				Name:        &names[1],
 				Type:        string(tnt.Account),
-				ParentID:    parent,
+				Parents:     []string{parent},
 				Initialized: nil,
 				Labels:      nil,
 				Provider:    testProvider,
@@ -313,7 +343,7 @@ func TestConverter_MultipleInputToGraphQLInputL(t *testing.T) {
 			{
 				Name:           names[0],
 				ExternalTenant: externalTenants[0],
-				Parent:         parent,
+				Parents:        []string{parent},
 				Subdomain:      subdomain,
 				Region:         region,
 				Type:           string(tnt.Account),
@@ -323,7 +353,7 @@ func TestConverter_MultipleInputToGraphQLInputL(t *testing.T) {
 			{
 				Name:           names[1],
 				ExternalTenant: externalTenants[1],
-				Parent:         parent,
+				Parents:        []string{parent},
 				Subdomain:      subdomain,
 				Region:         region,
 				Type:           string(tnt.Account),
@@ -335,7 +365,7 @@ func TestConverter_MultipleInputToGraphQLInputL(t *testing.T) {
 			{
 				Name:           names[0],
 				ExternalTenant: externalTenants[0],
-				Parent:         str.Ptr(parent),
+				Parents:        []*string{str.Ptr(parent)},
 				Subdomain:      str.Ptr(subdomain),
 				Region:         str.Ptr(region),
 				Type:           string(tnt.Account),
@@ -345,7 +375,7 @@ func TestConverter_MultipleInputToGraphQLInputL(t *testing.T) {
 			{
 				Name:           names[1],
 				ExternalTenant: externalTenants[1],
-				Parent:         str.Ptr(parent),
+				Parents:        []*string{str.Ptr(parent)},
 				Subdomain:      str.Ptr(subdomain),
 				Region:         str.Ptr(region),
 				Type:           string(tnt.Account),

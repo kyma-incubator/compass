@@ -152,7 +152,7 @@ func TestService_ExtractTenantIDForTenantScopedFormationTemplates(t *testing.T) 
 			Context: ctx,
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("Get", ctx, testID).Return(newModelBusinessTenantMappingWithType(testID, testName, "", nil, tenantEntity.Account), nil).Once()
+				tenantMappingRepo.On("Get", ctx, testID).Return(newModelBusinessTenantMappingWithType(testID, testName, []string{}, nil, tenantEntity.Account), nil).Once()
 				return tenantMappingRepo
 			},
 			ExpectedOutput: testID,
@@ -162,7 +162,8 @@ func TestService_ExtractTenantIDForTenantScopedFormationTemplates(t *testing.T) 
 			Context: ctx,
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("Get", ctx, testID).Return(newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Subaccount), nil).Once()
+				tenantMappingRepo.On("Get", ctx, testID).Return(newModelBusinessTenantMappingWithType(testID, testName, []string{testParentID}, nil, tenantEntity.Subaccount), nil).Once()
+				tenantMappingRepo.On("Get", ctx, testParentID).Return(newModelBusinessTenantMappingWithType(testParentID, testName, []string{testParentID}, nil, tenantEntity.Account), nil).Once()
 				return tenantMappingRepo
 			},
 			ExpectedOutput: testParentID,
@@ -427,11 +428,11 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 		newModelBusinessTenantMappingInput("test2", "", "", str.Ptr(testLicenseType)).WithExternalTenant("external2")}
 	tenantInputsWithCustomerID := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInputWithCustomerID("test1", testCustomerID),
 		newModelBusinessTenantMappingInputWithCustomerID("test2", testCustomerID)}
-	tenantModelInputsWithParent := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInputWithType(testID, "test1", testParentID, "", "", nil, tenantEntity.Account),
-		newModelBusinessTenantMappingInputWithType(testParentID, "test2", "", "", "", nil, tenantEntity.Customer)}
+	tenantModelInputsWithParent := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInputWithType(testID, "test1", []string{testParentID}, "", "", nil, tenantEntity.Account),
+		newModelBusinessTenantMappingInputWithType(testParentID, "test2", []string{}, "", "", nil, tenantEntity.Customer)}
 	tenantWithSubdomainAndRegion := newModelBusinessTenantMappingInput("test1", testSubdomain, testRegion, nil)
-	tenantModelInputsWithParentOrganization := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInputWithType(testID, "test1", testParentID, "", "", nil, tenantEntity.Organization),
-		newModelBusinessTenantMappingInputWithType(testParentID, "test2", "", "", "", nil, tenantEntity.Folder)}
+	tenantModelInputsWithParentOrganization := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInputWithType(testID, "test1", []string{testParentID}, "", "", nil, tenantEntity.Organization),
+		newModelBusinessTenantMappingInputWithType(testParentID, "test2", []string{}, "", "", nil, tenantEntity.Folder)}
 
 	tenantModels := []model.BusinessTenantMapping{*newModelBusinessTenantMapping(testID, "test1"),
 		newModelBusinessTenantMapping(testID, "test2").WithExternalTenant("external2")}
@@ -481,7 +482,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			TenantMappingRepoFn: func(createFunc string) *automock.TenantMappingRepository {
 				parent := tenantModelInputsWithParent[1]
 				modifiedTenant := tenantModelInputsWithParent[0]
-				modifiedTenant.Parent = testInternalParentID
+				modifiedTenant.Parents = []string{testInternalParentID}
 
 				tenantMappingRepo := &automock.TenantMappingRepository{}
 				tenantMappingRepo.On(createFunc, ctx, *parent.ToBusinessTenantMapping(testTemporaryInternalParentID)).Return(nil).Once()
@@ -507,7 +508,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			TenantMappingRepoFn: func(createFunc string) *automock.TenantMappingRepository {
 				parent := tenantModelInputsWithParentOrganization[1]
 				modifiedTenant := tenantModelInputsWithParentOrganization[0]
-				modifiedTenant.Parent = testInternalParentID
+				modifiedTenant.Parents = []string{testInternalParentID}
 
 				tenantMappingRepo := &automock.TenantMappingRepository{}
 				tenantMappingRepo.On(createFunc, ctx, *parent.ToBusinessTenantMapping(testTemporaryInternalParentID)).Return(nil).Once()
@@ -984,12 +985,12 @@ func Test_MultipleToTenantMapping(t *testing.T) {
 				{
 					Name:           "acc2",
 					ExternalTenant: "1",
-					Parent:         "2",
+					Parents:        []string{"2"},
 				},
 				{
 					Name:           "customer1",
 					ExternalTenant: "2",
-					Parent:         "4",
+					Parents:        []string{"4"},
 				},
 				{
 					Name:           "acc3",
@@ -1019,7 +1020,7 @@ func Test_MultipleToTenantMapping(t *testing.T) {
 					ID:             "2",
 					Name:           "customer1",
 					ExternalTenant: "2",
-					Parent:         "4",
+					Parents:        []string{"4"},
 					Status:         tenantEntity.Active,
 					Type:           tenantEntity.Unknown,
 				},
@@ -1027,7 +1028,7 @@ func Test_MultipleToTenantMapping(t *testing.T) {
 					ID:             "1",
 					Name:           "acc2",
 					ExternalTenant: "1",
-					Parent:         "2",
+					Parents:        []string{"2"},
 					Status:         tenantEntity.Active,
 					Type:           tenantEntity.Unknown,
 				},
@@ -1045,7 +1046,9 @@ func Test_MultipleToTenantMapping(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := tenant.NewService(nil, &serialUUIDService{}, nil)
-			require.Equal(t, testCase.ExpectedSlice, svc.MultipleToTenantMapping(testCase.InputSlice))
+			result, err := svc.MultipleToTenantMapping(context.TODO(), testCase.InputSlice)
+			require.Equal(t, testCase.ExpectedSlice, result)
+			require.NoError(t, err)
 		})
 	}
 }
@@ -1054,7 +1057,7 @@ func Test_Update(t *testing.T) {
 	tnt := model.BusinessTenantMappingInput{
 		Name:           testName,
 		ExternalTenant: testExternal,
-		Parent:         testParentID,
+		Parents:        []string{testParentID},
 		Subdomain:      testSubdomain,
 		Region:         testRegion,
 		Type:           string(tenantEntity.Account),
@@ -1064,7 +1067,7 @@ func Test_Update(t *testing.T) {
 		ID:             testID,
 		Name:           testName,
 		ExternalTenant: testExternal,
-		Parent:         testParentID,
+		Parents:        []string{testParentID},
 		Type:           tenantEntity.Account,
 		Provider:       testProvider,
 		Status:         tenantEntity.Active,

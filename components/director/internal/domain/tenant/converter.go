@@ -26,7 +26,6 @@ func (c *converter) ToEntity(in *model.BusinessTenantMapping) *tenant.Entity {
 		ID:             in.ID,
 		Name:           in.Name,
 		ExternalTenant: in.ExternalTenant,
-		Parent:         str.NewNullString(in.Parent),
 		Type:           in.Type,
 		ProviderName:   in.Provider,
 		Status:         in.Status,
@@ -42,7 +41,7 @@ func (c *converter) FromEntity(in *tenant.Entity) *model.BusinessTenantMapping {
 		ID:             in.ID,
 		Name:           in.Name,
 		ExternalTenant: in.ExternalTenant,
-		Parent:         in.Parent.String,
+		Parents:        []string{},
 		Type:           in.Type,
 		Provider:       in.ProviderName,
 		Status:         in.Status,
@@ -61,7 +60,7 @@ func (c *converter) ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant {
 		InternalID:  in.ID,
 		Name:        str.Ptr(in.Name),
 		Type:        tenant.TypeToStr(in.Type),
-		ParentID:    in.Parent,
+		Parents:     in.Parents,
 		Initialized: in.Initialized,
 		Provider:    in.Provider,
 	}
@@ -71,7 +70,7 @@ func (c *converter) ToGraphQLInput(in model.BusinessTenantMappingInput) graphql.
 	return graphql.BusinessTenantMappingInput{
 		Name:           in.Name,
 		ExternalTenant: in.ExternalTenant,
-		Parent:         str.Ptr(in.Parent),
+		Parents:        stringsToPointerStrings(in.Parents),
 		Subdomain:      str.Ptr(in.Subdomain),
 		Region:         str.Ptr(in.Region),
 		Type:           in.Type,
@@ -88,7 +87,7 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.BusinessTenantMapping
 		res = append(res, model.BusinessTenantMappingInput{
 			Name:           tnt.Name,
 			ExternalTenant: tnt.ExternalTenant,
-			Parent:         str.PtrStrToStr(tnt.Parent),
+			Parents:        pointerStringsToStrings(tnt.Parents),
 			Subdomain:      str.PtrStrToStr(tnt.Subdomain),
 			Region:         str.PtrStrToStr(tnt.Region),
 			Type:           tnt.Type,
@@ -105,7 +104,7 @@ func (c *converter) InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) mod
 	return model.BusinessTenantMappingInput{
 		Name:           tnt.Name,
 		ExternalTenant: tnt.ExternalTenant,
-		Parent:         str.PtrStrToStr(tnt.Parent),
+		Parents:        pointerStringsToStrings(tnt.Parents),
 		Subdomain:      str.PtrStrToStr(tnt.Subdomain),
 		Region:         str.PtrStrToStr(tnt.Region),
 		Type:           tnt.Type,
@@ -181,6 +180,7 @@ func (c *converter) TenantAccessToEntity(in *model.TenantAccess) *repo.TenantAcc
 		TenantID:   in.InternalTenantID,
 		ResourceID: in.ResourceID,
 		Owner:      in.Owner,
+		Source:     in.Source,
 	}
 }
 
@@ -194,6 +194,7 @@ func (c *converter) TenantAccessFromEntity(in *repo.TenantAccess) *model.TenantA
 		InternalTenantID: in.TenantID,
 		ResourceID:       in.ResourceID,
 		Owner:            in.Owner,
+		Source:           in.Source,
 	}
 }
 
@@ -221,4 +222,22 @@ func fromResourceTypeToTenantAccessObjectType(objectType resource.Type) (graphql
 	default:
 		return "", errors.Errorf("Unknown tenant access resource type %q", objectType)
 	}
+}
+
+func stringsToPointerStrings(input []string) []*string {
+	result := make([]*string, len(input))
+	for i, s := range input {
+		result[i] = &s
+	}
+	return result
+}
+
+func pointerStringsToStrings(input []*string) []string {
+	result := make([]string, len(input))
+	for i, s := range input {
+		if s != nil {
+			result[i] = *s
+		}
+	}
+	return result
 }

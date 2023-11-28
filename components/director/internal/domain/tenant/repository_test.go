@@ -46,7 +46,7 @@ func TestPgRepository_Upsert(t *testing.T) {
 		mockConverter.On("ToEntity", tenantMappingModel).Return(tenantMappingEntity).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, parent, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ?, ? ) ON CONFLICT ( external_tenant ) DO UPDATE SET external_name=EXCLUDED.external_name`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ? ) ON CONFLICT ( external_tenant ) DO UPDATE SET external_name=EXCLUDED.external_name`)).
 			WithArgs(fixTenantMappingCreateArgs(*tenantMappingEntity)...).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -70,7 +70,7 @@ func TestPgRepository_Upsert(t *testing.T) {
 		mockConverter.On("ToEntity", tenantModel).Return(tenantEntity).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, parent, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ?, ? ) ON CONFLICT ( external_tenant ) DO UPDATE SET external_name=EXCLUDED.external_name`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ? ) ON CONFLICT ( external_tenant ) DO UPDATE SET external_name=EXCLUDED.external_name`)).
 			WithArgs(fixTenantMappingCreateArgs(*tenantEntity)...).
 			WillReturnError(testError)
 
@@ -97,7 +97,7 @@ func TestPgRepository_UnsafeCreate(t *testing.T) {
 		mockConverter.On("ToEntity", tenantMappingModel).Return(tenantMappingEntity).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, parent, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ?, ? )  ON CONFLICT ( external_tenant ) DO NOTHING`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ? )  ON CONFLICT ( external_tenant ) DO NOTHING`)).
 			WithArgs(fixTenantMappingCreateArgs(*tenantMappingEntity)...).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
@@ -121,7 +121,7 @@ func TestPgRepository_UnsafeCreate(t *testing.T) {
 		mockConverter.On("ToEntity", tenantModel).Return(tenantEntity).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, parent, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ?, ? )  ON CONFLICT ( external_tenant ) DO NOTHING`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ? )  ON CONFLICT ( external_tenant ) DO NOTHING`)).
 			WithArgs(fixTenantMappingCreateArgs(*tenantEntity)...).
 			WillReturnError(testError)
 
@@ -149,9 +149,9 @@ func TestPgRepository_Get(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{id: testID, name: testName, externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+			{id: testID, name: testName, externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
 			WithArgs(testID, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
@@ -172,7 +172,7 @@ func TestPgRepository_Get(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
 			WithArgs(testID, tenantEntity.Inactive).WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -675,7 +675,7 @@ func TestPgRepository_ListByParentAndType(t *testing.T) {
 			newModelBusinessTenantMappingWithParentAndType("id1", "name1", parentID, nil, tenantEntity.Account),
 		}
 
-		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", parentID, tenantEntity.Account)
+		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", tenantEntity.Account)
 		tntEntity.Initialized = boolToPtr(true)
 
 		mockConverter := &automock.Converter{}
@@ -708,7 +708,7 @@ func TestPgRepository_ListByParentAndType(t *testing.T) {
 		// GIVEN
 		parentID := "test"
 
-		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", parentID, tenantEntity.Account)
+		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", tenantEntity.Account)
 		tntEntity.Initialized = boolToPtr(true)
 
 		mockConverter := &automock.Converter{}
@@ -757,7 +757,7 @@ func TestPgRepository_ListByType(t *testing.T) {
 			newModelBusinessTenantMappingWithParentAndType("id1", "name1", parentID, nil, tenantEntity.Account),
 		}
 
-		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", parentID, tenantEntity.Account)
+		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", tenantEntity.Account)
 		tntEntity.Initialized = boolToPtr(true)
 
 		mockConverter := &automock.Converter{}
@@ -788,9 +788,8 @@ func TestPgRepository_ListByType(t *testing.T) {
 
 	t.Run("Error when listing", func(t *testing.T) {
 		// GIVEN
-		parentID := "test"
 
-		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", parentID, tenantEntity.Account)
+		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", tenantEntity.Account)
 		tntEntity.Initialized = boolToPtr(true)
 
 		mockConverter := &automock.Converter{}
@@ -832,7 +831,7 @@ func TestPgRepository_ListByType(t *testing.T) {
 func TestPgRepository_ListBySubscribedRuntimesAndApplicationTemplates(t *testing.T) {
 	parentID := "test"
 
-	tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", parentID, tenantEntity.Account)
+	tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", tenantEntity.Account)
 	tntEntity.Initialized = boolToPtr(true)
 
 	t.Run("Success", func(t *testing.T) {
@@ -933,8 +932,8 @@ func chunkSizedTenantIDs(chunkSize int) []string {
 func TestPgRepository_Update(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Account)
-		tenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
+		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, []string{testParentID}, nil, tenantEntity.Account)
+		tenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("ToEntity", tenantMappingModel).Return(tenantMappingEntity).Once()
@@ -967,7 +966,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 	t.Run("Error when getting", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Account)
+		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, []string{testParentID}, nil, tenantEntity.Account)
 
 		db, dbMock := testdb.MockDatabase(t)
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
@@ -988,8 +987,8 @@ func TestPgRepository_Update(t *testing.T) {
 
 	t.Run("Error when updating", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Account)
-		tenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
+		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, []string{testParentID}, nil, tenantEntity.Account)
+		tenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("ToEntity", tenantMappingModel).Return(tenantMappingEntity).Once()
@@ -1023,10 +1022,10 @@ func TestPgRepository_Update(t *testing.T) {
 
 	t.Run("Success when parent is updated", func(t *testing.T) {
 		// GIVEN
-		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Account)
-		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, nil, tenantEntity.Account)
-		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
-		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID2)
+		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, []string{testParentID}, nil, tenantEntity.Account)
+		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, []string{testParentID2}, nil, tenantEntity.Account)
+		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName)
+		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("ToEntity", newTenantMappingModel).Return(newTenantMappingEntity).Once()
@@ -1075,10 +1074,10 @@ func TestPgRepository_Update(t *testing.T) {
 
 	t.Run("Error when parent is updated and list tenant accesses fail", func(t *testing.T) {
 		// GIVEN
-		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Account)
-		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, nil, tenantEntity.Account)
-		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
-		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID2)
+		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, []string{testParentID}, nil, tenantEntity.Account)
+		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, []string{testParentID2}, nil, tenantEntity.Account)
+		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName)
+		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("ToEntity", newTenantMappingModel).Return(newTenantMappingEntity).Once()
@@ -1115,10 +1114,10 @@ func TestPgRepository_Update(t *testing.T) {
 
 	t.Run("Error when parent is updated and create tenant access fail", func(t *testing.T) {
 		// GIVEN
-		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Account)
-		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, nil, tenantEntity.Account)
-		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
-		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID2)
+		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, []string{testParentID}, nil, tenantEntity.Account)
+		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, []string{testParentID2}, nil, tenantEntity.Account)
+		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName)
+		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("ToEntity", newTenantMappingModel).Return(newTenantMappingEntity).Once()
@@ -1159,10 +1158,10 @@ func TestPgRepository_Update(t *testing.T) {
 
 	t.Run("Error when parent is updated and tenant access delete fail", func(t *testing.T) {
 		// GIVEN
-		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Account)
-		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, nil, tenantEntity.Account)
-		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
-		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID2)
+		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, []string{testParentID}, nil, tenantEntity.Account)
+		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, []string{testParentID2}, nil, tenantEntity.Account)
+		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName)
+		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("ToEntity", newTenantMappingModel).Return(newTenantMappingEntity).Once()
@@ -1559,7 +1558,7 @@ func TestPgRepository_GetParentRecursivelyByExternalTenant(t *testing.T) {
 		ID:             testID,
 		Name:           testName,
 		ExternalTenant: testExternal,
-		Parent:         "",
+		Parents:        []string{},
 		Type:           tenantEntity.Account,
 		Provider:       testProvider,
 		Status:         tenantEntity.Active,
@@ -1568,7 +1567,6 @@ func TestPgRepository_GetParentRecursivelyByExternalTenant(t *testing.T) {
 		ID:             testID,
 		Name:           testName,
 		ExternalTenant: testExternal,
-		Parent:         sql.NullString{String: "", Valid: true},
 		Type:           tenantEntity.Account,
 		ProviderName:   testProvider,
 		Status:         tenantEntity.Active,
@@ -1591,7 +1589,7 @@ func TestPgRepository_GetParentRecursivelyByExternalTenant(t *testing.T) {
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
 
 		// WHEN
-		parentTenant, err := tenantMappingRepo.GetParentRecursivelyByExternalTenant(ctx, testExternal)
+		parentTenant, err := tenantMappingRepo.GetParentsRecursivelyByExternalTenant(ctx, testExternal)
 
 		// THEN
 		require.NoError(t, err)
@@ -1609,7 +1607,7 @@ func TestPgRepository_GetParentRecursivelyByExternalTenant(t *testing.T) {
 		tenantMappingRepo := tenant.NewRepository(nil)
 
 		// WHEN
-		parentTenant, err := tenantMappingRepo.GetParentRecursivelyByExternalTenant(ctx, testExternal)
+		parentTenant, err := tenantMappingRepo.GetParentsRecursivelyByExternalTenant(ctx, testExternal)
 
 		// THEN
 		require.Error(t, err)
@@ -1623,7 +1621,7 @@ func TestPgRepository_GetParentRecursivelyByExternalTenant(t *testing.T) {
 		ctx := context.TODO()
 		tenantMappingRepo := tenant.NewRepository(nil)
 		// WHEN
-		_, err := tenantMappingRepo.GetParentRecursivelyByExternalTenant(ctx, testExternal)
+		_, err := tenantMappingRepo.GetParentsRecursivelyByExternalTenant(ctx, testExternal)
 		// THEN
 		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})

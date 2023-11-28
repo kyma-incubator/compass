@@ -20,42 +20,64 @@ const (
 	M2MResourceIDColumn = "id"
 	// M2MOwnerColumn is the column name of the owner in each tenant access table / view.
 	M2MOwnerColumn = "owner"
+	// M2MSourceColumn is the column name of the source in each tenant access table / view.
+	M2MSourceColumn = "source"
 
 	// CreateSingleTenantAccessQuery sda
 	CreateSingleTenantAccessQuery = `INSERT INTO %s ( %s ) VALUES ( %s ) ON CONFLICT ON CONSTRAINT tenant_applications_pkey DO NOTHING`
 
 	// RecursiveCreateTenantAccessCTEQuery is a recursive SQL query that creates a tenant access record for a tenant and all its parents.
 	RecursiveCreateTenantAccessCTEQuery = `WITH RECURSIVE parents AS
-                   (SELECT t1.id, t1.parent
-                    FROM business_tenant_mappings t1
-                    WHERE id = :tenant_id
+                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id
+                    FROM business_tenant_mappings t1 JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
+                    WHERE id=:tenant_id
                     UNION ALL
-                    SELECT t2.id, t2.parent
-                    FROM business_tenant_mappings t2
-                             INNER JOIN parents t on t2.id = t.parent)
-			INSERT INTO %s ( %s ) (SELECT parents.id AS tenant_id, :id as id, :owner AS owner FROM parents)
-			ON CONFLICT ( tenant_id, id ) DO NOTHING`
+                    SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
+                    FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
+                                                     INNER JOIN parents p on p.parent_id = t2.id)
+			INSERT INTO %s ( %s )  (SELECT parents.id AS tenant_id, :id as id, :owner AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object'
+                                                                                                                 OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object'))
+					)
+			ON CONFLICT ( tenant_id, id, source ) DO NOTHING`
 
 	// RecursiveDeleteTenantAccessCTEQuery is a recursive SQL query that deletes tenant accesses based on given conditions for a tenant and all its parents.
 	RecursiveDeleteTenantAccessCTEQuery = `WITH RECURSIVE parents AS
-                   (SELECT t1.id, t1.parent
-                    FROM business_tenant_mappings t1
+                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id
+                    FROM business_tenant_mappings t1 JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
                     WHERE id = ?
                     UNION ALL
-                    SELECT t2.id, t2.parent
-                    FROM business_tenant_mappings t2
-                             INNER JOIN parents t on t2.id = t.parent)
-			DELETE FROM %s WHERE %s AND tenant_id IN (SELECT id FROM parents)`
+                    SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
+                    FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
+                                                     INNER JOIN parents p on p.parent_id = t2.id)
+			DELETE FROM %s WHERE %s AND EXISTS (SELECT id FROM parents where tenant_id == parents.parent_id AND source == parents.child_id))
+`
+	//tenant_id IN (SELECT id FROM parents WHERE type != 'cost-object' OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')))`
 )
 
+//APP - registered SA
+//Add TA SA2
+//
+//CRM, APP, GA1
+//CRM, APP, GA2 ----
+//GA1, APP, SA
+//SA, APP, SA
+//GA2, APP, SA2 ----
+//SA2, APP, SA2 ----
+//
+//
+//SA2, SA2
+//GA2, SA2
+//CRM, GA2
+
 // M2MColumns are the column names of the tenant access tables / views.
-var M2MColumns = []string{M2MTenantIDColumn, M2MResourceIDColumn, M2MOwnerColumn}
+var M2MColumns = []string{M2MTenantIDColumn, M2MResourceIDColumn, M2MOwnerColumn, M2MSourceColumn}
 
 // TenantAccess represents the tenant access table/views that are used for tenant isolation queries.
 type TenantAccess struct {
 	TenantID   string `db:"tenant_id"`
 	ResourceID string `db:"id"`
 	Owner      bool   `db:"owner"`
+	Source     string `db:"source"`
 }
 
 // TenantAccessCollection is a wrapper type for slice of entities.

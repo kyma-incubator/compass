@@ -2,10 +2,10 @@ package tenant
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -43,8 +43,9 @@ type TenantMappingRepository interface {
 	ListByExternalTenants(ctx context.Context, externalTenant []string) ([]*model.BusinessTenantMapping, error)
 	ListByParentAndType(ctx context.Context, parentID string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
 	ListByType(ctx context.Context, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
+	ListByIds(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
 	GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error)
-	GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
+	GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error)
 }
 
 // LabelUpsertService is responsible for creating, or updating already existing labels, and their label definitions.
@@ -137,6 +138,11 @@ func (s *service) ListByType(ctx context.Context, tenantType tenantpkg.Type) ([]
 	return s.tenantMappingRepo.ListByType(ctx, tenantType)
 }
 
+// ListByIDs returns all tenants with id in ids.
+func (s *service) ListByIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error) {
+	return s.tenantMappingRepo.ListByIds(ctx, ids)
+}
+
 // ListPageBySearchTerm returns all tenants present in the Compass storage.
 func (s *service) ListPageBySearchTerm(ctx context.Context, searchTerm string, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error) {
 	return s.tenantMappingRepo.ListPageBySearchTerm(ctx, searchTerm, pageSize, cursor)
@@ -158,7 +164,7 @@ func (s *service) GetLowestOwnerForResource(ctx context.Context, resourceType re
 }
 
 // MultipleToTenantMapping assigns a new internal ID to all the provided tenants, and returns the BusinessTenantMappingInputs as BusinessTenantMappings.
-func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMappingInput) []model.BusinessTenantMapping {
+func (s *service) MultipleToTenantMapping(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) ([]model.BusinessTenantMapping, error) {
 	tenants := make([]model.BusinessTenantMapping, 0, len(tenantInputs))
 	tenantIDs := make(map[string]string, len(tenantInputs))
 	for _, tenant := range tenantInputs {
@@ -166,20 +172,31 @@ func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 		tenants = append(tenants, *tenant.ToBusinessTenantMapping(id))
 		tenantIDs[tenant.ExternalTenant] = id
 	}
-	for i := 0; i < len(tenants); i++ { // Convert parent ID from external to internal id reference
-		if len(tenants[i].Parent) > 0 {
-			if _, ok := tenantIDs[tenants[i].Parent]; ok { // If the parent is inserted in this request (otherwise we assume that it is already in the db)
-				tenants[i].Parent = tenantIDs[tenants[i].Parent]
 
-				var moved bool
-				tenants, moved = MoveBeforeIfShould(tenants, tenants[i].Parent, i) // Move my parent before me (to be inserted first) if it is not already
-				if moved {
-					i-- // Process the moved parent as well
+	for i := 0; i < len(tenants); i++ { // Convert parent ID from external to internal id reference
+		if len(tenants[i].Parents) > 0 {
+			parentInternalIDs := make([]string, 0, len(tenants[i].Parents))
+			for _, parent := range tenants[i].Parents {
+				if _, ok := tenantIDs[parent]; ok { // If the parent is inserted in this request (otherwise we assume that it is already in the db)
+					parentInternalIDs = append(parentInternalIDs, tenantIDs[parent])
+
+					var moved bool
+					tenants, moved = MoveBeforeIfShould(tenants, parent, i) // Move my parent before me (to be inserted first) if it is not already
+					if moved {
+						i-- // Process the moved parent as well
+					}
+				} else {
+					internalPrentID, err := s.GetInternalTenant(ctx, parent)
+					if err != nil {
+						return nil, err
+					}
+					parentInternalIDs = append(parentInternalIDs, internalPrentID)
 				}
 			}
+			tenants[i].Parents = parentInternalIDs
 		}
 	}
-	return tenants
+	return tenants, nil
 }
 
 // Update updates tenant
@@ -198,9 +215,9 @@ func (s *service) GetCustomerIDParentRecursively(ctx context.Context, tenantID s
 	return s.tenantMappingRepo.GetCustomerIDParentRecursively(ctx, tenantID)
 }
 
-// GetParentRecursivelyByExternalTenant gets the top parent for a given external tenant
-func (s *service) GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
-	return s.tenantMappingRepo.GetParentRecursivelyByExternalTenant(ctx, externalTenant)
+// GetParentsRecursivelyByExternalTenant gets the top parents for a given external tenant
+func (s *service) GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error) {
+	return s.tenantMappingRepo.GetParentsRecursivelyByExternalTenant(ctx, externalTenant)
 }
 
 // CreateTenantAccessForResource creates a tenant access for a single resource.Type
@@ -296,7 +313,16 @@ func (s *service) ExtractTenantIDForTenantScopedFormationTemplates(ctx context.C
 	}
 
 	if tenantObject.Type == tenantpkg.Subaccount {
-		return tenantObject.Parent, nil
+		for _, parent := range tenantObject.Parents {
+			tnt, err := s.GetTenantByID(ctx, parent)
+			if err != nil {
+				return "", err
+			}
+			if tnt.Type == tenantpkg.Account {
+				return parent, nil
+			}
+		}
+		return "", errors.Errorf("unexpected error. Tenant with id %s must have parent of type %s", internalTenantID, tenantpkg.Account)
 	}
 
 	return tenantObject.ID, nil
@@ -370,7 +396,11 @@ func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.Bus
 }
 
 func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) error) ([]string, error) {
-	tenants := s.MultipleToTenantMapping(tenantInputs)
+	tenants, err := s.MultipleToTenantMapping(ctx, tenantInputs)
+	if err != nil {
+		return nil, err
+	}
+
 	subdomains, regions := tenantLocality(tenantInputs)
 	customerIDs := tenantCustomerIDs(tenantInputs)
 
@@ -394,12 +424,17 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 		if err != nil {
 			return nil, errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
 		}
+
 		// the tenant already exists in our DB with a different ID, and we should update all child resources to use the correct internal ID
 		tenantIDs = append(tenantIDs, tenantID)
 		if tenantID != tenant.ID {
 			for i := tenantIdx; i < len(tenants); i++ {
-				if tenants[i].Parent == tenant.ID {
-					tenants[i].Parent = tenantID
+				if slices.Contains(tenants[i].Parents, tenant.ID) {
+					// remove tenant.ID from the parents array and replace it with the id returned from the DB - tenantID
+					tenants[i].Parents = slices.Filter(nil, tenants[i].Parents, func(s string) bool {
+						return s != tenant.ID
+					})
+					tenants[i].Parents = append(tenants[i].Parents, tenantID)
 				}
 			}
 		}
