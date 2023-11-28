@@ -2,6 +2,7 @@ package aspect
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -17,6 +18,8 @@ import (
 type AspectRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Aspect) error
 	DeleteByIntegrationDependencyID(ctx context.Context, tenant string, integrationDependencyID string) error
+	ListByIntegrationDependencyID(ctx context.Context, tenant string, integrationDependencyID string) ([]*model.Aspect, error)
+	ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.Aspect, map[string]int, error)
 }
 
 // UIDService is responsible for generating GUIDs, which will be used as internal Aspect IDs when they are created.
@@ -57,13 +60,30 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 
 // DeleteByIntegrationDependencyID deletes Aspects for an Integration Dependency with given ID
 func (s *service) DeleteByIntegrationDependencyID(ctx context.Context, integrationDependencyID string) error {
-	if err := s.deleteAspectByIntegrationDependencyID(ctx, integrationDependencyID); err != nil {
+	if err := s.deleteAspectsByIntegrationDependencyID(ctx, integrationDependencyID); err != nil {
 		return errors.Wrapf(err, "while deleting Aspects for Integration Dependency with id %s", integrationDependencyID)
 	}
 
 	log.C(ctx).Infof("Successfully deleted Aspects for Integration Dependency with id %s", integrationDependencyID)
 
 	return nil
+}
+
+// ListByIntegrationDependencyID gets an Aspects by Integration Dependency id
+func (s *service) ListByIntegrationDependencyID(ctx context.Context, integrationDependencyID string) ([]*model.Aspect, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	aspects, err := s.repo.ListByIntegrationDependencyID(ctx, tnt, integrationDependencyID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing Aspects for Integration Dependency with id %s", integrationDependencyID)
+	}
+
+	log.C(ctx).Infof("Successfully listed Aspects for Integration Dependency with id %s", integrationDependencyID)
+
+	return aspects, nil
 }
 
 func (s *service) createAspect(ctx context.Context, aspect *model.Aspect) error {
@@ -75,11 +95,21 @@ func (s *service) createAspect(ctx context.Context, aspect *model.Aspect) error 
 	return s.repo.Create(ctx, tnt, aspect)
 }
 
-func (s *service) deleteAspectByIntegrationDependencyID(ctx context.Context, integrationDependencyID string) error {
+func (s *service) deleteAspectsByIntegrationDependencyID(ctx context.Context, integrationDependencyID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
 	return s.repo.DeleteByIntegrationDependencyID(ctx, tnt, integrationDependencyID)
+}
+
+// ListByApplicationIDs lists all Aspects for given array of application IDs. In addition, the number of records for each aspect is returned.
+func (s *service) ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.Aspect, map[string]int, error) {
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.repo.ListByApplicationIDs(ctx, applicationIDs, pageSize, cursor)
 }

@@ -2,10 +2,10 @@ package integrationdependency
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 )
@@ -123,6 +123,57 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID string, re
 	return integrationDependencies, nil
 }
 
+// ListByApplicationIDs retrieves all Integration Dependencies for an Application in pages. Each Application is extracted from the input array of applicationIDs. The input aspects array is used for getting the appropriate Integration Dependencies IDs.
+func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, aspects []*model.Aspect, totalCounts map[string]int, pageSize int, cursor string) ([]*model.IntegrationDependencyPage, error) {
+	integrationDependenciesIDs := make([]string, 0, len(aspects))
+	for _, aspect := range aspects {
+		integrationDependenciesIDs = append(integrationDependenciesIDs, aspect.IntegrationDependencyID)
+	}
+
+	var conditions repo.Conditions
+	if len(integrationDependenciesIDs) > 0 {
+		conditions = repo.Conditions{
+			repo.NewInConditionForStringValues("id", integrationDependenciesIDs),
+		}
+	}
+
+	var integrationDependencyCollection IntegrationDependencyCollection
+	err := r.lister.List(ctx, resource.IntegrationDependency, tenantID, &integrationDependencyCollection, conditions...)
+	if err != nil {
+		return nil, err
+	}
+
+	aspectsByApplicationID, integrationDependenciesByIntegrationDependencyID := r.groupEntitiesByID(aspects, integrationDependencyCollection)
+
+	offset, err := pagination.DecodeOffsetCursor(cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while decoding page cursor")
+	}
+
+	integrationDependencyPages := make([]*model.IntegrationDependencyPage, 0, len(applicationIDs))
+	for _, appID := range applicationIDs {
+		ids := getIntegrationDependencyIDsForApplication(aspectsByApplicationID[appID])
+		integrationDependencies := getIntegrationDependenciesForApplication(ids, integrationDependenciesByIntegrationDependencyID)
+
+		hasNextPage := false
+		endCursor := ""
+		if totalCounts[appID] > offset+len(integrationDependencies) {
+			hasNextPage = true
+			endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
+		}
+
+		page := &pagination.Page{
+			StartCursor: cursor,
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		}
+
+		integrationDependencyPages = append(integrationDependencyPages, &model.IntegrationDependencyPage{Data: integrationDependencies, TotalCount: totalCounts[appID], PageInfo: page})
+	}
+
+	return integrationDependencyPages, nil
+}
+
 // Create creates an IntegrationDependency.
 func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.IntegrationDependency) error {
 	if item == nil {
@@ -183,4 +234,43 @@ func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) e
 // DeleteGlobal deletes an IntegrationDependency by its ID without tenant isolation.
 func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+func getIntegrationDependencyIDsForApplication(aspects []*model.Aspect) []string {
+	integrationDependencyIDExists := make(map[string]bool)
+	result := make([]string, 0, len(aspects))
+
+	for _, aspect := range aspects {
+		id := aspect.IntegrationDependencyID
+		if !integrationDependencyIDExists[id] {
+			result = append(result, id)
+			integrationDependencyIDExists[id] = true
+		}
+	}
+	return result
+}
+
+func getIntegrationDependenciesForApplication(ids []string, integrationDependencies map[string]*model.IntegrationDependency) []*model.IntegrationDependency {
+	result := make([]*model.IntegrationDependency, 0, len(ids))
+	if len(integrationDependencies) > 0 {
+		for _, id := range ids {
+			result = append(result, integrationDependencies[id])
+		}
+	}
+	return result
+}
+
+func (r *pgRepository) groupEntitiesByID(aspects []*model.Aspect, integrationDependencyCollection IntegrationDependencyCollection) (map[string][]*model.Aspect, map[string]*model.IntegrationDependency) {
+	aspectsByApplicationID := map[string][]*model.Aspect{}
+	for _, aspect := range aspects {
+		aspectsByApplicationID[*aspect.ApplicationID] = append(aspectsByApplicationID[*aspect.ApplicationID], aspect)
+	}
+
+	integrationDependenciesByIntegrationDependencyID := map[string]*model.IntegrationDependency{}
+	for _, integrationDependencyEnt := range integrationDependencyCollection {
+		m := r.conv.FromEntity(&integrationDependencyEnt)
+		integrationDependenciesByIntegrationDependencyID[integrationDependencyEnt.ID] = m
+	}
+
+	return aspectsByApplicationID, integrationDependenciesByIntegrationDependencyID
 }

@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"strconv"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -63,6 +64,16 @@ type IntegrationDependencyInput struct {
 	DocumentationLabels            json.RawMessage `json:"documentationLabels,omitempty"`
 	*VersionInput                  `hash:"ignore"`
 }
+
+// IntegrationDependencyPage Struct for IntegrationDependency data with page info
+type IntegrationDependencyPage struct {
+	Data       []*IntegrationDependency
+	PageInfo   *pagination.Page
+	TotalCount int
+}
+
+// IsPageable missing godoc
+func (IntegrationDependencyPage) IsPageable() {}
 
 // ToIntegrationDependency converts IntegrationDependencyInput to IntegrationDependency
 func (i *IntegrationDependencyInput) ToIntegrationDependency(id string, resourceType resource.Type, resourceID string, packageID *string, integrationDependencyHash uint64) *IntegrationDependency {

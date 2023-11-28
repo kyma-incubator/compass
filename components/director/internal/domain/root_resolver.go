@@ -3,6 +3,9 @@ package domain
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/aspect"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationdependency"
+	ordpackage "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"net/http"
 	"net/url"
 
@@ -82,33 +85,34 @@ var _ graphql.ResolverRoot = &RootResolver{}
 
 // RootResolver missing godoc
 type RootResolver struct {
-	appNameNormalizer   normalizer.Normalizator
-	app                 *application.Resolver
-	appTemplate         *apptemplate.Resolver
-	api                 *api.Resolver
-	eventAPI            *eventdef.Resolver
-	eventing            *eventing.Resolver
-	doc                 *document.Resolver
-	formation           *formation.Resolver
-	runtime             *runtime.Resolver
-	runtimeContext      *runtimectx.Resolver
-	healthCheck         *healthcheck.Resolver
-	webhook             *webhook.Resolver
-	labelDef            *labeldef.Resolver
-	token               *onetimetoken.Resolver
-	systemAuth          *systemauth.Resolver
-	oAuth20             *oauth20.Resolver
-	intSys              *integrationsystem.Resolver
-	viewer              *viewer.Resolver
-	tenant              *tenant.Resolver
-	mpBundle            *bundleutil.Resolver
-	bundleInstanceAuth  *bundleinstanceauth.Resolver
-	scenarioAssignment  *scenarioassignment.Resolver
-	subscription        *subscription.Resolver
-	formationTemplate   *formationtemplate.Resolver
-	formationConstraint *formationconstraint.Resolver
-	constraintReference *formationtemplateconstraintreferences.Resolver
-	certSubjectMapping  *certsubjectmapping.Resolver
+	appNameNormalizer     normalizer.Normalizator
+	app                   *application.Resolver
+	appTemplate           *apptemplate.Resolver
+	api                   *api.Resolver
+	eventAPI              *eventdef.Resolver
+	eventing              *eventing.Resolver
+	integrationDependency *integrationdependency.Resolver
+	doc                   *document.Resolver
+	formation             *formation.Resolver
+	runtime               *runtime.Resolver
+	runtimeContext        *runtimectx.Resolver
+	healthCheck           *healthcheck.Resolver
+	webhook               *webhook.Resolver
+	labelDef              *labeldef.Resolver
+	token                 *onetimetoken.Resolver
+	systemAuth            *systemauth.Resolver
+	oAuth20               *oauth20.Resolver
+	intSys                *integrationsystem.Resolver
+	viewer                *viewer.Resolver
+	tenant                *tenant.Resolver
+	mpBundle              *bundleutil.Resolver
+	bundleInstanceAuth    *bundleinstanceauth.Resolver
+	scenarioAssignment    *scenarioassignment.Resolver
+	subscription          *subscription.Resolver
+	formationTemplate     *formationtemplate.Resolver
+	formationConstraint   *formationconstraint.Resolver
+	constraintReference   *formationtemplateconstraintreferences.Resolver
+	certSubjectMapping    *certsubjectmapping.Resolver
 }
 
 // NewRootResolver missing godoc
@@ -158,6 +162,9 @@ func NewRootResolver(
 	specConverter := spec.NewConverter(frConverter)
 	apiConverter := api.NewConverter(versionConverter, specConverter)
 	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	aspectConv := aspect.NewConverter()
+	integrationDependencyConv := integrationdependency.NewConverter(versionConverter, aspectConv)
+	pkgConverter := ordpackage.NewConverter()
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
@@ -191,6 +198,9 @@ func NewRootResolver(
 	webhookRepo := webhook.NewRepository(webhookConverter)
 	apiRepo := api.NewRepository(apiConverter)
 	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
+	aspectRepo := aspect.NewRepository(aspectConv)
+	integrationDependencyRepo := integrationdependency.NewRepository(integrationDependencyConv)
+	pkgRepo := ordpackage.NewRepository(pkgConverter)
 	specRepo := spec.NewRepository(specConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
@@ -228,6 +238,9 @@ func NewRootResolver(
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg.PublicAccessTokenEndpoint, hydra.Admin)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
+	aspectSvc := aspect.NewService(aspectRepo, uidSvc)
+	integrationDependencySvc := integrationdependency.NewService(integrationDependencyRepo, aspectSvc, uidSvc)
+	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, bundleInstanceAuthSvc, uidSvc)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsClient)
@@ -263,33 +276,34 @@ func NewRootResolver(
 	}
 
 	return &RootResolver{
-		appNameNormalizer:   appNameNormalizer,
-		app:                 application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, specSvc, apiSvc, eventAPISvc, apiConverter, eventAPIConverter, appTemplateSvc, appTemplateConverter, tenantBusinessTypeSvc, tenantBusinessTypeConverter, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
-		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, selfRegisterManager, uidSvc, certSubjectMappingSvc, appTemplateProductLabel, ordAggregatorClientConfig),
-		api:                 api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter, appSvc),
-		eventAPI:            eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
-		eventing:            eventing.NewResolver(transact, eventingSvc, appSvc),
-		doc:                 document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
-		formation:           formation.NewResolver(transact, formationSvc, formationConv, formationAssignmentSvc, formationAssignmentConv, tenantOnDemandSvc),
-		runtime:             runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc, runtimeContextSvc, runtimeContextConverter, webhookSvc, webhookConverter, tenantOnDemandSvc, formationSvc),
-		runtimeContext:      runtimectx.NewResolver(transact, runtimeContextSvc, runtimeContextConverter),
-		healthCheck:         healthcheck.NewResolver(healthCheckSvc),
-		webhook:             webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, runtimeSvc, formationTemplateSvc, webhookConverter),
-		labelDef:            labeldef.NewResolver(transact, labelDefSvc, formationSvc, labelDefConverter),
-		token:               onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter, oneTimeTokenCfg.SuggestTokenHeaderKey),
-		systemAuth:          systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, tokenSvc, systemAuthConverter, authConverter),
-		oAuth20:             oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
-		intSys:              integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
-		viewer:              viewer.NewViewerResolver(),
-		tenant:              tenant.NewResolver(transact, tenantSvc, tenantConverter, tenantOnDemandSvc),
-		mpBundle:            bundleutil.NewResolver(transact, bundleSvc, bundleInstanceAuthSvc, bundleReferenceSvc, apiSvc, eventAPISvc, docSvc, bundleConverter, bundleInstanceAuthConv, apiConverter, eventAPIConverter, docConverter, specSvc, appSvc),
-		bundleInstanceAuth:  bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
-		scenarioAssignment:  scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv, tenantSvc),
-		subscription:        subscription.NewResolver(transact, subscriptionSvc, ordAggregatorClientConfig),
-		formationTemplate:   formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, webhookConverter, formationConstraintSvc, formationConstraintConverter),
-		formationConstraint: formationconstraint.NewResolver(transact, formationConstraintConverter, formationConstraintSvc),
-		constraintReference: formationtemplateconstraintreferences.NewResolver(transact, constraintReferencesConverter, constraintReferenceSvc),
-		certSubjectMapping:  certsubjectmapping.NewResolver(transact, certSubjectMappingConv, certSubjectMappingSvc, uidSvc),
+		appNameNormalizer:     appNameNormalizer,
+		app:                   application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, specSvc, apiSvc, eventAPISvc, integrationDependencySvc, integrationDependencyConv, aspectSvc, apiConverter, eventAPIConverter, appTemplateSvc, appTemplateConverter, tenantBusinessTypeSvc, tenantBusinessTypeConverter, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
+		appTemplate:           apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, selfRegisterManager, uidSvc, certSubjectMappingSvc, appTemplateProductLabel, ordAggregatorClientConfig),
+		api:                   api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter, appSvc),
+		eventAPI:              eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
+		eventing:              eventing.NewResolver(transact, eventingSvc, appSvc),
+		integrationDependency: integrationdependency.NewResolver(transact, integrationDependencySvc, integrationDependencyConv, aspectSvc, appSvc, appTemplateSvc, packageSvc),
+		doc:                   document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
+		formation:             formation.NewResolver(transact, formationSvc, formationConv, formationAssignmentSvc, formationAssignmentConv, tenantOnDemandSvc),
+		runtime:               runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc, runtimeContextSvc, runtimeContextConverter, webhookSvc, webhookConverter, tenantOnDemandSvc, formationSvc),
+		runtimeContext:        runtimectx.NewResolver(transact, runtimeContextSvc, runtimeContextConverter),
+		healthCheck:           healthcheck.NewResolver(healthCheckSvc),
+		webhook:               webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, runtimeSvc, formationTemplateSvc, webhookConverter),
+		labelDef:              labeldef.NewResolver(transact, labelDefSvc, formationSvc, labelDefConverter),
+		token:                 onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter, oneTimeTokenCfg.SuggestTokenHeaderKey),
+		systemAuth:            systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, tokenSvc, systemAuthConverter, authConverter),
+		oAuth20:               oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
+		intSys:                integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
+		viewer:                viewer.NewViewerResolver(),
+		tenant:                tenant.NewResolver(transact, tenantSvc, tenantConverter, tenantOnDemandSvc),
+		mpBundle:              bundleutil.NewResolver(transact, bundleSvc, bundleInstanceAuthSvc, bundleReferenceSvc, apiSvc, eventAPISvc, docSvc, bundleConverter, bundleInstanceAuthConv, apiConverter, eventAPIConverter, docConverter, specSvc, appSvc),
+		bundleInstanceAuth:    bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
+		scenarioAssignment:    scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv, tenantSvc),
+		subscription:          subscription.NewResolver(transact, subscriptionSvc, ordAggregatorClientConfig),
+		formationTemplate:     formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, webhookConverter, formationConstraintSvc, formationConstraintConverter),
+		formationConstraint:   formationconstraint.NewResolver(transact, formationConstraintConverter, formationConstraintSvc),
+		constraintReference:   formationtemplateconstraintreferences.NewResolver(transact, constraintReferencesConverter, constraintReferenceSvc),
+		certSubjectMapping:    certsubjectmapping.NewResolver(transact, certSubjectMappingConv, certSubjectMappingSvc, uidSvc),
 	}, nil
 }
 
@@ -306,6 +320,11 @@ func (r *RootResolver) APIDefinitionsDataloader(ids []dataloader.ParamAPIDef) ([
 // EventDefinitionsDataloader missing godoc
 func (r *RootResolver) EventDefinitionsDataloader(ids []dataloader.ParamEventDef) ([]*graphql.EventDefinitionPage, []error) {
 	return r.mpBundle.EventDefinitionsDataLoader(ids)
+}
+
+// IntegrationDependenciesDataloader is the Integration Dependencies dataloader used in the graphql API router
+func (r *RootResolver) IntegrationDependenciesDataloader(ids []dataloader.ParamIntegrationDependency) ([]*graphql.IntegrationDependencyPage, []error) {
+	return r.app.IntegrationDependenciesDataLoader(ids)
 }
 
 // DocumentsDataloader missing godoc
@@ -982,6 +1001,16 @@ func (r *mutationResolver) AddEventDefinitionToApplication(ctx context.Context, 
 	return r.eventAPI.AddEventDefinitionToApplication(ctx, appID, in)
 }
 
+// AddIntegrationDependencyToApplication adds an Integration Dependency to a given application ID
+func (r *mutationResolver) AddIntegrationDependencyToApplication(ctx context.Context, appID string, in graphql.IntegrationDependencyInput) (*graphql.IntegrationDependency, error) {
+	return r.integrationDependency.AddIntegrationDependencyToApplication(ctx, appID, in)
+}
+
+// DeleteIntegrationDependency deletes an Integration Dependency byt given id
+func (r *mutationResolver) DeleteIntegrationDependency(ctx context.Context, id string) (*graphql.IntegrationDependency, error) {
+	return r.integrationDependency.DeleteIntegrationDependency(ctx, id)
+}
+
 // AddDocumentToBundle missing godoc
 func (r *mutationResolver) AddDocumentToBundle(ctx context.Context, bundleID string, in graphql.DocumentInput) (*graphql.Document, error) {
 	return r.doc.AddDocumentToBundle(ctx, bundleID, in)
@@ -1115,6 +1144,11 @@ func (r *applicationResolver) APIDefinition(ctx context.Context, obj *graphql.Ap
 // EventDefinition fetches an Event and its spec for Application and EventDefinition with a given ID
 func (r *applicationResolver) EventDefinition(ctx context.Context, obj *graphql.Application, id string) (*graphql.EventDefinition, error) {
 	return r.app.EventDefinition(ctx, obj, id)
+}
+
+// IntegrationDependencies resolves to IntegrationDependencies page for application
+func (r *applicationResolver) IntegrationDependencies(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.IntegrationDependencyPage, error) {
+	return r.app.IntegrationDependencies(ctx, obj, first, after)
 }
 
 // ApplicationTemplate resolves application template for application object

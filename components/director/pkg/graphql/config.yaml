@@ -56,6 +56,8 @@ models:
         resolver: true
       eventDefinition:
         resolver: true
+      integrationDependencies:
+        resolver: true
       webhooks:
         resolver: true
       labels:

@@ -2,10 +2,10 @@ package integrationdependency
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
@@ -18,6 +18,7 @@ type IntegrationDependencyRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.IntegrationDependency, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.IntegrationDependency, error)
 	ListByResourceID(ctx context.Context, tenantID string, resourceType resource.Type, resourceID string) ([]*model.IntegrationDependency, error)
+	ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, aspects []*model.Aspect, counts map[string]int, pageSize int, cursor string) ([]*model.IntegrationDependencyPage, error)
 	Create(ctx context.Context, tenant string, item *model.IntegrationDependency) error
 	CreateGlobal(ctx context.Context, item *model.IntegrationDependency) error
 	Update(ctx context.Context, tenant string, item *model.IntegrationDependency) error
@@ -35,14 +36,16 @@ type UIDService interface {
 
 type service struct {
 	repo         IntegrationDependencyRepository
+	aspectSvc    AspectService
 	uidService   UIDService
 	timestampGen timestamp.Generator
 }
 
 // NewService returns a new object responsible for service-layer Integration Dependency operations.
-func NewService(repo IntegrationDependencyRepository, uidService UIDService) *service {
+func NewService(repo IntegrationDependencyRepository, aspectSvc AspectService, uidService UIDService) *service {
 	return &service{
 		repo:         repo,
+		aspectSvc:    aspectSvc,
 		uidService:   uidService,
 		timestampGen: timestamp.DefaultGenerator,
 	}
@@ -118,6 +121,25 @@ func (s *service) Delete(ctx context.Context, resourceType resource.Type, id str
 	log.C(ctx).Infof("Successfully deleted Integration Dependency with id %s", id)
 
 	return nil
+}
+
+// ListByApplicationIDs lists all Integration Dependencies in pages for a given array of application IDs.
+func (s *service) ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.IntegrationDependencyPage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	aspects, counts, err := s.aspectSvc.ListByApplicationIDs(ctx, applicationIDs, pageSize, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.ListByApplicationIDs(ctx, tnt, applicationIDs, aspects, counts, pageSize, cursor)
 }
 
 func (s *service) createIntegrationDependency(ctx context.Context, resourceType resource.Type, integrationDependency *model.IntegrationDependency) error {

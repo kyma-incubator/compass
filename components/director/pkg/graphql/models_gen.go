@@ -190,6 +190,25 @@ type ApplicationUpdateInput struct {
 	LocalTenantID        *string                     `json:"localTenantID"`
 }
 
+
+type AspectAPIDefinitionInput struct {
+	OrdID string `json:"ordID"`
+}
+
+
+type AspectEventDefinitionInput struct {
+	OrdID  string    `json:"ordID"`
+	Subset []*string `json:"subset"`
+}
+
+type AspectInput struct {
+	Name           string                        `json:"name"`
+	Description    *string                       `json:"description"`
+	Mandatory      *bool                         `json:"mandatory"`
+	APIResources   []*AspectAPIDefinitionInput   `json:"apiResources"`
+	EventResources []*AspectEventDefinitionInput `json:"eventResources"`
+}
+
 type Auth struct {
 	Credential                      CredentialData         `json:"credential"`
 	AccessStrategy                  *string                `json:"accessStrategy"`
@@ -644,6 +663,27 @@ type IntSysSystemAuth struct {
 }
 
 func (IntSysSystemAuth) IsSystemAuth() {}
+
+
+type IntegrationDependencyInput struct {
+	Name          string         `json:"name"`
+	Description   *string        `json:"description"`
+	OrdID         *string        `json:"ordID"`
+	PartOfPackage *string        `json:"partOfPackage"`
+	Visibility    *string        `json:"visibility"`
+	ReleaseStatus *string        `json:"releaseStatus"`
+	Mandatory     *bool          `json:"mandatory"`
+	Aspects       []*AspectInput `json:"aspects"`
+	Version       *VersionInput  `json:"version"`
+}
+
+type IntegrationDependencyPage struct {
+	Data       []*IntegrationDependency `json:"data"`
+	PageInfo   *PageInfo                `json:"pageInfo"`
+	TotalCount int                      `json:"totalCount"`
+}
+
+func (IntegrationDependencyPage) IsPageable() {}
 
 type IntegrationSystemInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
