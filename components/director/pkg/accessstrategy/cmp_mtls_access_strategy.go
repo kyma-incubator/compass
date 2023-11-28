@@ -48,8 +48,8 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 	if clientCerts == nil {
 		return nil, errors.New("did not find client certificate in the cache")
 	}
-	tr := &http.Transport{}
-	tr2 := &http2.Transport{}
+	var tr *http.Transport
+	var tr2 *http2.Transport
 	if baseClient.Transport != nil {
 		switch v := baseClient.Transport.(type) {
 		case *http.Transport:
