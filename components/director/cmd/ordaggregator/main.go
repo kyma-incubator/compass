@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"golang.org/x/net/http2"
 	"net/http"
 	"os"
 	"time"
@@ -178,10 +177,21 @@ func main() {
 	certCache, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
+	//httpClient := &http.Client{
+	//	Timeout: cfg.ClientTimeout,
+	//	Transport: &http2.Transport{
+	//		AllowHTTP: true,
+	//		TLSClientConfig: &tls.Config{
+	//			InsecureSkipVerify: cfg.SkipSSLValidation,
+	//		},
+	//	},
+	//}
+
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
-		Transport: &http2.Transport{
-			AllowHTTP: true,
+		Transport: &http.Transport{
+			MaxConnsPerHost: 0,
+			MaxIdleConns:    0,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
@@ -414,10 +424,20 @@ func main() {
 }
 
 func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache credloader.CertCache) *ord.ORDDocumentsClient {
+	//httpClient := &http.Client{
+	//	Timeout: cfg.ClientTimeout,
+	//	Transport: &http2.Transport{
+	//		AllowHTTP: true,
+	//		TLSClientConfig: &tls.Config{
+	//			InsecureSkipVerify: cfg.SkipSSLValidation,
+	//		},
+	//	},
+	//}
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
-		Transport: &http2.Transport{
-			AllowHTTP: true,
+		Transport: &http.Transport{
+			MaxConnsPerHost: 0,
+			MaxIdleConns:    0,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
@@ -430,8 +450,9 @@ func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, c
 func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache credloader.CertCache) *ord.ORDDocumentsClient {
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
-		Transport: &http2.Transport{
-			AllowHTTP: true,
+		Transport: &http.Transport{
+			MaxConnsPerHost: 0,
+			MaxIdleConns:    0,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
