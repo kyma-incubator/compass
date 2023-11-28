@@ -142,7 +142,7 @@ func (b *OAuth2ClientCredsDestinationRequestBody) Validate() error {
 		validation.Field(&b.ClientID, validation.Required),
 		validation.Field(&b.ClientSecret, validation.Required),
 		validation.Field(&b.TokenServiceURL, validation.Required),
-		validation.Field(&b.TokenServiceURLType, validation.In(destinationcreatorpkg.DedicatedTokenServiceURLType, destinationcreatorpkg.CommonTokenServiceURLType)),
+		validation.Field(&b.TokenServiceURLType, validation.In(string(destinationcreatorpkg.DedicatedTokenServiceURLType), string(destinationcreatorpkg.CommonTokenServiceURLType))),
 	)
 }
 

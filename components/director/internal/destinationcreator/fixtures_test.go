@@ -25,6 +25,7 @@ const (
 	samlAssertionDestName            = "test-saml-assertion-dest-name"
 	samlAssertionDestURL             = "test-saml-assertion-dest-url"
 	clientCertAuthDestName           = "test-client-cert-auth-dest-name"
+	oauth2ClientCredsDestName        = "test-oauth2-client-creds-dest-name"
 	destinationDescription           = "test-dest-description"
 	destinationTypeHTTP              = string(destinationcreatorpkg.TypeHTTP)
 	destinationProxyTypeInternet     = string(destinationcreatorpkg.ProxyTypeInternet)
@@ -38,6 +39,10 @@ const (
 	basicDestURL                     = "basic-url"
 	basicDestUser                    = "basic-user"
 	basicDestPassword                = "basic-pwd"
+	oauth2ClientCredsURL             = "oauth2-url"
+	oauth2ClientCredsTokenURL        = "oauth2-token-url"
+	oauth2ClientCredsClientID        = "oauth2-client-id"
+	oauth2ClientCredsClientSecret    = "oauth2-client-secret"
 
 	// Destination Certificate constants
 	certificateName            = "testCertificateName"
@@ -172,6 +177,14 @@ func fixDestinationConfig() *destinationcreator.Config {
 	}
 }
 
+func fixDestinationInfo(authType, destType, url string) *destinationcreatorpkg.DestinationInfo {
+	return &destinationcreatorpkg.DestinationInfo{
+		AuthenticationType: destinationcreatorpkg.AuthType(authType),
+		Type:               destinationcreatorpkg.Type(destType),
+		URL:                url,
+	}
+}
+
 func fixDesignTimeDestinationDetails() operators.Destination {
 	return fixDestinationDetails(designTimeDestName, string(destinationcreatorpkg.AuthTypeNoAuth), destinationExternalSubaccountID)
 }
@@ -192,6 +205,12 @@ func fixSAMLAssertionDestinationsDetails() []operators.Destination {
 
 func fixClientCertAuthDestinationDetails() operators.Destination {
 	return fixDestinationDetails(clientCertAuthDestName, string(destinationcreatorpkg.AuthTypeClientCertificate), destinationExternalSubaccountID)
+}
+
+func fixOAuth2ClientCredsDestinationDetails() operators.Destination {
+	dest := fixDestinationDetails(oauth2ClientCredsDestName, string(destinationcreatorpkg.AuthTypeOAuth2ClientCredentials), destinationExternalSubaccountID)
+	dest.TokenServiceURLType = string(destinationcreatorpkg.DedicatedTokenServiceURLType)
+	return dest
 }
 
 func fixDestinationsDetailsWithoutSubaccountID() []operators.Destination {
@@ -230,6 +249,15 @@ func fixBasicAuthCreds(url, username, password string) operators.BasicAuthentica
 func fixSAMLAssertionAuthCreds(url string) *operators.SAMLAssertionAuthentication {
 	return &operators.SAMLAssertionAuthentication{
 		URL: url,
+	}
+}
+
+func fixOAuth2ClientCreds(url, tokenServiceURL, clientID, clientSecret string) operators.OAuth2ClientCredentialsAuthentication {
+	return operators.OAuth2ClientCredentialsAuthentication{
+		URL:             url,
+		TokenServiceURL: tokenServiceURL,
+		ClientID:        clientID,
+		ClientSecret:    clientSecret,
 	}
 }
 

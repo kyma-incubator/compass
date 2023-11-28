@@ -1,7 +1,6 @@
 package destination_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
@@ -21,16 +20,20 @@ const (
 	destinationInstanceID                  = "999ac686-5773-4ad0-8eb1-2349e931f852"
 
 	// Destination constants
-	destinationName        = "test-destination-name"
-	destinationType        = destinationcreatorpkg.TypeHTTP
-	destinationProxyType   = destinationcreatorpkg.ProxyTypeInternet
-	destinationNoAuthn     = destinationcreatorpkg.AuthTypeNoAuth
-	designTimeDestName     = "test-design-time-dest-name"
-	basicDestName          = "test-basic-dest-name"
-	samlAssertionDestName  = "test-saml-assertion-dest-name"
-	clientCertAuthDestName = "test-client-cert-auth-dest-name"
-	destinationURL         = "http://dest-test-url"
-	destinationDescription = "test-dest-description"
+	destinationName                  = "test-destination-name"
+	destinationType                  = destinationcreatorpkg.TypeHTTP
+	destinationProxyType             = destinationcreatorpkg.ProxyTypeInternet
+	destinationNoAuthn               = destinationcreatorpkg.AuthTypeNoAuth
+	designTimeDestName               = "test-design-time-dest-name"
+	basicDestName                    = "test-basic-dest-name"
+	samlAssertionDestName            = "test-saml-assertion-dest-name"
+	clientCertAuthDestName           = "test-client-cert-auth-dest-name"
+	oauth2ClientCredsDestName        = "test-oauth2-client-creds-dest-name"
+	destinationURL                   = "http://dest-test-url"
+	destinationDescription           = "test-dest-description"
+	oauth2ClientCredsTokenServiceURL = "http://oauth2-token-service-url"
+	oauth2ClientCredsClientID        = "test-client-id"
+	oauth2ClientCredsClientSecret    = "test-client-secret"
 
 	// Destination Creds constants
 	basicDestUser     = "basic-user"
@@ -109,6 +112,14 @@ func fixDestinationDetails(name, authentication, subaccountID string) operators.
 	}
 }
 
+func fixDestinationInfo(authType destinationcreatorpkg.AuthType, destType destinationcreatorpkg.Type, url string) *destinationcreatorpkg.DestinationInfo {
+	return &destinationcreatorpkg.DestinationInfo{
+		AuthenticationType: authType,
+		Type:               destType,
+		URL:                url,
+	}
+}
+
 func fixBasicAuthn() operators.BasicAuthentication {
 	return operators.BasicAuthentication{
 		URL:      destinationURL,
@@ -118,18 +129,20 @@ func fixBasicAuthn() operators.BasicAuthentication {
 	}
 }
 
-func fixBasicReqBody() *destinationcreator.BasicAuthDestinationRequestBody {
-	return &destinationcreator.BasicAuthDestinationRequestBody{
-		BaseDestinationRequestBody: destinationcreator.BaseDestinationRequestBody{
-			Name:               basicDestName,
-			URL:                destinationURL,
-			Type:               destinationType,
-			ProxyType:          destinationProxyType,
-			AuthenticationType: destinationcreatorpkg.AuthTypeBasic,
-		},
-		User:     basicDestUser,
-		Password: basicDestPassword,
-	}
+func fixBasicDestInfo() *destinationcreatorpkg.DestinationInfo {
+	return fixDestinationInfo(destinationcreatorpkg.AuthTypeBasic, destinationType, destinationURL)
+}
+
+func fixSAMLDestInfo() *destinationcreatorpkg.DestinationInfo {
+	return fixDestinationInfo(destinationcreatorpkg.AuthTypeSAMLAssertion, destinationType, destinationURL)
+}
+
+func fixClientCertDestInfo() *destinationcreatorpkg.DestinationInfo {
+	return fixDestinationInfo(destinationcreatorpkg.AuthTypeClientCertificate, destinationType, destinationURL)
+}
+
+func fixOAuth2ClientCredsDestInfo() *destinationcreatorpkg.DestinationInfo {
+	return fixDestinationInfo(destinationcreatorpkg.AuthTypeOAuth2ClientCredentials, destinationType, destinationURL)
 }
 
 func fixSAMLAssertionAuthentication() *operators.SAMLAssertionAuthentication {
@@ -161,6 +174,21 @@ func fixSAMLAssertionDestinationsDetails() []operators.Destination {
 func fixClientCertAuthDestinationsDetails() []operators.Destination {
 	return []operators.Destination{
 		fixDestinationDetails(clientCertAuthDestName, string(destinationcreatorpkg.AuthTypeClientCertificate), externalDestinationSubaccountID),
+	}
+}
+
+func fixOAuth2ClientCredsDestinationsDetails() []operators.Destination {
+	return []operators.Destination{
+		fixDestinationDetails(oauth2ClientCredsDestName, string(destinationcreatorpkg.AuthTypeOAuth2ClientCredentials), externalDestinationSubaccountID),
+	}
+}
+
+func fixOAuth2ClientCredsAuthn() operators.OAuth2ClientCredentialsAuthentication {
+	return operators.OAuth2ClientCredentialsAuthentication{
+		URL:             destinationURL,
+		TokenServiceURL: oauth2ClientCredsTokenServiceURL,
+		ClientID:        oauth2ClientCredsClientID,
+		ClientSecret:    oauth2ClientCredsClientSecret,
 	}
 }
 
