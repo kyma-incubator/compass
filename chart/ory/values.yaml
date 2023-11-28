@@ -113,6 +113,8 @@ hydra:
 # Overrides for the Oathkeeper chart
 oathkeeper:
   sidecar:
+    image:
+      tag: v0.1.8
     # Previously was hardcoded by the Kyma chart
     envs:
       - name: mutatorsAvailable

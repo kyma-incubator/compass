@@ -36,7 +36,6 @@ func NewFormationAssignmentStatusService(repo FormationAssignmentRepository, con
 // UpdateWithConstraints updates a Formation Assignment and enforces NotificationStatusReturned constraints before and after the update
 func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.Context, notificationStatusReport *statusreport.NotificationStatusReport, fa *model.FormationAssignment, operation model.FormationOperation) error {
 	id := fa.ID
-
 	log.C(ctx).Infof("Updating formation assignment with ID: %q", id)
 
 	tenantID, err := tenant.LoadFromContext(ctx)
@@ -57,7 +56,6 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 	fa.State = stateFromReport
 
 	if isErrorState(model.FormationAssignmentState(stateFromReport)) {
-		assignmentError := json.RawMessage{}
 		if notificationStatusReport.Error != "" {
 			assignmentErrorWrapper := AssignmentErrorWrapper{AssignmentError{
 				Message:   notificationStatusReport.Error,
@@ -67,9 +65,8 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 			if err != nil {
 				return errors.Wrapf(err, "While preparing error message for assignment with ID %q", fa.ID)
 			}
-			assignmentError = marshaled
+			fa.Error = marshaled
 		}
-		fa.Error = assignmentError
 	}
 
 	if !isErrorState(model.FormationAssignmentState(stateFromReport)) {
