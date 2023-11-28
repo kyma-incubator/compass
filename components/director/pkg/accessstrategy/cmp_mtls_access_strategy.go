@@ -63,15 +63,17 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		}
 	}
 
-	tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
-
 	var client *http.Client
 	if tr != nil {
+		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
+
 		client = &http.Client{
 			Timeout:   baseClient.Timeout,
 			Transport: tr,
 		}
 	} else {
+		tr2.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
+
 		client = &http.Client{
 			Timeout:   baseClient.Timeout,
 			Transport: tr2,
