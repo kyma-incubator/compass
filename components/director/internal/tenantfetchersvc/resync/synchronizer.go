@@ -31,6 +31,7 @@ type TenantStorageService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	ListsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
+	ListByIDsAndType(ctx context.Context, ids []string, tenantType tenant.Type) ([]*model.BusinessTenantMapping, error)
 }
 
 // TenantCreator takes care of retrieving tenants from external tenant registry and storing them in Director
