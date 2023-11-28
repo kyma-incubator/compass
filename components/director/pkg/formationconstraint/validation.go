@@ -236,12 +236,13 @@ func fixApplicationModel() *model.Application {
 			Condition: model.ApplicationStatusConditionInitial,
 			Timestamp: time.Time{},
 		},
-		HealthCheckURL:      str.Ptr(""),
-		BaseURL:             str.Ptr(""),
-		OrdLabels:           json.RawMessage("[]"),
-		CorrelationIDs:      json.RawMessage("[]"),
-		SystemStatus:        str.Ptr(""),
-		DocumentationLabels: json.RawMessage("[]"),
+		HealthCheckURL:       str.Ptr(""),
+		BaseURL:              str.Ptr(""),
+		ApplicationNamespace: str.Ptr(""),
+		OrdLabels:            json.RawMessage("[]"),
+		CorrelationIDs:       json.RawMessage("[]"),
+		SystemStatus:         str.Ptr(""),
+		DocumentationLabels:  json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
 			Ready:     true,
 			Error:     nil,
@@ -259,6 +260,7 @@ func fixLabels() map[string]string {
 func fixApplicationTemplateModel() *model.ApplicationTemplate {
 	return &model.ApplicationTemplate{
 		Description:          str.Ptr(""),
+		ApplicationNamespace: str.Ptr(""),
 		ApplicationInputJSON: `{}`,
 	}
 }
