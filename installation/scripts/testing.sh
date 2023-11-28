@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+# Currently not used but kept for easier transition to enable db dump
+DUMP_DB=false
 
 source ${ROOT_PATH}/kyma-scripts/testing-common.sh
 
@@ -22,10 +24,9 @@ do
     key="$1"
 
     case ${key} in
+        # Currently not used but kept for easier transition to enable db dump
         --dump-db)
-            checkInputParameterValue "${2}"
-            DUMP_DB="$2"
-            shift
+            DUMP_DB=true
             shift
         ;;
         --benchmark)
@@ -73,12 +74,10 @@ fi
 # match all tests
 if [ -z "$testDefinitionName" ]
 then
-  if [[ "${DUMP_DB}" == "true" ]]
+  labelSelector=''
+  if [ "$DUMP_DB" = true ]
   then
     labelSelector=',!disable-db-dump'
-  elif [[ "${DUMP_DB}" == "false" ]]
-  then
-    labelSelector=',disable-db-dump'
   fi
   if [[ "${BENCHMARK}" == "true" ]]
   then
