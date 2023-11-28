@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"golang.org/x/net/http2"
 	"net/http"
 	"os"
 	"time"
@@ -414,7 +415,7 @@ func main() {
 func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache credloader.CertCache) *ord.ORDDocumentsClient {
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
-		Transport: &http.Transport{
+		Transport: &http2.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
@@ -427,7 +428,7 @@ func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, c
 func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache credloader.CertCache) *ord.ORDDocumentsClient {
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
-		Transport: &http.Transport{
+		Transport: &http2.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
