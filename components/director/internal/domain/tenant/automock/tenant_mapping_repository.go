@@ -284,6 +284,32 @@ func (_m *TenantMappingRepository) ListByIds(ctx context.Context, ids []string) 
 	return r0, r1
 }
 
+// ListByIdsAndType provides a mock function with given fields: ctx, ids, tenantType
+func (_m *TenantMappingRepository) ListByIdsAndType(ctx context.Context, ids []string, tenantType pkgtenant.Type) ([]*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, ids, tenantType)
+
+	var r0 []*model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string, pkgtenant.Type) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, ids, tenantType)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []string, pkgtenant.Type) []*model.BusinessTenantMapping); ok {
+		r0 = rf(ctx, ids, tenantType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BusinessTenantMapping)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []string, pkgtenant.Type) error); ok {
+		r1 = rf(ctx, ids, tenantType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByParentAndType provides a mock function with given fields: ctx, parentID, tenantType
 func (_m *TenantMappingRepository) ListByParentAndType(ctx context.Context, parentID string, tenantType pkgtenant.Type) ([]*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx, parentID, tenantType)
