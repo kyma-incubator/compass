@@ -416,6 +416,7 @@ func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, c
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http2.Transport{
+			AllowHTTP: true,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
@@ -429,6 +430,7 @@ func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http2.Transport{
+			AllowHTTP: true,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
