@@ -212,7 +212,7 @@ func constructGlobalAccountTenant(ctx context.Context, jsonPayload, name, subdom
 	return &model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: externalTenant,
-		Parent:         parentID,
+		Parents:        []string{parentID},
 		Subdomain:      subdomain,
 		Region:         "",
 		Type:           tenant.TypeToStr(tenant.Account),
@@ -243,7 +243,7 @@ func constructSubaccountTenant(ctx context.Context, jsonPayload, name, subdomain
 	return &model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: externalTenant,
-		Parent:         parentID,
+		Parents:        []string{parentID},
 		Subdomain:      subdomain,
 		Region:         region,
 		Type:           tenant.TypeToStr(tenant.Subaccount),
