@@ -156,3 +156,32 @@ function wait_for_helm_stable_state() {
       sleep 10
   done
 }
+
+# Executes a passed util with a specific kubeconfig path and other arguments
+function util_kubeconfig () {
+  COMMAND="$1"
+  # Remove the first passed argument to this function
+  shift;
+  KUBECONFIG_PATH="$1"
+  shift;
+
+  "$COMMAND" --kubeconfig "$KUBECONFIG_PATH" "$@"
+}
+
+# Use kubectl with kubeconfig for k3d cluster with name kyma
+function kubectl_k3d_kyma () {
+  # Path created by run.sh
+  util_kubeconfig kubectl "$HOME"/.k3d/kubeconfig-kyma.yaml "$@"
+}
+
+# Use kyma CLI with kubeconfig for k3d cluster with name kyma
+function kyma_k3d_kyma () {
+  # Path created by run.sh
+  util_kubeconfig kyma "$HOME"/.k3d/kubeconfig-kyma.yaml "$@"
+}
+
+# Use helm with kubeconfig for k3d cluster with name kyma
+function helm_k3d_kyma () {
+  # Path created by run.sh
+  util_kubeconfig helm "$HOME"/.k3d/kubeconfig-kyma.yaml "$@"
+}

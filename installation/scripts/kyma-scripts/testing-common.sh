@@ -2,16 +2,12 @@
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source ${ROOT_PATH}/utils.sh
-
-function context_arg() {
-    if [ -n "$KUBE_CONTEXT" ]; then
-        echo "--context $KUBE_CONTEXT"
-    fi
-}
+# Compass' utils
+source ${ROOT_PATH}/../utils.sh
 
 function cmdGetPodsForSuite() {
     local suiteName=$1
-    cmd="kubectl $(context_arg) get pods -l testing.kyma-project.io/suite-name=${suiteName} \
+    cmd="kubectl_k3d_kyma get pods -l testing.kyma-project.io/suite-name=${suiteName} \
             --all-namespaces \
             --no-headers=true \
             -o=custom-columns=name:metadata.name,ns:metadata.namespace"
@@ -39,7 +35,7 @@ function printLogsFromFailedTests() {
 
         log "Testing '${pod}' from namespace '${namespace}'" nc bold
 
-        phase=$(kubectl $(context_arg)  get pod ${pod} -n ${namespace} -o jsonpath="{ .status.phase }")
+        phase=$(kubectl_k3d_kyma  get pod ${pod} -n ${namespace} -o jsonpath="{ .status.phase }")
 
         case ${phase} in
         "Failed")
@@ -53,7 +49,7 @@ function printLogsFromFailedTests() {
         "Pending")
             log "'${pod}' failed due to too long Pending status" red
             printf "Fetching events from '${pod}':\n"
-            kubectl $(context_arg)  describe po ${pod} -n ${namespace} | awk 'x==1 {print} /Events:/ {x=1}'
+            kubectl_k3d_kyma  describe po ${pod} -n ${namespace} | awk 'x==1 {print} /Events:/ {x=1}'
         ;;
         "Unknown")
             log "'${pod}' failed with Unknown status" red
@@ -76,7 +72,7 @@ function getContainerFromPod() {
     local namespace="$1"
     local pod="$2"
     local containers2ignore="istio-init istio-proxy manager"
-    containersInPod=$(kubectl get pods ${pod} -o jsonpath='{.spec.containers[*].name}' -n ${namespace})
+    containersInPod=$(kubectl_k3d_kyma get pods ${pod} -o jsonpath='{.spec.containers[*].name}' -n ${namespace})
     for container in $containersInPod; do
         if [[ ! ${containers2ignore[*]} =~ "${container}" ]]; then
             echo "${container}"
@@ -88,7 +84,7 @@ function printLogsFromPod() {
     local namespace=$1 pod=$2
     log "Fetching logs from '${pod}'" nc bold
     testPod=$(getContainerFromPod ${namespace} ${pod})
-    result=$(kubectl $(context_arg)  logs -n ${namespace} -c ${testPod} ${pod})
+    result=$(kubectl_k3d_kyma logs -n ${namespace} -c ${testPod} ${pod})
     if [ "${#result}" -eq 0 ]; then
         log "FAILED" red
         return 1
@@ -116,7 +112,7 @@ function checkTestPodTerminated() {
         namespace=${podOrNs}
         idx=$((${idx}+1))
 
-        phase=$(kubectl $(context_arg)  get pod "$pod" -n ${namespace} -o jsonpath="{ .status.phase }")
+        phase=$(kubectl_k3d_kyma  get pod "$pod" -n ${namespace} -o jsonpath="{ .status.phase }")
         # A Pod's phase  Failed or Succeeded means pod has terminated.
         # see: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-phase
         if [ "${phase}" !=  "Succeeded" ] && [ "${phase}" != "Failed" ]
@@ -168,7 +164,7 @@ function waitForTerminationAndPrintLogs() {
 
 function printImagesWithLatestTag() {
 
-    local images=$(kubectl $(context_arg)  get pods --all-namespaces -o jsonpath="{..image}" |\
+    local images=$(kubectl_k3d_kyma  get pods --all-namespaces -o jsonpath="{..image}" |\
     tr -s '[[:space:]]' '\n' |\
     grep ":latest")
 

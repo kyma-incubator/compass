@@ -3,6 +3,8 @@
 set -o errexit
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
+CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$CURRENT_DIR"/utils.sh
 
 VALUES_FILE_ORY="${ROOT_PATH}"/chart/ory/values.yaml
 OVERRIDE_TEMP_ORY=ory-temp-values.yaml
@@ -62,11 +64,6 @@ function cleanup_trap(){
   fi
 }
 
-# Generate random string with the length given as argument
-function generate_random(){
-  cat /dev/urandom | LC_ALL=C tr -dc 'a-z0-9' | fold -w ${1} | head -n 1
-}
-
 # Copy the identity provider configuration from the Compass chart; the Compass values are changed by the `run.sh`
 VALUES_FILE_COMPASS="${ROOT_PATH}"/chart/compass/values.yaml
 IDP_HOST=$(yq ".global.cockpit.auth.idpHost" $VALUES_FILE_COMPASS)
@@ -87,10 +84,10 @@ RELEASE_NS=ory
 RELEASE_NAME=ory-stack
 
 # As of Kyma 2.6.3 we need to specify which namespaces should enable istio injection
-kubectl create ns $RELEASE_NS --dry-run=client -o yaml | kubectl apply -f -
-kubectl label ns $RELEASE_NS istio-injection=enabled --overwrite
+kubectl_k3d_kyma create ns $RELEASE_NS --dry-run=client -o yaml | kubectl_k3d_kyma apply -f -
+kubectl_k3d_kyma label ns $RELEASE_NS istio-injection=enabled --overwrite
 # As of Kubernetes 1.25 we need to replace PodSecurityPolicies; we chose the Pod Security Standards
-kubectl label ns $RELEASE_NS pod-security.kubernetes.io/enforce=baseline --overwrite
+kubectl_k3d_kyma label ns $RELEASE_NS pod-security.kubernetes.io/enforce=baseline --overwrite
 
 CLOUD_PERSISTENCE=$(yq ".global.ory.hydra.persistence.gcloud.enabled" ${OVERRIDE_TEMP_ORY})
 # The System secret and cookie secret, needed by Hydra, are created by the Secret component of the Helm chart
@@ -109,4 +106,4 @@ if [ "$CLOUD_PERSISTENCE" = false ]; then
   yq -i ".hydra.hydra.config.dsn = \"$DSN\"" "${OVERRIDE_TEMP_ORY}"
 fi
 
-helm upgrade --atomic --install --create-namespace --timeout "${TIMEOUT}" $RELEASE_NAME -f "${OVERRIDE_TEMP_ORY}" -n $RELEASE_NS "${ROOT_PATH}"/chart/ory
+helm_k3d_kyma upgrade --atomic --install --create-namespace --timeout "${TIMEOUT}" $RELEASE_NAME -f "${OVERRIDE_TEMP_ORY}" -n $RELEASE_NS "${ROOT_PATH}"/chart/ory

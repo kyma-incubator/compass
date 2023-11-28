@@ -1,3 +1,6 @@
+CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$CURRENT_DIR"/utils.sh
+
 function prometheusMTLSPatch() {
   enableNodeExporterMTLS
   patchKymaServiceMonitorsForMTLS
@@ -156,9 +159,9 @@ EOF
   )
   echo "$daemonset" > daemonset.yaml
 
-  kubectl get secret istio-ca-secret --namespace=istio-system -o yaml | grep -v '^\s*namespace:\s' | kubectl replace --force --namespace=kyma-system -f -
+  kubectl_k3d_kyma get secret istio-ca-secret --namespace=istio-system -o yaml | grep -v '^\s*namespace:\s' | kubectl_k3d_kyma replace --force --namespace=kyma-system -f -
 
-  kubectl apply -f daemonset.yaml
+  kubectl_k3d_kyma apply -f daemonset.yaml
 
   rm daemonset.yaml
 } 
@@ -176,8 +179,8 @@ function patchKymaServiceMonitorsForMTLS() {
     "insecureSkipVerify": true
   }'
 
-  if kubectl get ${crd} -n ${namespace} "${sm}" > /dev/null; then
-    kubectl get ${crd} -n ${namespace} "${sm}" -o json > "${sm}.json"
+  if kubectl_k3d_kyma get ${crd} -n ${namespace} "${sm}" > /dev/null; then
+    kubectl_k3d_kyma get ${crd} -n ${namespace} "${sm}" -o json > "${sm}.json"
 
     cp "${sm}.json" tmp.json
     jq --arg newSchema "$scheme" '.spec.endpoints[].scheme = $newSchema' tmp.json > "${sm}.json"
@@ -185,7 +188,7 @@ function patchKymaServiceMonitorsForMTLS() {
     jq --argjson newTlsConfig "$tlsConfig" '.spec.endpoints[].tlsConfig = $newTlsConfig' tmp.json > "${sm}.json"
     rm tmp.json
 
-    kubectl apply -f "${sm}.json" || true
+    kubectl_k3d_kyma apply -f "${sm}.json" || true
 
     rm "${sm}.json"
   fi
@@ -194,5 +197,5 @@ function patchKymaServiceMonitorsForMTLS() {
 function removeKymaPeerAuthsForPrometheus() {
   crd="peerauthentications.security.istio.io"
 
-  kubectl delete ${crd} -n kyma-system monitoring-grafana-policy || true
+  kubectl_k3d_kyma delete ${crd} -n kyma-system monitoring-grafana-policy || true
 }

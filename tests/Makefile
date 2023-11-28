@@ -25,7 +25,8 @@ e2e-test:
 	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh
 
 e2e-test-clean:
-	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
+	kubectl config use-context k3d-kyma
+	kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
 
 deploy-tests-on-k3d:
 	docker build -t ${LOCAL_PREFIX}/compass-e2e-tests:${IMAGE_VERSION} .
