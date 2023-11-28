@@ -3,6 +3,7 @@ package accessstrategy
 import (
 	"context"
 	"crypto/tls"
+	"golang.org/x/net/http2"
 	"net/http"
 	"sync"
 
@@ -48,10 +49,13 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		return nil, errors.New("did not find client certificate in the cache")
 	}
 	tr := &http.Transport{}
+	tr2 := &http2.Transport{}
 	if baseClient.Transport != nil {
 		switch v := baseClient.Transport.(type) {
 		case *http.Transport:
 			tr = v.Clone()
+		case *http2.Transport:
+			tr2 = v
 		case HTTPRoundTripper:
 			tr = v.GetTransport().Clone()
 		default:
@@ -61,9 +65,17 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 
 	tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
 
-	client := &http.Client{
-		Timeout:   baseClient.Timeout,
-		Transport: tr,
+	var client *http.Client
+	if tr != nil {
+		client = &http.Client{
+			Timeout:   baseClient.Timeout,
+			Transport: tr,
+		}
+	} else {
+		client = &http.Client{
+			Timeout:   baseClient.Timeout,
+			Transport: tr2,
+		}
 	}
 
 	req, err := http.NewRequest("GET", documentURL, nil)
