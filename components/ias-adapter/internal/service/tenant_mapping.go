@@ -10,12 +10,14 @@ import (
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 )
 
+//go:generate mockery --name=TenantMappingsStorage --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantMappingsStorage interface {
 	UpsertTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error
 	ListTenantMappings(ctx context.Context, formationID string) (map[string]types.TenantMapping, error)
 	DeleteTenantMapping(ctx context.Context, formationID, applicationID string) error
 }
 
+//go:generate mockery --name=IASService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IASService interface {
 	GetApplication(ctx context.Context, iasHost, clientID, appTenantID string) (types.Application, error)
 	UpdateApplicationConsumedAPIs(ctx context.Context, data ias.UpdateData) error
@@ -51,18 +53,19 @@ func (s TenantMappingsService) handleAssign(ctx context.Context,
 	formationID := tenantMapping.FormationID
 	uclAppID := tenantMapping.AssignedTenants[0].UCLApplicationID
 
-	if _, ok := tenantMappingsFromDB[uclAppID]; ok {
+	_, tenantMappingAlreadyInDB := tenantMappingsFromDB[uclAppID]
+	if tenantMappingAlreadyInDB && len(tenantMapping.AssignedTenants[0].Configuration.ConsumedAPIs) == 0 {
 		// Safeguard for empty consumedAPIs
 		logger.FromContext(ctx).Warn().Msgf(
-			"Received additional tenant mapping for app '%s' in formation '%s'. Skipping processing",
+			"Received additional tenant mapping for app '%s' in formation '%s'. Skipping upsert.",
 			uclAppID, formationID)
-		return nil
+	} else {
+		if err := s.upsertTenantMappingInDB(ctx, tenantMapping); err != nil {
+			return err
+		}
+		tenantMappingsFromDB[uclAppID] = tenantMapping
 	}
 
-	if err := s.upsertTenantMappingInDB(ctx, tenantMapping); err != nil {
-		return err
-	}
-	tenantMappingsFromDB[uclAppID] = tenantMapping
 	if len(tenantMappingsFromDB) == 2 {
 		if err := s.updateIASAppsConsumedAPIs(ctx, types.OperationAssign, tenantMappingsFromDB); err != nil {
 			return errors.Newf("failed to update applications consumed APIs in formation '%s': %w", formationID, err)
