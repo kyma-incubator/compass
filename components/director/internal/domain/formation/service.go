@@ -1079,7 +1079,9 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Context, tenantID string, formation *model.Formation, shouldReset bool) (*model.Formation, error) {
 	resyncableFormationAssignments := make([]*model.FormationAssignment, 0)
 	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0)
-	assignmentIDToAssignmentPair := make(map[string]formationassignment.AssignmentMappingPairWithOperation)
+	assignmentMappingNoNotificationPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
+	assignmentMappingSyncPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
+	assignmentMappingAsyncPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
 
 	formationID := formation.ID
 	if err := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
@@ -1177,7 +1179,24 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				Operation: operation,
 			}
 
-			assignmentIDToAssignmentPair[fa.ID] = assignmentPair
+			// We separate the assignment pairs in 3 groups
+			// 1. With no requests for the assignment
+			// 2. With synchronous webhook requests for the assignments
+			// 3. With asynchronous webhook requests for the assignments
+			// We do this, so that we can order the processing of the formation assignments
+			// This makes the notification count deterministic (we don't send asynchronous notifications before synchronous ones),
+			// and we assure that the notification receivers always receive the reverse as READY,
+			// if it has no request associated, rather than being sometimes INITIAL, sometimes READY.
+			if notificationForFA == nil {
+				assignmentMappingNoNotificationPairs = append(assignmentMappingNoNotificationPairs, &assignmentPair)
+			} else if notificationForFA != nil &&
+				notificationForFA.Webhook != nil &&
+				notificationForFA.Webhook.Mode != nil &&
+				*notificationForFA.Webhook.Mode == graphql.WebhookModeAsyncCallback {
+				assignmentMappingAsyncPairs = append(assignmentMappingAsyncPairs, &assignmentPair)
+			} else {
+				assignmentMappingSyncPairs = append(assignmentMappingSyncPairs, &assignmentPair)
+			}
 		}
 
 		return nil
@@ -1186,24 +1205,25 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 	}
 
 	alreadyProcessedFAs := make(map[string]bool, 0)
+	assignmentMappingPairs := append(assignmentMappingNoNotificationPairs, append(assignmentMappingSyncPairs, assignmentMappingAsyncPairs...)...)
 	var errs *multierror.Error
 	if err := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
-		for _, fa := range resyncableFormationAssignments {
-			if alreadyProcessedFAs[fa.ID] {
+		for _, assignmentPair := range assignmentMappingPairs {
+			if alreadyProcessedFAs[assignmentPair.AssignmentReqMapping.FormationAssignment.ID] {
 				continue
 			}
-			assignmentPair := assignmentIDToAssignmentPair[fa.ID]
 			switch assignmentPair.Operation {
 			case model.AssignFormation:
-				isReverseProcessed, err := s.formationAssignmentService.ProcessFormationAssignmentPair(ctxWithTransact, &assignmentPair)
+				isReverseProcessed, err := s.formationAssignmentService.ProcessFormationAssignmentPair(ctxWithTransact, assignmentPair)
 				if err != nil {
 					errs = multierror.Append(errs, err)
 				}
+				// It is probably impossible for the reverse assignment to be nil if the reverse is processed, but it's better to safeguard against it anyway
 				if isReverseProcessed && assignmentPair.ReverseAssignmentReqMapping != nil && assignmentPair.ReverseAssignmentReqMapping.FormationAssignment != nil {
 					alreadyProcessedFAs[assignmentPair.ReverseAssignmentReqMapping.FormationAssignment.ID] = true
 				}
 			case model.UnassignFormation:
-				if _, err := s.formationAssignmentService.CleanupFormationAssignment(ctxWithTransact, &assignmentPair); err != nil {
+				if _, err := s.formationAssignmentService.CleanupFormationAssignment(ctxWithTransact, assignmentPair); err != nil {
 					errs = multierror.Append(errs, err)
 				}
 			}
