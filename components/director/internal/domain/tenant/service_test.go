@@ -1008,6 +1008,7 @@ func Test_MultipleToTenantMapping(t *testing.T) {
 					ExternalTenant: "0",
 					Status:         tenantEntity.Active,
 					Type:           tenantEntity.Unknown,
+					Parents:        []string{"4"},
 				},
 				{
 					ID:             "4",
@@ -1341,8 +1342,8 @@ func TestService_CreateTenantAccessForResource(t *testing.T) {
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
 				db, dbMock := testdb.MockDatabase(t)
 
-				dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ON CONSTRAINT tenant_applications_pkey DO NOTHING`)).
-					WithArgs(testInternal, testID, true).
+				dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner, source ) VALUES ( ?, ?, ?, ? ) ON CONFLICT ON CONSTRAINT tenant_applications_pkey DO NOTHING`)).
+					WithArgs(testInternal, testID, true, testInternal).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 				return db, dbMock
 			},
@@ -1561,8 +1562,8 @@ func TestService_GetTenantAccessForResource(t *testing.T) {
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
 				db, dbMock := testdb.MockDatabase(t)
 				rows := sqlmock.NewRows(tenantAccessTestTableColumns)
-				rows.AddRow(testInternal, testID, true)
-				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND id = $2`)).
+				rows.AddRow(testInternal, testID, true, testInternal)
+				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner, source FROM tenant_applications WHERE tenant_id = $1 AND id = $2`)).
 					WithArgs(testInternal, testID).WillReturnRows(rows)
 				return db, dbMock
 			},
@@ -1578,7 +1579,7 @@ func TestService_GetTenantAccessForResource(t *testing.T) {
 			Name: "Error while getting tenant access",
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
 				db, dbMock := testdb.MockDatabase(t)
-				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND id = $2`)).
+				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner, source FROM tenant_applications WHERE tenant_id = $1 AND id = $2`)).
 					WithArgs(testInternal, testID).WillReturnError(testError)
 				return db, dbMock
 			},

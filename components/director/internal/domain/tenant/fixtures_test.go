@@ -42,7 +42,7 @@ var (
 	testCustomerID               = str.Ptr("customerID")
 	testError                    = errors.New("test error")
 	testTableColumns             = []string{"id", "external_name", "external_tenant", "type", "provider_name", "status"}
-	tenantAccessTestTableColumns = []string{"tenant_id", "id", "owner"}
+	tenantAccessTestTableColumns = []string{"tenant_id", "id", "owner", "source"}
 	tenantAccessInput            = graphql.TenantAccessInput{
 		TenantID:     testExternal,
 		ResourceType: graphql.TenantAccessObjectTypeApplication,
@@ -67,6 +67,7 @@ var (
 		ResourceType:     resource.Application,
 		ResourceID:       testID,
 		Owner:            true,
+		Source:           testInternal,
 	}
 	tenantAccessModelWithSource = &model.TenantAccess{
 		ExternalTenantID: testExternal,
@@ -93,6 +94,7 @@ var (
 		TenantID:   testInternal,
 		ResourceID: testID,
 		Owner:      true,
+		Source:     testInternal,
 	}
 	invalidTenantAccessModel = &model.TenantAccess{
 		ResourceType: invalidResourceType,
