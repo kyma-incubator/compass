@@ -190,8 +190,7 @@ func main() {
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
-			MaxConnsPerHost: 0,
-			MaxIdleConns:    0,
+			MaxConnsPerHost: 500,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
@@ -436,8 +435,7 @@ func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, c
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
-			MaxConnsPerHost: 0,
-			MaxIdleConns:    0,
+			MaxConnsPerHost: 500,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
@@ -451,8 +449,7 @@ func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
-			MaxConnsPerHost: 0,
-			MaxIdleConns:    0,
+			MaxConnsPerHost: 500,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
