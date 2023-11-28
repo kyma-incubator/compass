@@ -404,7 +404,7 @@ func (s *Service) CreateClientCertificateDestination(ctx context.Context, destin
 }
 
 // CreateOAuth2ClientCredentialsDestinations is responsible to create an oauth2 client credentials destination resource in the remote destination service
-func (s *Service) CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2ClientCredsCredentials operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error) {
+func (s *Service) CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2ClientCredsCredentials *operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error) {
 	subaccountID := destinationDetails.SubaccountID
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {

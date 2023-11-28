@@ -204,7 +204,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		oauth2ClientCredsCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.OAuth2ClientCredentialsAuthentication
 		if oauth2ClientCredsDetails != nil && oauth2ClientCredsCreds != nil && len(oauth2ClientCredsDetails.Destinations) > 0 {
 			log.C(ctx).Infof("There is/are %d inbound oauth2 client credentials destination(s) details available in the configuration", len(oauth2ClientCredsDetails.Destinations))
-			if err := e.destinationSvc.CreateOAuth2ClientCredentialsDestinations(ctx, oauth2ClientCredsDetails.Destinations, *oauth2ClientCredsCreds, formationAssignment, oauth2ClientCredsDetails.CorrelationIDs, di.SkipSubaccountValidation); err != nil {
+			if err := e.destinationSvc.CreateOAuth2ClientCredentialsDestinations(ctx, oauth2ClientCredsDetails.Destinations, oauth2ClientCredsCreds, formationAssignment, oauth2ClientCredsDetails.CorrelationIDs, di.SkipSubaccountValidation); err != nil {
 				return false, errors.Wrap(err, "while creating oauth2 client credentials destinations")
 			}
 		}

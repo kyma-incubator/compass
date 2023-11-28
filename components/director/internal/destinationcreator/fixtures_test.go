@@ -252,8 +252,8 @@ func fixSAMLAssertionAuthCreds(url string) *operators.SAMLAssertionAuthenticatio
 	}
 }
 
-func fixOAuth2ClientCreds(url, tokenServiceURL, clientID, clientSecret string) operators.OAuth2ClientCredentialsAuthentication {
-	return operators.OAuth2ClientCredentialsAuthentication{
+func fixOAuth2ClientCreds(url, tokenServiceURL, clientID, clientSecret string) *operators.OAuth2ClientCredentialsAuthentication {
+	return &operators.OAuth2ClientCredentialsAuthentication{
 		URL:             url,
 		TokenServiceURL: tokenServiceURL,
 		ClientID:        clientID,

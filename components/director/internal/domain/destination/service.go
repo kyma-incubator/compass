@@ -44,7 +44,7 @@ type destinationCreatorService interface {
 	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
 	CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
 	CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
-	CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2ClientCredsCredentials operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
+	CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2ClientCredsCredentials *operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
 	DeleteDestination(ctx context.Context, destinationName, externalDestSubaccountID, instanceID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error
 	DeleteCertificate(ctx context.Context, certificateName, externalDestSubaccountID, instanceID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error
 	DetermineDestinationSubaccount(ctx context.Context, externalDestSubaccountID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) (string, error)
@@ -319,7 +319,7 @@ func (s *Service) createClientCertificateAuthenticationDestination(ctx context.C
 }
 
 // CreateOAuth2ClientCredentialsDestinations is responsible to create an oauth2 client credentials destination resource in the remote destination service as well as in our DB
-func (s *Service) CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationsDetails []operators.Destination, oauth2ClientCredsCredentials operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
+func (s *Service) CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationsDetails []operators.Destination, oauth2ClientCredsCredentials *operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
 	for _, destinationDetails := range destinationsDetails {
 		if err := s.createOAuth2ClientCredentialsDestinations(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, skipSubaccountValidation); err != nil {
 			return errors.Wrapf(err, "while creating oauth2 client credentials destination with name: %q", destinationDetails.Name)
@@ -329,7 +329,7 @@ func (s *Service) CreateOAuth2ClientCredentialsDestinations(ctx context.Context,
 }
 
 // createOAuth2ClientCredentialsDestinations is responsible to create an oauth2 client credentials destination resource in the remote destination service as well as in our DB
-func (s *Service) createOAuth2ClientCredentialsDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2ClientCredsCredentials operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
+func (s *Service) createOAuth2ClientCredentialsDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2ClientCredsCredentials *operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
 	subaccountID, err := s.destinationCreatorSvc.DetermineDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment, skipSubaccountValidation)
 	if err != nil {
 		return err

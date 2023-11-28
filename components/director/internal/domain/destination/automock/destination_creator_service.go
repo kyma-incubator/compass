@@ -86,15 +86,15 @@ func (_m *DestinationCreatorService) CreateDesignTimeDestinations(ctx context.Co
 }
 
 // CreateOAuth2ClientCredentialsDestinations provides a mock function with given fields: ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation
-func (_m *DestinationCreatorService) CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2ClientCredsCredentials operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreator.DestinationInfo, error) {
+func (_m *DestinationCreatorService) CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2ClientCredsCredentials *operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreator.DestinationInfo, error) {
 	ret := _m.Called(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 
 	var r0 *destinationcreator.DestinationInfo
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, operators.OAuth2ClientCredentialsAuthentication, *model.FormationAssignment, []string, uint8, bool) (*destinationcreator.DestinationInfo, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.OAuth2ClientCredentialsAuthentication, *model.FormationAssignment, []string, uint8, bool) (*destinationcreator.DestinationInfo, error)); ok {
 		return rf(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, operators.OAuth2ClientCredentialsAuthentication, *model.FormationAssignment, []string, uint8, bool) *destinationcreator.DestinationInfo); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.OAuth2ClientCredentialsAuthentication, *model.FormationAssignment, []string, uint8, bool) *destinationcreator.DestinationInfo); ok {
 		r0 = rf(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	} else {
 		if ret.Get(0) != nil {
@@ -102,7 +102,7 @@ func (_m *DestinationCreatorService) CreateOAuth2ClientCredentialsDestinations(c
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, operators.Destination, operators.OAuth2ClientCredentialsAuthentication, *model.FormationAssignment, []string, uint8, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, operators.Destination, *operators.OAuth2ClientCredentialsAuthentication, *model.FormationAssignment, []string, uint8, bool) error); ok {
 		r1 = rf(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	} else {
 		r1 = ret.Error(1)

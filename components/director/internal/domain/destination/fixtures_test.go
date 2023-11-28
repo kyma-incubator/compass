@@ -183,8 +183,8 @@ func fixOAuth2ClientCredsDestinationsDetails() []operators.Destination {
 	}
 }
 
-func fixOAuth2ClientCredsAuthn() operators.OAuth2ClientCredentialsAuthentication {
-	return operators.OAuth2ClientCredentialsAuthentication{
+func fixOAuth2ClientCredsAuthn() *operators.OAuth2ClientCredentialsAuthentication {
+	return &operators.OAuth2ClientCredentialsAuthentication{
 		URL:             destinationURL,
 		TokenServiceURL: oauth2ClientCredsTokenServiceURL,
 		ClientID:        oauth2ClientCredsClientID,
