@@ -75,7 +75,7 @@ func TestQueryTenantsPageSearch(t *testing.T) {
 	example.SaveExample(t, getTenantsRequest.Query(), "query tenants")
 }
 
-func TestQueryRootTenant(t *testing.T) {
+func TestQueryRootTenants(t *testing.T) {
 	ctx := context.TODO()
 
 	testProvider := "e2e-test-provider"
@@ -100,7 +100,7 @@ func TestQueryRootTenant(t *testing.T) {
 		{
 			Name:           customerName,
 			ExternalTenant: customerExternalTenant,
-			Parent:         nil,
+			Parents:        []*string{},
 			Subdomain:      &customerSubdomain,
 			Region:         &region,
 			Type:           string(tenant.Customer),
@@ -110,7 +110,7 @@ func TestQueryRootTenant(t *testing.T) {
 		{
 			Name:           accountName,
 			ExternalTenant: accountExternalTenant,
-			Parent:         &customerExternalTenant,
+			Parents:        []*string{&customerExternalTenant},
 			Subdomain:      &accountSubdomain,
 			Region:         &region,
 			Type:           string(tenant.Account),
@@ -120,7 +120,7 @@ func TestQueryRootTenant(t *testing.T) {
 		{
 			Name:           subaccountNames[0],
 			ExternalTenant: subaccountExternalTenants[0],
-			Parent:         &accountExternalTenant,
+			Parents:        []*string{&accountExternalTenant},
 			Subdomain:      &subaccountSubdomain,
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
@@ -130,7 +130,7 @@ func TestQueryRootTenant(t *testing.T) {
 		{
 			Name:           subaccountNames[1],
 			ExternalTenant: subaccountExternalTenants[1],
-			Parent:         &accountExternalTenant,
+			Parents:        []*string{&accountExternalTenant},
 			Subdomain:      &subaccountSubdomain,
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
@@ -148,7 +148,7 @@ func TestQueryRootTenant(t *testing.T) {
 
 	// assert the top parent for subaccount 1
 	var actualRootTenantForSubaccount1 graphql.Tenant
-	getRootTenant := fixtures.FixRootTenantRequest(subaccountExternalTenants[0])
+	getRootTenant := fixtures.FixRootTenantRequest(subaccountExternalTenants[0]) // TODO fixme
 	t.Logf("Query root tenant for external tenant: %q", subaccountExternalTenants[0])
 
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantForSubaccount1)
