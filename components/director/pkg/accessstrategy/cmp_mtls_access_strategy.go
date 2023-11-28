@@ -114,8 +114,15 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 			return nil, errors.Errorf("There must be exactly 2 certificates in the cert cache. Actual number of certificates: %d", len(clientCerts))
 		}
 		log.C(ctx).Info("Failed to execute request with initial mtls certificate. Will retry with backup certificate...")
-		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.extSvcClientCertSecretName]}
-		client.Transport = tr
+
+		if tr != nil {
+			tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.extSvcClientCertSecretName]}
+			client.Transport = tr
+		} else {
+			tr2.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.extSvcClientCertSecretName]}
+			client.Transport = tr2
+		}
+
 		return client.Do(req)
 	}
 	return resp, err
