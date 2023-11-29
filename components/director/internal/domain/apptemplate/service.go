@@ -57,6 +57,7 @@ type UIDService interface {
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
 	DeleteAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) error
+	Update(ctx context.Context, tenant string, item *model.Webhook) error
 }
 
 // LabelUpsertService is responsible for service layer label upserts
@@ -340,7 +341,7 @@ func (s *service) Update(ctx context.Context, id string, override bool, in model
 		return errors.Wrapf(err, "while updating Application Template with ID %s", id)
 	}
 
-	if override || (!override && len(in.Webhooks) != 0) {
+	if override {
 		if err = s.webhookRepo.DeleteAllByApplicationTemplateID(ctx, appTemplate.ID); err != nil {
 			return errors.Wrapf(err, "while deleting Webhooks for applicationTemplate")
 		}
@@ -352,6 +353,14 @@ func (s *service) Update(ctx context.Context, id string, override bool, in model
 		}
 		if err = s.webhookRepo.CreateMany(ctx, "", webhooks); err != nil {
 			return errors.Wrapf(err, "while creating Webhooks for applicationTemplate")
+		}
+	}
+
+	if !override && len(in.Webhooks) != 0 {
+		for _, item := range in.Webhooks {
+			if err = s.webhookRepo.Update(ctx, "", item.ToWebhook(item.ID, appTemplate.ID, model.ApplicationTemplateWebhookReference)); err != nil {
+				return errors.Wrapf(err, "while updating Webhooks for applicationTemplate")
+			}
 		}
 	}
 
