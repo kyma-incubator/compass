@@ -252,7 +252,7 @@ func (h *Handler) createDestination(ctx context.Context, bodyBytes []byte, reqBo
 	}
 
 	log.C(ctx).Infof("Validating %s destination request body...", destinationTypeName)
-	if err := reqBody.Validate(h.Config); err != nil {
+	if err := reqBody.Validate(); err != nil {
 		return http.StatusBadRequest, errors.Wrapf(err, "An error occurred while validating %s destination request body", destinationTypeName)
 	}
 

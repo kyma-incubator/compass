@@ -47,13 +47,13 @@ const (
 	destinationType           = destinationcreatorpkg.TypeHTTP
 	destinationProxyType      = destinationcreatorpkg.ProxyTypeInternet
 	destinationNoAuthn        = destinationcreatorpkg.AuthTypeNoAuth
-	oauth2TokenServiceURL     = "http://test-token-url"
-	oauth2ClientID            = "test-client-id"
-	oauth2ClientSecret        = "test-client-secret"
 
 	// Creds constants
-	basicDestUser     = "user"
-	basicDestPassword = "pwd"
+	basicDestUser                        = "user"
+	basicDestPassword                    = "pwd"
+	oauth2ClientCredsDestTokenServiceURL = "http://test-token-url"
+	oauth2ClientCredsDestClientID        = "test-client-id"
+	oauth2ClientCredsDestClientSecret    = "test-client-secret"
 
 	// Other
 	formationConstraintName = "test constraint"
@@ -123,7 +123,7 @@ var (
 		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"destinations":[{"url":"%s","name":"%s"}]},"clientCertificateAuthentication":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]},"oauth2ClientCredentials":{"destinations":[{"url":"%s","name":"%s"}]}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, clientCertAuthDestName, destinationURL, basicDestName, destinationURL, oauth2ClientCredsDestName, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
 	)
 	destsReverseConfigValueRawJSON = json.RawMessage(
-		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}},"outboundCommunication":{"basicAuthentication":{"url":"%s","username":"%s","password":"%s"},"samlAssertion":{"url":"%s"},"clientCertificateAuthentication":{"url":"%s"},"oauth2ClientCredentials":{"url":"%s","tokenServiceURL":"%s","clientId":"%s","clientSecret":"%s"}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, basicDestName, destinationURL, basicDestUser, basicDestPassword, destinationURL, destinationURL, destinationURL, oauth2TokenServiceURL, oauth2ClientID, oauth2ClientSecret, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
+		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}},"outboundCommunication":{"basicAuthentication":{"url":"%s","username":"%s","password":"%s"},"samlAssertion":{"url":"%s"},"clientCertificateAuthentication":{"url":"%s"},"oauth2ClientCredentials":{"url":"%s","tokenServiceURL":"%s","clientId":"%s","clientSecret":"%s"}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, basicDestName, destinationURL, basicDestUser, basicDestPassword, destinationURL, destinationURL, destinationURL, oauth2ClientCredsDestTokenServiceURL, oauth2ClientCredsDestClientID, oauth2ClientCredsDestClientSecret, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
 	)
 
 	destsConfigWithSAMLCertDataRawJSON = json.RawMessage(
@@ -429,9 +429,9 @@ func fixClientCertAuthCreds() *operators.ClientCertAuthentication {
 func fixOAuth2ClientCreds() *operators.OAuth2ClientCredentialsAuthentication {
 	return &operators.OAuth2ClientCredentialsAuthentication{
 		URL:             destinationURL,
-		TokenServiceURL: oauth2TokenServiceURL,
-		ClientID:        oauth2ClientID,
-		ClientSecret:    oauth2ClientSecret,
+		TokenServiceURL: oauth2ClientCredsDestTokenServiceURL,
+		ClientID:        oauth2ClientCredsDestClientID,
+		ClientSecret:    oauth2ClientCredsDestClientSecret,
 	}
 }
 

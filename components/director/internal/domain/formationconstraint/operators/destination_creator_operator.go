@@ -260,14 +260,12 @@ type OutboundCommunicationCredentials struct {
 // NoAuthentication represents outbound communication without any authentication
 type NoAuthentication struct {
 	URL            string   `json:"url"`
-	UIURL          string   `json:"uiUrl,omitempty"`
 	CorrelationIds []string `json:"correlationIds,omitempty"`
 }
 
 // BasicAuthentication represents outbound communication with basic authentication
 type BasicAuthentication struct {
 	URL            string   `json:"url"`
-	UIURL          string   `json:"uiUrl,omitempty"`
 	Username       string   `json:"username"`
 	Password       string   `json:"password"`
 	CorrelationIds []string `json:"correlationIds,omitempty"`
@@ -289,14 +287,12 @@ type OAuth2SAMLBearerAssertionAuthentication struct {
 // ClientCertAuthentication represents outbound communication with client certificate authentication
 type ClientCertAuthentication struct {
 	URL            string   `json:"url"`
-	UIURL          string   `json:"uiUrl,omitempty"`
 	CorrelationIds []string `json:"correlationIds,omitempty"`
 }
 
 // OAuth2ClientCredentialsAuthentication represents outbound communication with OAuth 2 client credentials authentication
 type OAuth2ClientCredentialsAuthentication struct {
 	URL             string   `json:"url"`
-	UIURL           string   `json:"uiUrl,omitempty"`
 	TokenServiceURL string   `json:"tokenServiceUrl"`
 	ClientID        string   `json:"clientId"`
 	ClientSecret    string   `json:"clientSecret"`

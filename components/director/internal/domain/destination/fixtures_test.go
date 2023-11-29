@@ -20,24 +20,24 @@ const (
 	destinationInstanceID                  = "999ac686-5773-4ad0-8eb1-2349e931f852"
 
 	// Destination constants
-	destinationName                  = "test-destination-name"
-	destinationType                  = destinationcreatorpkg.TypeHTTP
-	destinationProxyType             = destinationcreatorpkg.ProxyTypeInternet
-	destinationNoAuthn               = destinationcreatorpkg.AuthTypeNoAuth
-	designTimeDestName               = "test-design-time-dest-name"
-	basicDestName                    = "test-basic-dest-name"
-	samlAssertionDestName            = "test-saml-assertion-dest-name"
-	clientCertAuthDestName           = "test-client-cert-auth-dest-name"
-	oauth2ClientCredsDestName        = "test-oauth2-client-creds-dest-name"
-	destinationURL                   = "http://dest-test-url"
-	destinationDescription           = "test-dest-description"
+	destinationName           = "test-destination-name"
+	destinationType           = destinationcreatorpkg.TypeHTTP
+	destinationProxyType      = destinationcreatorpkg.ProxyTypeInternet
+	destinationNoAuthn        = destinationcreatorpkg.AuthTypeNoAuth
+	designTimeDestName        = "test-design-time-dest-name"
+	basicDestName             = "test-basic-dest-name"
+	samlAssertionDestName     = "test-saml-assertion-dest-name"
+	clientCertAuthDestName    = "test-client-cert-auth-dest-name"
+	oauth2ClientCredsDestName = "test-oauth2-client-creds-dest-name"
+	destinationURL            = "http://dest-test-url"
+	destinationDescription    = "test-dest-description"
+
+	// Destination Creds constants
+	basicDestUser                    = "basic-user"
+	basicDestPassword                = "basic-pwd"
 	oauth2ClientCredsTokenServiceURL = "http://oauth2-token-service-url"
 	oauth2ClientCredsClientID        = "test-client-id"
 	oauth2ClientCredsClientSecret    = "test-client-secret"
-
-	// Destination Creds constants
-	basicDestUser     = "basic-user"
-	basicDestPassword = "basic-pwd"
 
 	// Other
 	destinationLatestRevision = "2"
@@ -123,7 +123,6 @@ func fixDestinationInfo(authType destinationcreatorpkg.AuthType, destType destin
 func fixBasicAuthn() operators.BasicAuthentication {
 	return operators.BasicAuthentication{
 		URL:      destinationURL,
-		UIURL:    destinationURL,
 		Username: basicDestUser,
 		Password: basicDestPassword,
 	}
