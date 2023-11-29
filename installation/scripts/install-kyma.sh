@@ -10,10 +10,10 @@ CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$CURRENT_DIR"/utils.sh
 
 # $KYMA will take on the value "kyma" if not overridden - in local installation `run.sh` will override it
-# This is done to make sure that `install-kyma.sh` can be used with different kubeconfigs and not only the local one
+# This is done to make sure that `install-kyma.sh` can be used with different configurations and not only the local one
 : ${KYMA:=kyma}
 # $KUBECTL will take on the value "kubectl" if not overridden - in local installation `run.sh` will override it
-# This is done to make sure that `install-kyma.sh` can be used with different kubeconfigs and not only the local one
+# This is done to make sure that `install-kyma.sh` can be used with different configurations and not only the local one
 : ${KUBECTL:=kubectl}
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..

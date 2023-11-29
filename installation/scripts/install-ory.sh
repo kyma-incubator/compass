@@ -12,10 +12,10 @@ OVERRIDE_TEMP_ORY=ory-temp-values.yaml
 TIMEOUT=10m
 
 # $KUBECTL will take on the value "kubectl" if not overridden - in local installation `run.sh` will override it
-# This is done to make sure that `install-ory.sh` can be used with different kubeconfigs and not only the local one
+# This is done to make sure that `install-ory.sh` can be used with different configurations and not only the local one
 : ${KUBECTL:=kubectl}
 # $HELM will take on the value "helm" if not overridden - in local installation `run.sh` will override it
-# This is done to make sure that `install-ory.sh` can be used with different kubeconfigs and not only the local one
+# This is done to make sure that `install-ory.sh` can be used with different configurations and not only the local one
 : ${HELM:=helm}
 
 # Always create temporary override file, which is used whether "--overrides-file" is used or not
