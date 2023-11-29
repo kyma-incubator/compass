@@ -156,7 +156,7 @@ type IntegrationDependencyService interface {
 //
 //go:generate mockery --name=IntegrationDependencyConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationDependencyConverter interface {
-	MultipleToGraphQL(in []*model.IntegrationDependency, aspects []*model.Aspect) ([]*graphql.IntegrationDependency, error)
+	ToGraphQL(in *model.IntegrationDependency, aspects []*model.Aspect) (*graphql.IntegrationDependency, error)
 }
 
 // AspectService is responsible for the service-layer Integration Dependency operations
@@ -1056,20 +1056,15 @@ func (r *Resolver) IntegrationDependenciesDataLoader(keys []dataloader.ParamInte
 
 	gqlIntegrationDependencies := make([]*graphql.IntegrationDependencyPage, 0, len(integrationDependencyPages))
 	for i, integrationDependencyPage := range integrationDependencyPages {
-		integrationDependencyAspects := make([]*model.Aspect, 0, len(integrationDependencyPage.Data))
+		gqlIntDeps := make([]*graphql.IntegrationDependency, 0)
 		for _, intDep := range integrationDependencyPage.Data {
-			aspect, err := getAspectForIntegrationDependency(intDep.ID, aspectsByApplicationID[applicationIDs[i]])
+			aspectsForIntDep := getAspectsForIntegrationDependency(intDep.ID, aspectsByApplicationID[applicationIDs[i]])
+			gqlIntDep, err := r.integrationDependencyConv.ToGraphQL(intDep, aspectsForIntDep)
 			if err != nil {
 				return nil, []error{err}
 			}
-			integrationDependencyAspects = append(integrationDependencyAspects, aspect)
+			gqlIntDeps = append(gqlIntDeps, gqlIntDep)
 		}
-
-		gqlIntDeps, err := r.integrationDependencyConv.MultipleToGraphQL(integrationDependencyPage.Data, integrationDependencyAspects)
-		if err != nil {
-			return nil, []error{err}
-		}
-
 		gqlIntegrationDependencies = append(gqlIntegrationDependencies, &graphql.IntegrationDependencyPage{Data: gqlIntDeps, TotalCount: integrationDependencyPage.TotalCount, PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(integrationDependencyPage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(integrationDependencyPage.PageInfo.EndCursor),
@@ -1213,11 +1208,12 @@ func (r *Resolver) getApplication(ctx context.Context, get func(context.Context)
 	return r.appConverter.ToGraphQL(app), nil
 }
 
-func getAspectForIntegrationDependency(integrationDependencyID string, aspects []*model.Aspect) (*model.Aspect, error) {
+func getAspectsForIntegrationDependency(integrationDependencyID string, aspects []*model.Aspect) []*model.Aspect {
+	result := make([]*model.Aspect, 0)
 	for _, aspect := range aspects {
 		if aspect.IntegrationDependencyID == integrationDependencyID {
-			return aspect, nil
+			result = append(result, aspect)
 		}
 	}
-	return nil, errors.Errorf("could not find Aspect for Integration Dependency with id %s", integrationDependencyID)
+	return result
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/pkg/errors"
 	"time"
 )
 
@@ -180,23 +179,6 @@ func (c *converter) InputFromGraphQL(in *graphql.IntegrationDependencyInput) (*m
 		Aspects:       aspects,
 		VersionInput:  c.version.InputFromGraphQL(in.Version),
 	}, nil
-}
-
-// MultipleToGraphQL converts the provided service-layer representations of an Integration Dependency to the graphql-layer ones.
-func (c *converter) MultipleToGraphQL(in []*model.IntegrationDependency, aspects []*model.Aspect) ([]*graphql.IntegrationDependency, error) {
-	integrationDependencies := make([]*graphql.IntegrationDependency, 0, len(in))
-	for _, r := range in {
-		if r == nil {
-			continue
-		}
-		integrationDependency, err := c.ToGraphQL(r, aspects)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting Integration Dependency to GraphQL")
-		}
-		integrationDependencies = append(integrationDependencies, integrationDependency)
-	}
-
-	return integrationDependencies, nil
 }
 
 func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {

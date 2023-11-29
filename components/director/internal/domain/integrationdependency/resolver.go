@@ -50,7 +50,6 @@ type IntegrationDepConverter interface {
 type AspectService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyID string, in model.AspectInput) (string, error)
 	ListByIntegrationDependencyID(ctx context.Context, integrationDependencyID string) ([]*model.Aspect, error)
-	ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.Aspect, map[string]int, error)
 }
 
 // ApplicationService is responsible for the service-layer Application operations.

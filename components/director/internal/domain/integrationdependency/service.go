@@ -18,7 +18,7 @@ type IntegrationDependencyRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.IntegrationDependency, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.IntegrationDependency, error)
 	ListByResourceID(ctx context.Context, tenantID string, resourceType resource.Type, resourceID string) ([]*model.IntegrationDependency, error)
-	ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, aspects []*model.Aspect, counts map[string]int, pageSize int, cursor string) ([]*model.IntegrationDependencyPage, error)
+	ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.IntegrationDependencyPage, error)
 	Create(ctx context.Context, tenant string, item *model.IntegrationDependency) error
 	CreateGlobal(ctx context.Context, item *model.IntegrationDependency) error
 	Update(ctx context.Context, tenant string, item *model.IntegrationDependency) error
@@ -144,12 +144,7 @@ func (s *service) ListByApplicationIDs(ctx context.Context, applicationIDs []str
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	aspects, counts, err := s.aspectSvc.ListByApplicationIDs(ctx, applicationIDs, pageSize, cursor)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.repo.ListByApplicationIDs(ctx, tnt, applicationIDs, aspects, counts, pageSize, cursor)
+	return s.repo.ListByApplicationIDs(ctx, tnt, applicationIDs, pageSize, cursor)
 }
 
 func (s *service) createIntegrationDependency(ctx context.Context, resourceType resource.Type, integrationDependency *model.IntegrationDependency) error {
