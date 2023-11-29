@@ -30,6 +30,7 @@ ALTER TABLE tenant_applications
 ALTER TABLE tenant_applications
     ADD CONSTRAINT tenant_applications_source_fk
         FOREIGN KEY (source) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
+ALTER TABLE tenant_applications DROP CONSTRAINT tenant_applications_pkey;
 ALTER TABLE tenant_applications
     ADD PRIMARY KEY (tenant_id, id, source);
 
@@ -39,6 +40,7 @@ ALTER TABLE tenant_runtimes
 ALTER TABLE tenant_runtimes
     ADD CONSTRAINT tenant_runtimes_source_fk
         FOREIGN KEY (source) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
+ALTER TABLE tenant_runtimes DROP CONSTRAINT tenant_runtimes_pkey;
 ALTER TABLE tenant_runtimes
     ADD PRIMARY KEY (tenant_id, id, source);
 
@@ -48,6 +50,7 @@ ALTER TABLE tenant_runtime_contexts
 ALTER TABLE tenant_runtime_contexts
     ADD CONSTRAINT tenant_runtime_contexts_source_fk
         FOREIGN KEY (source) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
+ALTER TABLE tenant_runtime_contexts DROP CONSTRAINT tenant_runtime_contexts_pkey;
 ALTER TABLE tenant_runtime_contexts
     ADD PRIMARY KEY (tenant_id, id, source);
 
