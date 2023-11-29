@@ -236,6 +236,16 @@ func constructSubaccountTenant(ctx context.Context, jsonPayload, name, subdomain
 
 	var customerIDValue *string
 	customerIDField := gjson.Get(jsonPayload, ep.FieldMapping.LabelsField).Get(ep.FieldMapping.CustomerIDField)
+	lblField := gjson.Get(jsonPayload, ep.FieldMapping.LabelsField)
+	log.C(ctx).Infof("Label field %s. Customer field %s", ep.FieldMapping.LabelsField, ep.FieldMapping.CustomerIDField)
+	if lblField.Exists() {
+		log.C(ctx).Infof("Label field exists %+v for external tenant %s", lblField.Value(), externalTenant)
+
+		c := lblField.Get(ep.FieldMapping.CustomerIDField)
+		if c.Exists() {
+			log.C(ctx).Infof("Customer field exists %+v", c.Value())
+		}
+	}
 	if customerIDFieldArr := customerIDField.Array(); customerIDField.IsArray() && len(customerIDFieldArr) > 0 {
 		customerIDValue = str.Ptr(customerIDFieldArr[0].String())
 	}
