@@ -102,7 +102,7 @@ SELECT w.id,
        w.integration_system_id,
        w.app_template_id,
        w.formation_template_id,
-       btm.id,
+       tp.tenant_id,
        true
 FROM webhooks w
          JOIN formation_templates ft on w.formation_template_id = ft.id
@@ -206,7 +206,7 @@ SELECT w.id,
        w.integration_system_id,
        w.app_template_id,
        w.formation_template_id,
-       btm.id,
+       tp.tenant_id,
        true
 FROM webhooks w
          JOIN formation_templates ft on w.formation_template_id = ft.id
