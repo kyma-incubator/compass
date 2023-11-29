@@ -80,12 +80,16 @@ func (c *converter) ToGraphQL(in *model.Aspect) (*graphql.Aspect, error) {
 	var apiResources []*graphql.AspectAPIDefinition
 	var eventResources []*graphql.AspectEventDefinition
 
-	if err := json.Unmarshal(in.APIResources, &apiResources); err != nil {
-		return nil, err
+	if in.APIResources != nil {
+		if err := json.Unmarshal(in.APIResources, &apiResources); err != nil {
+			return nil, err
+		}
 	}
 
-	if err := json.Unmarshal(in.EventResources, &eventResources); err != nil {
-		return nil, err
+	if in.EventResources != nil {
+		if err := json.Unmarshal(in.EventResources, &eventResources); err != nil {
+			return nil, err
+		}
 	}
 
 	return &graphql.Aspect{

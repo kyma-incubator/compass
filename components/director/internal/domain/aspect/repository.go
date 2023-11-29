@@ -93,8 +93,8 @@ func (r *pgRepository) ListByIntegrationDependencyID(ctx context.Context, tenant
 
 	aspects := make([]*model.Aspect, 0, aspectCollection.Len())
 	for _, aspect := range aspectCollection {
-		apiModel := r.conv.FromEntity(&aspect)
-		aspects = append(aspects, apiModel)
+		aspectModel := r.conv.FromEntity(&aspect)
+		aspects = append(aspects, aspectModel)
 	}
 
 	return aspects, nil
@@ -104,8 +104,8 @@ func (r *pgRepository) ListByIntegrationDependencyID(ctx context.Context, tenant
 func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.Aspect, map[string]int, error) {
 	var aspectCollection AspectCollection
 	orderByColumns := repo.OrderByParams{repo.NewAscOrderBy(integrationDependencyIDColumn), repo.NewAscOrderBy(appIDColumn)}
-	counts, err := r.unionLister.List(ctx, resource.Aspect, tenantID, applicationIDs, appIDColumn, pageSize, cursor, orderByColumns, &aspectCollection)
 
+	counts, err := r.unionLister.List(ctx, resource.Aspect, tenantID, applicationIDs, appIDColumn, pageSize, cursor, orderByColumns, &aspectCollection)
 	if err != nil {
 		return nil, nil, err
 	}
