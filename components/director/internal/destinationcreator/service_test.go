@@ -350,7 +350,7 @@ func Test_CreateBasicDestinations(t *testing.T) {
 	basicDestDetailsWithURLOnlyWithScheme.URL = "https://"
 
 	basicDestDetailsWithURLOnlyWithPath := fixBasicDestinationDetails()
-	basicDestDetailsWithURLOnlyWithPath.URL = "/test/path"
+	basicDestDetailsWithURLOnlyWithPath.URL = testURLPath
 
 	testCases := []struct {
 		name                    string
@@ -471,7 +471,7 @@ func Test_CreateBasicDestinations(t *testing.T) {
 		{
 			name:                    "Success while calculating url and it has only path",
 			destinationDetails:      basicDestDetailsWithURLOnlyWithPath,
-			expectedDestinationInfo: fixDestinationInfo(basicDestDetailsWithURLOnlyWithPath.Authentication, basicDestDetailsWithURLOnlyWithPath.Type, "basic-url/test/path"),
+			expectedDestinationInfo: fixDestinationInfo(basicDestDetailsWithURLOnlyWithPath.Authentication, basicDestDetailsWithURLOnlyWithPath.Type, fmt.Sprintf("%s%s", basicDestURL, testURLPath)),
 			formationAssignment:     faWithSourceAppAndTargetApp,
 			correlationIDs:          testCorrelationIDs,
 			httpClient: func() *automock.HttpClient {
@@ -647,7 +647,7 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 	samlAssertionDestDetailsWithInvalidAuth.Authentication = invalidDestAuthType
 
 	samlAssertionDestDetailsOnlyWithPath := fixSAMLAssertionDestinationDetails()
-	samlAssertionDestDetailsOnlyWithPath.URL = "/test/path"
+	samlAssertionDestDetailsOnlyWithPath.URL = testURLPath
 
 	samlAssertionDestDetailsWithoutURL := fixSAMLAssertionDestinationDetails()
 	samlAssertionDestDetailsWithoutURL.URL = ""
@@ -779,7 +779,7 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 		{
 			name:                   "Success when calculating url using base URL of the system with destination details containing only path",
 			destinationDetails:     samlAssertionDestDetailsOnlyWithPath,
-			expectedDestInfo:       fixDestinationInfo(samlAssertionDestDetailsOnlyWithPath.Authentication, samlAssertionDestDetailsOnlyWithPath.Type, "http://app-test-base-url/test/path"),
+			expectedDestInfo:       fixDestinationInfo(samlAssertionDestDetailsOnlyWithPath.Authentication, samlAssertionDestDetailsOnlyWithPath.Type, fmt.Sprintf("%s%s", appBaseURL, testURLPath)),
 			samlAssertionAuthCreds: samlAssertionAuthCredsWithoutURL,
 			formationAssignment:    faWithSourceAppAndTargetApp,
 			httpClient: func() *automock.HttpClient {
@@ -1395,7 +1395,7 @@ func Test_CreateOauth2ClientCredentialsDestinations(t *testing.T) {
 	oauth2DestDetailsWithURLOnlyWithScheme.URL = "https://"
 
 	oauth2DestDetailsWithURLOnlyWithPath := fixOAuth2ClientCredsDestinationDetails()
-	oauth2DestDetailsWithURLOnlyWithPath.URL = "/test/path"
+	oauth2DestDetailsWithURLOnlyWithPath.URL = testURLPath
 
 	oauth2DestDetailsWithoutName := fixOAuth2ClientCredsDestinationDetails()
 	oauth2DestDetailsWithoutName.Name = ""
@@ -1519,7 +1519,7 @@ func Test_CreateOauth2ClientCredentialsDestinations(t *testing.T) {
 		{
 			name:                    "Success while calculating url and it has only path",
 			destinationDetails:      oauth2DestDetailsWithURLOnlyWithPath,
-			expectedDestinationInfo: fixDestinationInfo(oauth2DestDetailsWithURLOnlyWithPath.Authentication, oauth2DestDetailsWithURLOnlyWithPath.Type, "oauth2-url/test/path"),
+			expectedDestinationInfo: fixDestinationInfo(oauth2DestDetailsWithURLOnlyWithPath.Authentication, oauth2DestDetailsWithURLOnlyWithPath.Type, fmt.Sprintf("%s%s", oauth2ClientCredsURL, testURLPath)),
 			formationAssignment:     faWithSourceAppAndTargetApp,
 			correlationIDs:          testCorrelationIDs,
 			httpClient: func() *automock.HttpClient {

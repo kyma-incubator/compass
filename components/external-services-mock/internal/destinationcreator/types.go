@@ -41,7 +41,7 @@ type CertificateAPIConfig struct {
 
 type DestinationRequestBody interface {
 	ToDestination() destinationcreator.Destination
-	Validate(destinationCreatorCfg *Config) error
+	Validate() error
 	GetDestinationType() string
 	GetDestinationUniqueIdentifier(subaccountID, instanceID string) string
 }
@@ -109,7 +109,7 @@ func (b *BaseDestinationRequestBody) GetDestinationUniqueIdentifier(subaccountID
 }
 
 // Validate validates that the AuthTypeNoAuth request body contains the required fields, and they are valid
-func (n *DesignTimeDestRequestBody) Validate(destinationCreatorCfg *Config) error {
+func (n *DesignTimeDestRequestBody) Validate() error {
 	return validation.ValidateStruct(n,
 		validation.Field(&n.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&n.URL, validation.Required),
@@ -134,7 +134,7 @@ func (n *DesignTimeDestRequestBody) GetDestinationType() string {
 }
 
 // Validate validates that the AuthTypeBasic request body contains the required fields, and they are valid
-func (b *BasicDestRequestBody) Validate(destinationCreatorCfg *Config) error {
+func (b *BasicDestRequestBody) Validate() error {
 	return validation.ValidateStruct(b,
 		validation.Field(&b.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&b.URL, validation.Required),
@@ -164,7 +164,7 @@ func (b *BasicDestRequestBody) GetDestinationType() string {
 }
 
 // Validate validates that the AuthTypeSAMLAssertion request body contains the required fields, and they are valid
-func (s *SAMLAssertionDestRequestBody) Validate(destinationCreatorCfg *Config) error {
+func (s *SAMLAssertionDestRequestBody) Validate() error {
 	return validation.ValidateStruct(s,
 		validation.Field(&s.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&s.URL, validation.Required),
@@ -195,7 +195,7 @@ func (s *SAMLAssertionDestRequestBody) GetDestinationType() string {
 }
 
 // Validate validates that the AuthTypeClientCertificate request body contains the required fields, and they are valid
-func (s *ClientCertificateAuthDestRequestBody) Validate(destinationCreatorCfg *Config) error {
+func (s *ClientCertificateAuthDestRequestBody) Validate() error {
 	return validation.ValidateStruct(s,
 		validation.Field(&s.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&s.URL, validation.Required),
@@ -224,7 +224,7 @@ func (s *ClientCertificateAuthDestRequestBody) GetDestinationType() string {
 }
 
 // Validate validates that the AuthTypeBasic request body contains the required fields, and they are valid
-func (b *OAuth2ClientCredsDestRequestBody) Validate(destinationCreatorCfg *Config) error {
+func (b *OAuth2ClientCredsDestRequestBody) Validate() error {
 	return validation.ValidateStruct(b,
 		validation.Field(&b.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&b.URL, validation.Required),

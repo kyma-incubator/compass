@@ -584,7 +584,7 @@ func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Requ
 	}
 
 	r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
-	config := "{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"},\"oauth2ClientCredentials\":{\"tokenServiceUrl\":\"https://compass-external-services-mock.local.kyma.dev/secured/oauth/token\",\"clientId\":\"client_id\",\"clientSecret\":\"client_secret\"}}}}"
+	config := "{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"},\"oauth2ClientCredentials\":{\"url\":\"http://e2e-oauth2-client-creds-url-example.com\",\"tokenServiceUrl\":\"https://compass-external-services-mock.local.kyma.dev/secured/oauth/token\",\"clientId\":\"client_id\",\"clientSecret\":\"client_secret\"}}}}"
 	h.asyncFAResponse(ctx, writer, r, Assign, config, responseFunc)
 }
 

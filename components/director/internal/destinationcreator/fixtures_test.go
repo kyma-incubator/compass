@@ -80,6 +80,7 @@ var (
 	appTemplateID   = "testAppTemplateID"
 	appBaseURL      = "http://app-test-base-url"
 	appEmptyBaseURL = ""
+	testURLPath     = "/test/path"
 
 	TestEmptyErrorValueRawJSON = json.RawMessage(`\"\"`)
 	TestConfigValueRawJSON     = json.RawMessage(`{"configKey":"configValue"}`)
