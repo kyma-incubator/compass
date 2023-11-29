@@ -19,7 +19,7 @@ type AspectRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Aspect) error
 	DeleteByIntegrationDependencyID(ctx context.Context, tenant string, integrationDependencyID string) error
 	ListByIntegrationDependencyID(ctx context.Context, tenant string, integrationDependencyID string) ([]*model.Aspect, error)
-	ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.Aspect, map[string]int, error)
+	ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.Aspect, map[string]int, error)
 }
 
 // UIDService is responsible for generating GUIDs, which will be used as internal Aspect IDs when they are created.
@@ -106,10 +106,13 @@ func (s *service) deleteAspectsByIntegrationDependencyID(ctx context.Context, in
 
 // ListByApplicationIDs lists all Aspects for given array of application IDs. In addition, the number of records for each aspect is returned.
 func (s *service) ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.Aspect, map[string]int, error) {
-
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 	if pageSize < 1 || pageSize > 200 {
 		return nil, nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	return s.repo.ListByApplicationIDs(ctx, applicationIDs, pageSize, cursor)
+	return s.repo.ListByApplicationIDs(ctx, tnt, applicationIDs, pageSize, cursor)
 }

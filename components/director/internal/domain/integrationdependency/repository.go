@@ -5,8 +5,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 )
@@ -17,6 +19,9 @@ const (
 	appIDColumn                string = "app_id"
 	appTemplateVersionIDColumn string = "app_template_version_id"
 	packageIDColumn            string = "package_id"
+	visibilityColumn           string = "visibility"
+	internalVisibilityScope    string = "internal_visibility:read"
+	publicVisibilityValue      string = "public"
 )
 
 var (
@@ -38,17 +43,18 @@ type IntegrationDependencyConverter interface {
 }
 
 type pgRepository struct {
-	singleGetter       repo.SingleGetter
-	singleGetterGlobal repo.SingleGetterGlobal
-	lister             repo.Lister
-	listerGlobal       repo.ListerGlobal
-	unionLister        repo.UnionLister
-	creator            repo.Creator
-	creatorGlobal      repo.CreatorGlobal
-	updater            repo.Updater
-	updaterGlobal      repo.UpdaterGlobal
-	deleter            repo.Deleter
-	deleterGlobal      repo.DeleterGlobal
+	singleGetter                        repo.SingleGetter
+	singleGetterGlobal                  repo.SingleGetterGlobal
+	lister                              repo.Lister
+	listerGlobal                        repo.ListerGlobal
+	unionLister                         repo.UnionLister
+	creator                             repo.Creator
+	creatorGlobal                       repo.CreatorGlobal
+	updater                             repo.Updater
+	updaterGlobal                       repo.UpdaterGlobal
+	deleter                             repo.Deleter
+	deleterGlobal                       repo.DeleterGlobal
+	queryBuilderIntegrationDependencies repo.QueryBuilderGlobal
 
 	conv IntegrationDependencyConverter
 }
@@ -56,17 +62,18 @@ type pgRepository struct {
 // NewRepository returns a new entity responsible for repo-layer IntegrationDependencies operations.
 func NewRepository(conv IntegrationDependencyConverter) *pgRepository {
 	return &pgRepository{
-		singleGetter:       repo.NewSingleGetter(integrationDependencyTable, integrationDependencyColumns),
-		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.IntegrationDependency, integrationDependencyTable, integrationDependencyColumns),
-		lister:             repo.NewLister(integrationDependencyTable, integrationDependencyColumns),
-		listerGlobal:       repo.NewListerGlobal(resource.IntegrationDependency, integrationDependencyTable, integrationDependencyColumns),
-		unionLister:        repo.NewUnionLister(integrationDependencyTable, integrationDependencyColumns),
-		creator:            repo.NewCreator(integrationDependencyTable, integrationDependencyColumns),
-		creatorGlobal:      repo.NewCreatorGlobal(resource.IntegrationDependency, integrationDependencyTable, integrationDependencyColumns),
-		updater:            repo.NewUpdater(integrationDependencyTable, updatableColumns, idColumns),
-		updaterGlobal:      repo.NewUpdaterGlobal(resource.IntegrationDependency, integrationDependencyTable, updatableColumns, idColumns),
-		deleter:            repo.NewDeleter(integrationDependencyTable),
-		deleterGlobal:      repo.NewDeleterGlobal(resource.IntegrationDependency, integrationDependencyTable),
+		singleGetter:                        repo.NewSingleGetter(integrationDependencyTable, integrationDependencyColumns),
+		singleGetterGlobal:                  repo.NewSingleGetterGlobal(resource.IntegrationDependency, integrationDependencyTable, integrationDependencyColumns),
+		lister:                              repo.NewLister(integrationDependencyTable, integrationDependencyColumns),
+		listerGlobal:                        repo.NewListerGlobal(resource.IntegrationDependency, integrationDependencyTable, integrationDependencyColumns),
+		unionLister:                         repo.NewUnionLister(integrationDependencyTable, integrationDependencyColumns),
+		creator:                             repo.NewCreator(integrationDependencyTable, integrationDependencyColumns),
+		creatorGlobal:                       repo.NewCreatorGlobal(resource.IntegrationDependency, integrationDependencyTable, integrationDependencyColumns),
+		updater:                             repo.NewUpdater(integrationDependencyTable, updatableColumns, idColumns),
+		updaterGlobal:                       repo.NewUpdaterGlobal(resource.IntegrationDependency, integrationDependencyTable, updatableColumns, idColumns),
+		deleter:                             repo.NewDeleter(integrationDependencyTable),
+		deleterGlobal:                       repo.NewDeleterGlobal(resource.IntegrationDependency, integrationDependencyTable),
+		queryBuilderIntegrationDependencies: repo.NewQueryBuilderGlobal(resource.IntegrationDependency, integrationDependencyTable, idColumns),
 
 		conv: conv,
 	}
@@ -138,9 +145,32 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID string, re
 
 // ListByApplicationIDs retrieves all Integration Dependencies for an Application in pages. Each Application is extracted from the input array of applicationIDs.
 func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.IntegrationDependencyPage, error) {
+	isInternalVisibilityScopePresent, err := scope.Contains(ctx, internalVisibilityScope)
+	if err != nil {
+		log.C(ctx).Infof("No scopes are present in the context meaning the flow is not user-initiated. Processing Integration Dependencies without visibility check...")
+		isInternalVisibilityScopePresent = true
+	}
+
+	queryBuilder := r.queryBuilderIntegrationDependencies
+
+	var conditions repo.Conditions
+	if !isInternalVisibilityScopePresent {
+		log.C(ctx).Infof("No internal visibility scope is present in the context. Processing only public Integration Dependencies")
+
+		query, args, err := queryBuilder.BuildQueryGlobal(false, repo.NewEqualCondition(visibilityColumn, publicVisibilityValue))
+		if err != nil {
+			return nil, err
+		}
+		conditions = append(conditions, repo.NewInConditionForSubQuery(idColumn, query, args))
+	} else {
+		log.C(ctx).Infof("Internal visibility scope is present in the context. Processing Integration Dependencies without visibility check...")
+	}
+
+	conditions = append(conditions, repo.NewNotNullCondition(idColumn))
+
 	var integrationDependencyCollection IntegrationDependencyCollection
 	orderByColumns := repo.OrderByParams{repo.NewAscOrderBy(appIDColumn), repo.NewAscOrderBy(idColumn)}
-	counts, err := r.unionLister.List(ctx, resource.IntegrationDependency, tenantID, applicationIDs, appIDColumn, pageSize, cursor, orderByColumns, &integrationDependencyCollection)
+	counts, err := r.unionLister.List(ctx, resource.IntegrationDependency, tenantID, applicationIDs, appIDColumn, pageSize, cursor, orderByColumns, &integrationDependencyCollection, conditions...)
 	if err != nil {
 		return nil, err
 	}

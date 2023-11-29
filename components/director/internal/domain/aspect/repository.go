@@ -2,9 +2,6 @@ package aspect
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/scope"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -15,9 +12,6 @@ import (
 const (
 	aspectsTable                  string = `public.aspects`
 	integrationDependencyTable    string = `integration_dependencies`
-	visibilityColumn              string = "visibility"
-	internalVisibilityScope       string = "internal_visibility:read"
-	publicVisibilityValue         string = "public"
 	integrationDependencyIDColumn string = "integration_dependency_id"
 	appIDColumn                   string = "app_id"
 )
@@ -38,7 +32,7 @@ type AspectConverter interface {
 type pgRepository struct {
 	creator                             repo.Creator
 	deleter                             repo.Deleter
-	unionLister                         repo.UnionListerGlobal
+	unionLister                         repo.UnionLister
 	lister                              repo.Lister
 	queryBuilderIntegrationDependencies repo.QueryBuilderGlobal
 
@@ -50,7 +44,7 @@ func NewRepository(conv AspectConverter) *pgRepository {
 	return &pgRepository{
 		creator:                             repo.NewCreator(aspectsTable, aspectColumns),
 		deleter:                             repo.NewDeleter(aspectsTable),
-		unionLister:                         repo.NewUnionListerGlobal(resource.Aspect, aspectsTable, []string{}),
+		unionLister:                         repo.NewUnionLister(aspectsTable, aspectColumns),
 		lister:                              repo.NewLister(aspectsTable, aspectColumns),
 		queryBuilderIntegrationDependencies: repo.NewQueryBuilderGlobal(resource.IntegrationDependency, integrationDependencyTable, []string{"id"}),
 
@@ -107,43 +101,17 @@ func (r *pgRepository) ListByIntegrationDependencyID(ctx context.Context, tenant
 }
 
 // ListByApplicationIDs retrieves all Aspects matching an array of applicationIDs from the Compass storage.
-func (r *pgRepository) ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.Aspect, map[string]int, error) {
-	unionLister := r.unionLister.Clone()
-	unionLister.SetSelectedColumns(aspectColumns)
-
-	isInternalVisibilityScopePresent, err := scope.Contains(ctx, internalVisibilityScope)
-	if err != nil {
-		log.C(ctx).Info("No scopes are present in the context meaning the flow is not user-initiated. Processing Integration Dependencies without visibility check...")
-		isInternalVisibilityScopePresent = true
-	}
-
-	queryBuilder := r.queryBuilderIntegrationDependencies
-
-	var conditions repo.Conditions
-	if !isInternalVisibilityScopePresent {
-		log.C(ctx).Info("No internal visibility scope is present in the context. Processing only public Integration Dependencies")
-
-		query, args, err := queryBuilder.BuildQueryGlobal(false, repo.NewEqualCondition(visibilityColumn, publicVisibilityValue))
-		if err != nil {
-			return nil, nil, err
-		}
-		conditions = append(conditions, repo.NewInConditionForSubQuery(integrationDependencyIDColumn, query, args))
-	}
-
-	log.C(ctx).Infof("Internal visibility scope is present in the context. Processing Integration Dependencies without visibility check...")
-	conditions = append(conditions, repo.NewNotNullCondition(integrationDependencyIDColumn))
-
+func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.Aspect, map[string]int, error) {
+	var aspectCollection AspectCollection
 	orderByColumns := repo.OrderByParams{repo.NewAscOrderBy(integrationDependencyIDColumn), repo.NewAscOrderBy(appIDColumn)}
-
-	var objectApplicationIDs AspectCollection
-	counts, err := unionLister.ListGlobal(ctx, applicationIDs, appIDColumn, pageSize, cursor, orderByColumns, &objectApplicationIDs, conditions...)
+	counts, err := r.unionLister.List(ctx, resource.Aspect, tenantID, applicationIDs, appIDColumn, pageSize, cursor, orderByColumns, &aspectCollection)
 
 	if err != nil {
 		return nil, nil, err
 	}
 
-	aspects := make([]*model.Aspect, 0, len(objectApplicationIDs))
-	for _, d := range objectApplicationIDs {
+	aspects := make([]*model.Aspect, 0, len(aspectCollection))
+	for _, d := range aspectCollection {
 		entity := r.conv.FromEntity(&d)
 
 		aspects = append(aspects, entity)
