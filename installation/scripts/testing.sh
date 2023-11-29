@@ -53,7 +53,6 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 KUBECTL="kubectl_k3d_kyma"
 if [[ "${BENCHMARK}" == "true" ]]
 then
-  benchmarkLabelSelector='benchmark'
   KUBECTL="kubectl"
 fi
 
@@ -86,6 +85,10 @@ then
   if [ "$DUMP_DB" = true ]
   then
     labelSelector=',!disable-db-dump'
+  fi
+  if [[ "${BENCHMARK}" == "true" ]]
+  then
+    benchmarkLabelSelector='benchmark'
   fi
       cat <<EOF | "$KUBECTL" apply -f -
       apiVersion: testing.kyma-project.io/v1alpha1
