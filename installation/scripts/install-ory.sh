@@ -11,6 +11,13 @@ OVERRIDE_TEMP_ORY=ory-temp-values.yaml
 
 TIMEOUT=10m
 
+# $KUBECTL will take on the value "kubectl" if not overridden - in local installation `run.sh` will override it
+# This is done to make sure that `install-ory.sh` can be used with different kubeconfigs and not only the local one
+: ${KUBECTL:=kubectl}
+# $HELM will take on the value "helm" if not overridden - in local installation `run.sh` will override it
+# This is done to make sure that `install-ory.sh` can be used with different kubeconfigs and not only the local one
+: ${HELM:=helm}
+
 # Always create temporary override file, which is used whether "--overrides-file" is used or not
 cp "$VALUES_FILE_ORY" "$OVERRIDE_TEMP_ORY"
 
@@ -84,10 +91,10 @@ RELEASE_NS=ory
 RELEASE_NAME=ory-stack
 
 # As of Kyma 2.6.3 we need to specify which namespaces should enable istio injection
-kubectl_k3d_kyma create ns $RELEASE_NS --dry-run=client -o yaml | kubectl_k3d_kyma apply -f -
-kubectl_k3d_kyma label ns $RELEASE_NS istio-injection=enabled --overwrite
+"$KUBECTL" create ns $RELEASE_NS --dry-run=client -o yaml | "$KUBECTL" apply -f -
+"$KUBECTL" label ns $RELEASE_NS istio-injection=enabled --overwrite
 # As of Kubernetes 1.25 we need to replace PodSecurityPolicies; we chose the Pod Security Standards
-kubectl_k3d_kyma label ns $RELEASE_NS pod-security.kubernetes.io/enforce=baseline --overwrite
+"$KUBECTL" label ns $RELEASE_NS pod-security.kubernetes.io/enforce=baseline --overwrite
 
 CLOUD_PERSISTENCE=$(yq ".global.ory.hydra.persistence.gcloud.enabled" ${OVERRIDE_TEMP_ORY})
 # The System secret and cookie secret, needed by Hydra, are created by the Secret component of the Helm chart
@@ -106,4 +113,4 @@ if [ "$CLOUD_PERSISTENCE" = false ]; then
   yq -i ".hydra.hydra.config.dsn = \"$DSN\"" "${OVERRIDE_TEMP_ORY}"
 fi
 
-helm_k3d_kyma upgrade --atomic --install --create-namespace --timeout "${TIMEOUT}" $RELEASE_NAME -f "${OVERRIDE_TEMP_ORY}" -n $RELEASE_NS "${ROOT_PATH}"/chart/ory
+"$HELM" upgrade --atomic --install --create-namespace --timeout "${TIMEOUT}" $RELEASE_NAME -f "${OVERRIDE_TEMP_ORY}" -n $RELEASE_NS "${ROOT_PATH}"/chart/ory

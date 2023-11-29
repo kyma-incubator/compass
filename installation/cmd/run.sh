@@ -27,6 +27,11 @@ K3D_MEMORY=8192MB
 K3D_TIMEOUT=10m0s
 APISERVER_VERSION=1.25.6
 
+# These variables are used only during local installation to override the utils to use the k3d cluster
+KUBECTL="kubectl_k3d_kyma"
+HELM="helm_k3d_kyma"
+KYMA="kyma_k3d_kyma"
+
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do
@@ -138,12 +143,12 @@ function mount_k3d_ca_to_oathkeeper() {
   echo "Mounting k3d CA cert into oathkeeper's container..."
 
   docker exec k3d-kyma-server-0 cat /var/lib/rancher/k3s/server/tls/server-ca.crt > "$K3D_CA"
-  kubectl_k3d_kyma create configmap -n ory k3d-ca --from-file "$K3D_CA" --dry-run=client -o yaml | kubectl_k3d_kyma apply -f -
+  "$KUBECTL" create configmap -n ory k3d-ca --from-file "$K3D_CA" --dry-run=client -o yaml | "$KUBECTL" apply -f -
 
-  OATHKEEPER_DEPLOYMENT_NAME=$(kubectl_k3d_kyma get deployment -n ory | grep oathkeeper | awk '{print $1}')
-  OATHKEEPER_CONTAINER_NAME=$(kubectl_k3d_kyma get deployment -n ory "$OATHKEEPER_DEPLOYMENT_NAME" -o=jsonpath='{.spec.template.spec.containers[*].name}' | tr -s '[[:space:]]' '\n' | grep -v 'maester')
+  OATHKEEPER_DEPLOYMENT_NAME=$("$KUBECTL" get deployment -n ory | grep oathkeeper | awk '{print $1}')
+  OATHKEEPER_CONTAINER_NAME=$("$KUBECTL" get deployment -n ory "$OATHKEEPER_DEPLOYMENT_NAME" -o=jsonpath='{.spec.template.spec.containers[*].name}' | tr -s '[[:space:]]' '\n' | grep -v 'maester')
 
-  kubectl_k3d_kyma -n ory patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
+  "$KUBECTL" -n ory patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
    -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/k3d-ca.crt'","name": "k3d-ca-volume","subPath": "k3d-ca.crt"}]}],"volumes":[{"configMap":{"defaultMode": 420,"name": "k3d-ca"},"name": "k3d-ca-volume"}]}}}}'
 }
 
@@ -151,14 +156,14 @@ function mount_k3d_ca_to_oathkeeper() {
 # with the needed keys, by first getting them using kubectl
 function patchJWKS() {
   echo "Patching Request Authentication resources..."
-  JWKS="'$(kubectl_k3d_kyma get --raw '/openid/v1/jwks')'"
-  until [[ $(kubectl_k3d_kyma get requestauthentication ory-internal-authn -n ory 2>/dev/null) &&
-          $(kubectl_k3d_kyma get requestauthentication compass-internal-authn -n compass-system 2>/dev/null) ]]; do
+  JWKS="'$("$KUBECTL" get --raw '/openid/v1/jwks')'"
+  until [[ $("$KUBECTL" get requestauthentication ory-internal-authn -n ory 2>/dev/null) &&
+          $("$KUBECTL" get requestauthentication compass-internal-authn -n compass-system 2>/dev/null) ]]; do
     echo "Waiting for Request Authentication resources to be created"
     sleep 8
   done
-  kubectl_k3d_kyma get requestauthentication ory-internal-authn -n ory -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl_k3d_kyma apply -f -
-  kubectl_k3d_kyma get requestauthentication compass-internal-authn -n compass-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl_k3d_kyma apply -f -
+  "$KUBECTL" get requestauthentication ory-internal-authn -n ory -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | "$KUBECTL" apply -f -
+  "$KUBECTL" get requestauthentication compass-internal-authn -n compass-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | "$KUBECTL" apply -f -
   echo "Request Authentication resources were successfully patched"
 }
 
@@ -249,34 +254,29 @@ if [[ ! ${SKIP_K3D_START} ]]; then
   --kube-version "${APISERVER_VERSION}"
   echo "Adding k3d registry entry to /etc/hosts..."
   $SUDO sh -c "echo \"\n127.0.0.1 k3d-kyma-registry\" >> /etc/hosts"
-
-  # Creates/overwrites the kubeconfig file at $HOME/.k3d/kubeconfig-<K3D_NAME>.yaml
-  k3d kubeconfig write "$K3D_NAME"
 fi
 
-usek3d
-
 echo "Label k3d node for benchmark execution..."
-NODE=$(kubectl_k3d_kyma get nodes | grep agent | tail -n 1 | cut -d ' ' -f 1)
-kubectl_k3d_kyma label --overwrite node "$NODE" benchmark=true || true
+NODE=$("$KUBECTL" get nodes | grep agent | tail -n 1 | cut -d ' ' -f 1)
+"$KUBECTL" label --overwrite node "$NODE" benchmark=true || true
 
 if [[ ! ${SKIP_KYMA_START} ]]; then
-  LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh
+  KYMA="$KYMA" KUBECTL="$KUBECTL" LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh
 fi
 
 if [[ ! ${SKIP_DB_INSTALL} ]]; then
   DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
-  bash "${ROOT_PATH}"/installation/scripts/install-db.sh --overrides-file "${DB_OVERRIDES}" --timeout 30m0s
-  STATUS=$(helm_k3d_kyma status localdb -n compass-system -o json | jq .info.status)
+  KUBECTL="$KUBECTL" HELM="$HELM" bash "${ROOT_PATH}"/installation/scripts/install-db.sh --overrides-file "${DB_OVERRIDES}" --timeout 30m0s
+  STATUS=$("$HELM" status localdb -n compass-system -o json | jq .info.status)
   echo "DB installation status ${STATUS}"
 fi
 
 if [[ ! ${SKIP_ORY_INSTALL} ]]; then
   echo "Installing ORY Stack..."
-  bash "${ROOT_PATH}"/installation/scripts/install-ory.sh
+  KUBECTL="$KUBECTL" HELM="$HELM" bash "${ROOT_PATH}"/installation/scripts/install-ory.sh
 fi
 
-if [[ ! "$(helm_k3d_kyma status ory-stack -n ory)" ]]; then
+if [[ ! "$("$HELM" status ory-stack -n ory)" ]]; then
   echo -e "${RED}Ory Helm release does not exist, please omit the '--skip-ory-install' to install it.${NC}"
   exit 1
 fi
@@ -286,7 +286,7 @@ mount_k3d_ca_to_oathkeeper
 patchJWKS&
 
 COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
-bash "${ROOT_PATH}"/installation/scripts/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --timeout 30m0s --sql-helm-backend
+KUBECTL="$KUBECTL" HELM="$HELM" bash "${ROOT_PATH}"/installation/scripts/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --timeout 30m0s --sql-helm-backend
 
 prometheusMTLSPatch
 

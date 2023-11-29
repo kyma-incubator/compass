@@ -9,7 +9,12 @@ LOCAL_ENV=${LOCAL_ENV:-false}
 CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$CURRENT_DIR"/utils.sh
 
-usek3d
+# $KYMA will take on the value "kyma" if not overridden - in local installation `run.sh` will override it
+# This is done to make sure that `install-kyma.sh` can be used with different kubeconfigs and not only the local one
+: ${KYMA:=kyma}
+# $KUBECTL will take on the value "kubectl" if not overridden - in local installation `run.sh` will override it
+# This is done to make sure that `install-kyma.sh` can be used with different kubeconfigs and not only the local one
+: ${KUBECTL:=kubectl}
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 
@@ -44,8 +49,8 @@ fi
 # Thus, `--non-interactive` flag is used to bypass the hidden user
 # TODO: Remove `--non-interactive` flag whenever Kyma CLI 2.13 is reached
 echo "Installing minimal Kyma"
-kyma_k3d_kyma deploy --components-file "$KYMA_COMPONENTS_MINIMAL"  --values-file "$MINIMAL_OVERRIDES_TEMP" --source=local --workspace "$KYMA_WORKSPACE" --non-interactive
+"$KYMA" deploy --components-file "$KYMA_COMPONENTS_MINIMAL"  --values-file "$MINIMAL_OVERRIDES_TEMP" --source=local --workspace "$KYMA_WORKSPACE" --non-interactive
 
 # Needed since Kyma 2.5.2 to gather metrics
 echo "Patch the metrics port of the kube state metrics service resource to have 'http-' prefix"
-kubectl_k3d_kyma get services -n kyma-system monitoring-kube-state-metrics -o yaml | sed 's/name: metrics/name: http-metrics/g' | kubectl_k3d_kyma apply -f -
+"$KUBECTL" get services -n kyma-system monitoring-kube-state-metrics -o yaml | sed 's/name: metrics/name: http-metrics/g' | "$KUBECTL" apply -f -
