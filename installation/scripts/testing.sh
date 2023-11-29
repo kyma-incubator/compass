@@ -87,10 +87,6 @@ then
   then
     labelSelector=',!disable-db-dump'
   fi
-  if [[ "${BENCHMARK}" == "true" ]]
-  then
-    benchmarkLabelSelector='benchmark'
-  fi
       cat <<EOF | "$KUBECTL" apply -f -
       apiVersion: testing.kyma-project.io/v1alpha1
       kind: ClusterTestSuite
