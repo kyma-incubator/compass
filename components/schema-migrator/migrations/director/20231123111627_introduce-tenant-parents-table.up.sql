@@ -22,10 +22,6 @@ SELECT id, parent
 FROM business_tenant_mappings
 WHERE parent IS NOT NULL;
 
--- Drop 'parent' column from 'business_tenant_mappings'
-ALTER TABLE business_tenant_mappings
-    DROP COLUMN parent;
-
 
 -- TODO make source column not null
 -- Add source column to tenant_applications table
@@ -212,5 +208,9 @@ SELECT w.id,
 FROM webhooks w
          JOIN formation_templates ft on w.formation_template_id = ft.id
          JOIN tenant_parents tp on ft.tenant_id = tp.parent_id;
+
+-- Drop 'parent' column from 'business_tenant_mappings'
+ALTER TABLE business_tenant_mappings
+DROP COLUMN parent;
 
 COMMIT;
