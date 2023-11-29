@@ -48,6 +48,15 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+# Benchmark tests are executed in a GCP environment not k3d
+# All other tests should be executed facing k3d kyma
+KUBECTL="kubectl_k3d_kyma"
+if [[ "${BENCHMARK}" == "true" ]]
+then
+  benchmarkLabelSelector='benchmark'
+  KUBECTL="kubectl"
+fi
+
 suiteName="compass-e2e-tests"
 testDefinitionName=$1
 benchmarkLabelSelector="!benchmark"
@@ -176,7 +185,7 @@ done
 echo "Test summary"
 kubectl_k3d_kyma get cts  ${suiteName} -o=go-template --template='{{range .status.results}}{{printf "Test status: %s - %s" .name .status }}{{ if gt (len .executions) 1 }}{{ print " (Retried)" }}{{end}}{{print "\n"}}{{end}}'
 
-waitForTerminationAndPrintLogs ${suiteName}
+waitForTerminationAndPrintLogs ${suiteName} ${KUBECTL}
 cleanupExitCode=$?
 
 echo "ClusterTestSuite details:"
@@ -211,7 +220,7 @@ then
   kubectl_k3d_kyma delete cts ${suiteName}
 fi
 
-printImagesWithLatestTag
+printImagesWithLatestTag "$KUBECTL"
 latestTagExitCode=$?
 
 exit $((${testExitCode} + ${cleanupExitCode} + ${latestTagExitCode}))
