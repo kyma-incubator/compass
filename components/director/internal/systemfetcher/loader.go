@@ -35,6 +35,13 @@ type appTmplService interface {
 	Update(ctx context.Context, id string, override bool, in model.ApplicationTemplateUpdateInput) error
 }
 
+type webhookService interface {
+	ListForApplicationTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
+	Create(ctx context.Context, owningResourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error)
+	Update(ctx context.Context, id string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) error
+	Delete(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) error
+}
+
 //go:generate mockery --name=intSysSvc --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type intSysSvc interface {
 	Create(ctx context.Context, in model.IntegrationSystemInput) (string, error)
@@ -45,16 +52,18 @@ type intSysSvc interface {
 type DataLoader struct {
 	transaction persistence.Transactioner
 	appTmplSvc  appTmplService
+	webhookSvc  webhookService
 	intSysSvc   intSysSvc
 	cfg         Config
 }
 
 // NewDataLoader creates new DataLoader
-func NewDataLoader(tx persistence.Transactioner, cfg Config, appTmplSvc appTmplService, intSysSvc intSysSvc) *DataLoader {
+func NewDataLoader(tx persistence.Transactioner, cfg Config, appTmplSvc appTmplService, intSysSvc intSysSvc, webhookSvc webhookService) *DataLoader {
 	return &DataLoader{
 		transaction: tx,
 		appTmplSvc:  appTmplSvc,
 		intSysSvc:   intSysSvc,
+		webhookSvc:  webhookSvc,
 		cfg:         cfg,
 	}
 }
@@ -238,12 +247,96 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 				Placeholders:         appTmplInput.Placeholders,
 				AccessLevel:          appTmplInput.AccessLevel,
 				Labels:               appTmplInput.Labels,
-				Webhooks:             appTmplInput.Webhooks,
+				//Webhooks:             appTmplInput.Webhooks,
 			}
 			if err := d.appTmplSvc.Update(ctx, appTemplate.ID, false, appTemplateUpdateInput); err != nil {
 				return errors.Wrapf(err, "while updating application template with id %q", appTemplate.ID)
 			}
 			log.C(ctx).Infof("Successfully updated application template with id %q", appTemplate.ID)
+		}
+
+		webhooks, err := d.webhookSvc.ListForApplicationTemplate(ctx, appTemplate.ID)
+		if err != nil {
+			return err
+		}
+
+		if !areWebhooksEqual(webhooks, appTmplInput.Webhooks) {
+			if err := d.SyncWebhooks(ctx, appTemplate.ID, webhooks, appTmplInput.Webhooks); err != nil {
+				return errors.Wrapf(err, "while updating webhooks for application tempate with id %q", appTemplate.ID)
+			}
+		}
+	}
+
+	return nil
+}
+
+//func (d *DataLoader) SyncWebhooks(appTemplateID string, webhooksModel []model.Webhook, webhooksInput []*model.WebhookInput) error {
+//	for _, webhookInput := range webhooksInput {
+//		for _, webhookModel := range webhooksModel {
+//			if webhookInput.Type == webhookModel.Type {
+//				// update
+//			} else {
+//				// create
+//			}
+//		}
+//	}
+//
+//	missingInInput := make([]string, 0)
+//	for _, webhookModel := range webhooksModel {
+//		found := false
+//		for _, webhookInput := range webhooksInput {
+//			if webhookInput.Type == webhookModel.Type {
+//				found = true
+//				break
+//			}
+//		}
+//
+//		if !found {
+//			missingInInput = append(missingInInput, webhookModel.ID)
+//		}
+//	}
+//
+//	for _, id := range missingInInput {
+//		// delete webhook by appTemplateID
+//	}
+//
+//	return nil
+//}
+
+func (d *DataLoader) SyncWebhooks(ctx context.Context, appTemplateID string, webhooksModel []*model.Webhook, webhooksInput []*model.WebhookInput) error {
+	// Convert the webhooksModel slice to a map for easy access
+	webhooksModelMap := make(map[model.WebhookType]*model.Webhook)
+
+	fmt.Println(webhooksModel)
+	for _, webhook := range webhooksModel {
+		fmt.Println(webhook.ID, webhook.Type)
+		fmt.Println()
+		webhooksModelMap[webhook.Type] = webhook
+	}
+
+	for _, webhookInput := range webhooksInput {
+		webhookModel, exists := webhooksModelMap[webhookInput.Type]
+		var err error
+		if exists {
+			log.C(ctx).Infof("Webhook of type %s exists. Will update it...", webhookInput.Type)
+			err = d.webhookSvc.Update(ctx, webhookModel.ID, *webhookInput, model.ApplicationTemplateWebhookReference)
+			delete(webhooksModelMap, webhookInput.Type) // remove the item from the map after updating
+		} else {
+			log.C(ctx).Infof("Webhook of type %s does not exist. Will create it...", webhookInput.Type)
+			_, err = d.webhookSvc.Create(ctx, appTemplateID, *webhookInput, model.ApplicationTemplateWebhookReference)
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// The remaining items in webhooksModelMap are the ones that are in the database but not in the user input, so they should be deleted
+	for _, webhookModel := range webhooksModelMap {
+		log.C(ctx).Infof("Webhook of type %s is missin in the input. Will delete it...", webhookModel.Type)
+
+		if err := d.webhookSvc.Delete(ctx, webhookModel.ID, model.ApplicationTemplateWebhookReference); err != nil {
+			return err
 		}
 	}
 
@@ -350,16 +443,15 @@ func areAppTemplatesEqual(appTemplate *model.ApplicationTemplate, appTemplateInp
 	isAppInputJSONEqual := appTemplate.ApplicationInputJSON == appTemplateInput.ApplicationInputJSON
 	isLabelEqual := reflect.DeepEqual(appTemplate.Labels, appTemplateInput.Labels)
 	isPlaceholderEqual := reflect.DeepEqual(appTemplate.Placeholders, appTemplateInput.Placeholders)
-	areWebhooksEq := areWebhooksEqual(appTemplate.Webhooks, appTemplateInput.Webhooks)
 
-	if isAppInputJSONEqual && isLabelEqual && isPlaceholderEqual && areWebhooksEq {
+	if isAppInputJSONEqual && isLabelEqual && isPlaceholderEqual {
 		return true
 	}
 
 	return false
 }
 
-func areWebhooksEqual(webhooksModel []model.Webhook, webhooksInput []*model.WebhookInput) bool {
+func areWebhooksEqual(webhooksModel []*model.Webhook, webhooksInput []*model.WebhookInput) bool {
 	if len(webhooksModel) != len(webhooksInput) {
 		return false
 	}

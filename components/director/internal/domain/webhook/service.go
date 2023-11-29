@@ -162,7 +162,10 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 		return "", err
 	}
 
-	id := s.uidSvc.Generate()
+	id := in.ID
+	if id == "" {
+		id = s.uidSvc.Generate()
+	}
 
 	webhook := in.ToWebhook(id, owningResourceID, objectType)
 
