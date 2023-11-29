@@ -34,7 +34,7 @@ const (
 
 	// Destination Creds constants
 	basicDestUser                    = "basic-user"
-	basicDestPassword                = "basic-pwd"
+	basicDestPwd                     = "basic-pwd"
 	oauth2ClientCredsTokenServiceURL = "http://oauth2-token-service-url"
 	oauth2ClientCredsClientID        = "test-client-id"
 	oauth2ClientCredsClientSecret    = "test-client-secret"
@@ -124,7 +124,7 @@ func fixBasicAuthn() operators.BasicAuthentication {
 	return operators.BasicAuthentication{
 		URL:      destinationURL,
 		Username: basicDestUser,
-		Password: basicDestPassword,
+		Password: basicDestPwd,
 	}
 }
 
