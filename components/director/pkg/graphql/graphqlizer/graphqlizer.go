@@ -880,8 +880,11 @@ func (g *Graphqlizer) WriteTenantsInputToGQL(in []graphql.BusinessTenantMappingI
 			{
 				name: {{ quote $tenant.Name }},
  				externalTenant: {{ quote $tenant.ExternalTenant }},
-				{{- if $tenant.Parent }}
-				parent: {{ quote $tenant.Parent }},
+				{{- if $tenant.Parents }}
+				parents: [
+				{{- range $i, $e := $tenant.Parents }}
+					{{- if $i}}, {{- end}} {{ quote $e }}
+				{{- end }} ],
 				{{- end }}
 				{{- if $tenant.Region }}
 				region: {{ quote $tenant.Region }},
@@ -906,8 +909,11 @@ func (g *Graphqlizer) WriteTenantInputToGQL(in graphql.BusinessTenantMappingInpu
 	return g.genericToGQL(in, `{
 		name: {{ quote .Name }},
 		externalTenant: {{ quote .ExternalTenant }},
-		{{- if .Parent }}
-		parent: {{ quote .Parent }},
+		{{- if .Parents }}
+		parents: [
+		{{- range $i, $e := .Parents }}
+			{{- if $i}}, {{- end}} {{ quote $e }}
+		{{- end }} ],
 		{{- end }}
 		{{- if .Region }}
 		region: {{ quote .Region }},
@@ -939,8 +945,11 @@ func (g *Graphqlizer) UpdateTenantsInputToGQL(in graphql.BusinessTenantMappingIn
 		{
 			name: {{ quote .Name }},
  			externalTenant: {{ quote .ExternalTenant }},
-			{{- if .Parent }}
-			parent: {{ quote .Parent }},
+			{{- if .Parents }}
+			parents: [
+			{{- range $i, $e := .Parents }}
+				{{- if $i}}, {{- end}} {{ quote $e }}
+			{{- end }} ],
 			{{- end }}
 			{{- if .Region }}
 			region: {{ quote .Region }},
