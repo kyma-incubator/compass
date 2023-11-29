@@ -48,17 +48,19 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+suiteName="compass-e2e-tests"
+testDefinitionName=$1
+benchmarkLabelSelector="!benchmark"
+
 # Benchmark tests are executed in a GCP environment not k3d
 # All other tests should be executed facing k3d kyma
 KUBECTL="kubectl_k3d_kyma"
 if [[ "${BENCHMARK}" == "true" ]]
 then
+  benchmarkLabelSelector='benchmark'
   KUBECTL="kubectl"
 fi
 
-suiteName="compass-e2e-tests"
-testDefinitionName=$1
-benchmarkLabelSelector="!benchmark"
 echo "${1:-All tests}"
 echo "----------------------------"
 echo "- Testing Compass..."
@@ -85,10 +87,6 @@ then
   if [ "$DUMP_DB" = true ]
   then
     labelSelector=',!disable-db-dump'
-  fi
-  if [[ "${BENCHMARK}" == "true" ]]
-  then
-    benchmarkLabelSelector='benchmark'
   fi
       cat <<EOF | "$KUBECTL" apply -f -
       apiVersion: testing.kyma-project.io/v1alpha1
