@@ -525,7 +525,6 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
 	return dest.TenantID, nil
 }
 
-// TODO delete if still unused
 // GetCustomerIDParentRecursively gets the top parent external ID (customer_id) for a given tenant ID (internal id)
 func (r *pgRepository) GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error) {
 	recursiveQuery := `WITH RECURSIVE parents AS
@@ -547,13 +546,15 @@ func (r *pgRepository) GetCustomerIDParentRecursively(ctx context.Context, tenan
 
 	dest := struct {
 		ExternalCustomerTenant string `db:"external_tenant"`
+		Type                   string `db:"type"`
 	}{}
 
 	if err := persist.GetContext(ctx, &dest, recursiveQuery, tenantID); err != nil {
+		err = persistence.MapSQLError(ctx, err, resource.Tenant, resource.Get, "while getting parent external customer ID for internal tenant: %q", tenantID)
 		if apperrors.IsNotFoundError(err) {
 			return "", nil
 		}
-		return "", persistence.MapSQLError(ctx, err, resource.Tenant, resource.Get, "while getting parent external customer ID for internal tenant: %q", tenantID)
+		return "", err
 	}
 
 	if dest.ExternalCustomerTenant == "" {

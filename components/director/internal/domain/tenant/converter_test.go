@@ -39,7 +39,7 @@ func TestConverter(t *testing.T) {
 		c := tenant.NewConverter()
 
 		// When
-		input := newModelBusinessTenantMapping(id, name, nil)
+		input := newModelBusinessTenantMapping(id, name, []string{})
 		entity := c.ToEntity(input)
 		outputModel := c.FromEntity(entity)
 
@@ -96,7 +96,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		c := tenant.NewConverter()
 
 		// WHEN
-		in := newModelBusinessTenantMapping(ids[0], names[0], nil)
+		in := newModelBusinessTenantMapping(ids[0], names[0], []string{})
 		res := c.ToGraphQL(in)
 		expected := &graphql.Tenant{
 			ID:          testExternal,

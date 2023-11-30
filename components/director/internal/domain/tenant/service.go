@@ -174,7 +174,6 @@ func (s *service) MultipleToTenantMapping(ctx context.Context, tenantInputs []mo
 		tenants = append(tenants, *tenant.ToBusinessTenantMapping(id))
 		tenantIDs[tenant.ExternalTenant] = id
 	}
-spew.Dump("tenants before move", tenants)
 	for i := 0; i < len(tenants); i++ { // Convert parent ID from external to internal id reference
 		parentInternalIDs := make([]string, 0, len(tenants[i].Parents))
 		parentsInsertedInThisRequestIDs := make([]string, 0, len(tenants[i].Parents))
@@ -182,29 +181,27 @@ spew.Dump("tenants before move", tenants)
 		for _, parentID := range tenants[i].Parents {
 			if _, ok := tenantIDs[parentID]; ok { // If the parent is inserted in this request
 				parentInternalIDs = append(parentInternalIDs, tenantIDs[parentID])
-				parentsInsertedInThisRequestIDs = append(parentsInsertedInThisRequestIDs, parentID)
+				parentsInsertedInThisRequestIDs = append(parentsInsertedInThisRequestIDs, tenantIDs[parentID])
 			} else { // If the parent is already present in the DB - swap the external ID for the parent that is provided with the internal ID from the DB
 				internalPrentID, err := s.GetInternalTenant(ctx, parentID)
 				if err != nil {
-					return nil, err
+					return nil, errors.Wrapf(err, "for external tenant kalo: %s", parentID)
 				}
 				parentInternalIDs = append(parentInternalIDs, internalPrentID)
 			}
 		}
-
-		spew.Dump("tenant before updating parents", tenants[i])
 		tenants[i].Parents = parentInternalIDs
-		spew.Dump("tenant after updating parents", tenants[i])
+	}
 
+	for i := 0; i < len(tenants); i++ { // Convert parent ID from external to internal id reference
 		tenantID := tenants[i].ID
-		for _, parentID := range parentsInsertedInThisRequestIDs {
+		for _, parentID := range tenants[i].Parents {
 			var moved bool
 			tenants, moved = MoveBeforeIfShould(tenants, parentID, tenantID) // Move my parent before me (to be inserted first) if it is not already
-			if moved && i >= 0 { // In case the added tenant is first, and it has more than one parent inserted with this request `i` may end up being negative number on the next iteration of the loop so decrease `i` only if it is non-negative
+			if moved && i >= 0 {                                             // In case the added tenant is first, and it has more than one parent inserted with this request `i` may end up being negative number on the next iteration of the loop so decrease `i` only if it is non-negative
 				i-- // Process the moved parent as well
 			}
 		}
-		spew.Dump("tenants after parent move", tenants)
 	}
 	return tenants, nil
 }

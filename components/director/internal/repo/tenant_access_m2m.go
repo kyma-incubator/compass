@@ -29,7 +29,7 @@ const (
 	// RecursiveCreateTenantAccessCTEQuery is a recursive SQL query that creates a tenant access record for a tenant and all its parents.
 	RecursiveCreateTenantAccessCTEQuery = `WITH RECURSIVE parents AS
                    (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id
-                    FROM business_tenant_mappings t1 JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
+                    FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
                     WHERE id=:tenant_id
                     UNION ALL
                     SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
