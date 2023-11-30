@@ -20,6 +20,8 @@ const (
 	AuthTypeSAMLBearerAssertion AuthType = "OAuth2SAMLBearerAssertion"
 	// AuthTypeClientCertificate represents the ClientCertificate destination authentication
 	AuthTypeClientCertificate AuthType = "ClientCertificateAuthentication"
+	// AuthTypeOAuth2ClientCredentials represents the OAuth2ClientCredentials destination authentication
+	AuthTypeOAuth2ClientCredentials AuthType = "OAuth2ClientCredentials"
 
 	// ProxyTypeInternet represents the Internet proxy type
 	ProxyTypeInternet ProxyType = "Internet"
@@ -37,6 +39,11 @@ const (
 	SAMLAssertionDestPath = "credentials.inboundCommunication.samlAssertion"
 	// ClientCertAuthDestPath represents the client certificate authentication destination type in the assignment config
 	ClientCertAuthDestPath = "credentials.inboundCommunication.clientCertificateAuthentication"
+
+	// DedicatedTokenServiceURLType represents the 'Dedicated' token service URL type of OAuth2ClientCredentials destination
+	DedicatedTokenServiceURLType TokenServiceURLType = "Dedicated"
+	// CommonTokenServiceURLType represents the 'Common' token service URL type of OAuth2ClientCredentials destination
+	CommonTokenServiceURLType TokenServiceURLType = "Common"
 )
 
 // Type represents the destination type
@@ -47,3 +54,15 @@ type AuthType string
 
 // ProxyType represents the destination proxy type
 type ProxyType string
+
+// TokenServiceURLType represents the token service URL type of OAuth2ClientCredentials destination
+type TokenServiceURLType string
+
+// DestinationInfo holds information about some destination fields
+// these fields are calculated before calling DestinationCreator and then are passed to it
+// however, after we call the DestinationCreator, we have to store the given destination in our db; we want to reuse the already calculated fields via this struct so that we can use them when storing the destination in the db
+type DestinationInfo struct {
+	AuthenticationType AuthType
+	Type               Type
+	URL                string
+}

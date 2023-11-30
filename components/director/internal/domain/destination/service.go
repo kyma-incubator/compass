@@ -41,13 +41,13 @@ type UIDService interface {
 //go:generate mockery --exported --name=destinationCreatorService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationCreatorService interface {
 	CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) error
-	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error
-	CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error
-	CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error
+	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
+	CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
+	CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
+	CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2ClientCredsCredentials *operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
 	DeleteDestination(ctx context.Context, destinationName, externalDestSubaccountID, instanceID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error
 	DeleteCertificate(ctx context.Context, certificateName, externalDestSubaccountID, instanceID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error
 	DetermineDestinationSubaccount(ctx context.Context, externalDestSubaccountID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) (string, error)
-	PrepareBasicRequestBody(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) (*destinationcreator.BasicAuthDestinationRequestBody, error)
 	GetConsumerTenant(ctx context.Context, formationAssignment *model.FormationAssignment) (string, error)
 	EnsureDestinationSubaccountIDsCorrectness(ctx context.Context, destinationsDetails []operators.Destination, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error
 }
@@ -180,21 +180,17 @@ func (s *Service) createBasicCredentialDestination(ctx context.Context, destinat
 		return errors.Errorf("Already have destination with name: %q and tenant ID: %q for assignment ID: %q. Could not have second destination with the same name and tenant ID but with different assignment ID: %q", destinationDetails.Name, tenantID, *destinationFromDB.FormationAssignmentID, formationAssignment.ID)
 	}
 
-	if err = s.destinationCreatorSvc.CreateBasicCredentialDestinations(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, 0, skipSubaccountValidation); err != nil {
-		return err
-	}
-
-	basicReqBody, err := s.destinationCreatorSvc.PrepareBasicRequestBody(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs)
+	destInfo, err := s.destinationCreatorSvc.CreateBasicCredentialDestinations(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, 0, skipSubaccountValidation)
 	if err != nil {
 		return err
 	}
 
 	destModel := &model.Destination{
 		ID:                    s.uidSvc.Generate(),
-		Name:                  basicReqBody.Name,
-		Type:                  string(basicReqBody.Type),
-		URL:                   basicReqBody.URL,
-		Authentication:        string(basicReqBody.AuthenticationType),
+		Name:                  destinationDetails.Name,
+		Type:                  string(destInfo.Type),
+		URL:                   destInfo.URL,
+		Authentication:        string(destInfo.AuthenticationType),
 		SubaccountID:          t.ID,
 		InstanceID:            &destinationDetails.InstanceID,
 		FormationAssignmentID: &formationAssignment.ID,
@@ -242,16 +238,17 @@ func (s *Service) createSAMLAssertionDestination(ctx context.Context, destinatio
 		return errors.Errorf("Already have destination with name: %q and tenant ID: %q for assignment ID: %q. Could not have second destination with the same name and tenant ID but with different assignment ID: %q", destinationDetails.Name, tenantID, *destinationFromDB.FormationAssignmentID, formationAssignment.ID)
 	}
 
-	if err = s.destinationCreatorSvc.CreateSAMLAssertionDestination(ctx, destinationDetails, samlAssertionAuthCredentials, formationAssignment, correlationIDs, 0, skipSubaccountValidation); err != nil {
+	destInfo, err := s.destinationCreatorSvc.CreateSAMLAssertionDestination(ctx, destinationDetails, samlAssertionAuthCredentials, formationAssignment, correlationIDs, 0, skipSubaccountValidation)
+	if err != nil {
 		return err
 	}
 
 	destModel := &model.Destination{
 		ID:                    s.uidSvc.Generate(),
 		Name:                  destinationDetails.Name,
-		Type:                  string(destinationcreatorpkg.TypeHTTP),
-		URL:                   samlAssertionAuthCredentials.URL,
-		Authentication:        string(destinationcreatorpkg.AuthTypeSAMLAssertion),
+		Type:                  string(destInfo.Type),
+		URL:                   destInfo.URL,
+		Authentication:        string(destInfo.AuthenticationType),
 		SubaccountID:          t.ID,
 		InstanceID:            &destinationDetails.InstanceID,
 		FormationAssignmentID: &formationAssignment.ID,
@@ -298,16 +295,17 @@ func (s *Service) createClientCertificateAuthenticationDestination(ctx context.C
 		return errors.Errorf("Already have destination with name: %q and tenant ID: %q for assignment ID: %q. Could not have second destination with the same name and tenant ID but with different assignment ID: %q", destinationDetails.Name, tenantID, *destinationFromDB.FormationAssignmentID, formationAssignment.ID)
 	}
 
-	if err = s.destinationCreatorSvc.CreateClientCertificateDestination(ctx, destinationDetails, clientCertAuthCredentials, formationAssignment, correlationIDs, 0, skipSubaccountValidation); err != nil {
+	destInfo, err := s.destinationCreatorSvc.CreateClientCertificateDestination(ctx, destinationDetails, clientCertAuthCredentials, formationAssignment, correlationIDs, 0, skipSubaccountValidation)
+	if err != nil {
 		return err
 	}
 
 	destModel := &model.Destination{
 		ID:                    s.uidSvc.Generate(),
 		Name:                  destinationDetails.Name,
-		Type:                  string(destinationcreatorpkg.TypeHTTP),
-		URL:                   clientCertAuthCredentials.URL,
-		Authentication:        string(destinationcreatorpkg.AuthTypeClientCertificate),
+		Type:                  string(destInfo.Type),
+		URL:                   destInfo.URL,
+		Authentication:        string(destInfo.AuthenticationType),
 		SubaccountID:          t.ID,
 		InstanceID:            &destinationDetails.InstanceID,
 		FormationAssignmentID: &formationAssignment.ID,
@@ -315,6 +313,65 @@ func (s *Service) createClientCertificateAuthenticationDestination(ctx context.C
 
 	if err = s.destinationRepo.UpsertWithEmbeddedTenant(ctx, destModel); err != nil {
 		return errors.Wrapf(err, "while upserting SAML Assertion destination with name: %q and assignment ID: %q in the DB", destinationDetails.Name, formationAssignment.ID)
+	}
+
+	return nil
+}
+
+// CreateOAuth2ClientCredentialsDestinations is responsible to create an oauth2 client credentials destination resource in the remote destination service as well as in our DB
+func (s *Service) CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationsDetails []operators.Destination, oauth2ClientCredsCredentials *operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
+	for _, destinationDetails := range destinationsDetails {
+		if err := s.createOAuth2ClientCredentialsDestinations(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, skipSubaccountValidation); err != nil {
+			return errors.Wrapf(err, "while creating oauth2 client credentials destination with name: %q", destinationDetails.Name)
+		}
+	}
+	return nil
+}
+
+// createOAuth2ClientCredentialsDestinations is responsible to create an oauth2 client credentials destination resource in the remote destination service as well as in our DB
+func (s *Service) createOAuth2ClientCredentialsDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2ClientCredsCredentials *operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
+	subaccountID, err := s.destinationCreatorSvc.DetermineDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment, skipSubaccountValidation)
+	if err != nil {
+		return err
+	}
+	destinationDetails.SubaccountID = subaccountID
+
+	t, err := s.tenantRepo.GetByExternalTenant(ctx, subaccountID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting tenant by external ID: %q", subaccountID)
+	}
+
+	tenantID := t.ID
+	destinationFromDB, err := s.destinationRepo.GetDestinationByNameAndTenant(ctx, destinationDetails.Name, tenantID)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			return err
+		}
+		log.C(ctx).Infof("Destination with name: %q and tenant ID: %q was not found in our DB, it will be created...", destinationDetails.Name, tenantID)
+	}
+
+	if destinationFromDB != nil && destinationFromDB.FormationAssignmentID != nil && *destinationFromDB.FormationAssignmentID != formationAssignment.ID {
+		return errors.Errorf("Already have destination with name: %q and tenant ID: %q for assignment ID: %q. Could not have second destination with the same name and tenant ID but with different assignment ID: %q", destinationDetails.Name, tenantID, *destinationFromDB.FormationAssignmentID, formationAssignment.ID)
+	}
+
+	destInfo, err := s.destinationCreatorSvc.CreateOAuth2ClientCredentialsDestinations(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, 0, skipSubaccountValidation)
+	if err != nil {
+		return err
+	}
+
+	destModel := &model.Destination{
+		ID:                    s.uidSvc.Generate(),
+		Name:                  destinationDetails.Name,
+		Type:                  string(destInfo.Type),
+		URL:                   destInfo.URL,
+		Authentication:        string(destInfo.AuthenticationType),
+		SubaccountID:          t.ID,
+		InstanceID:            &destinationDetails.InstanceID,
+		FormationAssignmentID: &formationAssignment.ID,
+	}
+
+	if err = s.destinationRepo.UpsertWithEmbeddedTenant(ctx, destModel); err != nil {
+		return errors.Wrapf(err, "while upserting oauth2 client creds destination with name: %q and assignment ID: %q in the DB", destinationDetails.Name, formationAssignment.ID)
 	}
 
 	return nil
