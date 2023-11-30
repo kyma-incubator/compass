@@ -4,8 +4,8 @@ go 1.20
 
 require (
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231129100123-37727a76e87a
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231129100123-37727a76e87a
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231130075305-53f210d0d607
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231130075305-53f210d0d607
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
 	github.com/tidwall/gjson v1.17.0
@@ -44,7 +44,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231129100123-37727a76e87a // indirect
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231130075305-53f210d0d607 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
