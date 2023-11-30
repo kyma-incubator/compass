@@ -5,7 +5,7 @@ package automock
 import (
 	context "context"
 
-	destinationcreator "github.com/kyma-incubator/compass/components/director/internal/destinationcreator"
+	destinationcreator "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -20,31 +20,55 @@ type DestinationCreatorService struct {
 }
 
 // CreateBasicCredentialDestinations provides a mock function with given fields: ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation
-func (_m *DestinationCreatorService) CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error {
+func (_m *DestinationCreatorService) CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreator.DestinationInfo, error) {
 	ret := _m.Called(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string, uint8, bool) error); ok {
+	var r0 *destinationcreator.DestinationInfo
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string, uint8, bool) (*destinationcreator.DestinationInfo, error)); ok {
+		return rf(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string, uint8, bool) *destinationcreator.DestinationInfo); ok {
 		r0 = rf(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*destinationcreator.DestinationInfo)
+		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string, uint8, bool) error); ok {
+		r1 = rf(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // CreateClientCertificateDestination provides a mock function with given fields: ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation
-func (_m *DestinationCreatorService) CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error {
+func (_m *DestinationCreatorService) CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreator.DestinationInfo, error) {
 	ret := _m.Called(ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.ClientCertAuthentication, *model.FormationAssignment, []string, uint8, bool) error); ok {
+	var r0 *destinationcreator.DestinationInfo
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.ClientCertAuthentication, *model.FormationAssignment, []string, uint8, bool) (*destinationcreator.DestinationInfo, error)); ok {
+		return rf(ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.ClientCertAuthentication, *model.FormationAssignment, []string, uint8, bool) *destinationcreator.DestinationInfo); ok {
 		r0 = rf(ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*destinationcreator.DestinationInfo)
+		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, operators.Destination, *operators.ClientCertAuthentication, *model.FormationAssignment, []string, uint8, bool) error); ok {
+		r1 = rf(ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // CreateDesignTimeDestinations provides a mock function with given fields: ctx, destinationDetails, formationAssignment, depth, skipSubaccountValidation
@@ -61,18 +85,56 @@ func (_m *DestinationCreatorService) CreateDesignTimeDestinations(ctx context.Co
 	return r0
 }
 
-// CreateSAMLAssertionDestination provides a mock function with given fields: ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation
-func (_m *DestinationCreatorService) CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error {
-	ret := _m.Called(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+// CreateOAuth2ClientCredentialsDestinations provides a mock function with given fields: ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation
+func (_m *DestinationCreatorService) CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2ClientCredsCredentials *operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreator.DestinationInfo, error) {
+	ret := _m.Called(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.SAMLAssertionAuthentication, *model.FormationAssignment, []string, uint8, bool) error); ok {
-		r0 = rf(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	var r0 *destinationcreator.DestinationInfo
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.OAuth2ClientCredentialsAuthentication, *model.FormationAssignment, []string, uint8, bool) (*destinationcreator.DestinationInfo, error)); ok {
+		return rf(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.OAuth2ClientCredentialsAuthentication, *model.FormationAssignment, []string, uint8, bool) *destinationcreator.DestinationInfo); ok {
+		r0 = rf(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*destinationcreator.DestinationInfo)
+		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, operators.Destination, *operators.OAuth2ClientCredentialsAuthentication, *model.FormationAssignment, []string, uint8, bool) error); ok {
+		r1 = rf(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CreateSAMLAssertionDestination provides a mock function with given fields: ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation
+func (_m *DestinationCreatorService) CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreator.DestinationInfo, error) {
+	ret := _m.Called(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+
+	var r0 *destinationcreator.DestinationInfo
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.SAMLAssertionAuthentication, *model.FormationAssignment, []string, uint8, bool) (*destinationcreator.DestinationInfo, error)); ok {
+		return rf(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.SAMLAssertionAuthentication, *model.FormationAssignment, []string, uint8, bool) *destinationcreator.DestinationInfo); ok {
+		r0 = rf(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*destinationcreator.DestinationInfo)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, operators.Destination, *operators.SAMLAssertionAuthentication, *model.FormationAssignment, []string, uint8, bool) error); ok {
+		r1 = rf(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // DeleteCertificate provides a mock function with given fields: ctx, certificateName, externalDestSubaccountID, instanceID, formationAssignment, skipSubaccountValidation
@@ -158,32 +220,6 @@ func (_m *DestinationCreatorService) GetConsumerTenant(ctx context.Context, form
 
 	if rf, ok := ret.Get(1).(func(context.Context, *model.FormationAssignment) error); ok {
 		r1 = rf(ctx, formationAssignment)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PrepareBasicRequestBody provides a mock function with given fields: ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs
-func (_m *DestinationCreatorService) PrepareBasicRequestBody(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) (*destinationcreator.BasicAuthDestinationRequestBody, error) {
-	ret := _m.Called(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs)
-
-	var r0 *destinationcreator.BasicAuthDestinationRequestBody
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string) (*destinationcreator.BasicAuthDestinationRequestBody, error)); ok {
-		return rf(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string) *destinationcreator.BasicAuthDestinationRequestBody); ok {
-		r0 = rf(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*destinationcreator.BasicAuthDestinationRequestBody)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string) error); ok {
-		r1 = rf(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs)
 	} else {
 		r1 = ret.Error(1)
 	}
