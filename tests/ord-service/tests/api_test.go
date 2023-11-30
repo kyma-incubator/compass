@@ -28,6 +28,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"

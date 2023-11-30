@@ -58,6 +58,20 @@ func (_m *DestinationService) CreateDesignTimeDestinations(ctx context.Context, 
 	return r0
 }
 
+// CreateOAuth2ClientCredentialsDestinations provides a mock function with given fields: ctx, destinationsDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, skipSubaccountValidation
+func (_m *DestinationService) CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationsDetails []operators.Destination, oauth2ClientCredsCredentials *operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
+	ret := _m.Called(ctx, destinationsDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, skipSubaccountValidation)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, *operators.OAuth2ClientCredentialsAuthentication, *model.FormationAssignment, []string, bool) error); ok {
+		r0 = rf(ctx, destinationsDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, skipSubaccountValidation)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // CreateSAMLAssertionDestination provides a mock function with given fields: ctx, destinationsDetails, samlAssertionAuthCredentials, formationAssignment, correlationIDs, skipSubaccountValidation
 func (_m *DestinationService) CreateSAMLAssertionDestination(ctx context.Context, destinationsDetails []operators.Destination, samlAssertionAuthCredentials *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
 	ret := _m.Called(ctx, destinationsDetails, samlAssertionAuthCredentials, formationAssignment, correlationIDs, skipSubaccountValidation)

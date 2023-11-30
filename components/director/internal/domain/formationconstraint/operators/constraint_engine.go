@@ -41,6 +41,7 @@ type destinationService interface {
 	CreateBasicCredentialDestinations(ctx context.Context, destinationsDetails []Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
 	CreateSAMLAssertionDestination(ctx context.Context, destinationsDetails []Destination, samlAssertionAuthCredentials *SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
 	CreateClientCertificateAuthenticationDestination(ctx context.Context, destinationsDetails []Destination, clientCertAuthCredentials *ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
+	CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationsDetails []Destination, oauth2ClientCredsCredentials *OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
 	DeleteDestinations(ctx context.Context, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error
 }
 
