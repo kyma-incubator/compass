@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -331,7 +330,7 @@ func TestHandler_DeleteDestinations(t *testing.T) {
 			h.DeleteDestinations(r, req)
 			resp := r.Result()
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			// THEN
@@ -449,7 +448,7 @@ func TestHandler_CreateCertificate(t *testing.T) {
 			h.CreateCertificate(r, req)
 			resp := r.Result()
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			// THEN
@@ -562,7 +561,7 @@ func TestHandler_DeleteCertificate(t *testing.T) {
 			h.DeleteCertificate(r, req)
 			resp := r.Result()
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			// THEN
@@ -786,7 +785,7 @@ func TestHandler_GetDestinationCertificateByNameFromDestinationSvc(t *testing.T)
 			h.GetDestinationCertificateByNameFromDestinationSvc(r, req)
 			resp := r.Result()
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			// THEN

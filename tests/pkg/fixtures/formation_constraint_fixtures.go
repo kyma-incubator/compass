@@ -5,7 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-func FixFormationConstraintInputContainsScenarioGroups(resourceSubtype string, targetOperation graphql.TargetOperation, inputTemplate string) graphql.FormationConstraintInput{
+func FixFormationConstraintInputContainsScenarioGroups(resourceSubtype string, targetOperation graphql.TargetOperation, inputTemplate string) graphql.FormationConstraintInput {
 	return graphql.FormationConstraintInput{
 		Name:            "TestContainsScenarioGroupsAssign",
 		ConstraintType:  graphql.ConstraintTypePre,
