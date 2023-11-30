@@ -62,6 +62,16 @@ type Configuration struct {
 	TestProviderSubaccountID                    string `envconfig:"APP_TEST_PROVIDER_SUBACCOUNT_ID"`
 }
 
+// ProviderDestinationConfig holds a provider's destination service configuration
+type ProviderDestinationConfig struct {
+	ClientID     string `envconfig:"APP_PROVIDER_DESTINATION_CLIENT_ID"`
+	ClientSecret string `envconfig:"APP_PROVIDER_DESTINATION_CLIENT_SECRET"`
+	TokenURL     string `envconfig:"APP_PROVIDER_DESTINATION_TOKEN_URL"`
+	TokenPath    string `envconfig:"APP_PROVIDER_DESTINATION_TOKEN_PATH"`
+	ServiceURL   string `envconfig:"APP_PROVIDER_DESTINATION_SERVICE_URL"`
+	Dependency   string `envconfig:"APP_PROVIDER_DESTINATION_DEPENDENCY"`
+}
+
 // FormationAssignmentRequestBody contains the request input of the formation assignment async status request
 type FormationAssignmentRequestBody struct {
 	State         FormationAssignmentState `json:"state,omitempty"`
@@ -165,9 +175,10 @@ const DeleteErrorFormationState FormationState = "DELETE_ERROR"
 type Handler struct {
 	// Mappings is a map of string to Response, where the string value currently can be `formationID` or `tenantID`
 	// mapped to a particular Response that later will be validated in the E2E tests
-	Mappings          map[string][]Response
-	ShouldReturnError bool
-	config            Configuration
+	Mappings                  map[string][]Response
+	ShouldReturnError         bool
+	config                    Configuration
+	providerDestinationConfig ProviderDestinationConfig
 }
 
 // Response is used to model the response for a given formation or formation assignment notification request.
@@ -180,11 +191,12 @@ type Response struct {
 }
 
 // NewHandler creates a new Handler
-func NewHandler(notificationConfiguration Configuration) *Handler {
+func NewHandler(notificationConfiguration Configuration, providerDestinationConfig ProviderDestinationConfig) *Handler {
 	return &Handler{
-		Mappings:          make(map[string][]Response),
-		ShouldReturnError: true,
-		config:            notificationConfiguration,
+		Mappings:                  make(map[string][]Response),
+		ShouldReturnError:         true,
+		config:                    notificationConfiguration,
+		providerDestinationConfig: providerDestinationConfig,
 	}
 }
 
@@ -279,7 +291,7 @@ func (h *Handler) RespondWithIncompleteAndDestinationDetails(writer http.Respons
 			// BasicDestination on 'provider' instance level. Also, the basic destination has only a path for the URL and no correlationIds property
 			// Client Certificate Authentication destination on 'consumer' subaccount(implicitly) level
 			// SAML Assertion destination in the 'consumer' subaccount(implicitly) on provider instance level
-			responseWithPlaceholders := "{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"destinations\":[{\"name\":\"e2e-design-time-destination-name\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"http://e2e-design-time-url-example.com\",\"subaccountId\":\"%s\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"destinations\":[{\"name\":\"e2e-basic-destination-name\",\"description\":\"e2e-basic-destination description\",\"url\":\"/e2e-basic-url-path\",\"authentication\":\"BasicAuthentication\",\"subaccountId\":\"%s\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"e2e-saml-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-saml-assertion-destination-name\",\"description\":\"e2e saml assertion destination description\",\"url\":\"http://e2e-saml-url-example.com\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]},\"clientCertificateAuthentication\":{\"correlationIds\":[\"e2e-client-cert-auth-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-client-cert-auth-destination-name\",\"description\":\"e2e client cert auth destination description\",\"url\":\"http://e2e-client-cert-auth-url-example.com\",\"additionalProperties\":{\"e2e-clientCertAuthTestKey\":\"e2e-clientCertAuthTestVal\"}}]},\"oauth2ClientCredentials\":{\"correlationIds\":[\"e2e-oauth2-client-creds-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-oauth2-client-creds-destination-name\",\"subaccountId\":\"%s\",\"description\":\"e2e oauth2 client creds destination description\",\"url\":\"http://e2e-oauth2-client-creds-url-example.com\",\"additionalProperties\":{\"e2e-clientCertAuthTestKey\":\"e2e-oauth2ClientCredsTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}}"
+			responseWithPlaceholders := "{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"destinations\":[{\"name\":\"e2e-design-time-destination-name\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"http://e2e-design-time-url-example.com\",\"subaccountId\":\"%s\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"destinations\":[{\"name\":\"e2e-basic-destination-name\",\"description\":\"e2e-basic-destination description\",\"url\":\"/e2e-basic-url-path\",\"authentication\":\"BasicAuthentication\",\"subaccountId\":\"%s\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"e2e-saml-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-saml-assertion-destination-name\",\"description\":\"e2e saml assertion destination description\",\"url\":\"http://e2e-saml-url-example.com\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]},\"clientCertificateAuthentication\":{\"correlationIds\":[\"e2e-client-cert-auth-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-client-cert-auth-destination-name\",\"description\":\"e2e client cert auth destination description\",\"url\":\"http://e2e-client-cert-auth-url-example.com\",\"additionalProperties\":{\"e2e-clientCertAuthTestKey\":\"e2e-clientCertAuthTestVal\"}}]},\"oauth2ClientCredentials\":{\"correlationIds\":[\"e2e-oauth2-client-creds-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-oauth2-client-creds-destination-name\",\"subaccountId\":\"%s\",\"description\":\"e2e oauth2 client creds destination description\",\"url\":\"http://e2e-oauth2-client-creds-url-example.com\",\"additionalProperties\":{\"e2e-oauth2ClientCredsTestKey\":\"e2e-oauth2ClientCredsTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}}"
 			response := fmt.Sprintf(responseWithPlaceholders, h.config.TestProviderSubaccountID, h.config.TestProviderSubaccountID, h.config.TestDestinationInstanceID, h.config.TestDestinationInstanceID, h.config.TestProviderSubaccountID)
 			httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage(response))
 			return
@@ -584,7 +596,7 @@ func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Requ
 	}
 
 	r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
-	config := "{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"},\"oauth2ClientCredentials\":{\"url\":\"http://e2e-oauth2-client-creds-url-example.com\",\"tokenServiceUrl\":\"https://compass-external-services-mock.local.kyma.dev/secured/oauth/token\",\"clientId\":\"client_id\",\"clientSecret\":\"client_secret\"}}}}"
+	config := fmt.Sprintf("{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"},\"oauth2ClientCredentials\":{\"url\":\"http://e2e-oauth2-client-creds-url-example.com\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\",\"clientSecret\":\"%s\"}}}}", h.providerDestinationConfig.TokenURL+h.providerDestinationConfig.TokenPath, h.providerDestinationConfig.ClientID, h.providerDestinationConfig.ClientSecret)
 	h.asyncFAResponse(ctx, writer, r, Assign, config, responseFunc)
 }
 

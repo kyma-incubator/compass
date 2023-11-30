@@ -66,15 +66,16 @@ type config struct {
 	JWKSPath    string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
-	NotificationConfig       formationnotification.Configuration
-	DestinationCreatorConfig *destinationcreator.Config
-	DestinationServiceConfig DestinationServiceConfig
-	ORDServers               ORDServers
-	SelfRegConfig            selfreg.Config
-	DefaultTenant            string `envconfig:"APP_DEFAULT_TENANT"`
-	DefaultCustomerTenant    string `envconfig:"APP_DEFAULT_CUSTOMER_TENANT"`
-	TrustedTenant            string `envconfig:"APP_TRUSTED_TENANT"`
-	OnDemandTenant           string `envconfig:"APP_ON_DEMAND_TENANT"`
+	ProviderDestinationConfig formationnotification.ProviderDestinationConfig
+	NotificationConfig        formationnotification.Configuration
+	DestinationCreatorConfig  *destinationcreator.Config
+	DestinationServiceConfig  DestinationServiceConfig
+	ORDServers                ORDServers
+	SelfRegConfig             selfreg.Config
+	DefaultTenant             string `envconfig:"APP_DEFAULT_TENANT"`
+	DefaultCustomerTenant     string `envconfig:"APP_DEFAULT_CUSTOMER_TENANT"`
+	TrustedTenant             string `envconfig:"APP_TRUSTED_TENANT"`
+	OnDemandTenant            string `envconfig:"APP_ON_DEMAND_TENANT"`
 
 	KeyLoaderConfig credloader.KeysConfig
 
@@ -376,7 +377,7 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
-	notificationHandler := formationnotification.NewHandler(cfg.NotificationConfig)
+	notificationHandler := formationnotification.NewHandler(cfg.NotificationConfig, cfg.ProviderDestinationConfig)
 	// formation assignment notifications sync handlers
 	router.HandleFunc("/formation-callback/{tenantId}", notificationHandler.Patch).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
