@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -173,29 +174,37 @@ func (s *service) MultipleToTenantMapping(ctx context.Context, tenantInputs []mo
 		tenants = append(tenants, *tenant.ToBusinessTenantMapping(id))
 		tenantIDs[tenant.ExternalTenant] = id
 	}
-
+spew.Dump("tenants before move", tenants)
 	for i := 0; i < len(tenants); i++ { // Convert parent ID from external to internal id reference
-		if len(tenants[i].Parents) > 0 {
-			parentInternalIDs := make([]string, 0, len(tenants[i].Parents))
-			for _, parent := range tenants[i].Parents {
-				if _, ok := tenantIDs[parent]; ok { // If the parent is inserted in this request (otherwise we assume that it is already in the db)
-					parentInternalIDs = append(parentInternalIDs, tenantIDs[parent])
+		parentInternalIDs := make([]string, 0, len(tenants[i].Parents))
+		parentsInsertedInThisRequestIDs := make([]string, 0, len(tenants[i].Parents))
 
-					var moved bool
-					tenants, moved = MoveBeforeIfShould(tenants, parent, i) // Move my parent before me (to be inserted first) if it is not already
-					if moved {
-						i-- // Process the moved parent as well
-					}
-				} else {
-					internalPrentID, err := s.GetInternalTenant(ctx, parent)
-					if err != nil {
-						return nil, err
-					}
-					parentInternalIDs = append(parentInternalIDs, internalPrentID)
+		for _, parentID := range tenants[i].Parents {
+			if _, ok := tenantIDs[parentID]; ok { // If the parent is inserted in this request
+				parentInternalIDs = append(parentInternalIDs, tenantIDs[parentID])
+				parentsInsertedInThisRequestIDs = append(parentsInsertedInThisRequestIDs, parentID)
+			} else { // If the parent is already present in the DB - swap the external ID for the parent that is provided with the internal ID from the DB
+				internalPrentID, err := s.GetInternalTenant(ctx, parentID)
+				if err != nil {
+					return nil, err
 				}
+				parentInternalIDs = append(parentInternalIDs, internalPrentID)
 			}
-			tenants[i].Parents = parentInternalIDs
 		}
+
+		spew.Dump("tenant before updating parents", tenants[i])
+		tenants[i].Parents = parentInternalIDs
+		spew.Dump("tenant after updating parents", tenants[i])
+
+		tenantID := tenants[i].ID
+		for _, parentID := range parentsInsertedInThisRequestIDs {
+			var moved bool
+			tenants, moved = MoveBeforeIfShould(tenants, parentID, tenantID) // Move my parent before me (to be inserted first) if it is not already
+			if moved && i >= 0 { // In case the added tenant is first, and it has more than one parent inserted with this request `i` may end up being negative number on the next iteration of the loop so decrease `i` only if it is non-negative
+				i-- // Process the moved parent as well
+			}
+		}
+		spew.Dump("tenants after parent move", tenants)
 	}
 	return tenants, nil
 }
@@ -403,6 +412,7 @@ func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.Bus
 
 func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) error) ([]string, error) {
 	tenants, err := s.MultipleToTenantMapping(ctx, tenantInputs)
+	spew.Dump(tenants)
 	if err != nil {
 		return nil, err
 	}
@@ -560,25 +570,32 @@ func (s *service) ensureTenantExists(ctx context.Context, id string) error {
 }
 
 // MoveBeforeIfShould moves the tenant with id right before index only if it is not already before it
-func MoveBeforeIfShould(tenants []model.BusinessTenantMapping, id string, indx int) ([]model.BusinessTenantMapping, bool) {
-	var itemIndex int
+func MoveBeforeIfShould(tenants []model.BusinessTenantMapping, parentTenantID, childTenantID string) ([]model.BusinessTenantMapping, bool) {
+	var childTenantIndex int
 	for i, tenant := range tenants {
-		if tenant.ID == id {
-			itemIndex = i
+		if tenant.ID == childTenantID {
+			childTenantIndex = i
 		}
 	}
 
-	if itemIndex <= indx { // already before indx
+	var parentTenantIndex int
+	for i, tenant := range tenants {
+		if tenant.ID == parentTenantID {
+			parentTenantIndex = i
+		}
+	}
+
+	if parentTenantIndex <= childTenantIndex { // the parent tenant is already before the child tenant
 		return tenants, false
 	}
 
 	newTenants := make([]model.BusinessTenantMapping, 0, len(tenants))
 	for i := range tenants {
-		if i == itemIndex {
-			continue
+		if i == parentTenantIndex {
+			continue // skip adding the parent tenant to the new tenants here at it was already placed right before its child tenant
 		}
-		if i == indx {
-			newTenants = append(newTenants, tenants[itemIndex], tenants[i])
+		if i == childTenantIndex {
+			newTenants = append(newTenants, tenants[parentTenantIndex], tenants[i])
 			continue
 		}
 		newTenants = append(newTenants, tenants[i])

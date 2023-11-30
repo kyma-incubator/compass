@@ -9,11 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
@@ -38,7 +36,7 @@ var selfRegDistinguishLabel = "selfRegDistinguishLabel"
 func TestPgRepository_Upsert(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMapping(testID, testName)
+		tenantMappingModel := newModelBusinessTenantMapping(testID, testName, nil)
 		tenantMappingEntity := newEntityBusinessTenantMapping(testID, testName)
 
 		mockConverter := &automock.Converter{}
@@ -62,7 +60,7 @@ func TestPgRepository_Upsert(t *testing.T) {
 
 	t.Run("Error when upserting", func(t *testing.T) {
 		// GIVEN
-		tenantModel := newModelBusinessTenantMapping(testID, testName)
+		tenantModel := newModelBusinessTenantMapping(testID, testName, nil)
 		tenantEntity := newEntityBusinessTenantMapping(testID, testName)
 
 		mockConverter := &automock.Converter{}
@@ -82,14 +80,14 @@ func TestPgRepository_Upsert(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+		assert.EqualError(t, err, "while upserting business tenant mapping: Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
 func TestPgRepository_UnsafeCreate(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMapping(testID, testName)
+		tenantMappingModel := newModelBusinessTenantMapping(testID, testName, nil)
 		tenantMappingEntity := newEntityBusinessTenantMapping(testID, testName)
 
 		mockConverter := &automock.Converter{}
@@ -113,7 +111,7 @@ func TestPgRepository_UnsafeCreate(t *testing.T) {
 
 	t.Run("Error when creating", func(t *testing.T) {
 		// GIVEN
-		tenantModel := newModelBusinessTenantMapping(testID, testName)
+		tenantModel := newModelBusinessTenantMapping(testID, testName, nil)
 		tenantEntity := newEntityBusinessTenantMapping(testID, testName)
 
 		mockConverter := &automock.Converter{}
@@ -133,14 +131,15 @@ func TestPgRepository_UnsafeCreate(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+		assert.EqualError(t, err, "while creating business tenant mapping: Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
 func TestPgRepository_Get(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMapping(testID, testName)
+		tenantMappingModel := newModelBusinessTenantMapping(testID, testName, nil)
+		tenantMappingModelWithParents := newModelBusinessTenantMapping(testID, testName, []string{testParentID, testParentID2})
 		tenantMappingEntity := newEntityBusinessTenantMapping(testID, testName)
 
 		mockConverter := &automock.Converter{}
@@ -151,9 +150,16 @@ func TestPgRepository_Get(t *testing.T) {
 		rowsToReturn := fixSQLRows([]sqlRow{
 			{id: testID, name: testName, externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
 		})
+		parentRowsToReturn := fixSQLTenantParentsRows([]sqlTenantParentsRow{
+			{tenantID: testID, parentID: testParentID},
+			{tenantID: testID, parentID: testParentID2},
+		})
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
 			WithArgs(testID, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
+			WithArgs(testID).
+			WillReturnRows(parentRowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
@@ -164,7 +170,7 @@ func TestPgRepository_Get(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		assert.Equal(t, tenantMappingModel, result)
+		assert.Equal(t, tenantMappingModelWithParents, result)
 	})
 
 	t.Run("Error when get", func(t *testing.T) {
@@ -185,12 +191,37 @@ func TestPgRepository_Get(t *testing.T) {
 		require.Error(t, err)
 		require.Nil(t, result)
 	})
+	t.Run("Error when get parents", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		rowsToReturn := fixSQLRows([]sqlRow{
+			{id: testID, name: testName, externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+		})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+			WithArgs(testID, tenantEntity.Inactive).
+			WillReturnRows(rowsToReturn)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
+			WithArgs(testID).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(nil)
+
+		// WHEN
+		result, err := tenantMappingRepo.Get(ctx, testID)
+
+		// THEN
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
 }
 
 func TestPgRepository_GetByExternalTenant(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMapping(testID, testName)
+		tenantMappingModel := newModelBusinessTenantMapping(testID, testName, nil)
+		tenantMappingModelWithParents := newModelBusinessTenantMapping(testID, testName, []string{testParentID, testParentID2})
 		tenantMappingEntity := newEntityBusinessTenantMapping(testID, testName)
 
 		mockConverter := &automock.Converter{}
@@ -199,11 +230,18 @@ func TestPgRepository_GetByExternalTenant(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{id: testID, name: testName, externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+			{id: testID, name: testName, externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $2 `)).
+		parentRowsToReturn := fixSQLTenantParentsRows([]sqlTenantParentsRow{
+			{tenantID: testID, parentID: testParentID},
+			{tenantID: testID, parentID: testParentID2},
+		})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $2 `)).
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
+			WithArgs(testID).
+			WillReturnRows(parentRowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
@@ -214,7 +252,7 @@ func TestPgRepository_GetByExternalTenant(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		assert.Equal(t, tenantMappingModel, result)
+		assert.Equal(t, tenantMappingModelWithParents, result)
 	})
 
 	t.Run("Error when getting", func(t *testing.T) {
@@ -223,8 +261,41 @@ func TestPgRepository_GetByExternalTenant(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $ `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $ `)).
 			WithArgs(testExternal, tenantEntity.Inactive).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		result, err := tenantMappingRepo.GetByExternalTenant(ctx, testExternal)
+
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+		require.Nil(t, result)
+	})
+
+	t.Run("Error when getting parents", func(t *testing.T) {
+		// GIVEN
+		tenantMappingModel := newModelBusinessTenantMapping(testID, testName, nil)
+		tenantMappingEntity := newEntityBusinessTenantMapping(testID, testName)
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", tenantMappingEntity).Return(tenantMappingModel).Once()
+		defer mockConverter.AssertExpectations(t)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		rowsToReturn := fixSQLRows([]sqlRow{
+			{id: testID, name: testName, externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+		})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $ `)).
+			WithArgs(testExternal, tenantEntity.Inactive).
+			WillReturnRows(rowsToReturn)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
+			WithArgs(testID).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -374,9 +445,15 @@ func TestPgRepository_List(t *testing.T) {
 		notInitializedVal := false
 
 		tenantModels := []*model.BusinessTenantMapping{
-			newModelBusinessTenantMappingWithComputedValues("id1", "name1", &initializedVal),
-			newModelBusinessTenantMappingWithComputedValues("id2", "name2", &notInitializedVal),
-			newModelBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal),
+			newModelBusinessTenantMappingWithComputedValues("id1", "name1", &initializedVal, nil),
+			newModelBusinessTenantMappingWithComputedValues("id2", "name2", &notInitializedVal, nil),
+			newModelBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal, nil),
+		}
+
+		resultingTenantModels := []*model.BusinessTenantMapping{
+			newModelBusinessTenantMappingWithComputedValues("id1", "name1", &initializedVal, []string{testParentID, testParentID2}),
+			newModelBusinessTenantMappingWithComputedValues("id2", "name2", &notInitializedVal, []string{testParentID2}),
+			newModelBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal, nil),
 		}
 
 		tenantEntities := []*tenantEntity.Entity{
@@ -394,13 +471,30 @@ func TestPgRepository_List(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{
-			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &initializedVal},
-			{sqlRow: sqlRow{id: "id2", name: "name2", externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &notInitializedVal},
-			{sqlRow: sqlRow{id: "id3", name: "name3", externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &notInitializedVal},
+			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &initializedVal},
+			{sqlRow: sqlRow{id: "id2", name: "name2", externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &notInitializedVal},
+			{sqlRow: sqlRow{id: "id3", name: "name3", externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &notInitializedVal},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT DISTINCT t.id, t.external_name, t.external_tenant, t.parent, t.type, t.provider_name, t.status, ld.tenant_id IS NOT NULL AS initialized FROM public.business_tenant_mappings t LEFT JOIN public.label_definitions ld ON t.id=ld.tenant_id WHERE t.status = $1 ORDER BY initialized DESC, t.external_name ASC`)).
+		parentRowsForTenant1ToReturn := fixSQLTenantParentsRows([]sqlTenantParentsRow{
+			{tenantID: "id1", parentID: testParentID},
+			{tenantID: "id1", parentID: testParentID2},
+		})
+		parentRowsForTenant2ToReturn := fixSQLTenantParentsRows([]sqlTenantParentsRow{
+			{tenantID: "id2", parentID: testParentID2},
+		})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT DISTINCT t.id, t.external_name, t.external_tenant, t.type, t.provider_name, t.status, ld.tenant_id IS NOT NULL AS initialized FROM public.business_tenant_mappings t LEFT JOIN public.label_definitions ld ON t.id=ld.tenant_id WHERE t.status = $1 ORDER BY initialized DESC, t.external_name ASC`)).
 			WithArgs(tenantEntity.Active).
 			WillReturnRows(rowsToReturn)
+
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
+			WithArgs("id1").
+			WillReturnRows(parentRowsForTenant1ToReturn)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
+			WithArgs("id2").
+			WillReturnRows(parentRowsForTenant2ToReturn)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
+			WithArgs("id3").
+			WillReturnRows(sqlmock.NewRows(testTenantParentsTableColumns))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
@@ -411,7 +505,7 @@ func TestPgRepository_List(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		assert.Equal(t, tenantModels, result)
+		assert.Equal(t, resultingTenantModels, result)
 	})
 
 	t.Run("Error when listing", func(t *testing.T) {
@@ -420,7 +514,7 @@ func TestPgRepository_List(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT DISTINCT t.id, t.external_name, t.external_tenant, t.parent, t.type, t.provider_name, t.status, ld.tenant_id IS NOT NULL AS initialized FROM public.business_tenant_mappings t LEFT JOIN public.label_definitions ld ON t.id=ld.tenant_id WHERE t.status = $1 ORDER BY initialized DESC, t.external_name ASC`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT DISTINCT t.id, t.external_name, t.external_tenant, t.type, t.provider_name, t.status, ld.tenant_id IS NOT NULL AS initialized FROM public.business_tenant_mappings t LEFT JOIN public.label_definitions ld ON t.id=ld.tenant_id WHERE t.status = $1 ORDER BY initialized DESC, t.external_name ASC`)).
 			WithArgs(tenantEntity.Active).
 			WillReturnError(testError)
 
@@ -459,12 +553,18 @@ func TestPgRepository_ListPageBySearchTerm(t *testing.T) {
 		notInitializedVal := false
 
 		tenantModels := []*model.BusinessTenantMapping{
-			newModelBusinessTenantMappingWithComputedValues("id1", "name1", &initializedVal),
-			newModelBusinessTenantMappingWithComputedValues("id2", "name2", &notInitializedVal),
-			newModelBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal),
+			newModelBusinessTenantMappingWithComputedValues("id1", "name1", &initializedVal, nil),
+			newModelBusinessTenantMappingWithComputedValues("id2", "name2", &notInitializedVal, nil),
+			newModelBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal, nil),
 		}
 
-		tenantEntities := []*tenantEntity.Entity{
+		resultingTenantModels := []*model.BusinessTenantMapping{
+			newModelBusinessTenantMappingWithComputedValues("id1", "name1", &initializedVal, []string{testParentID, testParentID2}),
+			newModelBusinessTenantMappingWithComputedValues("id2", "name2", &notInitializedVal, []string{testParentID2}),
+			newModelBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal, nil),
+		}
+
+			tenantEntities := []*tenantEntity.Entity{
 			newEntityBusinessTenantMappingWithComputedValues("id1", "name1", &initializedVal),
 			newEntityBusinessTenantMappingWithComputedValues("id2", "name2", &notInitializedVal),
 			newEntityBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal),
@@ -477,7 +577,7 @@ func TestPgRepository_ListPageBySearchTerm(t *testing.T) {
 				EndCursor:   "",
 				HasNextPage: false,
 			},
-			TotalCount: len(tenantModels),
+			TotalCount: len(resultingTenantModels),
 		}
 
 		mockConverter := &automock.Converter{}
@@ -489,17 +589,34 @@ func TestPgRepository_ListPageBySearchTerm(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{
-			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &initializedVal},
-			{sqlRow: sqlRow{id: "id2", name: "name2", externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &notInitializedVal},
-			{sqlRow: sqlRow{id: "id3", name: "name3", externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &notInitializedVal},
+			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal,  typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &initializedVal},
+			{sqlRow: sqlRow{id: "id2", name: "name2", externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &notInitializedVal},
+			{sqlRow: sqlRow{id: "id3", name: "name3", externalTenant: testExternal,  typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &notInitializedVal},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE (status = $1 AND (id::text ILIKE $2 OR external_name ILIKE $3 OR external_tenant ILIKE $4)) ORDER BY external_name LIMIT 10 OFFSET 0`)).
+		parentRowsForTenant1ToReturn := fixSQLTenantParentsRows([]sqlTenantParentsRow{
+			{tenantID: "id1", parentID: testParentID},
+			{tenantID: "id1", parentID: testParentID2},
+		})
+		parentRowsForTenant2ToReturn := fixSQLTenantParentsRows([]sqlTenantParentsRow{
+			{tenantID: "id2", parentID: testParentID2},
+		})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE (status = $1 AND (id::text ILIKE $2 OR external_name ILIKE $3 OR external_tenant ILIKE $4)) ORDER BY external_name LIMIT 10 OFFSET 0`)).
 			WithArgs(tenantEntity.Active, "%name%", "%name%", "%name%").
 			WillReturnRows(rowsToReturn)
 
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT COUNT(*) FROM public.business_tenant_mappings WHERE (status = $1 AND (id::text ILIKE $2 OR external_name ILIKE $3 OR external_tenant ILIKE $4))`)).
 			WithArgs(tenantEntity.Active, "%name%", "%name%", "%name%").
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
+
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
+			WithArgs("id1").
+			WillReturnRows(parentRowsForTenant1ToReturn)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
+			WithArgs("id2").
+			WillReturnRows(parentRowsForTenant2ToReturn)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
+			WithArgs("id3").
+			WillReturnRows(sqlmock.NewRows(testTenantParentsTableColumns))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
@@ -523,7 +640,7 @@ func TestPgRepository_ListPageBySearchTerm(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE (status = $1 AND (id::text ILIKE $2 OR external_name ILIKE $3 OR external_tenant ILIKE $4)) ORDER BY external_name LIMIT 10 OFFSET 0`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE (status = $1 AND (id::text ILIKE $2 OR external_name ILIKE $3 OR external_tenant ILIKE $4)) ORDER BY external_name LIMIT 10 OFFSET 0`)).
 			WithArgs(tenantEntity.Active, "%name%", "%name%", "%name%").
 			WillReturnError(testError)
 
@@ -559,8 +676,12 @@ func TestPgRepository_ListByExternalTenants(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		initializedVal := true
-		tntModel := &model.BusinessTenantMapping{ID: id(), ExternalTenant: id(), Initialized: &initializedVal}
+		tntID := id()
+		externalTntID := id()
+		tntModel := &model.BusinessTenantMapping{ID: tntID, ExternalTenant: externalTntID, Initialized: &initializedVal}
 		tntEntity := &tenantEntity.Entity{ID: tntModel.ID, ExternalTenant: tntModel.ExternalTenant, Initialized: &initializedVal}
+
+		resultingTntModel := &model.BusinessTenantMapping{ID: tntID, ExternalTenant: externalTntID, Initialized: &initializedVal, Parents: []string{testParentID}}
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
@@ -569,12 +690,17 @@ func TestPgRepository_ListByExternalTenants(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{{sqlRow: sqlRow{id: tntModel.ID, externalTenant: tntModel.ExternalTenant}, initialized: &initializedVal}})
+		parentRowsToReturn := fixSQLTenantParentsRows([]sqlTenantParentsRow{
+			{tenantID: tntID, parentID: testParentID},
+		})
 
-		query := `SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant IN ($1)`
-
-		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant IN ($1)`)).
 			WithArgs(tntModel.ExternalTenant).
 			WillReturnRows(rowsToReturn)
+
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
+			WithArgs(tntID).
+			WillReturnRows(parentRowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
@@ -585,14 +711,18 @@ func TestPgRepository_ListByExternalTenants(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		assert.Equal(t, []*model.BusinessTenantMapping{tntModel}, result)
+		assert.Equal(t, []*model.BusinessTenantMapping{resultingTntModel}, result)
 	})
 
 	t.Run("Success when high load of tenants is requested", func(t *testing.T) {
 		// GIVEN
 		initializedVal := true
-		tntModel := &model.BusinessTenantMapping{ID: id(), ExternalTenant: id(), Initialized: &initializedVal}
+		tntID := id()
+		externalTntID := id()
+		tntModel := &model.BusinessTenantMapping{ID: tntID, ExternalTenant: externalTntID, Initialized: &initializedVal}
 		tntEntity := &tenantEntity.Entity{ID: tntModel.ID, ExternalTenant: tntModel.ExternalTenant, Initialized: &initializedVal}
+
+		resultingTntModel := &model.BusinessTenantMapping{ID: tntID, ExternalTenant: externalTntID, Initialized: &initializedVal, Parents: []string{testParentID}}
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
@@ -601,7 +731,9 @@ func TestPgRepository_ListByExternalTenants(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{{sqlRow: sqlRow{id: tntModel.ID, externalTenant: tntModel.ExternalTenant}, initialized: &initializedVal}})
-
+		parentRowsToReturn := fixSQLTenantParentsRows([]sqlTenantParentsRow{
+			{tenantID: tntID, parentID: testParentID},
+		})
 		// get first chunk of tenant IDs
 		firstChunkIDs := chunkSizedTenantIDs(49999)
 		firstChunkIDs = append(firstChunkIDs, tntModel.ExternalTenant)
@@ -610,12 +742,17 @@ func TestPgRepository_ListByExternalTenants(t *testing.T) {
 			WithArgs(firstChunkQueryArgs...).
 			WillReturnRows(rowsToReturn)
 
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
+			WithArgs(tntID).
+			WillReturnRows(parentRowsToReturn)
+
 		// get second chunk of tenant IDs
 		secondChunkIDs := chunkSizedTenantIDs(100)
 		secondChunkQuery, secondChunkIDsChunkQueryArgs := buildQueryWithTenantIDs(secondChunkIDs)
 		dbMock.ExpectQuery(regexp.QuoteMeta(secondChunkQuery)).
 			WithArgs(secondChunkIDsChunkQueryArgs...).
 			WillReturnRows(fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{}))
+
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
@@ -626,7 +763,7 @@ func TestPgRepository_ListByExternalTenants(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		assert.Equal(t, []*model.BusinessTenantMapping{tntModel}, result)
+		assert.Equal(t, []*model.BusinessTenantMapping{resultingTntModel}, result)
 	})
 
 	t.Run("Error when listing", func(t *testing.T) {
@@ -637,7 +774,7 @@ func TestPgRepository_ListByExternalTenants(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant IN ($1)`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant IN ($1)`)).
 			WithArgs(externalTenantID).
 			WillReturnError(testError)
 
@@ -669,39 +806,58 @@ func TestPgRepository_ListByExternalTenants(t *testing.T) {
 func TestPgRepository_ListByParentAndType(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		parentID := "test"
 
-		resultTntModel := []*model.BusinessTenantMapping{
-			newModelBusinessTenantMappingWithParentAndType("id1", "name1", parentID, nil, tenantEntity.Account),
+
+		tntModels := []*model.BusinessTenantMapping{
+			newModelBusinessTenantMappingWithParentAndType(testID, "name1", nil, nil, tenantEntity.Account), nil,
 		}
-
-		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", tenantEntity.Account)
+		resultTntModels := []*model.BusinessTenantMapping{
+			newModelBusinessTenantMappingWithParentAndType(testID, "name1", []string{testParentID, testParentID2}, nil, tenantEntity.Account), nil,
+		}
+		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount(testID, "name1", tenantEntity.Account)
 		tntEntity.Initialized = boolToPtr(true)
 
 		mockConverter := &automock.Converter{}
-		mockConverter.On("FromEntity", tntEntity).Return(resultTntModel[0]).Once()
+		mockConverter.On("FromEntity", tntEntity).Return(tntModels[0]).Once()
 		defer mockConverter.AssertExpectations(t)
 
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{
-			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal, parent: str.NewNullString(parentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: boolToPtr(true)},
+		tenantByParentRowsToReturn := fixSQLTenantParentsRows([]sqlTenantParentsRow{
+			{tenantID: testID, parentID: testParentID},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE parent = $1 AND type = $2`)).
-			WithArgs(parentID, tenantEntity.Account).
+		rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{
+			{sqlRow: sqlRow{id: testID, name: "name1", externalTenant: testExternal,  typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: boolToPtr(true)},
+		})
+
+		parentRowsToReturn := fixSQLTenantParentsRows([]sqlTenantParentsRow{
+			{tenantID: testID, parentID: testParentID},
+			{tenantID: testID, parentID: testParentID2},
+		})
+
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE parent_id = $1`)).
+			WithArgs(testParentID).
+			WillReturnRows(tenantByParentRowsToReturn)
+
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE id IN ($1) AND type = $2`)).
+			WithArgs(testID, tenantEntity.Account).
 			WillReturnRows(rowsToReturn)
+
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
+			WithArgs(testParentID).
+			WillReturnRows(parentRowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
 
 		// WHEN
-		result, err := tenantMappingRepo.ListByParentAndType(ctx, parentID, tenantEntity.Account)
+		result, err := tenantMappingRepo.ListByParentAndType(ctx, testParentID, tenantEntity.Account)
 
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		assert.Equal(t, resultTntModel, result)
+		assert.Equal(t, resultTntModels, result)
 	})
 
 	t.Run("Error when listing", func(t *testing.T) {
@@ -717,7 +873,7 @@ func TestPgRepository_ListByParentAndType(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE parent = $1 AND type = $2`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE parent = $1 AND type = $2`)).
 			WithArgs(parentID, tenantEntity.Account).
 			WillReturnError(testError)
 
@@ -751,10 +907,10 @@ func TestPgRepository_ListByParentAndType(t *testing.T) {
 func TestPgRepository_ListByType(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		parentID := "test"
+		//parentID := "test"
 
 		resultTntModel := []*model.BusinessTenantMapping{
-			newModelBusinessTenantMappingWithParentAndType("id1", "name1", parentID, nil, tenantEntity.Account),
+			//newModelBusinessTenantMappingWithParentAndType("id1", "name1", parentID, nil, tenantEntity.Account), nil,
 		}
 
 		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", tenantEntity.Account)
@@ -768,9 +924,9 @@ func TestPgRepository_ListByType(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{
-			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal, parent: str.NewNullString(parentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: boolToPtr(true)},
+			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal,  typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: boolToPtr(true)},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE type = $1`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE type = $1`)).
 			WithArgs(tenantEntity.Account).
 			WillReturnRows(rowsToReturn)
 
@@ -798,7 +954,7 @@ func TestPgRepository_ListByType(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE type = $1`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE type = $1`)).
 			WithArgs(tenantEntity.Account).
 			WillReturnError(testError)
 
@@ -829,7 +985,7 @@ func TestPgRepository_ListByType(t *testing.T) {
 }
 
 func TestPgRepository_ListBySubscribedRuntimesAndApplicationTemplates(t *testing.T) {
-	parentID := "test"
+	//parentID := "test"
 
 	tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", tenantEntity.Account)
 	tntEntity.Initialized = boolToPtr(true)
@@ -837,7 +993,7 @@ func TestPgRepository_ListBySubscribedRuntimesAndApplicationTemplates(t *testing
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		resultTntModel := []*model.BusinessTenantMapping{
-			newModelBusinessTenantMappingWithParentAndType("id1", "name1", parentID, nil, tenantEntity.Account),
+			//newModelBusinessTenantMappingWithParentAndType("id1", "name1", parentID, nil, tenantEntity.Account), nil,
 		}
 
 		mockConverter := &automock.Converter{}
@@ -848,9 +1004,9 @@ func TestPgRepository_ListBySubscribedRuntimesAndApplicationTemplates(t *testing
 		defer dbMock.AssertExpectations(t)
 
 		rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{
-			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal, parent: str.NewNullString(parentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: boolToPtr(true)},
+			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: boolToPtr(true)},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))`)).
 			WithArgs(tenantEntity.Subaccount, selfRegDistinguishLabel).
 			WillReturnRows(rowsToReturn)
 
@@ -874,7 +1030,7 @@ func TestPgRepository_ListBySubscribedRuntimesAndApplicationTemplates(t *testing
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))`)).
 			WithArgs(tenantEntity.Subaccount, selfRegDistinguishLabel).
 			WillReturnError(testError)
 
@@ -915,7 +1071,7 @@ func buildQueryWithTenantIDs(ids []string) (string, []driver.Value) {
 		}
 	}
 
-	queryFormat := `SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant IN (%s)`
+	queryFormat := `SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant IN (%s)`
 	query := fmt.Sprintf(queryFormat, sb.String())
 
 	return query, argumentValues
@@ -942,14 +1098,14 @@ func TestPgRepository_Update(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{id: testID, name: testName, externalTenant: testExternal, parent: repo.NewValidNullableString(testParentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+			{id: testID, name: testName, externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
 			WithArgs(testID, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, parent = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
-			WithArgs(testName, testExternal, testParentID, "account", "Compass", tenantEntity.Active, testID).
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
+			WithArgs(testName, testExternal, "account", "Compass", tenantEntity.Active, testID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -969,7 +1125,7 @@ func TestPgRepository_Update(t *testing.T) {
 		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, []string{testParentID}, nil, tenantEntity.Account)
 
 		db, dbMock := testdb.MockDatabase(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
 			WithArgs(testID, tenantEntity.Inactive).
 			WillReturnError(testError)
 
@@ -997,14 +1153,14 @@ func TestPgRepository_Update(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{id: testID, name: testName, externalTenant: testExternal, parent: repo.NewValidNullableString(testParentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+			{id: testID, name: testName, externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
 			WithArgs(testID, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, parent = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
-			WithArgs(testName, testExternal, testParentID, "account", "Compass", tenantEntity.Active, testID).
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
+			WithArgs(testName, testExternal, "account", "Compass", tenantEntity.Active, testID).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -1034,14 +1190,14 @@ func TestPgRepository_Update(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{id: testID, name: testName, externalTenant: testExternal, parent: repo.NewValidNullableString(testParentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+			{id: testID, name: testName, externalTenant: testExternal,  typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
 			WithArgs(testID, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, parent = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
-			WithArgs(testName, testExternal, testParentID2, "account", "Compass", tenantEntity.Active, testID).
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
+			WithArgs(testName, testExternal, "account", "Compass", tenantEntity.Active, testID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		for topLvlEntity := range resource.TopLevelEntities {
@@ -1086,14 +1242,14 @@ func TestPgRepository_Update(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{id: testID, name: testName, externalTenant: testExternal, parent: repo.NewValidNullableString(testParentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+			{id: testID, name: testName, externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
 			WithArgs(testID, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, parent = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
-			WithArgs(testName, testExternal, testParentID2, "account", "Compass", tenantEntity.Active, testID).
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
+			WithArgs(testName, testExternal, "account", "Compass", tenantEntity.Active, testID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		dbMock.ExpectQuery(`SELECT tenant_id, id, owner FROM (.+) WHERE tenant_id = \$1 AND owner = \$2`).
@@ -1126,13 +1282,13 @@ func TestPgRepository_Update(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{id: testID, name: testName, externalTenant: testExternal, parent: repo.NewValidNullableString(testParentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+			{id: testID, name: testName, externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
 			WithArgs(testID, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, parent = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
 			WithArgs(testName, testExternal, testParentID2, "account", "Compass", tenantEntity.Active, testID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
@@ -1170,14 +1326,14 @@ func TestPgRepository_Update(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{id: testID, name: testName, externalTenant: testExternal, parent: repo.NewValidNullableString(testParentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+			{id: testID, name: testName, externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
 			WithArgs(testID, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, parent = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
-			WithArgs(testName, testExternal, testParentID2, "account", "Compass", tenantEntity.Active, testID).
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
+			WithArgs(testName, testExternal, "account", "Compass", tenantEntity.Active, testID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		appTenantAccesses := fixTenantAccesses()
@@ -1209,7 +1365,7 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMapping(testID, testName)
+		tenantMappingModel := newModelBusinessTenantMapping(testID, testName, nil)
 		tenantMappingEntity := newEntityBusinessTenantMapping(testID, testName)
 
 		mockConverter := &automock.Converter{}
@@ -1217,9 +1373,9 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 
 		db, dbMock := testdb.MockDatabase(t)
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{id: testID, name: testName, externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+			{id: testID, name: testName, externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $2 `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $2 `)).
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
@@ -1255,7 +1411,7 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 	t.Run("Success when getting tenant before delete returns not found", func(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $2 `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $2 `)).
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnError(sql.ErrNoRows)
 
@@ -1273,7 +1429,7 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 	t.Run("Error when getting tenant before delete fail", func(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $2 `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $2 `)).
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnError(testError)
 
@@ -1291,7 +1447,7 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 
 	t.Run("Error when List tenant access fail", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMapping(testID, testName)
+		tenantMappingModel := newModelBusinessTenantMapping(testID, testName, nil)
 		tenantMappingEntity := newEntityBusinessTenantMapping(testID, testName)
 
 		mockConverter := &automock.Converter{}
@@ -1299,9 +1455,9 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 
 		db, dbMock := testdb.MockDatabase(t)
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{id: testID, name: testName, externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+			{id: testID, name: testName, externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $2 `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $2 `)).
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
@@ -1323,7 +1479,7 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 
 	t.Run("Error when Delete tenant access fail", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMapping(testID, testName)
+		tenantMappingModel := newModelBusinessTenantMapping(testID, testName, nil)
 		tenantMappingEntity := newEntityBusinessTenantMapping(testID, testName)
 
 		mockConverter := &automock.Converter{}
@@ -1331,9 +1487,9 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 
 		db, dbMock := testdb.MockDatabase(t)
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{id: testID, name: testName, externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+			{id: testID, name: testName, externalTenant: testExternal,typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $2 `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $2 `)).
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
@@ -1359,7 +1515,7 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 
 	t.Run("Error when delete fails", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMapping(testID, testName)
+		tenantMappingModel := newModelBusinessTenantMapping(testID, testName, nil)
 		tenantMappingEntity := newEntityBusinessTenantMapping(testID, testName)
 
 		mockConverter := &automock.Converter{}
@@ -1367,9 +1523,9 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 
 		db, dbMock := testdb.MockDatabase(t)
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{id: testID, name: testName, externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+			{id: testID, name: testName, externalTenant: testExternal,  typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $2 `)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant = $1 AND status != $2 `)).
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 

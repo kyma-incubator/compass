@@ -39,8 +39,8 @@ func TestResolver_Tenants(t *testing.T) {
 	testFirstParameterMissingError := errors.New("Invalid data [reason=missing required parameter 'first']")
 
 	modelTenants := []*model.BusinessTenantMapping{
-		newModelBusinessTenantMapping(testID, testName),
-		newModelBusinessTenantMapping("test1", "name1"),
+		newModelBusinessTenantMapping(testID, testName, nil),
+		newModelBusinessTenantMapping("test1", "name1", nil),
 	}
 
 	modelTenantsPage := &model.BusinessTenantMappingPage{

@@ -1,7 +1,6 @@
 package tenant_test
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"errors"
 	"testing"
@@ -43,6 +42,7 @@ var (
 	testError                    = errors.New("test error")
 	testTableColumns             = []string{"id", "external_name", "external_tenant", "type", "provider_name", "status"}
 	tenantAccessTestTableColumns = []string{"tenant_id", "id", "owner", "source"}
+	testTenantParentsTableColumns = []string{"tenant_id", "parent_id"}
 	tenantAccessInput            = graphql.TenantAccessInput{
 		TenantID:     testExternal,
 		ResourceType: graphql.TenantAccessObjectTypeApplication,
@@ -145,8 +145,8 @@ var (
 	}
 )
 
-func newModelBusinessTenantMapping(id, name string) *model.BusinessTenantMapping {
-	return newModelBusinessTenantMappingWithType(id, name, []string{}, nil, tenant.Account)
+func newModelBusinessTenantMapping(id, name string, parents []string) *model.BusinessTenantMapping {
+	return newModelBusinessTenantMappingWithType(id, name, parents, nil, tenant.Account)
 }
 
 func newModelBusinessTenantMappingWithLicense(id, name string, licenseType *string) *model.BusinessTenantMapping {
@@ -166,18 +166,18 @@ func newModelBusinessTenantMappingWithType(id, name string, parents []string, li
 	}
 }
 
-func newModelBusinessTenantMappingWithComputedValues(id, name string, initialized *bool) *model.BusinessTenantMapping {
-	tenantModel := newModelBusinessTenantMapping(id, name)
+func newModelBusinessTenantMappingWithComputedValues(id, name string, initialized *bool, parents []string) *model.BusinessTenantMapping {
+	tenantModel := newModelBusinessTenantMapping(id, name, parents)
 	tenantModel.Initialized = initialized
 	return tenantModel
 }
 
-func newModelBusinessTenantMappingWithParentAndType(id, name, parent string, licenseType *string, tntType tenant.Type) *model.BusinessTenantMapping {
+func newModelBusinessTenantMappingWithParentAndType(id, name string, parents []string, licenseType *string, tntType tenant.Type) *model.BusinessTenantMapping {
 	return &model.BusinessTenantMapping{
 		ID:             id,
 		Name:           name,
 		ExternalTenant: testExternal,
-		Parents:        []string{parent},
+		Parents:        parents,
 		Type:           tntType,
 		Provider:       testProvider,
 		Status:         tenant.Active,
@@ -218,10 +218,14 @@ type sqlRow struct {
 	id             string
 	name           string
 	externalTenant string
-	parent         sql.NullString
 	typeRow        string
 	provider       string
 	status         tenant.Status
+}
+
+type sqlTenantParentsRow struct {
+	tenantID string
+	parentID string
 }
 
 type sqlRowWithComputedValues struct {
@@ -233,7 +237,7 @@ func fixSQLRowsWithComputedValues(rows []sqlRowWithComputedValues) *sqlmock.Rows
 	columns := append(testTableColumns, initializedColumn)
 	out := sqlmock.NewRows(columns)
 	for _, row := range rows {
-		out.AddRow(row.id, row.name, row.externalTenant, row.parent, row.typeRow, row.provider, row.status, row.initialized)
+		out.AddRow(row.id, row.name, row.externalTenant, row.typeRow, row.provider, row.status, row.initialized)
 	}
 	return out
 }
@@ -242,6 +246,14 @@ func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
 	out := sqlmock.NewRows(testTableColumns)
 	for _, row := range rows {
 		out.AddRow(row.id, row.name, row.externalTenant, row.typeRow, row.provider, row.status)
+	}
+	return out
+}
+
+func fixSQLTenantParentsRows(rows []sqlTenantParentsRow) *sqlmock.Rows {
+	out := sqlmock.NewRows(testTenantParentsTableColumns)
+	for _, row := range rows {
+		out.AddRow(row.tenantID, row.parentID)
 	}
 	return out
 }
