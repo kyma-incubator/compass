@@ -259,6 +259,33 @@ spec:
                 value: {{ .Values.global.tests.destination.instanceID | quote }}
               - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
                 value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
+              - name: APP_PROVIDER_DESTINATION_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                    key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientIdKey }}
+              - name: APP_PROVIDER_DESTINATION_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                    key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientSecretKey }}
+              - name: APP_PROVIDER_DESTINATION_TOKEN_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                    key: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthUrlKey }}
+              - name: APP_PROVIDER_DESTINATION_TOKEN_PATH
+                value: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthTokenPath }}
+              - name: APP_PROVIDER_DESTINATION_SERVICE_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                    key: {{ .Values.global.tests.subscription.destinationOauthSecret.serviceUrlKey }}
+              - name: APP_PROVIDER_DESTINATION_DEPENDENCY
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                    key: {{ .Values.global.tests.subscription.destinationOauthSecret.dependencyKey }}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}

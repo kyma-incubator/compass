@@ -22,13 +22,14 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"net/http"
 	urlpkg "net/url"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
