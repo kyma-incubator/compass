@@ -247,7 +247,6 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 				Placeholders:         appTmplInput.Placeholders,
 				AccessLevel:          appTmplInput.AccessLevel,
 				Labels:               appTmplInput.Labels,
-				//Webhooks:             appTmplInput.Webhooks,
 			}
 			if err := d.appTmplSvc.Update(ctx, appTemplate.ID, false, appTemplateUpdateInput); err != nil {
 				return errors.Wrapf(err, "while updating application template with id %q", appTemplate.ID)
@@ -270,47 +269,10 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 	return nil
 }
 
-//func (d *DataLoader) SyncWebhooks(appTemplateID string, webhooksModel []model.Webhook, webhooksInput []*model.WebhookInput) error {
-//	for _, webhookInput := range webhooksInput {
-//		for _, webhookModel := range webhooksModel {
-//			if webhookInput.Type == webhookModel.Type {
-//				// update
-//			} else {
-//				// create
-//			}
-//		}
-//	}
-//
-//	missingInInput := make([]string, 0)
-//	for _, webhookModel := range webhooksModel {
-//		found := false
-//		for _, webhookInput := range webhooksInput {
-//			if webhookInput.Type == webhookModel.Type {
-//				found = true
-//				break
-//			}
-//		}
-//
-//		if !found {
-//			missingInInput = append(missingInInput, webhookModel.ID)
-//		}
-//	}
-//
-//	for _, id := range missingInInput {
-//		// delete webhook by appTemplateID
-//	}
-//
-//	return nil
-//}
-
 func (d *DataLoader) SyncWebhooks(ctx context.Context, appTemplateID string, webhooksModel []*model.Webhook, webhooksInput []*model.WebhookInput) error {
-	// Convert the webhooksModel slice to a map for easy access
 	webhooksModelMap := make(map[model.WebhookType]*model.Webhook)
 
-	fmt.Println(webhooksModel)
 	for _, webhook := range webhooksModel {
-		fmt.Println(webhook.ID, webhook.Type)
-		fmt.Println()
 		webhooksModelMap[webhook.Type] = webhook
 	}
 
@@ -331,10 +293,8 @@ func (d *DataLoader) SyncWebhooks(ctx context.Context, appTemplateID string, web
 		}
 	}
 
-	// The remaining items in webhooksModelMap are the ones that are in the database but not in the user input, so they should be deleted
 	for _, webhookModel := range webhooksModelMap {
 		log.C(ctx).Infof("Webhook of type %s is missin in the input. Will delete it...", webhookModel.Type)
-
 		if err := d.webhookSvc.Delete(ctx, webhookModel.ID, model.ApplicationTemplateWebhookReference); err != nil {
 			return err
 		}
