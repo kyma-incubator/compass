@@ -57,7 +57,6 @@ type UIDService interface {
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
 	DeleteAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) error
-	Update(ctx context.Context, tenant string, item *model.Webhook) error
 }
 
 // LabelUpsertService is responsible for service layer label upserts

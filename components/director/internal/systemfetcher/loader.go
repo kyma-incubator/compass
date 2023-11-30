@@ -301,7 +301,6 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 
 			log.C(ctx).Infof("Successfully updated the webhooks for application template with id %q", appTemplate.ID)
 		}
-
 	}
 
 	return nil
