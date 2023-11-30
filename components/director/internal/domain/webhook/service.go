@@ -316,6 +316,8 @@ func (s *service) retrieveWebhooks(ctx context.Context, application *model.Appli
 func (s *service) getTenantForWebhook(ctx context.Context, whType resource.Type) (string, error) {
 	if whType == resource.FormationTemplateWebhook {
 		return s.tenantSvc.ExtractTenantIDForTenantScopedFormationTemplates(ctx)
+	} else if whType == resource.Webhook {
+		return "", nil
 	}
 	return tenant.LoadFromContext(ctx)
 }
