@@ -35,6 +35,7 @@ type appTmplService interface {
 	Update(ctx context.Context, id string, override bool, in model.ApplicationTemplateUpdateInput) error
 }
 
+//go:generate mockery --name=webhookService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type webhookService interface {
 	ListForApplicationTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 	Create(ctx context.Context, owningResourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error)
@@ -93,6 +94,40 @@ func (d *DataLoader) LoadData(ctx context.Context, readDir func(dirname string) 
 
 	if err := tx.Commit(); err != nil {
 		return errors.Wrap(err, "while committing transaction")
+	}
+
+	return nil
+}
+
+func (d *DataLoader) syncWebhooks(ctx context.Context, appTemplateID string, webhooksModel []*model.Webhook, webhooksInput []*model.WebhookInput) error {
+	webhooksModelMap := make(map[model.WebhookType]*model.Webhook)
+
+	for _, webhook := range webhooksModel {
+		webhooksModelMap[webhook.Type] = webhook
+	}
+
+	for _, webhookInput := range webhooksInput {
+		webhookModel, exists := webhooksModelMap[webhookInput.Type]
+		var err error
+		if exists {
+			log.C(ctx).Infof("Webhook of type %s exists. Will update it...", webhookInput.Type)
+			err = d.webhookSvc.Update(ctx, webhookModel.ID, *webhookInput, model.ApplicationTemplateWebhookReference)
+			delete(webhooksModelMap, webhookInput.Type) // remove the item from the map after updating
+		} else {
+			log.C(ctx).Infof("Webhook of type %s does not exist. Will create it...", webhookInput.Type)
+			_, err = d.webhookSvc.Create(ctx, appTemplateID, *webhookInput, model.ApplicationTemplateWebhookReference)
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, webhookModel := range webhooksModelMap {
+		log.C(ctx).Infof("Webhook of type %s is missing in the input. Will delete it...", webhookModel.Type)
+		if err := d.webhookSvc.Delete(ctx, webhookModel.ID, model.ApplicationTemplateWebhookReference); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -260,44 +295,13 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 		}
 
 		if !areWebhooksEqual(webhooks, appTmplInput.Webhooks) {
-			if err := d.SyncWebhooks(ctx, appTemplate.ID, webhooks, appTmplInput.Webhooks); err != nil {
+			if err := d.syncWebhooks(ctx, appTemplate.ID, webhooks, appTmplInput.Webhooks); err != nil {
 				return errors.Wrapf(err, "while updating webhooks for application tempate with id %q", appTemplate.ID)
 			}
-		}
-	}
 
-	return nil
-}
-
-func (d *DataLoader) SyncWebhooks(ctx context.Context, appTemplateID string, webhooksModel []*model.Webhook, webhooksInput []*model.WebhookInput) error {
-	webhooksModelMap := make(map[model.WebhookType]*model.Webhook)
-
-	for _, webhook := range webhooksModel {
-		webhooksModelMap[webhook.Type] = webhook
-	}
-
-	for _, webhookInput := range webhooksInput {
-		webhookModel, exists := webhooksModelMap[webhookInput.Type]
-		var err error
-		if exists {
-			log.C(ctx).Infof("Webhook of type %s exists. Will update it...", webhookInput.Type)
-			err = d.webhookSvc.Update(ctx, webhookModel.ID, *webhookInput, model.ApplicationTemplateWebhookReference)
-			delete(webhooksModelMap, webhookInput.Type) // remove the item from the map after updating
-		} else {
-			log.C(ctx).Infof("Webhook of type %s does not exist. Will create it...", webhookInput.Type)
-			_, err = d.webhookSvc.Create(ctx, appTemplateID, *webhookInput, model.ApplicationTemplateWebhookReference)
+			log.C(ctx).Infof("Successfully updated the webhooks for application template with id %q", appTemplate.ID)
 		}
 
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, webhookModel := range webhooksModelMap {
-		log.C(ctx).Infof("Webhook of type %s is missin in the input. Will delete it...", webhookModel.Type)
-		if err := d.webhookSvc.Delete(ctx, webhookModel.ID, model.ApplicationTemplateWebhookReference); err != nil {
-			return err
-		}
 	}
 
 	return nil
