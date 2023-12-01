@@ -195,8 +195,12 @@ type AspectAPIDefinitionInput struct {
 }
 
 type AspectEventDefinitionInput struct {
-	OrdID  string    `json:"ordID"`
-	Subset []*string `json:"subset"`
+	OrdID  string                              `json:"ordID"`
+	Subset []*AspectEventDefinitionSubsetInput `json:"subset"`
+}
+
+type AspectEventDefinitionSubsetInput struct {
+	EventType *string `json:"eventType"`
 }
 
 type AspectInput struct {

@@ -600,20 +600,26 @@ func TestAspectEventDefinitionInput_Validate_OrdID(t *testing.T) {
 	}
 }
 
-func TestAspectEventDefinitionInput_Validate_Subset(t *testing.T) {
+// validate AspectEventDefinitionSubsetInput
+func TestAspectEventDefinitionSubsetInput_Validate_EventType(t *testing.T) {
 	testCases := []struct {
 		Name          string
-		Value         []*string
+		Value         *string
 		ExpectedValid bool
 	}{
 		{
 			Name:          "ExpectedValid",
-			Value:         []*string{str.Ptr("sap.cic.Order.OrderTransferred.v1"), str.Ptr("sap.cic.Order.OrderTransferred.v2")},
+			Value:         str.Ptr("sap.cic.Order.OrderTransferred.v1"),
 			ExpectedValid: true,
 		},
 		{
-			Name:          "Empty array",
-			Value:         []*string{},
+			Name:          "Empty string",
+			Value:         str.Ptr(inputvalidationtest.EmptyString),
+			ExpectedValid: false,
+		},
+		{
+			Name:          "Nil pointer",
+			Value:         nil,
 			ExpectedValid: false,
 		},
 	}
@@ -621,8 +627,8 @@ func TestAspectEventDefinitionInput_Validate_Subset(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			obj := fixValidAspectEventDefinitionInput()
-			obj.Subset = testCase.Value
+			obj := fixValidAspectEventDefinitionSubsetInput()
+			obj.EventType = testCase.Value
 			// WHEN
 			err := obj.Validate()
 			// THEN
@@ -656,6 +662,12 @@ func fixValidAspectAPIDefinitionInput() graphql.AspectAPIDefinitionInput {
 func fixValidAspectEventDefinitionInput() graphql.AspectEventDefinitionInput {
 	return graphql.AspectEventDefinitionInput{
 		OrdID:  "sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1",
-		Subset: []*string{str.Ptr("sap.cic.Order.OrderTransferred.v1")},
+		Subset: []*graphql.AspectEventDefinitionSubsetInput{{EventType: str.Ptr("sap.cic.Order.OrderTransferred.v1")}},
+	}
+}
+
+func fixValidAspectEventDefinitionSubsetInput() graphql.AspectEventDefinitionSubsetInput {
+	return graphql.AspectEventDefinitionSubsetInput{
+		EventType: str.Ptr("sap.cic.Order.OrderTransferred.v1"),
 	}
 }

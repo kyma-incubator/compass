@@ -189,6 +189,10 @@ type ComplexityRoot struct {
 		Subset func(childComplexity int) int
 	}
 
+	AspectEventDefinitionSubset struct {
+		EventType func(childComplexity int) int
+	}
+
 	Auth struct {
 		AccessStrategy                  func(childComplexity int) int
 		AdditionalHeaders               func(childComplexity int) int
@@ -1675,6 +1679,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AspectEventDefinition.Subset(childComplexity), true
+
+	case "AspectEventDefinitionSubset.eventType":
+		if e.complexity.AspectEventDefinitionSubset.EventType == nil {
+			break
+		}
+
+		return e.complexity.AspectEventDefinitionSubset.EventType(childComplexity), true
 
 	case "Auth.accessStrategy":
 		if e.complexity.Auth.AccessStrategy == nil {
@@ -5976,7 +5987,11 @@ input AspectAPIDefinitionInput {
 
 input AspectEventDefinitionInput {
 	ordID: String!
-	subset: [String]
+	subset: [AspectEventDefinitionSubsetInput]
+}
+
+input AspectEventDefinitionSubsetInput {
+	eventType: String
 }
 
 input AspectInput {
@@ -6587,7 +6602,11 @@ type AspectAPIDefinition {
 
 type AspectEventDefinition {
 	ordID: String!
-	subset: [String!]
+	subset: [AspectEventDefinitionSubset!]
+}
+
+type AspectEventDefinitionSubset {
+	eventType: String
 }
 
 type Auth {
@@ -14119,9 +14138,40 @@ func (ec *executionContext) _AspectEventDefinition_subset(ctx context.Context, f
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*string)
+	res := resTmp.([]*AspectEventDefinitionSubset)
 	fc.Result = res
-	return ec.marshalOString2ᚕᚖstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOAspectEventDefinitionSubset2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AspectEventDefinitionSubset_eventType(ctx context.Context, field graphql.CollectedField, obj *AspectEventDefinitionSubset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AspectEventDefinitionSubset",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EventType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auth_credential(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
@@ -34645,7 +34695,25 @@ func (ec *executionContext) unmarshalInputAspectEventDefinitionInput(ctx context
 			}
 		case "subset":
 			var err error
-			it.Subset, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			it.Subset, err = ec.unmarshalOAspectEventDefinitionSubsetInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputAspectEventDefinitionSubsetInput(ctx context.Context, obj interface{}) (AspectEventDefinitionSubsetInput, error) {
+	var it AspectEventDefinitionSubsetInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "eventType":
+			var err error
+			it.EventType, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -37184,6 +37252,30 @@ func (ec *executionContext) _AspectEventDefinition(ctx context.Context, sel ast.
 			}
 		case "subset":
 			out.Values[i] = ec._AspectEventDefinition_subset(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var aspectEventDefinitionSubsetImplementors = []string{"AspectEventDefinitionSubset"}
+
+func (ec *executionContext) _AspectEventDefinitionSubset(ctx context.Context, sel ast.SelectionSet, obj *AspectEventDefinitionSubset) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, aspectEventDefinitionSubsetImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AspectEventDefinitionSubset")
+		case "eventType":
+			out.Values[i] = ec._AspectEventDefinitionSubset_eventType(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -41511,6 +41603,20 @@ func (ec *executionContext) unmarshalNAspectEventDefinitionInput2ᚖgithubᚗcom
 	return &res, err
 }
 
+func (ec *executionContext) marshalNAspectEventDefinitionSubset2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubset(ctx context.Context, sel ast.SelectionSet, v AspectEventDefinitionSubset) graphql.Marshaler {
+	return ec._AspectEventDefinitionSubset(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAspectEventDefinitionSubset2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubset(ctx context.Context, sel ast.SelectionSet, v *AspectEventDefinitionSubset) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AspectEventDefinitionSubset(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNAspectInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectInput(ctx context.Context, v interface{}) (AspectInput, error) {
 	return ec.unmarshalInputAspectInput(ctx, v)
 }
@@ -43041,24 +43147,6 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	return ret
 }
 
-func (ec *executionContext) unmarshalNString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNString2string(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalNString2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec.marshalNString2string(ctx, sel, *v)
-}
-
 func (ec *executionContext) marshalNSystemAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v SystemAuth) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -43811,6 +43899,78 @@ func (ec *executionContext) unmarshalOAspectEventDefinitionInput2ᚕᚖgithubᚗ
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) marshalOAspectEventDefinitionSubset2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetᚄ(ctx context.Context, sel ast.SelectionSet, v []*AspectEventDefinitionSubset) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAspectEventDefinitionSubset2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubset(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalOAspectEventDefinitionSubsetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetInput(ctx context.Context, v interface{}) (AspectEventDefinitionSubsetInput, error) {
+	return ec.unmarshalInputAspectEventDefinitionSubsetInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOAspectEventDefinitionSubsetInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetInput(ctx context.Context, v interface{}) ([]*AspectEventDefinitionSubsetInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*AspectEventDefinitionSubsetInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOAspectEventDefinitionSubsetInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOAspectEventDefinitionSubsetInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetInput(ctx context.Context, v interface{}) (*AspectEventDefinitionSubsetInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOAspectEventDefinitionSubsetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalOAspectInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectInputᚄ(ctx context.Context, v interface{}) ([]*AspectInput, error) {
@@ -45070,70 +45230,6 @@ func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel
 	ret := make(graphql.Array, len(v))
 	for i := range v {
 		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
-	}
-
-	return ret
-}
-
-func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*string, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
-	}
-
-	return ret
-}
-
-func (ec *executionContext) unmarshalOString2ᚕᚖstringᚄ(ctx context.Context, v interface{}) ([]*string, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*string, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNString2ᚖstring(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOString2ᚕᚖstringᚄ(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalNString2ᚖstring(ctx, sel, v[i])
 	}
 
 	return ret

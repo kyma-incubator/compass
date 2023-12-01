@@ -6,7 +6,6 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/kyma-incubator/compass/components/director/internal/common"
-	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 )
 
 // Validate validates IntegrationDependencyInput object
@@ -45,5 +44,11 @@ func (a AspectAPIDefinitionInput) Validate() error {
 func (a AspectEventDefinitionInput) Validate() error {
 	return validation.ValidateStruct(&a,
 		validation.Field(&a.OrdID, validation.Required, validation.Length(common.MinOrdIDLength, common.MaxOrdIDLength), validation.Match(regexp.MustCompile(common.AspectEventResourceRegex))),
-		validation.Field(&a.Subset, validation.Required, inputvalidation.Each(validation.Match(regexp.MustCompile(common.EventResourceEventTypeRegex)))))
+		validation.Field(&a.Subset))
+}
+
+// Validate validates AspectEventDefinitionSubsetInput object
+func (a AspectEventDefinitionSubsetInput) Validate() error {
+	return validation.ValidateStruct(&a,
+		validation.Field(&a.EventType, validation.Required, validation.Match(regexp.MustCompile(common.EventResourceEventTypeRegex))))
 }

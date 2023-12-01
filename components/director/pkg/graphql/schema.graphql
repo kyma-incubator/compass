@@ -468,7 +468,11 @@ input AspectAPIDefinitionInput {
 
 input AspectEventDefinitionInput {
 	ordID: String!
-	subset: [String]
+	subset: [AspectEventDefinitionSubsetInput]
+}
+
+input AspectEventDefinitionSubsetInput {
+	eventType: String
 }
 
 input AspectInput {
@@ -1079,7 +1083,11 @@ type AspectAPIDefinition {
 
 type AspectEventDefinition {
 	ordID: String!
-	subset: [String!]
+	subset: [AspectEventDefinitionSubset!]
+}
+
+type AspectEventDefinitionSubset {
+	eventType: String
 }
 
 type Auth {

@@ -31,6 +31,11 @@ type AspectAPIDefinition struct {
 
 // AspectEventDefinition represents the Aspect Event Definition object
 type AspectEventDefinition struct {
-	OrdID  string    `json:"ordID"`
-	Subset []*string `json:"subset"`
+	OrdID  string                         `json:"ordID"`
+	Subset []*AspectEventDefinitionSubset `json:"subset"`
+}
+
+// AspectEventDefinitionSubset represents the Aspect Event Definition Subset object
+type AspectEventDefinitionSubset struct {
+	EventType *string `json:"eventType"`
 }
