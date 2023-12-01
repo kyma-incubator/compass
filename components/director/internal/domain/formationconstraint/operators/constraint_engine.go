@@ -183,7 +183,7 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 			DestinationCreatorOperator:                                   NewDestinationCreatorInput,
 			ConfigMutatorOperator:                                        NewConfigMutatorInput,
 			RedirectNotificationOperator:                                 NewRedirectNotificationInput,
-			RedirectNotificationCleanupOperator:                          RedirectNotificationCleanupOperatorInput,
+			AsynchronousFlowControlOperator:                              AsynchronousFlowControlOperatorInput,
 		},
 		runtimeTypeLabelKey:     runtimeTypeLabelKey,
 		applicationTypeLabelKey: applicationTypeLabelKey,
@@ -197,7 +197,7 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 		DestinationCreatorOperator:                                   ce.DestinationCreator,
 		ConfigMutatorOperator:                                        ce.MutateConfig,
 		RedirectNotificationOperator:                                 ce.RedirectNotification,
-		RedirectNotificationCleanupOperator:                          ce.RedirectNotificationCleanupOperator,
+		AsynchronousFlowControlOperator:                              ce.AsynchronousFlowControlOperator,
 	}
 	return ce
 }

@@ -13,18 +13,21 @@ import (
 )
 
 const (
-	// RedirectNotificationCleanupOperator represents the redirect notification operator
-	RedirectNotificationCleanupOperator = "RedirectNotificationCleanup"
+	// AsynchronousFlowControlOperator represents the asynchronous flow control operator
+	AsynchronousFlowControlOperator = "AsynchronousFlowControl"
 )
 
-// RedirectNotificationCleanupOperatorInput is input constructor for RedirectNotificationCleanupOperator. It returns empty OperatorInput
-func RedirectNotificationCleanupOperatorInput() OperatorInput {
+// AsynchronousFlowControlOperatorInput is input constructor for AsynchronousFlowControlOperator. It returns empty OperatorInput
+func AsynchronousFlowControlOperatorInput() OperatorInput {
 	return &formationconstraint.RedirectNotificationInput{}
 }
 
-// RedirectNotificationCleanupOperator is an operator that based on different condition could redirect the formation assignment notification
-func (e *ConstraintEngine) RedirectNotificationCleanupOperator(ctx context.Context, input OperatorInput) (bool, error) {
-	log.C(ctx).Infof("Starting executing operator: %s", RedirectNotificationCleanupOperator)
+// AsynchronousFlowControlOperator is an operator that based on different conditions behaves like the redirect operator, it redirects the formation assignment notification.
+// In other cases it mutates the state, in order to control the flow of the engine, so that the assignment doesn't get deleted too early,
+// and it resends the notification to the redirection endpoint, so that it can finish the cleanup.
+// It introduces new deleting states.
+func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, input OperatorInput) (bool, error) {
+	log.C(ctx).Infof("Starting executing operator: %s", AsynchronousFlowControlOperator)
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -33,9 +36,9 @@ func (e *ConstraintEngine) RedirectNotificationCleanupOperator(ctx context.Conte
 		}
 	}()
 
-	ri, ok := input.(*formationconstraint.RedirectNotificationCleanupInput)
+	ri, ok := input.(*formationconstraint.AsynchronousFlowControlOperatorInput)
 	if !ok {
-		return false, errors.Errorf("Incompatible input for operator: %s", RedirectNotificationCleanupOperator)
+		return false, errors.Errorf("Incompatible input for operator: %s", AsynchronousFlowControlOperator)
 	}
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q for location with constraint type: %q and operation name: %q during %q operation", ri.ResourceType, ri.ResourceSubtype, ri.Location.ConstraintType, ri.Location.OperationName, ri.Operation)

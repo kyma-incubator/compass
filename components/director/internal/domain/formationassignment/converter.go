@@ -50,13 +50,20 @@ func (c *converter) ToGraphQL(in *model.FormationAssignment) (*graphql.Formation
 		value = configurationStrValue
 	}
 
+	state := in.State
+	if state == string(model.InstanceCreatorDeletingAssignmentState) {
+		state = string(model.DeletingAssignmentState)
+	} else if state == string(model.InstanceCreatorDeleteErrorAssignmentState) {
+		state = string(model.DeleteErrorAssignmentState)
+	}
+
 	return &graphql.FormationAssignment{
 		ID:            in.ID,
 		Source:        in.Source,
 		SourceType:    graphql.FormationAssignmentType(in.SourceType),
 		Target:        in.Target,
 		TargetType:    graphql.FormationAssignmentType(in.TargetType),
-		State:         in.State,
+		State:         state,
 		Value:         value,
 		Configuration: configurationStrValue,
 		Error:         errorStrValue,
