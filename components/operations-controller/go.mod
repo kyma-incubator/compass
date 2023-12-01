@@ -4,8 +4,8 @@ go 1.20
 
 require (
 	github.com/go-logr/logr v1.2.3
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231120121524-9ee5c58d6fb0
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231120121524-9ee5c58d6fb0
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231201130323-2102894ae93f
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231201130323-2102894ae93f
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.7.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.17.0
@@ -95,7 +95,7 @@ require (
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/oauth2 v0.8.0 // indirect
+	golang.org/x/oauth2 v0.11.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/term v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
