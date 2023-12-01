@@ -114,7 +114,7 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		bundles {%s}
 		auths {%s}
 		eventingConfiguration { defaultURL }
-	`, fp.ForWebhooks(), fp.Page(fp.ForIntegrationDependencies()), fp.Page(fp.ForBundle()), fp.ForSystemAuth()),
+	`, fp.ForWebhooks(), fp.Page(fp.ForIntegrationDependency()), fp.Page(fp.ForBundle()), fp.ForSystemAuth()),
 		ctx, []string{"Application.bundle", "Application.apiDefinition", "Application.eventDefinition"})
 }
 
@@ -780,8 +780,8 @@ func (fp *GqlFieldsProvider) ForTenantAccess() string {
 	`
 }
 
-// ForIntegrationDependencies missing godoc
-func (fp *GqlFieldsProvider) ForIntegrationDependencies() string {
+// ForIntegrationDependency missing godoc
+func (fp *GqlFieldsProvider) ForIntegrationDependency() string {
 	return fmt.Sprintf(`
 		id
 		name
@@ -806,7 +806,7 @@ func (fp *GqlFieldsProvider) ForAspects() string {
 		apiResources {ordID}
 		eventResources {
 			ordID
-			subset
+			subset {eventType}
 		}
 	`
 }
