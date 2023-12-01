@@ -95,6 +95,39 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 	}
 }
 
+func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*AssignmentMappingPairWithOperation, error) {
+	log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
+	notificationReq, err := fan.GenerateFormationAssignmentNotification(ctx, fa, model.AssignFormation)
+	if err != nil {
+		return nil, errors.Wrapf(err, "An error occurred while generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
+
+	}
+
+	log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q", reverseFA.ID, reverseFA.FormationID)
+	reverseNotificationReq, err := fan.GenerateFormationAssignmentNotification(ctx, reverseFA, model.AssignFormation)
+	if err != nil {
+		return nil, errors.Wrapf(err, "An error occurred while generating reverse formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
+	}
+
+	faReqMapping := FormationAssignmentRequestMapping{
+		Request:             notificationReq,
+		FormationAssignment: fa,
+	}
+
+	reverseFAReqMapping := FormationAssignmentRequestMapping{
+		Request:             reverseNotificationReq,
+		FormationAssignment: reverseFA,
+	}
+
+	return &AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &AssignmentMappingPair{
+			AssignmentReqMapping:        &faReqMapping,
+			ReverseAssignmentReqMapping: &reverseFAReqMapping,
+		},
+		Operation: operation,
+	}, nil
+}
+
 // PrepareDetailsForNotificationStatusReturned creates NotificationStatusReturnedOperationDetails by given tenantID, formation assignment and formation operation
 func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, notificationStatusReport *statusreport.NotificationStatusReport) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
 	var targetType model.ResourceType

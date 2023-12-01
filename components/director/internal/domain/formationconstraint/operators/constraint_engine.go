@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -97,6 +100,26 @@ type formationAssignmentRepository interface {
 	Update(ctx context.Context, model *model.FormationAssignment) error
 }
 
+// FormationAssignmentService represents the formation assignment notification service for generating notifications
+//
+//go:generate mockery --name=formationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationAssignmentService interface {
+	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
+}
+
+// FormationAssignmentNotificationService represents the formation assignment notification service for generating notifications
+//
+//go:generate mockery --name=formationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationAssignmentNotificationService interface {
+	GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)
+	GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping, reverseFaRequestMapping *formationassignment.FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)
+}
+
+//go:generate mockery --exported --name=notificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type notificationService interface {
+	SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhook.Response, error)
+}
+
 // OperatorInput represents the input needed by the constraint operator
 type OperatorInput interface{}
 
@@ -111,24 +134,27 @@ type OperatorInputConstructor func() OperatorInput
 
 // ConstraintEngine determines which constraints are applicable to the reached join point and enforces them
 type ConstraintEngine struct {
-	transact                  persistence.Transactioner
-	constraintSvc             formationConstraintSvc
-	tenantSvc                 tenantService
-	asaSvc                    automaticScenarioAssignmentService
-	destinationSvc            destinationService
-	destinationCreatorSvc     destinationCreatorService
-	systemAuthSvc             systemAuthService
-	formationRepo             formationRepository
-	labelRepo                 labelRepository
-	labelService              labelService
-	applicationRepository     applicationRepository
-	runtimeContextRepo        runtimeContextRepo
-	formationTemplateRepo     formationTemplateRepo
-	formationAssignmentRepo   formationAssignmentRepository
-	operators                 map[OperatorName]OperatorFunc
-	operatorInputConstructors map[OperatorName]OperatorInputConstructor
-	runtimeTypeLabelKey       string
-	applicationTypeLabelKey   string
+	transact                           persistence.Transactioner
+	constraintSvc                      formationConstraintSvc
+	tenantSvc                          tenantService
+	asaSvc                             automaticScenarioAssignmentService
+	destinationSvc                     destinationService
+	destinationCreatorSvc              destinationCreatorService
+	systemAuthSvc                      systemAuthService
+	formationRepo                      formationRepository
+	labelRepo                          labelRepository
+	labelService                       labelService
+	applicationRepository              applicationRepository
+	runtimeContextRepo                 runtimeContextRepo
+	formationTemplateRepo              formationTemplateRepo
+	formationAssignmentRepo            formationAssignmentRepository
+	formationAssignmentService         formationAssignmentService
+	formationAssignmentNotificationSvc formationAssignmentNotificationService
+	notificationSvc                    notificationService
+	operators                          map[OperatorName]OperatorFunc
+	operatorInputConstructors          map[OperatorName]OperatorInputConstructor
+	runtimeTypeLabelKey                string
+	applicationTypeLabelKey            string
 }
 
 // NewConstraintEngine returns new ConstraintEngine
@@ -157,6 +183,7 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 			DestinationCreatorOperator:                                   NewDestinationCreatorInput,
 			ConfigMutatorOperator:                                        NewConfigMutatorInput,
 			RedirectNotificationOperator:                                 NewRedirectNotificationInput,
+			RedirectNotificationCleanupOperator:                          RedirectNotificationCleanupOperatorInput,
 		},
 		runtimeTypeLabelKey:     runtimeTypeLabelKey,
 		applicationTypeLabelKey: applicationTypeLabelKey,
@@ -170,6 +197,7 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 		DestinationCreatorOperator:                                   ce.DestinationCreator,
 		ConfigMutatorOperator:                                        ce.MutateConfig,
 		RedirectNotificationOperator:                                 ce.RedirectNotification,
+		RedirectNotificationCleanupOperator:                          ce.RedirectNotificationCleanupOperator,
 	}
 	return ce
 }

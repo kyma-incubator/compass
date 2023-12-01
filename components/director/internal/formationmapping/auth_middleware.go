@@ -13,10 +13,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
-	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
-
 	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
@@ -52,7 +50,7 @@ type FormationAssignmentService interface {
 //
 //go:generate mockery --name=FormationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentNotificationService interface {
-	GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequest, error)
+	GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)
 }
 
 // formationService is responsible for the service-layer Formation operations

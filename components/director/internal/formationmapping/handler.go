@@ -561,51 +561,24 @@ func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAss
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
-	notificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, fa, model.AssignFormation)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
-		return
-	}
-
 	reverseFA, err := h.faService.GetReverseBySourceAndTarget(ctx, fa.FormationID, fa.Source, fa.Target)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while getting reverse formation assignment by source: %q and target: %q", fa.Source, fa.Target)
 		return
 	}
 
-	log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q", reverseFA.ID, reverseFA.FormationID)
-	reverseNotificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, reverseFA, model.AssignFormation)
+	assignmentPair, err := h.faNotificationService.GenerateFormationAssignmentPair(ctx, reverseFA, fa, model.AssignFormation)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while generating reverse formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
 		return
 	}
 
-	if notificationReq == nil && reverseNotificationReq == nil {
+	if assignmentPair.AssignmentReqMapping.Request == nil && assignmentPair.ReverseAssignmentReqMapping.Request == nil {
 		log.C(ctx).Info("No formation assignment notification is generated. Returning...")
 		return
 	}
 
-	faReqMapping := formationassignment.FormationAssignmentRequestMapping{
-		Request:             notificationReq,
-		FormationAssignment: fa,
-	}
-
-	reverseFAReqMapping := formationassignment.FormationAssignmentRequestMapping{
-		Request:             reverseNotificationReq,
-		FormationAssignment: reverseFA,
-	}
-
-	assignmentPair := formationassignment.AssignmentMappingPairWithOperation{
-		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			AssignmentReqMapping:        &reverseFAReqMapping, // the status update call is a response to the original notification that's why here we switch the assignment and reverse assignment
-			ReverseAssignmentReqMapping: &faReqMapping,
-		},
-		Operation: model.AssignFormation,
-	}
-
 	log.C(ctx).Infof("Processing formation assignment pair and its notifications...")
-	_, err = h.faService.ProcessFormationAssignmentPair(ctx, &assignmentPair)
+	_, err = h.faService.ProcessFormationAssignmentPair(ctx, assignmentPair)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while processing formation assignment pair and its notifications")
 		if updateError := h.faService.SetAssignmentToErrorState(ctx, reverseFA, err.Error(), formationassignment.TechnicalError, model.CreateErrorAssignmentState); updateError != nil {
@@ -718,11 +691,14 @@ func decodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) err
 }
 
 func determineOperationBasedOnFormationAssignmentState(fa *model.FormationAssignment) model.FormationOperation {
-	unassignOperationStates := []string{string(model.DeletingAssignmentState), string(model.DeleteErrorAssignmentState)}
-	if str.ValueIn(fa.State, unassignOperationStates) {
-		return model.UnassignFormation
+	assignOperationStates := []string{string(model.InitialAssignmentState),
+		string(model.ConfigPendingAssignmentState),
+		string(model.ReadyAssignmentState),
+		string(model.CreateErrorAssignmentState)}
+	if str.ValueIn(fa.State, assignOperationStates) {
+		return model.AssignFormation
 	}
-	return model.AssignFormation
+	return model.UnassignFormation
 }
 
 func (mr *malformedRequest) Error() string {
