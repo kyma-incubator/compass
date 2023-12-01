@@ -156,59 +156,59 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
+      version: "v20231121-e91239f0"
       name: compass-connector
     connectivity_adapter:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
+      version: "v20231121-e91239f0"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
+      version: "v20231121-e91239f0"
       name: compass-pairing-adapter
     director:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-director:v20231130-437cb4c7"
+      version: "v20231130-437cb4c7"
       name: compass-director
     hydrator:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-hydrator:v20231124-b89ab74b"
+      version: "v20231124-b89ab74b"
       name: compass-hydrator
     ias_adapter:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-ias-adapter:v20231129-66fafbe9"
+      version: "v20231129-66fafbe9"
       name: compass-ias-adapter
     kyma_adapter:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
+      version: "v20231121-e91239f0"
       name: compass-kyma-adapter
     instance_creator:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
+      version: "v20231121-e91239f0"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231120-caf798d9"
+      version: "v20231120-caf798d9"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
+      version: "v20231121-e91239f0"
       name: compass-gateway
     operations_controller:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
+      version: "v20231121-e91239f0"
       name: compass-operations-controller
     ord_service:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-ord-service:v20231123-7a85e46c"
+      version: "v20231123-7a85e46c"
       name: compass-ord-service
     schema_migrator:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-schema-migrator:v20231127-7348d2ae"
+      version: "v20231127-7348d2ae"
       name: compass-schema-migrator
     system_broker:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
+      version: "v20231121-e91239f0"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -217,7 +217,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-e2e-tests:v20231130-4e562960"
+      version: "v20231130-4e562960"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -225,7 +225,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: prod/incubator/
-      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-e2e-tests:v20231130-4e562960"
+      version: "v20231130-4e562960"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -825,8 +825,8 @@ global:
     auth:
       allowedConnectSrc: "https://*.ondemand.com"
       secretName: "cockpit-auth-secret"
-      idpHost: ""
-      clientID: ""
+      idpHost: "https://as5rzk3dn.accounts400.ondemand.com"
+      clientID: "996db76f-1660-4c53-8a12-8117b343ccca"
       scopes: "openid profile email"
       path: "/oauth2/certs"
   destinationFetcher:
