@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"regexp"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -208,7 +207,7 @@ func constructGlobalAccountTenant(ctx context.Context, jsonPayload, name, subdom
 	if !customerIDResult.Exists() {
 		log.C(ctx).Warnf("Missig or invalid format of field: %s for tenant with id: %s", ep.FieldMapping.CustomerIDField, externalTenant)
 	} else {
-		parentID = strings.TrimLeft(customerIDResult.String(), "0")
+		parentID = tenant.TrimCustomerIDLeadingZeros(customerIDResult.String())
 	}
 	return &model.BusinessTenantMappingInput{
 		Name:           name,
@@ -238,7 +237,7 @@ func constructSubaccountTenant(ctx context.Context, jsonPayload, name, subdomain
 	var customerIDValue *string
 	customerIDField := gjson.Get(jsonPayload, ep.FieldMapping.LabelsField).Get(ep.FieldMapping.CustomerIDField)
 	if customerIDFieldArr := customerIDField.Array(); customerIDField.IsArray() && len(customerIDFieldArr) > 0 {
-		customerIDValue = str.Ptr(strings.TrimLeft(customerIDFieldArr[0].String(), "0"))
+		customerIDValue = str.Ptr(tenant.TrimCustomerIDLeadingZeros(customerIDFieldArr[0].String()))
 	}
 
 	return &model.BusinessTenantMappingInput{

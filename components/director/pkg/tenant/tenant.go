@@ -18,6 +18,7 @@ package tenant
 
 import (
 	"context"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
@@ -45,4 +46,8 @@ func LoadFromContext(ctx context.Context) (string, error) {
 // SaveToContext saves the provided tenantID into the respective context
 func SaveToContext(ctx context.Context, tenantID string) context.Context {
 	return context.WithValue(ctx, ContextKey, tenantID)
+}
+
+func TrimCustomerIDLeadingZeros(id string) string {
+	return strings.TrimLeft(id, "0")
 }

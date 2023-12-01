@@ -3,7 +3,6 @@ package resync
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -340,7 +339,7 @@ func missingParentTenants(currTenants map[string]string, eventsTenants []model.B
 			if _, ok := currTenants[eventTenant.Parent]; !ok {
 				parentType := getTenantParentType(eventTenant.Type)
 				if parentType == tenant.Customer {
-					eventTenant.Parent = strings.TrimLeft(eventTenant.Parent, "0")
+					eventTenant.Parent = tenant.TrimCustomerIDLeadingZeros(eventTenant.Parent)
 				}
 				parentTenant := model.BusinessTenantMappingInput{
 					Name:           eventTenant.Parent,
