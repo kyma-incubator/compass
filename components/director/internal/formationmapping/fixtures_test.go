@@ -48,6 +48,12 @@ var (
 	// UCL Subaccount IDs
 	matchingTestUCLSubaccountID = "testSubaccID"
 	nonMatchingUCLSubaccountID  = "anotherTestSubaccID"
+
+	cons = consumer.Consumer{
+		ConsumerID:   "consumerID",
+		ConsumerType: consumer.BusinessIntegration,
+	}
+	ctxWithConsumer = consumer.SaveToContext(context.TODO(), cons)
 )
 
 func fixTestHandler(t *testing.T) http.HandlerFunc {

@@ -3,7 +3,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "oathkeeper-maester.name" . }}
+  name: {{ include "oathkeeper-maester.fullname" . }}
   {{- if .Release.Namespace }}
   namespace: {{ .Release.Namespace }}
   {{- end }}
@@ -11,37 +11,44 @@ metadata:
 {{ include "oathkeeper-maester.labels" . | indent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
-  revisionHistoryLimit: 10
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:
     matchLabels:
       control-plane: controller-manager
-      app.kubernetes.io/name: {{ include "oathkeeper-maester.name" . }}
+      app.kubernetes.io/name: {{ include "oathkeeper-maester.fullname" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
+  # Custom, does not exist but is used by the base overrides in the management-plane-config
   strategy:
     {{- toYaml .Values.deployment.strategy | nindent 4 }}
   template:
     metadata:
       labels:
         control-plane: controller-manager
-        app.kubernetes.io/name: {{ include "oathkeeper-maester.name" . }}
+        app.kubernetes.io/name: {{ include "oathkeeper-maester.fullname" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
-      {{- with .Values.deployment.annotations }}
+        {{- with .Values.deployment.podMetadata.labels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
       annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- with .Values.deployment.podMetadata.annotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.deployment.annotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
-      {{- end }}    
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.oathkeeper) }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
             - /manager
           args:
-            - --metrics-addr=0.0.0.0:{{ .Values.port.metrics }}
+            - --metrics-addr=0.0.0.0:8080
             - controller
             - --rulesConfigmapName={{ include "oathkeeper-maester.getCM" . }}
             {{- if .Values.rulesConfigmapNamespace }}
@@ -59,23 +66,17 @@ spec:
             {{- end }}
             {{- with .Values.deployment.envs }}
             {{- toYaml . | nindent 12 }}
-            {{- end }}            
+            {{- end }}
           resources:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
           {{- if .Values.deployment.securityContext }}
           securityContext:
             {{- toYaml .Values.deployment.securityContext | nindent 12 }}
           {{- end }}
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
-          {{- with .Values.deployment.envs }}
-          env:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          ports:
-            - containerPort: {{ .Values.port.metrics }}
-              name: metrics
-      serviceAccountName: {{ include "oathkeeper-maester.name" . }}-account
+      serviceAccountName: {{ include "oathkeeper-maester.fullname" . }}-account
+      automountServiceAccountToken: {{ .Values.deployment.automountServiceAccountToken }}
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       securityContext: {}
@@ -84,6 +85,7 @@ spec:
       {{- with .Values.deployment.nodeSelector }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
+    # Custom implementation; does not exist in OS
     {{- if .Values.global.priorityClassName }}
       priorityClassName: {{ .Values.global.priorityClassName }}
     {{- end }}
@@ -93,6 +95,14 @@ spec:
     {{- end }}
     {{- with .Values.deployment.tolerations }}
       tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.deployment.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.deployment.dnsConfig }}
+      dnsConfig:
         {{- toYaml . | nindent 8 }}
     {{- end }}
 {{- end }}

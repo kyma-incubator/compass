@@ -12,20 +12,6 @@ func CreateAppTemplateName(name string) string {
 	return fmt.Sprintf("SAP %s", name)
 }
 
-func FixApplicationTemplateWithWebhookNotifications(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder string, webhookType graphql.WebhookType, mode graphql.WebhookMode, urlTemplate, inputTemplate, outputTemplate string) graphql.ApplicationTemplateInput {
-	webhookInput := &graphql.WebhookInput{
-		Type: webhookType,
-		Auth: &graphql.AuthInput{
-			AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-		},
-		Mode:           &mode,
-		URLTemplate:    &urlTemplate,
-		InputTemplate:  &inputTemplate,
-		OutputTemplate: &outputTemplate,
-	}
-	return FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder, webhookInput)
-}
-
 func FixAppTemplateInputWithDefaultDistinguishLabel(name, selfRegDistinguishLabelKey, selfRegDistinguishLabelValue string) graphql.ApplicationTemplateInput {
 	input := FixApplicationTemplate(name)
 	input.Labels[selfRegDistinguishLabelKey] = selfRegDistinguishLabelValue
@@ -34,11 +20,11 @@ func FixAppTemplateInputWithDefaultDistinguishLabel(name, selfRegDistinguishLabe
 }
 
 func FixApplicationTemplateWithoutWebhook(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder string) graphql.ApplicationTemplateInput {
-	return FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder, nil)
+	return FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder, nil, graphql.ApplicationStatusConditionInitial)
 }
 
 func FixApplicationTemplateWithCompositeLabelWithoutWebhook(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder string) graphql.ApplicationTemplateInput {
-	appTemplateInput := FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder, nil)
+	appTemplateInput := FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder, nil, graphql.ApplicationStatusConditionInitial)
 	appTemplateInput.Labels = map[string]interface{}{
 		"composite": map[string]interface{}{
 			"key":  "value",
@@ -48,7 +34,7 @@ func FixApplicationTemplateWithCompositeLabelWithoutWebhook(applicationType, loc
 	return appTemplateInput
 }
 
-func FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder string, webhookInput *graphql.WebhookInput) graphql.ApplicationTemplateInput {
+func FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder string, webhookInput *graphql.WebhookInput, condition graphql.ApplicationStatusCondition) graphql.ApplicationTemplateInput {
 	var webhooks []*graphql.WebhookInput = nil
 	if webhookInput != nil {
 		webhooks = []*graphql.WebhookInput{webhookInput}
@@ -57,10 +43,11 @@ func FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, regi
 		Name:        applicationType,
 		Description: &applicationType,
 		ApplicationInput: &graphql.ApplicationJSONInput{
-			Name:          fmt.Sprintf("{{%s}}", namePlaceholder),
-			ProviderName:  str.Ptr("compass"),
-			Description:   ptr.String(fmt.Sprintf("test {{%s}}", displayNamePlaceholder)),
-			LocalTenantID: &localTenantID,
+			Name:            fmt.Sprintf("{{%s}}", namePlaceholder),
+			ProviderName:    str.Ptr("compass"),
+			Description:     ptr.String(fmt.Sprintf("test {{%s}}", displayNamePlaceholder)),
+			LocalTenantID:   &localTenantID,
+			StatusCondition: &condition,
 			Labels: graphql.Labels{
 				"applicationType": applicationType,
 				"region":          region,
@@ -78,38 +65,6 @@ func FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, regi
 		},
 		Labels:               map[string]interface{}{},
 		ApplicationNamespace: &namespace,
-		AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
-	}
-}
-
-func FixApplicationTemplateWithStatusAndType(applicationType string, condition graphql.ApplicationStatusCondition) graphql.ApplicationTemplateInput {
-	localTenantID := "local-tenant-id"
-	region := "test-region"
-	appNamespace := "compass.test"
-	return graphql.ApplicationTemplateInput{
-		Name:        applicationType,
-		Description: &applicationType,
-		ApplicationInput: &graphql.ApplicationJSONInput{
-			Name:            fmt.Sprintf("{{%s}}", "name"),
-			ProviderName:    str.Ptr("compass"),
-			Description:     ptr.String(fmt.Sprintf("test {{%s}}", "name")),
-			LocalTenantID:   &localTenantID,
-			StatusCondition: &condition,
-			Labels: graphql.Labels{
-				"applicationType": applicationType,
-				"region":          region,
-				"displayName":     fmt.Sprintf("{{%s}}", "display-name"),
-			},
-		},
-		Placeholders: []*graphql.PlaceholderDefinitionInput{
-			{
-				Name: "name",
-			},
-			{
-				Name: "display-name",
-			},
-		},
-		ApplicationNamespace: &appNamespace,
 		AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
 	}
 }

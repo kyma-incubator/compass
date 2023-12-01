@@ -62,6 +62,16 @@ type Configuration struct {
 	TestProviderSubaccountID                    string `envconfig:"APP_TEST_PROVIDER_SUBACCOUNT_ID"`
 }
 
+// ProviderDestinationConfig holds a provider's destination service configuration
+type ProviderDestinationConfig struct {
+	ClientID     string `envconfig:"APP_PROVIDER_DESTINATION_CLIENT_ID"`
+	ClientSecret string `envconfig:"APP_PROVIDER_DESTINATION_CLIENT_SECRET"`
+	TokenURL     string `envconfig:"APP_PROVIDER_DESTINATION_TOKEN_URL"`
+	TokenPath    string `envconfig:"APP_PROVIDER_DESTINATION_TOKEN_PATH"`
+	ServiceURL   string `envconfig:"APP_PROVIDER_DESTINATION_SERVICE_URL"`
+	Dependency   string `envconfig:"APP_PROVIDER_DESTINATION_DEPENDENCY"`
+}
+
 // FormationAssignmentRequestBody contains the request input of the formation assignment async status request
 type FormationAssignmentRequestBody struct {
 	State         FormationAssignmentState `json:"state,omitempty"`
@@ -77,15 +87,15 @@ type FormationRequestBody struct {
 
 // FormationAssignmentResponseBody contains the synchronous formation assignment notification response body
 type FormationAssignmentResponseBody struct {
-	Config FormationAssignmentResponseConfig
-	Error  string `json:"error,omitempty"`
+	Config *FormationAssignmentResponseConfig `json:"config,omitempty"`
+	Error  string                             `json:"error,omitempty"`
 }
 
 // FormationAssignmentResponseBodyWithState contains the synchronous formation assignment notification response body with state in it
 type FormationAssignmentResponseBodyWithState struct {
-	Config FormationAssignmentResponseConfig
-	Error  string                   `json:"error,omitempty"`
-	State  FormationAssignmentState `json:"state"`
+	Config *FormationAssignmentResponseConfig `json:"config,omitempty"`
+	Error  string                             `json:"error,omitempty"`
+	State  FormationAssignmentState           `json:"state"`
 }
 
 // FormationAssignmentResponseConfig contains the configuration of the formation response body
@@ -165,9 +175,10 @@ const DeleteErrorFormationState FormationState = "DELETE_ERROR"
 type Handler struct {
 	// Mappings is a map of string to Response, where the string value currently can be `formationID` or `tenantID`
 	// mapped to a particular Response that later will be validated in the E2E tests
-	Mappings          map[string][]Response
-	ShouldReturnError bool
-	config            Configuration
+	Mappings                  map[string][]Response
+	ShouldReturnError         bool
+	config                    Configuration
+	providerDestinationConfig ProviderDestinationConfig
 }
 
 // Response is used to model the response for a given formation or formation assignment notification request.
@@ -180,11 +191,12 @@ type Response struct {
 }
 
 // NewHandler creates a new Handler
-func NewHandler(notificationConfiguration Configuration) *Handler {
+func NewHandler(notificationConfiguration Configuration, providerDestinationConfig ProviderDestinationConfig) *Handler {
 	return &Handler{
-		Mappings:          make(map[string][]Response),
-		ShouldReturnError: true,
-		config:            notificationConfiguration,
+		Mappings:                  make(map[string][]Response),
+		ShouldReturnError:         true,
+		config:                    notificationConfiguration,
+		providerDestinationConfig: providerDestinationConfig,
 	}
 }
 
@@ -198,7 +210,7 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func([]byte) {
 		response := FormationAssignmentResponseBody{
-			Config: FormationAssignmentResponseConfig{
+			Config: &FormationAssignmentResponseConfig{
 				Key: "value",
 				Key2: struct {
 					Key string `json:"key"`
@@ -218,7 +230,7 @@ func (h *Handler) PatchWithState(writer http.ResponseWriter, r *http.Request) {
 	responseFunc := func([]byte) {
 		response := FormationAssignmentResponseBodyWithState{
 			State: ConfigPendingAssignmentState,
-			Config: FormationAssignmentResponseConfig{
+			Config: &FormationAssignmentResponseConfig{
 				Key: "value",
 				Key2: struct {
 					Key string `json:"key"`
@@ -255,7 +267,7 @@ func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Requ
 			return
 		}
 		response := FormationAssignmentResponseBody{
-			Config: FormationAssignmentResponseConfig{
+			Config: &FormationAssignmentResponseConfig{
 				Key: "value",
 				Key2: struct {
 					Key string `json:"key"`
@@ -275,11 +287,12 @@ func (h *Handler) RespondWithIncompleteAndDestinationDetails(writer http.Respons
 	responseFunc := func(bodyBytes []byte) {
 		if config := gjson.Get(string(bodyBytes), "receiverTenant.configuration").String(); config == "" {
 			// NoAuthentication destination on 'provider' subaccount level
+			// OAuth2ClientCredentials destination on 'provider' subaccount level
 			// BasicDestination on 'provider' instance level. Also, the basic destination has only a path for the URL and no correlationIds property
 			// Client Certificate Authentication destination on 'consumer' subaccount(implicitly) level
 			// SAML Assertion destination in the 'consumer' subaccount(implicitly) on provider instance level
-			responseWithPlaceholders := "{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"destinations\":[{\"name\":\"e2e-design-time-destination-name\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"http://e2e-design-time-url-example.com\", \"subaccountId\":\"%s\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"destinations\":[{\"name\":\"e2e-basic-destination-name\",\"description\":\"e2e-basic-destination description\",\"url\":\"/e2e-basic-url-path\",\"authentication\":\"BasicAuthentication\",\"subaccountId\":\"%s\", \"instanceId\":\"%s\", \"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"e2e-saml-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-saml-assertion-destination-name\",\"description\":\"e2e saml assertion destination description\",\"url\":\"http://e2e-saml-url-example.com\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]},\"clientCertificateAuthentication\":{\"correlationIds\":[\"e2e-client-cert-auth-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-client-cert-auth-destination-name\",\"description\":\"e2e client cert auth destination description\",\"url\":\"http://e2e-client-cert-auth-url-example.com\",\"additionalProperties\":{\"e2e-clientCertAuthTestKey\":\"e2e-clientCertAuthTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}}"
-			response := fmt.Sprintf(responseWithPlaceholders, h.config.TestProviderSubaccountID, h.config.TestProviderSubaccountID, h.config.TestDestinationInstanceID, h.config.TestDestinationInstanceID)
+			responseWithPlaceholders := "{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"destinations\":[{\"name\":\"e2e-design-time-destination-name\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"http://e2e-design-time-url-example.com\",\"subaccountId\":\"%s\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"destinations\":[{\"name\":\"e2e-basic-destination-name\",\"description\":\"e2e-basic-destination description\",\"url\":\"/e2e-basic-url-path\",\"authentication\":\"BasicAuthentication\",\"subaccountId\":\"%s\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"e2e-saml-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-saml-assertion-destination-name\",\"description\":\"e2e saml assertion destination description\",\"url\":\"http://e2e-saml-url-example.com\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]},\"clientCertificateAuthentication\":{\"correlationIds\":[\"e2e-client-cert-auth-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-client-cert-auth-destination-name\",\"description\":\"e2e client cert auth destination description\",\"url\":\"http://e2e-client-cert-auth-url-example.com\",\"additionalProperties\":{\"e2e-clientCertAuthTestKey\":\"e2e-clientCertAuthTestVal\"}}]},\"oauth2ClientCredentials\":{\"correlationIds\":[\"e2e-oauth2-client-creds-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-oauth2-client-creds-destination-name\",\"subaccountId\":\"%s\",\"description\":\"e2e oauth2 client creds destination description\",\"url\":\"http://e2e-oauth2-client-creds-url-example.com\",\"additionalProperties\":{\"e2e-oauth2ClientCredsTestKey\":\"e2e-oauth2ClientCredsTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}}"
+			response := fmt.Sprintf(responseWithPlaceholders, h.config.TestProviderSubaccountID, h.config.TestProviderSubaccountID, h.config.TestDestinationInstanceID, h.config.TestDestinationInstanceID, h.config.TestProviderSubaccountID)
 			httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage(response))
 			return
 		}
@@ -510,7 +523,7 @@ func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Millisecond * time.Duration(h.config.TenantMappingAsyncResponseDelay))
-		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
+		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, &config, formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
 		}
@@ -525,12 +538,25 @@ func (h *Handler) AsyncOld(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Millisecond * time.Duration(h.config.TenantMappingAsyncResponseDelay))
-		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID); err != nil {
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, &config, formationID, formationAssignmentID); err != nil {
 			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
 		}
 	}
 
 	h.asyncFAResponse(ctx, writer, r, Assign, `{"asyncKey": "asyncValue", "asyncKey2": {"asyncNestedKey": "asyncNestedValue"}}`, responseFunc)
+}
+
+// AsyncNoConfig handles asynchronous formation assignment notification requests for Assign. Sends request without configuration in the body
+func (h *Handler) AsyncNoConfig(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, &config, formationID, formationAssignmentID); err != nil {
+			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
+		}
+	}
+
+	h.asyncFAResponse(ctx, writer, r, Assign, "", responseFunc)
 }
 
 // AsyncDestinationPatch handles asynchronous formation assignment notification requests for destination creation during Assign operation
@@ -564,13 +590,13 @@ func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Requ
 
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Millisecond * time.Duration(h.config.TenantMappingAsyncResponseDelay))
-		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID); err != nil {
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, &config, formationID, formationAssignmentID); err != nil {
 			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
 		}
 	}
 
 	r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
-	config := "{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"}}}}"
+	config := fmt.Sprintf("{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"},\"oauth2ClientCredentials\":{\"url\":\"http://e2e-oauth2-client-creds-url-example.com\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\",\"clientSecret\":\"%s\"}}}}", h.providerDestinationConfig.TokenURL+h.providerDestinationConfig.TokenPath, h.providerDestinationConfig.ClientID, h.providerDestinationConfig.ClientSecret)
 	h.asyncFAResponse(ctx, writer, r, Assign, config, responseFunc)
 }
 
@@ -579,7 +605,7 @@ func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Millisecond * time.Duration(h.config.TenantMappingAsyncResponseDelay))
-		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID); err != nil {
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, &config, formationID, formationAssignmentID); err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
 		}
 	}
@@ -592,7 +618,7 @@ func (h *Handler) AsyncDestinationDelete(writer http.ResponseWriter, r *http.Req
 	ctx := r.Context()
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Millisecond * time.Duration(h.config.TenantMappingAsyncResponseDelay))
-		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID); err != nil {
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, &config, formationID, formationAssignmentID); err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
 		}
 	}
@@ -614,9 +640,7 @@ func (h *Handler) AsyncNoResponseUnassign(writer http.ResponseWriter, r *http.Re
 func (h *Handler) AsyncFailOnce(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	operation := Assign
-	if r.Method == http.MethodPatch {
-		operation = Assign
-	} else if r.Method == http.MethodDelete {
+	if r.Method == http.MethodDelete {
 		operation = Unassign
 	}
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
@@ -629,7 +653,7 @@ func (h *Handler) AsyncFailOnce(writer http.ResponseWriter, r *http.Request) {
 			state = DeleteErrorAssignmentState
 			h.ShouldReturnError = false
 		}
-		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, state, config, formationID, formationAssignmentID); err != nil {
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, state, &config, formationID, formationAssignmentID); err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
 		}
 	}
@@ -646,9 +670,7 @@ func (h *Handler) AsyncFailOnce(writer http.ResponseWriter, r *http.Request) {
 func (h *Handler) AsyncFail(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	operation := Assign
-	if r.Method == http.MethodPatch {
-		operation = Assign
-	} else if r.Method == http.MethodDelete {
+	if r.Method == http.MethodDelete {
 		operation = Unassign
 	}
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
@@ -658,7 +680,7 @@ func (h *Handler) AsyncFail(writer http.ResponseWriter, r *http.Request) {
 			state = DeleteErrorAssignmentState
 		}
 
-		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, state, config, formationID, formationAssignmentID); err != nil {
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, state, &config, formationID, formationAssignmentID); err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
 		}
 	}
@@ -666,8 +688,29 @@ func (h *Handler) AsyncFail(writer http.ResponseWriter, r *http.Request) {
 	h.asyncFAResponse(ctx, writer, r, operation, config, responseFunc)
 }
 
+// AsyncFailNoError handles asynchronous formation assignment notification requests for both Assign and Unassign operations by failing and setting error states.
+func (h *Handler) AsyncFailNoError(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	operation := Assign
+	if r.Method == http.MethodDelete {
+		operation = Unassign
+	}
+	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
+		time.Sleep(time.Millisecond * time.Duration(h.config.TenantMappingAsyncResponseDelay))
+		state := CreateErrorAssignmentState
+		if operation == Unassign {
+			state = DeleteErrorAssignmentState
+		}
+
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, state, nil, formationID, formationAssignmentID); err != nil {
+			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
+		}
+	}
+	h.asyncFAResponse(ctx, writer, r, operation, "", responseFunc)
+}
+
 // executeFormationAssignmentStatusUpdateRequest prepares a request with the given inputs and sends it to the formation assignment status API
-func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPClient *http.Client, correlationID string, state FormationAssignmentState, testConfig, formationID, formationAssignmentID string) error {
+func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPClient *http.Client, correlationID string, state FormationAssignmentState, testConfig *string, formationID, formationAssignmentID string) error {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -680,12 +723,12 @@ func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPC
 	FAReqBody := FormationAssignmentRequestBody{
 		State: state,
 	}
-	if testConfig != "" {
+	if testConfig != nil {
 		if state == CreateErrorAssignmentState || state == DeleteErrorAssignmentState {
-			FAReqBody.Error = testConfig
+			FAReqBody.Error = *testConfig
 		}
 		if state == ReadyAssignmentState {
-			FAReqBody.Configuration = json.RawMessage(testConfig)
+			FAReqBody.Configuration = json.RawMessage(*testConfig)
 		}
 	}
 	marshalBody, err := json.Marshal(FAReqBody)
@@ -703,7 +746,7 @@ func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPC
 
 	request.Header.Add(correlation.RequestIDHeaderKey, correlationID)
 	request.Header.Add(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationJSON)
-	log.C(ctx).Infof("Calling status API for formation assignment status update with the following data - formation ID: %s, assignment with ID: %s, state: %s and config: %s", formationID, formationAssignmentID, state, testConfig)
+	log.C(ctx).Infof("Calling status API for formation assignment status update with the following data - formation ID: %s, assignment with ID: %s, state: %s and config: %v", formationID, formationAssignmentID, state, testConfig)
 	_, err = certSecuredHTTPClient.Do(request)
 	return err
 }

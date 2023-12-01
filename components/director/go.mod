@@ -31,7 +31,7 @@ require (
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
 	github.com/onrik/logrus v0.11.0
-	github.com/ory/hydra-client-go v1.10.6
+	github.com/ory/hydra-client-go/v2 v2.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.17.0
 	github.com/sirupsen/logrus v1.9.3
@@ -43,7 +43,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/mod v0.12.0
 	golang.org/x/net v0.17.0
-	golang.org/x/oauth2 v0.8.0
+	golang.org/x/oauth2 v0.11.0
 	golang.org/x/sync v0.3.0
 	golang.org/x/text v0.13.0
 	k8s.io/api v0.26.9
@@ -66,16 +66,9 @@ require (
 	github.com/frankban/quicktest v1.14.4 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
-	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-openapi/analysis v0.21.4 // indirect
-	github.com/go-openapi/errors v0.20.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
-	github.com/go-openapi/loads v0.21.2 // indirect
-	github.com/go-openapi/spec v0.20.8 // indirect
-	github.com/go-openapi/strfmt v0.21.7 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
-	github.com/go-openapi/validate v0.22.1 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -102,8 +95,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/oklog/ulid v1.3.1 // indirect
-	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.4.1-0.20230718164431-9a2bf3000d16 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
@@ -116,9 +107,6 @@ require (
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
-	go.mongodb.org/mongo-driver v1.11.3 // indirect
-	go.opentelemetry.io/otel v1.14.0 // indirect
-	go.opentelemetry.io/otel/trace v1.14.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/term v0.13.0 // indirect

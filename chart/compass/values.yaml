@@ -172,11 +172,11 @@ global:
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3478"
+      version: "PR-3496"
       name: compass-hydrator
     ias_adapter:
-      dir: prod/incubator/
-      version: "v20231018-28d8e617"
+      dir: dev/incubator/
+      version: "PR-3511"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
@@ -200,11 +200,11 @@ global:
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-108"
+      version: "PR-112"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3478"
+      version: "PR-3504"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
@@ -217,7 +217,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3478"
+      version: "PR-3518"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -225,7 +225,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3471"
+      version: "PR-3518"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -963,6 +963,11 @@ global:
       certValidity: "7"
       clientCertRetryAttempts: "8"
       containerName: "certificate-rotation"
+    preInstallJob:
+      enabled: false
+      name: "external-certificate-pre-install"
+      certValidity: "7"
+      clientCertRetryAttempts: "8"
   extSvcCertConfiguration:
     issuerLocality: "local,local2" # In local setup we have manually created connector CA certificate with 'local' Locality property
     subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
@@ -993,6 +998,11 @@ global:
       certValidity: "7"
       clientCertRetryAttempts: "8"
       containerName: "ext-svc-certificate-rotation"
+    preInstallJob:
+      enabled: false
+      name: "ext-svc-certificate-pre-install"
+      certValidity: "7"
+      clientCertRetryAttempts: "8"
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
     prefix: /open-resource-discovery-service/v0

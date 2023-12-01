@@ -165,11 +165,7 @@ EOF
 
 function patchKymaServiceMonitorsForMTLS() {
   # Some of the ServiceMonitor MTLS overrides were moved to the Kyma Helm chart overrides
-  kymaSvcMonitors=(
-    monitoring-operator
-    ory-stack-oathkeeper-maester
-  )
-
+  sm="monitoring-operator"
   crd="servicemonitors.monitoring.coreos.com"
   namespace="kyma-system"
   scheme="https"
@@ -180,30 +176,23 @@ function patchKymaServiceMonitorsForMTLS() {
     "insecureSkipVerify": true
   }'
 
-  for sm in "${kymaSvcMonitors[@]}"; do
-    # ory-stack-oathkeeper-maester is in different namespace as it is created by Helm
-    if [ "$sm" = "ory-stack-oathkeeper-maester" ]; then
-      namespace=ory
-    fi
-    
-    if kubectl get ${crd} -n ${namespace} "${sm}" > /dev/null; then
-      kubectl get ${crd} -n ${namespace} "${sm}" -o json > "${sm}.json"
+  if kubectl get ${crd} -n ${namespace} "${sm}" > /dev/null; then
+    kubectl get ${crd} -n ${namespace} "${sm}" -o json > "${sm}.json"
 
-      cp "${sm}.json" tmp.json
-      jq --arg newSchema "$scheme" '.spec.endpoints[].scheme = $newSchema' tmp.json > "${sm}.json"
-      cp "${sm}.json" tmp.json
-      jq --argjson newTlsConfig "$tlsConfig" '.spec.endpoints[].tlsConfig = $newTlsConfig' tmp.json > "${sm}.json"
-      rm tmp.json
+    cp "${sm}.json" tmp.json
+    jq --arg newSchema "$scheme" '.spec.endpoints[].scheme = $newSchema' tmp.json > "${sm}.json"
+    cp "${sm}.json" tmp.json
+    jq --argjson newTlsConfig "$tlsConfig" '.spec.endpoints[].tlsConfig = $newTlsConfig' tmp.json > "${sm}.json"
+    rm tmp.json
 
-      kubectl apply -f "${sm}.json" || true
+    kubectl apply -f "${sm}.json" || true
 
-      rm "${sm}.json"
-    fi
-  done
+    rm "${sm}.json"
+  fi
 }
 
 function removeKymaPeerAuthsForPrometheus() {
   crd="peerauthentications.security.istio.io"
 
-  kubectl delete ${crd} -n kyma-system monitoring-grafana-policy
+  kubectl delete ${crd} -n kyma-system monitoring-grafana-policy || true
 }
