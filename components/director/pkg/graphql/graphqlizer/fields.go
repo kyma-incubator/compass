@@ -114,7 +114,7 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		auths {%s}
 		eventingConfiguration { defaultURL }
 	`, fp.ForWebhooks(), fp.Page(fp.ForBundle()), fp.ForSystemAuth()),
-		ctx, []string{"Application.bundle", "Application.apiDefinition", "Application.eventDefinition"})
+		ctx, []string{"Application.bundle", "Application.apiDefinition", "Application.eventDefinition", "Application.integrationDependencies"})
 }
 
 // ForApplicationMinimal missing godoc
