@@ -36,16 +36,14 @@ type UIDService interface {
 
 type service struct {
 	repo         IntegrationDependencyRepository
-	aspectSvc    AspectService
 	uidService   UIDService
 	timestampGen timestamp.Generator
 }
 
 // NewService returns a new object responsible for service-layer Integration Dependency operations.
-func NewService(repo IntegrationDependencyRepository, aspectSvc AspectService, uidService UIDService) *service {
+func NewService(repo IntegrationDependencyRepository, uidService UIDService) *service {
 	return &service{
 		repo:         repo,
-		aspectSvc:    aspectSvc,
 		uidService:   uidService,
 		timestampGen: timestamp.DefaultGenerator,
 	}

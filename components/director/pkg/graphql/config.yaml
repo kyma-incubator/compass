@@ -189,3 +189,19 @@ models:
     fields:
       labels:
         resolver: true
+
+  IntegrationDependency:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.IntegrationDependency"
+    fields:
+
+  Aspect:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Aspect"
+    fields:
+
+  AspectAPIDefinition:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.AspectAPIDefinition"
+    fields:
+
+  AspectEventDefinition:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.AspectEventDefinition"
+    fields:

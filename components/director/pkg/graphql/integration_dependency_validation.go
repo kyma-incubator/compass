@@ -17,7 +17,7 @@ func (i IntegrationDependencyInput) Validate() error {
 		validation.Field(&i.PartOfPackage, validation.NilOrNotEmpty, validation.Length(common.MinTitleLength, common.MaxTitleLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
 		validation.Field(&i.Visibility, validation.NilOrNotEmpty, validation.In("public", "internal", "private")),
 		validation.Field(&i.ReleaseStatus, validation.NilOrNotEmpty, validation.In(common.ReleaseStatusBeta, common.ReleaseStatusActive, common.ReleaseStatusDeprecated)),
-		validation.Field(&i.Mandatory, validation.NilOrNotEmpty),
+		validation.Field(&i.Mandatory),
 		validation.Field(&i.Aspects),
 		validation.Field(&i.Version, validation.NilOrNotEmpty),
 	)
@@ -28,7 +28,7 @@ func (a AspectInput) Validate() error {
 	return validation.ValidateStruct(&a,
 		validation.Field(&a.Name, validation.Required, is.PrintableASCII, validation.Length(common.MinTitleLength, common.MaxTitleLength)),
 		validation.Field(&a.Description, validation.NilOrNotEmpty, validation.Length(common.MinDescriptionLength, descriptionStringLengthLimit)),
-		validation.Field(&a.Mandatory, validation.NilOrNotEmpty),
+		validation.Field(&a.Mandatory),
 		validation.Field(&a.APIResources),
 		validation.Field(&a.EventResources),
 	)

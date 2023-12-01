@@ -280,7 +280,7 @@ func main() {
 	entityTypeSvc := entitytype.NewService(entityTypeRepo, uidSvc)
 	capabilitySvc := capability.NewService(capabilityRepo, uidSvc, specSvc)
 	aspectSvc := aspect.NewService(aspectRepo, uidSvc)
-	integrationDependencySvc := integrationdependency.NewService(integrationDependencyRepo, aspectSvc, uidSvc)
+	integrationDependencySvc := integrationdependency.NewService(integrationDependencyRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, tenantMappingConfig, cfg.TenantMappingCallbackURL)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)

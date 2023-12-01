@@ -21,7 +21,7 @@ type VersionConverter interface {
 
 // AspectConverter converts Aspects between the model.Aspect service-layer representation and the graphql-layer representation graphql.Aspect.
 //
-//go:generate mockery --name=SpecConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=AspectConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AspectConverter interface {
 	MultipleToGraphQL(in []*model.Aspect) ([]*graphql.Aspect, error)
 	MultipleInputFromGraphQL(in []*graphql.AspectInput) ([]*model.AspectInput, error)

@@ -239,7 +239,7 @@ func NewRootResolver(
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
 	aspectSvc := aspect.NewService(aspectRepo, uidSvc)
-	integrationDependencySvc := integrationdependency.NewService(integrationDependencyRepo, aspectSvc, uidSvc)
+	integrationDependencySvc := integrationdependency.NewService(integrationDependencyRepo, uidSvc)
 	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, bundleInstanceAuthSvc, uidSvc)

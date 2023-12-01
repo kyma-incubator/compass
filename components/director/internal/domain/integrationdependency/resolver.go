@@ -38,7 +38,7 @@ type IntegrationDependencyService interface {
 
 // IntegrationDepConverter converts Integration Dependencies between the model.IntegrationDependency service-layer representation and the graphql-layer representation.
 //
-//go:generate mockery --name=IntegrationDependencyConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=IntegrationDepConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationDepConverter interface {
 	ToGraphQL(in *model.IntegrationDependency, aspects []*model.Aspect) (*graphql.IntegrationDependency, error)
 	InputFromGraphQL(in *graphql.IntegrationDependencyInput) (*model.IntegrationDependencyInput, error)
