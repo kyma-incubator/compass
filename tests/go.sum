@@ -133,11 +133,13 @@ github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-2023120
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20231201130323-2102894ae93f/go.mod h1:PXdTCsRwZ7XtY7xEMt2Wix9OsIVoOebWpvzDa1/+gTM=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20231201130323-2102894ae93f h1:CeRFM/6kg9ENxB8azeBt1gsv0Bg9s462z2Mnl8tUKRI=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20231201130323-2102894ae93f/go.mod h1:A7q1d4jojbLirQrazsHgGG1X1fXiWTcZTDah4qPTDzk=
+github.com/kyma-incubator/compass/components/director v0.0.0-20231201130323-2102894ae93f h1:xHUIEVn95atFkJr5b5rK8qFUdeSeBDXfzmkYaBb8QVA=
+github.com/kyma-incubator/compass/components/director v0.0.0-20231201130323-2102894ae93f/go.mod h1:yRzGhOVE0t/ORiHPLLeVHN0P24cJ91NPVqnTDNFY6Ok=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231201130323-2102894ae93f h1:iAkNQzidK1bt0cinZUBB8yrfmWsaQFCb867TtoDb8oo=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231201130323-2102894ae93f/go.mod h1:5EjF05ebZFuUJhnC5LOeNd1rVM05YCV7DfDZgzhccKo=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20231201130323-2102894ae93f h1:GlXaOQRouJ+SI8vXxZ4u3ltIhKk1Vc6k2YAiW5OP4ik=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20231201130323-2102894ae93f/go.mod h1:fLzbGl7dCsOUDCQThUBLpi9qOeOFOMrBWx/rvo2mxeM=
-github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231201130323-2102894ae93f h1:SXqUeWFImncmJehYHCzSimE9ZMCuzN2s0aJj+L7FZMA=
+github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231120121524-9ee5c58d6fb0 h1:C8svQ+yOnY7zwfhEh5jsGZ/+wuEeomNmt/CAYIHR1fM=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231201130323-2102894ae93f h1:bSsioai/+yp2xg3O0jZum26CJAW6xZ94yrI8gN9H6nQ=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231201130323-2102894ae93f/go.mod h1:0BF3s99Dc6nS51hUvxQs/ru+2SS2wUGxQC7z3h7tFr4=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231201130323-2102894ae93f h1:BDIUFOJRD+kHgFhN+RQjun6Z18xm55kuAFKaNmFh4CI=

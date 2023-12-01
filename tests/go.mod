@@ -90,5 +90,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace github.com/kyma-incubator/compass/components/director => /Users/I552193/SAPDevelop/development/go/src/github.com/compass/components/director
