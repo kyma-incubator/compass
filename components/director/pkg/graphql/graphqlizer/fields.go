@@ -114,7 +114,7 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		bundles {%s}
 		auths {%s}
 		eventingConfiguration { defaultURL }
-	`, fp.ForWebhooks(), fp.Page(fp.ForBundle()), fp.ForSystemAuth(), fp.Page(fp.ForIntegrationDependencies())),
+	`, fp.ForWebhooks(), fp.Page(fp.ForIntegrationDependencies()), fp.Page(fp.ForBundle()), fp.ForSystemAuth()),
 		ctx, []string{"Application.bundle", "Application.apiDefinition", "Application.eventDefinition"})
 }
 
@@ -781,8 +781,8 @@ func (fp *GqlFieldsProvider) ForTenantAccess() string {
 }
 
 // ForIntegrationDependencies missing godoc
-func (fp *GqlFieldsProvider) ForIntegrationDependencies(ctx ...FieldCtx) string {
-	return addFieldsFromContext(fmt.Sprintf(`
+func (fp *GqlFieldsProvider) ForIntegrationDependencies() string {
+	return fmt.Sprintf(`
 		id
 		name
 		description
@@ -793,8 +793,7 @@ func (fp *GqlFieldsProvider) ForIntegrationDependencies(ctx ...FieldCtx) string 
 		mandatory
 		version {value}
 		aspects {%s}
-		`, fp.ForAspects()),
-		ctx, []string{"Bundle.instanceAuth"})
+		`, fp.ForAspects())
 }
 
 // ForAspects returns tenant access fields
