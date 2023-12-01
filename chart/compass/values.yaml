@@ -155,60 +155,60 @@ global:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
     connector:
-      dir: dev/incubator/
-      version: "PR-3478"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
       name: compass-connector
     connectivity_adapter:
-      dir: dev/incubator/
-      version: "PR-3478"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
       name: compass-connectivity-adapter
     pairing_adapter:
-      dir: dev/incubator/
-      version: "PR-3478"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
       name: compass-pairing-adapter
     director:
-      dir: dev/incubator/
-      version: "PR-3516"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-director:v20231130-437cb4c7"
       name: compass-director
     hydrator:
-      dir: dev/incubator/
-      version: "PR-3496"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-hydrator:v20231124-b89ab74b"
       name: compass-hydrator
     ias_adapter:
-      dir: dev/incubator/
-      version: "PR-3511"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-ias-adapter:v20231129-66fafbe9"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: dev/incubator/
-      version: "PR-3478"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
       name: compass-kyma-adapter
     instance_creator:
-      dir: dev/incubator/
-      version: "PR-3478"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
       name: compass-instance-creator
     default_tenant_mapping_handler:
-      dir: dev/incubator/
-      version: "PR-3460"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231120-caf798d9"
       name: compass-default-tenant-mapping-handler
     gateway:
-      dir: dev/incubator/
-      version: "PR-3478"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
       name: compass-gateway
     operations_controller:
-      dir: dev/incubator/
-      version: "PR-3478"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
       name: compass-operations-controller
     ord_service:
-      dir: dev/incubator/
-      version: "PR-112"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-ord-service:v20231123-7a85e46c"
       name: compass-ord-service
     schema_migrator:
-      dir: dev/incubator/
-      version: "PR-3504"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-schema-migrator:v20231127-7348d2ae"
       name: compass-schema-migrator
     system_broker:
-      dir: dev/incubator/
-      version: "PR-3478"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-connector:v20231121-e91239f0"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -216,16 +216,16 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: dev/incubator/
-      version: "PR-3518"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-e2e-tests:v20231130-4e562960"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: dev/incubator/
-      version: "PR-3518"
+      dir: prod/incubator/
+      version: "europe-docker.pkg.dev/kyma-project/prod/incubator/compass-e2e-tests:v20231130-4e562960"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
