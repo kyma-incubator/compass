@@ -109,12 +109,13 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		error
 		status {condition timestamp}
 		webhooks {%s}
+		integrationDependencies {%s}
 		healthCheckURL
 		bundles {%s}
 		auths {%s}
 		eventingConfiguration { defaultURL }
-	`, fp.ForWebhooks(), fp.Page(fp.ForBundle()), fp.ForSystemAuth()),
-		ctx, []string{"Application.bundle", "Application.apiDefinition", "Application.eventDefinition", "Application.integrationDependencies"})
+	`, fp.ForWebhooks(), fp.Page(fp.ForBundle()), fp.ForSystemAuth(), fp.Page(fp.ForIntegrationDependencies())),
+		ctx, []string{"Application.bundle", "Application.apiDefinition", "Application.eventDefinition"})
 }
 
 // ForApplicationMinimal missing godoc
@@ -776,5 +777,37 @@ func (fp *GqlFieldsProvider) ForTenantAccess() string {
 		resourceID
         resourceType
 		owner
+	`
+}
+
+// ForIntegrationDependencies missing godoc
+func (fp *GqlFieldsProvider) ForIntegrationDependencies(ctx ...FieldCtx) string {
+	return addFieldsFromContext(fmt.Sprintf(`
+		id
+		name
+		description
+		ordID
+		partOfPackage
+		visibility
+		releaseStatus
+		mandatory
+		version {value}
+		aspects {%s}
+		`, fp.ForAspects()),
+		ctx, []string{"Bundle.instanceAuth"})
+}
+
+// ForAspects returns tenant access fields
+func (fp *GqlFieldsProvider) ForAspects() string {
+	return `
+		id
+		name
+		description
+		mandatory
+		apiResources {ordID}
+		eventResources {
+			ordID
+			subset
+		}
 	`
 }
