@@ -216,4 +216,25 @@ FROM webhooks w
 ALTER TABLE business_tenant_mappings
 DROP COLUMN parent;
 
+
+DROP TRIGGER tenant_id_is_direct_parent_of_target_tenant_id ON automatic_scenario_assignments;
+DROP FUNCTION IF EXISTS check_tenant_id_is_direct_parent_of_target_tenant_id();
+
+CREATE OR REPLACE FUNCTION check_tenant_id_is_direct_parent_of_target_tenant_id() RETURNS TRIGGER AS
+$$
+DECLARE
+    count INTEGER;
+BEGIN
+    EXECUTE format('SELECT COUNT(1) FROM tenant_parents WHERE tenant_id = %L AND parent_id = %L', NEW.target_tenant_id, NEW.tenant_id) INTO count;
+    IF count = 0 THEN
+        RAISE EXCEPTION 'target_tenant_id should be direct child of tenant_id';
+    END IF;
+    RETURN NULL;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE CONSTRAINT TRIGGER tenant_id_is_direct_parent_of_target_tenant_id AFTER INSERT ON automatic_scenario_assignments
+    FOR EACH ROW EXECUTE PROCEDURE check_tenant_id_is_direct_parent_of_target_tenant_id();
+
+
 COMMIT;

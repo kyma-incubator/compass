@@ -18,7 +18,7 @@ var (
 	tenantParentsSelectedColumns = []string{tenantIDColumn, parentIDColumn}
 )
 
-// TenantParent TODO
+// TenantParent defines tenant parent record
 type TenantParent struct {
 	TenantID string `db:"tenant_id"`
 	ParentID string `db:"parent_id"`
@@ -51,8 +51,9 @@ func (tpc TenantParentCollection) GetTenantIDs() []string {
 }
 
 type pgRepository struct {
-	listerGlobal  repo.ListerGlobal
-	creatorGlobal repo.CreatorGlobal
+	listerGlobal   repo.ListerGlobal
+	creatorGlobal  repo.CreatorGlobal
+	upserterGlobal repo.UpserterGlobal
 }
 
 // TenantParentRepository is responsible for the repo-layer tenant operations.
@@ -67,8 +68,9 @@ type TenantParentRepository interface {
 // NewRepository returns a new entity responsible for repo-layer tenant operations. All of its methods require persistence.PersistenceOp it the provided context.
 func NewRepository() *pgRepository {
 	return &pgRepository{
-		listerGlobal:  repo.NewListerGlobal(resource.TenantParent, tenantParentsTable, tenantParentsSelectedColumns),
-		creatorGlobal: repo.NewCreatorGlobal(resource.TenantParent, tenantParentsTable, tenantParentsSelectedColumns),
+		listerGlobal:   repo.NewListerGlobal(resource.TenantParent, tenantParentsTable, tenantParentsSelectedColumns),
+		creatorGlobal:  repo.NewCreatorGlobal(resource.TenantParent, tenantParentsTable, tenantParentsSelectedColumns),
+		upserterGlobal: repo.NewUpserterGlobal(resource.TenantParent, tenantParentsTable, tenantParentsSelectedColumns, tenantParentsSelectedColumns, []string{}),
 	}
 }
 
@@ -102,21 +104,20 @@ func (r *pgRepository) ListByParent(ctx context.Context, parentID string) ([]str
 	return tenantParents.GetTenantIDs(), nil
 }
 
-// Create creates new tenant parent mapping
-func (r *pgRepository) Create(ctx context.Context, tenantID string, parentID string) error {
+// Upsert upserts tenant parent mapping
+func (r *pgRepository) Upsert(ctx context.Context, tenantID string, parentID string) error {
 	tpEntity := &TenantParent{
 		TenantID: tenantID,
 		ParentID: parentID,
 	}
-
-	//TODO if the record already exists - do nothing
-	return r.creatorGlobal.Create(ctx, tpEntity)
+	return r.upserterGlobal.UpsertGlobal(ctx, tpEntity)
 }
 
+// TODO change the method name
 // CreateMultiple creates new tenant parent mappings
 func (r *pgRepository) CreateMultiple(ctx context.Context, tenantID string, parentIDs []string) error {
 	for _, parentID := range parentIDs {
-		if err := r.Create(ctx, tenantID, parentID); err != nil {
+		if err := r.Upsert(ctx, tenantID, parentID); err != nil {
 			log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantParent, resource.Create, "while creating tenant parent mapping for tenant with id %s and parent %s"), tenantID, parentID)
 			return err
 		}

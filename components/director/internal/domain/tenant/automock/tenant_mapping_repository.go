@@ -389,17 +389,27 @@ func (_m *TenantMappingRepository) ListPageBySearchTerm(ctx context.Context, sea
 }
 
 // UnsafeCreate provides a mock function with given fields: ctx, item
-func (_m *TenantMappingRepository) UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) error {
+func (_m *TenantMappingRepository) UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) (string, error) {
 	ret := _m.Called(ctx, item)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMapping) error); ok {
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMapping) (string, error)); ok {
+		return rf(ctx, item)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMapping) string); ok {
 		r0 = rf(ctx, item)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, model.BusinessTenantMapping) error); ok {
+		r1 = rf(ctx, item)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Update provides a mock function with given fields: ctx, _a1
@@ -417,17 +427,27 @@ func (_m *TenantMappingRepository) Update(ctx context.Context, _a1 *model.Busine
 }
 
 // Upsert provides a mock function with given fields: ctx, item
-func (_m *TenantMappingRepository) Upsert(ctx context.Context, item model.BusinessTenantMapping) error {
+func (_m *TenantMappingRepository) Upsert(ctx context.Context, item model.BusinessTenantMapping) (string, error) {
 	ret := _m.Called(ctx, item)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMapping) error); ok {
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMapping) (string, error)); ok {
+		return rf(ctx, item)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMapping) string); ok {
 		r0 = rf(ctx, item)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, model.BusinessTenantMapping) error); ok {
+		r1 = rf(ctx, item)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // NewTenantMappingRepository creates a new instance of TenantMappingRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

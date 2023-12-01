@@ -116,19 +116,27 @@ func NewRepository(conv Converter) *pgRepository {
 
 // UnsafeCreate adds a new tenant in the Compass DB in case it does not exist. If it already exists, no action is taken.
 // It is not guaranteed that the provided tenant ID is the same as the tenant ID in the database.
-func (r *pgRepository) UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) error {
+func (r *pgRepository) UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) (string, error) {
 	if err := r.unsafeCreator.UnsafeCreate(ctx, r.conv.ToEntity(&item)); err != nil {
-		return errors.Wrapf(err, "while creating business tenant mapping")
+		return "", errors.Wrapf(err, "while creating business tenant mapping")
 	}
-	return r.tenantParentRepo.CreateMultiple(ctx, item.ID, item.Parents)
+	btm, err := r.GetByExternalTenant(ctx, item.ExternalTenant)
+	if err != nil {
+		return "", errors.Wrapf(err, "while getting business tenant mapping by external id")
+	}
+	return btm.ID, r.tenantParentRepo.CreateMultiple(ctx, btm.ID, item.Parents)
 }
 
 // Upsert adds the provided tenant into the Compass storage if it does not exist, or updates it if it does.
-func (r *pgRepository) Upsert(ctx context.Context, item model.BusinessTenantMapping) error {
+func (r *pgRepository) Upsert(ctx context.Context, item model.BusinessTenantMapping) (string, error) {
 	if err := r.upserter.UpsertGlobal(ctx, r.conv.ToEntity(&item)); err != nil {
-		return errors.Wrapf(err, "while upserting business tenant mapping")
+		return "", errors.Wrapf(err, "while upserting business tenant mapping")
 	}
-	return r.tenantParentRepo.CreateMultiple(ctx, item.ID, item.Parents)
+	btm, err := r.GetByExternalTenant(ctx, item.ExternalTenant)
+	if err != nil {
+		return "", errors.Wrapf(err, "while getting business tenant mapping by external id")
+	}
+	return btm.ID, r.tenantParentRepo.CreateMultiple(ctx, btm.ID, item.Parents)
 }
 
 // Get retrieves the active tenant with matching internal ID from the Compass storage.
@@ -574,7 +582,7 @@ func (r *pgRepository) GetParentsRecursivelyByExternalTenant(ctx context.Context
                     SELECT t2.id, t2.external_name, t2.external_tenant, t2.provider_name, t2.status, t2.type, tp2.parent_id, p.depth+ 1
                     FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
                                                      INNER JOIN parents p on p.parent_id = t2.id)
-			SELECT id, external_name, external_tenant, provider_name, status, depth, type FROM parents WHERE parent_id is NULL AND (type != 'cost-object'
+			SELECT id, external_name, external_tenant, provider_name, status, type FROM parents WHERE parent_id is NULL AND (type != 'cost-object'
                                                                                               OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')))`
 
 	persist, err := persistence.FromCtx(ctx)
@@ -586,7 +594,7 @@ func (r *pgRepository) GetParentsRecursivelyByExternalTenant(ctx context.Context
 
 	var entityCollection tenant.EntityCollection
 
-	if err := persist.GetContext(ctx, &entityCollection, recursiveQuery, externalTenant); err != nil {
+	if err := persist.SelectContext(ctx, &entityCollection, recursiveQuery, externalTenant); err != nil {
 		return nil, persistence.MapSQLError(ctx, err, resource.Tenant, resource.List, "while listing parents for external tenant: %q", externalTenant)
 	}
 

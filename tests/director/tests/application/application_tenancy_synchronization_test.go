@@ -2,8 +2,6 @@ package application
 
 import (
 	"context"
-	"testing"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -12,6 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func TestCreateTenantAccessForNewApplication(t *testing.T) {
@@ -56,9 +55,6 @@ func TestCreateTenantAccessForNewTenants(t *testing.T) {
 	ctx := context.Background()
 	newExternalTenantID := "ga-tenant-multiple"
 
-	parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant))
-	assert.NoError(t, err)
-
 	in := graphql.ApplicationRegisterInput{
 		Name:           "test-atom-application",
 		ProviderName:   ptr.String("provider name"),
@@ -69,11 +65,12 @@ func TestCreateTenantAccessForNewTenants(t *testing.T) {
 		},
 	}
 
+	parentExternalID := tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant)
 	tenants := []graphql.BusinessTenantMappingInput{
 		{
 			Name:           "test-new-tenant",
 			ExternalTenant: newExternalTenantID,
-			Parents:        []*string{&parent.InternalID},
+			Parents:        []*string{&parentExternalID},
 			Type:           string(tenant.Account),
 			Provider:       "provide",
 		},
@@ -89,6 +86,8 @@ func TestCreateTenantAccessForNewTenants(t *testing.T) {
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, resourceGroupTnt, request, &actualApp)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, resourceGroupTnt, &actualApp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp)
 
 	// WHEN
 	err = fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
@@ -105,7 +104,6 @@ func TestCreateTenantAccessForNewTenants(t *testing.T) {
 	}()
 
 	//THEN
-	require.NotEmpty(t, actualApp)
 	app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, newExternalTenantID, actualApp.ID)
 	assert.Equal(t, actualApp.ID, app.ID)
 }
@@ -146,6 +144,8 @@ func TestCreateTenantAccessForNewTenant(t *testing.T) {
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, resourceGroupTnt, request, &actualApp)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, resourceGroupTnt, &actualApp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp)
 
 	// WHEN
 	err = fixtures.WriteTenant(t, ctx, directorInternalGQLClient, newTenant)
@@ -162,7 +162,6 @@ func TestCreateTenantAccessForNewTenant(t *testing.T) {
 	}()
 
 	//THEN
-	require.NotEmpty(t, actualApp)
 	app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, newExternalTenantID, actualApp.ID)
 	assert.Equal(t, actualApp.ID, app.ID)
 }

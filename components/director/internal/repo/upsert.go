@@ -230,7 +230,12 @@ func buildQuery(tableName string, insertColumns []string, conflictingColumns []s
 		update = append(update, fmt.Sprintf("%[1]s=EXCLUDED.%[1]s", c))
 	}
 	stmtWithoutUpsert := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", tableName, strings.Join(insertColumns, ", "), strings.Join(values, ", "))
-	stmtWithUpsert := fmt.Sprintf("%s ON CONFLICT ( %s ) DO UPDATE SET %s", stmtWithoutUpsert, strings.Join(conflictingColumns, ", "), strings.Join(update, ", "))
+	var stmtWithUpsert string
+	if len(updateColumns) == 0 {
+		stmtWithUpsert = fmt.Sprintf("%s ON CONFLICT ( %s ) DO NOTHING", stmtWithoutUpsert, strings.Join(conflictingColumns, ", "))
+	} else {
+		stmtWithUpsert = fmt.Sprintf("%s ON CONFLICT ( %s ) DO UPDATE SET %s", stmtWithoutUpsert, strings.Join(conflictingColumns, ", "), strings.Join(update, ", "))
+	}
 
 	stmtBuilder.WriteString(stmtWithUpsert)
 	return stmtBuilder.String()

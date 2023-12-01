@@ -30,8 +30,8 @@ const (
 //
 //go:generate mockery --name=TenantMappingRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantMappingRepository interface {
-	UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) error
-	Upsert(ctx context.Context, item model.BusinessTenantMapping) error
+	UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) (string, error)
+	Upsert(ctx context.Context, item model.BusinessTenantMapping) (string, error)
 	Update(ctx context.Context, model *model.BusinessTenantMapping) error
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
@@ -179,6 +179,9 @@ func (s *service) MultipleToTenantMapping(ctx context.Context, tenantInputs []mo
 		parentsInsertedInThisRequestIDs := make([]string, 0, len(tenants[i].Parents))
 
 		for _, parentID := range tenants[i].Parents {
+			if parentID == "" {
+				continue
+			}
 			if _, ok := tenantIDs[parentID]; ok { // If the parent is inserted in this request
 				parentInternalIDs = append(parentInternalIDs, tenantIDs[parentID])
 				parentsInsertedInThisRequestIDs = append(parentsInsertedInThisRequestIDs, tenantIDs[parentID])
@@ -379,7 +382,7 @@ func (s *labeledService) UpsertSingle(ctx context.Context, tenantInput model.Bus
 	return s.upsertTenant(ctx, tenantInput, s.tenantMappingRepo.Upsert)
 }
 
-func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) error) (string, error) {
+func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) (string, error)) (string, error) {
 	id := s.uidService.Generate()
 	tenant := *tenantInput.ToBusinessTenantMapping(id)
 	tenantList := []model.BusinessTenantMappingInput{tenantInput}
@@ -407,7 +410,7 @@ func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.Bus
 	return tenantID, nil
 }
 
-func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) error) ([]string, error) {
+func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) (string, error)) ([]string, error) {
 	tenants, err := s.MultipleToTenantMapping(ctx, tenantInputs)
 	spew.Dump(tenants)
 	if err != nil {
@@ -456,17 +459,13 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 	return tenantIDs, nil
 }
 
-func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region, customerID string, action func(context.Context, model.BusinessTenantMapping) error) (string, error) {
-	if err := action(ctx, tenant); err != nil {
+func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region, customerID string, action func(context.Context, model.BusinessTenantMapping) (string, error)) (string, error) {
+	internalID, err := action(ctx, tenant)
+	if err != nil {
 		return "", err
 	}
 
-	tenantFromDB, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenant.ExternalTenant)
-	if err != nil {
-		return "", errors.Wrapf(err, "while retrieving the internal tenant ID of tenant with external ID %s", tenant.ExternalTenant)
-	}
-
-	return tenantFromDB.ID, s.upsertLabels(ctx, tenantFromDB.ID, subdomain, region, str.PtrStrToStr(tenant.LicenseType), customerID)
+	return internalID, s.upsertLabels(ctx, internalID, subdomain, region, str.PtrStrToStr(tenant.LicenseType), customerID)
 }
 
 func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region, licenseType, customerID string) error {
