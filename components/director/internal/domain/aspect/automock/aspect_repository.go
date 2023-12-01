@@ -42,34 +42,34 @@ func (_m *AspectRepository) DeleteByIntegrationDependencyID(ctx context.Context,
 	return r0
 }
 
-// ListByApplicationIDs provides a mock function with given fields: ctx, applicationIDs, pageSize, cursor
-func (_m *AspectRepository) ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.Aspect, map[string]int, error) {
-	ret := _m.Called(ctx, applicationIDs, pageSize, cursor)
+// ListByApplicationIDs provides a mock function with given fields: ctx, tenantID, applicationIDs, pageSize, cursor
+func (_m *AspectRepository) ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.Aspect, map[string]int, error) {
+	ret := _m.Called(ctx, tenantID, applicationIDs, pageSize, cursor)
 
 	var r0 []*model.Aspect
 	var r1 map[string]int
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) ([]*model.Aspect, map[string]int, error)); ok {
-		return rf(ctx, applicationIDs, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int, string) ([]*model.Aspect, map[string]int, error)); ok {
+		return rf(ctx, tenantID, applicationIDs, pageSize, cursor)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) []*model.Aspect); ok {
-		r0 = rf(ctx, applicationIDs, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int, string) []*model.Aspect); ok {
+		r0 = rf(ctx, tenantID, applicationIDs, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.Aspect)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []string, int, string) map[string]int); ok {
-		r1 = rf(ctx, applicationIDs, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string, int, string) map[string]int); ok {
+		r1 = rf(ctx, tenantID, applicationIDs, pageSize, cursor)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(map[string]int)
 		}
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, []string, int, string) error); ok {
-		r2 = rf(ctx, applicationIDs, pageSize, cursor)
+	if rf, ok := ret.Get(2).(func(context.Context, string, []string, int, string) error); ok {
+		r2 = rf(ctx, tenantID, applicationIDs, pageSize, cursor)
 	} else {
 		r2 = ret.Error(2)
 	}

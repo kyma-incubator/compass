@@ -14,24 +14,24 @@ type IntegrationDependencyConverter struct {
 	mock.Mock
 }
 
-// MultipleToGraphQL provides a mock function with given fields: in, aspects
-func (_m *IntegrationDependencyConverter) MultipleToGraphQL(in []*model.IntegrationDependency, aspects []*model.Aspect) ([]*graphql.IntegrationDependency, error) {
+// ToGraphQL provides a mock function with given fields: in, aspects
+func (_m *IntegrationDependencyConverter) ToGraphQL(in *model.IntegrationDependency, aspects []*model.Aspect) (*graphql.IntegrationDependency, error) {
 	ret := _m.Called(in, aspects)
 
-	var r0 []*graphql.IntegrationDependency
+	var r0 *graphql.IntegrationDependency
 	var r1 error
-	if rf, ok := ret.Get(0).(func([]*model.IntegrationDependency, []*model.Aspect) ([]*graphql.IntegrationDependency, error)); ok {
+	if rf, ok := ret.Get(0).(func(*model.IntegrationDependency, []*model.Aspect) (*graphql.IntegrationDependency, error)); ok {
 		return rf(in, aspects)
 	}
-	if rf, ok := ret.Get(0).(func([]*model.IntegrationDependency, []*model.Aspect) []*graphql.IntegrationDependency); ok {
+	if rf, ok := ret.Get(0).(func(*model.IntegrationDependency, []*model.Aspect) *graphql.IntegrationDependency); ok {
 		r0 = rf(in, aspects)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*graphql.IntegrationDependency)
+			r0 = ret.Get(0).(*graphql.IntegrationDependency)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func([]*model.IntegrationDependency, []*model.Aspect) error); ok {
+	if rf, ok := ret.Get(1).(func(*model.IntegrationDependency, []*model.Aspect) error); ok {
 		r1 = rf(in, aspects)
 	} else {
 		r1 = ret.Error(1)
