@@ -2,8 +2,9 @@ package model
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"strconv"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"

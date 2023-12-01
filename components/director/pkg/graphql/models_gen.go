@@ -190,11 +190,9 @@ type ApplicationUpdateInput struct {
 	LocalTenantID        *string                     `json:"localTenantID"`
 }
 
-
 type AspectAPIDefinitionInput struct {
 	OrdID string `json:"ordID"`
 }
-
 
 type AspectEventDefinitionInput struct {
 	OrdID  string    `json:"ordID"`
@@ -663,7 +661,6 @@ type IntSysSystemAuth struct {
 }
 
 func (IntSysSystemAuth) IsSystemAuth() {}
-
 
 type IntegrationDependencyInput struct {
 	Name          string         `json:"name"`

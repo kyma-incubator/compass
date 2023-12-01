@@ -1,11 +1,12 @@
 package graphql
 
 import (
+	"regexp"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/kyma-incubator/compass/components/director/internal/common"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
-	"regexp"
 )
 
 // Validate validates IntegrationDependencyInput object

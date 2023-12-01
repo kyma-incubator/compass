@@ -3,11 +3,12 @@ package domain
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspect"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationdependency"
 	ordpackage "github.com/kyma-incubator/compass/components/director/internal/domain/package"
-	"net/http"
-	"net/url"
 
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 
