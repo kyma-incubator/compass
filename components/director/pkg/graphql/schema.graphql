@@ -1918,7 +1918,15 @@ type Mutation {
 	- [refetch api spec](examples/refetch-api-spec/refetch-api-spec.graphql)
 	"""
 	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
+	"""
+	**Examples**
+	- [add integration dependency to application](examples/add-integration-dependency-to-application/add-integration-dependency-to-application.graphql)
+	"""
 	addIntegrationDependencyToApplication(appID: ID!, in: IntegrationDependencyInput! @validate): IntegrationDependency! @hasScopes(path: "graphql.mutation.addIntegrationDependencyToApplication")
+	"""
+	**Examples**
+	- [delete integration dependency](examples/delete-integration-dependency/delete-integration-dependency.graphql)
+	"""
 	deleteIntegrationDependency(id: ID!): IntegrationDependency! @hasScopes(path: "graphql.mutation.deleteIntegrationDependency")
 	requestOneTimeTokenForRuntime(id: ID!, systemAuthID: ID): OneTimeTokenForRuntime! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")
 	requestOneTimeTokenForApplication(id: ID!, systemAuthID: ID): OneTimeTokenForApplication! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForApplication")
