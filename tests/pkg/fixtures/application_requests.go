@@ -38,6 +38,12 @@ func FixSampleApplicationRegisterInputWithBaseURL(placeholder, baseURL string) g
 	return sampleInput
 }
 
+func FixSampleApplicationRegisterInputWithApplicationNamespace(placeholder, appNamespace string) graphql.ApplicationRegisterInput {
+	sampleInput := FixSampleApplicationRegisterInput(placeholder)
+	sampleInput.ApplicationNamespace = ptr.String(appNamespace)
+	return sampleInput
+}
+
 func FixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
 		Name:         placeholder,

@@ -88,7 +88,7 @@ func (r *pgRepository) ListByIntegrationDependencyID(ctx context.Context, tenant
 
 	condition := repo.NewEqualCondition(integrationDependencyIDColumn, integrationDependencyID)
 
-	if err := r.lister.List(ctx, resource.IntegrationDependency, tenant, &aspectCollection, condition); err != nil {
+	if err := r.lister.List(ctx, resource.Aspect, tenant, &aspectCollection, condition); err != nil {
 		return nil, err
 	}
 
