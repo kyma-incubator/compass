@@ -185,7 +185,7 @@ func TestPgRepository_ListByIntegrationDependencyID(t *testing.T) {
 		Name: "List Aspects",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, integration_dependency_id, title, description, mandatory, support_multiple_providers, api_resources, event_resources, ready, created_at, updated_at, deleted_at, error FROM public.aspects WHERE integration_dependency_id = $1 AND (id IN (SELECT id FROM integration_dependencies_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, integration_dependency_id, title, description, mandatory, support_multiple_providers, api_resources, event_resources, ready, created_at, updated_at, deleted_at, error FROM public.aspects WHERE integration_dependency_id = $1 AND (id IN (SELECT id FROM aspects_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{integrationDependencyID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
