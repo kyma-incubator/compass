@@ -94,9 +94,9 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.BusinessTenantMapping
 func (c *converter) InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) model.BusinessTenantMappingInput {
 	externalTenant := tnt.ExternalTenant
 	parent := str.PtrStrToStr(tnt.Parent)
-	if tnt.Type == string(tenant.Customer) {
+	if tnt.Type == tenant.TypeToStr(tenant.Customer) {
 		externalTenant = tenant.TrimCustomerIDLeadingZeros(tnt.ExternalTenant)
-	} else if tnt.Type == string(tenant.Account) {
+	} else if tnt.Type == tenant.TypeToStr(tenant.Account) {
 		parent = tenant.TrimCustomerIDLeadingZeros(str.PtrStrToStr(tnt.Parent))
 	}
 
