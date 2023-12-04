@@ -85,8 +85,8 @@ type RedirectNotificationInput struct {
 	Location             JoinPointLocation        `json:"join_point_location"`
 }
 
-// RedirectNotificationCleanupInput is an input for RedirectNotificationCleanup operator
-type RedirectNotificationCleanupInput struct {
+// AsynchronousFlowControlOperatorInput is an input for AsynchronousFlowControlOperator operator
+type AsynchronousFlowControlOperatorInput struct {
 	RedirectNotificationInput
 	NotificationStatusReportMemoryAddress uintptr `json:"notification_status_report_memory_address"`
 	FAMemoryAddress                       uintptr `json:"formation_assignment_memory_address"`         // contains the memory address of the join point details' formation assignment in form of an integer

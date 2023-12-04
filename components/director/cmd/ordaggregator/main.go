@@ -295,7 +295,7 @@ func main() {
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, webhookLabelBuilder, webhookTenantBuilder, certSubjectInputBuilder)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
-	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, nil, nil, systemAuthSvc, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, nil, nil, systemAuthSvc, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, nil, nil, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
 	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo)
@@ -324,6 +324,9 @@ func main() {
 	tombstonedResourcesDeleter := processor.NewTombstonedResourcesDeleter(transact, packageSvc, apiSvc, eventAPISvc, entityTypeSvc, capabilitySvc, integrationDependencySvc, vendorSvc, productSvc, bundleSvc)
 	opRepo := operation.NewRepository(operation.NewConverter())
 	opSvc := operation.NewService(opRepo, uuid.NewService())
+
+	constraintEngine.SetFormationAssignmentNotificationService(faNotificationSvc)
+	constraintEngine.SetFormationAssignmentService(formationAssignmentSvc)
 
 	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeOrdAggregation, cfg.OperationsManagerConfig)
 

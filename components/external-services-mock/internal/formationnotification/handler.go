@@ -166,6 +166,7 @@ type Handler struct {
 	// Mappings is a map of string to Response, where the string value currently can be `formationID` or `tenantID`
 	// mapped to a particular Response that later will be validated in the E2E tests
 	Mappings          map[string][]Response
+	Redirections      map[string][]Response
 	ShouldReturnError bool
 	config            Configuration
 }
@@ -398,12 +399,19 @@ func (h *Handler) ResetShouldFail(writer http.ResponseWriter, r *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 }
 
-// GetResponses returns the notification data saved in the Mappings
 func (h *Handler) GetResponses(writer http.ResponseWriter, r *http.Request) {
+	h.getResponses(writer, r, h.Mappings)
+}
+
+func (h *Handler) GetRedirectResponses(writer http.ResponseWriter, r *http.Request) {
+	h.getResponses(writer, r, h.Redirections)
+}
+
+func (h *Handler) getResponses(writer http.ResponseWriter, r *http.Request, mappings map[string][]Response) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
-	if bodyBytes, err := json.Marshal(&h.Mappings); err != nil {
+	if bodyBytes, err := json.Marshal(&mappings); err != nil {
 		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while marshalling notification mappings"), respErrorMsg, correlationID, http.StatusInternalServerError)
 	} else {
 		writer.WriteHeader(http.StatusOK)
@@ -418,6 +426,7 @@ func (h *Handler) GetResponses(writer http.ResponseWriter, r *http.Request) {
 func (h *Handler) Cleanup(writer http.ResponseWriter, r *http.Request) {
 	log.C(r.Context()).Info("Cleaning up formation notification mappings")
 	h.Mappings = make(map[string][]Response)
+	h.Redirections = make(map[string][]Response)
 	writer.WriteHeader(http.StatusOK)
 }
 
@@ -694,6 +703,72 @@ func (h *Handler) AsyncFailNoError(writer http.ResponseWriter, r *http.Request) 
 		}
 	}
 	h.asyncFAResponse(ctx, writer, r, operation, "", responseFunc)
+}
+
+// asyncFAResponse handles the incoming formation assignment notification requests and prepare "asynchronous" response through go routine with fixed(configurable) delay that executes the provided `responseFunc` which sends a request to the formation assignment status API
+func (h *Handler) asyncFAResponse1(ctx context.Context, writer http.ResponseWriter, r *http.Request, operation Operation, config string, responseFunc AsyncFAResponseFn) {
+	correlationID := correlation.CorrelationIDFromContext(ctx)
+
+	routeVars := mux.Vars(r)
+	id, ok := routeVars[TenantIDParam]
+	if !ok {
+		err := errors.Errorf("missing %s path parameter in the url", TenantIDParam)
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
+		return
+	}
+	if _, ok := h.Mappings[id]; !ok {
+		h.Mappings[id] = make([]Response, 0, 1)
+	}
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
+		return
+	}
+
+	var result interface{}
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while unmarshalling request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
+		return
+	}
+	response := Response{
+		Operation:   operation,
+		RequestBody: bodyBytes,
+		RequestPath: r.URL.Path,
+	}
+	if r.Method == http.MethodDelete {
+		applicationId, ok := routeVars[ApplicationIDParam]
+		if !ok {
+			err := errors.Errorf("missing %s path parameter in the url", ApplicationIDParam)
+			httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
+			return
+		}
+		response.ApplicationID = &applicationId
+	}
+
+	log.C(ctx).Infof("Adding to formation assignment notifications mappings operation: %s and body: %s", operation, string(bodyBytes))
+	h.Mappings[id] = append(h.Mappings[id], response)
+
+	formationID, err := retrieveFormationID(ctx, bodyBytes)
+	if err != nil {
+		httputils.RespondWithError(ctx, writer, http.StatusInternalServerError, errors.New("Missing formation ID"))
+		return
+	}
+
+	formationAssignmentID, err := retrieveFormationAssignmentID(ctx, bodyBytes)
+	if err != nil {
+		httputils.RespondWithError(ctx, writer, http.StatusInternalServerError, errors.New("Missing formation assignment ID"))
+		return
+	}
+
+	certAuthorizedHTTPClient, err := h.getCertAuthorizedHTTPClient(ctx)
+	if err != nil {
+		httputils.RespondWithError(ctx, writer, http.StatusInternalServerError, err)
+		return
+	}
+
+	go responseFunc(certAuthorizedHTTPClient, correlationID, formationID, formationAssignmentID, config)
+
+	writer.WriteHeader(http.StatusAccepted)
 }
 
 // executeFormationAssignmentStatusUpdateRequest prepares a request with the given inputs and sends it to the formation assignment status API

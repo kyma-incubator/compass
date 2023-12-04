@@ -394,6 +394,7 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/fail/{tenantId}", notificationHandler.FailResponse).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/fail/{tenantId}/{applicationId}", notificationHandler.FailResponse).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/reset-should-fail", notificationHandler.ResetShouldFail).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback-redirection", notificationHandler.ResetShouldFail).Methods(http.MethodPatch, http.MethodDelete)
 	// formation assignment notifications handlers for kyma integration
 	router.HandleFunc("/v1/tenants/emptyCredentials", notificationHandler.KymaEmptyCredentials).Methods(http.MethodPatch, http.MethodDelete)
 	router.HandleFunc("/v1/tenants/basicCredentials", notificationHandler.KymaBasicCredentials).Methods(http.MethodPatch, http.MethodDelete)
@@ -428,6 +429,7 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/v1/businessIntegration/async-fail-once/{uclFormationId}", notificationHandler.AsyncFormationFailOnce).Methods(http.MethodPost, http.MethodDelete)
 	// "technical" handlers for getting/deleting the FA notifications
 	router.HandleFunc("/formation-callback", notificationHandler.GetResponses).Methods(http.MethodGet)
+	router.HandleFunc("/formation-callback-redirections", notificationHandler.GetRedirectResponses).Methods(http.MethodGet)
 	router.HandleFunc("/formation-callback/cleanup", notificationHandler.Cleanup).Methods(http.MethodDelete)
 
 	// destination creator handlers
