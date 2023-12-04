@@ -316,6 +316,8 @@ func (ts *TenantsSynchronizer) createTenants(ctx context.Context, currentTenants
 			// use internal ID of parent for pre-existing targetParentTenants
 			if parentGUID, ok := currentTenants[p]; ok {
 				parentIDs = append(parentIDs, parentGUID)
+			} else {
+				parentIDs = append(parentIDs, p)
 			}
 		}
 		eventTenant.Parents = parentIDs

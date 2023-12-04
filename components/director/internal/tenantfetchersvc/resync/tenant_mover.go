@@ -197,7 +197,7 @@ func (tmv *tenantMover) tenantsToUpsert(ctx context.Context, mappings []model.Mo
 		}
 
 		if len(parents) != 1 {
-			return nil, nil, errors.Wrap(err, "the subaccount must have only one parent")
+			return nil, nil, errors.Errorf("the subaccount must have only one parent")
 		}
 
 		tenantFromDB.Parents = slices.Filter(nil, tenantFromDB.Parents, func(s string) bool {
