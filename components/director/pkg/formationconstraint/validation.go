@@ -185,7 +185,31 @@ func emptySendNotificationOperationDetails() *SendNotificationOperationDetails {
 		Webhook: &graphql.Webhook{
 			CreatedAt: &graphql.Timestamp{},
 		},
-		TemplateInput:              nil,
+		TemplateInput: &webhook.ApplicationTenantMappingInput{
+			Operation: model.AssignFormation,
+			Formation: &model.Formation{},
+			SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixLabels(),
+			},
+			SourceApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(),
+				Labels:      fixLabels(),
+			},
+			TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixLabels(),
+			},
+			TargetApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(),
+				Labels:      fixLabels(),
+			},
+			CustomerTenantContext: &webhook.CustomerTenantContext{},
+			// The assignment and reverse assignment are present on top level in the joinPointDetails and should be used from there.
+			// Here they are intentionally set to nil so that if a template that uses them will fail to register.
+			Assignment:        nil,
+			ReverseAssignment: nil,
+		},
 		FormationAssignment:        &model.FormationAssignment{},
 		ReverseFormationAssignment: &model.FormationAssignment{},
 		Formation:                  &model.Formation{},
@@ -216,6 +240,7 @@ func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturn
 				Application: fixApplicationModel(),
 				Labels:      fixLabels(),
 			},
+			CustomerTenantContext: &webhook.CustomerTenantContext{},
 			// The assignment and reverse assignment are present on top level in the joinPointDetails and should be used from there.
 			// Here they are intentionally set to nil so that if a template that uses them will fail to register.
 			Assignment:        nil,

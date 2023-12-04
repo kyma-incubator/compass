@@ -22,10 +22,12 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 	basicDests := fixBasicDestinations()
 	samlAssertionDests := fixSAMLAssertionDestinations()
 	clientCertAuthDests := fixClientCertAuthDestinations()
+	oauth2ClientCredsDests := fixOAuth2ClientCredsDestinations()
 
 	basicCreds := fixBasicCreds()
 	samlAssertionCreds := fixSAMLCreds()
 	clientCertAuthCreds := fixClientCertAuthCreds()
+	oauth2ClientCreds := fixOAuth2ClientCreds()
 
 	testCases := []struct {
 		Name                  string
@@ -94,6 +96,7 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 				destSvc.On("CreateBasicCredentialDestinations", ctx, basicDests, basicCreds, fa, corrleationIDs, false).Return(nil).Once()
 				destSvc.On("CreateSAMLAssertionDestination", ctx, samlAssertionDests, samlAssertionCreds, fa, corrleationIDs, false).Return(nil).Once()
 				destSvc.On("CreateClientCertificateAuthenticationDestination", ctx, clientCertAuthDests, clientCertAuthCreds, fa, corrleationIDs, false).Return(nil).Once()
+				destSvc.On("CreateOAuth2ClientCredentialsDestinations", ctx, oauth2ClientCredsDests, oauth2ClientCreds, fa, corrleationIDs, false).Return(nil).Once()
 				return destSvc
 			},
 			ExpectedResult: true,
@@ -294,6 +297,19 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 				return destSvc
 			},
 			ExpectedErrorMsg: fmt.Sprintf("while creating client certificate authentication destinations: %s", testErr.Error()),
+		},
+		{
+			Name:  "Error when operation is 'assign' and location is 'SendNotification' and the creation of oauth2 client creds destinations fails",
+			Input: inputForAssignSendNotification,
+			DestinationSvc: func() *automock.DestinationService {
+				destSvc := &automock.DestinationService{}
+				destSvc.On("CreateBasicCredentialDestinations", ctx, basicDests, basicCreds, fa, corrleationIDs, false).Return(nil).Once()
+				destSvc.On("CreateSAMLAssertionDestination", ctx, samlAssertionDests, samlAssertionCreds, fa, corrleationIDs, false).Return(nil).Once()
+				destSvc.On("CreateClientCertificateAuthenticationDestination", ctx, clientCertAuthDests, clientCertAuthCreds, fa, corrleationIDs, false).Return(nil).Once()
+				destSvc.On("CreateOAuth2ClientCredentialsDestinations", ctx, oauth2ClientCredsDests, oauth2ClientCreds, fa, corrleationIDs, false).Return(testErr).Once()
+				return destSvc
+			},
+			ExpectedErrorMsg: fmt.Sprintf("while creating oauth2 client credentials destinations: %s", testErr.Error()),
 		},
 	}
 	for _, testCase := range testCases {

@@ -2,10 +2,11 @@ package json
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/stretchr/testify/assert"
 	"strconv"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/require"
