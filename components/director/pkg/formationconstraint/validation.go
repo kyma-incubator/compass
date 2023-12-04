@@ -32,6 +32,8 @@ const (
 	ConfigMutatorOperator = "ConfigMutator"
 	// RedirectNotificationOperator contains the name of the RedirectNotificationOperator
 	RedirectNotificationOperator = "RedirectNotification"
+	// AsynchronousFlowControlOperator represents the asynchronous flow control operator
+	AsynchronousFlowControlOperator = "AsynchronousFlowControl"
 )
 
 // OperatorInput represent the input needed by the operators
@@ -47,6 +49,7 @@ var FormationConstraintInputByOperator = map[string]OperatorInput{
 	DestinationCreator:                                           &DestinationCreatorInput{},
 	ConfigMutatorOperator:                                        &ConfigMutatorInput{},
 	RedirectNotificationOperator:                                 &RedirectNotificationInput{},
+	AsynchronousFlowControlOperator:                              &AsynchronousFlowControlOperatorInput{},
 }
 
 // JoinPointDetailsByLocation represents a mapping between JoinPointLocation and JoinPointDetails
