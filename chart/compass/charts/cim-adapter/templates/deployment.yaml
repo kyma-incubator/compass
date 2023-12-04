@@ -92,6 +92,20 @@ spec:
               value: {{ .Values.global.cimAdapter.oauthSecret.oauthUrlPath }}
             - name: APP_SM_INSTANCE_OAUTH_TOKEN_PATH
               value: {{ .Values.global.cimAdapter.oauthSecret.oauthTokenPath }}
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+            - name: APP_EXT_SVC_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
+            - name: APP_EXT_SVC_CLIENT_CERT_KEY
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
+            - name: APP_EXT_SVC_CLIENT_KEY_KEY
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}

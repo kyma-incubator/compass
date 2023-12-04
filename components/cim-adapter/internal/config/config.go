@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/kyma-incubator/compass/components/cim-adapter/internal/server"
 	pkgconfig "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
@@ -14,10 +15,12 @@ import (
 const envPrefix = "APP"
 
 type Config struct {
-	Server            *server.Config
-	Log               *log.Config
-	HTTPClient        HTTPClient
-	ServiceManagerCfg ServiceManagerConfig
+	Server                       *server.Config
+	Log                          *log.Config
+	HTTPClient                   HTTPClient
+	ServiceManagerCfg            ServiceManagerConfig
+	CertLoaderConfig             credloader.CertConfig
+	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 type HTTPClient struct {

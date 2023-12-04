@@ -7,7 +7,9 @@ import (
 	"github.com/kyma-incubator/compass/components/cim-adapter/internal/api/paths"
 	"github.com/kyma-incubator/compass/components/cim-adapter/internal/config"
 	"github.com/kyma-incubator/compass/components/cim-adapter/internal/server"
+	httputildirector "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/pkg/errors"
@@ -47,6 +49,11 @@ func main() {
 func initAPIHandlers(ctx context.Context, cfg config.Config) http.Handler {
 	logger := log.C(ctx)
 
+	certCache, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	exitOnError(err, "failed to initialize certificate loader")
+
+	mtlsHTTPClient := httputildirector.PrepareMTLSClientWithSSLValidation(cfg.HTTPClient.Timeout, certCache, cfg.HTTPClient.SkipSSLValidation, cfg.ExternalClientCertSecretName)
+
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(paths.LivezEndpoint, paths.ReadyzEndpoint))
 
@@ -54,7 +61,7 @@ func initAPIHandlers(ctx context.Context, cfg config.Config) http.Handler {
 	healthCheckRouter := mainRouter.PathPrefix(cfg.Server.RootAPIPath).Subrouter()
 
 	logger.Infof("Registering tenant mapping endpoints...")
-	tmHandler := handlers.NewHandler(cfg)
+	tmHandler := handlers.NewHandler(cfg, mtlsHTTPClient)
 	tmRouter.Handle(cfg.Server.TenantMappingAPIEndpoint, tmHandler).Methods(http.MethodPatch)
 
 	logger.Info("Registering liveness endpoint...")
