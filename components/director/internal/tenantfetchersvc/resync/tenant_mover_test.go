@@ -46,8 +46,8 @@ func TestTenantMover_TenantsToMove(t *testing.T) {
 		TargetTenant:       targetParentTenantID,
 	}
 
-	event1 := fixEvent(t, "Subaccount", movedSubaccount1.TenantMappingInput.Parent, movedEventFieldsFromTenant(jobConfig.APIConfig.TenantFieldMapping, jobConfig.APIConfig.MovedSubaccountsFieldMapping, movedSubaccount1))
-	event2 := fixEvent(t, "Subaccount", movedSubaccount2.TenantMappingInput.Parent, movedEventFieldsFromTenant(jobConfig.APIConfig.TenantFieldMapping, jobConfig.APIConfig.MovedSubaccountsFieldMapping, movedSubaccount2))
+	event1 := fixEvent(t, "Subaccount", movedSubaccount1.TenantMappingInput.Parents[0], movedEventFieldsFromTenant(jobConfig.APIConfig.TenantFieldMapping, jobConfig.APIConfig.MovedSubaccountsFieldMapping, movedSubaccount1))
+	event2 := fixEvent(t, "Subaccount", movedSubaccount2.TenantMappingInput.Parents[0], movedEventFieldsFromTenant(jobConfig.APIConfig.TenantFieldMapping, jobConfig.APIConfig.MovedSubaccountsFieldMapping, movedSubaccount2))
 
 	pageOneQueryParams := resync.QueryParams{
 		jobConfig.PageSizeField:                        "1",
@@ -154,7 +154,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 			ID:             subaccountInternalTenant,
 			Name:           subaccountExternalTenant,
 			ExternalTenant: subaccountExternalTenant,
-			Parent:         sourceParentTenantID,
+			Parents:        []string{sourceParentTenantID},
 			Type:           tenant.Subaccount,
 			Provider:       provider,
 		}
@@ -172,7 +172,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 	movedSubaccountInput := graphql.BusinessTenantMappingInput{
 		Name:           subaccountExternalTenant,
 		ExternalTenant: subaccountExternalTenant,
-		Parent:         str.Ptr(targetParent.ID),
+		Parents:        []*string{str.Ptr(targetParent.ID)},
 		Subdomain:      str.Ptr(""),
 		Region:         str.Ptr(""),
 		Type:           string(tenant.Subaccount),
@@ -356,7 +356,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 				svc := &automock.TenantStorageService{}
 				tnt := input[0]
 				subaccountFromDBWithNewParent := *subaccountFromDB
-				subaccountFromDBWithNewParent.Parent = targetParent.ID
+				subaccountFromDBWithNewParent.Parents = []string{targetParent.ID}
 				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.TargetTenant}).Return([]*model.BusinessTenantMapping{targetParent}, nil).Once()
 				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.SubaccountID}).Return([]*model.BusinessTenantMapping{&subaccountFromDBWithNewParent}, nil).Once()
 				return svc
