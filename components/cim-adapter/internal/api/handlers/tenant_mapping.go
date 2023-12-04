@@ -33,6 +33,7 @@ const (
 	mdiCatalogName               = "one-mds"
 	mdiPlanName                  = "sap-integration"
 	cimAppNamespace              = "sap.cim"
+	mdoAppNamespace              = "sap.mdo"
 	s4AppNamespace               = "sap.s4"
 	serviceInstanceMaxLengthName = 50
 	serviceBindingMaxLengthName  = 100
@@ -113,8 +114,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// todo::: extend the PoC to return CONFIG_PENDING in for the MDO-S4 setup
-
 	statusAPIURL := r.Header.Get(LocationHeaderKey)
 	if statusAPIURL == "" {
 		err := errors.Errorf("The value of the %s header could not be empty", LocationHeaderKey)
@@ -135,7 +134,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		logger := log.C(ctx).WithField(correlationIDKey, correlationID)
 		ctx = log.ContextWithLogger(ctx, logger)
 
-		if tm.AssignedTenant.ApplicationNamespace == "sap.cim" {
+		if tm.AssignedTenant.ApplicationNamespace == mdoAppNamespace && tm.ReceiverTenant.ApplicationNamespace == s4AppNamespace {
+			log.C(ctx).Infof("Service instances details are not provided from the mdo side but from S4. Returning CONFIG_PENDING state")
+			reqBody := "{\"state\":\"CONFIG_PENDING\"}"
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				log.C(ctx).Error(statusAPIErr)
+			}
+			return
+		}
+
+		if tm.AssignedTenant.ApplicationNamespace == cimAppNamespace {
 			mdiReadSvcInstanceName := mdiCatalogName + "-read-instance-" + formationID
 			if len(mdiReadSvcInstanceName) > serviceInstanceMaxLengthName {
 				log.C(ctx).Infof("The length of the service instance name is bigger than %d, truncating it...", serviceInstanceMaxLengthName)
@@ -284,7 +292,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if tm.AssignedTenant.ApplicationNamespace == "sap.s4" {
+		if tm.AssignedTenant.ApplicationNamespace == s4AppNamespace {
 			mdiWriteSvcInstance := mdiCatalogName + "-write-instance-" + formationID
 			if len(mdiWriteSvcInstance) > serviceInstanceMaxLengthName {
 				log.C(ctx).Infof("The length of the service instance name is bigger than %d, truncating it...", serviceInstanceMaxLengthName)
