@@ -64,7 +64,7 @@ func TestHandler_Patch(t *testing.T) {
 				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID})
 			}
 
-			h := formationnotification.NewHandler(formationnotification.Configuration{})
+			h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -121,7 +121,7 @@ func TestHandler_PatchWithState(t *testing.T) {
 				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID})
 			}
 
-			h := formationnotification.NewHandler(formationnotification.Configuration{})
+			h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -187,7 +187,7 @@ func TestHandler_RespondWithIncomplete(t *testing.T) {
 				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID})
 			}
 
-			h := formationnotification.NewHandler(formationnotification.Configuration{})
+			h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -253,7 +253,7 @@ func TestHandler_RespondWithIncompleteAndDestinationDetails(t *testing.T) {
 				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID})
 			}
 
-			h := formationnotification.NewHandler(formationnotification.Configuration{})
+			h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -325,7 +325,7 @@ func TestHandler_Delete(t *testing.T) {
 			}
 			req = mux.SetURLVars(req, vars)
 
-			h := formationnotification.NewHandler(formationnotification.Configuration{})
+			h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -397,7 +397,7 @@ func TestHandler_DestinationDelete(t *testing.T) {
 			}
 			req = mux.SetURLVars(req, vars)
 
-			h := formationnotification.NewHandler(formationnotification.Configuration{})
+			h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -469,7 +469,7 @@ func TestHandler_DeleteWithState(t *testing.T) {
 			}
 			req = mux.SetURLVars(req, vars)
 
-			h := formationnotification.NewHandler(formationnotification.Configuration{})
+			h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -490,7 +490,7 @@ func TestGetResponses(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
 
-	h := formationnotification.NewHandler(formationnotification.Configuration{})
+	h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 	h.Mappings = assignMappingsWithoutConfig
 	r := httptest.NewRecorder()
 
@@ -513,7 +513,7 @@ func TestCleanup(t *testing.T) {
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	require.NoError(t, err)
 
-	h := formationnotification.NewHandler(formationnotification.Configuration{})
+	h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 	h.Mappings = assignMappingsWithoutConfig
 	r := httptest.NewRecorder()
 
@@ -614,7 +614,7 @@ func TestHandler_FailOnceResponse(t *testing.T) {
 				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID})
 			}
 
-			h := formationnotification.NewHandler(formationnotification.Configuration{})
+			h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 			r := httptest.NewRecorder()
 
 			h.ShouldReturnError = testCase.ShouldFail
@@ -638,7 +638,7 @@ func TestResetShouldFail(t *testing.T) {
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	require.NoError(t, err)
 
-	h := formationnotification.NewHandler(formationnotification.Configuration{})
+	h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 	h.ShouldReturnError = false
 	r := httptest.NewRecorder()
 
@@ -696,7 +696,7 @@ func TestHandler_PostAndDeleteFormation(t *testing.T) {
 				req = mux.SetURLVars(req, map[string]string{formationIDParam: testCase.formationID})
 			}
 
-			handler := formationnotification.NewHandler(formationnotification.Configuration{})
+			handler := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 			recorder := httptest.NewRecorder()
 
 			//WHEN
@@ -717,7 +717,7 @@ func TestHandler_PostAndDeleteFormation(t *testing.T) {
 		require.NoError(t, err)
 		req = mux.SetURLVars(req, map[string]string{formationIDParam: formationID})
 
-		handler := formationnotification.NewHandler(formationnotification.Configuration{})
+		handler := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 		recorder := httptest.NewRecorder()
 
 		//WHEN
@@ -826,7 +826,7 @@ func TestHandler_FailOnceFormation(t *testing.T) {
 				req = mux.SetURLVars(req, map[string]string{formationIDParam: testCase.FormationID})
 			}
 
-			handler := formationnotification.NewHandler(formationnotification.Configuration{})
+			handler := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 			handler.ShouldReturnError = testCase.ShouldFail
 			recorder := httptest.NewRecorder()
 
@@ -849,7 +849,7 @@ func TestKymaBasicEmptyCredentials(t *testing.T) {
 		req, err := http.NewRequest(http.MethodPatch, url, nil)
 		require.NoError(t, err)
 
-		h := formationnotification.NewHandler(formationnotification.Configuration{})
+		h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -868,7 +868,7 @@ func TestKymaBasicEmptyCredentials(t *testing.T) {
 		req, err := http.NewRequest(http.MethodDelete, url, nil)
 		require.NoError(t, err)
 
-		h := formationnotification.NewHandler(formationnotification.Configuration{})
+		h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -888,7 +888,7 @@ func TestKymaBasicCredentials(t *testing.T) {
 		req, err := http.NewRequest(http.MethodPatch, url, nil)
 		require.NoError(t, err)
 
-		h := formationnotification.NewHandler(formationnotification.Configuration{})
+		h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -907,7 +907,7 @@ func TestKymaBasicCredentials(t *testing.T) {
 		req, err := http.NewRequest(http.MethodDelete, url, nil)
 		require.NoError(t, err)
 
-		h := formationnotification.NewHandler(formationnotification.Configuration{})
+		h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -927,7 +927,7 @@ func TestOauthBasicCredentials(t *testing.T) {
 		req, err := http.NewRequest(http.MethodPatch, url, nil)
 		require.NoError(t, err)
 
-		h := formationnotification.NewHandler(formationnotification.Configuration{})
+		h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -946,7 +946,7 @@ func TestOauthBasicCredentials(t *testing.T) {
 		req, err := http.NewRequest(http.MethodDelete, url, nil)
 		require.NoError(t, err)
 
-		h := formationnotification.NewHandler(formationnotification.Configuration{})
+		h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{})
 		r := httptest.NewRecorder()
 
 		//WHEN
