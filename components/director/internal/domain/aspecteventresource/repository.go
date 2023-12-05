@@ -30,7 +30,7 @@ type pgRepository struct {
 	conv AspectEventResourceConverter
 }
 
-// NewRepository returns a new entity responsible for repo-layer Aspects operations.
+// NewRepository returns a new entity responsible for repo-layer Aspect Event Resource operations.
 func NewRepository(conv AspectEventResourceConverter) *pgRepository {
 	return &pgRepository{
 		creator: repo.NewCreator(aspectEventResourcecTable, aspectEventResourcesColumns),
@@ -48,7 +48,7 @@ func (r AspectEventResourceCollection) Len() int {
 	return len(r)
 }
 
-// Create creates an Aspect for Integration Dependency.
+// Create creates an Aspect Event Resource for an Aspect.
 func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.AspectEventResource) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
