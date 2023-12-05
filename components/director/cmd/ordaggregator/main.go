@@ -105,8 +105,9 @@ type config struct {
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 
-	ClientTimeout     time.Duration `envconfig:"default=120s"`
-	SkipSSLValidation bool          `envconfig:"default=false"`
+	ClientTimeout               time.Duration `envconfig:"default=120s"`
+	ClientMaxConnectionsPerHost int           `envconfig:"APP_CLIENT_MAX_CONNECTIONS_PER_HOST,default=500"`
+	SkipSSLValidation           bool          `envconfig:"default=false"`
 
 	RetryConfig                   retry.Config
 	CertLoaderConfig              credloader.CertConfig
@@ -190,7 +191,7 @@ func main() {
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
-			MaxConnsPerHost: 500,
+			MaxConnsPerHost: cfg.ClientMaxConnectionsPerHost,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
@@ -435,7 +436,7 @@ func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, c
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
-			MaxConnsPerHost: 500,
+			MaxConnsPerHost: cfg.ClientMaxConnectionsPerHost,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
@@ -449,7 +450,7 @@ func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
-			MaxConnsPerHost: 500,
+			MaxConnsPerHost: cfg.ClientMaxConnectionsPerHost,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
