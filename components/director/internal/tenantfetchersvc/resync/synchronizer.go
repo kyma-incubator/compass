@@ -337,11 +337,15 @@ func missingParentTenants(currTenants map[string]string, eventsTenants []model.B
 	for _, eventTenant := range eventsTenants {
 		if len(eventTenant.Parent) > 0 {
 			if _, ok := currTenants[eventTenant.Parent]; !ok {
+				parentType := getTenantParentType(eventTenant.Type)
+				if parentType == tenant.TypeToStr(tenant.Customer) {
+					eventTenant.Parent = tenant.TrimCustomerIDLeadingZeros(eventTenant.Parent)
+				}
 				parentTenant := model.BusinessTenantMappingInput{
 					Name:           eventTenant.Parent,
 					ExternalTenant: eventTenant.Parent,
 					Parent:         "",
-					Type:           getTenantParentType(eventTenant.Type),
+					Type:           parentType,
 					Provider:       providerName,
 					Region:         region,
 				}
