@@ -103,7 +103,7 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 	)
 
 	if err != nil {
-		return nil, "", err
+		return nil, "", errors.Wrap(err, "All attempts to fetch the well-known config have failed.")
 	}
 
 	webhookBaseURL, err := calculateBaseURL(webhook, *config)
@@ -143,9 +143,21 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 				log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
 			}
 
-			doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, requestObject)
+			var doc *Document
+			err = retry.Do(
+				func() error {
+					var innerErr error
+					doc, innerErr = c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, requestObject)
+					return innerErr
+				},
+				retry.Attempts(3),
+				retry.Delay(time.Second),
+				retry.OnRetry(func(n uint, err error) {
+					log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
+				}),
+			)
 			if err != nil {
-				log.C(ctx).Warn(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
+				log.C(ctx).Warn(errors.Wrapf(err, "All attempts to fetch the ORD Document have failed. Error fetching ORD document from: %s", documentURL).Error())
 				addError(&fetchDocErrors, err, &errMutex)
 				return
 			}
