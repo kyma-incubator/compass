@@ -207,7 +207,7 @@ func main() {
 	capabilityConverter := capability.NewConverter(versionConverter)
 	aspectConverter := aspect.NewConverter()
 	aspectEventResourceConverter := aspecteventresource.NewConverter()
-	integrationDependencyConverter := integrationdependency.NewConverter(versionConverter)
+	integrationDependencyConverter := integrationdependency.NewConverter(versionConverter, aspectConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
 	intSysConverter := integrationsystem.NewConverter()

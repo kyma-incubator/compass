@@ -40,7 +40,7 @@ type RuntimeService interface {
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 }
 
-// APIConverter converts EventDefinitions between the model.APIDefinition service-layer representation and the graphql-layer representation.
+// APIConverter converts APIDefinitions between the model.APIDefinition service-layer representation and the graphql-layer representation.
 //
 //go:generate mockery --name=APIConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIConverter interface {

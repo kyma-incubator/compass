@@ -37,12 +37,13 @@ type ApplicationPageExt struct {
 // ApplicationExt missing godoc
 type ApplicationExt struct {
 	Application
-	Labels                Labels                           `json:"labels"`
-	Webhooks              []Webhook                        `json:"webhooks"`
-	Auths                 []*AppSystemAuth                 `json:"auths"`
-	Bundle                BundleExt                        `json:"bundle"`
-	Bundles               BundlePageExt                    `json:"bundles"`
-	EventingConfiguration ApplicationEventingConfiguration `json:"eventingConfiguration"`
-	APIDefinition         APIDefinitionExt                 `json:"apiDefinition"`
-	EventDefinition       EventAPIDefinitionExt            `json:"eventDefinition"`
+	Labels                  Labels                           `json:"labels"`
+	Webhooks                []Webhook                        `json:"webhooks"`
+	Auths                   []*AppSystemAuth                 `json:"auths"`
+	Bundle                  BundleExt                        `json:"bundle"`
+	Bundles                 BundlePageExt                    `json:"bundles"`
+	EventingConfiguration   ApplicationEventingConfiguration `json:"eventingConfiguration"`
+	APIDefinition           APIDefinitionExt                 `json:"apiDefinition"`
+	EventDefinition         EventAPIDefinitionExt            `json:"eventDefinition"`
+	IntegrationDependencies IntegrationDependencyPage        `json:"integrationDependencies"`
 }
