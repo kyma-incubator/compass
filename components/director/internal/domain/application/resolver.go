@@ -145,6 +145,27 @@ type EventDefinitionService interface {
 	GetForApplication(ctx context.Context, id string, appID string) (*model.EventDefinition, error)
 }
 
+// IntegrationDependencyService is responsible for the service-layer Integration Dependency operations
+//
+//go:generate mockery --name=IntegrationDependencyService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type IntegrationDependencyService interface {
+	ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.IntegrationDependencyPage, error)
+}
+
+// IntegrationDependencyConverter missing godoc
+//
+//go:generate mockery --name=IntegrationDependencyConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type IntegrationDependencyConverter interface {
+	ToGraphQL(in *model.IntegrationDependency, aspects []*model.Aspect) (*graphql.IntegrationDependency, error)
+}
+
+// AspectService is responsible for the service-layer Integration Dependency operations
+//
+//go:generate mockery --name=AspectService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type AspectService interface {
+	ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.Aspect, map[string]int, error)
+}
+
 // APIDefinitionConverter missing godoc
 //
 //go:generate mockery --name=APIDefinitionConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -229,6 +250,11 @@ type Resolver struct {
 	sysAuthSvc SystemAuthService
 	bndlSvc    BundleService
 
+	integrationDependencySvc  IntegrationDependencyService
+	integrationDependencyConv IntegrationDependencyConverter
+
+	aspectSvc AspectService
+
 	apiDefinitionSvc    APIDefinitionService
 	eventDefinitionSvc  EventDefinitionService
 	apiDefinitionConv   APIDefinitionConverter
@@ -260,6 +286,9 @@ func NewResolver(transact persistence.Transactioner,
 	specSvc SpecService,
 	apiDefinitionSvc APIDefinitionService,
 	eventDefinitionSvc EventDefinitionService,
+	integrationDependencySvc IntegrationDependencyService,
+	integrationDependencyConv IntegrationDependencyConverter,
+	aspectService AspectService,
 	apiDefinitionConverter APIDefinitionConverter,
 	eventDefinitionConverter EventDefinitionConverter,
 	appTemplateSvc ApplicationTemplateService,
@@ -281,6 +310,9 @@ func NewResolver(transact persistence.Transactioner,
 		specService:                     specSvc,
 		apiDefinitionSvc:                apiDefinitionSvc,
 		eventDefinitionSvc:              eventDefinitionSvc,
+		integrationDependencySvc:        integrationDependencySvc,
+		integrationDependencyConv:       integrationDependencyConv,
+		aspectSvc:                       aspectService,
 		apiDefinitionConv:               apiDefinitionConverter,
 		eventDefinitionConv:             eventDefinitionConverter,
 		bndlConv:                        bndlConverter,
@@ -972,6 +1004,82 @@ func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Application
 	return gqlBundle, nil
 }
 
+// IntegrationDependencies fetches Integration Dependencies for an Application
+func (r *Resolver) IntegrationDependencies(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.IntegrationDependencyPage, error) {
+	param := dataloader.ParamIntegrationDependency{ID: obj.ID, Ctx: ctx, First: first, After: after}
+	return dataloader.IntegrationDependencyFor(ctx).IntegrationDependencyByID.Load(param)
+}
+
+// IntegrationDependenciesDataLoader retrieves a page of Integration Dependencies for each Application ID in the keys argument
+func (r *Resolver) IntegrationDependenciesDataLoader(keys []dataloader.ParamIntegrationDependency) ([]*graphql.IntegrationDependencyPage, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No Applications found")}
+	}
+
+	ctx := keys[0].Ctx
+	applicationIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		applicationIDs = append(applicationIDs, key.ID)
+	}
+
+	var cursor string
+	if keys[0].After != nil {
+		cursor = string(*keys[0].After)
+	}
+
+	if keys[0].First == nil {
+		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, []error{err}
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	integrationDependencyPages, err := r.integrationDependencySvc.ListByApplicationIDs(ctx, applicationIDs, *keys[0].First, cursor)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	aspects, _, err := r.aspectSvc.ListByApplicationIDs(ctx, applicationIDs, *keys[0].First, cursor)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	aspectsByApplicationID := map[string][]*model.Aspect{}
+	for _, aspect := range aspects {
+		aspectsByApplicationID[*aspect.ApplicationID] = append(aspectsByApplicationID[*aspect.ApplicationID], aspect)
+	}
+
+	gqlIntegrationDependencies := make([]*graphql.IntegrationDependencyPage, 0, len(integrationDependencyPages))
+	for i, integrationDependencyPage := range integrationDependencyPages {
+		gqlIntDeps := make([]*graphql.IntegrationDependency, 0)
+		for _, intDep := range integrationDependencyPage.Data {
+			aspectsForIntDep := getAspectsForIntegrationDependency(intDep.ID, aspectsByApplicationID[applicationIDs[i]])
+			gqlIntDep, err := r.integrationDependencyConv.ToGraphQL(intDep, aspectsForIntDep)
+			if err != nil {
+				return nil, []error{err}
+			}
+			gqlIntDeps = append(gqlIntDeps, gqlIntDep)
+		}
+		gqlIntegrationDependencies = append(gqlIntegrationDependencies, &graphql.IntegrationDependencyPage{Data: gqlIntDeps, TotalCount: integrationDependencyPage.TotalCount, PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(integrationDependencyPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(integrationDependencyPage.PageInfo.EndCursor),
+			HasNextPage: integrationDependencyPage.PageInfo.HasNextPage,
+		}})
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	return gqlIntegrationDependencies, nil
+}
+
 // ApplicationTemplate retrieves application template by given application
 func (r *Resolver) ApplicationTemplate(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationTemplate, error) {
 	if obj == nil {
@@ -1098,4 +1206,14 @@ func (r *Resolver) getApplication(ctx context.Context, get func(context.Context)
 	}
 
 	return r.appConverter.ToGraphQL(app), nil
+}
+
+func getAspectsForIntegrationDependency(integrationDependencyID string, aspects []*model.Aspect) []*model.Aspect {
+	result := make([]*model.Aspect, 0)
+	for _, aspect := range aspects {
+		if aspect.IntegrationDependencyID == integrationDependencyID {
+			result = append(result, aspect)
+		}
+	}
+	return result
 }

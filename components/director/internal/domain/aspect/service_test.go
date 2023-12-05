@@ -178,3 +178,184 @@ func TestService_DeleteByIntegrationDependencyID(t *testing.T) {
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
+
+func TestService_ListByApplicationIDs(t *testing.T) {
+	//GIVEN
+	firstAspectID := "aspectID1"
+	secondAspectID := "aspectID2"
+	firstAppID := "appID1"
+	secondAppID := "appID2"
+	appIDs := []string{firstAppID, secondAppID}
+
+	aspectFirstApp := fixAspectModel(firstAspectID)
+	aspectFirstApp.ApplicationID = &firstAppID
+	aspectSecondApp := fixAspectModel(secondAspectID)
+	aspectSecondApp.ApplicationID = &secondAppID
+
+	aspects := []*model.Aspect{aspectFirstApp, aspectSecondApp}
+
+	numberOfAspectsInFirstApp := 1
+	numberOfAspectsInSecondApp := 1
+	totalCounts := map[string]int{firstAppID: numberOfAspectsInFirstApp, secondAppID: numberOfAspectsInSecondApp}
+
+	after := "test"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name                string
+		PageSize            int
+		RepositoryFn        func() *automock.AspectRepository
+		ExpectedResult      []*model.Aspect
+		ExpectedTotalCounts map[string]int
+		ExpectedErrMessage  string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.AspectRepository {
+				repo := &automock.AspectRepository{}
+				repo.On("ListByApplicationIDs", ctx, tenantID, appIDs, 2, after).Return(aspects, totalCounts, nil).Once()
+				return repo
+			},
+			PageSize:            2,
+			ExpectedResult:      aspects,
+			ExpectedTotalCounts: totalCounts,
+			ExpectedErrMessage:  "",
+		},
+		{
+			Name: "Return error when page size is less than 1",
+			RepositoryFn: func() *automock.AspectRepository {
+				repo := &automock.AspectRepository{}
+				return repo
+			},
+			PageSize:           0,
+			ExpectedResult:     aspects,
+			ExpectedErrMessage: "page size must be between 1 and 200",
+		},
+		{
+			Name: "Return error when page size is bigger than 200",
+			RepositoryFn: func() *automock.AspectRepository {
+				repo := &automock.AspectRepository{}
+				return repo
+			},
+			PageSize:           201,
+			ExpectedResult:     aspects,
+			ExpectedErrMessage: "page size must be between 1 and 200",
+		},
+		{
+			Name: "Returns error when Aspects listing failed",
+			RepositoryFn: func() *automock.AspectRepository {
+				repo := &automock.AspectRepository{}
+				repo.On("ListByApplicationIDs", ctx, tenantID, appIDs, 2, after).Return(nil, nil, testErr).Once()
+				return repo
+			},
+			PageSize:            2,
+			ExpectedResult:      nil,
+			ExpectedTotalCounts: nil,
+			ExpectedErrMessage:  testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := aspect.NewService(repo, nil)
+
+			// WHEN
+			aspects, counts, err := svc.ListByApplicationIDs(ctx, appIDs, testCase.PageSize, after)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, aspects)
+				assert.Equal(t, testCase.ExpectedTotalCounts[firstAppID], counts[firstAppID])
+				assert.Equal(t, testCase.ExpectedTotalCounts[secondAppID], counts[secondAppID])
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := aspect.NewService(nil, nil)
+		// WHEN
+		_, _, err := svc.ListByApplicationIDs(context.TODO(), nil, 5, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
+func TestService_ListByIntegrationDependencyID(t *testing.T) {
+	// GIVEN
+	aspects := []*model.Aspect{
+		fixAspectModel(aspectID),
+		fixAspectModel(aspectID),
+		fixAspectModel(aspectID),
+	}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.AspectRepository
+		ExpectedResult     []*model.Aspect
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.AspectRepository {
+				repo := &automock.AspectRepository{}
+				repo.On("ListByIntegrationDependencyID", ctx, tenantID, integrationDependencyID).Return(aspects, nil).Once()
+				return repo
+			},
+			ExpectedResult:     aspects,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when Aspects listing failed",
+			RepositoryFn: func() *automock.AspectRepository {
+				repo := &automock.AspectRepository{}
+				repo.On("ListByIntegrationDependencyID", ctx, tenantID, integrationDependencyID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := aspect.NewService(repo, nil)
+
+			// WHEN
+			aspects, err := svc.ListByIntegrationDependencyID(ctx, integrationDependencyID)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, aspects)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := aspect.NewService(nil, nil)
+		// WHEN
+		_, err := svc.ListByIntegrationDependencyID(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
