@@ -61,7 +61,7 @@ func (EntityTypePage) IsPageable() {}
 // EntityTypeInput missing godoc
 type EntityTypeInput struct {
 	OrdID               string          `json:"ordId"`
-	LocalTenantID       string          `json:"localTenantId"`
+	LocalTenantID       string          `json:"localId"`
 	CorrelationIDs      json.RawMessage `json:"correlationIds,omitempty"`
 	Level               string          `json:"level"`
 	Title               string          `json:"title"`

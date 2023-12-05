@@ -43,7 +43,7 @@ func (*IntegrationDependency) GetType() resource.Type {
 // IntegrationDependencyInput is an input for creating a new IntegrationDependency
 type IntegrationDependencyInput struct {
 	OrdID                          *string         `json:"ordId"`
-	LocalTenantID                  *string         `json:"localTenantId,omitempty"`
+	LocalTenantID                  *string         `json:"localId,omitempty"`
 	CorrelationIDs                 json.RawMessage `json:"correlationIds,omitempty"`
 	Title                          string          `json:"title"`
 	ShortDescription               *string         `json:"shortDescription,omitempty"`

@@ -95,6 +95,8 @@ const (
 	MaxShortDescriptionRuneLength = 256
 	// MaxShortDescriptionLengthSapCorePolicy represents the maximal length of ShortDescription field for sap:core:v1 policy
 	MaxShortDescriptionLengthSapCorePolicy = 180
+	// MaxDescriptionLengthSapCorePolicy represents the maximal length of Description field for sap:core:v1 policy
+	MaxDescriptionLengthSapCorePolicy = 1000
 	// MinLocalTenantIDLength represents the minimal accepted length of the LocalID field
 	MinLocalTenantIDLength = 1
 	// MaxLocalTenantIDLength represents the maximal accepted length of the LocalID field
@@ -125,9 +127,9 @@ const (
 	MinResourceLinkCustomTypeLength = 1
 	// MaxResourceLinkCustomTypeLength represents the maximal accepted length of the custom type field in a resource link
 	MaxResourceLinkCustomTypeLength = 255
-	// MinCorrelationIDLength represents the minimal accepted length of the Correaltion ID field
+	// MinCorrelationIDLength represents the minimal accepted length of the Correlation ID field
 	MinCorrelationIDLength = 1
-	// MaxCorrelationIDLength represents the maximal accepted length of the Correaltion ID field
+	// MaxCorrelationIDLength represents the maximal accepted length of the Correlation ID field
 	MaxCorrelationIDLength = 255
 
 	// IntegrationDependencyMsg represents the resource name for Integration Dependency used in error message
@@ -597,7 +599,7 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 			return validateDefaultConsumptionBundle(value, api.PartOfConsumptionBundles)
 		})),
 		validation.Field(&api.Extensible, validation.By(func(value interface{}) error {
-			return validateExtensibleField(value, docPolicyLevel)
+			return validateExtensibleField(value, docPolicyLevel, true)
 		})),
 		validation.Field(&api.EntityTypeMappings, validation.By(validateEntityTypeMappings)),
 		validation.Field(&api.DocumentationLabels, validation.By(validateDocumentationLabels)),
@@ -685,7 +687,7 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 		validation.Field(&event.CustomImplementationStandard, validation.When(event.ImplementationStandard != nil && *event.ImplementationStandard == EventImplementationStandardCustom, validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
 		validation.Field(&event.CustomImplementationStandardDescription, validation.When(event.ImplementationStandard != nil && *event.ImplementationStandard == EventImplementationStandardCustom, validation.Required).Else(validation.Empty)),
 		validation.Field(&event.Extensible, validation.By(func(value interface{}) error {
-			return validateExtensibleField(value, docPolicyLevel)
+			return validateExtensibleField(value, docPolicyLevel, true)
 		})),
 		validation.Field(&event.EntityTypeMappings, validation.By(validateEntityTypeMappings)),
 		validation.Field(&event.DocumentationLabels, validation.By(validateDocumentationLabels)),
@@ -721,10 +723,10 @@ func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *
 		validation.Field(&entityType.Level, validation.Required, validation.Length(MinLevelLength, MaxLevelLength)),
 		validation.Field(&entityType.Title, validation.Required, validation.NewStringRule(common.NoNewLines, "title should not contain line breaks"),
 			validation.Length(MinTitleLength, MaxTitleLength)),
-		validation.Field(&entityType.ShortDescription, validation.Required, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
+		validation.Field(&entityType.ShortDescription, validation.NewStringRule(common.NoNewLines, "short description should not contain line breaks"), validation.RuneLength(1, 256),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinShortDescriptionLength, MaxShortDescriptionLengthSapCorePolicy))),
 		validation.Field(&entityType.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength),
-			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap) && entityType.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(entityType.ShortDescription)))),
+			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap) && entityType.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(entityType.ShortDescription)), validation.Length(MinDescriptionLength, MaxDescriptionLengthSapCorePolicy))),
 		validation.Field(&entityType.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&entityType.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&entityType.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
@@ -743,7 +745,7 @@ func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EntityTypeOrdIDRegex))
 		})),
 		validation.Field(&entityType.Extensible, validation.By(func(value interface{}) error {
-			return validateExtensibleField(value, docPolicyLevel)
+			return validateExtensibleField(value, docPolicyLevel, false)
 		})),
 		validation.Field(&entityType.Tags, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
@@ -1665,17 +1667,6 @@ func validateEntityTypeMappings(value interface{}) error {
 		return errors.New("entityTypeMappings should not be empty if present")
 	}
 	for _, entityTypeMapping := range entityTypeMappings {
-		// Validate APIModelSelectors
-		var apiModelSelectors []*model.APIModelSelector
-		if err := json.Unmarshal(entityTypeMapping.APIModelSelectors, &apiModelSelectors); err != nil {
-			return errors.New("error while unmarshalling APIModelSelectors for EntityTypeMapping")
-		}
-		for _, apiModelSelector := range apiModelSelectors {
-			err := validateAPIModelSelector(apiModelSelector)
-			if err != nil {
-				return errors.Wrap(err, "error while validating APIModelSelector")
-			}
-		}
 
 		// Validate EntityTypeTargets
 		var entityTypeTargets []*model.EntityTypeTarget
@@ -1691,6 +1682,24 @@ func validateEntityTypeMappings(value interface{}) error {
 				return errors.Wrap(err, "error while validating EntityTypeTarget")
 			}
 		}
+
+		// apiModelSelectors is optional field
+		if entityTypeMapping.APIModelSelectors == nil {
+			continue
+		}
+
+		// Validate APIModelSelectors
+		var apiModelSelectors []*model.APIModelSelector
+		if err := json.Unmarshal(entityTypeMapping.APIModelSelectors, &apiModelSelectors); err != nil {
+			return errors.New("error while unmarshalling APIModelSelectors for EntityTypeMapping")
+		}
+		for _, apiModelSelector := range apiModelSelectors {
+			err := validateAPIModelSelector(apiModelSelector)
+			if err != nil {
+				return errors.Wrap(err, "error while validating APIModelSelector")
+			}
+		}
+
 	}
 	return nil
 }
@@ -1885,10 +1894,10 @@ func notPartOfConsumptionBundles(partOfConsumptionBundles []*model.ConsumptionBu
 	}
 }
 
-func validateExtensibleField(value interface{}, policyLevelInput *string) error {
+func validateExtensibleField(value interface{}, policyLevelInput *string, shouldBeRequired bool) error {
 	policyLevel := str.PtrStrToStr(policyLevelInput)
 
-	if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (value == nil || value.(json.RawMessage) == nil) {
+	if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && shouldBeRequired && (value == nil || value.(json.RawMessage) == nil) {
 		return errors.Errorf("`extensible` field must be provided when `policyLevel` is either `%s` or `%s`", PolicyLevelSap, PolicyLevelSapPartner)
 	}
 
