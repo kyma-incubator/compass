@@ -120,7 +120,8 @@ func (r *Resolver) AddIntegrationDependencyToApplication(ctx context.Context, ap
 
 	versionValue := defaultVersionValue
 	if in.Version != nil {
-		versionValue = in.Version.Value
+		// the input version value comes in this format: "1.0.0", but we need v1
+		versionValue = fmt.Sprintf("v%s", strings.Split(in.Version.Value, ".")[0])
 	}
 	// generate values which are mandatory by ORD spec if they are missing
 	in.OrdID = getOrdID(in.OrdID, appNamespace, in.Name, versionValue)
@@ -164,24 +165,24 @@ func (r *Resolver) AddIntegrationDependencyToApplication(ctx context.Context, ap
 
 	integrationDependency, err := r.integrationDependencySvc.Get(ctx, integrationDependencyID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Integration Depeendency with id %q", integrationDependencyID)
+		return nil, errors.Wrapf(err, "while getting Integration Dependency with id %q", integrationDependencyID)
 	}
 
 	aspects, err := r.aspectSvc.ListByIntegrationDependencyID(ctx, integrationDependencyID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Aspects for Integration Depeendency with id %q", integrationDependencyID)
+		return nil, errors.Wrapf(err, "while getting Aspects for Integration Dependency with id %q", integrationDependencyID)
 	}
 
 	gqlIntegrationDependency, err := r.integrationDependencyConverter.ToGraphQL(integrationDependency, aspects)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Integration Dependecy with id %q to graphQL", integrationDependencyID)
+		return nil, errors.Wrapf(err, "while converting Integration Dependency with id %q to graphQL", integrationDependencyID)
 	}
 
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
-	log.C(ctx).Infof("Integration Depenedncy with id %q successfully added to application with id %q", integrationDependencyID, appID)
+	log.C(ctx).Infof("Integration Dependency with id %q successfully added to application with id %q", integrationDependencyID, appID)
 	return gqlIntegrationDependency, nil
 }
 

@@ -339,6 +339,10 @@ func TestIntegrationDependencyInput_Validate_Mandatory(t *testing.T) {
 
 func TestIntegrationDependencyInput_Validate_Version(t *testing.T) {
 	validObj := fixValidVersionInput()
+
+	invalidObj := validObj
+	invalidObj.Value = "invalidValue"
+
 	emptyObj := graphql.VersionInput{}
 
 	testCases := []struct {
@@ -352,12 +356,17 @@ func TestIntegrationDependencyInput_Validate_Version(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
+			Name:          "Invalid object",
+			Value:         &invalidObj,
+			ExpectedValid: false,
+		},
+		{
 			Name:          "Nil object",
 			Value:         nil,
 			ExpectedValid: true,
 		},
 		{
-			Name:          "Invalid object",
+			Name:          "Empty object",
 			Value:         &emptyObj,
 			ExpectedValid: false,
 		},

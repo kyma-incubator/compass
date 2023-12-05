@@ -27,8 +27,6 @@ import (
 
 // Disclaimer: All regexes below are provided by the ORD spec itself.
 const (
-	// SemVerRegex represents the valid structure of the field
-	SemVerRegex = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 	// VendorOrdIDRegex represents the valid structure of the ordID of the Vendor
 	VendorOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(vendor):([a-zA-Z0-9._\\-]+):()$"
 	// ProductOrdIDRegex represents the valid structure of the ordID of the Product
@@ -350,7 +348,7 @@ func validatePackageInput(pkg *model.PackageInput, docPolicyLevel *string) error
 		validation.Field(&pkg.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, pkg.PolicyLevel, PolicyLevelSap) && pkg.ShortDescription != "", validation.By(validateDescriptionDoesNotContainShortDescription(&pkg.ShortDescription)))),
 		validation.Field(&pkg.SupportInfo, validation.NilOrNotEmpty),
-		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
+		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(common.SemVerRegex))),
 		validation.Field(&pkg.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom, PolicyLevelNone), validation.When(pkg.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
 		validation.Field(&pkg.CustomPolicyLevel, validation.When(pkg.PolicyLevel != nil && *pkg.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 		validation.Field(&pkg.PackageLinks, validation.By(validatePackageLinks)),
@@ -481,7 +479,7 @@ func validateBundleInput(bndl *model.BundleCreateInput, credentialExchangeStrate
 		validation.Field(&bndl.Name, validation.Required),
 		validation.Field(&bndl.ShortDescription, optionalShortDescriptionRules...),
 		validation.Field(&bndl.Description, validation.NilOrNotEmpty, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
-		validation.Field(&bndl.Version, validation.Match(regexp.MustCompile(SemVerRegex))),
+		validation.Field(&bndl.Version, validation.Match(regexp.MustCompile(common.SemVerRegex))),
 		validation.Field(&bndl.Links, validation.By(validateORDLinks)),
 		validation.Field(&bndl.Labels, validation.By(validateORDLabels)),
 		validation.Field(&bndl.CredentialExchangeStrategies, validation.By(func(value interface{}) error {
@@ -525,7 +523,7 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, api.PolicyLevel, PolicyLevelSap) && api.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(api.ShortDescription)))),
 		validation.Field(&api.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom, PolicyLevelNone), validation.When(api.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
 		validation.Field(&api.CustomPolicyLevel, validation.When(api.PolicyLevel != nil && *api.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
-		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
+		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(common.SemVerRegex))),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
 		validation.Field(&api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc, APIProtocolWebsocket, APIProtocolSAPSQLAPIV1, APIProtocolGraphql)),
 		validation.Field(&api.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
@@ -620,7 +618,7 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, event.PolicyLevel, PolicyLevelSap) && event.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(event.ShortDescription)))),
 		validation.Field(&event.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom, PolicyLevelNone), validation.When(event.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
 		validation.Field(&event.CustomPolicyLevel, validation.When(event.PolicyLevel != nil && *event.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
-		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
+		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(common.SemVerRegex))),
 		validation.Field(&event.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
 		validation.Field(&event.Visibility, validation.Required, validation.In(EventVisibilityPublic, EventVisibilityInternal, EventVisibilityPrivate)),
 		validation.Field(&event.PartOfProducts, validation.By(func(value interface{}) error {
@@ -714,7 +712,7 @@ func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap), validation.Match(regexp.MustCompile(ShortDescriptionSapCorePolicyRegex)), validation.Length(MinShortDescriptionLength, MaxShortDescriptionLengthSapCorePolicy))),
 		validation.Field(&entityType.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength),
 			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap) && entityType.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(entityType.ShortDescription)))),
-		validation.Field(&entityType.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
+		validation.Field(&entityType.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(common.SemVerRegex))),
 		validation.Field(&entityType.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&entityType.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
 		validation.Field(&entityType.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
@@ -770,7 +768,7 @@ func validateCapabilityInput(capability *model.CapabilityInput) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
 		validation.Field(&capability.LastUpdate, validation.When(capability.LastUpdate != nil, validation.By(isValidDate))),
-		validation.Field(&capability.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
+		validation.Field(&capability.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(common.SemVerRegex))),
 	)
 }
 
@@ -1013,7 +1011,7 @@ func validateORDChangeLogEntries(value interface{}) error {
 	return common.ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"version": {
 			validation.Required,
-			validation.Match(regexp.MustCompile(SemVerRegex)),
+			validation.Match(regexp.MustCompile(common.SemVerRegex)),
 		},
 		"releaseStatus": {
 			validation.Required,
