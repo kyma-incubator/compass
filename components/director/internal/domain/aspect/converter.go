@@ -28,7 +28,6 @@ func (c *converter) FromEntity(entity *Entity) *model.Aspect {
 		Mandatory:                    repo.BoolPtrFromNullableBool(entity.Mandatory),
 		SupportMultipleProviders:     repo.BoolPtrFromNullableBool(entity.SupportMultipleProviders),
 		APIResources:                 repo.JSONRawMessageFromNullableString(entity.APIResources),
-		EventResources:               repo.JSONRawMessageFromNullableString(entity.EventResources),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -55,7 +54,6 @@ func (c *converter) ToEntity(aspectModel *model.Aspect) *Entity {
 		Mandatory:                    repo.NewNullableBool(aspectModel.Mandatory),
 		SupportMultipleProviders:     repo.NewNullableBool(aspectModel.SupportMultipleProviders),
 		APIResources:                 repo.NewNullableStringFromJSONRawMessage(aspectModel.APIResources),
-		EventResources:               repo.NewNullableStringFromJSONRawMessage(aspectModel.EventResources),
 		BaseEntity: &repo.BaseEntity{
 			ID:        aspectModel.ID,
 			Ready:     aspectModel.Ready,

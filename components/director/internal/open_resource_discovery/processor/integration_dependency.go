@@ -29,19 +29,28 @@ type AspectService interface {
 	DeleteByIntegrationDependencyID(ctx context.Context, integrationDependencyID string) error
 }
 
+// AspectEventResourceService is responsible for the service-layer Aspect Event Resource operations.
+//
+//go:generate mockery --name=AspectEventResourceService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type AspectEventResourceService interface {
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, aspectID string, in model.AspectEventResourceInput) (string, error)
+}
+
 // IntegrationDependencyProcessor defines Integration Dependency processor
 type IntegrationDependencyProcessor struct {
 	transact                 persistence.Transactioner
 	integrationDependencySvc IntegrationDependencyService
 	aspectSvc                AspectService
+	aspectEventResourceSvc   AspectEventResourceService
 }
 
 // NewIntegrationDependencyProcessor creates new instance of IntegrationDependencyProcessor
-func NewIntegrationDependencyProcessor(transact persistence.Transactioner, integrationDependencySvc IntegrationDependencyService, aspectSvc AspectService) *IntegrationDependencyProcessor {
+func NewIntegrationDependencyProcessor(transact persistence.Transactioner, integrationDependencySvc IntegrationDependencyService, aspectSvc AspectService, aspectEventResourceSvc AspectEventResourceService) *IntegrationDependencyProcessor {
 	return &IntegrationDependencyProcessor{
 		transact:                 transact,
 		integrationDependencySvc: integrationDependencySvc,
 		aspectSvc:                aspectSvc,
+		aspectEventResourceSvc:   aspectEventResourceSvc,
 	}
 }
 
@@ -121,9 +130,16 @@ func (id *IntegrationDependencyProcessor) resyncIntegrationDependency(ctx contex
 			return err
 		}
 
-		err = id.createAspects(ctx, resourceType, resourceID, integrationDependencyID, integrationDependency.Aspects)
+		aspectEventResourcesByAspectID, err := id.createAspects(ctx, resourceType, resourceID, integrationDependencyID, integrationDependency.Aspects)
 		if err != nil {
 			return err
+		}
+
+		for aspectID, aspectEventResources := range aspectEventResourcesByAspectID {
+			err = id.createAspectEventResources(ctx, resourceType, resourceID, aspectID, aspectEventResources)
+			if err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -137,9 +153,32 @@ func (id *IntegrationDependencyProcessor) resyncIntegrationDependency(ctx contex
 	return id.resyncAspects(ctx, resourceType, resourceID, integrationDependenciesFromDB[i].ID, integrationDependency.Aspects)
 }
 
-func (id *IntegrationDependencyProcessor) createAspects(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyID string, aspects []*model.AspectInput) error {
+func (id *IntegrationDependencyProcessor) createAspects(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyID string, aspects []*model.AspectInput) (map[string][]*model.AspectEventResourceInput, error) {
+	aspectEventResourcesByAspectID := make(map[string][]*model.AspectEventResourceInput, 0)
 	for _, aspect := range aspects {
-		_, err := id.aspectSvc.Create(ctx, resourceType, resourceID, integrationDependencyID, *aspect)
+		id, err := id.aspectSvc.Create(ctx, resourceType, resourceID, integrationDependencyID, *aspect)
+		if err != nil {
+			return nil, err
+		}
+		aspectEventResourcesByAspectID[id] = aspect.EventResources
+	}
+
+	return aspectEventResourcesByAspectID, nil
+}
+
+func (id *IntegrationDependencyProcessor) resyncAspects(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyID string, aspects []*model.AspectInput) error {
+	// this has to delete aspects and its event resources as well, otherwise use deleteByAspectID method
+	if err := id.aspectSvc.DeleteByIntegrationDependencyID(ctx, integrationDependencyID); err != nil {
+		return err
+	}
+
+	aspectEventResourcesByAspectID, err := id.createAspects(ctx, resourceType, resourceID, integrationDependencyID, aspects)
+	if err != nil {
+		return err
+	}
+
+	for aspectID, aspectEventResources := range aspectEventResourcesByAspectID {
+		err := id.createAspectEventResources(ctx, resourceType, resourceID, aspectID, aspectEventResources)
 		if err != nil {
 			return err
 		}
@@ -148,10 +187,13 @@ func (id *IntegrationDependencyProcessor) createAspects(ctx context.Context, res
 	return nil
 }
 
-func (id *IntegrationDependencyProcessor) resyncAspects(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyID string, aspects []*model.AspectInput) error {
-	if err := id.aspectSvc.DeleteByIntegrationDependencyID(ctx, integrationDependencyID); err != nil {
-		return err
+func (id *IntegrationDependencyProcessor) createAspectEventResources(ctx context.Context, resourceType resource.Type, resourceID string, aspectID string, aspectEventResources []*model.AspectEventResourceInput) error {
+	for _, aspectEventResource := range aspectEventResources {
+		_, err := id.aspectEventResourceSvc.Create(ctx, resourceType, resourceID, aspectID, *aspectEventResource)
+		if err != nil {
+			return err
+		}
 	}
 
-	return id.createAspects(ctx, resourceType, resourceID, integrationDependencyID, aspects)
+	return nil
 }
