@@ -1,4 +1,4 @@
-//package tenant_test
+package tenant_test
 //
 //import (
 //	"fmt"
