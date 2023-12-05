@@ -2,9 +2,10 @@ package asserters
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg/json"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/json"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -16,7 +17,7 @@ import (
 type FormationAssignmentsAsyncAsserter struct {
 	FormationAssignmentsAsserter
 	timeout time.Duration
-	tick time.Duration
+	tick    time.Duration
 }
 
 func NewFormationAssignmentAsyncAsserter(expectations map[string]map[string]fixtures.AssignmentState, expectedAssignmentsCount int, certSecuredGraphQLClient *graphql.Client, tenantID string) *FormationAssignmentsAsyncAsserter {
@@ -27,8 +28,8 @@ func NewFormationAssignmentAsyncAsserter(expectations map[string]map[string]fixt
 			certSecuredGraphQLClient: certSecuredGraphQLClient,
 			tenantID:                 tenantID,
 		},
-		timeout: time.Second*8,
-		tick: time.Millisecond*50,
+		timeout: time.Second * 8,
+		tick:    time.Millisecond * 50,
 	}
 	return &f
 }

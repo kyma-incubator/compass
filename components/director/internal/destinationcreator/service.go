@@ -165,11 +165,11 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 }
 
 // CreateBasicCredentialDestinations is responsible to create a basic destination resource in the remote destination service
-func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error {
+func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error) {
 	subaccountID := destinationDetails.SubaccountID
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
-		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
+		return nil, errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
 	destinationName := destinationDetails.Name
@@ -180,43 +180,47 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 		InstanceID:   destinationDetails.InstanceID,
 	}, false)
 	if err != nil {
-		return errors.Wrapf(err, "while building destination URL")
+		return nil, errors.Wrapf(err, "while building destination URL")
 	}
 
 	reqBody, err := s.PrepareBasicRequestBody(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	log.C(ctx).Infof("Creating inbound basic destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
 	_, statusCode, err := s.executeCreateRequest(ctx, strURL, reqBody, destinationName)
 	if err != nil {
-		return errors.Wrapf(err, "while creating inbound basic destination with name: %q in the destination service", destinationName)
+		return nil, errors.Wrapf(err, "while creating inbound basic destination with name: %q in the destination service", destinationName)
 	}
 
 	if statusCode == http.StatusConflict {
 		log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destinationName)
 		depth++
 		if depth > DepthLimit {
-			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
+			return nil, errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
 		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment, skipSubaccountValidation); err != nil {
-			return errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
+			return nil, errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
 		}
 
 		return s.CreateBasicCredentialDestinations(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	}
 
-	return nil
+	return &destinationcreatorpkg.DestinationInfo{
+		AuthenticationType: reqBody.AuthenticationType,
+		Type:               reqBody.Type,
+		URL:                reqBody.URL,
+	}, nil
 }
 
 // CreateSAMLAssertionDestination is responsible to create SAML Assertion destination resource in the DB as well as in the remote destination service
-func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error {
+func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error) {
 	subaccountID := destinationDetails.SubaccountID
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
-		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
+		return nil, errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
 	destinationName := destinationDetails.Name
@@ -227,12 +231,12 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 		InstanceID:   destinationDetails.InstanceID,
 	}, false)
 	if err != nil {
-		return errors.Wrapf(err, "while building destination URL")
+		return nil, errors.Wrapf(err, "while building destination URL")
 	}
 
 	certName, err := GetDestinationCertificateName(ctx, destinationcreatorpkg.AuthTypeSAMLAssertion, formationAssignment.ID)
 	if err != nil {
-		return errors.Wrapf(err, "while getting destination certificate name for destination auth type: %s", destinationcreatorpkg.AuthTypeSAMLAssertion)
+		return nil, errors.Wrapf(err, "while getting destination certificate name for destination auth type: %s", destinationcreatorpkg.AuthTypeSAMLAssertion)
 	}
 
 	destReqBody := &SAMLAssertionDestinationRequestBody{
@@ -248,13 +252,13 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 
 	enrichedProperties, err := enrichDestinationAdditionalPropertiesWithCorrelationIDs(s.config, correlationIDs, destinationDetails.AdditionalProperties)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	destReqBody.AdditionalProperties = enrichedProperties
 
 	u, err := s.calculateDestinationURL(ctx, destinationDetails.URL, samlAuthCreds.URL, destinationcreatorpkg.AuthTypeSAMLAssertion, formationAssignment.TenantID, formationAssignment.Target)
 	if err != nil {
-		return errors.Wrapf(err, "while calculating destination URL")
+		return nil, errors.Wrapf(err, "while calculating destination URL")
 	}
 	destReqBody.URL = u
 
@@ -267,50 +271,54 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 	}
 
 	if destinationDetails.Authentication != "" && destinationcreatorpkg.AuthType(destinationDetails.Authentication) != destinationcreatorpkg.AuthTypeSAMLAssertion {
-		return errors.Errorf("The provided authentication type: %s in the destination details is invalid. It should be %s", destinationDetails.Authentication, destinationcreatorpkg.AuthTypeSAMLAssertion)
+		return nil, errors.Errorf("The provided authentication type: %s in the destination details is invalid. It should be %s", destinationDetails.Authentication, destinationcreatorpkg.AuthTypeSAMLAssertion)
 	}
 
 	app, err := s.applicationRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Source)
 	if err != nil {
-		return errors.Wrapf(err, "while getting application with ID: %q", formationAssignment.Source)
+		return nil, errors.Wrapf(err, "while getting application with ID: %q", formationAssignment.Source)
 	}
 	if app.BaseURL != nil {
 		destReqBody.Audience = *app.BaseURL
 	}
 
 	if err := destReqBody.Validate(); err != nil {
-		return errors.Wrapf(err, "while validating SAML assertion destination request body")
+		return nil, errors.Wrapf(err, "while validating SAML assertion destination request body")
 	}
 
 	log.C(ctx).Infof("Creating SAML assertion destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
 	_, statusCode, err := s.executeCreateRequest(ctx, strURL, destReqBody, destinationName)
 	if err != nil {
-		return errors.Wrapf(err, "while creating SAML assertion destination with name: %q in the destination service", destinationName)
+		return nil, errors.Wrapf(err, "while creating SAML assertion destination with name: %q in the destination service", destinationName)
 	}
 
 	if statusCode == http.StatusConflict {
 		log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destinationName)
 		depth++
 		if depth > DepthLimit {
-			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
+			return nil, errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
 		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment, skipSubaccountValidation); err != nil {
-			return errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
+			return nil, errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
 		}
 
 		return s.CreateSAMLAssertionDestination(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	}
 
-	return nil
+	return &destinationcreatorpkg.DestinationInfo{
+		AuthenticationType: destReqBody.AuthenticationType,
+		Type:               destReqBody.Type,
+		URL:                destReqBody.URL,
+	}, nil
 }
 
 // CreateClientCertificateDestination is responsible to create client certificate destination resource in the DB as well as in the remote destination service
-func (s *Service) CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error {
+func (s *Service) CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error) {
 	subaccountID := destinationDetails.SubaccountID
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
-		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
+		return nil, errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
 	destinationName := destinationDetails.Name
@@ -321,12 +329,12 @@ func (s *Service) CreateClientCertificateDestination(ctx context.Context, destin
 		InstanceID:   destinationDetails.InstanceID,
 	}, false)
 	if err != nil {
-		return errors.Wrapf(err, "while building destination URL")
+		return nil, errors.Wrapf(err, "while building destination URL")
 	}
 
 	certName, err := GetDestinationCertificateName(ctx, destinationcreatorpkg.AuthTypeClientCertificate, formationAssignment.ID)
 	if err != nil {
-		return errors.Wrapf(err, "while getting destination certificate name for destination auth type: %s", destinationcreatorpkg.AuthTypeClientCertificate)
+		return nil, errors.Wrapf(err, "while getting destination certificate name for destination auth type: %s", destinationcreatorpkg.AuthTypeClientCertificate)
 	}
 
 	destReqBody := &ClientCertAuthDestinationRequestBody{
@@ -342,13 +350,13 @@ func (s *Service) CreateClientCertificateDestination(ctx context.Context, destin
 
 	enrichedProperties, err := enrichDestinationAdditionalPropertiesWithCorrelationIDs(s.config, correlationIDs, destinationDetails.AdditionalProperties)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	destReqBody.AdditionalProperties = enrichedProperties
 
 	u, err := s.calculateDestinationURL(ctx, destinationDetails.URL, clientCertAuthCreds.URL, destinationcreatorpkg.AuthTypeClientCertificate, formationAssignment.TenantID, formationAssignment.Target)
 	if err != nil {
-		return errors.Wrapf(err, "while calculating destination URL")
+		return nil, errors.Wrapf(err, "while calculating destination URL")
 	}
 	destReqBody.URL = u
 
@@ -361,34 +369,128 @@ func (s *Service) CreateClientCertificateDestination(ctx context.Context, destin
 	}
 
 	if destinationDetails.Authentication != "" && destinationcreatorpkg.AuthType(destinationDetails.Authentication) != destinationcreatorpkg.AuthTypeClientCertificate {
-		return errors.Errorf("The provided authentication type: %s in the destination details is invalid. It should be %s", destinationDetails.Authentication, destinationcreatorpkg.AuthTypeClientCertificate)
+		return nil, errors.Errorf("The provided authentication type: %s in the destination details is invalid. It should be %s", destinationDetails.Authentication, destinationcreatorpkg.AuthTypeClientCertificate)
 	}
 
 	if err := destReqBody.Validate(); err != nil {
-		return errors.Wrapf(err, "while validating client certificate destination request body")
+		return nil, errors.Wrapf(err, "while validating client certificate destination request body")
 	}
 
 	log.C(ctx).Infof("Creating client certificate authentication destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
 	_, statusCode, err := s.executeCreateRequest(ctx, strURL, destReqBody, destinationName)
 	if err != nil {
-		return errors.Wrapf(err, "while creating client certificate authentication destination with name: %q in the destination service", destinationName)
+		return nil, errors.Wrapf(err, "while creating client certificate authentication destination with name: %q in the destination service", destinationName)
 	}
 
 	if statusCode == http.StatusConflict {
 		log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destinationName)
 		depth++
 		if depth > DepthLimit {
-			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
+			return nil, errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
 		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment, skipSubaccountValidation); err != nil {
-			return errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
+			return nil, errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
 		}
 
 		return s.CreateClientCertificateDestination(ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	}
 
-	return nil
+	return &destinationcreatorpkg.DestinationInfo{
+		AuthenticationType: destReqBody.AuthenticationType,
+		Type:               destReqBody.Type,
+		URL:                destReqBody.URL,
+	}, nil
+}
+
+// CreateOAuth2ClientCredentialsDestinations is responsible to create an oauth2 client credentials destination resource in the remote destination service
+func (s *Service) CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2ClientCredsCredentials *operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error) {
+	subaccountID := destinationDetails.SubaccountID
+	region, err := s.getRegionLabel(ctx, subaccountID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
+	}
+
+	destinationName := destinationDetails.Name
+	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
+		EntityName:   destinationName,
+		Region:       region,
+		SubaccountID: subaccountID,
+		InstanceID:   destinationDetails.InstanceID,
+	}, false)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while building destination URL")
+	}
+
+	reqBody := &OAuth2ClientCredsDestinationRequestBody{
+		BaseDestinationRequestBody: BaseDestinationRequestBody{
+			Name:               destinationDetails.Name,
+			Type:               destinationcreatorpkg.TypeHTTP,
+			ProxyType:          destinationcreatorpkg.ProxyTypeInternet,
+			AuthenticationType: destinationcreatorpkg.AuthTypeOAuth2ClientCredentials,
+		},
+		ClientID:        oauth2ClientCredsCredentials.ClientID,
+		ClientSecret:    oauth2ClientCredsCredentials.ClientSecret,
+		TokenServiceURL: oauth2ClientCredsCredentials.TokenServiceURL,
+	}
+
+	enrichedProperties, err := enrichDestinationAdditionalPropertiesWithCorrelationIDs(s.config, correlationIDs, destinationDetails.AdditionalProperties)
+	if err != nil {
+		return nil, err
+	}
+	reqBody.AdditionalProperties = enrichedProperties
+
+	u, err := s.calculateDestinationURL(ctx, destinationDetails.URL, oauth2ClientCredsCredentials.URL, destinationcreatorpkg.AuthTypeOAuth2ClientCredentials, formationAssignment.TenantID, formationAssignment.Target)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while calculating destination URL")
+	}
+	reqBody.URL = u
+
+	if destinationDetails.Type != "" {
+		reqBody.Type = destinationcreatorpkg.Type(destinationDetails.Type)
+	}
+
+	if destinationDetails.ProxyType != "" {
+		reqBody.ProxyType = destinationcreatorpkg.ProxyType(destinationDetails.ProxyType)
+	}
+
+	if destinationDetails.TokenServiceURLType != "" {
+		reqBody.TokenServiceURLType = destinationDetails.TokenServiceURLType
+	}
+
+	if destinationDetails.Authentication != "" && destinationcreatorpkg.AuthType(destinationDetails.Authentication) != destinationcreatorpkg.AuthTypeOAuth2ClientCredentials {
+		return nil, errors.Errorf("The provided authentication type: %s in the destination details is invalid. It should be %s", destinationDetails.Authentication, destinationcreatorpkg.AuthTypeOAuth2ClientCredentials)
+	}
+
+	if err := reqBody.Validate(); err != nil {
+		return nil, errors.Wrapf(err, "while validating oauth2 client credentials destination request body")
+	}
+
+	log.C(ctx).Infof("Creating inbound oauth2 client credentials destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
+	_, statusCode, err := s.executeCreateRequest(ctx, strURL, reqBody, destinationName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while creating inbound oauth2 client credentials destination with name: %q in the destination service", destinationName)
+	}
+
+	if statusCode == http.StatusConflict {
+		log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destinationName)
+		depth++
+		if depth > DepthLimit {
+			return nil, errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
+		}
+
+		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment, skipSubaccountValidation); err != nil {
+			return nil, errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
+		}
+
+		return s.CreateOAuth2ClientCredentialsDestinations(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	}
+
+	return &destinationcreatorpkg.DestinationInfo{
+		AuthenticationType: reqBody.AuthenticationType,
+		Type:               reqBody.Type,
+		URL:                reqBody.URL,
+	}, nil
 }
 
 // CreateCertificate is responsible to create certificate resource in the remote destination service
@@ -908,12 +1010,7 @@ func (s *Service) validateRuntimeContextProviderSubaccount(ctx context.Context, 
 	return s.validateRuntimeProviderSubaccount(ctx, rtmCtx.RuntimeID, externalDestSubaccountID)
 }
 
-func (s *Service) executeCreateRequest(
-	ctx context.Context,
-	url string,
-	reqBody interface{},
-	entityName string,
-) (defaultRespBody []byte, defaultStatusCode int, err error) {
+func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody interface{}, entityName string) (defaultRespBody []byte, defaultStatusCode int, err error) {
 	reqBodyBytes, err := json.Marshal(reqBody)
 	if err != nil {
 		return defaultRespBody, defaultStatusCode, errors.Wrapf(err, "while marshalling request body")

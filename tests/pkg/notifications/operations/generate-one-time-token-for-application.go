@@ -10,10 +10,10 @@ import (
 )
 
 type GenerateOnetimeTokenForApplicationOperation struct {
-	applicationID string
-	tenantID      string
+	applicationID  string
+	tenantID       string
 	scenarioGroups string
-	asserters                          []asserters.Asserter
+	asserters      []asserters.Asserter
 }
 
 func NewGenerateOnetimeTokenForApplicationOperation(applicationID string, tenantID string) *GenerateOnetimeTokenForApplicationOperation {

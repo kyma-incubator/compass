@@ -18,6 +18,7 @@ package tenant
 
 import (
 	"context"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
@@ -45,4 +46,10 @@ func LoadFromContext(ctx context.Context) (string, error) {
 // SaveToContext saves the provided tenantID into the respective context
 func SaveToContext(ctx context.Context, tenantID string) context.Context {
 	return context.WithValue(ctx, ContextKey, tenantID)
+}
+
+// TrimCustomerIDLeadingZeros trims the leading zeros of customer IDs. Some IDs might have those zeros but we need
+// to unify all IDs because other external services expect the values without the zeros.
+func TrimCustomerIDLeadingZeros(id string) string {
+	return strings.TrimLeft(id, "0")
 }
