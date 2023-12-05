@@ -3,6 +3,7 @@ package tenant
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -251,6 +252,37 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Tenant, key *string)
 	return resultLabels, nil
 }
 
+func (r *Resolver) sanitizeCRMIds(ctx context.Context, inputTenants []*graphql.BusinessTenantMappingInput) {
+	tenantIDToSanitizedTenantID := make(map[string]string, len(inputTenants))
+	for _, inputTenant := range inputTenants {
+		if inputTenant.Type == tenant.TypeToStr(tenant.Customer) {
+			sanitizedID := tenant.TrimCustomerIDLeadingZeros(inputTenant.ExternalTenant)
+			tenantIDToSanitizedTenantID[inputTenant.ExternalTenant] = sanitizedID
+			inputTenant.ExternalTenant = sanitizedID
+		} else {
+			tenantIDToSanitizedTenantID[inputTenant.ExternalTenant] = inputTenant.ExternalTenant // nothing to sanitize
+		}
+	}
+
+	for _, inputTenant := range inputTenants {
+		sanitizedParentIDs := make([]string, 0, len(inputTenant.Parents))
+		for _, parentID := range inputTenant.Parents {
+			if parentID != nil {
+				if sanitizedParentID, ok := tenantIDToSanitizedTenantID[*parentID]; ok {// the parent tenant is part of the same batch of tenants - reuse the already sanitized parent ID
+					sanitizedParentIDs = append(sanitizedParentIDs, sanitizedParentID)
+				}else{
+					// the parent tenant is not part of the same batch of tenants - get it from the DB
+					// !!!The parent ID could be either externalID or internal ID!!!
+					// if the parent is not found when getting tenant by ID then the provided id was internal
+
+					// TODO we do not know if this is internalID or it is CRM ID that is not sanitized
+					//parentTenant, err := r.srv.GetTenantByExternalID(ctx, *parentID)
+				}
+			}
+		}
+	}
+}
+
 // Write creates new global and subaccounts
 func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTenantMappingInput) ([]string, error) {
 	tx, err := r.transact.Begin()
@@ -320,7 +352,7 @@ func (r *Resolver) Delete(ctx context.Context, externalTenantIDs []string) (int,
 	return len(externalTenantIDs), nil
 }
 
-// Update update single tenant
+// Update update single tenant. The parent IDs from the input are INTERNAL IDs
 func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {

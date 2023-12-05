@@ -237,7 +237,7 @@ func constructSubaccountTenant(ctx context.Context, jsonPayload, name, subdomain
 	var customerIDValue *string
 	customerIDField := gjson.Get(jsonPayload, ep.FieldMapping.LabelsField).Get(ep.FieldMapping.CustomerIDField)
 	if customerIDFieldArr := customerIDField.Array(); customerIDField.IsArray() && len(customerIDFieldArr) > 0 {
-		customerIDValue = str.Ptr(customerIDFieldArr[0].String())
+		customerIDValue = str.Ptr(tenant.TrimCustomerIDLeadingZeros(customerIDFieldArr[0].String()))
 	}
 
 	return &model.BusinessTenantMappingInput{
