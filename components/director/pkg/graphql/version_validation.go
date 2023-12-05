@@ -1,9 +1,10 @@
 package graphql
 
 import (
+	"regexp"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/common"
-	"regexp"
 )
 
 // Validate missing godoc
