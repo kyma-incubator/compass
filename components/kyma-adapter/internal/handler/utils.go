@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"io"
 	"net/http"
 	"strings"
@@ -35,7 +36,7 @@ func decodeJSONBody(r *http.Request, dst interface{}) error {
 	r.Body = io.NopCloser(r.Body)
 
 	dec := json.NewDecoder(r.Body)
-
+spew.Dump("BODY:", r.Body)
 	if err := dec.Decode(&dst); err != nil {
 		var syntaxError *json.SyntaxError
 		var unmarshalTypeError *json.UnmarshalTypeError
