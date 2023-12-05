@@ -4,8 +4,8 @@ go 1.18
 
 require (
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231117123701-9a77e393bcd8
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231117123701-9a77e393bcd8
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231205075651-04485fcb521f
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231120121524-9ee5c58d6fb0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
 	github.com/vrischmann/envconfig v1.3.0
@@ -42,7 +42,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231117123701-9a77e393bcd8 // indirect
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231120121524-9ee5c58d6fb0 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
@@ -73,7 +73,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/oauth2 v0.8.0 // indirect
+	golang.org/x/oauth2 v0.11.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/term v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
