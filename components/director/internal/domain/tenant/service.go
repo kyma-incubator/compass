@@ -2,7 +2,6 @@ package tenant
 
 import (
 	"context"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -412,7 +411,6 @@ func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.Bus
 
 func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) (string, error)) ([]string, error) {
 	tenants, err := s.MultipleToTenantMapping(ctx, tenantInputs)
-	spew.Dump(tenants)
 	if err != nil {
 		return nil, err
 	}

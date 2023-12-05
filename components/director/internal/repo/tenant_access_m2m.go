@@ -49,7 +49,7 @@ const (
                     SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
                     FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
                                                      INNER JOIN parents p on p.parent_id = t2.id)
-			DELETE FROM %s WHERE %s AND EXISTS (SELECT id FROM parents where tenant_id == parents.parent_id AND source == parents.child_id))
+			DELETE FROM %s WHERE %s AND EXISTS (SELECT id FROM parents where tenant_id = parents.parent_id AND source = parents.child_id)
 `
 	//tenant_id IN (SELECT id FROM parents WHERE type != 'cost-object' OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')))`
 )

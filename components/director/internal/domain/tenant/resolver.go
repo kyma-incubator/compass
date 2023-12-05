@@ -2,7 +2,6 @@ package tenant
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -29,7 +28,7 @@ type BusinessTenantMappingService interface {
 	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error)
 	UpsertSingle(ctx context.Context, tenantInput model.BusinessTenantMappingInput) (string, error)
 	Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error
-	DeleteMany(ctx context.Context, tenantInputs []string) error
+	DeleteMany(ctx context.Context, externalTenantIDs []string) error
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 	CreateTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error

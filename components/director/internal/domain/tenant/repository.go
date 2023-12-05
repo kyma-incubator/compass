@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantparentmapping"
+	"k8s.io/utils/strings/slices"
 	"math"
 	"strings"
 	"text/template"
@@ -341,57 +343,149 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
+	tenantFromDB, err := r.Get(ctx, model.ID)
+	if err != nil {
+		return err
+	}
+
 	entity := r.conv.ToEntity(model)
 	if err := r.updaterGlobal.UpdateSingleGlobal(ctx, entity); err != nil {
 		return err
+	}
+
+	parentsToAdd := slices.Filter(nil, model.Parents, func(s string) bool {
+		return !slices.Contains(tenantFromDB.Parents, s)
+	})
+
+	parentsToRemove := slices.Filter(nil, tenantFromDB.Parents, func(s string) bool {
+		return !slices.Contains(model.Parents, s)
+	})
+
+	for _, p := range parentsToRemove {
+		if err := r.removeParent(ctx, p, model.ID); err != nil {
+			return err
+		}
+	}
+
+	for _, p := range parentsToAdd {
+		if err := r.addParent(ctx, p, model.ID); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 // TODO
-func (r *pgRepository) AddParent(ctx context.Context, model *model.BusinessTenantMapping) error {
-	//if tntFromDB.Parent != model.Parent {
-	//	for topLevelEntity := range resource.TopLevelEntities {
-	//		if _, ok := topLevelEntity.IgnoredTenantAccessTable(); ok {
-	//			log.C(ctx).Debugf("top level entity %s does not need a tenant access table", topLevelEntity)
-	//			continue
-	//		}
-	//
-	//		m2mTable, ok := topLevelEntity.TenantAccessTable()
-	//		if !ok {
-	//			return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
-	//		}
-	//
-	//		tenantAccesses := repo.TenantAccessCollection{}
-	//
-	//		tenantAccessLister := repo.NewListerGlobal(resource.TenantAccess, m2mTable, repo.M2MColumns)
-	//		if err := tenantAccessLister.ListGlobal(ctx, &tenantAccesses, repo.NewEqualCondition(repo.M2MTenantIDColumn, model.ID), repo.NewEqualCondition(repo.M2MOwnerColumn, true)); err != nil {
-	//			return errors.Wrapf(err, "while listing tenant access records for tenant with id %s", model.ID)
-	//		}
-	//
-	//		for _, ta := range tenantAccesses {
-	//			tenantAccess := &repo.TenantAccess{
-	//				TenantID:   model.Parent,
-	//				ResourceID: ta.ResourceID,
-	//				Owner:      true, //TODO
-	//			}
-	//			if err := repo.CreateTenantAccessRecursively(ctx, m2mTable, tenantAccess); err != nil {
-	//				return errors.Wrapf(err, "while creating tenant acccess record for resource %s for parent %s of tenant %s", ta.ResourceID, model.Parent, model.ID)
-	//			}
-	//		}
-	//
-	//		if len(tntFromDB.Parent) > 0 && len(tenantAccesses) > 0 {
-	//			resourceIDs := make([]string, 0, len(tenantAccesses))
-	//			for _, ta := range tenantAccesses {
-	//				resourceIDs = append(resourceIDs, ta.ResourceID)
-	//			}
-	//
-	//			if err := repo.DeleteTenantAccessRecursively(ctx, m2mTable, tntFromDB.Parent, resourceIDs); err != nil {
-	//				return errors.Wrapf(err, "while deleting tenant accesses for the old parent %s of the tenant %s", tntFromDB.Parent, model.ID)
-	//			}
-	//		}
+func (r *pgRepository) addParent(ctx context.Context, internalParentID, internalChildID string) error {
+	//tenantFromDB, err := r.Get(ctx, internalChildID)
+	//if err != nil {
+	//	if apperrors.IsNotFoundError(err) {
+	//		// todo
 	//	}
+	//	return err
+	//}
+	//
+	//parentFromDB, err := r.GetByExternalTenant(ctx, externalParentID)
+	//if err != nil {
+	//	if apperrors.IsNotFoundError(err) {
+	//		// todo
+	//	}
+	//	return err
+	//}
+
+	//if !slices.Contains(tenantFromDB.Parents, parentFromDB.ID) {
+	if err := r.tenantParentRepo.Create(ctx, internalChildID, internalParentID); err != nil {
+		return err
+	}
+
+	for topLevelEntity := range resource.TopLevelEntities {
+		if _, ok := topLevelEntity.IgnoredTenantAccessTable(); ok {
+			log.C(ctx).Debugf("top level entity %s does not need a tenant access table", topLevelEntity)
+			continue
+		}
+
+		m2mTable, ok := topLevelEntity.TenantAccessTable()
+		if !ok {
+			return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
+		}
+
+		tenantAccesses := repo.TenantAccessCollection{}
+
+		tenantAccessLister := repo.NewListerGlobal(resource.TenantAccess, m2mTable, repo.M2MColumns)
+		if err := tenantAccessLister.ListGlobal(ctx, &tenantAccesses, repo.NewEqualCondition(repo.M2MTenantIDColumn, internalChildID)); err != nil {
+			return errors.Wrapf(err, "while listing tenant access records for tenant with id %s", internalChildID)
+		}
+
+		for _, ta := range tenantAccesses {
+			tenantAccess := &repo.TenantAccess{
+				TenantID:   internalParentID,
+				ResourceID: ta.ResourceID,
+				Owner:      ta.Owner,
+				Source:     internalChildID,
+			}
+			if err := repo.CreateTenantAccessRecursively(ctx, m2mTable, tenantAccess); err != nil {
+				return errors.Wrapf(err, "while creating tenant acccess record for resource %s for parent %s of tenant %s", ta.ResourceID, internalParentID, internalChildID)
+			}
+		}
+	}
+	//}
+	return nil
+}
+
+func (r *pgRepository) removeParent(ctx context.Context, internalParentID, internalChildID string) error {
+	//tenantFromDB, err := r.Get(ctx, internalChildID)
+	//if err != nil {
+	//	if apperrors.IsNotFoundError(err) {
+	//		// todo
+	//	}
+	//	return err
+	//}
+	//
+	//parentFromDB, err := r.GetByExternalTenant(ctx, externalParentID)
+	//if err != nil {
+	//	if apperrors.IsNotFoundError(err) {
+	//		// todo
+	//	}
+	//	return err
+	//}
+
+	//if slices.Contains(tenantFromDB.Parents, parentFromDB.ID) {
+	if err := r.tenantParentRepo.Delete(ctx, internalChildID, internalParentID); err != nil {
+		return err
+	}
+
+	for topLevelEntity := range resource.TopLevelEntities {
+		if _, ok := topLevelEntity.IgnoredTenantAccessTable(); ok {
+			log.C(ctx).Debugf("top level entity %s does not need a tenant access table", topLevelEntity)
+			continue
+		}
+
+		m2mTable, ok := topLevelEntity.TenantAccessTable()
+		if !ok {
+			return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
+		}
+
+		tenantAccesses := repo.TenantAccessCollection{}
+
+		tenantAccessLister := repo.NewListerGlobal(resource.TenantAccess, m2mTable, repo.M2MColumns)
+		if err := tenantAccessLister.ListGlobal(ctx, &tenantAccesses, repo.NewEqualCondition(repo.M2MTenantIDColumn, internalChildID)); err != nil {
+			return errors.Wrapf(err, "while listing tenant access records for tenant with id %s", internalChildID)
+		}
+
+		resourceIDs := make([]string, 0, len(tenantAccesses))
+		for _, ta := range tenantAccesses {
+			resourceIDs = append(resourceIDs, ta.ResourceID)
+		}
+
+		if len(resourceIDs) > 0 {
+			if err := repo.DeleteTenantAccessRecursively(ctx, m2mTable, internalParentID, resourceIDs); err != nil {
+				return errors.Wrapf(err, "while deleting tenant accesses for the old parent %s of the tenant %s", internalParentID, internalChildID)
+			}
+		}
+	}
+	//} else {
+	//	log.C(ctx).Infof("Tenant %s is not parent of tenant %s", externalParentID, internalChildID)
 	//}
 	return nil
 }
@@ -400,6 +494,7 @@ func (r *pgRepository) AddParent(ctx context.Context, model *model.BusinessTenan
 // DeleteByExternalTenant removes a tenant with matching external ID from the Compass storage.
 // It also deletes all the accesses for resources that the tenant is owning for its parents.
 func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenant string) error {
+	spew.Dump("Delete by external tenant: ", externalTenant)
 	tnt, err := r.GetByExternalTenant(ctx, externalTenant)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
@@ -408,11 +503,6 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 		return err
 	}
 
-	//1. Delete tenant record from model.BusinessTenantMapping
-	//2. Delete all records from tenant_parent mapping - ON CASCADE DELETE
-	//3. Tenant access?
-
-	// TODO adaptation is needed here
 	for topLevelEntity, topLevelEntityTable := range resource.TopLevelEntities {
 		if _, ok := topLevelEntity.IgnoredTenantAccessTable(); ok {
 			log.C(ctx).Debugf("top level entity %s does not need a tenant access table", topLevelEntity)

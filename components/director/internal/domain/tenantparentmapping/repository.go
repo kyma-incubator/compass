@@ -54,6 +54,7 @@ type pgRepository struct {
 	listerGlobal   repo.ListerGlobal
 	creatorGlobal  repo.CreatorGlobal
 	upserterGlobal repo.UpserterGlobal
+	deleterGlobal  repo.DeleterGlobal
 }
 
 // TenantParentRepository is responsible for the repo-layer tenant operations.
@@ -63,6 +64,8 @@ type TenantParentRepository interface {
 	ListParents(ctx context.Context, tenantID string) ([]string, error)
 	ListByParent(ctx context.Context, parentID string) ([]string, error)
 	CreateMultiple(ctx context.Context, tenantID string, parentIDs []string) error
+	Create(ctx context.Context, tenantID string, parentID string) error
+	Delete(ctx context.Context, tenantID string, parentID string) error
 }
 
 // NewRepository returns a new entity responsible for repo-layer tenant operations. All of its methods require persistence.PersistenceOp it the provided context.
@@ -71,6 +74,7 @@ func NewRepository() *pgRepository {
 		listerGlobal:   repo.NewListerGlobal(resource.TenantParent, tenantParentsTable, tenantParentsSelectedColumns),
 		creatorGlobal:  repo.NewCreatorGlobal(resource.TenantParent, tenantParentsTable, tenantParentsSelectedColumns),
 		upserterGlobal: repo.NewUpserterGlobal(resource.TenantParent, tenantParentsTable, tenantParentsSelectedColumns, tenantParentsSelectedColumns, []string{}),
+		deleterGlobal:  repo.NewDeleterGlobal(resource.TenantParent, tenantParentsTable),
 	}
 }
 
@@ -121,6 +125,27 @@ func (r *pgRepository) CreateMultiple(ctx context.Context, tenantID string, pare
 			log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantParent, resource.Create, "while creating tenant parent mapping for tenant with id %s and parent %s"), tenantID, parentID)
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (r *pgRepository) Create(ctx context.Context, tenantID string, parentID string) error {
+	if err := r.Upsert(ctx, tenantID, parentID); err != nil {
+		log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantParent, resource.Create, "while creating tenant parent mapping for tenant with id %s and parent %s"), tenantID, parentID)
+		return err
+	}
+
+	return nil
+}
+
+func (r *pgRepository) Delete(ctx context.Context, tenantID string, parentID string) error {
+	if err := r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{
+		repo.NewEqualCondition(tenantIDColumn, tenantID),
+		repo.NewEqualCondition(parentIDColumn, parentID),
+	}); err != nil {
+		log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantParent, resource.Create, "while deleting tenant parent mapping for tenant with id %s and parent %s"), tenantID, parentID)
+		return err
 	}
 
 	return nil

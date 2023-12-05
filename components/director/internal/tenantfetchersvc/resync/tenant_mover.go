@@ -177,7 +177,7 @@ func (tmv *tenantMover) tenantsToUpsert(ctx context.Context, mappings []model.Mo
 		tenantFromDB, ok := existingTenantsMap[mapping.SubaccountID]
 		if !ok {
 			log.C(ctx).Infof("Subaccount with external id %s does not exist, will be created in the correct parent tenant", mapping.SubaccountID)
-			mapping.TenantMappingInput.Parents = []string{parentTenants[mapping.TargetTenant].ID}
+			mapping.TenantMappingInput.Parents = []string{parentTenants[mapping.TargetTenant].ExternalTenant}
 			tenantsToCreate = append(tenantsToCreate, mapping.TenantMappingInput)
 			continue
 		}

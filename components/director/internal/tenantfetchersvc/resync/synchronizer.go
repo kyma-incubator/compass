@@ -248,16 +248,6 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 		return fmt.Errorf("parent tenant not found of tenant with ID %s", tenantID)
 	}
 
-	parentIDs := make([]string, 0, len(fetchedTenant.Parents))
-	for _, p := range fetchedTenant.Parents {
-		parent, err := ts.fetchFromDirector(ctx, p)
-		if err != nil {
-			return errors.Wrapf(err, "while checking if parent tenant with ID %s exists", p)
-		}
-		parentIDs = append(parentIDs, parent.ID)
-	}
-
-	fetchedTenant.Parents = parentIDs
 	return ts.creator.CreateTenants(ctx, []model.BusinessTenantMappingInput{*fetchedTenant})
 }
 
@@ -311,16 +301,6 @@ func (ts *TenantsSynchronizer) createTenants(ctx context.Context, currentTenants
 	// create missing parent tenants
 	tenantsToCreate := missingParentTenants(currentTenants, newTenants, ts.config.TenantProvider, fullRegionName)
 	for _, eventTenant := range newTenants {
-		parentIDs := make([]string, 0, len(eventTenant.Parents))
-		for _, p := range eventTenant.Parents {
-			// use internal ID of parent for pre-existing targetParentTenants
-			if parentGUID, ok := currentTenants[p]; ok {
-				parentIDs = append(parentIDs, parentGUID)
-			} else {
-				parentIDs = append(parentIDs, p)
-			}
-		}
-		eventTenant.Parents = parentIDs
 		eventTenant.Region = fullRegionName
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
 	}
