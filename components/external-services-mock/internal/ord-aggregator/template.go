@@ -1087,7 +1087,7 @@ const ordDocument = `{
   ],
 	"integrationDependencies": [
     {
-      "ordId": "sap.s4:integrationDependency:subscriptionReplication:v2",
+      "ordId": "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2",
       "version": "2.2.3",
       "title": "INTEGRATION DEPENDENCY TITLE",
       "shortDescription": "Short description of an integration dependency",
@@ -1098,6 +1098,92 @@ const ordDocument = `{
       ],
       "lastUpdate": "2023-08-03T10:14:26.941Z",
       "visibility": "public",
+      "releaseStatus": "active",
+	  "mandatory": true,
+      "aspects": [
+        {
+          "title": "ASPECT TITLE",
+          "mandatory": true,
+          "eventResources": [
+            {
+              "ordId": "ns:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
+              "subset": [
+                {
+                  "eventType": "sap.billing.sb.Subscription.Created.v1"
+                },
+                {
+                  "eventType": "sap.billing.sb.Subscription.Updated.v1"
+                },
+                {
+                  "eventType": "sap.billing.sb.Subscription.Deleted.v1"
+                }
+              ]
+            }
+          ],
+		  "apiResources": [
+            {
+              "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2",
+              "minVersion": "2.3.0"
+            }
+          ]
+        }
+      ]
+    },
+	{
+      "ordId": "ns2:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2",
+      "version": "2.2.3",
+      "title": "INTEGRATION DEPENDENCY TITLE PRIVATE",
+      "shortDescription": "Short description of a private integration dependency",
+      "description": "longer description of a private integration dependency",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "correlationIds": [
+		 "sap.s4:communicationScenario:SAP_COM_123"
+      ],
+      "lastUpdate": "2023-08-03T10:14:26.941Z",
+      "visibility": "private",
+      "releaseStatus": "active",
+	  "mandatory": true,
+      "aspects": [
+        {
+          "title": "ASPECT TITLE",
+          "mandatory": true,
+          "eventResources": [
+            {
+              "ordId": "ns:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
+              "subset": [
+                {
+                  "eventType": "sap.billing.sb.Subscription.Created.v1"
+                },
+                {
+                  "eventType": "sap.billing.sb.Subscription.Updated.v1"
+                },
+                {
+                  "eventType": "sap.billing.sb.Subscription.Deleted.v1"
+                }
+              ]
+            }
+          ],
+		  "apiResources": [
+            {
+              "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2",
+              "minVersion": "2.3.0"
+            }
+          ]
+        }
+      ]
+    },
+	{
+      "ordId": "ns3:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2",
+      "version": "2.2.3",
+      "title": "INTEGRATION DEPENDENCY TITLE INTERNAL",
+      "shortDescription": "Short description of an internal integration dependency",
+      "description": "longer description of an internal integration dependency",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "correlationIds": [
+		 "sap.s4:communicationScenario:SAP_COM_123"
+      ],
+      "lastUpdate": "2023-08-03T10:14:26.941Z",
+      "visibility": "internal",
       "releaseStatus": "active",
 	  "mandatory": true,
       "aspects": [
