@@ -30,13 +30,13 @@ func (_m *BusinessTenantMappingService) CreateTenantAccessForResourceRecursively
 	return r0
 }
 
-// DeleteMany provides a mock function with given fields: ctx, tenantInputs
-func (_m *BusinessTenantMappingService) DeleteMany(ctx context.Context, tenantInputs []string) error {
-	ret := _m.Called(ctx, tenantInputs)
+// DeleteMany provides a mock function with given fields: ctx, externalTenantIDs
+func (_m *BusinessTenantMappingService) DeleteMany(ctx context.Context, externalTenantIDs []string) error {
+	ret := _m.Called(ctx, externalTenantIDs)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, []string) error); ok {
-		r0 = rf(ctx, tenantInputs)
+		r0 = rf(ctx, externalTenantIDs)
 	} else {
 		r0 = ret.Error(0)
 	}

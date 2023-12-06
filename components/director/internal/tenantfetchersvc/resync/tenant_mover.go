@@ -107,7 +107,7 @@ func (tmv *tenantMover) MoveTenants(ctx context.Context, movedSubaccountMappings
 
 func (tmv *tenantMover) moveSubaccount(ctx context.Context, subaccountTenant *model.BusinessTenantMapping) error {
 	subaccountTenantGQL := tmv.tenantConverter.ToGraphQLInput(subaccountTenant.ToInput())
-	if err := tmv.gqlClient.UpdateTenant(ctx, subaccountTenant.ID, subaccountTenantGQL); err != nil { //TODO the update no longer supports parent update
+	if err := tmv.gqlClient.UpdateTenant(ctx, subaccountTenant.ID, subaccountTenantGQL); err != nil {
 		return errors.Wrapf(err, "while updating tenant with id %s", subaccountTenant.ID)
 	}
 	log.C(ctx).Infof("Successfully moved subaccount tenant %s to new parent with ID %v", subaccountTenant.ID, subaccountTenant.Parents)
@@ -204,6 +204,16 @@ func (tmv *tenantMover) tenantsToUpsert(ctx context.Context, mappings []model.Mo
 			return s != parents[0].ID
 		})
 		tenantFromDB.Parents = append(tenantFromDB.Parents, parentTenants[mapping.TargetTenant].ID)
+
+		btms, err := tmv.tenantStorageService.ListByIDs(ctx, tenantFromDB.Parents)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "while listing tenants by internal ids")
+		}
+		externalParentsIDs := make([]string, 0, len(btms))
+		for _, btm := range btms {
+			externalParentsIDs = append(externalParentsIDs, btm.ExternalTenant)
+		}
+		tenantFromDB.Parents = externalParentsIDs
 		tenantsToUpdate = append(tenantsToUpdate, tenantFromDB)
 	}
 

@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/gqlclient"
@@ -82,7 +81,7 @@ func (a AdapterHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 			respondWithError(ctx, w, http.StatusBadRequest, "", errors.Wrapf(err, "while getting parent tenant"))
 			return
 		}
-		if tenantObject.Type == "account"{
+		if tenantObject.Type == "account" {
 			ownerTenantID = tenantObject.InternalID
 			break
 		}
@@ -138,13 +137,10 @@ out:
 
 	creds := credentials.NewCredentials(configuration)
 	modifyFunc := a.determineAuthModifyFunc(instanceAuthExist, operation)
-	spew.Dump(creds)
-	spew.Dump(bundles)
 	for _, bundle := range bundles {
 		input := buildInstanceAuthInput(instanceAuthExist, operation, bundle, rtmID, creds)
 		if state, err := modifyFunc(ctx, ownerTenantID, input); err != nil {
 			respondWithError(ctx, w, http.StatusBadRequest, state, err)
-			spew.Dump(err)
 			return
 		}
 	}

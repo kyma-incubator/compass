@@ -50,8 +50,8 @@ type Configuration struct {
 
 // ReceiverTenant is a structure used to JSON decode the receiverTenant in the Body
 type ReceiverTenant struct {
-	UclSystemTenantID string `json:"uclSystemTenantId"`
-	OwnerTenants       []string `json:"ownerTenants"`
+	UclSystemTenantID string   `json:"uclSystemTenantId"`
+	OwnerTenants      []string `json:"ownerTenants"`
 }
 
 // AssignedTenant is a structure used to JSON decode the assignedTenant in the Body

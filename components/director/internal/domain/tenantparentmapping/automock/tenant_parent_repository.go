@@ -13,6 +13,20 @@ type TenantParentRepository struct {
 	mock.Mock
 }
 
+// Create provides a mock function with given fields: ctx, tenantID, parentID
+func (_m *TenantParentRepository) Create(ctx context.Context, tenantID string, parentID string) error {
+	ret := _m.Called(ctx, tenantID, parentID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tenantID, parentID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // CreateMultiple provides a mock function with given fields: ctx, tenantID, parentIDs
 func (_m *TenantParentRepository) CreateMultiple(ctx context.Context, tenantID string, parentIDs []string) error {
 	ret := _m.Called(ctx, tenantID, parentIDs)
@@ -20,6 +34,20 @@ func (_m *TenantParentRepository) CreateMultiple(ctx context.Context, tenantID s
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) error); ok {
 		r0 = rf(ctx, tenantID, parentIDs)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Delete provides a mock function with given fields: ctx, tenantID, parentID
+func (_m *TenantParentRepository) Delete(ctx context.Context, tenantID string, parentID string) error {
+	ret := _m.Called(ctx, tenantID, parentID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tenantID, parentID)
 	} else {
 		r0 = ret.Error(0)
 	}

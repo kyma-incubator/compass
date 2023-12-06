@@ -179,7 +179,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 	movedSubaccountInput := graphql.BusinessTenantMappingInput{
 		Name:           subaccountExternalTenant,
 		ExternalTenant: subaccountExternalTenant,
-		Parents:        []*string{str.Ptr(targetParent.ID)},
+		Parents:        []*string{str.Ptr(targetParent.ExternalTenant)},
 		Subdomain:      str.Ptr(""),
 		Region:         str.Ptr(""),
 		Type:           string(tenant.Subaccount),
@@ -240,6 +240,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.TargetTenant}).Return([]*model.BusinessTenantMapping{targetParent}, nil).Once()
 				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.SubaccountID}).Return([]*model.BusinessTenantMapping{subaccountFromDB}, nil).Once()
 				svc.On("ListByIDsAndType", txtest.CtxWithDBMatcher(), []string{sourceParentTenantID}, tenant.Account).Return([]*model.BusinessTenantMapping{parentTenant}, nil).Once()
+				svc.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{targetParent.ID}).Return([]*model.BusinessTenantMapping{targetParent}, nil).Once()
 				return svc
 			},
 			tenantsInput: []model.MovedSubaccountMappingInput{movedSubaccount1},
@@ -297,6 +298,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.SubaccountID}).Return([]*model.BusinessTenantMapping{subaccountFromDB}, nil).Once()
 				svc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), sourceParentTenantID).Return(sourceParent, nil).Once()
 				svc.On("ListByIDsAndType", txtest.CtxWithDBMatcher(), []string{sourceParentTenantID}, tenant.Account).Return([]*model.BusinessTenantMapping{parentTenant}, nil).Once()
+				svc.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{targetParent.ID}).Return([]*model.BusinessTenantMapping{targetParent}, nil).Once()
 				return svc
 			},
 			tenantsInput: []model.MovedSubaccountMappingInput{movedSubaccount1},
@@ -332,6 +334,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.SubaccountID}).Return([]*model.BusinessTenantMapping{subaccountFromDB}, nil).Once()
 				svc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), sourceParentTenantID).Return(sourceParent, nil).Once()
 				svc.On("ListByIDsAndType", txtest.CtxWithDBMatcher(), []string{sourceParentTenantID}, tenant.Account).Return([]*model.BusinessTenantMapping{parentTenant}, nil).Once()
+				svc.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{targetParent.ID}).Return([]*model.BusinessTenantMapping{targetParent}, nil).Once()
 				return svc
 			},
 			tenantsInput: []model.MovedSubaccountMappingInput{movedSubaccount1},

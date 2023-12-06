@@ -55,7 +55,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 		ResyncConfig: resync.ResyncConfig{FullResyncInterval: time.Hour},
 	}
 
-	newAccountTenant := model.BusinessTenantMappingInput{ExternalTenant: newTenantID, Region: region, Parents: []string{}}
+	newAccountTenant := model.BusinessTenantMappingInput{ExternalTenant: newTenantID, Region: region}
 	movedAccountTenant := model.MovedSubaccountMappingInput{SubaccountID: movedTenantID}
 	deletedAccountTenant := model.BusinessTenantMappingInput{ExternalTenant: deletedTenantID}
 	emptyTenantsResult := make([]model.BusinessTenantMappingInput, 0)
@@ -225,7 +225,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 				}
 
 				expectedTenantWithParent := tenantWithParent
-				expectedTenantWithParent.Parents = []string{internalParentTenantID}
+				expectedTenantWithParent.Parents = []string{parentTenantID}
 
 				svc.On("TenantsToCreate", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{tenantWithParent}, nil)
 				svc.On("CreateTenants", ctxWithRegion, []model.BusinessTenantMappingInput{expectedTenantWithParent}).Return(nil)
@@ -532,16 +532,13 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				parentTnt := &model.BusinessTenantMapping{ID: internalParentTenantID, ExternalTenant: parentTenantID}
 				svc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), newTenantID).Return(nil, nil)
-				svc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), newSubaccountTenant.Parents[0]).Return(parentTnt, nil)
-
 				return svc
 			},
 			TenantCreatorFn: func() *automock.TenantCreator {
 				svc := &automock.TenantCreator{}
 				tenantWithExistingParent := newSubaccountTenant
-				tenantWithExistingParent.Parents = []string{internalParentTenantID}
+				tenantWithExistingParent.Parents = []string{parentTenantID}
 				svc.On("FetchTenant", ctx, newTenantID).Return(&newSubaccountTenant, nil)
 				svc.On("CreateTenants", ctx, []model.BusinessTenantMappingInput{tenantWithExistingParent}).Return(nil)
 				return svc
@@ -655,36 +652,6 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 			ExpectedErrMsg: failedToFetchNewTenantsErrMsg,
 		},
 		{
-			Name:           "Fails when parent retrieval returns an error",
-			ParentTenantID: parentTenantID,
-			JobCfg:         jobCfg,
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(1)
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(2)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(2)
-
-				return persistTx, transact
-			},
-			TenantStorageSvcFn: func() *automock.TenantStorageService {
-				svc := &automock.TenantStorageService{}
-				svc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), newTenantID).Return(nil, nil)
-				svc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), newSubaccountTenant.Parents[0]).Return(nil, testErr)
-
-				return svc
-			},
-			TenantCreatorFn: func() *automock.TenantCreator {
-				svc := &automock.TenantCreator{}
-				tenantWithExistingParent := newSubaccountTenant
-				tenantWithExistingParent.Parents = []string{internalParentTenantID}
-				svc.On("FetchTenant", ctx, newTenantID).Return(&newSubaccountTenant, nil)
-				return svc
-			},
-			ExpectedErrMsg: testErr.Error(),
-		},
-		{
 			Name:               "Fails when transaction start returns an error",
 			ParentTenantID:     parentTenantID,
 			JobCfg:             jobCfg,
@@ -711,11 +678,11 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			persist, transact := testCase.TransactionerFn()
+			_, transact := testCase.TransactionerFn()
 			tenantStorageSvc := testCase.TenantStorageSvcFn()
 			tenantCreator := testCase.TenantCreatorFn()
 
-			defer mock.AssertExpectationsForObjects(t, persist, transact, tenantStorageSvc, tenantCreator)
+			defer mock.AssertExpectationsForObjects(t, tenantStorageSvc, tenantCreator)
 
 			synchronizer := resync.NewTenantSynchronizer(testCase.JobCfg, transact, tenantStorageSvc, tenantCreator, nil, nil, nil, nil)
 			err := synchronizer.SynchronizeTenant(ctx, testCase.ParentTenantID, newTenantID)

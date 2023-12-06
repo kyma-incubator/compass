@@ -124,7 +124,7 @@ func (r *pgRepository) UnsafeCreate(ctx context.Context, item model.BusinessTena
 	}
 	btm, err := r.GetByExternalTenant(ctx, item.ExternalTenant)
 	if err != nil {
-		return "",errors.Wrapf(err, "while getting business tenant mapping by external id %s", item.ExternalTenant)
+		return "", errors.Wrapf(err, "while getting business tenant mapping by external id %s", item.ExternalTenant)
 	}
 	return btm.ID, r.tenantParentRepo.CreateMultiple(ctx, btm.ID, item.Parents)
 }
@@ -353,12 +353,22 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 		return err
 	}
 
-	parentsToAdd := slices.Filter(nil, model.Parents, func(s string) bool {
+	btms, err := r.listByExternalTenantIDs(ctx, model.Parents)
+	if err != nil {
+		return err
+	}
+
+	parentsInternalIDs := make([]string, 0, len(btms))
+	for _, btm := range btms {
+		parentsInternalIDs = append(parentsInternalIDs, btm.ID)
+	}
+
+	parentsToAdd := slices.Filter(nil, parentsInternalIDs, func(s string) bool {
 		return !slices.Contains(tenantFromDB.Parents, s)
 	})
 
 	parentsToRemove := slices.Filter(nil, tenantFromDB.Parents, func(s string) bool {
-		return !slices.Contains(model.Parents, s)
+		return !slices.Contains(parentsInternalIDs, s)
 	})
 
 	for _, p := range parentsToRemove {
