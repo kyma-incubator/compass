@@ -263,6 +263,10 @@ func fixTenantMappingCreateArgs(ent tenant.Entity) []driver.Value {
 	return []driver.Value{ent.ID, ent.Name, ent.ExternalTenant, ent.Type, ent.ProviderName, ent.Status}
 }
 
+func fixTenantParentCreateArgs(tenantID, parentID string) []driver.Value {
+	return []driver.Value{tenantID, parentID}
+}
+
 func newModelBusinessTenantMappingInput(name, subdomain, region string, licenseType *string) model.BusinessTenantMappingInput {
 	return newModelBusinessTenantMappingInputWithType(testExternal, name, []string{}, subdomain, region, licenseType, tenant.Account)
 }

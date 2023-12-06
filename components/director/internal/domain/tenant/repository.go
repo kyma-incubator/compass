@@ -132,11 +132,11 @@ func (r *pgRepository) UnsafeCreate(ctx context.Context, item model.BusinessTena
 // Upsert adds the provided tenant into the Compass storage if it does not exist, or updates it if it does.
 func (r *pgRepository) Upsert(ctx context.Context, item model.BusinessTenantMapping) (string, error) {
 	if err := r.upserter.UpsertGlobal(ctx, r.conv.ToEntity(&item)); err != nil {
-		return "", errors.Wrapf(err, "while upserting business tenant mapping")
+		return "", errors.Wrapf(err, "while upserting business tenant mapping for tenant with external id %s", item.ExternalTenant)
 	}
 	btm, err := r.GetByExternalTenant(ctx, item.ExternalTenant)
 	if err != nil {
-		return "", errors.Wrapf(err, "while getting business tenant mapping by external id")
+		return "", errors.Wrapf(err, "while getting business tenant mapping by external id %s", item.ExternalTenant)
 	}
 	return btm.ID, r.tenantParentRepo.CreateMultiple(ctx, btm.ID, item.Parents)
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -122,8 +123,8 @@ func (r *pgRepository) Upsert(ctx context.Context, tenantID string, parentID str
 func (r *pgRepository) CreateMultiple(ctx context.Context, tenantID string, parentIDs []string) error {
 	for _, parentID := range parentIDs {
 		if err := r.Upsert(ctx, tenantID, parentID); err != nil {
-			log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantParent, resource.Create, "while creating tenant parent mapping for tenant with id %s and parent %s"), tenantID, parentID)
-			return err
+			log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantParent, resource.Create, "while creating tenant parent mapping for tenant with id %s and parent %s", tenantID, parentID))
+			return errors.Wrapf(err, "while creating tenant parent mapping for tenant with id %s and parent %s", tenantID, parentID)
 		}
 	}
 
