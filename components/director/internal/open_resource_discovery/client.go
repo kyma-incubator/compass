@@ -197,7 +197,11 @@ func (c *ORDDocumentsClient) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx co
 
 	resp, err := executor.Execute(ctx, c.Client, documentURL, requestObject.TenantID, requestObject.Headers)
 	if err != nil {
-		return nil, errors.Wrapf(err, "execute err status code %d", resp.StatusCode)
+		if resp != nil {
+			return nil, errors.Wrapf(err, "execute err status code %d", resp.StatusCode)
+		}
+
+		return nil, err
 	}
 
 	defer closeBody(ctx, resp.Body)
