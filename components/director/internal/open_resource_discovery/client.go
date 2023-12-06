@@ -96,7 +96,7 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 			return err
 		},
 		retry.Attempts(3),
-		retry.Delay(time.Second),
+		retry.Delay(time.Second*5),
 		retry.OnRetry(func(n uint, err error) {
 			log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
 		}),
@@ -151,7 +151,7 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 					return innerErr
 				},
 				retry.Attempts(3),
-				retry.Delay(time.Second),
+				retry.Delay(time.Second*5),
 				retry.OnRetry(func(n uint, err error) {
 					log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
 				}),
