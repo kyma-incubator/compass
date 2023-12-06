@@ -2,8 +2,6 @@ package tests
 
 import (
 	"context"
-	"testing"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 	"github.com/kyma-incubator/compass/tests/director/tests/example"
@@ -16,6 +14,7 @@ import (
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func TestTenantIsolation(t *testing.T) {

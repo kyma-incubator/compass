@@ -28,7 +28,6 @@ import (
 //go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DirectorClient interface {
 	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
-	GetRootTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetSystemAuthByID(ctx context.Context, authID string) (*model.SystemAuth, error)
 	UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAuth) (director.UpdateAuthResult, error)
 }
@@ -236,18 +235,18 @@ func (h *Handler) calculateTenants(ctx context.Context, objectContexts []ObjectC
 	}
 
 	if substituteTenantID != "" {
-		rootTenant, err := h.directorClient.GetRootTenantByExternalID(ctx, substituteTenantID)
+		subtituteTenant, err := h.directorClient.GetTenantByExternalID(ctx, substituteTenantID)
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("while fetching root tenant for tenant with external ID: %s", substituteTenantID)
 			return nil, errors.Wrapf(err, "while fetching root tenant for tenant with external ID: %s", substituteTenantID)
 		}
 
-		log.C(ctx).Infof("The caller tenant has %s label with value %s, substituting the caller tenant %s with customer tenant Root parent with external ID %s and internal ID %s", h.tenantSubstitutionLabelKey, substituteTenantID, tenants[tenantmapping.ExternalTenantKey], rootTenant.ID, rootTenant.InternalID)
+		log.C(ctx).Infof("The caller tenant has %s label with value %s, substituting the caller tenant %s with customer tenant Root parent with external ID %s and internal ID %s", h.tenantSubstitutionLabelKey, substituteTenantID, tenants[tenantmapping.ExternalTenantKey], subtituteTenant.ID, subtituteTenant.InternalID)
 		tenants[tenantmapping.ProviderTenantKey] = tenants[tenantmapping.ConsumerTenantKey]
 		tenants[tenantmapping.ProviderExternalTenantKey] = tenants[tenantmapping.ExternalTenantKey]
 
-		tenants[tenantmapping.ConsumerTenantKey] = rootTenant.InternalID
-		tenants[tenantmapping.ExternalTenantKey] = rootTenant.ID
+		tenants[tenantmapping.ConsumerTenantKey] = subtituteTenant.InternalID
+		tenants[tenantmapping.ExternalTenantKey] = subtituteTenant.ID
 	}
 	return tenants, nil
 }

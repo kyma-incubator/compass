@@ -147,7 +147,7 @@ global:
   tenantsLabels:
     - tenantID: 818005d6-9264-4abb-af4c-29c754630a7d # TestTenantSubstitutionSubaccount
       key: customerId
-      value: 777ce47b-d901-4647-9223-14e94819830b
+      value: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
     - tenantID: e1e2f861-2b2e-42a9-ba9f-404d292e5471 # TestTenantSubstitutionSubaccount2
       key: customerId
       value: 5984a414-1eed-4972-af2c-b2b6a415c7d7 # ApplicationsForRuntimeTenantName, randomly chosen Account tenant

@@ -290,7 +290,7 @@ func (r *pgRepository) ListByDestination(ctx context.Context, tenantID string, d
 			WHERE id IN (
 				SELECT id
 				FROM tenant_applications
-				WHERE tenant_id=(SELECT parent FROM business_tenant_mappings WHERE id = ? )
+				WHERE tenant_id=(SELECT parent_id FROM tenant_parents WHERE tenant_id = ? )
 			)
 			AND name = ? AND base_url = ?
 		`, []interface{}{tenantID, destination.XSystemTenantName, destination.XSystemBaseURL})
@@ -301,7 +301,7 @@ func (r *pgRepository) ListByDestination(ctx context.Context, tenantID string, d
 			WHERE pa.id IN (
 				SELECT id
 				FROM tenant_applications
-				WHERE tenant_id=(SELECT parent FROM business_tenant_mappings WHERE id = ? )
+				WHERE tenant_id=(SELECT parent_id FROM tenant_parents WHERE tenant_id = ? )
 			)
 			AND l.key='applicationType'
 			AND l.value ?| array[?]
