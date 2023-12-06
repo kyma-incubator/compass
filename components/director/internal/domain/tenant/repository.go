@@ -120,11 +120,11 @@ func NewRepository(conv Converter) *pgRepository {
 // It is not guaranteed that the provided tenant ID is the same as the tenant ID in the database.
 func (r *pgRepository) UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) (string, error) {
 	if err := r.unsafeCreator.UnsafeCreate(ctx, r.conv.ToEntity(&item)); err != nil {
-		return "", errors.Wrapf(err, "while creating business tenant mapping")
+		return "", errors.Wrapf(err, "while creating business tenant mapping for tenant with external id %s", item.ExternalTenant)
 	}
 	btm, err := r.GetByExternalTenant(ctx, item.ExternalTenant)
 	if err != nil {
-		return "", errors.Wrapf(err, "while getting business tenant mapping by external id")
+		return "",errors.Wrapf(err, "while getting business tenant mapping by external id %s", item.ExternalTenant)
 	}
 	return btm.ID, r.tenantParentRepo.CreateMultiple(ctx, btm.ID, item.Parents)
 }
@@ -148,13 +148,13 @@ func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenan
 		repo.NewEqualCondition(idColumn, id),
 		repo.NewNotEqualCondition(statusColumn, string(tenant.Inactive))}
 	if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while getting tenant with id %s", id)
 	}
 
 	//TODO optimise
 	parents, err := r.tenantParentRepo.ListParents(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while listing parent tenants for tenant with id %s", id)
 	}
 	btm := r.conv.FromEntity(&entity)
 	btm.Parents = parents
@@ -163,19 +163,19 @@ func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenan
 }
 
 // GetByExternalTenant retrieves the active tenant with matching external ID from the Compass storage.
-func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
+func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenantID string) (*model.BusinessTenantMapping, error) {
 	var entity tenant.Entity
 	conditions := repo.Conditions{
-		repo.NewEqualCondition(externalTenantColumn, externalTenant),
+		repo.NewEqualCondition(externalTenantColumn, externalTenantID),
 		repo.NewNotEqualCondition(statusColumn, string(tenant.Inactive))}
 	if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while getting tenant with external id %s", externalTenantID)
 	}
 
 	btm := r.conv.FromEntity(&entity)
 	parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while listing parent tenants for tenant with external id %s", externalTenantID)
 	}
 	btm.Parents = parents
 	return btm, nil
@@ -737,14 +737,14 @@ func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx conte
 	)
 
 	if err := r.conditionTreeLister.ListConditionTreeGlobal(ctx, resource.Tenant, &entityCollection, conditions); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while listing tenants by label")
 	}
 
 	btms := r.multipleFromEntities(entityCollection)
 	for _, btm := range btms {
 		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while listing parent tenants for tenant with ID %s", btm.ID)
 		}
 		btm.Parents = parents
 	}
@@ -755,7 +755,7 @@ func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx conte
 func (r *pgRepository) ListByParentAndType(ctx context.Context, parentID string, tenantType tenant.Type) ([]*model.BusinessTenantMapping, error) {
 	tenantIDs, err := r.tenantParentRepo.ListByParent(ctx, parentID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "wlile listing tenant parent records for parent with id %s", parentID)
 	}
 
 	conditions := repo.Conditions{
@@ -765,14 +765,14 @@ func (r *pgRepository) ListByParentAndType(ctx context.Context, parentID string,
 
 	var entityCollection tenant.EntityCollection
 	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while listing tenants of type %s with ids %v", tenantType, tenantIDs)
 	}
 
 	btms := r.multipleFromEntities(entityCollection)
 	for _, btm := range btms {
 		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while listing parent tenants for tenant with ID %s", btm.ID)
 		}
 		btm.Parents = parents
 	}
@@ -788,14 +788,14 @@ func (r *pgRepository) ListByIds(ctx context.Context, ids []string) ([]*model.Bu
 	}
 
 	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while listing tenants with ids %v", ids)
 	}
 
 	btms := r.multipleFromEntities(entityCollection)
 	for _, btm := range btms {
 		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while listing parent tenants for tenant with ID %s", btm.ID)
 		}
 		btm.Parents = parents
 	}
@@ -811,14 +811,14 @@ func (r *pgRepository) ListByType(ctx context.Context, tenantType tenant.Type) (
 	}
 
 	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while listing tenants of type %s", tenantType)
 	}
 
 	btms := r.multipleFromEntities(entityCollection)
 	for _, btm := range btms {
 		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while listing parent tenants for tenant with ID %s", btm.ID)
 		}
 		btm.Parents = parents
 	}
@@ -835,14 +835,14 @@ func (r *pgRepository) ListByIdsAndType(ctx context.Context, ids []string, tenan
 	}
 
 	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while listing tenants of type %s with ids %v", tenantType, ids)
 	}
 
 	btms := r.multipleFromEntities(entityCollection)
 	for _, btm := range btms {
 		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while listing parent tenants for tenant with ID %s", btm.ID)
 		}
 		btm.Parents = parents
 	}

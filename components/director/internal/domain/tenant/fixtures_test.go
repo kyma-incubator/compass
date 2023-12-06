@@ -24,6 +24,7 @@ const (
 	testExternal                  = "external"
 	testInternal                  = "internalID"
 	testID                        = "foo"
+	testID2                        = "foo2"
 	testName                      = "bar"
 	testParentID                  = "parent"
 	testParentID2                 = "parent2"
