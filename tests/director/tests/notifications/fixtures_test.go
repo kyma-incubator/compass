@@ -364,6 +364,11 @@ func assertNotificationsCountMoreThanForTenant(t *testing.T, body []byte, tenant
 	assertNotificationsCountMoreThan(t, body, tenantID, count)
 }
 
+func assertNotificationsCountForTenantWithEventually(t *testing.T, certSecuredHTTPClient *http.Client, tenantID string, count int, timeout, tick time.Duration) {
+	assertNotificationsCountWithEventually(t, certSecuredHTTPClient, tenantID, count, timeout, tick)
+
+}
+
 func assertNotificationsCountForTenant(t *testing.T, body []byte, tenantID string, count int) {
 	assertNotificationsCount(t, body, tenantID, count)
 }
@@ -381,6 +386,28 @@ func assertNotificationsCountMoreThan(t *testing.T, body []byte, objectID string
 	} else {
 		require.False(t, notifications.Exists())
 	}
+}
+
+func assertNotificationsCountWithEventually(t *testing.T, certSecuredHTTPClient *http.Client, objectID string, count int, timeout, tick time.Duration) {
+	require.Eventually(t, func() (isOkay bool) {
+		body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+		notifications := gjson.GetBytes(body, objectID)
+		if count > 0 {
+			if !notifications.Exists() {
+				return
+			}
+
+			if len(notifications.Array()) != count {
+				return
+			}
+			require.Len(t, notifications.Array(), count)
+		} else {
+			if notifications.Exists() {
+				return
+			}
+		}
+		return true
+	}, timeout, tick)
 }
 
 func assertNotificationsCount(t *testing.T, body []byte, objectID string, count int) {
@@ -743,6 +770,24 @@ func buildConsumerTokenURL(providerTokenURL, consumerSubdomain string) (string, 
 
 	tokenURL := strings.Replace(providerTokenURL, originalSubdomain, consumerSubdomain, 1)
 	return tokenURL, nil
+}
+
+func executeFAStatusResetReqForInstanceCreator(t *testing.T, certSecuredHTTPClient *http.Client, state, tnt, formationID, formationAssignmentID string, expectedStatusCode int) {
+	reqBody := FormationAssignmentRequestBody{
+		State: state,
+	}
+	marshalBody, err := json.Marshal(reqBody)
+	require.NoError(t, err)
+
+	formationAssignmentAsyncStatusAPIEndpoint := resolveFAAsyncStatusAPIURL(formationID, formationAssignmentID)
+	request, err := http.NewRequest(http.MethodPatch, formationAssignmentAsyncStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
+	require.NoError(t, err)
+	request.Header.Add("Content-Type", "application/json")
+	// The Tenant header is needed in case we are simulating an application reporting status for its own formation assignment.
+	request.Header.Add("Tenant", tnt)
+	response, err := certSecuredHTTPClient.Do(request)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatusCode, response.StatusCode)
 }
 
 func executeFAStatusResetReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, state, testConfig, tnt, formationID, formationAssignmentID string, expectedStatusCode int) {

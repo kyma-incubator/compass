@@ -97,16 +97,19 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 
 func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*AssignmentMappingPairWithOperation, error) {
 	log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
-	notificationReq, err := fan.GenerateFormationAssignmentNotification(ctx, fa, model.AssignFormation)
+	notificationReq, err := fan.GenerateFormationAssignmentNotification(ctx, fa, operation)
 	if err != nil {
 		return nil, errors.Wrapf(err, "An error occurred while generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
 
 	}
 
-	log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q", reverseFA.ID, reverseFA.FormationID)
-	reverseNotificationReq, err := fan.GenerateFormationAssignmentNotification(ctx, reverseFA, model.AssignFormation)
-	if err != nil {
-		return nil, errors.Wrapf(err, "An error occurred while generating reverse formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
+	var reverseNotificationReq *webhookclient.FormationAssignmentNotificationRequest
+	if reverseFA != nil {
+		log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q", reverseFA.ID, reverseFA.FormationID)
+		reverseNotificationReq, err = fan.GenerateFormationAssignmentNotification(ctx, reverseFA, operation)
+		if err != nil {
+			return nil, errors.Wrapf(err, "An error occurred while generating reverse formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
+		}
 	}
 
 	faReqMapping := FormationAssignmentRequestMapping{

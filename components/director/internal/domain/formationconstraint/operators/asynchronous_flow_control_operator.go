@@ -19,7 +19,7 @@ const (
 
 // AsynchronousFlowControlOperatorInput is input constructor for AsynchronousFlowControlOperator. It returns empty OperatorInput
 func AsynchronousFlowControlOperatorInput() OperatorInput {
-	return &formationconstraint.RedirectNotificationInput{}
+	return &formationconstraint.AsynchronousFlowControlOperatorInput{}
 }
 
 // AsynchronousFlowControlOperator is an operator that based on different conditions behaves like the redirect operator, it redirects the formation assignment notification.
@@ -43,26 +43,32 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q for location with constraint type: %q and operation name: %q during %q operation", ri.ResourceType, ri.ResourceSubtype, ri.Location.ConstraintType, ri.Location.OperationName, ri.Operation)
 
-	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, ri.FAMemoryAddress)
-	if err != nil {
-		return false, err
-	}
-	reverseAssignment, err := RetrieveFormationAssignmentPointer(ctx, ri.ReverseFAMemoryAddress)
-	if err != nil {
-		return false, err
-	}
 	if ri.Operation == model.AssignFormation && ri.Location.OperationName == model.SendNotificationOperation && ri.Location.ConstraintType == model.PreOperation {
-		return e.RedirectNotification(ctx, ri)
+		return e.RedirectNotification(ctx, &ri.RedirectNotificationInput)
 	}
-	if ri.Operation == model.UnassignFormation && ri.Location.OperationName == model.SendNotificationOperation && ri.Location.ConstraintType == model.PreOperation{
+	if ri.Operation == model.UnassignFormation && ri.Location.OperationName == model.SendNotificationOperation && ri.Location.ConstraintType == model.PreOperation {
+		formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, ri.FAMemoryAddress)
+		if err != nil {
+			return false, err
+		}
 		if formationAssignment.State == string(model.InstanceCreatorDeletingAssignmentState) ||
 			formationAssignment.State == string(model.InstanceCreatorDeleteErrorAssignmentState) {
-			return e.RedirectNotification(ctx, ri)
+			log.C(ctx).Infof("Tenant mapping participant processing unassign notification has alredy finished, redirecting notification for assignment %q with state %q to instance creator", formationAssignment.ID, formationAssignment.State)
+			ri.ShouldRedirect = true
+			return e.RedirectNotification(ctx, &ri.RedirectNotificationInput)
 		}
 		return true, nil
 	}
 
 	if ri.Location.OperationName == model.NotificationStatusReturned && ri.Location.ConstraintType == model.PreOperation {
+		formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, ri.FAMemoryAddress)
+		if err != nil {
+			return false, err
+		}
+		reverseAssignment, err := RetrieveFormationAssignmentPointer(ctx, ri.ReverseFAMemoryAddress)
+		if err != nil {
+			log.C(ctx).Warnf(errors.Wrapf(err, "Reverse assignment not found").Error())
+		}
 		statusReport, err := RetrieveNotificationStatusReportPointer(ctx, ri.NotificationStatusReportMemoryAddress)
 		if err != nil {
 			return false, err
@@ -81,25 +87,30 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 		}
 		if ri.Operation == model.UnassignFormation {
 			if formationAssignment.State == string(model.DeletingAssignmentState) && statusReport.State == string(model.ReadyAssignmentState) {
+				log.C(ctx).Infof("Tenant mapping participant finished processing unassign notification sucessfully for assignment with ID %q, changing state to %q", formationAssignment.ID, model.InstanceCreatorDeletingAssignmentState)
 				formationAssignment.State = string(model.InstanceCreatorDeletingAssignmentState)
+				statusReport.State = string(model.InstanceCreatorDeletingAssignmentState)
 				if err = e.formationAssignmentRepo.Update(ctx, formationAssignment); err != nil {
 					return false, errors.Wrapf(err, "while updating formation assignment with ID %q", formationAssignment.ID)
 				}
+				log.C(ctx).Infof("Generating formation assignment notification for assignent with ID %q", formationAssignment.ID)
 				assignmentPair, err := e.formationAssignmentNotificationSvc.GenerateFormationAssignmentPair(ctx, formationAssignment, reverseAssignment, model.UnassignFormation)
 				if err != nil {
 					return false, errors.Wrapf(err, "while generating formation assignment notification")
 				}
+				log.C(ctx).Infof("Sending notification to instance creator")
 				_, err =  e.formationAssignmentService.CleanupFormationAssignment(ctx, assignmentPair)
 				if err != nil {
 					return false, err
 				}
-				return false, nil
+				return true, nil
 			}
 
 			if formationAssignment.State == string(model.DeletingAssignmentState) && statusReport.State == string(model.DeleteErrorAssignmentState) {
 				return true, nil
 			}
 			if formationAssignment.State == string(model.InstanceCreatorDeletingAssignmentState) && statusReport.State == string(model.ReadyAssignmentState) {
+				log.C(ctx).Infof("Instance creator reported %q, proceeding with deletion of formation assignment with ID %q", statusReport.State, formationAssignment.ID)
 				return true, nil
 			}
 			if formationAssignment.State == string(model.InstanceCreatorDeletingAssignmentState) && statusReport.State == string(model.DeleteErrorFormationState) {
