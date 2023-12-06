@@ -208,6 +208,10 @@ func TestWriteTenants(t *testing.T) {
 	accountName := "account-name"
 	accountSubdomain := "account-subdomain"
 
+	orgExternalTenant := "org-external-tenant-1"
+	orgName := "org-name"
+	orgSubdomain := "org-subdomain"
+
 	region := "local"
 
 	tenants := []graphql.BusinessTenantMappingInput{
@@ -238,6 +242,16 @@ func TestWriteTenants(t *testing.T) {
 			Subdomain:      &accountSubdomain,
 			Region:         &region,
 			Type:           string(tenant.Account),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           orgName,
+			ExternalTenant: orgExternalTenant,
+			Parent:         &customerExternalTenant,
+			Subdomain:      &orgSubdomain,
+			Region:         &region,
+			Type:           string(tenant.Organization),
 			Provider:       testProvider,
 			LicenseType:    &testLicenseType,
 		},
@@ -280,4 +294,15 @@ func TestWriteTenants(t *testing.T) {
 	require.Equal(t, accountName, *actualAccountTenant.Name)
 	require.Equal(t, string(tenant.Account), actualAccountTenant.Type)
 	require.Equal(t, actualCustomer1Tenant.InternalID, actualAccountTenant.ParentID)
+
+	var actualOrgenant graphql.Tenant
+	getTenant = fixtures.FixTenantRequest(orgExternalTenant)
+	t.Logf("Query tenant for external tenant: %q", orgExternalTenant)
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenant, &actualOrgenant)
+	require.NoError(t, err)
+	require.Equal(t, orgExternalTenant, actualOrgenant.ID)
+	require.Equal(t, orgName, *actualOrgenant.Name)
+	require.Equal(t, string(tenant.Organization), actualOrgenant.Type)
+	require.Equal(t, actualCustomer1Tenant.InternalID, actualOrgenant.ParentID)
 }
