@@ -197,14 +197,14 @@ func TestWriteTenants(t *testing.T) {
 	testProvider := "e2e-test-provider"
 	testLicenseType := "LICENSETYPE"
 
+	// customerExternalTenantGUID to have leading zeros, so we can check if they are not accidentally trimmed
 	customerExternalTenantGUID := "0022b8c3-bfda-47b4-8d1b-4c717b9940a3"
 	customerExternalTenant := "0000customerID"
 	customerTrimmedExternalTenant := "customerID"
 	customerName := "customer-name"
 	customerSubdomain := "customer-subdomain"
 
-	account1ExternalTenant := "account-external-tenant-1"
-	account2ExternalTenant := "account-external-tenant-2"
+	accountExternalTenant := "account-external-tenant-1"
 	accountName := "account-name"
 	accountSubdomain := "account-subdomain"
 
@@ -222,19 +222,19 @@ func TestWriteTenants(t *testing.T) {
 			LicenseType:    &testLicenseType,
 		},
 		{
-			Name:           accountName,
-			ExternalTenant: account1ExternalTenant,
-			Parent:         &customerExternalTenant,
-			Subdomain:      &accountSubdomain,
+			Name:           customerName,
+			ExternalTenant: customerExternalTenantGUID,
+			Parent:         nil,
+			Subdomain:      &customerSubdomain,
 			Region:         &region,
-			Type:           string(tenant.Account),
+			Type:           string(tenant.Customer),
 			Provider:       testProvider,
 			LicenseType:    &testLicenseType,
 		},
 		{
 			Name:           accountName,
-			ExternalTenant: account2ExternalTenant,
-			Parent:         &customerExternalTenantGUID,
+			ExternalTenant: accountExternalTenant,
+			Parent:         &customerExternalTenant,
 			Subdomain:      &accountSubdomain,
 			Region:         &region,
 			Type:           string(tenant.Account),
@@ -243,42 +243,41 @@ func TestWriteTenants(t *testing.T) {
 		},
 	}
 	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
-	assert.NoError(t, err)
-	defer func() { // cleanup tenants
-		err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenants)
-		assert.NoError(t, err)
-		log.D().Info("Successfully cleanup tenants")
-	}()
+	require.NoError(t, err)
+	//defer func() { // cleanup tenants
+	//	err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenants)
+	//	assert.NoError(t, err)
+	//	log.D().Info("Successfully cleanup tenants")
+	//}()
 
-	var actualCustomerTenant graphql.Tenant
+	var actualCustomer1Tenant graphql.Tenant
 	getTenant := fixtures.FixTenantRequest(customerTrimmedExternalTenant)
 	t.Logf("Query tenant for external tenant: %q", customerTrimmedExternalTenant)
 
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenant, &actualCustomerTenant)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenant, &actualCustomer1Tenant)
 	require.NoError(t, err)
-	require.Equal(t, customerTrimmedExternalTenant, actualCustomerTenant.ID)
-	require.Equal(t, customerName, *actualCustomerTenant.Name)
-	require.Equal(t, string(tenant.Customer), actualCustomerTenant.Type)
+	require.Equal(t, customerTrimmedExternalTenant, actualCustomer1Tenant.ID)
+	require.Equal(t, customerName, *actualCustomer1Tenant.Name)
+	require.Equal(t, string(tenant.Customer), actualCustomer1Tenant.Type)
 
-	var actualAccount1Tenant graphql.Tenant
-	getTenant = fixtures.FixTenantRequest(account1ExternalTenant)
-	t.Logf("Query tenant for external tenant: %q", account1ExternalTenant)
+	var actualCustomer2Tenant graphql.Tenant
+	getTenant = fixtures.FixTenantRequest(customerExternalTenantGUID)
+	t.Logf("Query tenant for external tenant: %q", customerExternalTenantGUID)
 
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenant, &actualAccount1Tenant)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenant, &actualCustomer2Tenant)
 	require.NoError(t, err)
-	require.Equal(t, account1ExternalTenant, actualAccount1Tenant.ID)
-	require.Equal(t, accountName, *actualAccount1Tenant.Name)
-	require.Equal(t, string(tenant.Account), actualAccount1Tenant.Type)
-	require.Equal(t, customerTrimmedExternalTenant, actualAccount1Tenant.ParentID)
+	require.Equal(t, customerExternalTenantGUID, actualCustomer2Tenant.ID)
+	require.Equal(t, customerName, *actualCustomer2Tenant.Name)
+	require.Equal(t, string(tenant.Customer), actualCustomer2Tenant.Type)
 
-	var actualAccount2Tenant graphql.Tenant
-	getTenant = fixtures.FixTenantRequest(account2ExternalTenant)
-	t.Logf("Query tenant for external tenant: %q", account2ExternalTenant)
+	var actualAccountTenant graphql.Tenant
+	getTenant = fixtures.FixTenantRequest(accountExternalTenant)
+	t.Logf("Query tenant for external tenant: %q", accountExternalTenant)
 
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenant, &actualAccount2Tenant)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenant, &actualAccountTenant)
 	require.NoError(t, err)
-	require.Equal(t, account2ExternalTenant, actualAccount2Tenant.ID)
-	require.Equal(t, accountName, *actualAccount2Tenant.Name)
-	require.Equal(t, string(tenant.Account), actualAccount2Tenant.Type)
-	require.Equal(t, customerExternalTenantGUID, actualAccount2Tenant.ParentID)
+	require.Equal(t, accountExternalTenant, actualAccountTenant.ID)
+	require.Equal(t, accountName, *actualAccountTenant.Name)
+	require.Equal(t, string(tenant.Account), actualAccountTenant.Type)
+	require.Equal(t, actualCustomer1Tenant.InternalID, actualAccountTenant.ParentID)
 }
