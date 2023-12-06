@@ -95,7 +95,7 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 			config, err = c.fetchConfig(ctx, resource, webhook, tenantValue, requestObject)
 			return err
 		},
-		retry.Attempts(3),
+		retry.Attempts(5),
 		retry.Delay(time.Second*5),
 		retry.OnRetry(func(n uint, err error) {
 			log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
@@ -103,6 +103,7 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 	)
 
 	if err != nil {
+		log.C(ctx).Error(errors.Wrap(err, "error fetching ORD well-known config").Error())
 		return nil, "", err
 	}
 
@@ -134,7 +135,7 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 
 			documentURL, err := buildDocumentURL(docDetails.URL, webhookBaseURL, str.PtrStrToStr(webhook.ProxyURL), ordWebhookMapping)
 			if err != nil {
-				log.C(ctx).Warn(errors.Wrap(err, "error building document URL").Error())
+				log.C(ctx).Error(errors.Wrap(err, "error building document URL").Error())
 				addError(&fetchDocErrors, err, &errMutex)
 				return
 			}
@@ -150,14 +151,14 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 					doc, innerErr = c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, requestObject)
 					return innerErr
 				},
-				retry.Attempts(3),
+				retry.Attempts(5),
 				retry.Delay(time.Second*5),
 				retry.OnRetry(func(n uint, err error) {
 					log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
 				}),
 			)
 			if err != nil {
-				log.C(ctx).Warn(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
+				log.C(ctx).Error(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
 				addError(&fetchDocErrors, err, &errMutex)
 				return
 			}
