@@ -243,12 +243,12 @@ func TestWriteTenants(t *testing.T) {
 		},
 	}
 	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
-	require.NoError(t, err)
-	//defer func() { // cleanup tenants
-	//	err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenants)
-	//	assert.NoError(t, err)
-	//	log.D().Info("Successfully cleanup tenants")
-	//}()
+	assert.NoError(t, err)
+	defer func() { // cleanup tenants
+		err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenants)
+		assert.NoError(t, err)
+		log.D().Info("Successfully cleanup tenants")
+	}()
 
 	var actualCustomer1Tenant graphql.Tenant
 	getTenant := fixtures.FixTenantRequest(customerTrimmedExternalTenant)
