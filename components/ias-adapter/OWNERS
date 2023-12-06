@@ -3,6 +3,6 @@ reviewers:
 approvers:
   - team-atlas
 labels:
-  - ":atlas: team-atlas"
+  - ":globe_with_meridians: team-atlas"
 options:
   no_parent_owners: true
