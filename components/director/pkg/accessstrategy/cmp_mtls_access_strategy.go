@@ -65,8 +65,8 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 
 	var client *http.Client
 	if tr != nil {
-		log.C(ctx).Infof("Default Transport %+v", tr)
-		log.C(ctx).Infof("Default Transport TLSClientConfig %+v", tr.TLSClientConfig)
+		//log.C(ctx).Infof("Default Transport %+v", tr)
+		//log.C(ctx).Infof("Default Transport TLSClientConfig %+v", tr.TLSClientConfig)
 		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
 
 		client = &http.Client{
@@ -74,7 +74,7 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 			Transport: tr,
 		}
 	} else {
-		log.C(ctx).Infof("HTTP2 Transport %+v", tr2)
+		//log.C(ctx).Infof("HTTP2 Transport %+v", tr2)
 
 		tr2.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
 
@@ -110,6 +110,7 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode >= http.StatusBadRequest {
+		errors.Errorf("Err: %+v, Status code: %+v", err.Error(), resp.StatusCode)
 		if len(clientCerts) != 2 {
 			return nil, errors.Errorf("There must be exactly 2 certificates in the cert cache. Actual number of certificates: %d", len(clientCerts))
 		}
