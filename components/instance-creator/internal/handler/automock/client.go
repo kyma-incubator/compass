@@ -5,6 +5,8 @@ package automock
 import (
 	context "context"
 
+	json "encoding/json"
+
 	mock "github.com/stretchr/testify/mock"
 
 	resources "github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
@@ -50,6 +52,20 @@ func (_m *Client) DeleteMultipleResources(ctx context.Context, region string, su
 	return r0
 }
 
+// DeleteMultipleResourcesByIDs provides a mock function with given fields: ctx, region, subaccountID, _a3, resourceIDs
+func (_m *Client) DeleteMultipleResourcesByIDs(ctx context.Context, region string, subaccountID string, _a3 resources.Resources, resourceIDs []string) error {
+	ret := _m.Called(ctx, region, subaccountID, _a3, resourceIDs)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, resources.Resources, []string) error); ok {
+		r0 = rf(ctx, region, subaccountID, _a3, resourceIDs)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteResource provides a mock function with given fields: ctx, region, subaccountID, resource
 func (_m *Client) DeleteResource(ctx context.Context, region string, subaccountID string, resource resources.Resource) error {
 	ret := _m.Called(ctx, region, subaccountID, resource)
@@ -64,16 +80,62 @@ func (_m *Client) DeleteResource(ctx context.Context, region string, subaccountI
 	return r0
 }
 
+// RetrieveMultipleResources provides a mock function with given fields: ctx, region, subaccountID, _a3, resourceMatchParams
+func (_m *Client) RetrieveMultipleResources(ctx context.Context, region string, subaccountID string, _a3 resources.Resources, resourceMatchParams resources.ResourceMatchParameters) ([]string, error) {
+	ret := _m.Called(ctx, region, subaccountID, _a3, resourceMatchParams)
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, resources.Resources, resources.ResourceMatchParameters) []string); ok {
+		r0 = rf(ctx, region, subaccountID, _a3, resourceMatchParams)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, resources.Resources, resources.ResourceMatchParameters) error); ok {
+		r1 = rf(ctx, region, subaccountID, _a3, resourceMatchParams)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RetrieveMultipleResourcesIDsByLabels provides a mock function with given fields: ctx, region, subaccountID, _a3, labels
+func (_m *Client) RetrieveMultipleResourcesIDsByLabels(ctx context.Context, region string, subaccountID string, _a3 resources.Resources, labels map[string][]string) ([]string, error) {
+	ret := _m.Called(ctx, region, subaccountID, _a3, labels)
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, resources.Resources, map[string][]string) []string); ok {
+		r0 = rf(ctx, region, subaccountID, _a3, labels)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, resources.Resources, map[string][]string) error); ok {
+		r1 = rf(ctx, region, subaccountID, _a3, labels)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RetrieveRawResourceByID provides a mock function with given fields: ctx, region, subaccountID, resource
-func (_m *Client) RetrieveRawResourceByID(ctx context.Context, region string, subaccountID string, resource resources.Resource) (map[string]interface{}, error) {
+func (_m *Client) RetrieveRawResourceByID(ctx context.Context, region string, subaccountID string, resource resources.Resource) (json.RawMessage, error) {
 	ret := _m.Called(ctx, region, subaccountID, resource)
 
-	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, resources.Resource) map[string]interface{}); ok {
+	var r0 json.RawMessage
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, resources.Resource) json.RawMessage); ok {
 		r0 = rf(ctx, region, subaccountID, resource)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]interface{})
+			r0 = ret.Get(0).(json.RawMessage)
 		}
 	}
 

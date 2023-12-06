@@ -140,7 +140,7 @@ func (c *client) RetrieveMultipleResourcesIDsByLabels(ctx context.Context, regio
 // Example call, delete after initial usage of the client:
 //
 // RetrieveRawResourceByID(ctx , region, subaccountID, &types.ServiceKey{ID: serviceKeyID}, &types.ServiceKeyMatchParameters{})
-func (c *client) RetrieveRawResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource) (map[string]interface{}, error) {
+func (c *client) RetrieveRawResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource) (json.RawMessage, error) {
 	resourcePath := resource.GetResourceURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
 	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourcePath, SubaccountKey, subaccountID)
 	if err != nil {
@@ -154,12 +154,7 @@ func (c *client) RetrieveRawResourceByID(ctx context.Context, region, subaccount
 	}
 	log.C(ctx).Infof("Successfully got %s by ID: %s for subaccount with ID: %q", resource.GetResourceType(), resource.GetResourceID(), subaccountID)
 
-	var result map[string]interface{}
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling the body into map of string to interface")
-	}
-
-	return result, nil
+	return body, nil
 }
 
 // CreateResource creates a given resource in SM

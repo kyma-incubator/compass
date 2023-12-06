@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/types/tenantmapping"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 	"net/http"
 	"regexp"
 	"strings"
@@ -31,7 +32,7 @@ const (
 
 	assignOperation = "assign"
 
-	inboundCommunicationPath  = "inboundCommunication"
+	inboundCommunicationKey   = "inboundCommunication"
 	serviceInstancesKey       = "serviceInstances"
 	serviceBindingKey         = "serviceBinding"
 	serviceInstanceServiceKey = "service"
@@ -40,6 +41,7 @@ const (
 	nameKey                   = "name"
 	assignmentIDKey           = "assignment_id"
 	currentWaveHashKey        = "current_wave_hash"
+	reverseKey                = "reverse"
 
 	locationHeader             = "Location"
 	contentTypeHeaderKey       = "Content-Type"
@@ -51,7 +53,7 @@ const (
 type Client interface {
 	RetrieveResource(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) (string, error)
 	RetrieveResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource) (resources.Resource, error)
-	RetrieveRawResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource) (map[string]interface{}, error)
+	RetrieveRawResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource) (json.RawMessage, error)
 	RetrieveMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) ([]string, error)
 	RetrieveMultipleResourcesIDsByLabels(ctx context.Context, region, subaccountID string, resources resources.Resources, labels map[string][]string) ([]string, error)
 	CreateResource(ctx context.Context, region, subaccountID string, resourceReqBody resources.ResourceRequestBody, resource resources.Resource) (string, error)
@@ -130,232 +132,170 @@ func (i *InstanceCreatorHandler) handleInstances(r *http.Request, statusAPIURL, 
 // Core Instance Creation Logic
 func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL, correlationID string) {
 	// If receiver tenant outboundCommunication is missing - create it. It's here because if this code fails it's better to be before the instances are created.
-	if err := reqBody.AddReceiverTenantOutboundCommunicationIfMissing(); err != nil {
+	err := reqBody.AddReceiverTenantOutboundCommunicationIfMissing()
+	if err != nil {
 		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, err)
 		return
 	}
 
-	assignedTenantInboundCommunication, err := reqBody.GetAssignedTenantInboundCommunication()
-	if err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while getting assigned tenant configuration inbound communication"))
-		return
-	}
+	assignedTenantInboundCommunication := reqBody.GetAssignedTenantInboundCommunication()
+	assignedTenantConfiguration := reqBody.AssignedTenant.Configuration
 
-	//region := reqBody.ReceiverTenant.Region
-	//subaccount := reqBody.ReceiverTenant.SubaccountID
-
-	serviceInstancesPath := tenantmapping.FindKeyPath(assignedTenantInboundCommunication, serviceInstancesKey)
+	serviceInstancesPath := tenantmapping.FindKeyPath(assignedTenantInboundCommunication.Value(), serviceInstancesKey)
 	if serviceInstancesPath == "" {
-		i.reportToUCLWithSuccess(ctx, statusAPIURL, correlationID, configPendingState, fmt.Sprintf("Service instances details are missing. Returning %q...", configPendingState), []byte(""))
+		i.reportToUCLWithSuccess(ctx, statusAPIURL, correlationID, configPendingState, fmt.Sprintf("Service instances details are missing. Returning %q...", configPendingState), nil)
 		return
 	}
 
-	var assignedTenantConfiguration interface{}
-	if err = json.Unmarshal(reqBody.AssignedTenant.Configuration, &assignedTenantConfiguration); err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrap(err, "while unmarshalling assigned tenant configuration to interface"))
-		return
-	}
+	globalServiceInstances := gjson.Get(assignedTenantInboundCommunication.Raw, serviceInstancesKey)
 
 	// Go through global service instances(if exist)
-	if globalServiceInstances, globalServiceInstancesExist := assignedTenantInboundCommunication[serviceInstancesKey]; globalServiceInstancesExist {
+	if globalServiceInstances.Exists() && globalServiceInstances.IsArray() && len(globalServiceInstances.Array()) > 0 {
 		// Handle global service instances creation
-		var globalServiceInstancesInterface []interface{}
-		if err = json.Unmarshal(globalServiceInstances, &globalServiceInstancesInterface); err != nil {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrap(err, "while unmarshalling global instances in interface"))
-			return
-		}
+		currentPath := fmt.Sprintf("%s.%s", tenantmapping.FindKeyPath(gjson.ParseBytes(assignedTenantConfiguration).Value(), inboundCommunicationKey), serviceInstancesKey)
 
-		createdGlobalServiceInstances, err := i.createServiceInstances(ctx, reqBody, globalServiceInstancesInterface, assignedTenantConfiguration, inboundCommunicationPath)
+		assignedTenantConfiguration, err = i.createServiceInstances(ctx, reqBody, globalServiceInstances.Raw, assignedTenantConfiguration, currentPath)
 		if err != nil {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.New("while creating service instances"))
+			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while creating service instances"))
 			return
 		}
-
-		createdGlobalServiceInstancesJSON, err := json.Marshal(createdGlobalServiceInstances)
-		if err != nil {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.New("while marshalling created global service instances"))
-			return
-		}
-
-		// Save the service instances
-		assignedTenantInboundCommunication[serviceInstancesKey] = createdGlobalServiceInstancesJSON
 	}
 
-	// Go through every type of inbound communication(auth)
-	for auth, assignedTenantAuth := range assignedTenantInboundCommunication {
-		// Skip if the auth don't have service instances
-		if gjson.GetBytes(assignedTenantAuth, serviceInstancesKey).Exists() == false {
-			continue
+	// Go through every auth methods and create their instances
+	gjson.Parse(assignedTenantInboundCommunication.Raw).ForEach(func(auth, assignedTenantAuth gjson.Result) bool {
+		currentPath := fmt.Sprintf("%s.%s", tenantmapping.FindKeyPath(gjson.ParseBytes(assignedTenantConfiguration).Value(), inboundCommunicationKey), auth)
+
+		if gjson.Get(assignedTenantAuth.Raw, serviceInstancesKey).Exists() == false {
+			// Substitute auth methods referring global instances
+			assignedTenantAuth, err = SubstituteGJSON(gjson.GetBytes(assignedTenantConfiguration, currentPath), gjson.ParseBytes(assignedTenantConfiguration).Value())
+			if err != nil {
+				return false
+			}
+
+			assignedTenantConfiguration, err = sjson.SetBytes(assignedTenantConfiguration, currentPath, assignedTenantAuth.Value())
+			if err != nil {
+				return false
+			}
+
+			return true
 		}
 
-		// Convert the assignedTenantAuth to map[string]interface{}
-		var assignedTenantAuthMap map[string]interface{}
-		if err := json.Unmarshal(assignedTenantAuth, &assignedTenantAuthMap); err != nil {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while unmarshalling assigned tenant %q auth in map of string to interface", auth))
-			return
-		}
+		localServiceInstances := gjson.Get(assignedTenantAuth.Raw, serviceInstancesKey)
 
-		serviceInstancesArray, ok := assignedTenantAuthMap[serviceInstancesKey].([]interface{})
-		if !ok {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.New("while casting service instances interface to array"))
-			return
-		}
-
-		createdServiceInstances, err := i.createServiceInstances(ctx, reqBody, serviceInstancesArray, assignedTenantConfiguration, auth)
+		assignedTenantConfiguration, err = i.createServiceInstances(ctx, reqBody, localServiceInstances.Raw, assignedTenantConfiguration, fmt.Sprintf("%s.%s", currentPath, serviceInstancesKey))
 		if err != nil {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.New("while creating service instances"))
-			return
+			return false
 		}
-
-		// Save the service instances
-		assignedTenantAuthMap[serviceInstancesKey] = createdServiceInstances
-		assignedTenantAuthMapMarshalled, err := json.Marshal(assignedTenantAuthMap)
-		if err != nil {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Errorf("while marshalling %q auth", auth))
-			return
-		}
-		assignedTenantInboundCommunication[auth] = assignedTenantAuthMapMarshalled
-
-		//// Go through all service instances(we know they exist because we checked with the if at the start of the for loop)
-		//serviceInstancesArray, ok := assignedTenantAuthMap[serviceInstancesKey].([]interface{})
-		//if !ok {
-		//	i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.New("while casting service instances interface to array"))
-		//	return
-		//}
-		//
-		//for idx, serviceInstance := range serviceInstancesArray {
-		//	serviceInstanceMap, ok := serviceInstance.(map[string]interface{})
-		//	if !ok {
-		//		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.New("while casting service instance interface to map"))
-		//		return
-		//	}
-		//
-		//	// Set the Service Instance name to service-plan-assignmentId
-		//	//serviceInstanceName := strings.Join([]string{serviceInstanceMap[serviceInstanceServicePath].(string), serviceInstanceMap[serviceInstancePlanPath].(string), reqBody.AssignedTenant.AssignmentID}, "-")
-		//	serviceInstanceName := getServiceInstanceName(serviceInstanceMap)
-		//	serviceInstanceMap[nameKey] = serviceInstanceName
-		//
-		//	// Save the service instance binding in a var and delete it from the service instance map.
-		//	// That way later we will be able to substitute only the service instance json paths
-		//	serviceInstanceBinding := serviceInstanceMap[serviceBindingKey]
-		//	delete(serviceInstanceMap, serviceBindingKey)
-		//
-		//	// Substitute the service instance json paths(without the service binding)
-		//	substituteJSON(serviceInstanceMap, assignedTenantConfiguration)
-		//
-		//	// Extract Service Offering catalog name and Service Plan catalog name from the service instance
-		//	serviceOfferingCatalogName, servicePlanCatalogName, err := extractServiceOfferingAndPlanCatalogNames(serviceInstance)
-		//	if err != nil {
-		//		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, err)
-		//		return
-		//	}
-		//
-		//	serviceInstanceParameters, err := extractParameters(serviceInstance)
-		//	if err != nil {
-		//		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while extracting the parameters of service instance with id: %d", idx))
-		//		return
-		//	}
-		//
-		//	// Get the Service Offering ID with catalog name(service from the contract)
-		//	serviceOfferingID, err := i.SMClient.RetrieveResource(ctx, region, subaccount, &types.ServiceOfferings{}, &types.ServiceOfferingMatchParameters{CatalogName: serviceOfferingCatalogName})
-		//	if err != nil {
-		//		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Errorf("while retrieving service offering with catalog name %q", "catalogName"))
-		//		return
-		//	}
-		//
-		//	// Get the Service Plan ID with the Service Offering ID + Service Plan Catalog Name(plan from the contract)
-		//	servicePlanID, err := i.SMClient.RetrieveResource(ctx, region, subaccount, &types.ServicePlans{}, &types.ServicePlanMatchParameters{PlanName: servicePlanCatalogName, OfferingID: serviceOfferingID})
-		//	if err != nil {
-		//		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Errorf("while retrieving service plan with catalog name %q and offering ID %q", "catalogName", serviceOfferingID))
-		//		return
-		//	}
-		//
-		//	// Create the service instance - params from the contract
-		//	serviceInstanceID, err := i.SMClient.CreateResource(ctx, region, subaccount, &types.ServiceInstanceReqBody{Name: serviceInstanceName, ServicePlanID: servicePlanID, Parameters: serviceInstanceParameters, Labels: map[string][]string{assignmentIDKey: {reqBody.AssignedTenant.AssignmentID}}}, &types.ServiceInstance{})
-		//	instanceAlreadyExists := strings.Contains(err.Error(), fmt.Sprintf("status: %d", http.StatusConflict))
-		//	if err != nil && !instanceAlreadyExists {
-		//		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Errorf("while creating service instance with name %q", serviceInstanceName))
-		//		return
-		//	}
-		//
-		//	// Recreating it if it already exists - resync case
-		//	if instanceAlreadyExists {
-		//		if err = i.recreateServiceInstance(ctx, region, subaccount, serviceInstanceName, servicePlanID, serviceInstanceParameters); err != nil {
-		//			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Errorf("while recreating service instance with name %q", serviceInstanceName))
-		//			return
-		//		}
-		//	}
-		//
-		//	// Retrieve the service instance by ID
-		//	serviceInstanceRaw, err := i.SMClient.RetrieveRawResourceByID(ctx, region, subaccount, &types.ServiceInstance{ID: serviceInstanceID})
-		//	if err != nil {
-		//		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Errorf("while retrieving service instance with ID %q", serviceInstanceID))
-		//		return
-		//	}
-		//
-		//	// Save the service instance
-		//	serviceInstancesArray[idx] = serviceInstanceRaw
-		//
-		//	// Substitute the service binding json paths
-		//	substituteJSON(serviceInstanceBinding, assignedTenantConfiguration)
-		//
-		//	serviceBindingParameters, err := extractParameters(serviceInstanceBinding)
-		//	if err != nil {
-		//		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while extracting the parameters of service binding for a service instance with id: %d", idx))
-		//		return
-		//	}
-		//
-		//	// Create the service instance binding
-		//	serviceBindingID, err := i.SMClient.CreateResource(ctx, region, subaccount, &types.ServiceKeyReqBody{Name: serviceInstanceName, ServiceKeyID: serviceInstanceID, Parameters: serviceBindingParameters}, &types.ServiceKey{})
-		//	if err != nil {
-		//		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Errorf("while creating service instance binding for service instance with ID %q", serviceInstanceID))
-		//		return
-		//	}
-		//
-		//	// Retrieve the service instance binding by ID
-		//	serviceBindingRaw, err := i.SMClient.RetrieveRawResourceByID(ctx, region, subaccount, &types.ServiceInstance{ID: serviceBindingID})
-		//	if err != nil {
-		//		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Errorf("while retrieving service instance binding with ID %q", serviceBindingID))
-		//		return
-		//	}
-		//
-		//	// Save the service instance binding
-		//	serviceInstanceRaw[serviceBindingKey] = serviceBindingRaw
-		//	serviceInstance = serviceInstanceRaw
 
 		// Substitute the top most json paths
-		substituteJSON(assignedTenantAuthMap, assignedTenantConfiguration)
-
-		// Remove the service instances from the json
-		//delete(assignedTenantAuthMap, serviceInstancesPath)
-
-		// Update the Receiver Tenant outbound communication with the Assigned Tenant inbound communication.
-		// If the same auth exists in the receiver tenant, merge the two jsons.
-		// If the auth doesn't exist - add it.
-		receiverTenantOutboundCommunication, err := reqBody.GetReceiverTenantOutboundCommunication()
+		assignedTenantAuth, err = SubstituteGJSON(gjson.GetBytes(assignedTenantConfiguration, currentPath), gjson.ParseBytes(assignedTenantConfiguration).Value())
 		if err != nil {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while getting receiver tenant outbound communication"))
+			return false
+		}
+
+		assignedTenantConfiguration, err = sjson.SetBytes(assignedTenantConfiguration, currentPath, assignedTenantAuth.Value())
+		if err != nil {
+			return false
+		}
+
+		return true
+	})
+	if err != nil {
+		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while creating service instances for auth methods"))
+		return
+	}
+
+	// Remove Receiver Tenant inboundCommunication with service instance details and substitute the reverse json paths
+	receiverTenantConfiguration := reqBody.ReceiverTenant.Configuration
+	receiverTenantInboundCommunication := reqBody.GetReceiverTenantInboundCommunication()
+	if receiverTenantInboundCommunication.Exists() {
+		inboundCommunicationPath := tenantmapping.FindKeyPath(gjson.ParseBytes(receiverTenantConfiguration).Value(), inboundCommunicationKey)
+
+		// Remove global instances
+		receiverTenantConfiguration, err = sjson.DeleteBytes(receiverTenantConfiguration, fmt.Sprintf("%s.%s", inboundCommunicationPath, serviceInstancesKey))
+		if err != nil {
+			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while removing global service instances from receiver tenant inboundCommunication"))
 			return
 		}
 
-		mergedConfiguration := make(map[string]interface{}, len(receiverTenantOutboundCommunication[auth])+len(assignedTenantAuthMap))
-		gjson.ParseBytes(receiverTenantOutboundCommunication[auth]).ForEach(func(key, value gjson.Result) bool {
-			mergedConfiguration[key.Str] = value.Raw
+		// Remove auth methods with local instances or reffering global instances
+		receiverTenantInboundCommunication = gjson.GetBytes(receiverTenantConfiguration, inboundCommunicationPath)
+		gjson.Parse(receiverTenantInboundCommunication.Raw).ForEach(func(auth, assignedTenantAuth gjson.Result) bool {
+			if gjson.Get(assignedTenantAuth.Raw, serviceInstancesKey).Exists() || strings.Contains(assignedTenantAuth.Raw, fmt.Sprintf("$.%s.%s", inboundCommunicationPath, serviceInstancesKey)) {
+				receiverTenantConfiguration, err = sjson.DeleteBytes(receiverTenantConfiguration, fmt.Sprintf("%s.%s", inboundCommunicationPath, auth))
+				if err != nil {
+					return false
+				}
+			}
+
 			return true
 		})
-		for k, v := range assignedTenantAuthMap {
-			mergedConfiguration[k] = v
+		if err != nil {
+			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while deleting auth methods with local instances or refering global instances"))
+			return
 		}
 
-		if err := reqBody.SetReceiverTenantAuth(auth, mergedConfiguration); err != nil {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while updating receiver tenant %q auth", auth))
+		// Create temporary config with reverse field which is needed to populate the reverse paths below
+		receiverTenantConfigurationWithReverse, err := sjson.SetBytes(receiverTenantConfiguration, reverseKey, gjson.ParseBytes(assignedTenantConfiguration).Value())
+		if err != nil {
+			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while setting reverse object in receiver tenant configuration"))
 			return
+		}
+
+		// Substitute reverse json paths
+		receiverTenantConfigurationGJSONResult, err := SubstituteGJSON(gjson.ParseBytes(receiverTenantConfiguration), gjson.ParseBytes(receiverTenantConfigurationWithReverse).Value())
+		if err != nil {
+			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while converting receiver tenant configuration to gjson.Result"))
+			return
+		}
+
+		receiverTenantConfiguration = []byte(receiverTenantConfigurationGJSONResult.Raw)
+
+		// Delete receiver tenant inbound communication if it is empty
+		receiverTenantInboundCommunication = gjson.GetBytes(receiverTenantConfiguration, inboundCommunicationPath)
+		if (receiverTenantInboundCommunication.IsObject() && len(receiverTenantInboundCommunication.Map()) == 0) || (receiverTenantInboundCommunication.IsArray() && len(receiverTenantInboundCommunication.Array()) == 0) {
+			receiverTenantConfiguration, err = sjson.DeleteBytes(receiverTenantConfiguration, inboundCommunicationPath)
+			if err != nil {
+				i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while deleting the whole receiver tenant inbound communication"))
+				return
+			}
 		}
 	}
 
-	responseConfig, err := json.Marshal(reqBody.ReceiverTenant.Configuration)
+	// Populate Receiver tenant outbound communication
+	// Remove service instance details from inbound communication before populating the receiver tenant outbound communication
+	assignedTenantInboundCommunicationPath := tenantmapping.FindKeyPath(gjson.ParseBytes(assignedTenantConfiguration).Value(), inboundCommunicationKey) // Receiver outbound Path == Assigned inbound Path
+
+	assignedTenantConfiguration, err = sjson.DeleteBytes(assignedTenantConfiguration, fmt.Sprintf("%s.%s", assignedTenantInboundCommunicationPath, serviceInstancesKey))
 	if err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrap(err, "while marshalling receiver tenant configuration"))
+		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while deleting global service instances from assigned tenant inboundCommunication"))
+		return
+	}
+
+	assignedTenantInboundCommunication = gjson.GetBytes(assignedTenantConfiguration, assignedTenantInboundCommunicationPath)
+	gjson.Parse(assignedTenantInboundCommunication.Raw).ForEach(func(auth, assignedTenantAuth gjson.Result) bool {
+		assignedTenantConfiguration, err = sjson.DeleteBytes(assignedTenantConfiguration, fmt.Sprintf("%s.%s.%s", assignedTenantInboundCommunicationPath, auth, serviceInstancesPath))
+		if err != nil {
+			return false
+		}
+
+		return true
+	})
+	if err != nil {
+		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while deleting service instances for auth methods"))
+		return
+	}
+
+	receiverTenantOutboundCommunicationPath := tenantmapping.FindKeyPath(gjson.ParseBytes(receiverTenantConfiguration).Value(), "outboundCommunication") // Receiver outbound Path == Assigned inbound Path
+
+	receiverTenantOutboundCommunication := gjson.GetBytes(receiverTenantConfiguration, receiverTenantOutboundCommunicationPath)
+	assignedTenantInboundCommunication = gjson.GetBytes(assignedTenantConfiguration, assignedTenantInboundCommunicationPath)
+
+	mergedReceiverTenantOutboundCommunication := deepMergeJSON(assignedTenantInboundCommunication, receiverTenantOutboundCommunication)
+
+	responseConfig, err := sjson.SetBytes(receiverTenantConfiguration, receiverTenantOutboundCommunicationPath, mergedReceiverTenantOutboundCommunication.Value())
+	if err != nil {
+		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while setting merged receiver tenant outboundCommunication with assigned tenant inboundCommunication in receiver tenant"))
 		return
 	}
 
@@ -368,16 +308,16 @@ func (i *InstanceCreatorHandler) handleInstanceDeletion(ctx context.Context, req
 	assignmentID := reqBody.AssignedTenant.AssignmentID
 
 	// Get the service instance with labels using the formation-id label key
-	serviceInstanceIDs, err := i.SMClient.RetrieveMultipleResourcesIDsByLabels(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceInstances{}, map[string][]string{assignmentIDKey: {assignmentID}})
+	serviceInstancesIDs, err := i.SMClient.RetrieveMultipleResourcesIDsByLabels(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceInstances{}, map[string][]string{assignmentIDKey: {assignmentID}})
 	if err != nil {
 		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, deleteErrorState, errors.Wrapf(err, "while retrieving service instances for assignmentID: %q", assignmentID))
 		return
 	}
 
 	// Retrieve all service instances bindings
-	serviceBindingsIDs, err := i.SMClient.RetrieveMultipleResources(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceKeys{}, &types.ServiceKeyMatchParameters{ServiceInstancesIDs: serviceInstanceIDs})
+	serviceBindingsIDs, err := i.SMClient.RetrieveMultipleResources(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceKeys{}, &types.ServiceKeyMatchParameters{ServiceInstancesIDs: serviceInstancesIDs})
 	if err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, deleteErrorState, errors.Wrapf(err, "while retrieving service bindings for service instaces with IDs: %v", serviceInstanceIDs))
+		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, deleteErrorState, errors.Wrapf(err, "while retrieving service bindings for service instaces with IDs: %v", serviceInstancesIDs))
 		return
 	}
 
@@ -388,8 +328,8 @@ func (i *InstanceCreatorHandler) handleInstanceDeletion(ctx context.Context, req
 	}
 
 	// Delete all service instances with serviceInstanceIDs
-	if err := i.SMClient.DeleteMultipleResourcesByIDs(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceInstances{}, serviceInstanceIDs); err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, deleteErrorState, errors.Wrapf(err, "while deleting service instances with IDs: %v", serviceInstanceIDs))
+	if err := i.SMClient.DeleteMultipleResourcesByIDs(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceInstances{}, serviceInstancesIDs); err != nil {
+		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, deleteErrorState, errors.Wrapf(err, "while deleting service instances with IDs: %v", serviceInstancesIDs))
 		return
 	}
 
@@ -439,72 +379,78 @@ func (i *InstanceCreatorHandler) callUCLStatusAPI(statusAPIURL, correlationID st
 	}
 }
 
-func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, reqBody *tenantmapping.Body, serviceInstancesArray []interface{}, assignedTenantConfiguration interface{}, parentScope string) ([]interface{}, error) {
+func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, reqBody *tenantmapping.Body, serviceInstancesRaw string, assignedTenantConfiguration json.RawMessage, pathToServiceInstances string) (json.RawMessage, error) {
 	region := reqBody.ReceiverTenant.Region
 	subaccount := reqBody.ReceiverTenant.SubaccountID
 
+	serviceInstancesArray := gjson.Parse(serviceInstancesRaw).Array()
+
+	// Get current wave hash
+	currentWaveHash, err := getCurrentWaveHash(pathToServiceInstances, gjson.Parse(serviceInstancesRaw).Value())
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting current wave hash")
+	}
+
+	// Get the service instances from this wave, if they exist - it is resync case, and we need to delete them, so we can create them from scratch
+	smLabels := map[string][]string{
+		assignmentIDKey:    {reqBody.AssignedTenant.AssignmentID},
+		currentWaveHashKey: {currentWaveHash},
+	}
+	existentServiceInstancesIDs, err := i.SMClient.RetrieveMultipleResourcesIDsByLabels(ctx, region, subaccount, &types.ServiceInstances{}, smLabels)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting service instances for the current wave with hash: %q", currentWaveHash)
+	}
+
+	if len(existentServiceInstancesIDs) > 0 {
+		// Retrieve all service instances bindings
+		serviceBindingsIDs, err := i.SMClient.RetrieveMultipleResources(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceKeys{}, &types.ServiceKeyMatchParameters{ServiceInstancesIDs: existentServiceInstancesIDs})
+		if err != nil {
+			return nil, errors.Wrapf(err, "while retrieving service bindings for service instaces with IDs: %v", existentServiceInstancesIDs)
+		}
+
+		// Delete all service instances bindings for the service instances
+		if err = i.SMClient.DeleteMultipleResourcesByIDs(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceKeys{}, serviceBindingsIDs); err != nil {
+			return nil, errors.Wrapf(err, "while deleting service bindings with IDs: %v", serviceBindingsIDs)
+		}
+
+		// Delete all service instances with serviceInstanceIDs
+		if err := i.SMClient.DeleteMultipleResourcesByIDs(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceInstances{}, existentServiceInstancesIDs); err != nil {
+			return nil, errors.Wrapf(err, "while deleting service instances with IDs: %v", existentServiceInstancesIDs)
+		}
+	}
+
 	for idx, serviceInstance := range serviceInstancesArray {
-		serviceInstanceMap, ok := serviceInstance.(map[string]interface{})
-		if !ok {
-			return nil, errors.New("while casting service instance interface to map")
-		}
+		currentPath := fmt.Sprintf("%s.%d", pathToServiceInstances, idx)
+		serviceInstanceName := getResourceName(serviceInstance)
 
-		// Get current wave hash
-		currentWaveHash, err := getCurrentWaveHash(parentScope, serviceInstancesArray)
-		if err != nil {
-			return nil, errors.Wrap(err, "while getting current wave hash")
-		}
-
-		// Get the service instances from this wave, if they exist - it is resync case, and we need to delete them, so we can create them from scratch
-		smLabels := map[string][]string{
-			assignmentIDKey:    {reqBody.AssignedTenant.AssignmentID},
-			currentWaveHashKey: {currentWaveHash},
-		}
-		existentServiceInstancesIDs, err := i.SMClient.RetrieveMultipleResourcesIDsByLabels(ctx, region, subaccount, &types.ServiceInstances{}, smLabels)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while getting service instances for the current wave with hash: %q", currentWaveHash)
-		}
-
-		if len(existentServiceInstancesIDs) > 0 {
-			// Retrieve all service instances bindings
-			serviceBindingsIDs, err := i.SMClient.RetrieveMultipleResources(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceKeys{}, &types.ServiceKeyMatchParameters{ServiceInstancesIDs: existentServiceInstancesIDs})
-			if err != nil {
-				return nil, errors.Wrapf(err, "while retrieving service bindings for service instaces with IDs: %v", existentServiceInstancesIDs)
-			}
-
-			// Delete all service instances bindings for the service instances
-			if err = i.SMClient.DeleteMultipleResourcesByIDs(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceKeys{}, serviceBindingsIDs); err != nil {
-				return nil, errors.Wrapf(err, "while deleting service bindings with IDs: %v", serviceBindingsIDs)
-			}
-
-			// Delete all service instances with serviceInstanceIDs
-			if err := i.SMClient.DeleteMultipleResourcesByIDs(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceInstances{}, existentServiceInstancesIDs); err != nil {
-				return nil, errors.Wrapf(err, "while deleting service instances with IDs: %v", existentServiceInstancesIDs)
-			}
-		}
-
-		// Set the Service Instance name to service-plan-assignmentId
-		serviceInstanceName := getServiceInstanceName(serviceInstanceMap)
-		serviceInstanceMap[nameKey] = serviceInstanceName
-
-		// Save the service instance binding in a var and delete it from the service instance map.
-		// That way later we will be able to substitute only the service instance json paths
-		serviceInstanceBinding := serviceInstanceMap[serviceBindingKey]
-		delete(serviceInstanceMap, serviceBindingKey)
-
-		// Substitute the service instance json paths(without the service binding)
-		substituteJSON(serviceInstanceMap, assignedTenantConfiguration)
-
-		// Extract Service Offering catalog name and Service Plan catalog name from the service instance
-		serviceOfferingCatalogName, servicePlanCatalogName, err := extractServiceOfferingAndPlanCatalogNames(serviceInstance)
+		assignedTenantConfiguration, err = sjson.SetBytes(assignedTenantConfiguration, fmt.Sprintf("%s.%s", currentPath, nameKey), serviceInstanceName)
 		if err != nil {
 			return nil, err
 		}
 
-		serviceInstanceParameters, err := extractParameters(serviceInstance)
+		// Save the service instance binding in a var and delete it from the service instance map.
+		// That way later we will be able to substitute only the service instance json paths
+		serviceInstanceBinding := gjson.Get(serviceInstance.Raw, serviceBindingKey)
+		serviceBindingName := getResourceName(serviceInstanceBinding)
+
+		assignedTenantConfiguration, err = sjson.SetBytes(assignedTenantConfiguration, fmt.Sprintf("%s.%s.%s", currentPath, serviceBindingKey, nameKey), serviceBindingName)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while extracting the parameters of service instance with id: %d", idx)
+			return nil, err
 		}
+
+		serviceInstanceWithoutBinding, err := sjson.Delete(serviceInstance.Raw, serviceBindingKey)
+		if err != nil {
+			return nil, err
+		}
+
+		// Substitute the service instance json paths(without the service binding)
+		if serviceInstance, err = SubstituteGJSON(gjson.Parse(serviceInstanceWithoutBinding), gjson.ParseBytes(assignedTenantConfiguration).Value()); err != nil {
+			return nil, err
+		}
+
+		serviceOfferingCatalogName := gjson.Get(serviceInstance.Raw, serviceInstanceServiceKey).String()
+		servicePlanCatalogName := gjson.Get(serviceInstance.Raw, serviceInstancePlanKey).String()
+		serviceInstanceParameters := []byte(gjson.Get(serviceInstance.Raw, parametersKey).String())
 
 		// Get the Service Offering ID with catalog name(service from the contract)
 		serviceOfferingID, err := i.SMClient.RetrieveResource(ctx, region, subaccount, &types.ServiceOfferings{}, &types.ServiceOfferingMatchParameters{CatalogName: serviceOfferingCatalogName})
@@ -531,35 +477,41 @@ func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, req
 		}
 
 		// Save the service instance
-		serviceInstancesArray[idx] = serviceInstanceRaw
+		assignedTenantConfiguration, err = sjson.SetBytes(assignedTenantConfiguration, currentPath, gjson.ParseBytes(serviceInstanceRaw).Value())
+		if err != nil {
+			return nil, err
+		}
 
 		// Substitute the service binding json paths
-		// TODO:: THIS CONFIG WILL NOT HAVE THE NEW SERVICE INSTANCE INFO IN IT
-		substituteJSON(serviceInstanceBinding, assignedTenantConfiguration)
+		if serviceInstanceBinding, err = SubstituteGJSON(serviceInstanceBinding, gjson.ParseBytes(assignedTenantConfiguration).Value()); err != nil {
+			return nil, err
+		}
 
-		serviceBindingParameters, err := extractParameters(serviceInstanceBinding)
+		serviceBindingParameters := []byte(gjson.Get(serviceInstanceBinding.Raw, parametersKey).String())
 		if err != nil {
 			return nil, errors.Wrapf(err, "while extracting the parameters of service binding for a service instance with id: %d", idx)
 		}
 
 		// Create the service instance binding
-		serviceBindingID, err := i.SMClient.CreateResource(ctx, region, subaccount, &types.ServiceKeyReqBody{Name: serviceInstanceName, ServiceKeyID: serviceInstanceID, Parameters: serviceBindingParameters}, &types.ServiceKey{})
+		serviceBindingID, err := i.SMClient.CreateResource(ctx, region, subaccount, &types.ServiceKeyReqBody{Name: serviceBindingName, ServiceKeyID: serviceInstanceID, Parameters: serviceBindingParameters}, &types.ServiceKey{})
 		if err != nil {
 			return nil, errors.Errorf("while creating service instance binding for service instance with ID %q", serviceInstanceID)
 		}
 
 		// Retrieve the service instance binding by ID
-		serviceBindingRaw, err := i.SMClient.RetrieveRawResourceByID(ctx, region, subaccount, &types.ServiceInstance{ID: serviceBindingID})
+		serviceBindingRaw, err := i.SMClient.RetrieveRawResourceByID(ctx, region, subaccount, &types.ServiceKey{ID: serviceBindingID})
 		if err != nil {
 			return nil, errors.Errorf("while retrieving service instance binding with ID %q", serviceBindingID)
 		}
 
 		// Save the service instance binding
-		serviceInstanceRaw[serviceBindingKey] = serviceBindingRaw
-		serviceInstance = serviceInstanceRaw
+		assignedTenantConfiguration, err = sjson.SetBytes(assignedTenantConfiguration, fmt.Sprintf("%s.%s", currentPath, serviceBindingKey), gjson.ParseBytes(serviceBindingRaw).Value())
+		if err != nil {
+			return []byte(""), err
+		}
 	}
 
-	return serviceInstancesArray, nil
+	return assignedTenantConfiguration, nil
 }
 
 func closeResponseBody(ctx context.Context, resp *http.Response) {
@@ -591,7 +543,63 @@ func (i *InstanceCreatorHandler) reportToUCLWithSuccess(ctx context.Context, sta
 	i.callUCLStatusAPI(statusAPIURL, correlationID, successResponse)
 }
 
-func substituteJSON(json interface{}, rootMap interface{}) {
+func SubstituteGJSON(json gjson.Result, rootMap interface{}) (gjson.Result, error) {
+	substitutedJson := json
+
+	var err error
+	var iterateAndSubstitute func(key string, value gjson.Result, path string)
+	iterateAndSubstitute = func(key string, value gjson.Result, path string) {
+		if value.IsObject() {
+			for k, v := range value.Map() {
+				iterateAndSubstitute(k, v, tenantmapping.NewCurrentPath(path, k))
+			}
+		} else if value.IsArray() {
+			for i, el := range value.Array() {
+				strI := fmt.Sprint(i)
+				iterateAndSubstitute(strI, el, tenantmapping.NewCurrentPath(path, strI))
+			}
+		} else {
+			concreteVal := value.String()
+			if strings.Contains(concreteVal, "$.") {
+				var substitution interface{}
+
+				fmt.Printf("Before substituting: %q\n", concreteVal)
+				regex := regexp.MustCompile(`\{(\$.*?)\}`)
+				matches := regex.FindAllStringSubmatch(concreteVal, -1)
+				if len(matches) == 0 { // the value is something like "$.<>"
+					substitution, err = jsonpath.Get(concreteVal, rootMap)
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
+				} else { // the value contains jsonPaths with concatenated static strings. for example, "{$.<>}/string..."
+					for _, match := range matches {
+						var currentSubstitution interface{}
+						currentSubstitution, err = jsonpath.Get(match[1], rootMap)
+						if err != nil {
+							fmt.Println(err)
+							return
+						}
+						substitution = strings.ReplaceAll(concreteVal, match[0], currentSubstitution.(string))
+					}
+				}
+				substitutedJsonStr, err := sjson.Set(substitutedJson.String(), path, substitution)
+				if err != nil {
+					return
+				}
+
+				fmt.Printf("After substituting: %q\n", substitution)
+
+				substitutedJson = gjson.Parse(substitutedJsonStr)
+			}
+		}
+	}
+	iterateAndSubstitute("", json, "")
+
+	return substitutedJson, err
+}
+
+func SubstituteJSON(json interface{}, rootMap interface{}) {
 	switch json.(type) {
 	case map[string]interface{}:
 		parseMap(json.(map[string]interface{}), rootMap)
@@ -678,61 +686,63 @@ func parseArray(anArray []interface{}, rootMap interface{}) {
 	}
 }
 
-func extractServiceOfferingAndPlanCatalogNames(serviceInstance interface{}) (string, string, error) {
-	serviceInstanceJSON, err := json.Marshal(serviceInstance)
-	if err != nil {
-		return "", "", errors.Wrapf(err, "while marshalling service instance")
+func getResourceName(resource gjson.Result) string {
+	name := gjson.Get(resource.Raw, nameKey)
+	if !name.Exists() {
+		return uuid.New().String()
 	}
-
-	serviceOfferingCatalogName := gjson.GetBytes(serviceInstanceJSON, serviceInstanceServiceKey)
-	if !serviceOfferingCatalogName.Exists() {
-		return "", "", errors.Errorf("%q is missing in service instance", serviceInstanceServiceKey)
-	}
-	servicePlanCatalogName := gjson.GetBytes(serviceInstanceJSON, serviceInstancePlanKey)
-	if !servicePlanCatalogName.Exists() {
-		return "", "", errors.Errorf("%q is missing in service instance", serviceInstancePlanKey)
-	}
-
-	return serviceOfferingCatalogName.String(), servicePlanCatalogName.String(), nil
+	return name.String()
 }
 
-func extractParameters(object interface{}) (json.RawMessage, error) {
-	objectJSON, err := json.Marshal(object)
-	if err != nil {
-		return []byte(""), errors.Wrapf(err, "while marshalling object")
-	}
-
-	objectParameters := gjson.GetBytes(objectJSON, parametersKey)
-	if !objectParameters.Exists() || objectParameters.Raw == "{}" {
-		return []byte(""), nil
-	}
-
-	objectParametersJSON, err := json.Marshal(objectParameters)
-	if err != nil {
-		return []byte(""), errors.Wrapf(err, "while marshalling object parameters")
-	}
-
-	return objectParametersJSON, nil
-}
-
-func getServiceInstanceName(serviceInstanceMap map[string]interface{}) string {
-	serviceInstanceName, ok := serviceInstanceMap[nameKey]
-	if !ok {
-		serviceInstanceName = uuid.New().String()
-	}
-	return serviceInstanceName.(string)
-}
-
-func getCurrentWaveHash(parentScope string, serviceInstances interface{}) (string, error) {
-	currentWave := map[string]interface{}{parentScope: serviceInstances}
-
-	// Marshal always orders keys which gives us the same hash
-	marshalledInstances, err := json.Marshal(currentWave)
+func getCurrentWaveHash(pathToServiceInstances string, serviceInstances interface{}) (string, error) {
+	currentWave, err := sjson.SetBytes([]byte(`{}`), pathToServiceInstances, serviceInstances)
 	if err != nil {
 		return "", err
 	}
 
-	sum := sha256.Sum256(marshalledInstances)
+	sum := sha256.Sum256(currentWave)
 	res := hex.EncodeToString(sum[0:])
 	return res, nil
+}
+
+//func interfaceToGJSONResult(i interface{}) (gjson.Result, error) {
+//	marshalledInterface, err := json.Marshal(i)
+//	if err != nil {
+//		return gjson.Result{}, err
+//	}
+//	return gjson.ParseBytes(marshalledInterface), nil
+//}
+
+func deepMergeJSON(src, dest gjson.Result) gjson.Result {
+	res := dest
+
+	var merge func(src, dest gjson.Result, path string)
+	merge = func(src, dest gjson.Result, path string) {
+		src.ForEach(func(srcKey, srcValue gjson.Result) bool {
+			currentPath := path + "." + srcKey.String()
+			if path == "" {
+				currentPath = srcKey.String()
+			}
+
+			if !dest.Get(currentPath).Exists() {
+				newJson, err := sjson.Set(res.Raw, currentPath, srcValue.Value())
+				if err != nil {
+					return false
+				}
+
+				res = gjson.Parse(newJson)
+				return true
+			}
+
+			// If both are objects, merge recursively
+			if srcValue.IsObject() {
+				merge(srcValue, res, currentPath)
+			}
+			return true
+		})
+	}
+
+	merge(src, dest, "")
+
+	return res
 }

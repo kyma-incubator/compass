@@ -11,7 +11,6 @@ import (
 )
 
 // Contract
-
 // {
 //  "state": "CONFIG_PENDING",
 //  "configuration": {
@@ -56,6 +55,14 @@ import (
 //  }
 //}
 
+const (
+	assignOperation   = "assign"
+	unassignOperation = "unassign"
+
+	inboundCommunicationKey  = "inboundCommunication"
+	outboundCommunicationKey = "outboundCommunication"
+)
+
 // Context is a structure used to JSON decode the context in the Body
 type Context struct {
 	FormationID string `json:"uclFormationId"`
@@ -83,72 +90,60 @@ type Body struct {
 }
 
 // GetAssignedTenantInboundCommunication returns the Body assigned tenant inbound communication
-func (b Body) GetAssignedTenantInboundCommunication() (map[string]json.RawMessage, error) {
-	var assignedTenantConfiguration interface{}
-	if err := json.Unmarshal(b.AssignedTenant.Configuration, &assignedTenantConfiguration); err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling assigned tenant configuration")
-	}
+func (b Body) GetAssignedTenantInboundCommunication() gjson.Result {
+	assignedTenantConfiguration := gjson.ParseBytes(b.AssignedTenant.Configuration)
 
-	assignedTenantInboundCommunicationPath := FindKeyPath(assignedTenantConfiguration, "inboundCommunication")
+	assignedTenantInboundCommunicationPath := FindKeyPath(assignedTenantConfiguration.Value(), inboundCommunicationKey)
 	if assignedTenantInboundCommunicationPath == "" {
-		return nil, errors.New("Assigned tenant inbound communication is missing in the configuration")
+		return gjson.Result{}
 	}
 
 	assignedTenantInboundCommunication := gjson.GetBytes(b.AssignedTenant.Configuration, assignedTenantInboundCommunicationPath)
 	if !assignedTenantInboundCommunication.Exists() {
-		return nil, errors.New("Assigned tenant inbound communication is missing in the configuration")
+		return gjson.Result{}
 	}
 
-	marshalledInboundCommunication, err := json.Marshal(assignedTenantInboundCommunication.Value())
-	if err != nil {
-		return nil, errors.Wrap(err, "while marshalling assigned tenant inbound communication")
-	}
-
-	var res map[string]json.RawMessage
-	if err := json.Unmarshal(marshalledInboundCommunication, &res); err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling assigned tenant inbound communication to map of string to json.RawMessage")
-	}
-
-	return res, nil
+	return assignedTenantInboundCommunication
 }
 
 // GetReceiverTenantOutboundCommunication returns the Body receiver tenant outbound communication
-func (b Body) GetReceiverTenantOutboundCommunication() (map[string]json.RawMessage, error) {
-	var receiverTenantConfiguration interface{}
-	if err := json.Unmarshal(b.ReceiverTenant.Configuration, &receiverTenantConfiguration); err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling receiver tenant configuration")
-	}
+func (b Body) GetReceiverTenantOutboundCommunication() gjson.Result {
+	receiverTenantConfiguration := gjson.ParseBytes(b.ReceiverTenant.Configuration)
 
-	receiverTenantOutboundCommunicationPath := FindKeyPath(receiverTenantConfiguration, "outboundCommunication")
+	receiverTenantOutboundCommunicationPath := FindKeyPath(receiverTenantConfiguration.Value(), outboundCommunicationKey)
 	if receiverTenantOutboundCommunicationPath == "" {
-		return nil, errors.New("Receiver tenant outbound communication is missing in the configuration")
+		return gjson.Result{}
 	}
 
 	receiverTenantOutboundCommunication := gjson.GetBytes(b.ReceiverTenant.Configuration, receiverTenantOutboundCommunicationPath)
 	if !receiverTenantOutboundCommunication.Exists() {
-		return nil, errors.New("Receiver tenant outbound communication is missing in the configuration")
+		return gjson.Result{}
 	}
 
-	marshalledOutboundCommunication, err := json.Marshal(receiverTenantOutboundCommunication.Value())
-	if err != nil {
-		return nil, errors.Wrap(err, "while marshalling receiver tenant outbound communication")
+	return receiverTenantOutboundCommunication
+}
+
+// GetReceiverTenantInboundCommunication returns the Body receiver tenant inbound communication
+func (b Body) GetReceiverTenantInboundCommunication() gjson.Result {
+	receiverTenantConfiguration := gjson.ParseBytes(b.ReceiverTenant.Configuration)
+
+	receiverTenantInboundCommunicationPath := FindKeyPath(receiverTenantConfiguration.Value(), inboundCommunicationKey)
+	if receiverTenantInboundCommunicationPath == "" {
+		return gjson.Result{}
 	}
 
-	var res map[string]json.RawMessage
-	if err := json.Unmarshal(marshalledOutboundCommunication, &res); err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling receiver tenant outbound communication to map of string to json.RawMessage")
+	receiverTenantInboundCommunication := gjson.GetBytes(b.ReceiverTenant.Configuration, receiverTenantInboundCommunicationPath)
+	if !receiverTenantInboundCommunication.Exists() {
+		return gjson.Result{}
 	}
 
-	return res, nil
+	return receiverTenantInboundCommunication
 }
 
 func (b *Body) SetReceiverTenantAuth(authKey string, authValue map[string]interface{}) error {
-	var receiverTenantConfiguration interface{}
-	if err := json.Unmarshal(b.ReceiverTenant.Configuration, &receiverTenantConfiguration); err != nil {
-		return errors.Wrap(err, "while unmarshalling receiver tenant outbound communication")
-	}
+	receiverTenantConfiguration := gjson.ParseBytes(b.ReceiverTenant.Configuration)
 
-	receiverTenantOutboundCommunicationPath := FindKeyPath(receiverTenantConfiguration, "outboundCommunication")
+	receiverTenantOutboundCommunicationPath := FindKeyPath(receiverTenantConfiguration.Value(), outboundCommunicationKey)
 	if receiverTenantOutboundCommunicationPath == "" {
 		return errors.New("Receiver tenant inbound communication is missing in the configuration")
 	}
@@ -167,8 +162,8 @@ func (b Body) Validate() error {
 		return apperrors.NewInvalidDataError("Context's Formation ID should be provided")
 	}
 
-	if b.Context.Operation == "" || (b.Context.Operation != "assign" && b.Context.Operation != "unassign") {
-		return apperrors.NewInvalidDataError("Context's Operation is invalid, expected %q or %q, got: %q", "assign", "unassign", b.Context.Operation)
+	if b.Context.Operation == "" || (b.Context.Operation != assignOperation && b.Context.Operation != unassignOperation) {
+		return apperrors.NewInvalidDataError("Context's Operation is invalid, expected %q or %q, got: %q", assignOperation, unassignOperation, b.Context.Operation)
 	}
 
 	if b.AssignedTenant.AssignmentID == "" {
@@ -183,55 +178,38 @@ func (b Body) Validate() error {
 		return apperrors.NewInvalidDataError("Receiver Tenant Subaccount ID should be provided")
 	}
 
-	if b.Context.Operation == "assign" {
-		var assignedTenantConfiguration interface{}
-		if err := json.Unmarshal(b.AssignedTenant.Configuration, &assignedTenantConfiguration); err != nil {
-			return apperrors.NewInvalidDataError("While unmarshalling assigned tenant configuration")
-		}
-
-		assignedTenantInboundCommunicationPath := FindKeyPath(assignedTenantConfiguration, "inboundCommunication")
+	if b.Context.Operation == assignOperation {
+		assignedTenantConfiguration := gjson.ParseBytes(b.AssignedTenant.Configuration)
+		assignedTenantInboundCommunicationPath := FindKeyPath(assignedTenantConfiguration.Value(), inboundCommunicationKey)
 		if assignedTenantInboundCommunicationPath == "" {
 			return apperrors.NewInvalidDataError("Assigned tenant inbound communication is missing in the configuration")
 		}
 
-		var receiverTenantConfiguration interface{}
-		if err := json.Unmarshal(b.ReceiverTenant.Configuration, &receiverTenantConfiguration); err != nil {
-			return errors.New("asd")
-		}
-
-		receiverTenantOutboundCommunicationPath := FindKeyPath(receiverTenantConfiguration, "outboundCommunication")
-		if receiverTenantOutboundCommunicationPath != "" && strings.TrimSuffix(receiverTenantOutboundCommunicationPath, "outboundCommunication") != strings.TrimSuffix(assignedTenantInboundCommunicationPath, "inboundCommunication") {
+		receiverTenantConfiguration := gjson.ParseBytes(b.ReceiverTenant.Configuration)
+		receiverTenantOutboundCommunicationPath := FindKeyPath(receiverTenantConfiguration.Value(), outboundCommunicationKey)
+		if receiverTenantOutboundCommunicationPath != "" && strings.TrimSuffix(receiverTenantOutboundCommunicationPath, outboundCommunicationKey) != strings.TrimSuffix(assignedTenantInboundCommunicationPath, inboundCommunicationKey) {
 			return errors.New("Receiver tenant outbound communication should be in the same place as the assigned tenant inbound communication")
 		}
-
-		return nil
 	}
 
 	return nil
 }
 
 func (b *Body) AddReceiverTenantOutboundCommunicationIfMissing() error {
-	if _, err := b.GetReceiverTenantOutboundCommunication(); err != nil {
-		if !strings.Contains(err.Error(), "Receiver tenant outbound communication is missing in the configuration") {
-			return errors.Wrap(err, "while getting receiver tenant outboundCommunication")
-		}
-		// outboundCommunication is missing - create it
-		if err2 := b.addReceiverTenantOutboundCommunication(); err2 != nil {
-			return errors.Wrap(err2, "while creating receiver tenant outbound communication")
+	if outboundCommunication := b.GetReceiverTenantOutboundCommunication(); !outboundCommunication.Exists() {
+		if err := b.addReceiverTenantOutboundCommunication(); err != nil {
+			return errors.Wrap(err, "while creating receiver tenant outbound communication")
 		}
 	}
-
 	return nil
 }
 
 func (b *Body) addReceiverTenantOutboundCommunication() error {
-	var assignedTenantConfiguration interface{}
-	if err := json.Unmarshal(b.AssignedTenant.Configuration, &assignedTenantConfiguration); err != nil {
-		return errors.New("while unmarshalling assigned tenant configuration")
-	}
-	assignedTenantInboundCommunicationPath := FindKeyPath(assignedTenantConfiguration, "inboundCommunication")
+	assignedTenantConfiguration := gjson.ParseBytes(b.AssignedTenant.Configuration)
 
-	newConfiguration, err := sjson.SetBytes(b.ReceiverTenant.Configuration, strings.Replace(assignedTenantInboundCommunicationPath, "%inboundCommunication", "outboundCommunication", 1), "{}")
+	assignedTenantInboundCommunicationPath := FindKeyPath(assignedTenantConfiguration.Value(), inboundCommunicationKey)
+
+	newConfiguration, err := sjson.SetBytes(b.ReceiverTenant.Configuration, strings.Replace(assignedTenantInboundCommunicationPath, inboundCommunicationKey, outboundCommunicationKey, 1), "{}")
 	if err != nil {
 		return err
 	}
@@ -244,23 +222,23 @@ func FindKeyPath(json interface{}, targetKey string) string {
 	return findKeyPathHelper(json, targetKey, "")
 }
 
-func findKeyPathHelper(json interface{}, targetKey string, currentPath string) string {
-	switch v := json.(type) {
+func findKeyPathHelper(jsonData interface{}, targetKey string, currentPath string) string {
+	switch v := jsonData.(type) {
 	case map[string]interface{}:
 		for key, _ := range v {
 			if key == targetKey {
-				return newCurrentPath(currentPath, targetKey)
+				return NewCurrentPath(currentPath, targetKey)
 			}
 		}
 
 		for key, value := range v {
-			if path := findKeyPathHelper(value, targetKey, newCurrentPath(currentPath, key)); len(path) > 0 {
+			if path := findKeyPathHelper(value, targetKey, NewCurrentPath(currentPath, key)); len(path) > 0 {
 				return path
 			}
 		}
 	case []interface{}:
 		for i, item := range v {
-			if path := findKeyPathHelper(item, targetKey, newCurrentPath(currentPath, fmt.Sprint(i))); len(path) > 0 {
+			if path := findKeyPathHelper(item, targetKey, NewCurrentPath(currentPath, fmt.Sprint(i))); len(path) > 0 {
 				return path
 			}
 		}
@@ -268,43 +246,10 @@ func findKeyPathHelper(json interface{}, targetKey string, currentPath string) s
 	return ""
 }
 
-func newCurrentPath(currentPath, key string) string {
+func NewCurrentPath(currentPath, key string) string {
 	newPath := currentPath + "." + key
 	if currentPath == "" {
 		newPath = key
 	}
 	return newPath
 }
-
-// TODO:: Remove if I can't find usage for it
-//func addNestedPath(jsonData json.RawMessage, path string) map[string]json.RawMessage {
-//	var data map[string]interface{}
-//	err := json.Unmarshal(jsonData, &data)
-//	if err != nil {
-//		fmt.Println("Error:", err)
-//		return nil
-//	}
-//
-//	segments := strings.Split(path, ".")
-//
-//	current := data
-//	for _, segment := range segments {
-//		key := segment
-//		if _, ok := current[key]; !ok {
-//			current[key] = make(map[string]interface{})
-//		}
-//		current = current[key].(map[string]interface{})
-//	}
-//
-//	marshalledOutboundCommunication, err := json.Marshal(data)
-//	if err != nil {
-//		return nil
-//	}
-//
-//	var res map[string]json.RawMessage
-//	if err := json.Unmarshal(marshalledOutboundCommunication, &res); err != nil {
-//		return nil
-//	}
-//
-//	return res
-//}
