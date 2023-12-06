@@ -14,6 +14,7 @@ type ReceiverTenant struct {
 	ApplicationTenantID  string          `json:"applicationTenantId"`
 	SubaccountID         string          `json:"subaccountId"`
 	ApplicationNamespace string          `json:"applicationNamespace"`
+	Subdomain            string          `json:"subdomain"`
 	Configuration        json.RawMessage `json:"configuration"`
 }
 

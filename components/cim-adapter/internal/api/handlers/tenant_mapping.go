@@ -18,6 +18,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -30,12 +31,17 @@ const (
 	contentTypeHeaderKey       = "unassign"
 	contentTypeApplicationJSON = "unassign"
 
-	mdiCatalogName               = "one-mds"
-	mdiPlanName                  = "sap-integration"
-	cimAppNamespace              = "sap.cim"
-	mdoAppNamespace              = "sap.mdo"
-	s4AppNamespace               = "sap.s4"
-	serviceInstanceMaxLengthName = 50
+	mdiCatalogName     = "one-mds"
+	mdiPlanName        = "sap-integration"
+	billingCatalogName = "SAPHybrisRevenueCloud"
+	billingPlanName    = "default"
+
+	cimAppNamespace     = "sap.cim"
+	mdoAppNamespace     = "sap.mdo"
+	s4AppNamespace      = "sap.s4"
+	billingAppNamespace = "sap.billing"
+
+	serviceInstanceNameMaxLength = 50
 	serviceBindingMaxLengthName  = 100
 )
 
@@ -87,6 +93,37 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.tenantID = tm.ReceiverTenant.ApplicationTenantID
 	}
 
+	statusAPIURL := r.Header.Get(LocationHeaderKey)
+	if statusAPIURL == "" {
+		err := errors.Errorf("The value of the %s header could not be empty", LocationHeaderKey)
+		log.C(ctx).Error(err)
+		httputil.RespondWithError(ctx, w, http.StatusBadRequest, err)
+		return
+	}
+
+	// This is due to MDO configuration and because it has references to the reverse service instance config.
+	// It that case we should return only CONFIG_PENDING state
+	if tm.AssignedTenant.ApplicationNamespace == mdoAppNamespace && tm.ReceiverTenant.ApplicationNamespace == s4AppNamespace {
+		log.C(ctx).Infof("Service instances details are not provided from the mdo side but from S4. Returning CONFIG_PENDING state")
+		httputil.Respond(w, http.StatusAccepted)
+		go func() {
+			ctx, cancel := context.WithCancel(context.TODO())
+			defer cancel()
+
+			correlationIDKey := correlation.RequestIDHeaderKey
+			ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
+
+			logger := log.C(ctx).WithField(correlationIDKey, correlationID)
+			ctx = log.ContextWithLogger(ctx, logger)
+
+			reqBody := "{\"state\":\"CONFIG_PENDING\"}"
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				log.C(ctx).Error(statusAPIErr)
+			}
+		}()
+		return
+	}
+
 	ic, exists := h.cfg.ServiceManagerCfg.RegionToInstanceConfig[tm.ReceiverTenant.DeploymentRegion]
 	if !exists {
 		log.C(ctx).Errorf("Missing service manager instance config for region: %s", tm.ReceiverTenant.DeploymentRegion)
@@ -104,19 +141,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.caller = caller
 	h.cfg.ServiceManagerCfg.URL = ic.SMURL
 
-	readyResp := `{"state":"READY"}`
+	readyResp := "{\"state\":\"READY\"}"
 	formationID := tm.Context.FormationID
 
 	if tm.AssignedTenant.ApplicationNamespace != cimAppNamespace && tm.AssignedTenant.ApplicationNamespace != s4AppNamespace {
 		err := errors.Errorf("Unexpected assigned tenant application namespace: '%s'. Expected to be either '%s' or '%s'", tm.AssignedTenant.ApplicationNamespace, cimAppNamespace, s4AppNamespace)
-		log.C(ctx).Error(err)
-		httputil.RespondWithError(ctx, w, http.StatusBadRequest, err)
-		return
-	}
-
-	statusAPIURL := r.Header.Get(LocationHeaderKey)
-	if statusAPIURL == "" {
-		err := errors.Errorf("The value of the %s header could not be empty", LocationHeaderKey)
 		log.C(ctx).Error(err)
 		httputil.RespondWithError(ctx, w, http.StatusBadRequest, err)
 		return
@@ -134,21 +163,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		logger := log.C(ctx).WithField(correlationIDKey, correlationID)
 		ctx = log.ContextWithLogger(ctx, logger)
 
-		if tm.AssignedTenant.ApplicationNamespace == mdoAppNamespace && tm.ReceiverTenant.ApplicationNamespace == s4AppNamespace {
-			log.C(ctx).Infof("Service instances details are not provided from the mdo side but from S4. Returning CONFIG_PENDING state")
-			reqBody := "{\"state\":\"CONFIG_PENDING\"}"
-			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
-				log.C(ctx).Error(statusAPIErr)
-			}
-			return
-		}
-
-		if tm.AssignedTenant.ApplicationNamespace == cimAppNamespace {
+		if tm.AssignedTenant.ApplicationNamespace == cimAppNamespace && tm.ReceiverTenant.ApplicationNamespace == mdoAppNamespace {
 			mdiReadSvcInstanceName := mdiCatalogName + "-read-instance-" + formationID
-			if len(mdiReadSvcInstanceName) > serviceInstanceMaxLengthName {
-				log.C(ctx).Infof("The length of the service instance name is bigger than %d, truncating it...", serviceInstanceMaxLengthName)
-				mdiReadSvcInstanceName = mdiReadSvcInstanceName[:serviceInstanceMaxLengthName]
-			}
+			mdiReadSvcInstanceName = truncateString(ctx, mdiReadSvcInstanceName, serviceInstanceNameMaxLength)
 
 			if tm.Context.Operation == UnassignOperation {
 				log.C(ctx).Infof("Handle MDI 'read' instance for %s operation...", UnassignOperation)
@@ -220,12 +237,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			mdiReadSvcKeyName := mdiReadSvcInstanceName + "-key"
-			if len(mdiReadSvcKeyName) > serviceBindingMaxLengthName {
-				log.C(ctx).Infof("The length of the service binding name is bigger than %d, truncating it...", serviceBindingMaxLengthName)
-				mdiReadSvcKeyName = mdiReadSvcKeyName[:serviceBindingMaxLengthName]
-			}
+			mdiReadSvcKeyName = truncateString(ctx, mdiReadSvcKeyName, serviceBindingMaxLengthName)
 
-			mdiServiceKeyID, err := h.createServiceKey(ctx, mdiReadSvcKeyName, svcInstanceIDMDI, mdiReadSvcInstanceName)
+			mdiServiceKeyID, err := h.createServiceKey(ctx, mdiReadSvcKeyName, "", svcInstanceIDMDI, mdiReadSvcInstanceName)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating MDI 'read' service key: %s\"}", err.Error())
@@ -285,19 +299,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			log.C(ctx).Infof("Successfully processed tenant mapping notification")
+			log.C(ctx).Infof("Successfully processed tenant mapping notification about CIM")
 			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, res.String(), correlationID); statusAPIErr != nil {
 				log.C(ctx).Error(statusAPIErr)
 			}
 			return
 		}
 
-		if tm.AssignedTenant.ApplicationNamespace == s4AppNamespace {
+		if tm.AssignedTenant.ApplicationNamespace == s4AppNamespace && tm.ReceiverTenant.ApplicationNamespace == mdoAppNamespace {
 			mdiWriteSvcInstance := mdiCatalogName + "-write-instance-" + formationID
-			if len(mdiWriteSvcInstance) > serviceInstanceMaxLengthName {
-				log.C(ctx).Infof("The length of the service instance name is bigger than %d, truncating it...", serviceInstanceMaxLengthName)
-				mdiWriteSvcInstance = mdiWriteSvcInstance[:serviceInstanceMaxLengthName]
-			}
+			mdiWriteSvcInstance = truncateString(ctx, mdiWriteSvcInstance, serviceInstanceNameMaxLength)
 
 			if tm.Context.Operation == UnassignOperation {
 				log.C(ctx).Infof("Handle MDI 'write' instance for %s operation...", UnassignOperation)
@@ -337,6 +348,37 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			log.C(ctx).Infof("Handle MDI 'write' instance for %s operation...", AssignOperation)
+
+			var businessSystemID string
+			isAssignedTntCfgNonEmpty := isConfigNonEmpty(string(tm.AssignedTenant.Configuration))
+			if tm.Context.Operation == AssignOperation && tm.AssignedTenant.State == "CONFIG_PENDING" && tm.AssignedTenant.Configuration != nil && isAssignedTntCfgNonEmpty {
+				log.C(ctx).Infof("Notification request is received for %q operation with CONFIG_PENDING state of the assigned tenant and service instances details. Checking for businessSystemId...", AssignOperation)
+				bizSystemID := gjson.GetBytes(tm.AssignedTenant.Configuration, "credentials.inboundCommunication.serviceInstances.[0].parameters.businessSystemId").String()
+				if bizSystemID == "" {
+					log.C(ctx).Error("The business system ID property in the assigned tenant configuration cannot be empty")
+					reqBody := "{\"state\":\"CREATE_ERROR\", \"error\": \"The business system ID property in the assigned tenant configuration cannot be empty\"}"
+					if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+						log.C(ctx).Error(statusAPIErr)
+					}
+					return
+				}
+				businessSystemID = bizSystemID
+			}
+
+			if businessSystemID == "" {
+				log.C(ctx).Error("The business system ID cannot be empty")
+				return
+			}
+
+			if tm.Context.Operation == AssignOperation && tm.ReceiverTenant.Subdomain == "" {
+				log.C(ctx).Error("The receiver subdomain cannot be empty")
+				reqBody := "{\"state\":\"CREATE_ERROR\", \"error\": \"The receiver subdomain cannot be empty\"}"
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+
 			offeringIDMDI, err := h.retrieveServiceOffering(ctx, mdiCatalogName)
 			if err != nil {
 				log.C(ctx).Error(err)
@@ -357,7 +399,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			mdiWriteInstanceParams := `{"application":"s4","businessSystemId":"MDI","enableTenantDeletion":true,"writePermissions":[{"entityType":"sap.odm.businesspartner.BusinessPartnerRelationship"},{"entityType":"sap.odm.businesspartner.BusinessPartner"},{"entityType":"sap.odm.businesspartner.ContactPersonRelationship"},{"entityType":"sap.odm.finance.costobject.ProjectControllingObject"},{"entityType":"sap.odm.finance.costobject.CostCenter"}]}`
+			mdiWriteInstanceParams := fmt.Sprintf(`{"application":"s4","businessSystemId":"%s","enableTenantDeletion":true,"writePermissions":[{"entityType":"sap.odm.businesspartner.BusinessPartnerRelationship"},{"entityType":"sap.odm.businesspartner.BusinessPartner"},{"entityType":"sap.odm.businesspartner.ContactPersonRelationship"},{"entityType":"sap.odm.finance.costobject.ProjectControllingObject"},{"entityType":"sap.odm.finance.costobject.CostCenter"}]}`, businessSystemID)
 			mdiSvcInstanceID, err := h.createServiceInstance(ctx, mdiWriteSvcInstance, mdiPlanID, mdiWriteInstanceParams)
 			if err != nil {
 				log.C(ctx).Error(err)
@@ -369,12 +411,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			mdiWriteSvcKeyName := mdiWriteSvcInstance + "-key"
-			if len(mdiWriteSvcKeyName) > serviceBindingMaxLengthName {
-				log.C(ctx).Infof("The length of the service binding name is bigger than %d, truncating it...", serviceBindingMaxLengthName)
-				mdiWriteSvcKeyName = mdiWriteSvcKeyName[:serviceBindingMaxLengthName]
-			}
+			mdiWriteSvcKeyName = truncateString(ctx, mdiWriteSvcKeyName, serviceBindingMaxLengthName)
 
-			mdiWriteServiceKeyID, err := h.createServiceKey(ctx, mdiWriteSvcKeyName, mdiSvcInstanceID, mdiWriteSvcInstance)
+			mdiWriteServiceKeyID, err := h.createServiceKey(ctx, mdiWriteSvcKeyName, "", mdiSvcInstanceID, mdiWriteSvcInstance)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating MDI 'write' service key: %s\"}", err.Error())
@@ -413,7 +452,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			respBody := `{"state":"CONFIG_PENDING","configuration":{"credentials":{"inboundCommunication":{"basicAuthentication":{"correlationIds":["SAP_COM_0594","SAP_COM_0008"],"destinations":[{"name":"mdo-ui","url":"/sap/opu/odata4/sap/mdo_distributionadmin/srvd_a2x/sap/distributionadmin/0001/","additionalProperties":{"MDOProvider":"true","MDOConsumer":"true","MDIInstanceId":"{{ .SystemID }}","MDOBusinessSystem":"{{ .TemplateInput.SourceApplication.Name }}"}},{"name":"{{ .TemplateInput.SourceApplication.Name }}_BPCONFIRM","url":"/sap/bc/srt/scs_ext/sap/businesspartnerrelationshipsu1"}]}},"outboundCommunication":{"basicAuthentication":{"correlationIds":["SAP_COM_0008"],"username":"{{ .ClientID }}","password":"{{ .ClientSecret }}","url":"{{ .URL }}"},"oauth2ClientCredentials":{"correlationIds":["SAP_COM_0659"],"clientId":"{{ .ClientID }}","clientSecret":"{{ .ClientSecret }}","url":"{{ .URL }}","tokenServiceUrl":"{{ .TokenURL }}"}}},"additionalAttributes":{"communicationSystemProperties":[{"name":"Business System","value":"{{ .TemplateInput.SourceApplication.Name }}","correlationIds":["SAP_COM_0659"]},{"name":"Logical System","value":"MDI_BUPA","correlationIds":["SAP_COM_0008"]},{"name":"Business System","value":"{{ .TemplateInput.TargetApplication.Tenant.Labels.subdomain }}","correlationIds":["SAP_COM_0008"]}],"communicationArrangementProperties":[{"name":"Path","value":"/","correlationIds":["SAP_COM_0659"]}],"outboundServicesProperties":[{"name":"Business Partner - Replicate from SAP S/4HANA Cloud to Client","path":"/businesspartner/v0/soap/BusinessPartnerBulkReplicateRequestIn?tenantId={{ .TemplateInput.TargetApplication.Tenant.Labels.subdomain }}","correlationIds":["SAP_COM_0008"],"isServiceActive":true,"additionalProperties":[{"name":"Replication Model","value":"BPMDI_CIM"},{"name":"Replication Mode","value":"C"},{"name":"Output Mode","value":"D"}]},{"name":"Replicate Customers from S/4 System to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false},{"name":"Replicate Suppliers from S/4 System to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false},{"name":"Replicate Company Addresses from S/4 System to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false},{"name":"Replicate Workplace Addresses from S/4 System to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false},{"name":"Replicate Personal Addresses from S/4 System to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false},{"name":"Business Partner Relationship - Replicate from SAP S/4HANA Cloud to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false},{"name":"Business Partner - Send Confirmation from SAP S/4HANA Cloud to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false},{"name":"BP Relationship - Send Confirmation from SAP S/4HANA Cloud to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false}]}}}`
+			receiverSubdomain := tm.ReceiverTenant.Subdomain
+			respBody := fmt.Sprintf(`{"state":"CONFIG_PENDING","configuration":{"credentials":{"inboundCommunication":{"basicAuthentication":{"correlationIds":["SAP_COM_0594","SAP_COM_0008"],"destinations":[{"name":"mdo-ui","url":"/sap/opu/odata4/sap/mdo_distributionadmin/srvd_a2x/sap/distributionadmin/0001/","additionalProperties":{"MDOProvider":"true","MDOConsumer":"true","MDIInstanceId":"{{ .SystemID }}","MDOBusinessSystem":"%s"}},{"name":"%s_BPCONFIRM","url":"/sap/bc/srt/scs_ext/sap/businesspartnerrelationshipsu1"}]}},"outboundCommunication":{"basicAuthentication":{"correlationIds":["SAP_COM_0008"],"username":"{{ .ClientID }}","password":"{{ .ClientSecret }}","url":"{{ .URL }}"},"oauth2ClientCredentials":{"correlationIds":["SAP_COM_0659"],"clientId":"{{ .ClientID }}","clientSecret":"{{ .ClientSecret }}","url":"{{ .URL }}","tokenServiceUrl":"{{ .TokenURL }}"}}},"additionalAttributes":{"communicationSystemProperties":[{"name":"Business System","value":"MDI","correlationIds":["SAP_COM_0659"]},{"name":"Logical System","value":"MDI_BUPA","correlationIds":["SAP_COM_0008"]},{"name":"Business System","value":"%s","correlationIds":["SAP_COM_0008"]}],"communicationArrangementProperties":[{"name":"Path","value":"/","correlationIds":["SAP_COM_0659"]}],"outboundServicesProperties":[{"name":"Business Partner - Replicate from SAP S/4HANA Cloud to Client","path":"/businesspartner/v0/soap/BusinessPartnerBulkReplicateRequestIn?tenantId=%s","correlationIds":["SAP_COM_0008"],"isServiceActive":true,"additionalProperties":[{"name":"Replication Model","value":"BPMDI_CIM"},{"name":"Replication Mode","value":"C"},{"name":"Output Mode","value":"D"}]},{"name":"Replicate Customers from S/4 System to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false},{"name":"Replicate Suppliers from S/4 System to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false},{"name":"Replicate Company Addresses from S/4 System to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false},{"name":"Replicate Workplace Addresses from S/4 System to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false},{"name":"Replicate Personal Addresses from S/4 System to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false},{"name":"Business Partner Relationship - Replicate from SAP S/4HANA Cloud to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false},{"name":"Business Partner - Send Confirmation from SAP S/4HANA Cloud to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false},{"name":"BP Relationship - Send Confirmation from SAP S/4HANA Cloud to Client","correlationIds":["SAP_COM_0008"],"isServiceActive":false}]}}}`, businessSystemID, businessSystemID, receiverSubdomain, receiverSubdomain)
+
 			t, err := template.New("").Parse(respBody)
 			if err != nil {
 				log.C(ctx).Errorf("An error occurred while parsing template: %s", err.Error())
@@ -434,13 +475,191 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			log.C(ctx).Infof("Successfully processed tenant mapping notification")
+			log.C(ctx).Infof("Successfully processed tenant mapping notification about S4")
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, res.String(), correlationID); statusAPIErr != nil {
+				log.C(ctx).Error(statusAPIErr)
+			}
+			return
+		}
+
+		if tm.AssignedTenant.ApplicationNamespace == s4AppNamespace && tm.ReceiverTenant.ApplicationNamespace == billingAppNamespace {
+			var inboundCert string
+			isAssignedTntCfgNonEmpty := isConfigNonEmpty(string(tm.AssignedTenant.Configuration))
+			if tm.Context.Operation == AssignOperation && tm.AssignedTenant.State == "CONFIG_PENDING" && tm.AssignedTenant.Configuration != nil && isAssignedTntCfgNonEmpty {
+				log.C(ctx).Infof("Notification request is received for %q operation with CONFIG_PENDING state and non empty configuration. Checking for inbound certificate...", AssignOperation)
+				cert := gjson.GetBytes(tm.AssignedTenant.Configuration, "credentials.inboundCommunication.oauth2mtls.certificate").String()
+				if cert == "" {
+					log.C(ctx).Error("The OAuth2 mTLS certificate in the assigned tenant configuration cannot be empty")
+					reqBody := "{\"state\":\"CREATE_ERROR\", \"error\": \"The OAuth2 mTLS certificate in the assigned tenant configuration cannot be empty\"}"
+					if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+						log.C(ctx).Error(statusAPIErr)
+					}
+					return
+				}
+				inboundCert = cert
+			}
+
+			billingSvcInstanceName := billingCatalogName + "-instance-" + formationID
+			billingSvcInstanceName = truncateString(ctx, billingSvcInstanceName, serviceInstanceNameMaxLength)
+
+			if tm.Context.Operation == UnassignOperation {
+				log.C(ctx).Info("Handle subscription billing instance deletion...")
+				billingSvcInstanceID, err := h.retrieveServiceInstanceIDByName(ctx, billingSvcInstanceName)
+				if err != nil {
+					log.C(ctx).Error(err)
+					reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
+					if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+						log.C(ctx).Error(statusAPIErr)
+					}
+					return
+				}
+
+				if billingSvcInstanceID != "" {
+					if err := h.deleteServiceKeys(ctx, billingSvcInstanceID, billingSvcInstanceName); err != nil {
+						log.C(ctx).Error(err)
+						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting service key(s) for subscription billing instance: %s\"}", err.Error())
+						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+							log.C(ctx).Error(statusAPIErr)
+						}
+						return
+					}
+					if err := h.deleteServiceInstance(ctx, billingSvcInstanceID, billingSvcInstanceName); err != nil {
+						log.C(ctx).Error(err)
+						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting subscription billing instance: %s\"}", err.Error())
+						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+							log.C(ctx).Error(statusAPIErr)
+						}
+						return
+					}
+				}
+
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, readyResp, correlationID); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+
+			log.C(ctx).Info("Handle subscription billing instance creation...")
+			billingOfferingID, err := h.retrieveServiceOffering(ctx, billingCatalogName)
+			if err != nil {
+				log.C(ctx).Error(err)
+				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+
+			billingPlanID, err := h.retrieveServicePlan(ctx, billingPlanName, billingOfferingID)
+			if err != nil {
+				log.C(ctx).Error(err)
+				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service plans: %s\"}", err.Error())
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+
+			billingSvcInstanceID, err := h.createServiceInstance(ctx, billingSvcInstanceName, billingPlanID, "")
+			if err != nil {
+				log.C(ctx).Error(err)
+				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating subscription billing service instance: %s\"}", err.Error())
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+
+			billingSvcKeyName := billingSvcInstanceName + "-key"
+			billingSvcKeyName = truncateString(ctx, billingSvcKeyName, serviceBindingMaxLengthName)
+			billingSvcKeyParams := fmt.Sprintf("{\"xsuaa\":{\"credential-type\":\"x509\",\"x509\":{\"certificate\":\"%s\",\"certificate-pinning\":false}}}", inboundCert)
+
+			billingServiceKeyID, err := h.createServiceKey(ctx, billingSvcKeyName, billingSvcKeyParams, billingSvcInstanceID, billingSvcInstanceName)
+			if err != nil {
+				log.C(ctx).Error(err)
+				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating subscription billing service key: %s\"}", err.Error())
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+
+			billingServiceKey, err := h.retrieveServiceKeyByID(ctx, billingServiceKeyID)
+			if err != nil {
+				log.C(ctx).Error(err)
+				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving MDI 'write' service key: %s\"}", err.Error())
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+
+			if len(billingServiceKey.Credentials) < 0 {
+				log.C(ctx).Errorf("The credentials for MDI 'write' service key with ID: %q should not be empty", billingServiceKey.ID)
+				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"The service key for the subscription billing instance shoud not be empty: %s\"}", err.Error())
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+
+			if inboundCert == "" {
+				log.C(ctx).Error("The inbound certificate cannot be empty")
+				reqBody := "{\"state\":\"CREATE_ERROR\", \"error\": \"The inbound certificate cannot be empty\"}"
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+
+			data, err := h.buildTemplateDataForSubscriptionBilling(billingServiceKey.Credentials)
+			if err != nil {
+				log.C(ctx).Errorf("An error occurred while building template data with the MDI 'write' service key: %s", err.Error())
+				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while building template data with the MDI 'write' service key: %s\"}", err.Error())
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+
+			respBody := fmt.Sprintf("{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"credentials\":{\"outboundCommunication\":{\"oauth2mtls\":{\"url\":\"{{ .URL }}\",\"tokenServiceUrl\":\"{{ .TokenURL }}\",\"clientId\":\"{{ .ClientID }}\",\"certificate\":\"%s\",\"correlationIds\":[\"SAP_COM_0642\"]}}}}}", inboundCert)
+			t, err := template.New("").Parse(respBody)
+			if err != nil {
+				log.C(ctx).Errorf("An error occurred while parsing template: %s", err.Error())
+				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while parsing subscription billing template: %s\"}", err.Error())
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+
+			res := new(bytes.Buffer)
+			if err = t.Execute(res, data); err != nil {
+				log.C(ctx).Errorf("An error occurred while executing subscription billing template: %s", err.Error())
+				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while executing subscription billing template: %s\"}", err.Error())
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+
+			log.C(ctx).Infof("Successfully processed tenant mapping notification for subscription billing")
 			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, res.String(), correlationID); statusAPIErr != nil {
 				log.C(ctx).Error(statusAPIErr)
 			}
 			return
 		}
 	}()
+}
+
+func truncateString(ctx context.Context, str string, maxLength int) string {
+	if len(str) > maxLength {
+		log.C(ctx).Infof("The length of the string is bigger than %d, truncating it...", maxLength)
+		str = str[:maxLength]
+		return str
+	}
+
+	return str
 }
 
 func (h *Handler) sendStatusAPIRequest(ctx context.Context, statusAPIURL, reqBody, correlationID string) error {
@@ -968,10 +1187,19 @@ func (h *Handler) retrieveServiceInstanceIDByName(ctx context.Context, serviceIn
 	return instanceID, nil
 }
 
-func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceInstanceID, serviceInstanceNameProcurement string) (string, error) {
-	serviceKeyReqBody := &types.ServiceKeyReqBody{
-		Name:              serviceKeyName,
-		ServiceInstanceId: serviceInstanceID,
+func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceKeyParams, serviceInstanceID, serviceInstanceName string) (string, error) {
+	serviceKeyReqBody := &types.ServiceKeyReqBody{}
+	if strings.Contains(serviceInstanceName, billingCatalogName) {
+		serviceKeyReqBody = &types.ServiceKeyReqBody{
+			Name:              serviceKeyName,
+			ServiceInstanceId: serviceInstanceID,
+			Parameters:        json.RawMessage(serviceKeyParams),
+		}
+	} else {
+		serviceKeyReqBody = &types.ServiceKeyReqBody{
+			Name:              serviceKeyName,
+			ServiceInstanceId: serviceInstanceID,
+		}
 	}
 
 	serviceKeyReqBodyBytes, err := json.Marshal(serviceKeyReqBody)
@@ -984,7 +1212,7 @@ func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceI
 		return "", errors.Wrapf(err, "while building service bindings URL")
 	}
 
-	log.C(ctx).Infof("Creating service key for service instance with name: %q", serviceInstanceNameProcurement)
+	log.C(ctx).Infof("Creating service key for service instance with name: %q", serviceInstanceName)
 	req, err := http.NewRequest(http.MethodPost, strURL, bytes.NewBuffer(serviceKeyReqBodyBytes))
 	if err != nil {
 		return "", err
@@ -1071,7 +1299,7 @@ func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceI
 		}
 	}
 
-	log.C(ctx).Infof("Successfully create IAS service key for service instance with name: %q synchronously", serviceInstanceNameProcurement)
+	log.C(ctx).Infof("Successfully create service key for service instance with name: %q synchronously", serviceInstanceName)
 	var serviceKey types.ServiceKey
 	err = json.Unmarshal(body, &serviceKey)
 	if err != nil {
@@ -1222,6 +1450,32 @@ func (h *Handler) buildTemplateData(serviceKeyCredentials json.RawMessage) (map[
 		"TokenURL":     svcKeyTokenURL + tokenPath,
 		"ClientID":     svcKeyClientID,
 		"ClientSecret": svcKeyClientSecret,
+	}
+
+	return data, nil
+}
+
+func (h *Handler) buildTemplateDataForSubscriptionBilling(serviceKeyCredentials json.RawMessage) (map[string]string, error) {
+	svcURL, ok := gjson.Get(string(serviceKeyCredentials), "url").Value().(string)
+	if !ok {
+		return nil, errors.New("could not find 'url' property")
+	}
+
+	svcKeyClientID, ok := gjson.Get(string(serviceKeyCredentials), "uaa.clientid").Value().(string)
+	if !ok {
+		return nil, errors.New("could not find 'uaa.clientid' property")
+	}
+
+	svcKeyTokenURL, ok := gjson.Get(string(serviceKeyCredentials), "uaa.url").Value().(string)
+	if !ok {
+		return nil, errors.New("could not find 'uaa.url' property")
+	}
+	tokenPath := "/oauth/token"
+
+	data := map[string]string{
+		"URL":      svcURL,
+		"TokenURL": svcKeyTokenURL + tokenPath,
+		"ClientID": svcKeyClientID,
 	}
 
 	return data, nil
