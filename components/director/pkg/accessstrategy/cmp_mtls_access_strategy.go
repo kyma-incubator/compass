@@ -110,7 +110,9 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode >= http.StatusBadRequest {
-		errors.Errorf("Err: %+v, Status code: %+v", err.Error(), resp.StatusCode)
+		if resp != nil {
+			errors.Errorf("Err: %+v, Status code: %+v", err.Error(), resp.StatusCode)
+		}
 		if len(clientCerts) != 2 {
 			return nil, errors.Errorf("There must be exactly 2 certificates in the cert cache. Actual number of certificates: %d", len(clientCerts))
 		}
