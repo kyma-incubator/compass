@@ -226,7 +226,7 @@ func main() {
 	entityTypeMappingConverter := entitytypemapping.NewConverter()
 	capabilityConverter := capability.NewConverter(versionConverter)
 	aspectConverter := aspect.NewConverter()
-	integrationDependencyConverter := integrationdependency.NewConverter(versionConverter)
+	integrationDependencyConverter := integrationdependency.NewConverter(versionConverter, aspectConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
 	intSysConverter := integrationsystem.NewConverter()

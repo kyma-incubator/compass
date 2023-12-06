@@ -56,6 +56,8 @@ models:
         resolver: true
       eventDefinition:
         resolver: true
+      integrationDependencies:
+        resolver: true
       webhooks:
         resolver: true
       labels:
@@ -187,3 +189,18 @@ models:
     fields:
       labels:
         resolver: true
+
+  IntegrationDependency:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.IntegrationDependency"
+
+  Aspect:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Aspect"
+
+  AspectAPIDefinition:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.AspectAPIDefinition"
+
+  AspectEventDefinition:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.AspectEventDefinition"
+
+  AspectEventDefinitionSubset:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.AspectEventDefinitionSubset"
