@@ -22,12 +22,19 @@ import (
 
 const (
 	testExternal                  = "external"
+	testParentExternal            = "externalParent"
+	testParent2External           = "externalParent2"
+	testParent3External           = "externalParent3"
 	testInternal                  = "internalID"
 	testID                        = "foo"
-	testID2                        = "foo2"
+	testID2                       = "foo2"
 	testName                      = "bar"
+	testParentName                = "parent"
+	testParent2Name               = "parent2"
+	testParent3Name               = "parent3"
 	testParentID                  = "parent"
 	testParentID2                 = "parent2"
+	testParentID3                 = "parent3"
 	testInternalParentID          = "internal-parent"
 	testTemporaryInternalParentID = "internal-parent-temp"
 	testSubdomain                 = "subdomain"
@@ -39,13 +46,13 @@ const (
 )
 
 var (
-	testCustomerID               = str.Ptr("0000customerID")
-	testCustomerIDTrimmed        = str.Ptr("customerID")
-	testError                    = errors.New("test error")
-	testTableColumns             = []string{"id", "external_name", "external_tenant", "type", "provider_name", "status"}
-	tenantAccessTestTableColumns = []string{"tenant_id", "id", "owner", "source"}
+	testCustomerID                = str.Ptr("0000customerID")
+	testCustomerIDTrimmed         = str.Ptr("customerID")
+	testError                     = errors.New("test error")
+	testTableColumns              = []string{"id", "external_name", "external_tenant", "type", "provider_name", "status"}
+	tenantAccessTestTableColumns  = []string{"tenant_id", "id", "owner", "source"}
 	testTenantParentsTableColumns = []string{"tenant_id", "parent_id"}
-	tenantAccessInput            = graphql.TenantAccessInput{
+	tenantAccessInput             = graphql.TenantAccessInput{
 		TenantID:     testExternal,
 		ResourceType: graphql.TenantAccessObjectTypeApplication,
 		ResourceID:   testID,
@@ -155,17 +162,21 @@ func newModelBusinessTenantMappingWithLicense(id, name string, licenseType *stri
 	return newModelBusinessTenantMappingWithType(id, name, []string{}, licenseType, tenant.Account)
 }
 
-func newModelBusinessTenantMappingWithType(id, name string, parents []string, licenseType *string, tenantType tenant.Type) *model.BusinessTenantMapping {
+func newModelBusinessTenantMappingWithTypeAndExternalID(id, externalID, name string, parents []string, licenseType *string, tenantType tenant.Type) *model.BusinessTenantMapping {
 	return &model.BusinessTenantMapping{
 		ID:             id,
 		Name:           name,
-		ExternalTenant: testExternal,
+		ExternalTenant: externalID,
 		Parents:        parents,
 		Type:           tenantType,
 		Provider:       testProvider,
 		Status:         tenant.Active,
 		LicenseType:    licenseType,
 	}
+}
+
+func newModelBusinessTenantMappingWithType(id, name string, parents []string, licenseType *string, tenantType tenant.Type) *model.BusinessTenantMapping {
+	return newModelBusinessTenantMappingWithTypeAndExternalID(id, testExternal, name,parents, licenseType, tenantType)
 }
 
 func newModelBusinessTenantMappingWithComputedValues(id, name string, initialized *bool, parents []string) *model.BusinessTenantMapping {
@@ -188,23 +199,23 @@ func newModelBusinessTenantMappingWithParentAndType(id, name string, parents []s
 	}
 }
 
-func newEntityBusinessTenantMapping(id, name string) *tenant.Entity {
-	return newEntityBusinessTenantMappingWithParent(id, name)
-}
-
-func newEntityBusinessTenantMappingWithParent(id, name string) *tenant.Entity {
+func newEntityBusinessTenantMappingWithExternalID(id, externalID, name string) *tenant.Entity {
 	return &tenant.Entity{
 		ID:             id,
 		Name:           name,
-		ExternalTenant: testExternal,
+		ExternalTenant: externalID,
 		Type:           tenant.Account,
 		ProviderName:   testProvider,
 		Status:         tenant.Active,
 	}
 }
 
+func newEntityBusinessTenantMapping(id, name string) *tenant.Entity {
+	return newEntityBusinessTenantMappingWithExternalID(id, testExternal, name)
+}
+
 func newEntityBusinessTenantMappingWithParentAndAccount(id, name string, tntType tenant.Type) *tenant.Entity {
-	tnt := newEntityBusinessTenantMappingWithParent(id, name)
+	tnt := newEntityBusinessTenantMapping(id, name)
 	tnt.Type = tntType
 
 	return tnt
@@ -310,7 +321,7 @@ func fixTenantAccesses() []repo.TenantAccess {
 }
 
 func fixTenantAccessesRow() []driver.Value {
-	return []driver.Value{testID, "resourceID", true}
+	return []driver.Value{testID, "resourceID", true, "source"}
 }
 
 func boolToPtr(in bool) *bool {
