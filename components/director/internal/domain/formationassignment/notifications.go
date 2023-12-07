@@ -100,7 +100,6 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentPa
 	notificationReq, err := fan.GenerateFormationAssignmentNotification(ctx, fa, operation)
 	if err != nil {
 		return nil, errors.Wrapf(err, "An error occurred while generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
-
 	}
 
 	var reverseNotificationReq *webhookclient.FormationAssignmentNotificationRequest

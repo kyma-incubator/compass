@@ -87,7 +87,7 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 		}
 		if ri.Operation == model.UnassignFormation {
 			if formationAssignment.State == string(model.DeletingAssignmentState) && statusReport.State == string(model.ReadyAssignmentState) {
-				log.C(ctx).Infof("Tenant mapping participant finished processing unassign notification sucessfully for assignment with ID %q, changing state to %q", formationAssignment.ID, model.InstanceCreatorDeletingAssignmentState)
+				log.C(ctx).Infof("Tenant mapping participant finished processing unassign notification successfully for assignment with ID %q, changing state to %q", formationAssignment.ID, model.InstanceCreatorDeletingAssignmentState)
 				formationAssignment.State = string(model.InstanceCreatorDeletingAssignmentState)
 				statusReport.State = string(model.InstanceCreatorDeletingAssignmentState)
 				if err = e.formationAssignmentRepo.Update(ctx, formationAssignment); err != nil {

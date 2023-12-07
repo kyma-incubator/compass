@@ -8,9 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
-	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/hashicorp/go-multierror"
@@ -115,11 +112,6 @@ type formationAssignmentNotificationService interface {
 	GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)
 }
 
-//go:generate mockery --exported --name=notificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type notificationService interface {
-	SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhook.Response, error)
-}
-
 // OperatorInput represents the input needed by the constraint operator
 type OperatorInput interface{}
 
@@ -203,10 +195,12 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 	return ce
 }
 
+// SetFormationAssignmentService sets the formation assignment service of the constraint engine
 func (e *ConstraintEngine) SetFormationAssignmentService(formationAssignmentService formationAssignmentService) {
 	e.formationAssignmentService = formationAssignmentService
 }
 
+// SetFormationAssignmentNotificationService sets the formation assignment notification service of the constraint engine
 func (e *ConstraintEngine) SetFormationAssignmentNotificationService(formationAssignmentNotificationSvc formationAssignmentNotificationService) {
 	e.formationAssignmentNotificationSvc = formationAssignmentNotificationSvc
 }
