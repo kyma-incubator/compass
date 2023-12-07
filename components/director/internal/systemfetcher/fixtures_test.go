@@ -70,12 +70,20 @@ func fixAppInputBySystem(t *testing.T, system systemfetcher.System) model.Applic
 	}
 }
 
-func fixWebhookModel(id string, whMode model.WebhookMode) model.Webhook {
+func fixWebhookModel(id string, whMode model.WebhookMode, whType model.WebhookType) model.Webhook {
 	return model.Webhook{
 		ID:         id,
 		ObjectID:   id,
-		ObjectType: model.ApplicationWebhookReference,
-		Type:       model.WebhookTypeConfigurationChanged,
+		ObjectType: model.ApplicationTemplateWebhookReference,
+		Type:       whType,
 		Mode:       &whMode,
+	}
+}
+
+func fixWebhookInputModel(id string, whMode model.WebhookMode, whType model.WebhookType) model.WebhookInput {
+	return model.WebhookInput{
+		ID:   id,
+		Type: whType,
+		Mode: &whMode,
 	}
 }
