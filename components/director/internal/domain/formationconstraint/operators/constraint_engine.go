@@ -91,23 +91,17 @@ type formationTemplateRepo interface {
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
 }
 
-// FormationAssignmentRepository represents the Formation Assignment repository layer
-//
-//go:generate mockery --name=formationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --exported --name=formationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentRepository interface {
 	Update(ctx context.Context, model *model.FormationAssignment) error
 }
 
-// FormationAssignmentService represents the formation assignment notification service for generating notifications
-//
-//go:generate mockery --name=formationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --exported --name=formationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentService interface {
 	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
 }
 
-// FormationAssignmentNotificationService represents the formation assignment notification service for generating notifications
-//
-//go:generate mockery --name=formationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --exported --name=formationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentNotificationService interface {
 	GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)
 }

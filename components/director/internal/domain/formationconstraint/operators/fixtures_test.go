@@ -316,6 +316,46 @@ var (
 	webhookURLTemplate               = "testWebhookURLTemplate"
 )
 
+// AsynchronousFlowControlOperator fixtures
+
+func fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddress(operation model.FormationOperation, webhook *graphql.Webhook, location formationconstraintpkg.JoinPointLocation) *formationconstraintpkg.AsynchronousFlowControlOperatorInput {
+	return fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddressShouldRedirect(false, operation, webhook, location)
+}
+
+func fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddressShouldRedirect(shouldRedirect bool, operation model.FormationOperation, webhook *graphql.Webhook, location formationconstraintpkg.JoinPointLocation) *formationconstraintpkg.AsynchronousFlowControlOperatorInput {
+	return &formationconstraintpkg.AsynchronousFlowControlOperatorInput{
+		RedirectNotificationInput: formationconstraintpkg.RedirectNotificationInput{
+			ShouldRedirect:       shouldRedirect,
+			WebhookMemoryAddress: webhook.GetAddress(),
+			Operation:            operation,
+			Location:             location,
+		},
+	}
+}
+
+func cloneAsynchronousFlowControlOperatorInput(input *formationconstraintpkg.AsynchronousFlowControlOperatorInput) *formationconstraintpkg.AsynchronousFlowControlOperatorInput {
+	return &formationconstraintpkg.AsynchronousFlowControlOperatorInput{
+		RedirectNotificationInput: formationconstraintpkg.RedirectNotificationInput{
+			ShouldRedirect:       input.ShouldRedirect,
+			WebhookMemoryAddress: input.WebhookMemoryAddress,
+			Operation:            input.Operation,
+			Location:             input.Location,
+		},
+	}
+}
+
+func setAssignmentToAsynchronousFlowControlInput(input *formationconstraintpkg.AsynchronousFlowControlOperatorInput, assignment *model.FormationAssignment) {
+	input.FAMemoryAddress = assignment.GetAddress()
+}
+
+func setReverseAssignmentToAsynchronousFlowControlInput(input *formationconstraintpkg.AsynchronousFlowControlOperatorInput, assignment *model.FormationAssignment) {
+	input.ReverseFAMemoryAddress = assignment.GetAddress()
+}
+
+func setStatusReportToAsynchronousFlowControlInput(input *formationconstraintpkg.AsynchronousFlowControlOperatorInput, report *statusreport.NotificationStatusReport) {
+	input.NotificationStatusReportMemoryAddress = report.GetAddress()
+}
+
 // Destination Creator operator fixtures
 
 func fixDestinationCreatorInputWithAssignmentMemoryAddress(operation model.FormationOperation, formationAssignment *model.FormationAssignment, location formationconstraintpkg.JoinPointLocation, report *statusreport.NotificationStatusReport) *formationconstraintpkg.DestinationCreatorInput {
@@ -485,6 +525,12 @@ func fixNotificationStatusReportWithStateAndConfig(state string, config json.Raw
 	return &statusreport.NotificationStatusReport{
 		State:         state,
 		Configuration: config,
+	}
+}
+
+func fixNotificationStatusReportWithState(state model.FormationAssignmentState) *statusreport.NotificationStatusReport {
+	return &statusreport.NotificationStatusReport{
+		State: string(state),
 	}
 }
 
