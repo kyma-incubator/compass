@@ -109,12 +109,16 @@ func mkslice(args ...string) []string {
 	return args
 }
 
-func stringify(v interface{}) string {
-	switch v := v.(type) {
+func stringify(value interface{}) string {
+	switch v := value.(type) {
 	case string:
 		return v
 	case *string:
-		return *v
+		if v != nil {
+			return *v
+		} else {
+			return ""
+		}
 	case []byte:
 		return string(v)
 	case error:
