@@ -24,10 +24,15 @@ var (
 	ids             = []string{"id1", "id2", "id3"}
 	names           = []string{"name1", "name2", "name3"}
 	externalTenants = []string{"external1", "external2", "0000external3"}
-	parents         = []string{"parent1", "0000parent1"}
+	parents         = []string{"parent1", "0000parent2"}
 	subdomain       = "subdomain"
 	region          = "region"
 	licenseType     = "TESTLICENSE"
+)
+
+const (
+	trimmedExternalTenant = "external3"
+	trimmedParent         = "parent2"
 )
 
 func TestConverter(t *testing.T) {
@@ -183,6 +188,15 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 				Type:           string(tnt.Customer),
 				Provider:       testProvider,
 			},
+			{
+				Name:           names[0],
+				ExternalTenant: externalTenants[0],
+				Parent:         str.Ptr(parents[1]),
+				Subdomain:      str.Ptr(subdomain),
+				Region:         str.Ptr(region),
+				Type:           string(tnt.Organization),
+				Provider:       testProvider,
+			},
 		}
 		res := c.MultipleInputFromGraphQL(in)
 		expected := []model.BusinessTenantMappingInput{
@@ -198,7 +212,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			{
 				Name:           names[1],
 				ExternalTenant: externalTenants[1],
-				Parent:         parents[0],
+				Parent:         trimmedParent,
 				Subdomain:      subdomain,
 				Region:         region,
 				Type:           string(tnt.Account),
@@ -216,11 +230,20 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			},
 			{
 				Name:           names[2],
-				ExternalTenant: "external3",
+				ExternalTenant: trimmedExternalTenant,
 				Parent:         parents[0],
 				Subdomain:      subdomain,
 				Region:         region,
 				Type:           string(tnt.Customer),
+				Provider:       testProvider,
+			},
+			{
+				Name:           names[0],
+				ExternalTenant: externalTenants[0],
+				Parent:         trimmedParent,
+				Subdomain:      subdomain,
+				Region:         region,
+				Type:           string(tnt.Organization),
 				Provider:       testProvider,
 			},
 		}
