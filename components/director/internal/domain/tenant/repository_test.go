@@ -1847,65 +1847,97 @@ func TestPgRepository_Update(t *testing.T) {
 		tenantAccesses := fixTenantAccesses()
 		dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
 			WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
-		dbMock.ExpectExec(`WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id = $1 UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) DELETE FROM tenant_applications WHERE id IN ($2) AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)`).
+
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS
+                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id
+                    FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
+                    WHERE id = $1
+                    UNION ALL
+                    SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
+                    FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
+                                                     INNER JOIN parents p on p.parent_id = t2.id)
+			DELETE FROM `)+`(.+)`+regexp.QuoteMeta(` WHERE id IN ($2) AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)
+`)).
 			WithArgs(testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		dbMock.ExpectExec(`WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id = $1 UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`).
-			WithArgs(testParentID2, tenantAccesses[0].ResourceID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
+			WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS
+                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id
+                    FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
+                    WHERE id = $1
+                    UNION ALL
+                    SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
+                    FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
+                                                     INNER JOIN parents p on p.parent_id = t2.id)
+			DELETE FROM `)+`(.+)`+regexp.QuoteMeta(` WHERE id IN ($2) AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)
+`)).
+			WithArgs(testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
+		dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
+			WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS
+                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id
+                    FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
+                    WHERE id = $1
+                    UNION ALL
+                    SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
+                    FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
+                                                     INNER JOIN parents p on p.parent_id = t2.id)
+			DELETE FROM `)+`(.+)`+regexp.QuoteMeta(` WHERE id IN ($2) AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)
+`)).
+			WithArgs(testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		//
-		//dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
-		//	WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
-		//dbMock.ExpectExec("WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id = $1 UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) DELETE FROM tenant_runtimes WHERE id IN ($2) AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)").
-		//	WithArgs(testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
-		//
-		//dbMock.ExpectExec(`WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id = $1 UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) INSERT INTO tenant_runtimes ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`).
-		//	WithArgs(testParentID2, tenantAccesses[0].ResourceID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
-		//
-		//
-		//
-		//dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
-		//	WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
-		//
-		//dbMock.ExpectExec("WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id = $1 UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) DELETE FROM tenant_runtime_contexts WHERE id IN ($2) AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)").
-		//	WithArgs(testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
-		//
-		//dbMock.ExpectExec(`WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id = $1 UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) INSERT INTO tenant_runtime_contexts ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`).
-		//	WithArgs(testParentID2, tenantAccesses[0].ResourceID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
-		//
-		//
-		//
-		//dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
-		//	WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
-		//dbMock.ExpectExec("WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id = $1 UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) DELETE FROM (.+) WHERE id IN ($2) AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)").
-		//	WithArgs(testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
-		//
-		//dbMock.ExpectExec(`WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id = $1 UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) INSERT INTO (.+) ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`).
-		//	WithArgs(testParentID2, tenantAccesses[0].ResourceID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
-		//
-		//
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_parents ( tenant_id, parent_id ) VALUES ( ?, ? ) ON CONFLICT ( tenant_id, parent_id ) DO NOTHING`)).
+			WithArgs(testID, testParent2Name).WillReturnResult(sqlmock.NewResult(-1, 1))
 
+		dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
+			WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS
+                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id
+                    FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
+                    WHERE id=?
+                    UNION ALL
+                    SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
+                    FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
+                                                     INNER JOIN parents p on p.parent_id = t2.id)
+			INSERT INTO `)+`(.+)`+regexp.QuoteMeta(` ( tenant_id, id, owner, source )  (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object'
+                                                                                                                 OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object'))
+					)
+			ON CONFLICT ( tenant_id, id, source ) DO NOTHING`)).
+			WithArgs(testParentID2, tenantAccesses[0].ResourceID, tenantAccesses[0].Owner).WillReturnResult(sqlmock.NewResult(-1, 1))
 
+		dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
+			WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS
+                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id
+                    FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
+                    WHERE id=?
+                    UNION ALL
+                    SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
+                    FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
+                                                     INNER JOIN parents p on p.parent_id = t2.id)
+			INSERT INTO `)+`(.+)`+regexp.QuoteMeta(` ( tenant_id, id, owner, source )  (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object'
+                                                                                                                 OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object'))
+					)
+			ON CONFLICT ( tenant_id, id, source ) DO NOTHING`)).
+			WithArgs(testParentID2, tenantAccesses[0].ResourceID, tenantAccesses[0].Owner).WillReturnResult(sqlmock.NewResult(-1, 1))
 
-
-
-		//for topLvlEntity := range resource.TopLevelEntities {
-		//	_, ok := topLvlEntity.IgnoredTenantAccessTable()
-		//	if ok {
-		//		continue
-		//	}
-		//	tenantAccesses := fixTenantAccesses()
-		//
-		//	dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
-		//		WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
-		//	dbMock.ExpectExec("WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id = $1 UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) DELETE FROM (.+) WHERE id IN ($2) AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)").
-		//		WithArgs(testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
-		//
-		//	dbMock.ExpectExec(`WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id = $1 UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) INSERT INTO (.+) ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`).
-		//		WithArgs(testParentID2, tenantAccesses[0].ResourceID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
-		//
-		//}
+		dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
+			WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS
+                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id
+                    FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
+                    WHERE id=?
+                    UNION ALL
+                    SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
+                    FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
+                                                     INNER JOIN parents p on p.parent_id = t2.id)
+			INSERT INTO `)+`(.+)`+regexp.QuoteMeta(` ( tenant_id, id, owner, source )  (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object'
+                                                                                                                 OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object'))
+					)
+			ON CONFLICT ( tenant_id, id, source ) DO NOTHING`)).
+			WithArgs(testParentID2, tenantAccesses[0].ResourceID, tenantAccesses[0].Owner).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
@@ -2160,13 +2192,21 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
+		parentRowsToReturn := fixSQLTenantParentsRows([]sqlTenantParentsRow{
+			{tenantID: testID, parentID: testParentID},
+		})
+
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
+			WithArgs(testID).
+			WillReturnRows(parentRowsToReturn)
+
 		for topLvlEntity := range resource.TopLevelEntities {
 			if _, ok := topLvlEntity.IgnoredTenantAccessTable(); ok {
 				continue
 			}
 			tenantAccesses := fixTenantAccesses()
 
-			dbMock.ExpectQuery(`SELECT tenant_id, id, owner FROM (.+) WHERE tenant_id = \$1 AND owner = \$2`).
+			dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
 				WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
 
 			dbMock.ExpectExec(`DELETE FROM (.+) WHERE id IN \(\$1\)`).
