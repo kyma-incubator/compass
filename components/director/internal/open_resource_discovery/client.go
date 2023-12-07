@@ -33,6 +33,8 @@ import (
 // ClientConfig contains configuration for the ORD aggregator client
 type ClientConfig struct {
 	maxParallelDocumentsPerApplication int
+	retryDelay                         time.Duration
+	retryAttempts                      uint
 }
 
 // Resource represents a resource that is being aggregated. This would be an Application or Application Template
@@ -45,9 +47,11 @@ type Resource struct {
 }
 
 // NewClientConfig creates new ClientConfig from the supplied parameters
-func NewClientConfig(maxParallelDocumentsPerApplication int) ClientConfig {
+func NewClientConfig(maxParallelDocumentsPerApplication int, retryDelay time.Duration, retryAttempts uint) ClientConfig {
 	return ClientConfig{
 		maxParallelDocumentsPerApplication: maxParallelDocumentsPerApplication,
+		retryDelay:                         retryDelay,
+		retryAttempts:                      retryAttempts,
 	}
 }
 
@@ -95,8 +99,8 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 			config, err = c.fetchConfig(ctx, resource, webhook, tenantValue, requestObject)
 			return err
 		},
-		retry.Attempts(5),
-		retry.Delay(time.Second*5),
+		retry.Attempts(c.config.retryAttempts),
+		retry.Delay(c.config.retryDelay),
 		retry.OnRetry(func(n uint, err error) {
 			log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
 		}),
@@ -151,8 +155,8 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 					doc, innerErr = c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, requestObject)
 					return innerErr
 				},
-				retry.Attempts(5),
-				retry.Delay(time.Second*5),
+				retry.Attempts(c.config.retryAttempts),
+				retry.Delay(c.config.retryDelay),
 				retry.OnRetry(func(n uint, err error) {
 					log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
 				}),

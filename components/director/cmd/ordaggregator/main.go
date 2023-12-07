@@ -109,6 +109,8 @@ type config struct {
 	ClientTimeout                  time.Duration `envconfig:"default=120s"`
 	ClientMaxConnectionsPerHost    int           `envconfig:"APP_CLIENT_MAX_CONNECTIONS_PER_HOST,default=500"`
 	ClientMaxIdlConnectionsPerHost int           `envconfig:"APP_CLIENT_MAX_IDLE_CONNECTIONS_PER_HOST,default=500"`
+	ClientRetryAttempts            uint          `envconfig:"default=5"`
+	ClientRetryDelay               time.Duration `envconfig:"default=5s"`
 	SkipSSLValidation              bool          `envconfig:"default=false"`
 
 	RetryConfig                   retry.Config
@@ -355,7 +357,7 @@ func main() {
 		shutdownMainSrv()
 	}()
 
-	clientConfig := ord.NewClientConfig(cfg.MaxParallelDocumentsPerApplication)
+	clientConfig := ord.NewClientConfig(cfg.MaxParallelDocumentsPerApplication, cfg.ClientRetryDelay, cfg.ClientRetryAttempts)
 	ordClientWithTenantExecutor := newORDClientWithTenantExecutor(cfg, clientConfig, certCache)
 	ordClientWithoutTenantExecutor := newORDClientWithoutTenantExecutor(cfg, clientConfig, certCache)
 
