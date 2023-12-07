@@ -103,6 +103,17 @@ func fixFormationAssignmentGQLModelWithConfigAndError(configValue, errorValue *s
 	}
 }
 
+func fixFormationAssignmentGQLModelWithState(state string) *graphql.FormationAssignment {
+	return &graphql.FormationAssignment{
+		ID:         TestID,
+		Source:     TestSource,
+		SourceType: TestSourceType,
+		Target:     TestTarget,
+		TargetType: TestTargetType,
+		State:      state,
+	}
+}
+
 func fixFormationAssignmentModel(configValue json.RawMessage) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:          TestID,
@@ -145,6 +156,20 @@ func fixFormationAssignmentModelWithConfigAndError(configValue, errorValue json.
 		State:       TestStateInitial,
 		Value:       configValue,
 		Error:       errorValue,
+	}
+}
+
+func fixFormationAssignmentModelWithState(state string) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:          TestID,
+		FormationID: TestFormationID,
+		TenantID:    TestTenantID,
+		Source:      TestSource,
+		SourceType:  TestSourceType,
+		Target:      TestTarget,
+		TargetType:  TestTargetType,
+		State:       state,
+		Error:       nil,
 	}
 }
 
