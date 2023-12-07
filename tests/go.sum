@@ -135,11 +135,14 @@ github.com/kyma-incubator/compass/components/connector v0.0.0-20231205120215-13b
 github.com/kyma-incubator/compass/components/connector v0.0.0-20231205120215-13beedda6074/go.mod h1:mVhhqj5a2kWO8GMdeeWbB5M1qulYxOWWUVuHGedDv5M=
 github.com/kyma-incubator/compass/components/director v0.0.0-20231205120215-13beedda6074 h1:bNoTCjX4xNCp+8ffpqO9u9X3VrmMkcb1wivAcOns3CA=
 github.com/kyma-incubator/compass/components/director v0.0.0-20231205120215-13beedda6074/go.mod h1:XvyZhyLxi+iBZvL5E8XvNhapYVisMIKoiN63tR7Xfos=
+github.com/kyma-incubator/compass/components/director v0.0.0-20231207081047-a9c33929b1b1 h1:Y4+hKtMqklxq7g0Y5PB0C6tZbghW7XcVJ0M31eeMWHA=
+github.com/kyma-incubator/compass/components/director v0.0.0-20231207081047-a9c33929b1b1/go.mod h1:nEvMt4L43o2iXGS7u2+JZtthTdDeoTvKLneoV9yloNY=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231205120215-13beedda6074 h1:aiFacxnJz1cqgd610/m4NFWFBdZTqDm4CDD//odNfqw=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231205120215-13beedda6074/go.mod h1:nCsc2mKhL2yNAQdw3rj3Q4+NwJgc7tlwLL3F17wZUpA=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20231205105729-6980303522b9 h1:PKkV34gKwCBwGfegALcJEmL8Aggs+v5jJwYMSDpF6Jc=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20231205105729-6980303522b9/go.mod h1:vflYm57YtkXGsXu/tW+72O2hvSmiDJkOPGtw1ucMSsU=
 github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231205105729-6980303522b9 h1:EvKuA6F1u5DN8SOHEJgCwoL6rw7touJIV4e+N4M7AkU=
+github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231205120215-13beedda6074 h1:3IMotXdHiWWocTA9917dGBtGPjpz6zquiTIKdPZnpAA=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231205120215-13beedda6074 h1:R0LHzF8izRA+cn7tuzHchQROMc82xFGgM6ka/L2r26M=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231205120215-13beedda6074/go.mod h1:SH+zkz/V15zM5hOLtIis/GTElwZkTWXWjxU54gYjaEQ=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231205120215-13beedda6074 h1:7YcmdNmOFDfvOFynFfKrlLcCsV+nVoXbk1vPP68TMnA=
