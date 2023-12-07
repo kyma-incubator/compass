@@ -99,7 +99,7 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 					return false, errors.Wrapf(err, "while generating formation assignment notification")
 				}
 				log.C(ctx).Infof("Sending notification to instance creator")
-				_, err =  e.formationAssignmentService.CleanupFormationAssignment(ctx, assignmentPair)
+				_, err = e.formationAssignmentService.CleanupFormationAssignment(ctx, assignmentPair)
 				if err != nil {
 					return false, err
 				}
