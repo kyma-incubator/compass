@@ -2,6 +2,9 @@ package model
 
 import (
 	"encoding/json"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/kyma-incubator/compass/components/director/internal/common"
+	"regexp"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
@@ -29,18 +32,14 @@ type AspectEventResourceInput struct {
 	Subset     json.RawMessage `json:"subset"`
 }
 
-//// Validate validates Aspect fields
-//func (a *AspectEventResourceInput) Validate() error {
-//	return validation.ValidateStruct(a,
-//		validation.Field(&a.Title, validation.Required, validation.Length(common.MinTitleLength, common.MaxTitleLength), validation.NewStringRule(common.NoNewLines, "title should not contain line breaks")),
-//		validation.Field(&a.Description, validation.NilOrNotEmpty, validation.Length(common.MinDescriptionLength, common.MaxDescriptionLength)),
-//		validation.Field(&a.Mandatory, validation.By(func(value interface{}) error {
-//			return common.ValidateFieldMandatory(value, common.AspectMsg)
-//		})),
-//		validation.Field(&a.APIResources, validation.By(common.ValidateAspectAPIResources)),
-//		validation.Field(&a.EventResources, validation.By(common.ValidateAspectEventResources)),
-//	)
-//}
+// Validate validates Aspect Event Resource fields
+func (a *AspectEventResourceInput) Validate() error {
+	return validation.ValidateStruct(a,
+		validation.Field(&a.OrdID, validation.Required, validation.Length(common.MinOrdIDLength, common.MaxOrdIDLength), validation.Match(regexp.MustCompile(common.AspectEventResourceRegex))),
+		validation.Field(&a.MinVersion, validation.NilOrNotEmpty, validation.Match(regexp.MustCompile(common.AspectResourcesMinVersionRegex))),
+		validation.Field(&a.Subset, validation.By(common.ValidateAspectEventResourceSubset)),
+	)
+}
 
 // ToAspectEventResource converts AspectEventResourceInput to AspectEventResource
 func (a *AspectEventResourceInput) ToAspectEventResource(id string, resourceType resource.Type, resourceID string, aspectID string) *AspectEventResource {

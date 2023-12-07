@@ -130,13 +130,13 @@ func (id *IntegrationDependencyProcessor) resyncIntegrationDependency(ctx contex
 			return err
 		}
 
-		aspectEventResourcesByAspectID, err := id.createAspects(ctx, resourceType, resourceID, integrationDependencyID, integrationDependency.Aspects)
+		aspectEventResourcesByAspectIDInput, err := id.createAspects(ctx, resourceType, resourceID, integrationDependencyID, integrationDependency.Aspects)
 		if err != nil {
 			return err
 		}
 
-		for aspectID, aspectEventResources := range aspectEventResourcesByAspectID {
-			err = id.createAspectEventResources(ctx, resourceType, resourceID, aspectID, aspectEventResources)
+		for aspectID, aspectEventResourcesInput := range aspectEventResourcesByAspectIDInput {
+			err = id.createAspectEventResources(ctx, resourceType, resourceID, aspectID, aspectEventResourcesInput)
 			if err != nil {
 				return err
 			}
@@ -154,16 +154,16 @@ func (id *IntegrationDependencyProcessor) resyncIntegrationDependency(ctx contex
 }
 
 func (id *IntegrationDependencyProcessor) createAspects(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyID string, aspects []*model.AspectInput) (map[string][]*model.AspectEventResourceInput, error) {
-	aspectEventResourcesByAspectID := make(map[string][]*model.AspectEventResourceInput, 0)
+	aspectEventResourcesByAspectIDInput := make(map[string][]*model.AspectEventResourceInput, 0)
 	for _, aspect := range aspects {
 		id, err := id.aspectSvc.Create(ctx, resourceType, resourceID, integrationDependencyID, *aspect)
 		if err != nil {
 			return nil, err
 		}
-		aspectEventResourcesByAspectID[id] = aspect.EventResources
+		aspectEventResourcesByAspectIDInput[id] = aspect.EventResources
 	}
 
-	return aspectEventResourcesByAspectID, nil
+	return aspectEventResourcesByAspectIDInput, nil
 }
 
 func (id *IntegrationDependencyProcessor) resyncAspects(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyID string, aspects []*model.AspectInput) error {
@@ -172,13 +172,13 @@ func (id *IntegrationDependencyProcessor) resyncAspects(ctx context.Context, res
 		return err
 	}
 
-	aspectEventResourcesByAspectID, err := id.createAspects(ctx, resourceType, resourceID, integrationDependencyID, aspects)
+	aspectEventResourcesByAspectIDInput, err := id.createAspects(ctx, resourceType, resourceID, integrationDependencyID, aspects)
 	if err != nil {
 		return err
 	}
 
-	for aspectID, aspectEventResources := range aspectEventResourcesByAspectID {
-		err := id.createAspectEventResources(ctx, resourceType, resourceID, aspectID, aspectEventResources)
+	for aspectID, aspectEventResourcesInput := range aspectEventResourcesByAspectIDInput {
+		err := id.createAspectEventResources(ctx, resourceType, resourceID, aspectID, aspectEventResourcesInput)
 		if err != nil {
 			return err
 		}
@@ -187,9 +187,9 @@ func (id *IntegrationDependencyProcessor) resyncAspects(ctx context.Context, res
 	return nil
 }
 
-func (id *IntegrationDependencyProcessor) createAspectEventResources(ctx context.Context, resourceType resource.Type, resourceID string, aspectID string, aspectEventResources []*model.AspectEventResourceInput) error {
-	for _, aspectEventResource := range aspectEventResources {
-		_, err := id.aspectEventResourceSvc.Create(ctx, resourceType, resourceID, aspectID, *aspectEventResource)
+func (id *IntegrationDependencyProcessor) createAspectEventResources(ctx context.Context, resourceType resource.Type, resourceID string, aspectID string, aspectEventResourcesInput []*model.AspectEventResourceInput) error {
+	for _, aspectEventResourceInput := range aspectEventResourcesInput {
+		_, err := id.aspectEventResourceSvc.Create(ctx, resourceType, resourceID, aspectID, *aspectEventResourceInput)
 		if err != nil {
 			return err
 		}

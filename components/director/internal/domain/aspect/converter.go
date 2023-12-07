@@ -10,12 +10,23 @@ import (
 	"github.com/pkg/errors"
 )
 
+// AspectEventResourceConverter converts Aspect Event Resources between the model.AspectEventResource service-layer representation and the graphql-layer representation graphql.AspectEventDefinition.
+//
+//go:generate mockery --name=AspectEventResourceConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type AspectEventResourceConverter interface {
+	MultipleToGraphQL(in []*model.AspectEventResource) ([]*graphql.AspectEventDefinition, error)
+	MultipleInputFromGraphQL(in []*graphql.AspectEventDefinitionInput) ([]*model.AspectEventResourceInput, error)
+}
+
 type converter struct {
+	aspectEventResourceConverter AspectEventResourceConverter
 }
 
 // NewConverter returns a new Converter that can later be used to make the conversions between the service and repository layer representations of a Compass Aspect.
-func NewConverter() *converter {
-	return &converter{}
+func NewConverter(aspectEventResourceConverter AspectEventResourceConverter) *converter {
+	return &converter{
+		aspectEventResourceConverter: aspectEventResourceConverter,
+	}
 }
 
 // FromEntity converts the provided Entity repo-layer representation of an Aspect to the service-layer representation model.Aspect.
@@ -71,24 +82,21 @@ func (c *converter) ToEntity(aspectModel *model.Aspect) *Entity {
 }
 
 // ToGraphQL converts the provided service-layer representation of an Aspect to the graphql-layer one.
-func (c *converter) ToGraphQL(in *model.Aspect) (*graphql.Aspect, error) {
+func (c *converter) ToGraphQL(in *model.Aspect, aspectEventResources []*model.AspectEventResource) (*graphql.Aspect, error) {
 	if in == nil {
 		return nil, nil
 	}
 
 	var apiResources []*graphql.AspectAPIDefinition
-	var eventResources []*graphql.AspectEventDefinition
-
 	if in.APIResources != nil {
 		if err := json.Unmarshal(in.APIResources, &apiResources); err != nil {
 			return nil, err
 		}
 	}
 
-	if in.EventResources != nil {
-		if err := json.Unmarshal(in.EventResources, &eventResources); err != nil {
-			return nil, err
-		}
+	eventResources, err := c.aspectEventResourceConverter.MultipleToGraphQL(aspectEventResources)
+	if err != nil {
+		return nil, err
 	}
 
 	return &graphql.Aspect{
@@ -109,14 +117,14 @@ func (c *converter) ToGraphQL(in *model.Aspect) (*graphql.Aspect, error) {
 }
 
 // MultipleToGraphQL converts the provided service-layer representations of an Aspect to the graphql-layer ones.
-func (c *converter) MultipleToGraphQL(in []*model.Aspect) ([]*graphql.Aspect, error) {
+func (c *converter) MultipleToGraphQL(in []*model.Aspect, aspectEventResourcesByAspectID map[string][]*model.AspectEventResource) ([]*graphql.Aspect, error) {
 	aspects := make([]*graphql.Aspect, 0, len(in))
 	for _, a := range in {
 		if a == nil {
 			continue
 		}
 
-		aspect, err := c.ToGraphQL(a)
+		aspect, err := c.ToGraphQL(a, aspectEventResourcesByAspectID[a.ID])
 		if err != nil {
 			return nil, err
 		}
@@ -138,9 +146,9 @@ func (c *converter) InputFromGraphQL(in *graphql.AspectInput) (*model.AspectInpu
 		return nil, errors.Wrap(err, "error while marshalling aspect api resources")
 	}
 
-	eventResources, err := json.Marshal(in.EventResources)
+	eventResources, err := c.aspectEventResourceConverter.MultipleInputFromGraphQL(in.EventResources)
 	if err != nil {
-		return nil, errors.Wrap(err, "error while marshalling aspect event resources")
+		return nil, err
 	}
 
 	return &model.AspectInput{

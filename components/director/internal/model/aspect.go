@@ -45,8 +45,7 @@ func (a *AspectInput) Validate() error {
 			return common.ValidateFieldMandatory(value, common.AspectMsg)
 		})),
 		validation.Field(&a.APIResources, validation.By(common.ValidateAspectAPIResources)),
-		// todo
-		validation.Field(&a.EventResources, validation.By(common.ValidateAspectEventResources)),
+		validation.Field(&a.EventResources),
 	)
 }
 

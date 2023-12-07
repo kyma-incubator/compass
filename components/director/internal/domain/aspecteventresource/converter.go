@@ -1,8 +1,12 @@
 package aspecteventresource
 
 import (
+	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
+	"time"
 )
 
 type converter struct {
@@ -59,4 +63,94 @@ func (c *converter) ToEntity(aspectEventResourceModel *model.AspectEventResource
 			Error:     repo.NewNullableString(aspectEventResourceModel.Error),
 		},
 	}
+}
+
+// InputFromGraphQL converts the provided graphql-layer representation of an Aspect Event Definition to the service-layer one.
+func (c *converter) InputFromGraphQL(in *graphql.AspectEventDefinitionInput) (*model.AspectEventResourceInput, error) {
+	if in == nil {
+		return nil, nil
+	}
+
+	subset, err := json.Marshal(in.Subset)
+	if err != nil {
+		return nil, errors.Wrap(err, "error while marshalling aspect event resource subset")
+	}
+
+	return &model.AspectEventResourceInput{
+		OrdID:  in.OrdID,
+		Subset: subset,
+	}, nil
+}
+
+// MultipleInputFromGraphQL converts the provided graphql-layer representations of an Aspect Event Definition to the service-layer ones.
+func (c *converter) MultipleInputFromGraphQL(in []*graphql.AspectEventDefinitionInput) ([]*model.AspectEventResourceInput, error) {
+	inputs := make([]*model.AspectEventResourceInput, 0, len(in))
+	for _, a := range in {
+		if a == nil {
+			continue
+		}
+		aspectEventIn, err := c.InputFromGraphQL(a)
+		if err != nil {
+			return nil, err
+		}
+
+		inputs = append(inputs, aspectEventIn)
+	}
+
+	return inputs, nil
+}
+
+// ToGraphQL converts the provided service-layer representation of an Aspect Event Resource to the graphql-layer one.
+func (c *converter) ToGraphQL(in *model.AspectEventResource) (*graphql.AspectEventDefinition, error) {
+	if in == nil {
+		return nil, nil
+	}
+
+	var subset []*graphql.AspectEventDefinitionSubset
+	if in.Subset != nil {
+		if err := json.Unmarshal(in.Subset, &subset); err != nil {
+			return nil, err
+		}
+	}
+
+	return &graphql.AspectEventDefinition{
+		OrdID:  in.OrdID,
+		Subset: subset,
+		BaseEntity: &graphql.BaseEntity{
+			ID:        in.ID,
+			Ready:     in.Ready,
+			CreatedAt: timePtrToTimestampPtr(in.CreatedAt),
+			UpdatedAt: timePtrToTimestampPtr(in.UpdatedAt),
+			DeletedAt: timePtrToTimestampPtr(in.DeletedAt),
+			Error:     in.Error,
+		},
+	}, nil
+}
+
+// MultipleToGraphQL converts the provided service-layer representations of an Aspect Event Resource to the graphql-layer ones.
+func (c *converter) MultipleToGraphQL(in []*model.AspectEventResource) ([]*graphql.AspectEventDefinition, error) {
+	aspectEvents := make([]*graphql.AspectEventDefinition, 0, len(in))
+	for _, a := range in {
+		if a == nil {
+			continue
+		}
+
+		aspectEvent, err := c.ToGraphQL(a)
+		if err != nil {
+			return nil, err
+		}
+
+		aspectEvents = append(aspectEvents, aspectEvent)
+	}
+
+	return aspectEvents, nil
+}
+
+func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
+	if time == nil {
+		return nil
+	}
+
+	t := graphql.Timestamp(*time)
+	return &t
 }

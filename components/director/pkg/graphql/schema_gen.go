@@ -185,8 +185,12 @@ type ComplexityRoot struct {
 	}
 
 	AspectEventDefinition struct {
-		OrdID  func(childComplexity int) int
-		Subset func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		DeletedAt func(childComplexity int) int
+		Error     func(childComplexity int) int
+		OrdID     func(childComplexity int) int
+		Subset    func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
 	}
 
 	AspectEventDefinitionSubset struct {
@@ -1666,6 +1670,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AspectAPIDefinition.OrdID(childComplexity), true
 
+	case "AspectEventDefinition.created_at":
+		if e.complexity.AspectEventDefinition.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.AspectEventDefinition.CreatedAt(childComplexity), true
+
+	case "AspectEventDefinition.deleted_at":
+		if e.complexity.AspectEventDefinition.DeletedAt == nil {
+			break
+		}
+
+		return e.complexity.AspectEventDefinition.DeletedAt(childComplexity), true
+
+	case "AspectEventDefinition.error":
+		if e.complexity.AspectEventDefinition.Error == nil {
+			break
+		}
+
+		return e.complexity.AspectEventDefinition.Error(childComplexity), true
+
 	case "AspectEventDefinition.ordID":
 		if e.complexity.AspectEventDefinition.OrdID == nil {
 			break
@@ -1679,6 +1704,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AspectEventDefinition.Subset(childComplexity), true
+
+	case "AspectEventDefinition.updated_at":
+		if e.complexity.AspectEventDefinition.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.AspectEventDefinition.UpdatedAt(childComplexity), true
 
 	case "AspectEventDefinitionSubset.eventType":
 		if e.complexity.AspectEventDefinitionSubset.EventType == nil {
@@ -6603,6 +6635,10 @@ type AspectAPIDefinition {
 type AspectEventDefinition {
 	ordID: String!
 	subset: [AspectEventDefinitionSubset!]
+	created_at: Timestamp
+	updated_at: Timestamp
+	deleted_at: Timestamp
+	error: String
 }
 
 type AspectEventDefinitionSubset {
@@ -14149,6 +14185,130 @@ func (ec *executionContext) _AspectEventDefinition_subset(ctx context.Context, f
 	res := resTmp.([]*AspectEventDefinitionSubset)
 	fc.Result = res
 	return ec.marshalOAspectEventDefinitionSubset2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AspectEventDefinition_created_at(ctx context.Context, field graphql.CollectedField, obj *AspectEventDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AspectEventDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AspectEventDefinition_updated_at(ctx context.Context, field graphql.CollectedField, obj *AspectEventDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AspectEventDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AspectEventDefinition_deleted_at(ctx context.Context, field graphql.CollectedField, obj *AspectEventDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AspectEventDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeletedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AspectEventDefinition_error(ctx context.Context, field graphql.CollectedField, obj *AspectEventDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AspectEventDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AspectEventDefinitionSubset_eventType(ctx context.Context, field graphql.CollectedField, obj *AspectEventDefinitionSubset) (ret graphql.Marshaler) {
@@ -37260,6 +37420,14 @@ func (ec *executionContext) _AspectEventDefinition(ctx context.Context, sel ast.
 			}
 		case "subset":
 			out.Values[i] = ec._AspectEventDefinition_subset(ctx, field, obj)
+		case "created_at":
+			out.Values[i] = ec._AspectEventDefinition_created_at(ctx, field, obj)
+		case "updated_at":
+			out.Values[i] = ec._AspectEventDefinition_updated_at(ctx, field, obj)
+		case "deleted_at":
+			out.Values[i] = ec._AspectEventDefinition_deleted_at(ctx, field, obj)
+		case "error":
+			out.Values[i] = ec._AspectEventDefinition_error(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -66,25 +66,8 @@ func ValidateAspectAPIResources(value interface{}) error {
 	})
 }
 
-// ValidateAspectEventResources validates the JSONB field `eventResources` in Aspect
-func ValidateAspectEventResources(value interface{}) error {
-	return ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
-		"ordId": {
-			validation.Required,
-			validation.Length(MinOrdIDLength, MaxOrdIDLength),
-			validation.Match(regexp.MustCompile(AspectEventResourceRegex)),
-		},
-		"minVersion": {
-			validation.Match(regexp.MustCompile(AspectResourcesMinVersionRegex)),
-		},
-		"subset": {
-			validation.By(validateAspectEventResourceSubset),
-		},
-	})
-}
-
-// validateAspectEventResourceSubset validates the Aspect Event Resource fields
-func validateAspectEventResourceSubset(value interface{}) error {
+// ValidateAspectEventResourceSubset validates the Aspect Event Resource Subset fields
+func ValidateAspectEventResourceSubset(value interface{}) error {
 	if value == nil {
 		return nil
 	}

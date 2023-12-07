@@ -1084,6 +1084,10 @@ type AspectAPIDefinition {
 type AspectEventDefinition {
 	ordID: String!
 	subset: [AspectEventDefinitionSubset!]
+	created_at: Timestamp
+	updated_at: Timestamp
+	deleted_at: Timestamp
+	error: String
 }
 
 type AspectEventDefinitionSubset {
