@@ -92,6 +92,11 @@ func RegisterApplicationWithBaseURL(t require.TestingT, ctx context.Context, gql
 	return RegisterApplicationFromInput(t, ctx, gqlClient, tenant, in)
 }
 
+func RegisterApplicationWithApplicationNamespace(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, appName, appNamespace, tenant string) (graphql.ApplicationExt, error) {
+	in := FixSampleApplicationRegisterInputWithApplicationNamespace(appName, appNamespace)
+	return RegisterApplicationFromInput(t, ctx, gqlClient, tenant, in)
+}
+
 func RegisterApplicationFromInput(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt, error) {
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)

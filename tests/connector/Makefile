@@ -19,7 +19,8 @@ e2e-test:
 	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh connector
 
 e2e-test-clean:
-	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
+	kubectl config use-context k3d-kyma
+	kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
 
 sandbox-test:
 	@../sandbox.sh connector
@@ -33,5 +34,6 @@ sandbox-deploy-test:
 	rm ./connector.test
 
 sandbox-test-clean:
+	kubectl config use-context k3d-kyma
 	@kubectl delete testdefinitions.testing.kyma-project.io -n kyma-system compass-e2e-connector-local || true
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
