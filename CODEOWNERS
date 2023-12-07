@@ -39,6 +39,7 @@ components/director/internal/domain/formationtemplateconstraintreferences @kyma-
 /components/director/internal/nsadapter @kyma-incubator/team-falcon
 /components/director/internal/open_resource_discovery @kyma-incubator/team-falcon
 /components/director/internal/scopes_sync @kyma-incubator/team-raptor
+/components/director/internal/systemfetcher @kyma-incubator/team-falcon
 /components/director/internal/tenantfetcher @kyma-incubator/team-falcon
 /components/director/internal/tenantfetchersvc @kyma-incubator/team-falcon
 /components/director/pkg/accessstrategy @kyma-incubator/team-falcon
@@ -68,6 +69,7 @@ components/director/internal/domain/formationtemplateconstraintreferences @kyma-
 /tests/pairing-adapter @kyma-incubator/team-falcon
 /tests/pkg/notifications @kyma-incubator/team-raptor
 /tests/system-fetcher @kyma-incubator/team-falcon
+/tests/tenant-fetcher @kyma-incubator/team-falcon
 
 # All .md files
 *.md @kyma-incubator/cmp-technical-writers
