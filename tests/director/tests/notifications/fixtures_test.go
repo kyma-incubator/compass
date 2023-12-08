@@ -794,22 +794,6 @@ func buildConsumerTokenURL(providerTokenURL, consumerSubdomain string) (string, 
 	return tokenURL, nil
 }
 
-func executeFAStatusResetReqForInstanceCreator(t *testing.T, certSecuredHTTPClient *http.Client, state, tnt, formationID, formationAssignmentID string, expectedStatusCode int) {
-	reqBody := FormationAssignmentRequestBody{
-		State: state,
-	}
-	marshalBody, err := json.Marshal(reqBody)
-	require.NoError(t, err)
-
-	formationAssignmentAsyncStatusAPIEndpoint := resolveFAAsyncStatusAPIURL(formationID, formationAssignmentID)
-	request, err := http.NewRequest(http.MethodPatch, formationAssignmentAsyncStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
-	require.NoError(t, err)
-	request.Header.Add("Content-Type", "application/json")
-	response, err := certSecuredHTTPClient.Do(request)
-	require.NoError(t, err)
-	require.Equal(t, expectedStatusCode, response.StatusCode)
-}
-
 func executeFAStatusResetReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, state, testConfig, tnt, formationID, formationAssignmentID string, expectedStatusCode int) {
 	reqBody := FormationAssignmentRequestBody{
 		State:         state,
