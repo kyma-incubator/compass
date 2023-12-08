@@ -62,13 +62,13 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 }
 
 // Update updates an Entity Type by ID for a given resource.Type
-func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.EntityTypeInput, entityTypeHash uint64) error {
+func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, packageID string, in model.EntityTypeInput, entityTypeHash uint64) error {
 	entityType, err := s.getEntityType(ctx, id, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Entity Type with id %s", id)
 	}
 
-	entityType.SetFromUpdateInput(in, entityTypeHash)
+	entityType.SetFromUpdateInput(in, packageID, entityTypeHash)
 
 	if err = s.updateEntityType(ctx, entityType, resourceType); err != nil {
 		return errors.Wrapf(err, "while updating Entity Type with id %s", id)
