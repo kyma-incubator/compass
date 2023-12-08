@@ -107,8 +107,8 @@ type config struct {
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 
 	ClientTimeout                  time.Duration `envconfig:"default=120s"`
-	ClientMaxConnectionsPerHost    int           `envconfig:"APP_CLIENT_MAX_CONNECTIONS_PER_HOST,default=500"`
-	ClientMaxIdlConnectionsPerHost int           `envconfig:"APP_CLIENT_MAX_IDLE_CONNECTIONS_PER_HOST,default=500"`
+	ClientMaxConnectionsPerHost    int           `envconfig:"APP_CLIENT_MAX_CONNECTIONS_PER_HOST,default=1000"`
+	ClientMaxIdlConnectionsPerHost int           `envconfig:"APP_CLIENT_MAX_IDLE_CONNECTIONS_PER_HOST,default=1000"`
 	ClientRetryAttempts            uint          `envconfig:"default=5"`
 	ClientRetryDelay               time.Duration `envconfig:"default=5s"`
 	SkipSSLValidation              bool          `envconfig:"default=false"`
