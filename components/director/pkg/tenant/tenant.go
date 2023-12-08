@@ -22,8 +22,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/google/uuid"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 

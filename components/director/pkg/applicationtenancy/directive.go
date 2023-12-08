@@ -25,7 +25,6 @@ type BusinessTenantMappingService interface {
 	GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error)
 	GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error)
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // ApplicationService is responsible for the service-layer application operations.

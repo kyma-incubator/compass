@@ -38,11 +38,6 @@ const (
 	trimmedParent         = "parent2"
 )
 
-const (
-	trimmedExternalTenant = "external3"
-	trimmedParent         = "parent2"
-)
-
 func TestConverter(t *testing.T) {
 	// GIVEN
 	id := "foo"
