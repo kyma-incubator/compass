@@ -754,7 +754,8 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 	return nil
 }
 
-func (s *service) unassign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) error {
+// UnassignFromScenarioLabel unassigns object from scenario label
+func (s *service) UnassignFromScenarioLabel(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) error {
 	if objectType == graphql.FormationObjectTypeApplication ||
 		objectType == graphql.FormationObjectTypeRuntime ||
 		objectType == graphql.FormationObjectTypeRuntimeContext {
@@ -874,7 +875,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if err != nil {
 			return nil, errors.Wrapf(err, "while deleting formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
-		err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
+		err = s.UnassignFromScenarioLabel(ctx, tnt, objectID, objectType, formationFromDB)
 		if err != nil && !apperrors.IsNotFoundError(err) {
 			return nil, errors.Wrapf(err, "while unassigning from formation")
 		}
@@ -1027,7 +1028,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 		if len(pendingAsyncAssignments) == 0 {
 			log.C(ctx).Infof("There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationFromDB.ID, objectType, objectID, formationFromDB.ID)
-			err = s.unassign(scenarioTransactionCtx, tnt, participantID, objectType, formationFromDB)
+			err = s.UnassignFromScenarioLabel(scenarioTransactionCtx, tnt, participantID, objectType, formationFromDB)
 			if err != nil && !apperrors.IsNotFoundError(err) {
 				return nil, errors.Wrapf(err, "while unassigning from formation")
 			}
@@ -1250,7 +1251,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 
 				if len(leftAssignmentsInFormation) == 0 {
 					log.C(ctx).Infof("There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formation.ID, objectType, objectID, formation.ID)
-					err = s.unassign(ctxWithTransact, tenantID, objectID, objectType, formation)
+					err = s.UnassignFromScenarioLabel(ctxWithTransact, tenantID, objectID, objectType, formation)
 					if err != nil && !apperrors.IsNotFoundError(err) {
 						return errors.Wrapf(err, "while unassigning the object with type %q and ID %q", objectType, objectID)
 					}

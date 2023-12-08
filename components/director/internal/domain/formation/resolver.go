@@ -501,11 +501,12 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 }
 
 func isInErrorState(state string) bool {
-	return state == string(model.CreateErrorAssignmentState) || state == string(model.DeleteErrorAssignmentState)
+	return state == string(model.CreateErrorAssignmentState) || state == string(model.DeleteErrorAssignmentState) || state == string(model.InstanceCreatorDeleteErrorAssignmentState)
 }
 
 func isInProgressState(state string) bool {
 	return state == string(model.InitialAssignmentState) ||
 		state == string(model.DeletingAssignmentState) ||
-		state == string(model.ConfigPendingAssignmentState)
+		state == string(model.ConfigPendingAssignmentState) ||
+		state == string(model.InstanceCreatorDeletingAssignmentState)
 }

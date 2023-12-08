@@ -805,8 +805,6 @@ func executeFAStatusResetReqForInstanceCreator(t *testing.T, certSecuredHTTPClie
 	request, err := http.NewRequest(http.MethodPatch, formationAssignmentAsyncStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
 	require.NoError(t, err)
 	request.Header.Add("Content-Type", "application/json")
-	// The Tenant header is needed in case we are simulating an application reporting status for its own formation assignment.
-	request.Header.Add("Tenant", tnt)
 	response, err := certSecuredHTTPClient.Do(request)
 	require.NoError(t, err)
 	require.Equal(t, expectedStatusCode, response.StatusCode)

@@ -410,11 +410,11 @@ func (h *Handler) unassignObjectFromFormationWhenThereAreNoFormationAssignments(
 	// if there are no formation assignments left after the deletion, execute unassign formation for the object
 	if len(formationAssignmentsForObject) == 0 {
 		log.C(ctx).Infof("Unassining formation with name: %q for object with ID: %q and type: %q", formation.Name, objectID, objectType)
-		f, err := h.formationService.UnassignFormation(ctx, fa.TenantID, objectID, graphql.FormationObjectType(objectType), *formation)
+		err = h.formationService.UnassignFromScenarioLabel(ctx, fa.TenantID, objectID, graphql.FormationObjectType(objectType), formation)
 		if err != nil {
 			return errors.Wrapf(err, "while unassigning formation with name: %q for object ID: %q and type: %q", formation.Name, objectID, objectType)
 		}
-		log.C(ctx).Infof("Object with type: %q and ID: %q was successfully unassigned from formation with name: %q", objectType, objectID, f.Name)
+		log.C(ctx).Infof("Object with type: %q and ID: %q was successfully unassigned from formation with name: %q", objectType, objectID, formation.Name)
 	}
 	return nil
 }
@@ -455,6 +455,17 @@ func (b FormationRequestBody) Validate() error {
 // processFormationAssignmentUnassignStatusUpdate handles the async unassign formation assignment status update
 func (h *Handler) processFormationAssignmentUnassignStatusUpdate(ctx context.Context, fa *model.FormationAssignment, statusReport *statusreport.NotificationStatusReport) (bool, error) {
 	stateFromStatusReport := model.FormationAssignmentState(statusReport.State)
+
+	if !isRegularUnassignAssignmentState(fa) {
+		consumerInfo, err := consumer.LoadFromContext(ctx)
+		if err != nil {
+			return false, err
+		}
+
+		if consumerInfo.ConsumerType != consumer.InstanceCreator {
+			return false, nil
+		}
+	}
 
 	if stateFromStatusReport == model.DeleteErrorAssignmentState {
 		if err := h.faStatusService.UpdateWithConstraints(ctx, statusReport, fa, model.UnassignFormation); err != nil {
@@ -699,6 +710,12 @@ func determineOperationBasedOnFormationAssignmentState(fa *model.FormationAssign
 		return model.AssignFormation
 	}
 	return model.UnassignFormation
+}
+
+func isRegularUnassignAssignmentState(fa *model.FormationAssignment) bool {
+	unassignOperationStates := []string{string(model.DeletingAssignmentState),
+		string(model.DeleteErrorAssignmentState)}
+	return str.ValueIn(fa.State, unassignOperationStates)
 }
 
 func (mr *malformedRequest) Error() string {

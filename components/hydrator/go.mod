@@ -24,7 +24,7 @@ require (
 require (
 	github.com/avast/retry-go/v4 v4.5.0
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20231205120215-13beedda6074
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231206060934-76a549241228
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231208122958-531c6a939d6a
 	github.com/prometheus/client_golang v1.17.0
 	golang.org/x/oauth2 v0.11.0
 )

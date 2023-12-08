@@ -34,10 +34,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 
 	formationTmplName := "e2e-tests-app-only-formation-template-name"
 
-	certSubjcetMappingCN := "csm-async-callback-cn"
-	certSubjcetMappingCNSecond := "csm-async-callback-cn-second"
-	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCN, -1)
-	certSubjectMappingCustomSubjectSecond := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCNSecond, -1)
+	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, "instance-creator", -1)
 
 	// We need an externally issued cert with a custom subject that will be used to create a certificate subject mapping through the GraphQL API,
 	// which later will be loaded in-memory from the hydrator component
@@ -53,8 +50,31 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		ExternalCertProvider:                  certprovider.CertificateService,
 	}
 
+	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
+	instanceCreatorCertClient := gql.NewCertAuthorizedHTTPClient(pk, cert, conf.SkipSSLValidation)
+
+	certSubjcetMappingCN := "csm-async-callback-cn"
+	certSubjcetMappingCNSecond := "csm-async-callback-cn-second"
+	certSubjectMappingCustomSubject = strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCN, -1)
+	certSubjectMappingCustomSubjectSecond := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCNSecond, -1)
+
+	// We need an externally issued cert with a custom subject that will be used to create a certificate subject mapping through the GraphQL API,
+	// which later will be loaded in-memory from the hydrator component
+	externalCertProviderConfig = certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
+		TestExternalCertSubject:               certSubjectMappingCustomSubject,
+		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+		ExternalCertProvider:                  certprovider.CertificateService,
+	}
+
 	// We need only to create the secret so in the external-services-mock an HTTP client with certificate to be created and used to call the formation status API
-	_, _ = certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, false)
+	appPk, appCert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, false)
+	appCertClient := gql.NewCertAuthorizedHTTPClient(appPk, appCert, conf.SkipSSLValidation)
 
 	// The external cert secret created by the NewExternalCertFromConfig above is used by the external-services-mock for the async formation status API call,
 	// that's why in the function above there is a false parameter that don't delete it and an explicit defer deletion func is added here
@@ -3017,8 +3037,14 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, tnt, 2)
 		formationAssignmentID := getFormationAssignmentIDBySourceAndTarget(t, assignmentsPage, app2.ID, app1.ID)
 
-		t.Logf("Calling FA status API for formation assignment ID %q", formationAssignmentID)
-		executeFAStatusResetReqForInstanceCreator(t, certSecuredHTTPClient, "READY", tnt, formation.ID, formationAssignmentID, http.StatusOK)
+		t.Logf("Calling FA status API for formation assignment ID %q should not delete assignment", formationAssignmentID)
+		executeFAStatusUpdateReqWithExpectedStatusCode(t, appCertClient, "", formation.ID, formationAssignmentID, http.StatusOK)
+
+		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 2, expectedAssignmentsBySourceID, eventuallyTimeout, eventuallyTick)
+		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress})
+
+		t.Logf("Calling FA status API for formation assignment ID %q with certificate for instance creator should delete assignment", formationAssignmentID)
+		executeFAStatusUpdateReqWithExpectedStatusCode(t, instanceCreatorCertClient, "", formation.ID, formationAssignmentID, http.StatusOK)
 
 		expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
