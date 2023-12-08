@@ -25,6 +25,8 @@ const (
 	// MaxOrdIDLength represents the maximal accepted length of the OrdID field
 	MaxOrdIDLength = 255
 
+	// SemVerRegex represents the valid structure of the field
+	SemVerRegex = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 	// AspectAPIResourceRegex represents the valid structure of the apiResource items in Integration Dependency Aspect
 	AspectAPIResourceRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(apiResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// AspectEventResourceRegex represents the valid structure of the eventResource items in Integration Dependency Aspect
@@ -33,8 +35,21 @@ const (
 	EventResourceEventTypeRegex = "^([a-z0-9A-Z]+(?:[.][a-z0-9A-Z]+)(?:[.][a-z0-9A-Z]+)+)\\.(v0|v[1-9][0-9]*)$"
 	// AspectResourcesMinVersionRegex represents the valid structure of the minVersion for apiResources and eventResources in Aspect
 	AspectResourcesMinVersionRegex = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+	// IntegrationDependencyOrdIDRegex represents the valid structure of the ordID of the Integration Dependency
+	IntegrationDependencyOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(integrationDependency):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
+	// PackageOrdIDRegex represents the valid structure of the ordID of the Package
+	PackageOrdIDRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(package):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// AspectMsg represents the resource name for Aspect used in error message
 	AspectMsg = "aspect"
+)
+
+const (
+	// ReleaseStatusBeta is one of the available release status options
+	ReleaseStatusBeta string = "beta"
+	// ReleaseStatusActive is one of the available release status options
+	ReleaseStatusActive string = "active"
+	// ReleaseStatusDeprecated is one of the available release status options
+	ReleaseStatusDeprecated string = "deprecated"
 )
 
 // ValidateAspectAPIResources validates the JSONB field `apiResources` in Aspect

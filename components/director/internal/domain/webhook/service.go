@@ -162,7 +162,10 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 		return "", err
 	}
 
-	id := s.uidSvc.Generate()
+	id := in.ID
+	if id == "" {
+		id = s.uidSvc.Generate()
+	}
 
 	webhook := in.ToWebhook(id, owningResourceID, objectType)
 
@@ -314,5 +317,11 @@ func (s *service) getTenantForWebhook(ctx context.Context, whType resource.Type)
 	if whType == resource.FormationTemplateWebhook {
 		return s.tenantSvc.ExtractTenantIDForTenantScopedFormationTemplates(ctx)
 	}
-	return tenant.LoadFromContext(ctx)
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if apperrors.IsCannotReadTenant(err) && whType == resource.Webhook {
+		return "", nil
+	}
+
+	return tnt, err
 }

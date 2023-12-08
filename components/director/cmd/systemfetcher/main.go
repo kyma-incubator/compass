@@ -273,6 +273,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient, extSvcMtlsClient)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, map[string]interface{}{}, "")
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
 	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
 	certSubjectInputBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)
@@ -319,7 +320,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		Authenticator: pkgAuth.NewServiceAccountTokenAuthorizationProvider(),
 	}
 
-	dataLoader := systemfetcher.NewDataLoader(tx, cfg.SystemFetcher, appTemplateSvc, intSysSvc)
+	dataLoader := systemfetcher.NewDataLoader(tx, cfg.SystemFetcher, appTemplateSvc, intSysSvc, webhookSvc)
 	if err := dataLoader.LoadData(ctx, os.ReadDir, os.ReadFile); err != nil {
 		return nil, err
 	}

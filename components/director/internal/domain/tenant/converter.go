@@ -85,33 +85,40 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.BusinessTenantMapping
 	res := make([]model.BusinessTenantMappingInput, 0, len(in))
 
 	for _, tnt := range in {
-		res = append(res, model.BusinessTenantMappingInput{
-			Name:           tnt.Name,
-			ExternalTenant: tnt.ExternalTenant,
-			Parent:         str.PtrStrToStr(tnt.Parent),
-			Subdomain:      str.PtrStrToStr(tnt.Subdomain),
-			Region:         str.PtrStrToStr(tnt.Region),
-			Type:           tnt.Type,
-			Provider:       tnt.Provider,
-			LicenseType:    tnt.LicenseType,
-			CustomerID:     tnt.CustomerID,
-		})
+		res = append(res, c.InputFromGraphQL(*tnt))
 	}
 
 	return res
 }
 
 func (c *converter) InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) model.BusinessTenantMappingInput {
+	externalTenant := tnt.ExternalTenant
+	parent := str.PtrStrToStr(tnt.Parent)
+
+	switch tnt.Type {
+	case tenant.TypeToStr(tenant.Customer):
+		externalTenant = tenant.TrimCustomerIDLeadingZeros(tnt.ExternalTenant)
+	case tenant.TypeToStr(tenant.Account):
+		fallthrough
+	case tenant.TypeToStr(tenant.Organization):
+		parent = tenant.TrimCustomerIDLeadingZeros(str.PtrStrToStr(tnt.Parent))
+	}
+
+	customerID := tnt.CustomerID
+	if customerID != nil {
+		customerID = str.Ptr(tenant.TrimCustomerIDLeadingZeros(str.PtrStrToStr(tnt.CustomerID)))
+	}
+
 	return model.BusinessTenantMappingInput{
 		Name:           tnt.Name,
-		ExternalTenant: tnt.ExternalTenant,
-		Parent:         str.PtrStrToStr(tnt.Parent),
+		ExternalTenant: externalTenant,
+		Parent:         parent,
 		Subdomain:      str.PtrStrToStr(tnt.Subdomain),
 		Region:         str.PtrStrToStr(tnt.Region),
 		Type:           tnt.Type,
 		Provider:       tnt.Provider,
 		LicenseType:    tnt.LicenseType,
-		CustomerID:     tnt.CustomerID,
+		CustomerID:     customerID,
 	}
 }
 

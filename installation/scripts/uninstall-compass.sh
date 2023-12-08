@@ -27,12 +27,12 @@ done
 if [[ ${SQL_HELM_BACKEND} ]]; then
     echo -e "${GREEN}Helm SQL storage backend will be used${NC}"
 
-    DB_USER=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-director-username']}"))
-    DB_PWD=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-director-password']}"))
-    DB_NAME=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-directorDatabaseName']}"))
-    DB_PORT=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-servicePort']}"))
+    DB_USER=$(base64 -d <<< $(kubectl_k3d_kyma get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-director-username']}"))
+    DB_PWD=$(base64 -d <<< $(kubectl_k3d_kyma get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-director-password']}"))
+    DB_NAME=$(base64 -d <<< $(kubectl_k3d_kyma get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-directorDatabaseName']}"))
+    DB_PORT=$(base64 -d <<< $(kubectl_k3d_kyma get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-servicePort']}"))
 
-    kubectl port-forward --namespace compass-system svc/compass-postgresql ${DB_PORT}:${DB_PORT} &
+    kubectl_k3d_kyma port-forward --namespace compass-system svc/compass-postgresql ${DB_PORT}:${DB_PORT} &
     sleep 5 #wait port-forwarding to be completed
 
     export HELM_DRIVER=sql
@@ -43,7 +43,7 @@ echo "Wait for helm stable status"
 wait_for_helm_stable_state "compass" "compass-system" 
 
 echo "Uninstall Compass"
-helm uninstall --wait --debug --timeout "${TIMEOUT}" --namespace compass-system compass || true
+helm_k3d_kyma uninstall --wait --debug --timeout "${TIMEOUT}" --namespace compass-system compass || true
 
 if [[ ${SQL_HELM_BACKEND} ]]; then
     pkill kubectl

@@ -125,6 +125,32 @@ func (_m *IntegrationDependencyRepository) GetByIDGlobal(ctx context.Context, id
 	return r0, r1
 }
 
+// ListByApplicationIDs provides a mock function with given fields: ctx, tenantID, applicationIDs, pageSize, cursor
+func (_m *IntegrationDependencyRepository) ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.IntegrationDependencyPage, error) {
+	ret := _m.Called(ctx, tenantID, applicationIDs, pageSize, cursor)
+
+	var r0 []*model.IntegrationDependencyPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int, string) ([]*model.IntegrationDependencyPage, error)); ok {
+		return rf(ctx, tenantID, applicationIDs, pageSize, cursor)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int, string) []*model.IntegrationDependencyPage); ok {
+		r0 = rf(ctx, tenantID, applicationIDs, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.IntegrationDependencyPage)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string, int, string) error); ok {
+		r1 = rf(ctx, tenantID, applicationIDs, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByResourceID provides a mock function with given fields: ctx, tenantID, resourceType, resourceID
 func (_m *IntegrationDependencyRepository) ListByResourceID(ctx context.Context, tenantID string, resourceType resource.Type, resourceID string) ([]*model.IntegrationDependency, error) {
 	ret := _m.Called(ctx, tenantID, resourceType, resourceID)

@@ -39,7 +39,8 @@ const (
 )
 
 var (
-	testCustomerID               = str.Ptr("customerID")
+	testCustomerID               = str.Ptr("0000customerID")
+	testCustomerIDTrimmed        = str.Ptr("customerID")
 	testError                    = errors.New("test error")
 	testTableColumns             = []string{"id", "external_name", "external_tenant", "parent", "type", "provider_name", "status"}
 	tenantAccessTestTableColumns = []string{"tenant_id", "id", "owner"}
