@@ -142,7 +142,7 @@ func (i *EntityTypeInput) ToEntityType(id string, resourceType resource.Type, re
 }
 
 // SetFromUpdateInput missing godoc
-func (entityType *EntityType) SetFromUpdateInput(update EntityTypeInput, entityTypeHash uint64) {
+func (entityType *EntityType) SetFromUpdateInput(update EntityTypeInput, packageID string, entityTypeHash uint64) {
 	var hash *string
 	if entityTypeHash != 0 {
 		hash = str.Ptr(strconv.FormatUint(entityTypeHash, 10))
@@ -156,7 +156,7 @@ func (entityType *EntityType) SetFromUpdateInput(update EntityTypeInput, entityT
 	entityType.Description = update.Description
 	entityType.SystemInstanceAware = update.SystemInstanceAware
 	entityType.ChangeLogEntries = update.ChangeLogEntries
-	entityType.PackageID = update.OrdPackageID
+	entityType.PackageID = packageID
 	entityType.Visibility = update.Visibility
 	entityType.Links = update.Links
 	entityType.PartOfProducts = update.PartOfProducts

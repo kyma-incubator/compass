@@ -143,11 +143,13 @@ func (u *updater) updateSingleWithFields(ctx context.Context, dbEntity interface
 		return err
 	}
 
+	fmt.Println(query)
+
 	if entityWithExternalTenant, ok := dbEntity.(EntityWithExternalTenant); ok {
 		dbEntity = entityWithExternalTenant.DecorateWithTenantID(tenant)
 	}
 
-	log.C(ctx).Debugf("Executing DB query: %s", query)
+	log.C(ctx).Infof("Executing DB query: %s", query)
 	res, err := persist.NamedExecContext(ctx, query, dbEntity)
 	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Update, "while updating single entity from '%s' table", u.tableName); err != nil {
 		return err
