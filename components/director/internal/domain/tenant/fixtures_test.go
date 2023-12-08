@@ -23,14 +23,12 @@ import (
 
 const (
 	testExternal                  = "external"
-	testParentExternal            = "externalParent"
 	testParent2External           = "externalParent2"
 	testParent3External           = "externalParent3"
 	testInternal                  = "internalID"
 	testID                        = "foo"
 	testID2                       = "foo2"
 	testName                      = "bar"
-	testParentName                = "parent"
 	testParent2Name               = "parent2"
 	testParent3Name               = "parent3"
 	testParentID                  = "parent"

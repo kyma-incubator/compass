@@ -870,7 +870,7 @@ func TestPgRepository_List(t *testing.T) {
 					WillReturnError(testError)
 				return db, dbMock
 			},
-			ExpectedErrorMessage: fmt.Sprintf("while listing parent tenants for tenant with ID id1"),
+			ExpectedErrorMessage: "while listing parent tenants for tenant with ID id1",
 		},
 		{
 			Name: "Error while listing parents",
@@ -882,7 +882,7 @@ func TestPgRepository_List(t *testing.T) {
 					WillReturnError(testError)
 				return db, dbMock
 			},
-			ExpectedErrorMessage: fmt.Sprintf("while listing tenants from DB"),
+			ExpectedErrorMessage: "while listing tenants from DB",
 		},
 	}
 	for _, testCase := range testCases {
@@ -1053,7 +1053,7 @@ func TestPgRepository_ListPageBySearchTerm(t *testing.T) {
 					WillReturnError(testError)
 				return db, dbMock
 			},
-			ExpectedErrorMessage: fmt.Sprintf("while listing parent tenants for tenant with ID id1"),
+			ExpectedErrorMessage: "while listing parent tenants for tenant with ID id1",
 		},
 		{
 			Name: "Error while listing parents",
@@ -1065,7 +1065,7 @@ func TestPgRepository_ListPageBySearchTerm(t *testing.T) {
 					WillReturnError(testError)
 				return db, dbMock
 			},
-			ExpectedErrorMessage: fmt.Sprintf("while listing tenants from DB"),
+			ExpectedErrorMessage: "while listing tenants from DB",
 		},
 	}
 	for _, testCase := range testCases {

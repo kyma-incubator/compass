@@ -51,6 +51,7 @@ const (
                                                      INNER JOIN parents p on p.parent_id = t2.id)
 			DELETE FROM %s WHERE %s AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)`
 
+	// DeleteTenantAccessGrantedByParentQuery is a delete SQL query that deletes tenant accesses based on given tenant id and source.
 	DeleteTenantAccessGrantedByParentQuery = `DELETE FROM %s WHERE tenant_id = %s AND source = %s`
 )
 
