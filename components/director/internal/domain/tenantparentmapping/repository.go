@@ -133,7 +133,7 @@ func (r *pgRepository) CreateMultiple(ctx context.Context, tenantID string, pare
 
 func (r *pgRepository) Create(ctx context.Context, tenantID string, parentID string) error {
 	if err := r.Upsert(ctx, tenantID, parentID); err != nil {
-		log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantParent, resource.Create, "while creating tenant parent mapping for tenant with id %s and parent %s"), tenantID, parentID)
+		log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantParent, resource.Create, "while creating tenant parent mapping for tenant with id %s and parent %s", tenantID, parentID))
 		return err
 	}
 
@@ -145,7 +145,7 @@ func (r *pgRepository) Delete(ctx context.Context, tenantID string, parentID str
 		repo.NewEqualCondition(tenantIDColumn, tenantID),
 		repo.NewEqualCondition(parentIDColumn, parentID),
 	}); err != nil {
-		log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantParent, resource.Create, "while deleting tenant parent mapping for tenant with id %s and parent %s"), tenantID, parentID)
+		log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantParent, resource.Create, "while deleting tenant parent mapping for tenant with id %s and parent %s", tenantID, parentID))
 		return err
 	}
 

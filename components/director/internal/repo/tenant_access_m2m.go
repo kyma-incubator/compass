@@ -49,25 +49,10 @@ const (
                     SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
                     FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
                                                      INNER JOIN parents p on p.parent_id = t2.id)
-			DELETE FROM %s WHERE %s AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)
-`
-	//tenant_id IN (SELECT id FROM parents WHERE type != 'cost-object' OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')))`
-)
+			DELETE FROM %s WHERE %s AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)`
 
-//APP - registered SA
-//Add TA SA2
-//
-//CRM, APP, GA1
-//CRM, APP, GA2 ----
-//GA1, APP, SA
-//SA, APP, SA
-//GA2, APP, SA2 ----
-//SA2, APP, SA2 ----
-//
-//
-//SA2, SA2
-//GA2, SA2
-//CRM, GA2
+	DeleteTenantAccessGrantedByParentQuery = `DELETE FROM %s WHERE tenant_id = %s AND source = %s`
+)
 
 // M2MColumns are the column names of the tenant access tables / views.
 var M2MColumns = []string{M2MTenantIDColumn, M2MResourceIDColumn, M2MOwnerColumn, M2MSourceColumn}
@@ -164,4 +149,19 @@ func DeleteTenantAccessRecursively(ctx context.Context, m2mTable string, tenant 
 	_, err = persist.ExecContext(ctx, deleteTenantAccessStmt, args...)
 
 	return persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Delete, "while deleting tenant access record from '%s' table", m2mTable)
+}
+
+// DeleteTenantAccessFromParent deletes all the accesses to resources that were granted to childTenantID from parentTenantID. Such tenant accesses are granted through the directive
+func DeleteTenantAccessFromParent(ctx context.Context, m2mTable string, childTenantID, parentTenantID string) error {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return err
+	}
+
+	deleteTenantAccessStmt := fmt.Sprintf(DeleteTenantAccessGrantedByParentQuery, m2mTable, childTenantID, parentTenantID)
+
+	log.C(ctx).Debugf("Executing DB query: %s", deleteTenantAccessStmt)
+	_, err = persist.ExecContext(ctx, deleteTenantAccessStmt)
+
+	return persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Delete, "while deleting tenant access records for tenant with ID %s granted by parent with ID %s from '%s' table", childTenantID, parentTenantID, m2mTable)
 }

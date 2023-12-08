@@ -157,7 +157,7 @@ func (u *upserter) upsertTenantAccess(ctx context.Context, resourceType resource
 	return CreateTenantAccessRecursively(ctx, m2mTable, &TenantAccess{
 		TenantID:   tenant,
 		ResourceID: resourceID,
-		Owner:      true, //TODO
+		Owner:      true,
 	})
 }
 

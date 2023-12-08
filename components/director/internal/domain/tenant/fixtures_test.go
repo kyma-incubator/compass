@@ -3,6 +3,7 @@ package tenant_test
 import (
 	"database/sql/driver"
 	"errors"
+	"regexp"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -91,6 +92,7 @@ var (
 		ResourceType:     resource.Application,
 		ResourceID:       testID,
 		Owner:            true,
+		Source: testInternal,
 	}
 	tenantAccessWithoutInternalTenantModel = &model.TenantAccess{
 		ExternalTenantID: testExternal,
@@ -346,4 +348,32 @@ func unusedTenantService() *automock.BusinessTenantMappingService {
 
 func unusedFetcherService() *automock.Fetcher {
 	return &automock.Fetcher{}
+}
+
+func fixDeleteTenantAccessesQuery() string{
+	return regexp.QuoteMeta(`WITH RECURSIVE parents AS
+                  (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id
+                   FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
+                   WHERE id = $1
+                   UNION ALL
+                   SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
+                   FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
+                                                    INNER JOIN parents p on p.parent_id = t2.id)
+			DELETE FROM `)+`(.+)`+regexp.QuoteMeta(` WHERE id IN ($2) AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)
+`)
+}
+
+func fixInsertTenantAccessesQuery() string{
+	return regexp.QuoteMeta(`WITH RECURSIVE parents AS
+                  (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id
+                   FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
+                   WHERE id=?
+                   UNION ALL
+                   SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
+                   FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
+                                                    INNER JOIN parents p on p.parent_id = t2.id)
+			INSERT INTO `)+`(.+)`+regexp.QuoteMeta(` ( tenant_id, id, owner, source )  (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object'
+                                                                                                                OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object'))
+					)
+			ON CONFLICT ( tenant_id, id, source ) DO NOTHING`)
 }

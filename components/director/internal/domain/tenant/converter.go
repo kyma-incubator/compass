@@ -84,33 +84,46 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.BusinessTenantMapping
 	res := make([]model.BusinessTenantMappingInput, 0, len(in))
 
 	for _, tnt := range in {
-		res = append(res, model.BusinessTenantMappingInput{
-			Name:           tnt.Name,
-			ExternalTenant: tnt.ExternalTenant,
-			Parents:        pointerStringsToStrings(tnt.Parents),
-			Subdomain:      str.PtrStrToStr(tnt.Subdomain),
-			Region:         str.PtrStrToStr(tnt.Region),
-			Type:           tnt.Type,
-			Provider:       tnt.Provider,
-			LicenseType:    tnt.LicenseType,
-			CustomerID:     tnt.CustomerID,
-		})
+		if tnt != nil {
+			res = append(res, c.InputFromGraphQL(*tnt))
+		}
 	}
 
 	return res
 }
 
 func (c *converter) InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) model.BusinessTenantMappingInput {
+	externalTenant := tnt.ExternalTenant
+	trimmedParents := pointerStringsToStrings(tnt.Parents)
+
+	switch tnt.Type {
+	case tenant.TypeToStr(tenant.Customer):
+		externalTenant = tenant.TrimCustomerIDLeadingZeros(tnt.ExternalTenant)
+	case tenant.TypeToStr(tenant.Account), tenant.TypeToStr(tenant.Organization):
+		trimmedParents = make([]string, 0, len(tnt.Parents))
+		for _, parent := range tnt.Parents {
+			if parent != nil {
+				trimmedParent := tenant.TrimCustomerIDLeadingZeros(*parent)
+				trimmedParents = append(trimmedParents, trimmedParent)
+			}
+		}
+	}
+
+	customerID := tnt.CustomerID
+	if tnt.CustomerID != nil {
+		customerID = str.Ptr(tenant.TrimCustomerIDLeadingZeros(*customerID))
+	}
+
 	return model.BusinessTenantMappingInput{
 		Name:           tnt.Name,
-		ExternalTenant: tnt.ExternalTenant,
-		Parents:        pointerStringsToStrings(tnt.Parents),
+		ExternalTenant: externalTenant,
+		Parents:        trimmedParents,
 		Subdomain:      str.PtrStrToStr(tnt.Subdomain),
 		Region:         str.PtrStrToStr(tnt.Region),
 		Type:           tnt.Type,
 		Provider:       tnt.Provider,
 		LicenseType:    tnt.LicenseType,
-		CustomerID:     tnt.CustomerID,
+		CustomerID:     customerID,
 	}
 }
 

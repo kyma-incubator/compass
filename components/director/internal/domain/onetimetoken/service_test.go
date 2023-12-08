@@ -92,7 +92,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		ID:             subaccountInternalID,
 		Name:           "subaccount",
 		ExternalTenant: subaccountExternalID,
-		Parent:         gaInternalID,
+		Parents:         []string{gaInternalID},
 		Type:           tenantpkg.Subaccount,
 	}
 
@@ -100,7 +100,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		ID:             gaInternalID,
 		Name:           "ga",
 		ExternalTenant: gaExternalID,
-		Parent:         "",
+		Parents:         []string{},
 		Type:           tenantpkg.Account,
 	}
 
@@ -470,7 +470,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountAndScenarioGroups, subaccountInternalID).Return(subaccountMapping, nil)
-				tenantSvc.On("GetTenantByID", ctxWithSubaccountAndScenarioGroups, gaInternalID).Return(gaMapping, nil)
+				tenantSvc.On("ListByIDsAndType", ctxWithSubaccountAndScenarioGroups, []string{gaInternalID}, tenantpkg.Account).Return([]*model.BusinessTenantMapping{{ExternalTenant: gaExternalID}}, nil)
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
@@ -723,7 +723,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
 				tenantSvc.On("GetTenantByID", ctxWithSubaccount, subaccountInternalID).Return(subaccountMapping, nil)
-				tenantSvc.On("GetTenantByID", ctxWithSubaccount, gaInternalID).Return(gaMapping, nil)
+				tenantSvc.On("ListByIDsAndType", ctxWithSubaccount, []string{gaInternalID}, tenantpkg.Account).Return([]*model.BusinessTenantMapping{{ExternalTenant: gaExternalID}}, nil)
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
@@ -856,7 +856,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
 				tenantSvc.On("GetTenantByID", ctxWithSubaccount, subaccountInternalID).Return(subaccountMapping, nil)
-				tenantSvc.On("GetTenantByID", ctxWithSubaccount, gaInternalID).Return(&model.BusinessTenantMapping{}, errors.New("some-error"))
+				tenantSvc.On("ListByIDsAndType", ctxWithSubaccount, []string{gaInternalID}, tenantpkg.Account).Return(nil, errors.New("some-error"))
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {

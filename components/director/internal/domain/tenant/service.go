@@ -175,7 +175,6 @@ func (s *service) MultipleToTenantMapping(ctx context.Context, tenantInputs []mo
 	}
 	for i := 0; i < len(tenants); i++ { // Convert parent ID from external to internal id reference
 		parentInternalIDs := make([]string, 0, len(tenants[i].Parents))
-		parentsInsertedInThisRequestIDs := make([]string, 0, len(tenants[i].Parents))
 
 		for _, parentID := range tenants[i].Parents {
 			if parentID == "" {
@@ -183,11 +182,10 @@ func (s *service) MultipleToTenantMapping(ctx context.Context, tenantInputs []mo
 			}
 			if _, ok := tenantIDs[parentID]; ok { // If the parent is inserted in this request
 				parentInternalIDs = append(parentInternalIDs, tenantIDs[parentID])
-				parentsInsertedInThisRequestIDs = append(parentsInsertedInThisRequestIDs, tenantIDs[parentID])
 			} else { // If the parent is already present in the DB - swap the external ID for the parent that is provided with the internal ID from the DB
 				internalPrentID, err := s.GetInternalTenant(ctx, parentID)
 				if err != nil {
-					return nil, errors.Wrapf(err, "for external tenant kalo: %s", parentID)
+					return nil, errors.Wrapf(err, "while getting internal tenant: %s", parentID)
 				}
 				parentInternalIDs = append(parentInternalIDs, internalPrentID)
 			}

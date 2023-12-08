@@ -532,7 +532,7 @@ func TestPgRepository_ListByDestination(t *testing.T) {
 						WHERE id IN (
 							SELECT id
 							FROM tenant_applications
-							WHERE tenant_id=(SELECT parent FROM business_tenant_mappings WHERE id = $1 )
+							WHERE tenant_id=(SELECT parent_id FROM tenant_parents WHERE tenant_id = $1 )
 						)
 						AND name = $2 AND base_url = $3
 				) AND correlation_ids ?| array[$4]`),
@@ -580,7 +580,7 @@ func TestPgRepository_ListByDestination(t *testing.T) {
 						WHERE pa.id IN (
 							SELECT id
 							FROM tenant_applications
-							WHERE tenant_id=(SELECT parent FROM business_tenant_mappings WHERE id = $1 )
+							WHERE tenant_id=(SELECT parent_id FROM tenant_parents WHERE tenant_id = $1 )
 						)
 						AND l.key='applicationType'
 						AND l.value ?| array[$2]

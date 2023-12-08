@@ -18,6 +18,7 @@ package tenant
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -49,7 +50,14 @@ func SaveToContext(ctx context.Context, tenantID string) context.Context {
 }
 
 // TrimCustomerIDLeadingZeros trims the leading zeros of customer IDs. Some IDs might have those zeros but we need
-// to unify all IDs because other external services expect the values without the zeros.
+// to unify all IDs because other external services expect the values without the zeros. If the id argument is a valid
+// GUID, then no trimming is performed
 func TrimCustomerIDLeadingZeros(id string) string {
+	if _, err := uuid.Parse(id); err == nil {
+		// id is in a GUID format. Should not try to trim anything.
+		return id
+	}
+
 	return strings.TrimLeft(id, "0")
 }
+

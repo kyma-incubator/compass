@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantparentmapping"
 	"k8s.io/utils/strings/slices"
 	"math"
@@ -152,14 +151,8 @@ func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenan
 	}
 
 	//TODO optimise
-	parents, err := r.tenantParentRepo.ListParents(ctx, id)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing parent tenants for tenant with id %s", id)
-	}
 	btm := r.conv.FromEntity(&entity)
-	btm.Parents = parents
-
-	return btm, nil
+	return r.enrichWithParents(ctx, btm)
 }
 
 // GetByExternalTenant retrieves the active tenant with matching external ID from the Compass storage.
@@ -173,12 +166,7 @@ func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenantID
 	}
 
 	btm := r.conv.FromEntity(&entity)
-	parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing parent tenants for tenant with external id %s", externalTenantID)
-	}
-	btm.Parents = parents
-	return btm, nil
+	return r.enrichWithParents(ctx, btm)
 }
 
 // Exists checks if tenant with the provided internal ID exists in the Compass storage.
@@ -253,11 +241,9 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 
 	btms := r.multipleFromEntities(entityCollection)
 	for _, btm := range btms {
-		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
-		if err != nil {
+		if _, err = r.enrichWithParents(ctx, btm); err != nil {
 			return nil, err
 		}
-		btm.Parents = parents
 	}
 
 	return btms, nil
@@ -284,11 +270,9 @@ func (r *pgRepository) ListPageBySearchTerm(ctx context.Context, searchTerm stri
 
 	items := r.multipleFromEntities(entityCollection)
 	for _, btm := range items {
-		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
-		if err != nil {
+		if _, err = r.enrichWithParents(ctx, btm); err != nil {
 			return nil, err
 		}
-		btm.Parents = parents
 	}
 
 	return &model.BusinessTenantMappingPage{
@@ -328,11 +312,9 @@ func (r *pgRepository) listByExternalTenantIDs(ctx context.Context, externalTena
 
 	btms := r.multipleFromEntities(entityCollection)
 	for _, btm := range btms {
-		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
-		if err != nil {
+		if _, err := r.enrichWithParents(ctx, btm); err != nil {
 			return nil, err
 		}
-		btm.Parents = parents
 	}
 	return btms, nil
 }
@@ -345,17 +327,17 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 
 	tenantFromDB, err := r.Get(ctx, model.ID)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while getting tenant with ID %s", model.ID)
 	}
 
 	entity := r.conv.ToEntity(model)
 	if err := r.updaterGlobal.UpdateSingleGlobal(ctx, entity); err != nil {
-		return err
+		return errors.Wrapf(err, "while updating tenant with ID %s", entity.ID)
 	}
 
 	btms, err := r.listByExternalTenantIDs(ctx, model.Parents)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while listing parent tenants by external IDs %v", model.Parents)
 	}
 
 	parentsInternalIDs := make([]string, 0, len(btms))
@@ -386,27 +368,9 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 	return nil
 }
 
-// TODO
 func (r *pgRepository) addParent(ctx context.Context, internalParentID, internalChildID string) error {
-	//tenantFromDB, err := r.Get(ctx, internalChildID)
-	//if err != nil {
-	//	if apperrors.IsNotFoundError(err) {
-	//		// todo
-	//	}
-	//	return err
-	//}
-	//
-	//parentFromDB, err := r.GetByExternalTenant(ctx, externalParentID)
-	//if err != nil {
-	//	if apperrors.IsNotFoundError(err) {
-	//		// todo
-	//	}
-	//	return err
-	//}
-
-	//if !slices.Contains(tenantFromDB.Parents, parentFromDB.ID) {
 	if err := r.tenantParentRepo.Create(ctx, internalChildID, internalParentID); err != nil {
-		return err
+		return errors.Wrapf(err, "while adding tenant parent record for tenant with ID %s and parent teannt with ID %s", internalChildID, internalParentID)
 	}
 
 	for topLevelEntity := range resource.TopLevelEntities {
@@ -439,30 +403,12 @@ func (r *pgRepository) addParent(ctx context.Context, internalParentID, internal
 			}
 		}
 	}
-	//}
 	return nil
 }
 
 func (r *pgRepository) removeParent(ctx context.Context, internalParentID, internalChildID string) error {
-	//tenantFromDB, err := r.Get(ctx, internalChildID)
-	//if err != nil {
-	//	if apperrors.IsNotFoundError(err) {
-	//		// todo
-	//	}
-	//	return err
-	//}
-	//
-	//parentFromDB, err := r.GetByExternalTenant(ctx, externalParentID)
-	//if err != nil {
-	//	if apperrors.IsNotFoundError(err) {
-	//		// todo
-	//	}
-	//	return err
-	//}
-
-	//if slices.Contains(tenantFromDB.Parents, parentFromDB.ID) {
 	if err := r.tenantParentRepo.Delete(ctx, internalChildID, internalParentID); err != nil {
-		return err
+		return errors.Wrapf(err, "while deleting tenant parent record for tenant with ID %s and parent tenant with ID %s", internalChildID, internalParentID)
 	}
 
 	for topLevelEntity := range resource.TopLevelEntities {
@@ -493,10 +439,12 @@ func (r *pgRepository) removeParent(ctx context.Context, internalParentID, inter
 				return errors.Wrapf(err, "while deleting tenant accesses for the old parent %s of the tenant %s", internalParentID, internalChildID)
 			}
 		}
+
+		if err := repo.DeleteTenantAccessFromParent(ctx, m2mTable, internalChildID, internalParentID); err != nil {
+			return errors.Wrapf(err, "while deleting tenant accesses for granted from the old parent %s to tenant %s", internalParentID, internalChildID)
+		}
 	}
-	//} else {
-	//	log.C(ctx).Infof("Tenant %s is not parent of tenant %s", externalParentID, internalChildID)
-	//}
+
 	return nil
 }
 
@@ -504,13 +452,12 @@ func (r *pgRepository) removeParent(ctx context.Context, internalParentID, inter
 // DeleteByExternalTenant removes a tenant with matching external ID from the Compass storage.
 // It also deletes all the accesses for resources that the tenant is owning for its parents.
 func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenant string) error {
-	spew.Dump("Delete by external tenant: ", externalTenant)
 	tnt, err := r.GetByExternalTenant(ctx, externalTenant)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil
 		}
-		return err
+		return errors.Wrapf(err, "while getting tenant with external ID %s", externalTenant)
 	}
 
 	for topLevelEntity, topLevelEntityTable := range resource.TopLevelEntities {
@@ -560,7 +507,7 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 func (r *pgRepository) deleteChildTenantsRecursively(ctx context.Context, parentID string) error {
 	childTenants, err := r.tenantParentRepo.ListByParent(ctx, parentID)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while listing child tenants for tenant with ID %s", parentID)
 	}
 	for _, childTenant := range childTenants {
 		if err := r.deleteChildTenantsRecursively(ctx, childTenant); err != nil {
@@ -571,7 +518,7 @@ func (r *pgRepository) deleteChildTenantsRecursively(ctx context.Context, parent
 			repo.NewEqualCondition(idColumn, childTenant),
 		}
 		if err = r.deleterGlobal.DeleteOneGlobal(ctx, conditions); err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting tenant with ID %s", childTenant)
 		}
 	}
 	return nil
@@ -700,11 +647,9 @@ func (r *pgRepository) GetParentsRecursivelyByExternalTenant(ctx context.Context
 
 	btms := r.multipleFromEntities(entityCollection)
 	for _, btm := range btms {
-		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
-		if err != nil {
+		if _, err = r.enrichWithParents(ctx, btm); err != nil {
 			return nil, err
 		}
-		btm.Parents = parents
 	}
 	return btms, nil
 }
@@ -752,11 +697,9 @@ func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx conte
 
 	btms := r.multipleFromEntities(entityCollection)
 	for _, btm := range btms {
-		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while listing parent tenants for tenant with ID %s", btm.ID)
+		if _, err = r.enrichWithParents(ctx, btm); err != nil {
+			return nil, err
 		}
-		btm.Parents = parents
 	}
 	return btms, nil
 }
@@ -780,11 +723,9 @@ func (r *pgRepository) ListByParentAndType(ctx context.Context, parentID string,
 
 	btms := r.multipleFromEntities(entityCollection)
 	for _, btm := range btms {
-		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while listing parent tenants for tenant with ID %s", btm.ID)
+		if _, err = r.enrichWithParents(ctx, btm); err != nil {
+			return nil, err
 		}
-		btm.Parents = parents
 	}
 	return btms, nil
 }
@@ -803,11 +744,9 @@ func (r *pgRepository) ListByIds(ctx context.Context, ids []string) ([]*model.Bu
 
 	btms := r.multipleFromEntities(entityCollection)
 	for _, btm := range btms {
-		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while listing parent tenants for tenant with ID %s", btm.ID)
+		if _, err := r.enrichWithParents(ctx, btm); err != nil {
+			return nil, err
 		}
-		btm.Parents = parents
 	}
 	return btms, nil
 }
@@ -826,11 +765,9 @@ func (r *pgRepository) ListByType(ctx context.Context, tenantType tenant.Type) (
 
 	btms := r.multipleFromEntities(entityCollection)
 	for _, btm := range btms {
-		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while listing parent tenants for tenant with ID %s", btm.ID)
+		if _, err := r.enrichWithParents(ctx, btm); err != nil {
+			return nil, err
 		}
-		btm.Parents = parents
 	}
 	return btms, nil
 }
@@ -850,11 +787,9 @@ func (r *pgRepository) ListByIdsAndType(ctx context.Context, ids []string, tenan
 
 	btms := r.multipleFromEntities(entityCollection)
 	for _, btm := range btms {
-		parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while listing parent tenants for tenant with ID %s", btm.ID)
+		if _, err := r.enrichWithParents(ctx, btm); err != nil {
+			return nil, err
 		}
-		btm.Parents = parents
 	}
 	return btms, nil
 }
@@ -868,4 +803,14 @@ func (r *pgRepository) multipleFromEntities(entities tenant.EntityCollection) []
 	}
 
 	return items
+}
+
+func (r *pgRepository) enrichWithParents(ctx context.Context, btm *model.BusinessTenantMapping) (*model.BusinessTenantMapping, error) {
+	parents, err := r.tenantParentRepo.ListParents(ctx, btm.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing parent tenants for tenant with ID %s", btm.ID)
+	}
+
+	btm.Parents = parents
+	return btm, nil
 }
