@@ -1457,6 +1457,7 @@ global:
         - "webhook:write"
         - "application_template:read"
         - "application_template:write"
+        - "application_template.webhooks:read"
         - "formation_template:read"
         - "formation_template:write"
         - "formation_template.webhooks:read"
