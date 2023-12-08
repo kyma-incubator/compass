@@ -313,10 +313,10 @@ func descriptionRules(docPolicyLevel, resourcePolicyLevel, resourceShortDescript
 	}
 }
 
-func optionalDescriptionRules(docPolicyLevel, resourcePolicyLevel, resourceShortDescription *string) []validation.Rule {
+func optionalDescriptionRules(docPolicyLevel, resourceShortDescription *string) []validation.Rule {
 	return []validation.Rule{
 		validation.NilOrNotEmpty,
-		validation.When(checkResourcePolicyLevel(docPolicyLevel, resourcePolicyLevel, PolicyLevelSap) && resourceShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(resourceShortDescription))),
+		validation.When(checkResourcePolicyLevel(docPolicyLevel, nil, PolicyLevelSap) && resourceShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(resourceShortDescription))),
 		validation.Length(MinDescriptionLength, MaxDescriptionLength),
 	}
 }
@@ -553,7 +553,7 @@ func validateBundleInput(bndl *model.BundleCreateInput, credentialExchangeStrate
 		validation.Field(&bndl.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
 		validation.Field(&bndl.Name, titleRules(docPolicyLevel, nil)...),
 		validation.Field(&bndl.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, nil, bndl.Name)...),
-		validation.Field(&bndl.Description, optionalDescriptionRules(docPolicyLevel, nil, bndl.ShortDescription)...),
+		validation.Field(&bndl.Description, optionalDescriptionRules(docPolicyLevel, bndl.ShortDescription)...),
 		validation.Field(&bndl.Version, validation.Match(regexp.MustCompile(common.SemVerRegex))),
 		validation.Field(&bndl.Links, validation.By(validateORDLinks)),
 		validation.Field(&bndl.Labels, validation.By(validateORDLabels)),
@@ -748,7 +748,7 @@ func validateCapabilityInput(capability *model.CapabilityInput, docPolicyLevel *
 	return validation.ValidateStruct(capability,
 		validation.Field(&capability.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
 		validation.Field(&capability.Name, titleRules(docPolicyLevel, nil)...),
-		validation.Field(&capability.Description, optionalDescriptionRules(docPolicyLevel, nil, capability.ShortDescription)...),
+		validation.Field(&capability.Description, optionalDescriptionRules(docPolicyLevel, capability.ShortDescription)...),
 		validation.Field(&capability.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(CapabilityOrdIDRegex))),
 		validation.Field(&capability.Type, validation.Required, validation.In(CapabilityTypeCustom, CapabilityTypeMDICapabilityV1), validation.When(capability.CustomType != nil, validation.In(CapabilityTypeCustom))),
 		validation.Field(&capability.CustomType, validation.When(capability.Type != CapabilityTypeCustom, validation.Empty), validation.Match(regexp.MustCompile(CapabilityCustomTypeRegex))),
@@ -787,7 +787,7 @@ func validateIntegrationDependencyInput(integrationDependency *model.Integration
 		validation.Field(&integrationDependency.CorrelationIDs, correlationIdsRules()...),
 		validation.Field(&integrationDependency.Title, titleRules(docPolicyLevel, nil)...),
 		validation.Field(&integrationDependency.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, nil, integrationDependency.Title)...),
-		validation.Field(&integrationDependency.Description, optionalDescriptionRules(docPolicyLevel, nil, integrationDependency.ShortDescription)...),
+		validation.Field(&integrationDependency.Description, optionalDescriptionRules(docPolicyLevel, integrationDependency.ShortDescription)...),
 		validation.Field(&integrationDependency.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
 		validation.Field(&integrationDependency.LastUpdate, validation.When(integrationDependency.LastUpdate != nil, validation.By(isValidDate))),
 		validation.Field(&integrationDependency.Visibility, validation.Required, validation.In(IntegrationDependencyVisibilityPublic, IntegrationDependencyVisibilityInternal, IntegrationDependencyVisibilityPrivate)),
@@ -824,7 +824,7 @@ func validateProductInput(product *model.ProductInput, docPolicyLevel *string) e
 		validation.Field(&product.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(ProductOrdIDRegex))),
 		validation.Field(&product.Title, titleRules(docPolicyLevel, nil)...),
 		validation.Field(&product.ShortDescription, shortDescriptionRules(docPolicyLevel, nil, product.Title)...),
-		validation.Field(&product.Description, optionalDescriptionRules(docPolicyLevel, nil, &product.ShortDescription)...),
+		validation.Field(&product.Description, optionalDescriptionRules(docPolicyLevel, &product.ShortDescription)...),
 		validation.Field(&product.Vendor, validation.Required,
 			validation.Match(regexp.MustCompile(VendorOrdIDRegex)),
 			validation.When(regexp.MustCompile(SAPProductOrdIDNamespaceRegex).MatchString(productOrdIDNamespace), validation.In(SapVendor)).Else(validation.NotIn(SapVendor)),
@@ -1670,7 +1670,6 @@ func validateEntityTypeMappings(value interface{}) error {
 				return errors.Wrap(err, "error while validating APIModelSelector")
 			}
 		}
-
 	}
 	return nil
 }
