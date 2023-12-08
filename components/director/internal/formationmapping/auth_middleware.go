@@ -363,6 +363,14 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 			return true, http.StatusOK, nil
 		}
 
+		if consumerType == consumer.InstanceCreator {
+			if err := tx.Commit(); err != nil {
+				return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")
+			}
+			log.C(ctx).Infof("The caller with ID: %s and type: %s is allowed to update formation assignments in tenants of type %s", consumerID, consumerType, tnt.Type)
+			return true, http.StatusOK, nil
+		}
+
 		app, err := a.appRepo.GetByID(ctx, fa.TenantID, fa.Target)
 		if err != nil {
 			return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting application with ID: %q", fa.Target)
@@ -376,14 +384,6 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 			}
 
 			log.C(ctx).Infof("The caller with ID: %q and type: %q manages the target of the formation assignment with ID: %q and type: %q that is being updated", consumerID, consumerType, fa.Target, fa.TargetType)
-			return true, http.StatusOK, nil
-		}
-
-		if consumerType == consumer.InstanceCreator {
-			if err := tx.Commit(); err != nil {
-				return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")
-			}
-			log.C(ctx).Infof("The caller with ID: %s and type: %s is allowed to update formation assignments in tenants of type %s", consumerID, consumerType, tnt.Type)
 			return true, http.StatusOK, nil
 		}
 

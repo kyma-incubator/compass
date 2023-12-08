@@ -66,6 +66,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 	// formation assignment fixtures with UNASSIGN operation
 	faWithSourceAppAndTargetRuntimeForUnassingOp := fixFormationAssignmentModelWithStateAndConfig(testFormationAssignmentID, testFormationID, internalTntID, faSourceID, faTargetID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, model.DeletingAssignmentState, testValidConfig)
 	faWithSourceAppAndTargetRuntimeForUnassingOpWithDeleteErrorState := fixFormationAssignmentModelWithStateAndConfig(testFormationAssignmentID, testFormationID, internalTntID, faSourceID, faTargetID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, model.DeletingAssignmentState, "")
+	faWithSourceAppAndTargetRuntimeForUnassingOpWithInstanceCreatorDeletingState := fixFormationAssignmentModelWithStateAndConfig(testFormationAssignmentID, testFormationID, internalTntID, faSourceID, faTargetID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, model.InstanceCreatorDeletingAssignmentState, "")
 
 	testFormationAssignmentsForObject := []*model.FormationAssignment{
 		{
@@ -83,6 +84,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 
 	initialNotificationReportWithConfig := fixNotificationStatusReportWithStateAndConfig(json.RawMessage(testValidConfig), string(model.InitialAssignmentState))
 	readyNotificationReportWithConfig := fixNotificationStatusReportWithStateAndConfig(json.RawMessage(testValidConfig), string(model.ReadyAssignmentState))
+	readyNotificationReportWithoutConfig := fixNotificationStatusReportWithStateAndConfig(nil, string(model.ReadyAssignmentState))
 	createErrorNotificationReport := fixNotificationStatusReportWithStateAndError(string(model.CreateErrorAssignmentState), configurationErr.Error())
 	deleteErrorNotificationReport := fixNotificationStatusReportWithStateAndError(string(model.DeleteErrorAssignmentState), configurationErr.Error())
 
@@ -905,6 +907,52 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusInternalServerError,
 			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
+		},
+		{
+			name:       "Success when formation assignment is in INSTANCE_CREATOR_DELETING state and consumer is not instance creator does not delete assignment",
+			transactFn: txGen.ThatSucceeds,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOpWithInstanceCreatorDeletingState, nil).Once()
+				return faSvc
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
+				return formationSvc
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				State: model.ReadyAssignmentState,
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusOK,
+		},
+		{
+			name:       "Success when formation assignment is in INSTANCE_CREATOR_DELETING state and consumer is instance creator should proceed with unassign",
+			transactFn: txGen.ThatSucceedsTwice,
+			context:    ctxWithInstanceCreatorConsumer,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOpWithInstanceCreatorDeletingState, nil).Once()
+				faSvc.On("ListFormationAssignmentsForObjectID", contextThatHasTenant(internalTntID), testFormationID, faSourceID).Return(testFormationAssignmentsForObject, nil).Once()
+				faSvc.On("ListFormationAssignmentsForObjectID", contextThatHasTenant(internalTntID), testFormationID, faTargetID).Return(testFormationAssignmentsForObject, nil).Once()
+				return faSvc
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
+				return formationSvc
+			},
+			faStatusSvcFn: func() *automock.FormationAssignmentStatusService {
+				faStatusSvc := &automock.FormationAssignmentStatusService{}
+				faStatusSvc.On("DeleteWithConstraints", contextThatHasTenant(internalTntID), testFormationAssignmentID, readyNotificationReportWithoutConfig).Return(nil).Once()
+				return faStatusSvc
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				State: model.ReadyAssignmentState,
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusOK,
 		},
 		{
 			name:       "Error when setting formation assignment state to error fail",
