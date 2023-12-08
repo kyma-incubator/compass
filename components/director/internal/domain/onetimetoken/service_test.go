@@ -92,7 +92,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		ID:             subaccountInternalID,
 		Name:           "subaccount",
 		ExternalTenant: subaccountExternalID,
-		Parents:         []string{gaInternalID},
+		Parents:        []string{gaInternalID},
 		Type:           tenantpkg.Subaccount,
 	}
 
@@ -100,7 +100,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		ID:             gaInternalID,
 		Name:           "ga",
 		ExternalTenant: gaExternalID,
-		Parents:         []string{},
+		Parents:        []string{},
 		Type:           tenantpkg.Account,
 	}
 

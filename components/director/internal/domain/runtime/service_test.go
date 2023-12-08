@@ -203,7 +203,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 		ID:             subaccountID,
 		Name:           "sa",
 		ExternalTenant: extSubaccountID,
-		Parents:         []string{tnt},
+		Parents:        []string{tnt},
 		Type:           "subaccount",
 		Provider:       "test",
 		Status:         "Active",
@@ -212,7 +212,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 	subaccountInput := func() model.BusinessTenantMappingInput {
 		return model.BusinessTenantMappingInput{
 			ExternalTenant: extSubaccountID,
-			Parents:         []string{tnt},
+			Parents:        []string{tnt},
 			Type:           "subaccount",
 			Provider:       "lazilyWhileRuntimeCreation",
 		}

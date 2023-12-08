@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"

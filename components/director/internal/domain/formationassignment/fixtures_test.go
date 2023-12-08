@@ -323,7 +323,7 @@ func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapp
 		ID:             TestTenantID,
 		Name:           "test-name",
 		ExternalTenant: TestTenantID,
-		Parents:         []string{TntParentID},
+		Parents:        []string{TntParentID},
 		Type:           t,
 		Provider:       "Compass",
 		Status:         tnt.Active,

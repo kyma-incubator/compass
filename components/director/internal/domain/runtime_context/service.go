@@ -137,7 +137,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 		return "", errors.Wrapf(err, "while getting tenant with id %s", rtmCtxTenant)
 	}
 
-	for _, parentTenantID := range tnt.Parents{
+	for _, parentTenantID := range tnt.Parents {
 		ctxWithParentTenant := tenant.SaveToContext(ctx, parentTenantID, "")
 		scenariosFromAssignments, err := s.formationService.GetScenariosFromMatchingASAs(ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext)
 		if err != nil {

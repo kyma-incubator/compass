@@ -3,8 +3,9 @@ package resync
 import (
 	"context"
 	"fmt"
-	"k8s.io/utils/strings/slices"
 	"time"
+
+	"k8s.io/utils/strings/slices"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"

@@ -3,10 +3,11 @@ package runtime
 import (
 	"context"
 	"fmt"
-	"k8s.io/utils/strings/slices"
 	"regexp"
 	"strings"
 	"time"
+
+	"k8s.io/utils/strings/slices"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 

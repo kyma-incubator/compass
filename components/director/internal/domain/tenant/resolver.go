@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -268,9 +269,9 @@ func (r *Resolver) sanitizeCRMIds(ctx context.Context, inputTenants []*graphql.B
 		sanitizedParentIDs := make([]string, 0, len(inputTenant.Parents))
 		for _, parentID := range inputTenant.Parents {
 			if parentID != nil {
-				if sanitizedParentID, ok := tenantIDToSanitizedTenantID[*parentID]; ok {// the parent tenant is part of the same batch of tenants - reuse the already sanitized parent ID
+				if sanitizedParentID, ok := tenantIDToSanitizedTenantID[*parentID]; ok { // the parent tenant is part of the same batch of tenants - reuse the already sanitized parent ID
 					sanitizedParentIDs = append(sanitizedParentIDs, sanitizedParentID)
-				}else{
+				} else {
 					// the parent tenant is not part of the same batch of tenants - get it from the DB
 					// !!!The parent ID could be either externalID or internal ID!!!
 					// if the parent is not found when getting tenant by ID then the provided id was internal

@@ -5,11 +5,12 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/stretchr/testify/mock"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -2686,7 +2687,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 				return db, dbMock
 			},
-			Input: newModelBusinessTenantMappingWithType(testID, testName, []string{testParent2External, testParent3External}, nil, tenantEntity.Account),
+			Input:                newModelBusinessTenantMappingWithType(testID, testName, []string{testParent2External, testParent3External}, nil, tenantEntity.Account),
 			ExpectedErrorMessage: fmt.Sprintf("while listing parent tenants by external IDs %v", []string{testParent2External, testParent3External}),
 		},
 		{
@@ -2729,7 +2730,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 				return db, dbMock
 			},
-			Input: newModelBusinessTenantMappingWithType(testID, testName, []string{testParent2External, testParent3External}, nil, tenantEntity.Account),
+			Input:                newModelBusinessTenantMappingWithType(testID, testName, []string{testParent2External, testParent3External}, nil, tenantEntity.Account),
 			ExpectedErrorMessage: fmt.Sprintf("while updating tenant with ID %s", testID),
 		},
 		{
@@ -2743,12 +2744,12 @@ func TestPgRepository_Update(t *testing.T) {
 
 				return db, dbMock
 			},
-			Input: newModelBusinessTenantMappingWithType(testID, testName, []string{testParent2External, testParent3External}, nil, tenantEntity.Account),
+			Input:                newModelBusinessTenantMappingWithType(testID, testName, []string{testParent2External, testParent3External}, nil, tenantEntity.Account),
 			ExpectedErrorMessage: fmt.Sprintf("while getting tenant with ID %s", testID),
 		},
 		{
-			Name: "Fail when model is empty",
-			Input: nil,
+			Name:                 "Fail when model is empty",
+			Input:                nil,
 			ExpectedErrorMessage: "model can not be empty",
 		},
 	}

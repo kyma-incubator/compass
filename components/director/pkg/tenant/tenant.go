@@ -18,8 +18,9 @@ package tenant
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"strings"
+
+	"github.com/google/uuid"
 
 	"github.com/google/uuid"
 
@@ -62,4 +63,3 @@ func TrimCustomerIDLeadingZeros(id string) string {
 
 	return strings.TrimLeft(id, "0")
 }
-

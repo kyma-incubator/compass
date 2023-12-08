@@ -2,10 +2,11 @@ package resync
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
-	"k8s.io/utils/strings/slices"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/avast/retry-go/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"

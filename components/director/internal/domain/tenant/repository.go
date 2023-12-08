@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantparentmapping"
-	"k8s.io/utils/strings/slices"
 	"math"
 	"strings"
 	"text/template"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantparentmapping"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
