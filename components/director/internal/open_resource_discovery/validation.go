@@ -746,7 +746,7 @@ func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *
 
 func validateCapabilityInput(capability *model.CapabilityInput, docPolicyLevel *string) error {
 	return validation.ValidateStruct(capability,
-		validation.Field(&capability.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
+		validation.Field(&capability.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
 		validation.Field(&capability.Name, titleRules(docPolicyLevel, nil)...),
 		validation.Field(&capability.Description, optionalDescriptionRules(docPolicyLevel, nil, capability.ShortDescription)...),
 		validation.Field(&capability.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(CapabilityOrdIDRegex))),
@@ -788,7 +788,7 @@ func validateIntegrationDependencyInput(integrationDependency *model.Integration
 		validation.Field(&integrationDependency.Title, titleRules(docPolicyLevel, nil)...),
 		validation.Field(&integrationDependency.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, nil, integrationDependency.Title)...),
 		validation.Field(&integrationDependency.Description, optionalDescriptionRules(docPolicyLevel, nil, integrationDependency.ShortDescription)...),
-		validation.Field(&integrationDependency.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
+		validation.Field(&integrationDependency.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
 		validation.Field(&integrationDependency.LastUpdate, validation.When(integrationDependency.LastUpdate != nil, validation.By(isValidDate))),
 		validation.Field(&integrationDependency.Visibility, validation.Required, validation.In(IntegrationDependencyVisibilityPublic, IntegrationDependencyVisibilityInternal, IntegrationDependencyVisibilityPrivate)),
 		validation.Field(&integrationDependency.ReleaseStatus, validation.Required, validation.In(common.ReleaseStatusBeta, common.ReleaseStatusActive, common.ReleaseStatusDeprecated)),
