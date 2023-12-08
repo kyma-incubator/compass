@@ -828,7 +828,8 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 	gaExternalTenant := "ga1"
 	subdomain1 := "ga1"
 	region := "local"
-	customerIDs := []string{"customerID1", "customerID2"}
+	customerIDs := []string{"0022b8c3-bfda-47b4-8d1b-4c717b9940a3", "000000customerID2"}
+	customerIDsTrimmed := []string{"0022b8c3-bfda-47b4-8d1b-4c717b9940a3", "customerID2"}
 
 	subaccountNames := []string{"sub1", "sub2"}
 	subaccountExternalTenants := []string{"sub1", "sub2"}
@@ -892,7 +893,7 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 
 		customerIDLabel, exists := subaccount2.Labels[customerIDLabelKey]
 		assert.True(t, exists)
-		assert.Equal(t, customerIDs[1], customerIDLabel)
+		assert.Equal(t, customerIDsTrimmed[1], customerIDLabel)
 
 		parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountParent)
 		if parent == nil {
