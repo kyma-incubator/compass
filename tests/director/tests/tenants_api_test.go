@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"k8s.io/utils/strings/slices"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -216,7 +217,7 @@ func TestWriteTenants(t *testing.T) {
 		{
 			Name:           customerName,
 			ExternalTenant: customerExternalTenant,
-			Parent:         nil,
+			Parents:        nil,
 			Subdomain:      &customerSubdomain,
 			Region:         &region,
 			Type:           string(tenant.Customer),
@@ -226,7 +227,7 @@ func TestWriteTenants(t *testing.T) {
 		{
 			Name:           customerName,
 			ExternalTenant: customerExternalTenantGUID,
-			Parent:         nil,
+			Parents:        nil,
 			Subdomain:      &customerSubdomain,
 			Region:         &region,
 			Type:           string(tenant.Customer),
@@ -236,7 +237,7 @@ func TestWriteTenants(t *testing.T) {
 		{
 			Name:           accountName,
 			ExternalTenant: accountExternalTenant,
-			Parent:         &customerExternalTenant,
+			Parents:        []*string{&customerExternalTenant},
 			Subdomain:      &accountSubdomain,
 			Region:         &region,
 			Type:           string(tenant.Account),
@@ -246,7 +247,7 @@ func TestWriteTenants(t *testing.T) {
 		{
 			Name:           orgName,
 			ExternalTenant: orgExternalTenant,
-			Parent:         &customerExternalTenant,
+			Parents:        []*string{&customerExternalTenant},
 			Subdomain:      &orgSubdomain,
 			Region:         &region,
 			Type:           string(tenant.Organization),
@@ -291,7 +292,7 @@ func TestWriteTenants(t *testing.T) {
 	require.Equal(t, accountExternalTenant, actualAccountTenant.ID)
 	require.Equal(t, accountName, *actualAccountTenant.Name)
 	require.Equal(t, string(tenant.Account), actualAccountTenant.Type)
-	require.Equal(t, actualCustomer1Tenant.InternalID, actualAccountTenant.ParentID)
+	require.True(t, slices.Contains(actualAccountTenant.Parents, actualCustomer1Tenant.InternalID))
 
 	var actualOrgenant graphql.Tenant
 	getTenant = fixtures.FixTenantRequest(orgExternalTenant)
@@ -302,5 +303,5 @@ func TestWriteTenants(t *testing.T) {
 	require.Equal(t, orgExternalTenant, actualOrgenant.ID)
 	require.Equal(t, orgName, *actualOrgenant.Name)
 	require.Equal(t, string(tenant.Organization), actualOrgenant.Type)
-	require.Equal(t, actualCustomer1Tenant.InternalID, actualOrgenant.ParentID)
+	require.True(t, slices.Contains(actualOrgenant.Parents, actualCustomer1Tenant.InternalID))
 }
