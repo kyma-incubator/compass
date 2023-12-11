@@ -21,7 +21,6 @@ type Client interface {
 	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetTenantByInternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetTenantByLowestOwnerForResource(ctx context.Context, resourceID, resourceType string) (string, error)
-	//GetRootTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetSystemAuthByID(ctx context.Context, authID string) (*model.SystemAuth, error)
 	GetSystemAuthByToken(ctx context.Context, token string) (*model.SystemAuth, error)
 	UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAuth) (UpdateAuthResult, error)
@@ -112,19 +111,6 @@ func (c *client) GetTenantByLowestOwnerForResource(ctx context.Context, resource
 
 	return response.Result, nil
 }
-
-// TODO remove
-//func (c *client) GetRootTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error) {
-//	query := GetRootTenantByExternalIDQuery(tenantID)
-//	var response TenantResponse
-//
-//	err := c.execute(ctx, c.gqlClient, query, &response)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return response.Result, nil
-//}
 
 func (c *client) GetSystemAuthByID(ctx context.Context, authID string) (*model.SystemAuth, error) {
 	query := SystemAuthQuery(authID)

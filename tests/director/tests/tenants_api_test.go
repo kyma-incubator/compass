@@ -149,7 +149,7 @@ func TestQueryRootTenants(t *testing.T) {
 
 	// assert the top parent for subaccount 1
 	var actualRootTenantsForSubaccount1 []graphql.Tenant
-	getRootTenant := fixtures.FixRootTenantsRequest(subaccountExternalTenants[0]) // TODO fixme
+	getRootTenant := fixtures.FixRootTenantsRequest(subaccountExternalTenants[0])
 	t.Logf("Query root tenants for external tenant: %q", subaccountExternalTenants[0])
 
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantsForSubaccount1)

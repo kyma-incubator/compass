@@ -130,7 +130,6 @@ var tenantAccessTable = map[Type]string{
 	RuntimeContext: "tenant_runtime_contexts",
 
 	// Views
-	// TODO regenerate all views
 	Label:                      "labels_tenants",
 	ApplicationLabel:           "application_labels_tenants",
 	RuntimeLabel:               "runtime_labels_tenants",

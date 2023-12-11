@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/gqlclient"
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/types/credentials"
