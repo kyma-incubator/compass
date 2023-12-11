@@ -86,7 +86,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			},
 			InputResource:              resource.Application,
 			InputResourceID:            appID,
-			InputPackagesFromDB:        fixEmptyPackages(),
+			InputPackagesFromDB:        fixPackages(),
 			CapabilityInput:            fixCapabilityInputs,
 			InputResourceHashes:        resourceHashes,
 			ExpectedCapabilityOutput:   fixCapabilities,
@@ -101,7 +101,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilitiesNoNewerLastUpdate(), nil).Once()
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities, nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, nilString, *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -221,7 +221,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities, nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, *fixCapabilityInputs[0], emptyHash).Return(testErr).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, nilString, *fixCapabilityInputs[0], emptyHash).Return(testErr).Once()
 				return capabilitySvc
 			},
 			InputResource:       resource.Application,
@@ -295,7 +295,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities, nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, nilString, *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -322,7 +322,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilitiesNoNewerLastUpdate(), nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, nilString, *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -350,7 +350,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixCapabilitiesNoNewerLastUpdate(), nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, fixCapabilities[0].ID, *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, fixCapabilities[0].ID, nilString, *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
