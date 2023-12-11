@@ -53,7 +53,7 @@ type CapabilityInput struct {
 	OrdID                 *string                 `json:"ordId"`
 	Type                  string                  `json:"type"`
 	CustomType            *string                 `json:"customType"`
-	LocalTenantID         *string                 `json:"localTenantId"`
+	LocalTenantID         *string                 `json:"localId"`
 	ShortDescription      *string                 `json:"shortDescription"`
 	SystemInstanceAware   *bool                   `json:"systemInstanceAware"`
 	Tags                  json.RawMessage         `json:"tags"`

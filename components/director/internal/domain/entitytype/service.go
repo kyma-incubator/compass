@@ -68,7 +68,7 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 		return errors.Wrapf(err, "while getting Entity Type with id %s", id)
 	}
 
-	entityType.SetFromUpdateInput(in, entityTypeHash)
+	entityType.SetFromUpdateInput(in, entityType.PackageID, entityTypeHash)
 
 	if err = s.updateEntityType(ctx, entityType, resourceType); err != nil {
 		return errors.Wrapf(err, "while updating Entity Type with id %s", id)

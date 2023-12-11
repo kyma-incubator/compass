@@ -160,7 +160,11 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 
 	webhooks := make([]*model.Webhook, 0, len(in.Webhooks))
 	for _, item := range in.Webhooks {
-		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), appTemplateID, model.ApplicationTemplateWebhookReference))
+		id := item.ID
+		if id == "" {
+			id = s.uidService.Generate()
+		}
+		webhooks = append(webhooks, item.ToWebhook(id, appTemplateID, model.ApplicationTemplateWebhookReference))
 	}
 	if err = s.webhookRepo.CreateMany(ctx, "", webhooks); err != nil {
 		return "", errors.Wrapf(err, "while creating Webhooks for applicationTemplate")

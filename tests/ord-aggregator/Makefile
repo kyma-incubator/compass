@@ -15,7 +15,8 @@ e2e-test:
 	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh ord-aggregator
 
 e2e-test-clean:
-	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
+	kubectl config use-context k3d-kyma
+	kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
 
 sandbox-test:
 	@../sandbox.sh ord-aggregator
@@ -29,6 +30,7 @@ sandbox-deploy-test:
 	rm ./ord-aggregator.test
 
 sandbox-test-clean:
+	kubectl config use-context k3d-kyma
 	@kubectl delete testdefinitions.testing.kyma-project.io -n kyma-system compass-e2e-ord-aggregator-local || true
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
 
