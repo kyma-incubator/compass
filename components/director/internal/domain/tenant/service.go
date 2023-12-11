@@ -46,7 +46,6 @@ type TenantMappingRepository interface {
 	ListByType(ctx context.Context, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
 	ListByIds(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
 	ListByIdsAndType(ctx context.Context, ids []string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
-	//GetTenantParentIDsRecursively(ctx context.Context, tenantID string) (string, error)
 	GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error)
 }
 
