@@ -601,11 +601,6 @@ func (fan *formationAssignmentNotificationService) extractCustomerTenantContext(
 		return nil, err
 	}
 
-	customerID, err := fan.tenantRepository.GetCustomerIDParentRecursively(ctx, internalTenantID)
-	if err != nil {
-		return nil, err
-	}
-
 	var accountID *string
 	var path *string
 	if tenantObject.Type == tenant.Account {
@@ -614,10 +609,30 @@ func (fan *formationAssignmentNotificationService) extractCustomerTenantContext(
 		path = &tenantObject.ExternalTenant
 	}
 
+	tenantParents, err := fan.tenantRepository.GetParentsRecursivelyByExternalTenant(ctx, tenantObject.ExternalTenant)
+	if err != nil {
+		return nil, err
+	}
+
+	var customerID string
+	var costObjectID string
+	for _, parent := range tenantParents {
+		if parent.Type == tenant.Customer {
+			customerID = parent.ExternalTenant
+		} else if parent.Type == tenant.CostObject {
+			costObjectID = parent.ExternalTenant
+		}
+	}
+
+	if customerID == "" && costObjectID == "" {
+		return nil, errors.New("Either customer ID or cost object ID should be present")
+	}
+
 	return &webhook.CustomerTenantContext{
-		CustomerID: customerID,
-		AccountID:  accountID,
-		Path:       path,
+		CustomerID:   customerID,
+		CostObjectID: costObjectID,
+		AccountID:    accountID,
+		Path:         path,
 	}, nil
 }
 

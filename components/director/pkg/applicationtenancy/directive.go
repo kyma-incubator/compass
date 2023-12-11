@@ -22,7 +22,6 @@ type BusinessTenantMappingService interface {
 	CreateTenantAccessForResource(ctx context.Context, tenantAccess *model.TenantAccess) error
 	ListByParentAndType(ctx context.Context, parentID string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
 	ListByIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
-	GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error)
 	GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error)
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }

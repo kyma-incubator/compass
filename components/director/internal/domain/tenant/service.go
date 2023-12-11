@@ -46,7 +46,7 @@ type TenantMappingRepository interface {
 	ListByType(ctx context.Context, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
 	ListByIds(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
 	ListByIdsAndType(ctx context.Context, ids []string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
-	GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error)
+	//GetTenantParentIDsRecursively(ctx context.Context, tenantID string) (string, error)
 	GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error)
 }
 
@@ -216,11 +216,6 @@ func (s *service) Update(ctx context.Context, id string, tenantInput model.Busin
 	}
 
 	return nil
-}
-
-// GetCustomerIDParentRecursively gets the top parent external ID (customer_id) for a given tenant
-func (s *service) GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error) {
-	return s.tenantMappingRepo.GetCustomerIDParentRecursively(ctx, tenantID)
 }
 
 // GetParentsRecursivelyByExternalTenant gets the top parents for a given external tenant

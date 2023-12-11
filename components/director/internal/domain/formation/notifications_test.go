@@ -47,7 +47,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetTenantParentIDsRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -84,7 +84,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(rgTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetTenantParentIDsRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -121,7 +121,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetTenantParentIDsRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -148,7 +148,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetTenantParentIDsRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -170,7 +170,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetTenantParentIDsRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -207,7 +207,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetTenantParentIDsRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -234,7 +234,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetTenantParentIDsRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -256,7 +256,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetTenantParentIDsRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -301,7 +301,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetTenantParentIDsRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -334,7 +334,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetTenantParentIDsRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -361,7 +361,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetTenantParentIDsRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -382,7 +382,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return("", testErr)
+				repo.On("GetTenantParentIDsRecursively", ctx, inputFormation.TenantID).Return("", testErr)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -409,7 +409,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetTenantParentIDsRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeTenant,
@@ -469,7 +469,7 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 			tenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("Get", ctx, TntInternalID).Return(gaTenantObject, nil).Once()
-				tenantRepo.On("GetCustomerIDParentRecursively", ctx, TntInternalID).Return(TntCustomerID, nil).Once()
+				tenantRepo.On("GetTenantParentIDsRecursively", ctx, TntInternalID).Return(TntCustomerID, nil).Once()
 				return tenantRepo
 			},
 			notificationsGeneratorFn: func() *automock.NotificationsGenerator {
@@ -493,7 +493,7 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 			tenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("Get", ctx, TntInternalID).Return(gaTenantObject, nil).Once()
-				tenantRepo.On("GetCustomerIDParentRecursively", ctx, TntInternalID).Return(TntCustomerID, nil).Once()
+				tenantRepo.On("GetTenantParentIDsRecursively", ctx, TntInternalID).Return(TntCustomerID, nil).Once()
 				return tenantRepo
 			},
 			notificationsGeneratorFn: func() *automock.NotificationsGenerator {

@@ -52,7 +52,7 @@ const (
 			DELETE FROM %s WHERE %s AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)`
 
 	// DeleteTenantAccessGrantedByParentQuery is a delete SQL query that deletes tenant accesses based on given tenant id and source.
-	DeleteTenantAccessGrantedByParentQuery = `DELETE FROM %s WHERE tenant_id = %s AND source = %s`
+	DeleteTenantAccessGrantedByParentQuery = `DELETE FROM %s WHERE tenant_id = ? AND source = ?`
 )
 
 // M2MColumns are the column names of the tenant access tables / views.
@@ -159,10 +159,11 @@ func DeleteTenantAccessFromParent(ctx context.Context, m2mTable string, childTen
 		return err
 	}
 
-	deleteTenantAccessStmt := fmt.Sprintf(DeleteTenantAccessGrantedByParentQuery, m2mTable, childTenantID, parentTenantID)
+	deleteTenantAccessStmt := fmt.Sprintf(DeleteTenantAccessGrantedByParentQuery, m2mTable)
+	deleteTenantAccessStmt = sqlx.Rebind(sqlx.DOLLAR, deleteTenantAccessStmt)
 
 	log.C(ctx).Debugf("Executing DB query: %s", deleteTenantAccessStmt)
-	_, err = persist.ExecContext(ctx, deleteTenantAccessStmt)
+	_, err = persist.ExecContext(ctx, deleteTenantAccessStmt, childTenantID, parentTenantID)
 
 	return persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Delete, "while deleting tenant access records for tenant with ID %s granted by parent with ID %s from '%s' table", childTenantID, parentTenantID, m2mTable)
 }

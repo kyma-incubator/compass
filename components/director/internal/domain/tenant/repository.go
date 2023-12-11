@@ -580,45 +580,6 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
 	return dest.TenantID, nil
 }
 
-// GetCustomerIDParentRecursively gets the top parent external ID (customer_id) for a given tenant ID (internal id)
-func (r *pgRepository) GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error) {
-	recursiveQuery := `WITH RECURSIVE parents AS
-                   (SELECT t1.id, t1.external_tenant, t1.type, tp1.parent_id
-                    FROM business_tenant_mappings t1 JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
-                    WHERE id = $1
-                    UNION ALL
-                    SELECT t2.id, t2.external_tenant, t2.type, tp2.parent_id
-                    FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
-                                                     INNER JOIN parents p on p.parent_id = t2.id)
-			SELECT external_tenant, type FROM parents WHERE parent_id is NULL AND type='customer'`
-
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	log.C(ctx).Debugf("Executing DB query: %s", recursiveQuery)
-
-	dest := struct {
-		ExternalCustomerTenant string `db:"external_tenant"`
-		Type                   string `db:"type"`
-	}{}
-
-	if err := persist.GetContext(ctx, &dest, recursiveQuery, tenantID); err != nil {
-		err = persistence.MapSQLError(ctx, err, resource.Tenant, resource.Get, "while getting parent external customer ID for internal tenant: %q", tenantID)
-		if apperrors.IsNotFoundError(err) {
-			return "", nil
-		}
-		return "", err
-	}
-
-	if dest.ExternalCustomerTenant == "" {
-		return "", errors.Errorf("external parent customer ID for internal tenant ID: %s can not be empty", tenantID)
-	}
-
-	return dest.ExternalCustomerTenant, nil
-}
-
 // GetParentsRecursivelyByExternalTenant gets the top parent for a given external tenant
 func (r *pgRepository) GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error) {
 	recursiveQuery := `WITH RECURSIVE parents AS
