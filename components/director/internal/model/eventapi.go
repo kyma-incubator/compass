@@ -78,7 +78,7 @@ type EventDefinitionInput struct {
 	Description                             *string                       `json:"description"`
 	Group                                   *string                       `json:",omitempty"`
 	OrdID                                   *string                       `json:"ordId"`
-	LocalTenantID                           *string                       `json:"localTenantId"`
+	LocalTenantID                           *string                       `json:"localId"`
 	ShortDescription                        *string                       `json:"shortDescription"`
 	SystemInstanceAware                     *bool                         `json:"systemInstanceAware"`
 	PolicyLevel                             *string                       `json:"policyLevel"`

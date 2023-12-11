@@ -375,7 +375,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 			if err := validateBundleInputWithSuppressedErrors(bndl, resourcesFromDB.Bundles, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
 			}
-			if err := validateBundleInput(bndl, credentialExchangeStrategyTenantMappings); err != nil {
+			if err := validateBundleInput(bndl, credentialExchangeStrategyTenantMappings, doc.PolicyLevel); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
 				invalidBundlesIndices = append(invalidBundlesIndices, i)
 				continue
@@ -389,7 +389,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, product := range doc.Products {
-			if err := validateProductInput(product); err != nil {
+			if err := validateProductInput(product, doc.PolicyLevel); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating product with ord id %q", product.OrdID))
 				invalidProductsIndices = append(invalidProductsIndices, i)
 				continue
@@ -457,7 +457,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 			if err := validateCapabilityInputWithSuppressedErrors(capability, resourcesFromDB.Capabilities, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating capability with ord id %q", stringPtrToString(capability.OrdID)))
 			}
-			if err := validateCapabilityInput(capability); err != nil {
+			if err := validateCapabilityInput(capability, doc.PolicyLevel); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating capability with ord id %q", stringPtrToString(capability.OrdID)))
 				invalidCapabilitiesIndices = append(invalidCapabilitiesIndices, i)
 				continue
@@ -488,7 +488,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, vendor := range doc.Vendors {
-			if err := validateVendorInput(vendor); err != nil {
+			if err := validateVendorInput(vendor, doc.PolicyLevel); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating vendor with ord id %q", vendor.OrdID))
 				invalidVendorsIndices = append(invalidVendorsIndices, i)
 				continue

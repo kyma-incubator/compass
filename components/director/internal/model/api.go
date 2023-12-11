@@ -76,7 +76,7 @@ type APIDefinitionInput struct {
 	TargetURLs                              json.RawMessage               `json:"entryPoints"`
 	Group                                   *string                       `json:",omitempty"` //  group allows you to find the same API but in different version
 	OrdID                                   *string                       `json:"ordId"`
-	LocalTenantID                           *string                       `json:"localTenantId"`
+	LocalTenantID                           *string                       `json:"localId"`
 	ShortDescription                        *string                       `json:"shortDescription"`
 	SystemInstanceAware                     *bool                         `json:"systemInstanceAware"`
 	PolicyLevel                             *string                       `json:"policyLevel"`
