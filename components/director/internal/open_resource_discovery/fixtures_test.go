@@ -513,11 +513,11 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		ConsumptionBundles: []*model.BundleCreateInput{
 			{
 				Name:                         "BUNDLE TITLE",
-				Description:                  str.Ptr("lorem ipsum dolor nsq sme"),
+				Description:                  str.Ptr("Bundle description"),
 				Version:                      str.Ptr("1.1.2"),
 				OrdID:                        str.Ptr(bundleORDID),
 				LocalTenantID:                str.Ptr(localTenantID),
-				ShortDescription:             str.Ptr("lorem ipsum"),
+				ShortDescription:             str.Ptr("Short description for bundle"),
 				Links:                        json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				Tags:                         json.RawMessage(tags),
 				Labels:                       json.RawMessage(labels),
