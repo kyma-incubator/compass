@@ -40,6 +40,8 @@ const (
 	TestWebhookID           = "eca98d44-aac0-4e44-898b-c394beab2e94"
 	TestReverseWebhookID    = "aecec253-b4d8-416a-be5c-a27677ee5157"
 	TntParentID             = "2d11035a-72e4-4a78-9025-bbcb1f87760b"
+	TntParentIDExternal              = "934fe388-982d-11ee-b9d1-0242ac120002"
+	testProvider    = "Compass"
 )
 
 var (
@@ -59,6 +61,9 @@ var (
 
 	appSubtype = "app-subtype"
 	rtmSubtype = "rtm-subtype"
+	customerParentTenantResponse = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.Customer)}
+	costObjectParentTenantResponse = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.CostObject)}
+	accountParentTenantResponse = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.Account)}
 )
 
 func fixFormationAssignmentGQLModel(configValue *string) *graphql.FormationAssignment {
@@ -878,4 +883,17 @@ func fixNotificationStatusReportWithStateAndConfig(configuration json.RawMessage
 
 func fixNotificationStatusReportWithStateAndError(state, errorMessage string) *statusreport.NotificationStatusReport {
 	return statusreport.NewNotificationStatusReport(nil, state, errorMessage)
+}
+
+
+func fixParentTenant(id, externalID string, t tnt.Type) *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             id,
+		Name:           "test-name",
+		ExternalTenant: externalID,
+		Parents:        []string{},
+		Type:           t,
+		Provider:       testProvider,
+		Status:         tnt.Active,
+	}
 }
