@@ -1,6 +1,7 @@
 package aspect_test
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -15,7 +16,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		aspectModel := fixAspectModel(aspectID)
 		require.NotNil(t, aspectModel)
-		conv := aspect.NewConverter()
+		conv := aspect.NewConverter(aspecteventresource.NewConverter())
 
 		entity := conv.ToEntity(aspectModel)
 
@@ -23,7 +24,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 	})
 
 	t.Run("Returns nil if aspect model is nil", func(t *testing.T) {
-		conv := aspect.NewConverter()
+		conv := aspect.NewConverter(nil)
 
 		aspectEntity := conv.ToEntity(nil)
 
@@ -34,7 +35,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		entity := fixEntityAspect(aspectID, appID, integrationDependencyID)
-		conv := aspect.NewConverter()
+		conv := aspect.NewConverter(aspecteventresource.NewConverter())
 
 		aspectModel := conv.FromEntity(entity)
 
@@ -42,7 +43,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 	})
 
 	t.Run("Returns nil if Entity is nil", func(t *testing.T) {
-		conv := aspect.NewConverter()
+		conv := aspect.NewConverter(nil)
 
 		aspectModel := conv.FromEntity(nil)
 
@@ -56,29 +57,30 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	gqlAspect := fixGQLAspect(aspectID)
 
 	testCases := []struct {
-		Name     string
-		Input    *model.Aspect
-		Expected *graphql.Aspect
+		Name                      string
+		InputAspect               *model.Aspect
+		InputAspectEventResources []*model.AspectEventResource
+		Expected                  *graphql.Aspect
 	}{
 		{
-			Name:     "All properties given",
-			Input:    modelAspect,
-			Expected: gqlAspect,
+			Name:        "All properties given",
+			InputAspect: modelAspect,
+			Expected:    gqlAspect,
 		},
 		{
-			Name:     "Nil",
-			Input:    nil,
-			Expected: nil,
+			Name:        "Nil",
+			InputAspect: nil,
+			Expected:    nil,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVE
-			converter := aspect.NewConverter()
+			converter := aspect.NewConverter(aspecteventresource.NewConverter())
 
 			// WHEN
-			res, err := converter.ToGraphQL(testCase.Input)
+			res, err := converter.ToGraphQL(testCase.InputAspect, testCase.InputAspectEventResources)
 
 			// THEN
 			assert.NoError(t, err)
@@ -100,8 +102,8 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	expected := []*graphql.Aspect{gqlAspect1, gqlAspect2}
 
 	// WHEN
-	converter := aspect.NewConverter()
-	res, err := converter.MultipleToGraphQL(inputAspects)
+	converter := aspect.NewConverter(aspecteventresource.NewConverter())
+	res, err := converter.MultipleToGraphQL(inputAspects, map[string][]*model.AspectEventResource{})
 	assert.NoError(t, err)
 
 	// then
@@ -135,7 +137,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVE
-			converter := aspect.NewConverter()
+			converter := aspect.NewConverter(aspecteventresource.NewConverter())
 
 			// WHEN
 			res, err := converter.InputFromGraphQL(testCase.Input)
@@ -178,7 +180,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
-			converter := aspect.NewConverter()
+			converter := aspect.NewConverter(aspecteventresource.NewConverter())
 
 			// WHEN
 			res, err := converter.MultipleInputFromGraphQL(testCase.Input)

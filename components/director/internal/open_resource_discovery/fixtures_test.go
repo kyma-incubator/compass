@@ -931,7 +931,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						Mandatory:                &mandatoryTrue,
 						SupportMultipleProviders: &mandatoryTrue,
 						APIResources:             json.RawMessage("[]"),
-						EventResources:           json.RawMessage("[]"),
+						EventResources:           []*model.AspectEventResourceInput{},
 					},
 				},
 				ReleaseStatus:       str.Ptr("active"),

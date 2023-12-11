@@ -2,6 +2,7 @@ package integrationdependency_test
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspect"
@@ -19,7 +20,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		integrationDependencyModel := fixIntegrationDependencyModel(integrationDependencyID)
 		require.NotNil(t, integrationDependencyModel)
-		conv := integrationdependency.NewConverter(version.NewConverter(), aspect.NewConverter())
+		conv := integrationdependency.NewConverter(version.NewConverter(), aspect.NewConverter(aspecteventresource.NewConverter()))
 
 		entity := conv.ToEntity(integrationDependencyModel)
 
@@ -27,7 +28,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 	})
 
 	t.Run("Returns nil if integration dependency model is nil", func(t *testing.T) {
-		conv := integrationdependency.NewConverter(version.NewConverter(), aspect.NewConverter())
+		conv := integrationdependency.NewConverter(version.NewConverter(), aspect.NewConverter(aspecteventresource.NewConverter()))
 
 		integrationDependencyEntity := conv.ToEntity(nil)
 
@@ -38,7 +39,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		entity := fixIntegrationDependencyEntity(integrationDependencyID, appID)
-		conv := integrationdependency.NewConverter(version.NewConverter(), aspect.NewConverter())
+		conv := integrationdependency.NewConverter(version.NewConverter(), aspect.NewConverter(aspecteventresource.NewConverter()))
 
 		integrationDependencyModel := conv.FromEntity(entity)
 
@@ -46,7 +47,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 	})
 
 	t.Run("Returns nil if Entity is nil", func(t *testing.T) {
-		conv := integrationdependency.NewConverter(version.NewConverter(), aspect.NewConverter())
+		conv := integrationdependency.NewConverter(version.NewConverter(), aspect.NewConverter(aspecteventresource.NewConverter()))
 
 		integrationDependencyModel := conv.FromEntity(nil)
 
@@ -79,10 +80,10 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVE
-			converter := integrationdependency.NewConverter(version.NewConverter(), aspect.NewConverter())
+			converter := integrationdependency.NewConverter(version.NewConverter(), aspect.NewConverter(aspecteventresource.NewConverter()))
 
 			// WHEN
-			res, err := converter.ToGraphQL(testCase.Input, []*model.Aspect{})
+			res, err := converter.ToGraphQL(testCase.Input, []*model.Aspect{}, map[string][]*model.AspectEventResource{})
 
 			// THEN
 			assert.NoError(t, err)
@@ -108,7 +109,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 				Description:    str.Ptr(description),
 				Mandatory:      &mandatory,
 				APIResources:   json.RawMessage("[]"),
-				EventResources: json.RawMessage("[]"),
+				EventResources: []*model.AspectEventResourceInput{},
 			},
 		},
 	}
@@ -133,7 +134,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVE
-			converter := integrationdependency.NewConverter(version.NewConverter(), aspect.NewConverter())
+			converter := integrationdependency.NewConverter(version.NewConverter(), aspect.NewConverter(aspecteventresource.NewConverter()))
 
 			// WHEN
 			res, err := converter.InputFromGraphQL(testCase.Input)

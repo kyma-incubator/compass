@@ -3,6 +3,7 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -68,7 +69,7 @@ func ValidateAspectAPIResources(value interface{}) error {
 
 // ValidateAspectEventResourceSubset validates the Aspect Event Resource Subset fields
 func ValidateAspectEventResourceSubset(value interface{}) error {
-	if value == nil {
+	if value == nil || reflect.ValueOf(value).IsNil() {
 		return nil
 	}
 
