@@ -112,7 +112,7 @@ func (ep *EntityTypeProcessor) resyncEntityType(ctx context.Context, resourceTyp
 			return err
 		}
 	} else {
-		err := ep.entityTypeSvc.Update(ctx, resourceType, resourceID, packageID, entityType, entityTypeHash)
+		err := ep.entityTypeSvc.Update(ctx, resourceType, entityTypesFromDB[i].ID, packageID, entityType, entityTypeHash)
 		if err != nil {
 			return err
 		}
