@@ -106,13 +106,13 @@ func (_m *EntityTypeService) ListByApplicationTemplateVersionID(ctx context.Cont
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, resourceType, id, in, entityTypeHash
-func (_m *EntityTypeService) Update(ctx context.Context, resourceType resource.Type, id string, in model.EntityTypeInput, entityTypeHash uint64) error {
-	ret := _m.Called(ctx, resourceType, id, in, entityTypeHash)
+// Update provides a mock function with given fields: ctx, resourceType, id, packageID, in, entityTypeHash
+func (_m *EntityTypeService) Update(ctx context.Context, resourceType resource.Type, id string, packageID string, in model.EntityTypeInput, entityTypeHash uint64) error {
+	ret := _m.Called(ctx, resourceType, id, packageID, in, entityTypeHash)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.EntityTypeInput, uint64) error); ok {
-		r0 = rf(ctx, resourceType, id, in, entityTypeHash)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.EntityTypeInput, uint64) error); ok {
+		r0 = rf(ctx, resourceType, id, packageID, in, entityTypeHash)
 	} else {
 		r0 = ret.Error(0)
 	}

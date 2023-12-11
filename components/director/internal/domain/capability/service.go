@@ -109,14 +109,14 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 }
 
 // Update updates a Capability.
-func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.CapabilityInput, capabilityHash uint64) error {
+func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, packageID *string, in model.CapabilityInput, capabilityHash uint64) error {
 	capability, err := s.getCapability(ctx, id, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Capability with ID %s for %s", id, resourceType)
 	}
 
 	resourceID := getParentResourceID(capability)
-	capability = in.ToCapability(id, resourceType, resourceID, capability.PackageID, capabilityHash)
+	capability = in.ToCapability(id, resourceType, resourceID, packageID, capabilityHash)
 
 	err = s.updateCapability(ctx, capability, resourceType)
 	if err != nil {

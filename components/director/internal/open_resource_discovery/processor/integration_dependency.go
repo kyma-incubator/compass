@@ -17,7 +17,7 @@ type IntegrationDependencyService interface {
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.IntegrationDependency, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.IntegrationDependency, error)
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) (string, error)
-	Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) error
+	Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, packageID *string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) error
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
 }
 
@@ -129,7 +129,7 @@ func (id *IntegrationDependencyProcessor) resyncIntegrationDependency(ctx contex
 		return nil
 	}
 
-	err := id.integrationDependencySvc.Update(ctx, resourceType, resourceID, integrationDependenciesFromDB[i].ID, integrationDependency, integrationDependencyHash)
+	err := id.integrationDependencySvc.Update(ctx, resourceType, resourceID, integrationDependenciesFromDB[i].ID, packageID, integrationDependency, integrationDependencyHash)
 	if err != nil {
 		return err
 	}

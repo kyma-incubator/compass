@@ -216,18 +216,18 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 
 // Update updates an APIDefinition. This function is used in the graphQL flow.
 func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error {
-	return s.UpdateInManyBundles(ctx, resourceType, id, "", in, specIn, nil, nil, nil, 0, "")
+	return s.UpdateInManyBundles(ctx, resourceType, id, nil, in, specIn, nil, nil, nil, 0, "")
 }
 
 // UpdateInManyBundles updates APIDefinition/s. This function is used both in the ORD scenario and is re-used in Update but with "null" ORD specific arguments.
-func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, packageID string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64, defaultBundleID string) error {
+func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, packageID *string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64, defaultBundleID string) error {
 	api, err := s.getAPI(ctx, id, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while getting API with ID %s for %s", id, resourceType)
 	}
 
 	resourceID := getParentResourceID(api)
-	api = in.ToAPIDefinition(id, resourceType, resourceID, &packageID, apiHash)
+	api = in.ToAPIDefinition(id, resourceType, resourceID, packageID, apiHash)
 
 	err = s.updateAPI(ctx, api, resourceType)
 	if err != nil {

@@ -74,7 +74,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities, nil).Twice()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID), *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {

@@ -126,10 +126,13 @@ func TestService_Create(t *testing.T) {
 func TestService_Update(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), tenantID, externalTenantID)
+	packageUUID := "09d05bcb-5819-4790-ad67-399d6a3da940"
+
 	testCases := []struct {
 		Name                        string
 		InputResourceType           resource.Type
 		InputID                     string
+		InputPackageID              *string
 		IntegrationDependencyInput  model.IntegrationDependencyInput
 		IntegrationDependencyRepoFn func() *automock.IntegrationDependencyRepository
 		ExpectedError               error
@@ -219,9 +222,9 @@ func TestService_Update(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			integrationDependencyRepo := testCase.IntegrationDependencyRepoFn()
 			svc := integrationdependency.NewService(integrationDependencyRepo, nil)
-
+			testCase.InputPackageID = &packageUUID
 			// WHEN
-			err := svc.Update(ctx, testCase.InputResourceType, testCase.InputID, integrationDependencyID, testCase.IntegrationDependencyInput, 123)
+			err := svc.Update(ctx, testCase.InputResourceType, testCase.InputID, integrationDependencyID, testCase.InputPackageID, testCase.IntegrationDependencyInput, 123)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -237,7 +240,7 @@ func TestService_Update(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := integrationdependency.NewService(nil, uid.NewService())
 		// WHEN
-		err := svc.Update(context.TODO(), "", "", "", model.IntegrationDependencyInput{}, 123)
+		err := svc.Update(context.TODO(), "", "", "", nil, model.IntegrationDependencyInput{}, 123)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
