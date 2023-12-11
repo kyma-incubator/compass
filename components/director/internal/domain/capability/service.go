@@ -157,16 +157,16 @@ func (s *service) getCapability(ctx context.Context, id string, resourceType res
 	return s.Get(ctx, id)
 }
 
-func (s *service) updateCapability(ctx context.Context, api *model.Capability, resourceType resource.Type) error {
+func (s *service) updateCapability(ctx context.Context, capability *model.Capability, resourceType resource.Type) error {
 	if resourceType.IsTenantIgnorable() {
-		return s.repo.UpdateGlobal(ctx, api)
+		return s.repo.UpdateGlobal(ctx, capability)
 	}
 
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
-	return s.repo.Update(ctx, tnt, api)
+	return s.repo.Update(ctx, tnt, capability)
 }
 
 func (s *service) processSpecs(ctx context.Context, capabilityID string, specs []*model.SpecInput, resourceType resource.Type) error {
