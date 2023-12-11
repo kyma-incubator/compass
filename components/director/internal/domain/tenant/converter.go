@@ -239,7 +239,7 @@ func fromResourceTypeToTenantAccessObjectType(objectType resource.Type) (graphql
 
 func stringsToPointerStrings(input []string) []*string {
 	result := make([]*string, len(input))
-	for i, _ := range input {
+	for i := range input {
 		result[i] = &input[i]
 	}
 	return result
