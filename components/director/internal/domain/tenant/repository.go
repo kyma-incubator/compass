@@ -126,7 +126,7 @@ func (r *pgRepository) UnsafeCreate(ctx context.Context, item model.BusinessTena
 	if err != nil {
 		return "", errors.Wrapf(err, "while getting business tenant mapping by external id %s", item.ExternalTenant)
 	}
-	return btm.ID, r.tenantParentRepo.CreateMultiple(ctx, btm.ID, item.Parents)
+	return btm.ID, r.tenantParentRepo.UpsertMultiple(ctx, btm.ID, item.Parents)
 }
 
 // Upsert adds the provided tenant into the Compass storage if it does not exist, or updates it if it does.
@@ -138,7 +138,7 @@ func (r *pgRepository) Upsert(ctx context.Context, item model.BusinessTenantMapp
 	if err != nil {
 		return "", errors.Wrapf(err, "while getting business tenant mapping by external id %s", item.ExternalTenant)
 	}
-	return btm.ID, r.tenantParentRepo.CreateMultiple(ctx, btm.ID, item.Parents)
+	return btm.ID, r.tenantParentRepo.UpsertMultiple(ctx, btm.ID, item.Parents)
 }
 
 // Get retrieves the active tenant with matching internal ID from the Compass storage.
@@ -151,7 +151,6 @@ func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenan
 		return nil, errors.Wrapf(err, "while getting tenant with id %s", id)
 	}
 
-	//TODO optimise
 	btm := r.conv.FromEntity(&entity)
 	return r.enrichWithParents(ctx, btm)
 }
@@ -370,7 +369,7 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 }
 
 func (r *pgRepository) addParent(ctx context.Context, internalParentID, internalChildID string) error {
-	if err := r.tenantParentRepo.Create(ctx, internalChildID, internalParentID); err != nil {
+	if err := r.tenantParentRepo.Upsert(ctx, internalChildID, internalParentID); err != nil {
 		return errors.Wrapf(err, "while adding tenant parent record for tenant with ID %s and parent teannt with ID %s", internalChildID, internalParentID)
 	}
 

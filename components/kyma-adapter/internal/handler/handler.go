@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/gqlclient"
@@ -81,7 +82,7 @@ func (a AdapterHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 			respondWithError(ctx, w, http.StatusBadRequest, "", errors.Wrapf(err, "while getting parent tenant"))
 			return
 		}
-		if tenantObject.Type == "account" {
+		if tenantObject.Type == string(tenantpkg.Account) {
 			ownerTenantID = tenantObject.InternalID
 			break
 		}

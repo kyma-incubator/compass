@@ -36,7 +36,7 @@ func (tpc TenantParentCollection) Len() int {
 
 // GetParentIDs returns list of all parent ids.
 func (tpc TenantParentCollection) GetParentIDs() []string {
-	var parentIDs []string
+	parentIDs := make([]string, 0, len(tpc))
 	for _, tp := range tpc {
 		parentIDs = append(parentIDs, tp.ParentID)
 	}
@@ -45,7 +45,7 @@ func (tpc TenantParentCollection) GetParentIDs() []string {
 
 // GetTenantIDs returns list of all tenant ids.
 func (tpc TenantParentCollection) GetTenantIDs() []string {
-	var tenantIDs []string
+	tenantIDs := make([]string, 0, len(tpc))
 	for _, tp := range tpc {
 		tenantIDs = append(tenantIDs, tp.TenantID)
 	}
@@ -65,8 +65,8 @@ type pgRepository struct {
 type TenantParentRepository interface {
 	ListParents(ctx context.Context, tenantID string) ([]string, error)
 	ListByParent(ctx context.Context, parentID string) ([]string, error)
-	CreateMultiple(ctx context.Context, tenantID string, parentIDs []string) error
-	Create(ctx context.Context, tenantID string, parentID string) error
+	UpsertMultiple(ctx context.Context, tenantID string, parentIDs []string) error
+	Upsert(ctx context.Context, tenantID string, parentID string) error
 	Delete(ctx context.Context, tenantID string, parentID string) error
 }
 
@@ -119,23 +119,13 @@ func (r *pgRepository) Upsert(ctx context.Context, tenantID string, parentID str
 	return r.upserterGlobal.UpsertGlobal(ctx, tpEntity)
 }
 
-// TODO change the method name
-// CreateMultiple creates new tenant parent mappings
-func (r *pgRepository) CreateMultiple(ctx context.Context, tenantID string, parentIDs []string) error {
+// UpsertMultiple upserts new tenant parent mappings
+func (r *pgRepository) UpsertMultiple(ctx context.Context, tenantID string, parentIDs []string) error {
 	for _, parentID := range parentIDs {
 		if err := r.Upsert(ctx, tenantID, parentID); err != nil {
 			log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantParent, resource.Create, "while creating tenant parent mapping for tenant with id %s and parent %s", tenantID, parentID))
 			return errors.Wrapf(err, "while creating tenant parent mapping for tenant with id %s and parent %s", tenantID, parentID)
 		}
-	}
-
-	return nil
-}
-
-func (r *pgRepository) Create(ctx context.Context, tenantID string, parentID string) error {
-	if err := r.Upsert(ctx, tenantID, parentID); err != nil {
-		log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantParent, resource.Create, "while creating tenant parent mapping for tenant with id %s and parent %s", tenantID, parentID))
-		return err
 	}
 
 	return nil

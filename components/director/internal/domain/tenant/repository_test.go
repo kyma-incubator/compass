@@ -41,7 +41,7 @@ var (
 		{tenantID: testID, parentID: testParentID2},
 	}
 	tenantMappingModel               = newModelBusinessTenantMapping(testID, testName, parents)
-	tenantMappingModelWithoutParents = newModelBusinessTenantMapping(testID, testName, nil)
+	tenantMappingModelWithoutParents = newModelBusinessTenantMapping(testID, testName, []string{})
 	tenantMappingEntity              = newEntityBusinessTenantMapping(testID, testName)
 )
 
@@ -829,7 +829,7 @@ func TestPgRepository_List(t *testing.T) {
 			ExpectedResult: []*model.BusinessTenantMapping{
 				newModelBusinessTenantMappingWithComputedValues("id1", "name1", &initializedVal, []string{testParentID, testParentID2}),
 				newModelBusinessTenantMappingWithComputedValues("id2", "name2", &notInitializedVal, []string{testParentID2}),
-				newModelBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal, nil),
+				newModelBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal, []string{}),
 			},
 		},
 		{
@@ -937,7 +937,7 @@ func TestPgRepository_ListPageBySearchTerm(t *testing.T) {
 	resultingTenantModels := []*model.BusinessTenantMapping{
 		newModelBusinessTenantMappingWithComputedValues("id1", "name1", &initializedVal, []string{testParentID, testParentID2}),
 		newModelBusinessTenantMappingWithComputedValues("id2", "name2", &notInitializedVal, []string{testParentID2}),
-		newModelBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal, nil),
+		newModelBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal, []string{}),
 	}
 
 	testCases := []struct {
@@ -3027,9 +3027,6 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 						WithArgs(tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
 				}
 
-				parentRowsToReturn = fixSQLTenantParentsRows([]sqlTenantParentsRow{
-					{tenantID: testID2, parentID: testID},
-				})
 				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE parent_id = $1`)).
 					WithArgs(testID).WillReturnError(testError)
 
