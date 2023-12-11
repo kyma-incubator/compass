@@ -92,8 +92,6 @@ const (
 	MaxShortDescriptionRuneLength = 256
 	// MaxShortDescriptionLengthSapCorePolicy represents the maximal length of ShortDescription field for sap:core:v1 policy
 	MaxShortDescriptionLengthSapCorePolicy = 180
-	// MaxDescriptionLengthSapCorePolicy represents the maximal length of Description field for sap:core:v1 policy
-	MaxDescriptionLengthSapCorePolicy = 1000
 	// MinLocalTenantIDLength represents the minimal accepted length of the LocalID field
 	MinLocalTenantIDLength = 1
 	// MaxLocalTenantIDLength represents the maximal accepted length of the LocalID field
