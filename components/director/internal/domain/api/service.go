@@ -226,6 +226,10 @@ func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource
 		return errors.Wrapf(err, "while getting API with ID %s for %s", id, resourceType)
 	}
 
+	if packageID == nil {
+		packageID = api.PackageID
+	}
+
 	resourceID := getParentResourceID(api)
 	api = in.ToAPIDefinition(id, resourceType, resourceID, packageID, apiHash)
 

@@ -220,6 +220,10 @@ func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource
 		return errors.Wrapf(err, "while getting EventDefinition with ID %s", id)
 	}
 
+	if packageID == nil {
+		packageID = eventDef.PackageID
+	}
+
 	resourceID := getParentResourceID(eventDef)
 	eventDef = in.ToEventDefinition(id, resourceType, resourceID, packageID, eventHash)
 
