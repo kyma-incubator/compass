@@ -2,9 +2,10 @@ package model
 
 import (
 	"encoding/json"
+	"regexp"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/common"
-	"regexp"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )

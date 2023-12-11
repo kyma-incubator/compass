@@ -5,13 +5,14 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
-	"time"
 )
 
 const (
@@ -19,7 +20,6 @@ const (
 	aspectID              = "aspectID"
 	tenantID              = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	externalTenantID      = "external-tnt"
-	description           = "description"
 	ordID                 = "ordID"
 )
 

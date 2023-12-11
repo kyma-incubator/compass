@@ -4,10 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspect"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/capability"

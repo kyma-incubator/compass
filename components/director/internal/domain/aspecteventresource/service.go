@@ -2,6 +2,7 @@ package aspecteventresource
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"

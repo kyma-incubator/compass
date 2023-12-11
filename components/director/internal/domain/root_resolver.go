@@ -3,9 +3,10 @@ package domain
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
 	"net/http"
 	"net/url"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspect"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationdependency"

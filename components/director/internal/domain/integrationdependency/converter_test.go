@@ -2,8 +2,9 @@ package integrationdependency_test
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspect"
 	"github.com/kyma-incubator/compass/components/director/internal/model"

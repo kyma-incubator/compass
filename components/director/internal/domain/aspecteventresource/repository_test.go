@@ -3,9 +3,10 @@ package aspecteventresource_test
 import (
 	"context"
 	"database/sql/driver"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource/automock"

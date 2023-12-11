@@ -1,8 +1,9 @@
 package aspecteventresource_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
