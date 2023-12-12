@@ -18,27 +18,59 @@ CREATE INDEX parent_index ON business_tenant_mappings(parent);
 -- Fill parent column
 INSERT INTO business_tenant_mappings(parent)
 SELECT parent_id
-    from tenant_parents join business_tenant_mappings btm on btm.id = tenant_parents.tenant_id AND btm.type IS NOT 'cost-object';
+from tenant_parents join business_tenant_mappings btm on btm.id = tenant_parents.tenant_id AND btm.type IS NOT 'cost-object';
 
--- Drop source column
-CREATE TABLE tenant_applications_temp (LIKE tenant_applications INCLUDING ALL);
--- TODO missing fk
-ALTER TABLE tenant_applications_temp DROP CONSTRAINT tenant_applications_temp_pkey;
-ALTER TABLE tenant_applications_temp
-    ADD PRIMARY KEY (tenant_id, id);
-ALTER TABLE tenant_applications_temp
-    DROP COLUMN source;
+-- tenant_applications
+DELETE FROM tenant_applications t1
+    USING tenant_applications t2
+WHERE t1.source < t2.source
+  AND t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner=t2.owner;
 
-INSERT INTO tenant_applications_temp(tenant_id, id, owner)
-SELECT
-    DISTINCT ON (id, tenant_id) tenant_id, id, owner
-FROM tenant_applications
-ORDER BY id, tenant_id,owner DESC;
+DELETE FROM
+    tenant_applications t1
+    USING tenant_applications t2
+WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner=false AND t2.owner=true;
 
+ALTER TABLE tenant_applications DROP column source;
 
-DROP TABLE tenant_applications;
-ALTER TABLE tenant_applications_temp
-    RENAME TO tenant_applications; -- TODO keys and indexes are not renamed
+-- tenant_runtimes
+DELETE FROM tenant_runtimes t1
+    USING tenant_runtimes t2
+WHERE t1.source < t2.source
+  AND t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner=t2.owner;
+
+DELETE FROM
+    tenant_runtimes t1
+    USING tenant_runtimes t2
+WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner=false AND t2.owner=true;
+
+ALTER TABLE tenant_runtimes DROP column source;
+
+-- tenant_runtime_contexts
+DELETE FROM tenant_runtime_contexts t1
+    USING tenant_runtime_contexts t2
+WHERE t1.source < t2.source
+  AND t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner=t2.owner;
+
+DELETE FROM
+    tenant_runtime_contexts t1
+    USING tenant_runtime_contexts t2
+WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner=false AND t2.owner=true;
+
+ALTER TABLE tenant_runtime_contexts DROP column source;
+
+-- Identify duplicates and keep the one with owner=true
+-- WITH ranked_rows AS (
+--     SELECT
+--         tenant_id,
+--         id,
+--         source,
+--         ROW_NUMBER() OVER (PARTITION BY tenant_id, id ORDER BY owner DESC) AS row_num
+--     FROM
+--         tenant_applications
+-- )
+-- DELETE FROM tenant_applications
+-- WHERE (tenant_id, id, source) IN (SELECT tenant_id, id, source FROM ranked_rows WHERE row_num > 1);
 
 -----------
 CREATE TABLE tenant_runtimes_temp (LIKE tenant_runtimes INCLUDING ALL);
