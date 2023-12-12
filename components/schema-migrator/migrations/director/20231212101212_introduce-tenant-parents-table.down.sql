@@ -25,10 +25,9 @@ ALTER TABLE business_tenant_mappings
 CREATE INDEX parent_index ON business_tenant_mappings (parent);
 
 -- Fill parent column
-INSERT INTO business_tenant_mappings(parent)
-SELECT parent_id
-from tenant_parents
-         join business_tenant_mappings btm on btm.id = tenant_parents.tenant_id AND btm.type NOT LIKE  'cost-object';
+UPDATE business_tenant_mappings SET parent=parent_id
+FROM tenant_parents
+WHERE  business_tenant_mappings.id = tenant_parents.tenant_id AND business_tenant_mappings.type <> 'cost-object'::tenant_type;
 
 -- tenant_applications
 DELETE
