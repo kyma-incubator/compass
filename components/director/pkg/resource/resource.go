@@ -80,6 +80,8 @@ const (
 	IntegrationDependency Type = "integrationDependency"
 	// Aspect type represents the Aspect inside Integration Dependency resource
 	Aspect Type = "aspect"
+	// DataProduct type represents the Data Product resource.
+	DataProduct Type = "dataProduct"
 	// AutomaticScenarioAssigment type represents ASA resource.
 	AutomaticScenarioAssigment Type = "automaticScenarioAssigment"
 	// CertSubjectMapping type represents certificate subject mapping resource

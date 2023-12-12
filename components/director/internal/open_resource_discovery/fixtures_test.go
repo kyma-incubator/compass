@@ -166,7 +166,7 @@ var (
       }`)
 
 	supportedUseCases = removeWhitespace(`[
-        "mass-extraction"
+        "data-federation"
       ]`)
 
 	credentialExchangeStrategiesWithCustomTypeFormat = removeWhitespace(`[

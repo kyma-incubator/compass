@@ -28,8 +28,7 @@ const (
 	invalidTitleLengthSapCorePolicy            = 121 // max allowed: 120
 	invalidOrdIDLength                         = 256 // max allowed: 255
 	invalidLocalTenantIDLength                 = 256 //max allowed: 255
-	invalidLocalIDLength                       = 256 //max allowed: 255
-	invalidRuntimeRestrictionLength            = 256 //max allowed: 255
+	invalidResponsibleLength                   = 256 //max allowed 255
 	maxDescriptionLength                       = 5000
 	invalidVersion                             = "invalidVersion"
 	invalidPolicyLevel                         = "invalidPolicyLevel"
@@ -40,11 +39,11 @@ const (
 	invalidMediaType                           = "invalid/type"
 	invalidBundleOrdID                         = "ns:wrongConsumptionBundle:v1"
 	invalidShortDescSapCore                    = "no:colons:no&special%chars"
-
-	unknownVendorOrdID  = "nsUNKNOWN:vendor:id:"
-	unknownProductOrdID = "nsUNKNOWN:product:id:"
-	unknownPackageOrdID = "ns:package:UNKNOWN_PACKAGE_ID:v1"
-	unknownBundleOrdID  = "ns:consumptionBundle:UNKNOWN_BUNDLE_ID:v1"
+	invalidRuntimeRestriction                  = "wrongRuntimeRestriction"
+	unknownVendorOrdID                         = "nsUNKNOWN:vendor:id:"
+	unknownProductOrdID                        = "nsUNKNOWN:product:id:"
+	unknownPackageOrdID                        = "ns:package:UNKNOWN_PACKAGE_ID:v1"
+	unknownBundleOrdID                         = "ns:consumptionBundle:UNKNOWN_BUNDLE_ID:v1"
 )
 
 var (
@@ -179,7 +178,7 @@ var (
 
 	invalidSupportedUseCasesValue = `["some-value"]`
 
-	validSupportedUseCasesValue = `["mass-extraction"]`
+	validSupportedUseCasesValue = `["snapshot"]`
 
 	invalidLabelsWhenValueIsNotArray = `{
   		"label-key-1": "label-value-1"
@@ -1466,10 +1465,10 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid too large `runtimeRestriction` field for Package",
+			Name: "Invalid `runtimeRestriction` field value for Package",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].RuntimeRestriction = str.Ptr(strings.Repeat("a", invalidRuntimeRestrictionLength))
+				doc.Packages[0].RuntimeRestriction = str.Ptr(invalidRuntimeRestriction)
 
 				return []*ord.Document{doc}
 			},
@@ -2741,7 +2740,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].SupportedUseCases = json.RawMessage(validSupportedUseCasesValue)
-
+				fmt.Println("HERE")
+				fmt.Println(doc.APIResources[0].SupportedUseCases)
 				return []*ord.Document{doc}
 			},
 			ExpectedToBeValid: true,
@@ -4372,6 +4372,48 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].DeprecationDate = str.Ptr("string value")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid missing `responsible` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Responsible = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `responsible` field value for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Responsible = str.Ptr("invalid value")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `responsible` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Responsible = str.Ptr(strings.Repeat("a", invalidResponsibleLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid missing `usage` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Usage = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `usage` field value for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Usage = str.Ptr("invalid value")
 
 				return []*ord.Document{doc}
 			},
@@ -6598,6 +6640,31 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].DeprecationDate = str.Ptr("string value")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid missing `responsible` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Responsible = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `responsible` field value for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Responsible = str.Ptr("invalid value")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `responsible` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Responsible = str.Ptr(strings.Repeat("a", invalidResponsibleLength))
 
 				return []*ord.Document{doc}
 			},

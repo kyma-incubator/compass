@@ -53,6 +53,7 @@ type EventDefinition struct {
 	CorrelationIDs                          json.RawMessage
 	LastUpdate                              *string
 	DeprecationDate                         *string
+	Responsible                             *string
 	*BaseEntity
 }
 
@@ -109,6 +110,7 @@ type EventDefinitionInput struct {
 	CorrelationIDs                          json.RawMessage               `json:"correlationIds,omitempty"`
 	LastUpdate                              *string                       `json:"lastUpdate"`
 	DeprecationDate                         *string                       `json:"deprecationDate"`
+	Responsible                             *string                       `json:"responsible"`
 	*VersionInput                           `hash:"ignore"`
 }
 

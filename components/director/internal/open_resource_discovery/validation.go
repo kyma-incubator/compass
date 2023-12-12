@@ -54,9 +54,9 @@ const (
 	// EventOrdIDRegex represents the valid structure of the ordID of the Event
 	EventOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// CapabilityOrdIDRegex represents the valid structure of the ordID of the Capability
-	CapabilityOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(capability):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
+	CapabilityOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(capability):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// IntegrationDependencyOrdIDRegex represents the valid structure of the ordID of the Integration Dependency
-	IntegrationDependencyOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(integrationDependency):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
+	IntegrationDependencyOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// CorrelationIDsRegex represents the valid structure of the field
 	CorrelationIDsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
 	// LabelsKeyRegex represents the valid structure of the field
@@ -68,7 +68,7 @@ const (
 	// VendorPartnersRegex represents the valid structure of the field
 	VendorPartnersRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(vendor):([a-zA-Z0-9._\\-]+):()$"
 	// CustomPolicyLevelRegex represents the valid structure of the field
-	CustomPolicyLevelRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	CustomPolicyLevelRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// CustomTypeCredentialExchangeStrategyRegex represents the valid structure of the field
 	CustomTypeCredentialExchangeStrategyRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	// SAPProductOrdIDNamespaceRegex represents the valid structure of a SAP Product OrdID Namespace part
@@ -84,6 +84,9 @@ const (
 	EventSuccessorsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// IntegrationDependencySuccessorsRegex represents the valid structure of the Integration Dependency successors array items
 	IntegrationDependencySuccessorsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+
+	// ResponsibleRegex represents the valid structure of the `responsible` field for API, Event and Data Product
+	ResponsibleRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
 
 	// MinDescriptionLength represents the minimal accepted length of the Description field
 	MinDescriptionLength = 1
@@ -125,14 +128,14 @@ const (
 	MinResourceLinkCustomTypeLength = 1
 	// MaxResourceLinkCustomTypeLength represents the maximal accepted length of the custom type field in a resource link
 	MaxResourceLinkCustomTypeLength = 255
-	// MinCorrelationIDLength represents the minimal accepted length of the Correaltion ID field
+	// MinCorrelationIDLength represents the minimal accepted length of the Correlation ID field
 	MinCorrelationIDLength = 1
-	// MaxCorrelationIDLength represents the maximal accepted length of the Correaltion ID field
+	// MaxCorrelationIDLength represents the maximal accepted length of the Correlation ID field
 	MaxCorrelationIDLength = 255
-	// MinRuntimeRestrictionLength represents the minimal accepted length of the Runtime Restriction field
-	MinRuntimeRestrictionLength = 1
-	// MaxRuntimeRestrictionLength represents the maximal accepted length of the Runtime Restriction field
-	MaxRuntimeRestrictionLength = 255
+	// MinResponsibleLength represents the minimal accepted length of the Correlation ID field
+	MinResponsibleLength = 1
+	// MaxResponsibleLength represents the maximal accepted length of the Correlation ID field
+	MaxResponsibleLength = 255
 
 	// IntegrationDependencyMsg represents the resource name for Integration Dependency used in error message
 	IntegrationDependencyMsg string = "integration dependency"
@@ -179,6 +182,10 @@ const (
 	APIProtocolSAPSQLAPIV1 string = "sap-sql-api-v1"
 	// APIProtocolGraphql is one of the available api protocol options
 	APIProtocolGraphql string = "graphql"
+	// APIProtocolDeltaSharing is one of the available api protocol options
+	APIProtocolDeltaSharing string = "delta-sharing"
+	// APIProtocolSapInaApiV1 is one of the available api protocol options
+	APIProtocolSapInaApiV1 string = "sap-ina-api-v1"
 
 	// APIVisibilityPublic is one of the available api visibility options
 	APIVisibilityPublic = public
@@ -218,6 +225,10 @@ const (
 	APIImplementationStandardApeAPI string = "sap:ape-api:v1"
 	// APIImplementationStandardCdiAPI is one of the available api implementation standard options
 	APIImplementationStandardCdiAPI string = "sap:cdi-api:v1"
+	// APIImplementationStandardHdlfDeltaSharing is one of the available api implementation standard options
+	APIImplementationStandardHdlfDeltaSharing string = "sap:hdlf-delta-sharing:v1"
+	// APIImplementationStandardHanaCloudSql is one of the available api implementation standard options
+	APIImplementationStandardHanaCloudSql string = "sap:hana-cloud-sql:v1"
 	// APIImplementationStandardCustom is one of the available api implementation standard options
 	APIImplementationStandardCustom = custom
 
@@ -245,10 +256,18 @@ const (
 	// DecommissionedTerm represents a term which all titles must not contain (except link titles) due to sap core policy
 	DecommissionedTerm = "decommissioned"
 
-	// APIModelSelectorTypeODATA for odata selector tyor.
+	// APIModelSelectorTypeODATA for odata selector type.
 	APIModelSelectorTypeODATA = "odata"
-	// APIModelSelectorTypeJSONPointer for json pointer selector tyor.
+	// APIModelSelectorTypeJSONPointer for json pointer selector type.
 	APIModelSelectorTypeJSONPointer = "json-pointer"
+
+	// PackageRuntimeRestriction is one of the available RuntimeRestriction options for Package
+	PackageRuntimeRestriction = "sap.datasphere"
+
+	// APIUsageExternal is one of the available Usage options for API
+	APIUsageExternal = "external"
+	// APIUsageLocal is one of the available Usage options for API
+	APIUsageLocal = "local"
 )
 
 var (
@@ -301,8 +320,10 @@ var (
 	}
 	// SupportedUseCases contain all valid values for this field from the spec
 	SupportedUseCases = map[string]bool{
-		"mass-extraction": true,
-		// "mass-import":     true, // will be added later in spec
+		"data-federation": true,
+		"snapshot":        true,
+		"incremental":     true,
+		"streaming":       true,
 	}
 )
 
@@ -380,7 +401,7 @@ func validatePackageInput(pkg *model.PackageInput, docPolicyLevel *string) error
 		validation.Field(&pkg.Tags, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
-		validation.Field(&pkg.RuntimeRestriction, validation.NilOrNotEmpty, validation.Length(MinRuntimeRestrictionLength, MaxRuntimeRestrictionLength)),
+		validation.Field(&pkg.RuntimeRestriction, validation.NilOrNotEmpty, validation.In(PackageRuntimeRestriction)),
 		validation.Field(&pkg.Labels, validation.By(validateORDLabels)),
 		validation.Field(&pkg.Countries, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CountryRegex))
@@ -543,7 +564,7 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 		validation.Field(&api.CustomPolicyLevel, validation.When(api.PolicyLevel != nil && *api.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc, APIProtocolWebsocket, APIProtocolSAPSQLAPIV1, APIProtocolGraphql)),
+		validation.Field(&api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc, APIProtocolWebsocket, APIProtocolSAPSQLAPIV1, APIProtocolGraphql, APIProtocolDeltaSharing, APIProtocolSapInaApiV1)),
 		validation.Field(&api.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
 		validation.Field(&api.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
@@ -592,7 +613,7 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&api.TargetURLs, validation.By(validateEntryPoints), validation.When(api.TargetURLs == nil, validation.By(notPartOfConsumptionBundles(api.PartOfConsumptionBundles)))),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
-		validation.Field(&api.ImplementationStandard, validation.In(APIImplementationStandardDocumentAPI, APIImplementationStandardServiceBroker, APIImplementationStandardCsnExposure, APIImplementationStandardApeAPI, APIImplementationStandardCdiAPI, APIImplementationStandardCustom)),
+		validation.Field(&api.ImplementationStandard, validation.In(APIImplementationStandardDocumentAPI, APIImplementationStandardServiceBroker, APIImplementationStandardCsnExposure, APIImplementationStandardApeAPI, APIImplementationStandardCdiAPI, APIImplementationStandardHdlfDeltaSharing, APIImplementationStandardHanaCloudSql, APIImplementationStandardCustom)),
 		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == APIImplementationStandardCustom, validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
 		validation.Field(&api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == APIImplementationStandardCustom, validation.Required).Else(validation.Empty)),
 		validation.Field(&api.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
@@ -612,6 +633,8 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 		validation.Field(&api.Direction, validation.In(APIDirectionInbound, APIDirectionMixed, APIDirectionOutbound)),
 		validation.Field(&api.LastUpdate, validation.When(api.LastUpdate != nil, validation.By(isValidDate))),
 		validation.Field(&api.DeprecationDate, validation.NilOrNotEmpty, validation.When(api.DeprecationDate != nil, validation.By(isValidDate))),
+		validation.Field(&api.Responsible, validation.NilOrNotEmpty, validation.Length(MinResponsibleLength, MaxResponsibleLength), validation.Match(regexp.MustCompile(ResponsibleRegex))),
+		validation.Field(&api.Usage, validation.NilOrNotEmpty, validation.In(APIUsageExternal, APIUsageLocal)),
 	)
 }
 
@@ -699,6 +722,7 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 		})),
 		validation.Field(&event.LastUpdate, validation.When(event.LastUpdate != nil, validation.By(isValidDate))),
 		validation.Field(&event.DeprecationDate, validation.NilOrNotEmpty, validation.When(event.DeprecationDate != nil, validation.By(isValidDate))),
+		validation.Field(&event.Responsible, validation.NilOrNotEmpty, validation.Length(MinResponsibleLength, MaxResponsibleLength), validation.Match(regexp.MustCompile(ResponsibleRegex))),
 	)
 }
 

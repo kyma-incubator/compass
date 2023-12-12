@@ -83,6 +83,7 @@ type Document struct {
 	Vendors                 []*model.VendorInput                `json:"vendors"`
 	Capabilities            []*model.CapabilityInput            `json:"capabilities"`
 	IntegrationDependencies []*model.IntegrationDependencyInput `json:"integrationDependencies"`
+	DataProducts            []*model.DataProductInput           `json:"dataProducts"`
 }
 
 // Validate validates if the Config object complies with the spec requirements
@@ -125,6 +126,7 @@ type ResourcesFromDB struct {
 	Bundles                 map[string]*model.Bundle
 	Capabilities            map[string]*model.Capability
 	IntegrationDependencies map[string]*model.IntegrationDependency
+	DataProducts            map[string]*model.DataProduct
 }
 
 // ResourceIDs holds some of the ORD entities' IDs
@@ -139,6 +141,7 @@ type ResourceIDs struct {
 	VendorIDs                map[string]bool
 	CapabilityIDs            map[string]bool
 	IntegrationDependencyIDs map[string]bool
+	DataProductIDs           map[string]bool
 }
 
 // Validate validates all the documents for a system instance
@@ -186,6 +189,7 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 		VendorIDs:                make(map[string]bool),
 		CapabilityIDs:            make(map[string]bool),
 		IntegrationDependencyIDs: make(map[string]bool),
+		DataProductIDs:           make(map[string]bool),
 	}
 
 	for _, doc := range docs {
@@ -206,6 +210,7 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 	invalidEntityTypesIndices := make([]int, 0)
 	invalidCapabilitiesIndices := make([]int, 0)
 	invalidIntegrationDependenciesIndices := make([]int, 0)
+	invalidDataProductsIndices := make([]int, 0)
 
 	r1, e1 := docs.validateAndCheckForDuplications(SystemVersionPerspective, true, resourcesFromDB, resourceIDs, resourceHashes, credentialExchangeStrategyTenantMappings)
 	r2, e2 := docs.validateAndCheckForDuplications(SystemInstancePerspective, true, resourcesFromDB, resourceIDs, resourceHashes, credentialExchangeStrategyTenantMappings)
@@ -312,15 +317,24 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 			}
 		}
 
+		for i, dataProduct := range doc.DataProducts {
+			if dataProduct.OrdPackageID != nil && !resourceIDs.PackageIDs[*dataProduct.OrdPackageID] {
+				errs = multierror.Append(errs, errors.Errorf("data product with id %q has a reference to unknown package %q", *dataProduct.OrdID, *dataProduct.OrdPackageID))
+				invalidDataProductsIndices = append(invalidDataProductsIndices, i)
+			}
+		}
+
 		doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
 		doc.EventResources = deleteInvalidInputObjects(invalidEventsIndices, doc.EventResources)
 		doc.EntityTypes = deleteInvalidInputObjects(invalidEntityTypesIndices, doc.EntityTypes)
 		doc.Capabilities = deleteInvalidInputObjects(invalidCapabilitiesIndices, doc.Capabilities)
 		doc.IntegrationDependencies = deleteInvalidInputObjects(invalidIntegrationDependenciesIndices, doc.IntegrationDependencies)
+		doc.DataProducts = deleteInvalidInputObjects(invalidDataProductsIndices, doc.DataProducts)
 		invalidApisIndices = nil
 		invalidEventsIndices = nil
 		invalidCapabilitiesIndices = nil
 		invalidIntegrationDependenciesIndices = nil
+		invalidDataProductsIndices = nil
 	}
 
 	return errs.ErrorOrNil()
@@ -340,6 +354,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		VendorIDs:                make(map[string]bool),
 		CapabilityIDs:            make(map[string]bool),
 		IntegrationDependencyIDs: make(map[string]bool),
+		DataProductIDs:           make(map[string]bool),
 	}
 	for _, doc := range docs {
 		if doc.Perspective == perspectiveConstraint {
@@ -355,6 +370,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		invalidEntityTypesIndices := make([]int, 0)
 		invalidCapabilitiesIndices := make([]int, 0)
 		invalidIntegrationDependenciesIndices := make([]int, 0)
+		invalidDataProductsIndices := make([]int, 0)
 
 		if err := validateDocumentInput(doc); err != nil {
 			errs = multierror.Append(errs, errors.Wrap(err, "error validating document"))
@@ -487,6 +503,23 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 			}
 		}
 
+		for i, dataProduct := range doc.DataProducts {
+			if err := validateDataProductInputWithSuppressedErrors(dataProduct, resourcesFromDB.IntegrationDependencies, resourceHashes); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating data product with ord id %q", stringPtrToString(dataProduct.OrdID)))
+			}
+			if err := validateDataProductInput(dataProduct, doc.PolicyLevel); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "error validating data product with ord id %q", stringPtrToString(dataProduct.OrdID)))
+				invalidDataProductsIndices = append(invalidDataProductsIndices, i)
+				continue
+			}
+			if dataProduct.OrdID != nil {
+				if _, ok := resourceIDs.DataProductIDs[*dataProduct.OrdID]; ok && forbidDuplications {
+					errs = multierror.Append(errs, errors.Errorf("found duplicate data product with ord id %q", *dataProduct.OrdID))
+				}
+				resourceIDs.DataProductIDs[*dataProduct.OrdID] = true
+			}
+		}
+
 		for i, vendor := range doc.Vendors {
 			if err := validateVendorInput(vendor); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating vendor with ord id %q", vendor.OrdID))
@@ -529,6 +562,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		PackagePolicyLevels:      resourceIDs.PackagePolicyLevels,
 		CapabilityIDs:            resourceIDs.CapabilityIDs,
 		IntegrationDependencyIDs: resourceIDs.IntegrationDependencyIDs,
+		DataProductIDs:           resourceIDs.DataProductIDs,
 	}, errs
 }
 
