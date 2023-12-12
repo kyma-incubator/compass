@@ -13,12 +13,12 @@ import (
 type converter struct {
 }
 
-// NewConverter returns a new Converter that can later be used to make the conversions between the service and repository layer representations of a Compass Aspect.
+// NewConverter returns a new Converter that can later be used to make the conversions between the service and repository layer representations of a Compass Aspect Event Resource.
 func NewConverter() *converter {
 	return &converter{}
 }
 
-// FromEntity converts the provided Entity repo-layer representation of an Aspect to the service-layer representation model.Aspect.
+// FromEntity converts the provided Entity repo-layer representation of an Aspect Event Resource to the service-layer representation model.AspectEventResource.
 func (c *converter) FromEntity(entity *Entity) *model.AspectEventResource {
 	if entity == nil {
 		return nil
@@ -42,7 +42,7 @@ func (c *converter) FromEntity(entity *Entity) *model.AspectEventResource {
 	}
 }
 
-// ToEntity converts the provided service-layer representation of an Aspect to the repository-layer one.
+// ToEntity converts the provided service-layer representation of an Aspect Event Resource to the repository-layer one.
 func (c *converter) ToEntity(aspectEventResourceModel *model.AspectEventResource) *Entity {
 	if aspectEventResourceModel == nil {
 		return nil

@@ -7,7 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
-// Entity is a representation of an Aspect in the database.
+// Entity is a representation of an Aspect Event Resource in the database.
 type Entity struct {
 	ApplicationID                sql.NullString `db:"app_id"`
 	ApplicationTemplateVersionID sql.NullString `db:"app_template_version_id"`

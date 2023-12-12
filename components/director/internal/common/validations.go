@@ -69,7 +69,7 @@ func ValidateAspectAPIResources(value interface{}) error {
 
 // ValidateAspectEventResourceSubset validates the Aspect Event Resource Subset fields
 func ValidateAspectEventResourceSubset(value interface{}) error {
-	if value == nil || reflect.ValueOf(value).IsNil() {
+	if value == nil || reflect.ValueOf(value).IsNil() { // the value comes as json.RawMessage(nil)
 		return nil
 	}
 
