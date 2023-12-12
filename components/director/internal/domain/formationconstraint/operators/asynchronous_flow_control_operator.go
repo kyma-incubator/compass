@@ -65,10 +65,6 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 		if err != nil {
 			return false, err
 		}
-		reverseAssignment, err := RetrieveFormationAssignmentPointer(ctx, ri.ReverseFAMemoryAddress)
-		if err != nil {
-			log.C(ctx).Warnf(errors.Wrapf(err, "Reverse assignment not found").Error())
-		}
 		statusReport, err := RetrieveNotificationStatusReportPointer(ctx, ri.NotificationStatusReportMemoryAddress)
 		if err != nil {
 			return false, err
@@ -87,6 +83,10 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 		}
 		if ri.Operation == model.UnassignFormation {
 			if formationAssignment.State == string(model.DeletingAssignmentState) && statusReport.State == string(model.ReadyAssignmentState) {
+				reverseAssignment, err := RetrieveFormationAssignmentPointer(ctx, ri.ReverseFAMemoryAddress)
+				if err != nil {
+					log.C(ctx).Warnf(errors.Wrapf(err, "Reverse assignment not found").Error())
+				}
 				log.C(ctx).Infof("Tenant mapping participant finished processing unassign notification successfully for assignment with ID %q, changing state to %q", formationAssignment.ID, model.InstanceCreatorDeletingAssignmentState)
 				formationAssignment.State = string(model.InstanceCreatorDeletingAssignmentState)
 				statusReport.State = string(model.InstanceCreatorDeletingAssignmentState)

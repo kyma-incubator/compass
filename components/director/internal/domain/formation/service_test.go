@@ -2596,8 +2596,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 
 	allStates := []string{string(model.InitialAssignmentState),
 		string(model.DeletingAssignmentState),
+		string(model.InstanceCreatorDeletingAssignmentState),
 		string(model.CreateErrorAssignmentState),
-		string(model.DeleteErrorAssignmentState)}
+		string(model.DeleteErrorAssignmentState),
+		string(model.InstanceCreatorDeleteErrorAssignmentState)}
 
 	testFormation := fixFormationModelWithState(model.ReadyFormationState)
 	formationInCreateErrorState := fixFormationModelWithStateAndAssignmentError(t, model.CreateErrorFormationState, testErr.Error(), formationassignment.ClientError)
