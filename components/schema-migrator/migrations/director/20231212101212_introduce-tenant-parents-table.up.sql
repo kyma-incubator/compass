@@ -1,19 +1,30 @@
 BEGIN;
 
+UPDATE webhooks
+SET input_template = '{"context":{"platform":"{{if .CustomerTenantContext.AccountID}}btp{{else}}unified-services{{end}}","uclFormationId":"{{.FormationID}}","accountId":"{{if .CustomerTenantContext.AccountID}}{{.CustomerTenantContext.AccountID}}{{else}}{{.CustomerTenantContext.Path}}{{end}}","crmId":"{{.CustomerTenantContext.CustomerID}}","operation":"{{.Operation}}"},"assignedTenant":{"state":"{{.Assignment.State}}","uclAssignmentId":"{{.Assignment.ID}}","deploymentRegion":"{{if .Application.Labels.region}}{{.Application.Labels.region}}{{else}}{{.ApplicationTemplate.Labels.region}}{{end}}","applicationNamespace":"{{if .Application.ApplicationNamespace}}{{.Application.ApplicationNamespace}}{{else}}{{.ApplicationTemplate.ApplicationNamespace}}{{end}}","applicationUrl":"{{.Application.BaseURL}}","applicationTenantId":"{{.Application.LocalTenantID}}","uclSystemName":"{{.Application.Name}}","uclSystemTenantId":"{{.Application.ID}}",{{if .ApplicationTemplate.Labels.parameters}}"parameters":{{.ApplicationTemplate.Labels.parameters}},{{end}}"configuration":{{.ReverseAssignment.Value}}},"receiverTenant":{"ownerTenant":"{{.Runtime.Tenant.Parent}}","state":"{{.ReverseAssignment.State}}","uclAssignmentId":"{{.ReverseAssignment.ID}}","deploymentRegion":"{{if and .RuntimeContext .RuntimeContext.Labels.region}}{{.RuntimeContext.Labels.region}}{{else}}{{.Runtime.Labels.region}}{{end}}","applicationNamespace":"{{.Runtime.ApplicationNamespace}}","applicationTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.Value}}{{else}}{{.Runtime.Labels.global_subaccount_id}}{{end}}","uclSystemTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}",{{if .Runtime.Labels.parameters}}"parameters":{{.Runtime.Labels.parameters}},{{end}}"configuration":{{.Assignment.Value}}}}'
+where runtime_id IN
+      (SELECT runtime_id
+       FROM labels
+       WHERE runtime_id IS NOT NULL
+         AND
+    key = 'runtimeType'
+  AND value = '"kyma"'
+    );
+
 -- Create many to many tenant_parents table
 CREATE TABLE tenant_parents
 (
-    tenant_id   uuid NOT NULL,
-    parent_id   uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    parent_id uuid NOT NULL,
 
-    CONSTRAINT tenant_parents_tenant_id_fkey  FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE,
-    CONSTRAINT tenant_parents_parent_id_fkey  FOREIGN KEY (parent_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE,
+    CONSTRAINT tenant_parents_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE,
+    CONSTRAINT tenant_parents_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE,
     PRIMARY KEY (tenant_id, parent_id)
 );
 
 -- Create indexes for tenant_parents table
-CREATE INDEX tenant_parents_tenant_id ON tenant_parents(tenant_id);
-CREATE INDEX tenant_parents_parent_id ON tenant_parents(parent_id);
+CREATE INDEX tenant_parents_tenant_id ON tenant_parents (tenant_id);
+CREATE INDEX tenant_parents_parent_id ON tenant_parents (parent_id);
 
 
 -- Populate 'tenant_parents' table with data from 'business_tenant_mappings'
@@ -57,7 +68,8 @@ ALTER TABLE tenant_runtime_contexts
 
 DROP VIEW IF EXISTS formation_templates_webhooks_tenants;
 
-CREATE OR REPLACE VIEW formation_templates_webhooks_tenants (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
+CREATE
+OR REPLACE VIEW formation_templates_webhooks_tenants (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
                                                              input_template, header_template, output_template, status_template, runtime_id, integration_system_id,
                                                              app_template_id, formation_template_id, tenant_id, owner)
 AS
@@ -110,11 +122,10 @@ FROM webhooks w
 
 
 
-
-
 DROP VIEW IF EXISTS webhooks_tenants;
 
-CREATE OR REPLACE VIEW webhooks_tenants
+CREATE
+OR REPLACE VIEW webhooks_tenants
             (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
              input_template, header_template, output_template, status_template, runtime_id, integration_system_id,
              app_template_id, formation_template_id, tenant_id, owner)
@@ -214,26 +225,32 @@ FROM webhooks w
 
 -- Drop 'parent' column from 'business_tenant_mappings'
 ALTER TABLE business_tenant_mappings
-DROP COLUMN parent;
+DROP
+COLUMN parent;
 
 
 DROP TRIGGER tenant_id_is_direct_parent_of_target_tenant_id ON automatic_scenario_assignments;
 DROP FUNCTION IF EXISTS check_tenant_id_is_direct_parent_of_target_tenant_id();
 
-CREATE OR REPLACE FUNCTION check_tenant_id_is_direct_parent_of_target_tenant_id() RETURNS TRIGGER AS
+CREATE
+OR REPLACE FUNCTION check_tenant_id_is_direct_parent_of_target_tenant_id() RETURNS TRIGGER AS
 $$
 DECLARE
-    count INTEGER;
+count INTEGER;
 BEGIN
-    EXECUTE format('SELECT COUNT(1) FROM tenant_parents WHERE tenant_id = %L AND parent_id = %L', NEW.target_tenant_id, NEW.tenant_id) INTO count;
-    IF count = 0 THEN
+EXECUTE format('SELECT COUNT(1) FROM tenant_parents WHERE tenant_id = %L AND parent_id = %L', NEW.target_tenant_id,
+               NEW.tenant_id) INTO count;
+IF
+count = 0 THEN
         RAISE EXCEPTION 'target_tenant_id should be direct child of tenant_id';
-    END IF;
-    RETURN NULL;
+END IF;
+RETURN NULL;
 END
-$$ LANGUAGE plpgsql;
+$$
+LANGUAGE plpgsql;
 
-CREATE CONSTRAINT TRIGGER tenant_id_is_direct_parent_of_target_tenant_id AFTER INSERT ON automatic_scenario_assignments
+CREATE
+CONSTRAINT TRIGGER tenant_id_is_direct_parent_of_target_tenant_id AFTER INSERT ON automatic_scenario_assignments
     FOR EACH ROW EXECUTE PROCEDURE check_tenant_id_is_direct_parent_of_target_tenant_id();
 
 

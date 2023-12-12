@@ -1,6 +1,15 @@
 BEGIN;
 
--- TODO revert kyma-adapter webhook migration
+UPDATE webhooks
+SET input_template = '{"context":{"platform":"{{if .CustomerTenantContext.AccountID}}btp{{else}}unified-services{{end}}","uclFormationId":"{{.FormationID}}","accountId":"{{if .CustomerTenantContext.AccountID}}{{.CustomerTenantContext.AccountID}}{{else}}{{.CustomerTenantContext.Path}}{{end}}","crmId":"{{.CustomerTenantContext.CustomerID}}","operation":"{{.Operation}}"},"assignedTenant":{"state":"{{.Assignment.State}}","uclAssignmentId":"{{.Assignment.ID}}","deploymentRegion":"{{if .Application.Labels.region}}{{.Application.Labels.region}}{{else}}{{.ApplicationTemplate.Labels.region}}{{end}}","applicationNamespace":"{{if .Application.ApplicationNamespace}}{{.Application.ApplicationNamespace}}{{else}}{{.ApplicationTemplate.ApplicationNamespace}}{{end}}","applicationUrl":"{{.Application.BaseURL}}","applicationTenantId":"{{.Application.LocalTenantID}}","uclSystemName":"{{.Application.Name}}","uclSystemTenantId":"{{.Application.ID}}",{{if .ApplicationTemplate.Labels.parameters}}"parameters":{{.ApplicationTemplate.Labels.parameters}},{{end}}"configuration":{{.ReverseAssignment.Value}}},"receiverTenant":{"ownerTenants": [{{ Join .Runtime.Tenant.Parents }}],"state":"{{.ReverseAssignment.State}}","uclAssignmentId":"{{.ReverseAssignment.ID}}","deploymentRegion":"{{if and .RuntimeContext .RuntimeContext.Labels.region}}{{.RuntimeContext.Labels.region}}{{else}}{{.Runtime.Labels.region}}{{end}}","applicationNamespace":"{{.Runtime.ApplicationNamespace}}","applicationTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.Value}}{{else}}{{.Runtime.Labels.global_subaccount_id}}{{end}}","uclSystemTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}",{{if .Runtime.Labels.parameters}}"parameters":{{.Runtime.Labels.parameters}},{{end}}"configuration":{{.Assignment.Value}}}}'
+where runtime_id IN
+      (SELECT runtime_id
+       FROM labels
+       WHERE runtime_id IS NOT NULL
+         AND
+    key = 'runtimeType'
+  AND value = '"kyma"'
+    );
 
 -- Add parent column to business tenant mapping
 ALTER TABLE business_tenant_mappings
@@ -10,52 +19,59 @@ ALTER TABLE business_tenant_mappings
 ALTER TABLE business_tenant_mappings
     ADD CONSTRAINT business_tenant_mappings_parent_fk
         FOREIGN KEY (parent)
-            REFERENCES business_tenant_mappings(id);
+            REFERENCES business_tenant_mappings (id);
 
 -- Create parent index
-CREATE INDEX parent_index ON business_tenant_mappings(parent);
+CREATE INDEX parent_index ON business_tenant_mappings (parent);
 
 -- Fill parent column
 INSERT INTO business_tenant_mappings(parent)
 SELECT parent_id
-from tenant_parents join business_tenant_mappings btm on btm.id = tenant_parents.tenant_id AND btm.type IS NOT 'cost-object';
+from tenant_parents
+         join business_tenant_mappings btm on btm.id = tenant_parents.tenant_id AND btm.type NOT LIKE  'cost-object';
 
 -- tenant_applications
-DELETE FROM tenant_applications t1
-    USING tenant_applications t2
-WHERE t1.source < t2.source
-  AND t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner=t2.owner;
+DELETE
+FROM tenant_applications t1 USING tenant_applications t2
+WHERE t1.source
+    < t2.source
+  AND t1.tenant_id = t2.tenant_id
+  AND t1.id=t2.id
+  AND t1.owner=t2.owner;
 
-DELETE FROM
-    tenant_applications t1
-    USING tenant_applications t2
-WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner=false AND t2.owner=true;
+DELETE
+FROM tenant_applications t1 USING tenant_applications t2
+WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner= false AND t2.owner= true;
 
 ALTER TABLE tenant_applications DROP column source;
 
 -- tenant_runtimes
-DELETE FROM tenant_runtimes t1
-    USING tenant_runtimes t2
-WHERE t1.source < t2.source
-  AND t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner=t2.owner;
+DELETE
+FROM tenant_runtimes t1 USING tenant_runtimes t2
+WHERE t1.source
+    < t2.source
+  AND t1.tenant_id = t2.tenant_id
+  AND t1.id=t2.id
+  AND t1.owner=t2.owner;
 
-DELETE FROM
-    tenant_runtimes t1
-    USING tenant_runtimes t2
-WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner=false AND t2.owner=true;
+DELETE
+FROM tenant_runtimes t1 USING tenant_runtimes t2
+WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner= false AND t2.owner= true;
 
 ALTER TABLE tenant_runtimes DROP column source;
 
 -- tenant_runtime_contexts
-DELETE FROM tenant_runtime_contexts t1
-    USING tenant_runtime_contexts t2
-WHERE t1.source < t2.source
-  AND t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner=t2.owner;
+DELETE
+FROM tenant_runtime_contexts t1 USING tenant_runtime_contexts t2
+WHERE t1.source
+    < t2.source
+  AND t1.tenant_id = t2.tenant_id
+  AND t1.id=t2.id
+  AND t1.owner=t2.owner;
 
-DELETE FROM
-    tenant_runtime_contexts t1
-    USING tenant_runtime_contexts t2
-WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner=false AND t2.owner=true;
+DELETE
+FROM tenant_runtime_contexts t1 USING tenant_runtime_contexts t2
+WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner= false AND t2.owner= true;
 
 ALTER TABLE tenant_runtime_contexts DROP column source;
 
@@ -73,17 +89,21 @@ ALTER TABLE tenant_runtime_contexts DROP column source;
 -- WHERE (tenant_id, id, source) IN (SELECT tenant_id, id, source FROM ranked_rows WHERE row_num > 1);
 
 -----------
-CREATE TABLE tenant_runtimes_temp (LIKE tenant_runtimes INCLUDING ALL);
+CREATE TABLE tenant_runtimes_temp
+(
+    LIKE tenant_runtimes INCLUDING ALL
+);
 
 ALTER TABLE tenant_runtimes_temp DROP CONSTRAINT tenant_runtimes_temp_pkey;
 ALTER TABLE tenant_runtimes_temp
     ADD PRIMARY KEY (tenant_id, id);
 ALTER TABLE tenant_runtimes_temp
-    DROP COLUMN source;
+DROP
+COLUMN source;
 
 INSERT INTO tenant_runtimes_temp(tenant_id, id, owner)
-SELECT
-    DISTINCT ON (id, tenant_id) tenant_id, id, owner
+SELECT DISTINCT
+ON (id, tenant_id) tenant_id, id, owner
 FROM tenant_runtimes
 ORDER BY owner DESC;
 
@@ -93,17 +113,21 @@ ALTER TABLE tenant_runtimes_temp
     RENAME TO tenant_runtimes;
 ----------
 
-CREATE TABLE tenant_runtime_contexts_temp (LIKE tenant_runtime_contexts INCLUDING ALL);
+CREATE TABLE tenant_runtime_contexts_temp
+(
+    LIKE tenant_runtime_contexts INCLUDING ALL
+);
 
 ALTER TABLE tenant_runtime_contexts_temp DROP CONSTRAINT tenant_runtime_contexts_temp_pkey;
 ALTER TABLE tenant_runtime_contexts_temp
     ADD PRIMARY KEY (tenant_id, id);
 ALTER TABLE tenant_runtime_contexts_temp
-    DROP COLUMN source;
+DROP
+COLUMN source;
 
 INSERT INTO tenant_runtime_contexts_temp(tenant_id, id, owner)
-SELECT
-    DISTINCT ON (id, tenant_id) tenant_id, id, owner
+SELECT DISTINCT
+ON (id, tenant_id) tenant_id, id, owner
 FROM tenant_runtime_contexts
 ORDER BY owner DESC;
 
@@ -116,27 +140,33 @@ ALTER TABLE tenant_runtime_contexts_temp
 DROP TRIGGER tenant_id_is_direct_parent_of_target_tenant_id ON automatic_scenario_assignments;
 DROP FUNCTION IF EXISTS check_tenant_id_is_direct_parent_of_target_tenant_id();
 
-CREATE OR REPLACE FUNCTION check_tenant_id_is_direct_parent_of_target_tenant_id() RETURNS TRIGGER AS
+CREATE
+OR REPLACE FUNCTION check_tenant_id_is_direct_parent_of_target_tenant_id() RETURNS TRIGGER AS
 $$
 DECLARE
-    count INTEGER;
+count INTEGER;
 BEGIN
-    EXECUTE format('SELECT COUNT(1) FROM business_tenant_mappings WHERE id = %L AND parent = %L', NEW.target_tenant_id, NEW.tenant_id) INTO count;
-    IF count = 0 THEN
+EXECUTE format('SELECT COUNT(1) FROM business_tenant_mappings WHERE id = %L AND parent = %L', NEW.target_tenant_id,
+               NEW.tenant_id) INTO count;
+IF
+count = 0 THEN
         RAISE EXCEPTION 'target_tenant_id should be direct child of tenant_id';
-    END IF;
-    RETURN NULL;
+END IF;
+RETURN NULL;
 END
-$$ LANGUAGE plpgsql;
+$$
+LANGUAGE plpgsql;
 
-CREATE CONSTRAINT TRIGGER tenant_id_is_direct_parent_of_target_tenant_id AFTER INSERT ON automatic_scenario_assignments
+CREATE
+CONSTRAINT TRIGGER tenant_id_is_direct_parent_of_target_tenant_id AFTER INSERT ON automatic_scenario_assignments
     FOR EACH ROW EXECUTE PROCEDURE check_tenant_id_is_direct_parent_of_target_tenant_id();
 
 
 DROP VIEW IF EXISTS formation_templates_webhooks_tenants;
 
 
-CREATE OR REPLACE VIEW formation_templates_webhooks_tenants (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
+CREATE
+OR REPLACE VIEW formation_templates_webhooks_tenants (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
                                                              input_template, header_template, output_template, status_template, runtime_id, integration_system_id,
                                                              app_template_id, formation_template_id, tenant_id, owner)
 AS
@@ -189,11 +219,9 @@ FROM webhooks w
 
 
 
-
-
-
 DROP VIEW IF EXISTS webhooks_tenants;
-CREATE OR REPLACE VIEW webhooks_tenants
+CREATE
+OR REPLACE VIEW webhooks_tenants
             (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
              input_template, header_template, output_template, status_template, runtime_id, integration_system_id,
              app_template_id, formation_template_id, tenant_id, owner)
