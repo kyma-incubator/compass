@@ -2176,7 +2176,8 @@ func TestPgRepository_Update(t *testing.T) {
 					dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
 						WithArgs(testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
-					dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM `) + `(.+)` + regexp.QuoteMeta(fmt.Sprintf(` WHERE tenant_id = %s AND source = %s`, testID, testParentID))).
+					dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM `)+`(.+)`+regexp.QuoteMeta(` WHERE tenant_id = $1 AND source = $2`)).
+						WithArgs(testID, testParentID).
 						WillReturnResult(sqlmock.NewResult(-1, 1))
 				}
 
@@ -2257,8 +2258,8 @@ func TestPgRepository_Update(t *testing.T) {
 				dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
 					WithArgs(testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
-				dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM `) + `(.+)` + regexp.QuoteMeta(fmt.Sprintf(` WHERE tenant_id = %s AND source = %s`, testID, testParentID))).
-					WillReturnError(testError)
+				dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM `)+`(.+)`+regexp.QuoteMeta(` WHERE tenant_id = $1 AND source = $2`)).
+					WithArgs(testID, testParentID).WillReturnError(testError)
 
 				return db, dbMock
 			},

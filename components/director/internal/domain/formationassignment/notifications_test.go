@@ -87,8 +87,8 @@ var (
 
 	testCostObjectCustomerTenantContext = &webhook.CustomerTenantContext{
 		CostObjectID: TntParentIDExternal,
-		AccountID:  str.Ptr(TestTenantID),
-		Path:       nil,
+		AccountID:    str.Ptr(TestTenantID),
+		Path:         nil,
 	}
 
 	faWithSourceAppAndTargetApp               = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ReadyAssignmentState), TestConfigValueRawJSON, TestEmptyErrorValueRawJSON)

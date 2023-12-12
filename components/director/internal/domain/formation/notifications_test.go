@@ -436,10 +436,10 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(accountParentTenantResponse, nil)
 				return repo
 			},
-			ObjectType:     graphql.FormationObjectTypeRuntime,
-			OperationType:  model.AssignFormation,
-			ObjectID:       RuntimeID,
-			InputFormation: inputFormation,
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			OperationType:      model.AssignFormation,
+			ObjectID:           RuntimeID,
+			InputFormation:     inputFormation,
 			ExpectedErrMessage: "Either customer ID or cost object ID should be present",
 		},
 		{
