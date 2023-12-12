@@ -49,7 +49,7 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 			EntityTypeSvcFn: func() *automock.EntityTypeService {
 				entityTypeSvc := &automock.EntityTypeService{}
 				entityTypeSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(entityTypeModels, nil).Twice()
-				entityTypeSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, appID, *entityTypeInputs[0], uint64ResourceHash).Return(nil).Once()
+				entityTypeSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, entityTypeModels[0].ID, *entityTypeInputs[0], uint64ResourceHash).Return(nil).Once()
 				return entityTypeSvc
 			},
 			InputResource:       resource.Application,
@@ -84,7 +84,7 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 			EntityTypeSvcFn: func() *automock.EntityTypeService {
 				entityTypeSvc := &automock.EntityTypeService{}
 				entityTypeSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(entityTypeModels, nil).Twice()
-				entityTypeSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, *entityTypeInputs[0], uint64ResourceHash).Return(nil).Once()
+				entityTypeSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, entityTypeModels[0].ID, *entityTypeInputs[0], uint64ResourceHash).Return(nil).Once()
 				return entityTypeSvc
 			},
 			InputResource:       resource.ApplicationTemplateVersion,
@@ -154,7 +154,7 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 			EntityTypeSvcFn: func() *automock.EntityTypeService {
 				entityTypeSvc := &automock.EntityTypeService{}
 				entityTypeSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(entityTypeModels, nil).Once()
-				entityTypeSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, appID, *entityTypeInputs[0], uint64ResourceHash).Return(testErr).Once()
+				entityTypeSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, entityTypeModels[0].ID, *entityTypeInputs[0], uint64ResourceHash).Return(testErr).Once()
 				return entityTypeSvc
 			},
 			InputResource:       resource.Application,
