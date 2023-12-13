@@ -156,7 +156,7 @@ type IntegrationDependencyService interface {
 //
 //go:generate mockery --name=IntegrationDependencyConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationDependencyConverter interface {
-	ToGraphQL(in *model.IntegrationDependency, aspects []*model.Aspect) (*graphql.IntegrationDependency, error)
+	ToGraphQL(in *model.IntegrationDependency, aspects []*model.Aspect, aspectEventResourcesByAspectID map[string][]*model.AspectEventResource) (*graphql.IntegrationDependency, error)
 }
 
 // AspectService is responsible for the service-layer Integration Dependency operations
@@ -164,6 +164,13 @@ type IntegrationDependencyConverter interface {
 //go:generate mockery --name=AspectService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AspectService interface {
 	ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.Aspect, map[string]int, error)
+}
+
+// AspectEventResourceService is responsible for the service-layer Aspect Event Resource operations.
+//
+//go:generate mockery --name=AspectEventResourceService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type AspectEventResourceService interface {
+	ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.AspectEventResource, map[string]int, error)
 }
 
 // APIDefinitionConverter missing godoc
@@ -253,7 +260,8 @@ type Resolver struct {
 	integrationDependencySvc  IntegrationDependencyService
 	integrationDependencyConv IntegrationDependencyConverter
 
-	aspectSvc AspectService
+	aspectSvc              AspectService
+	aspectEventResourceSvc AspectEventResourceService
 
 	apiDefinitionSvc    APIDefinitionService
 	eventDefinitionSvc  EventDefinitionService
@@ -289,6 +297,7 @@ func NewResolver(transact persistence.Transactioner,
 	integrationDependencySvc IntegrationDependencyService,
 	integrationDependencyConv IntegrationDependencyConverter,
 	aspectService AspectService,
+	aspectEventResourceSvc AspectEventResourceService,
 	apiDefinitionConverter APIDefinitionConverter,
 	eventDefinitionConverter EventDefinitionConverter,
 	appTemplateSvc ApplicationTemplateService,
@@ -313,6 +322,7 @@ func NewResolver(transact persistence.Transactioner,
 		integrationDependencySvc:        integrationDependencySvc,
 		integrationDependencyConv:       integrationDependencyConv,
 		aspectSvc:                       aspectService,
+		aspectEventResourceSvc:          aspectEventResourceSvc,
 		apiDefinitionConv:               apiDefinitionConverter,
 		eventDefinitionConv:             eventDefinitionConverter,
 		bndlConv:                        bndlConverter,
@@ -1049,9 +1059,19 @@ func (r *Resolver) IntegrationDependenciesDataLoader(keys []dataloader.ParamInte
 		return nil, []error{err}
 	}
 
+	aspectEventResources, _, err := r.aspectEventResourceSvc.ListByApplicationIDs(ctx, applicationIDs, *keys[0].First, cursor)
+	if err != nil {
+		return nil, []error{err}
+	}
+
 	aspectsByApplicationID := map[string][]*model.Aspect{}
 	for _, aspect := range aspects {
 		aspectsByApplicationID[*aspect.ApplicationID] = append(aspectsByApplicationID[*aspect.ApplicationID], aspect)
+	}
+
+	aspectEventResourcesByApplicationID := map[string][]*model.AspectEventResource{}
+	for _, aspectEventResource := range aspectEventResources {
+		aspectEventResourcesByApplicationID[*aspectEventResource.ApplicationID] = append(aspectEventResourcesByApplicationID[*aspectEventResource.ApplicationID], aspectEventResource)
 	}
 
 	gqlIntegrationDependencies := make([]*graphql.IntegrationDependencyPage, 0, len(integrationDependencyPages))
@@ -1059,7 +1079,8 @@ func (r *Resolver) IntegrationDependenciesDataLoader(keys []dataloader.ParamInte
 		gqlIntDeps := make([]*graphql.IntegrationDependency, 0)
 		for _, intDep := range integrationDependencyPage.Data {
 			aspectsForIntDep := getAspectsForIntegrationDependency(intDep.ID, aspectsByApplicationID[applicationIDs[i]])
-			gqlIntDep, err := r.integrationDependencyConv.ToGraphQL(intDep, aspectsForIntDep)
+			aspectEventResourcesForAspect := getAspectEventResourcesForAspectByID(aspectsForIntDep, aspectEventResourcesByApplicationID[applicationIDs[i]])
+			gqlIntDep, err := r.integrationDependencyConv.ToGraphQL(intDep, aspectsForIntDep, aspectEventResourcesForAspect)
 			if err != nil {
 				return nil, []error{err}
 			}
@@ -1213,6 +1234,18 @@ func getAspectsForIntegrationDependency(integrationDependencyID string, aspects 
 	for _, aspect := range aspects {
 		if aspect.IntegrationDependencyID == integrationDependencyID {
 			result = append(result, aspect)
+		}
+	}
+	return result
+}
+
+func getAspectEventResourcesForAspectByID(aspects []*model.Aspect, aspectEventResources []*model.AspectEventResource) map[string][]*model.AspectEventResource {
+	result := make(map[string][]*model.AspectEventResource, 0)
+	for _, aspect := range aspects {
+		for _, aspectEventResource := range aspectEventResources {
+			if aspectEventResource.AspectID == aspect.ID {
+				result[aspect.ID] = append(result[aspect.ID], aspectEventResource)
+			}
 		}
 	}
 	return result

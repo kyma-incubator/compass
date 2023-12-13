@@ -18,7 +18,6 @@ type Aspect struct {
 	Mandatory                    *bool
 	SupportMultipleProviders     *bool
 	APIResources                 json.RawMessage
-	EventResources               json.RawMessage
 	*BaseEntity
 }
 
@@ -29,12 +28,12 @@ func (*Aspect) GetType() resource.Type {
 
 // AspectInput is an input for creating a new Aspect
 type AspectInput struct {
-	Title                    string          `json:"title"`
-	Description              *string         `json:"description"`
-	Mandatory                *bool           `json:"mandatory"`
-	SupportMultipleProviders *bool           `json:"supportMultipleProviders"`
-	APIResources             json.RawMessage `json:"apiResources"`
-	EventResources           json.RawMessage `json:"eventResources"`
+	Title                    string                      `json:"title"`
+	Description              *string                     `json:"description"`
+	Mandatory                *bool                       `json:"mandatory"`
+	SupportMultipleProviders *bool                       `json:"supportMultipleProviders"`
+	APIResources             json.RawMessage             `json:"apiResources"`
+	EventResources           []*AspectEventResourceInput `json:"eventResources"`
 }
 
 // Validate validates Aspect fields
@@ -46,7 +45,7 @@ func (a *AspectInput) Validate() error {
 			return common.ValidateFieldMandatory(value, common.AspectMsg)
 		})),
 		validation.Field(&a.APIResources, validation.By(common.ValidateAspectAPIResources)),
-		validation.Field(&a.EventResources, validation.By(common.ValidateAspectEventResources)),
+		validation.Field(&a.EventResources),
 	)
 }
 
@@ -63,7 +62,6 @@ func (a *AspectInput) ToAspect(id string, resourceType resource.Type, resourceID
 		Mandatory:                a.Mandatory,
 		SupportMultipleProviders: a.SupportMultipleProviders,
 		APIResources:             a.APIResources,
-		EventResources:           a.EventResources,
 		BaseEntity: &BaseEntity{
 			ID:    id,
 			Ready: true,

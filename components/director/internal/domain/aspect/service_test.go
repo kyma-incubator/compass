@@ -40,9 +40,9 @@ func TestService_Create(t *testing.T) {
 			InputResourceID:   "application-id",
 			AspectInput:       fixAspectInputModel(),
 			AspectRepoFn: func() *automock.AspectRepository {
-				entityTypeRepo := &automock.AspectRepository{}
-				entityTypeRepo.On("Create", ctx, tenantID, mock.Anything).Return(nil).Once()
-				return entityTypeRepo
+				aspectRepo := &automock.AspectRepository{}
+				aspectRepo.On("Create", ctx, tenantID, mock.Anything).Return(nil).Once()
+				return aspectRepo
 			},
 			UIDServiceFn:   uidSvcFn,
 			ExpectedOutput: aspectID,
@@ -53,9 +53,9 @@ func TestService_Create(t *testing.T) {
 			InputResourceID:   "application-template-version-id",
 			AspectInput:       fixAspectInputModel(),
 			AspectRepoFn: func() *automock.AspectRepository {
-				entityTypeRepo := &automock.AspectRepository{}
-				entityTypeRepo.On("Create", ctx, tenantID, mock.Anything).Return(nil).Once()
-				return entityTypeRepo
+				aspectRepo := &automock.AspectRepository{}
+				aspectRepo.On("Create", ctx, tenantID, mock.Anything).Return(nil).Once()
+				return aspectRepo
 			},
 			UIDServiceFn:   uidSvcFn,
 			ExpectedOutput: aspectID,
@@ -66,9 +66,9 @@ func TestService_Create(t *testing.T) {
 			InputResourceID:   "application-id",
 			AspectInput:       fixAspectInputModel(),
 			AspectRepoFn: func() *automock.AspectRepository {
-				entityTypeRepo := &automock.AspectRepository{}
-				entityTypeRepo.On("Create", ctx, tenantID, mock.Anything).Return(testErr).Once()
-				return entityTypeRepo
+				aspectRepo := &automock.AspectRepository{}
+				aspectRepo.On("Create", ctx, tenantID, mock.Anything).Return(testErr).Once()
+				return aspectRepo
 			},
 			UIDServiceFn:  uidSvcFn,
 			ExpectedError: testErr,
@@ -79,9 +79,9 @@ func TestService_Create(t *testing.T) {
 			InputResourceID:   "application-template-version-id",
 			AspectInput:       fixAspectInputModel(),
 			AspectRepoFn: func() *automock.AspectRepository {
-				entityTypeRepo := &automock.AspectRepository{}
-				entityTypeRepo.On("Create", ctx, tenantID, mock.Anything).Return(testErr).Once()
-				return entityTypeRepo
+				aspectRepo := &automock.AspectRepository{}
+				aspectRepo.On("Create", ctx, tenantID, mock.Anything).Return(testErr).Once()
+				return aspectRepo
 			},
 			UIDServiceFn:  uidSvcFn,
 			ExpectedError: testErr,
@@ -132,18 +132,18 @@ func TestService_DeleteByIntegrationDependencyID(t *testing.T) {
 		{
 			Name: "Success",
 			AspectRepoFn: func() *automock.AspectRepository {
-				entityTypeRepo := &automock.AspectRepository{}
-				entityTypeRepo.On("DeleteByIntegrationDependencyID", ctx, tenantID, integrationDependencyID).Return(nil).Once()
-				return entityTypeRepo
+				aspectRepo := &automock.AspectRepository{}
+				aspectRepo.On("DeleteByIntegrationDependencyID", ctx, tenantID, integrationDependencyID).Return(nil).Once()
+				return aspectRepo
 			},
 			ExpectedError: nil,
 		},
 		{
 			Name: "Error on deletion",
 			AspectRepoFn: func() *automock.AspectRepository {
-				entityTypeRepo := &automock.AspectRepository{}
-				entityTypeRepo.On("DeleteByIntegrationDependencyID", ctx, tenantID, integrationDependencyID).Return(testErr).Once()
-				return entityTypeRepo
+				aspectRepo := &automock.AspectRepository{}
+				aspectRepo.On("DeleteByIntegrationDependencyID", ctx, tenantID, integrationDependencyID).Return(testErr).Once()
+				return aspectRepo
 			},
 			ExpectedError: testErr,
 		},

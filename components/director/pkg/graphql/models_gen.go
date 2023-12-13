@@ -191,11 +191,11 @@ type ApplicationUpdateInput struct {
 }
 
 type AspectAPIDefinitionInput struct {
-	OrdID string `json:"ordID"`
+	OrdID string `json:"ordId"`
 }
 
 type AspectEventDefinitionInput struct {
-	OrdID  string                              `json:"ordID"`
+	OrdID  string                              `json:"ordId"`
 	Subset []*AspectEventDefinitionSubsetInput `json:"subset"`
 }
 

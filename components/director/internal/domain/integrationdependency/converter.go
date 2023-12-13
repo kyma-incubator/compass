@@ -24,7 +24,7 @@ type VersionConverter interface {
 //
 //go:generate mockery --name=AspectConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AspectConverter interface {
-	MultipleToGraphQL(in []*model.Aspect) ([]*graphql.Aspect, error)
+	MultipleToGraphQL(in []*model.Aspect, aspectEventResourcesByAspectID map[string][]*model.AspectEventResource) ([]*graphql.Aspect, error)
 	MultipleInputFromGraphQL(in []*graphql.AspectInput) ([]*model.AspectInput, error)
 }
 
@@ -127,12 +127,12 @@ func (c *converter) convertVersionToEntity(inVer *model.Version) version.Version
 }
 
 // ToGraphQL converts the provided service-layer representation of an Integration Dependency to the graphql-layer one.
-func (c *converter) ToGraphQL(in *model.IntegrationDependency, aspects []*model.Aspect) (*graphql.IntegrationDependency, error) {
+func (c *converter) ToGraphQL(in *model.IntegrationDependency, aspects []*model.Aspect, aspectEventResourcesByAspectID map[string][]*model.AspectEventResource) (*graphql.IntegrationDependency, error) {
 	if in == nil {
 		return nil, nil
 	}
 
-	gqlAspects, err := c.aspectConverter.MultipleToGraphQL(aspects)
+	gqlAspects, err := c.aspectConverter.MultipleToGraphQL(aspects, aspectEventResourcesByAspectID)
 	if err != nil {
 		return nil, err
 	}
