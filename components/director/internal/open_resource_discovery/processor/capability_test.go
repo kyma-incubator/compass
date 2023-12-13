@@ -24,6 +24,11 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 		fixCapability(capabilityID, str.Ptr(capabilityORDID)),
 	}
 
+	fixUpdatedCapabilities := []*model.Capability{
+		fixCapability(capabilityID, str.Ptr(capabilityORDID)),
+	}
+	fixUpdatedCapabilities[0].PackageID = str.Ptr(packageID2)
+
 	fixCapabilities2 := []*model.Capability{
 		fixCapability(capabilityID, str.Ptr(capabilityORDID2)),
 	}
@@ -49,7 +54,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 		ExpectedErr                error
 	}{
 		{
-			Name: "Success empty API inputs",
+			Name: "Success empty Capability inputs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsTwice()
 			},
@@ -74,7 +79,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities, nil).Twice()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID), *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -101,7 +106,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilitiesNoNewerLastUpdate(), nil).Once()
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities, nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, nilString, *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -112,7 +117,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			},
 			InputResource:              resource.Application,
 			InputResourceID:            appID,
-			InputPackagesFromDB:        fixEmptyPackages(),
+			InputPackagesFromDB:        fixPackages(),
 			CapabilityInput:            fixCapabilityInputs,
 			InputResourceHashes:        resourceHashes,
 			ExpectedCapabilityOutput:   fixCapabilities,
@@ -126,7 +131,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				apiSvc := &automock.CapabilityService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities2, nil).Twice()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID), *fixCapabilityInputs[0], nilSpecInputSlice, emptyHash).Return(capabilityID, nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID1), *fixCapabilityInputs[0], nilSpecInputSlice, emptyHash).Return(capabilityID, nil).Once()
 				return apiSvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -221,18 +226,18 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities, nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, nilString, *fixCapabilityInputs[0], emptyHash).Return(testErr).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], emptyHash).Return(testErr).Once()
 				return capabilitySvc
 			},
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
-			InputPackagesFromDB: fixEmptyPackages(),
+			InputPackagesFromDB: fixPackages(),
 			CapabilityInput:     fixCapabilityInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         testErr,
 		},
 		{
-			Name: "Fail while creating api",
+			Name: "Fail while creating Capability",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx, transact := txGen.ThatSucceeds()
 				transact.On("Begin").Return(persistTx, nil).Once()
@@ -295,7 +300,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities, nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, nilString, *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -305,7 +310,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			},
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
-			InputPackagesFromDB: fixEmptyPackages(),
+			InputPackagesFromDB: fixPackages(),
 			CapabilityInput:     fixCapabilityInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         testErr,
@@ -322,7 +327,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilitiesNoNewerLastUpdate(), nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, nilString, *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -333,7 +338,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			},
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
-			InputPackagesFromDB: fixEmptyPackages(),
+			InputPackagesFromDB: fixPackages(),
 			CapabilityInput:     fixCapabilityInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         testErr,
@@ -350,7 +355,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixCapabilitiesNoNewerLastUpdate(), nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, fixCapabilities[0].ID, nilString, *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -361,10 +366,38 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			},
 			InputResource:       resource.ApplicationTemplateVersion,
 			InputResourceID:     appTemplateVersionID,
-			InputPackagesFromDB: fixEmptyPackages(),
+			InputPackagesFromDB: fixPackages(),
 			CapabilityInput:     fixCapabilityInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         testErr,
+		},
+		{
+			Name: "Success when updating package id for Capability",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
+			CapabilitySvcFn: func() *automock.CapabilityService {
+				capabilitySvc := &automock.CapabilityService{}
+				fixCapabilityInputs[0].OrdPackageID = str.Ptr(packageORDID2)
+				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities, nil).Once()
+				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixUpdatedCapabilities, nil).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID2), *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				return capabilitySvc
+			},
+			SpecSvcFn: func() *automock.SpecService {
+				specSvc := &automock.SpecService{}
+				spec := fixCapabilityInputs[0].CapabilityDefinitions[0].ToSpec()
+				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.CapabilitySpecReference, capabilityID).Return(nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec, resource.Application, model.CapabilitySpecReference, capabilityID).Return("", nil, nil).Once()
+				return specSvc
+			},
+			InputResource:              resource.Application,
+			InputResourceID:            appID,
+			InputPackagesFromDB:        fixPackages(),
+			CapabilityInput:            fixCapabilityInputs,
+			InputResourceHashes:        resourceHashes,
+			ExpectedCapabilityOutput:   fixUpdatedCapabilities,
+			ExpectedFetchRequestOutput: []*processor.OrdFetchRequest{{FetchRequest: nil, RefObjectOrdID: capabilityORDID}},
 		},
 	}
 

@@ -21,13 +21,15 @@ const (
 	capabilityID = "capability-id"
 	vendorID     = "vendor-id"
 	entityTypeID = "entity-type-id"
-	packageID    = "package-id"
+	packageID1   = "package-id-1"
+	packageID2   = "package-id-2"
 
 	tenantID         = "testTenant"
 	externalTenantID = "externalTestTenant"
 
 	vendorORDID      = "sap:vendor:SAP:"
-	packageORDID     = "ns:package:PACKAGE_ID:v1"
+	packageORDID1    = "ns:package:PACKAGE_ID_1:v1"
+	packageORDID2    = "ns:package:PACKAGE_ID_2:v1"
 	productORDID     = "sap:product:id:"
 	bundleORDID      = "ns:consumptionBundle:BUNDLE_ID:v1"
 	apiORDID         = "ns:apiResource:API_ID:v1"
@@ -267,7 +269,7 @@ func fixEntityTypeModel(entityTypeID string) *model.EntityType {
 		Description:                  &description,
 		SystemInstanceAware:          &systemInstanceAware,
 		ChangeLogEntries:             json.RawMessage(changeLogEntries),
-		PackageID:                    packageORDID,
+		PackageID:                    packageORDID1,
 		Visibility:                   publicVisibility,
 		Links:                        json.RawMessage(links),
 		PartOfProducts:               json.RawMessage(products),
@@ -296,7 +298,7 @@ func fixEntityTypeInputModel() *model.EntityTypeInput {
 		Description:         &description,
 		SystemInstanceAware: &systemInstanceAware,
 		ChangeLogEntries:    json.RawMessage(changeLogEntries),
-		OrdPackageID:        packageORDID,
+		OrdPackageID:        packageORDID1,
 		Visibility:          publicVisibility,
 		Links:               json.RawMessage(links),
 		PartOfProducts:      json.RawMessage(products),
@@ -321,14 +323,14 @@ func fixIntegrationDependencyModel(integrationDependencyID, integrationDependenc
 		OrdID:                        str.Ptr(integrationDependencyORDID),
 		ApplicationID:                &appID,
 		ApplicationTemplateVersionID: &appTemplateVersionID,
-		PackageID:                    str.Ptr(packageORDID),
+		PackageID:                    str.Ptr(packageORDID1),
 	}
 }
 
 func fixIntegrationDependencyInputModel(integrationDependencyORDID string) *model.IntegrationDependencyInput {
 	return &model.IntegrationDependencyInput{
 		OrdID:        str.Ptr(integrationDependencyORDID),
-		OrdPackageID: str.Ptr(packageORDID),
+		OrdPackageID: str.Ptr(packageORDID1),
 		Aspects: []*model.AspectInput{
 			{
 				Title:     "Test integration aspect name",
@@ -341,11 +343,33 @@ func fixIntegrationDependencyInputModel(integrationDependencyORDID string) *mode
 func fixPackages() []*model.Package {
 	return []*model.Package{
 		{
-			ID:                  packageID,
+			ID:                  packageID1,
 			ApplicationID:       &appID,
-			OrdID:               packageORDID,
+			OrdID:               packageORDID1,
 			Vendor:              str.Ptr(vendorORDID),
 			Title:               "PACKAGE 1 TITLE",
+			ShortDescription:    "lorem ipsum",
+			Description:         "lorem ipsum dolor set",
+			Version:             "1.1.2",
+			PackageLinks:        json.RawMessage(fmt.Sprintf(packageLinksFormat, baseURL)),
+			Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			LicenseType:         str.Ptr("licence"),
+			SupportInfo:         str.Ptr("support-info"),
+			Tags:                json.RawMessage(`["testTag"]`),
+			Countries:           json.RawMessage(`["BG","EN"]`),
+			Labels:              json.RawMessage(packageLabels),
+			DocumentationLabels: json.RawMessage(documentationLabels),
+			PolicyLevel:         str.Ptr(policyLevel),
+			PartOfProducts:      json.RawMessage(products),
+			LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
+			Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+		},
+		{
+			ID:                  packageID2,
+			ApplicationID:       &appID,
+			OrdID:               packageORDID2,
+			Vendor:              str.Ptr(vendorORDID),
+			Title:               "PACKAGE 2 TITLE",
 			ShortDescription:    "lorem ipsum",
 			Description:         "lorem ipsum dolor set",
 			Version:             "1.1.2",
@@ -390,7 +414,7 @@ func fixEntityTypeMappingInputModel() *model.EntityTypeMappingInput {
 func fixAPI(id string, ordID *string) *model.APIDefinition {
 	return &model.APIDefinition{
 		ApplicationID:                           &appID,
-		PackageID:                               str.Ptr(packageORDID),
+		PackageID:                               str.Ptr(packageID1),
 		Name:                                    "API TITLE",
 		Description:                             str.Ptr("lorem ipsum dolor sit amet"),
 		TargetURLs:                              json.RawMessage(`["/test/v1"]`),
@@ -428,7 +452,7 @@ func fixAPIInput() *model.APIDefinitionInput {
 	return &model.APIDefinitionInput{
 		OrdID:                                   str.Ptr(apiORDID),
 		LocalTenantID:                           str.Ptr(localTenantID),
-		OrdPackageID:                            str.Ptr(packageORDID),
+		OrdPackageID:                            str.Ptr(packageORDID1),
 		Name:                                    "API TITLE",
 		Description:                             str.Ptr("long desc"),
 		TargetURLs:                              json.RawMessage(`["https://exmaple.com/test/v1","https://exmaple.com/test/v2"]`),
@@ -511,7 +535,7 @@ func fixEvent(id string, ordID *string) *model.EventDefinition {
 	return &model.EventDefinition{
 
 		ApplicationID:       &appID,
-		PackageID:           str.Ptr(packageORDID),
+		PackageID:           str.Ptr(packageID1),
 		Name:                "EVENT TITLE",
 		Description:         str.Ptr("lorem ipsum dolor sit amet"),
 		OrdID:               ordID,
@@ -542,7 +566,7 @@ func fixEvent(id string, ordID *string) *model.EventDefinition {
 func fixCapability(id string, ordID *string) *model.Capability {
 	return &model.Capability{
 		ApplicationID:       &appID,
-		PackageID:           str.Ptr(packageORDID),
+		PackageID:           str.Ptr(packageID1),
 		Name:                "Capability Title",
 		Description:         str.Ptr("Capability Description"),
 		OrdID:               ordID,
@@ -573,7 +597,7 @@ func fixCapabilityInput() *model.CapabilityInput {
 	return &model.CapabilityInput{
 		OrdID:               str.Ptr(capabilityORDID),
 		LocalTenantID:       str.Ptr(localTenantID),
-		OrdPackageID:        str.Ptr(packageORDID),
+		OrdPackageID:        str.Ptr(packageORDID1),
 		Name:                "Capability Title",
 		Description:         str.Ptr("Capability Description"),
 		Type:                "sap.mdo:mdi-capability:v1",
@@ -634,7 +658,7 @@ func fixEventInput() *model.EventDefinitionInput {
 	return &model.EventDefinitionInput{
 		OrdID:                                   str.Ptr(eventORDID),
 		LocalTenantID:                           str.Ptr(localTenantID),
-		OrdPackageID:                            str.Ptr(packageORDID),
+		OrdPackageID:                            str.Ptr(packageORDID1),
 		Name:                                    "EVENT TITLE",
 		Description:                             str.Ptr("long desc"),
 		ShortDescription:                        str.Ptr("short desc"),
