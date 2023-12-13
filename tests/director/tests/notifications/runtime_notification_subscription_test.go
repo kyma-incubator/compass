@@ -652,7 +652,6 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				assertSeveralFormationAssignmentsNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 1)
 
 				t.Logf("Check that application with ID %q is unassigned from formation %s", app1.ID, formationName)
-				t.Logf("Asserting scenarios label with eventually...")
 				require.Eventually(t, func() (doesNotHaveScenarioLabels bool) {
 					app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, app1.ID)
 					_, hasScenarios := app.Labels["scenarios"]
