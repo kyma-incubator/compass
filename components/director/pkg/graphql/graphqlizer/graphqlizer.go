@@ -524,14 +524,14 @@ func (g *Graphqlizer) AspectInputToGQL(in graphql.AspectInput) (string, error) {
 // AspectAPIDefinitionInputToGQL missing godoc
 func (g *Graphqlizer) AspectAPIDefinitionInputToGQL(in graphql.AspectAPIDefinitionInput) (string, error) {
 	return g.genericToGQL(in, `{
-		ordID: "{{ .OrdID}}",
+		ordId: "{{ .OrdID}}",
 	}`)
 }
 
 // AspectEventDefinitionInputToGQL missing godoc
 func (g *Graphqlizer) AspectEventDefinitionInputToGQL(in graphql.AspectEventDefinitionInput) (string, error) {
 	return g.genericToGQL(in, `{
-		ordID: "{{ .OrdID}}",
+		ordId: "{{ .OrdID}}",
 		{{- if .Subset }}
 		subset: [
 			{{- range $i, $e := .Subset }}
