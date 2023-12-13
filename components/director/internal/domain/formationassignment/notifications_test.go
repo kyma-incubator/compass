@@ -436,18 +436,6 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			expectedErrMsg: testErr.Error(),
 		},
 		{
-			name:                "Error when getting parent tenant is neither customer nor cost object",
-			formationAssignment: faWithSourceAppAndTargetApp,
-			formationOperation:  model.AssignFormation,
-			tenantRepo: func() *automock.TenantRepository {
-				repo := &automock.TenantRepository{}
-				repo.On("Get", emptyCtx, faWithSourceAppAndTargetApp.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(accountParentTenantResponse, nil)
-				return repo
-			},
-			expectedErrMsg: "Either customer ID or cost object ID should be present",
-		},
-		{
 			name:                "Error when getting parent tenant fails",
 			formationAssignment: faWithSourceAppAndTargetApp,
 			formationOperation:  model.AssignFormation,

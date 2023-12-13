@@ -624,10 +624,6 @@ func (fan *formationAssignmentNotificationService) extractCustomerTenantContext(
 		}
 	}
 
-	if customerID == "" && costObjectID == "" {
-		return nil, errors.New("Either customer ID or cost object ID should be present")
-	}
-
 	return &webhook.CustomerTenantContext{
 		CustomerID:   customerID,
 		CostObjectID: costObjectID,

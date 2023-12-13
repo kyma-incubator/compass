@@ -429,20 +429,6 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "error when parent is neither customer nor cost-object",
-			TenantRepoFn: func() *automock.TenantRepository {
-				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(accountParentTenantResponse, nil)
-				return repo
-			},
-			ObjectType:         graphql.FormationObjectTypeRuntime,
-			OperationType:      model.AssignFormation,
-			ObjectID:           RuntimeID,
-			InputFormation:     inputFormation,
-			ExpectedErrMessage: "Either customer ID or cost object ID should be present",
-		},
-		{
 			Name: "error when getting tenant",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}

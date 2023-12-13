@@ -220,10 +220,6 @@ func (ns *notificationsService) extractCustomerTenantContext(ctx context.Context
 		}
 	}
 
-	if customerID == "" && costObjectID == "" {
-		return nil, errors.New("Either customer ID or cost object ID should be present")
-	}
-
 	return &webhookdir.CustomerTenantContext{
 		CustomerID:   customerID,
 		CostObjectID: costObjectID,
