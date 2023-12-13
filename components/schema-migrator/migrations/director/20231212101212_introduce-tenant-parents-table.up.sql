@@ -198,7 +198,7 @@ ALTER TABLE tenant_runtime_contexts
 ALTER TABLE tenant_runtime_contexts
     ADD PRIMARY KEY (tenant_id, id, source);
 
-CREATE INDEX tenant_runtimes_source ON tenant_runtime_contexts (source);
+CREATE INDEX tenant_runtimes_contexts_source ON tenant_runtime_contexts (source);
 
 
 DROP VIEW IF EXISTS formation_templates_webhooks_tenants;
