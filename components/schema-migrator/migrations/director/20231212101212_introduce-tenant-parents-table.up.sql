@@ -44,7 +44,7 @@ ALTER TABLE tenant_applications
 ALTER TABLE tenant_applications DROP CONSTRAINT tenant_applications_pkey;
 
 ALTER TABLE  tenant_applications
-    ADD CONSTRAINT unique_ta UNIQUE (tenant_id,id,source);
+    ADD CONSTRAINT unique_tenant_applications UNIQUE (tenant_id,id,source);
 
 -- Add tenant access for the parents of the owning tenant
 INSERT INTO tenant_applications
@@ -100,7 +100,7 @@ ALTER TABLE tenant_runtimes
 ALTER TABLE tenant_runtimes DROP CONSTRAINT tenant_runtimes_pkey;
 
 ALTER TABLE  tenant_runtimes
-    ADD CONSTRAINT unique_ta UNIQUE (tenant_id,id,source);
+    ADD CONSTRAINT unique_tenant_runtimes UNIQUE (tenant_id,id,source);
 
 -- Add tenant access for the parents of the owning tenant
 INSERT INTO tenant_runtimes
@@ -156,7 +156,7 @@ ALTER TABLE tenant_runtime_contexts
 ALTER TABLE tenant_runtime_contexts DROP CONSTRAINT tenant_runtime_contexts_pkey;
 
 ALTER TABLE  tenant_runtime_contexts
-    ADD CONSTRAINT unique_ta UNIQUE (tenant_id,id,source);
+    ADD CONSTRAINT unique_tenant_runtime_contexts UNIQUE (tenant_id,id,source);
 
 -- Add tenant access for the parents of the owning tenant
 INSERT INTO tenant_runtime_contexts
