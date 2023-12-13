@@ -358,7 +358,7 @@ func TestORDService(stdT *testing.T) {
 			require.Equal(t, *testData.appInput.Description, gjson.Get(respBody, "value.0.description").String())
 		})
 		t.Run(fmt.Sprintf("Requesting System Instances with apis for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
-			respBody := makeRequestWithHeaders(t, testData.client, testData.url+"/systemInstances?$format=json&$expand=apis", testData.headers)
+			respBody := makeRequestWithHeaders(t, testData.client, testData.url+"/systemInstances?$expand=apis&$format=json", testData.headers)
 			require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 			require.Equal(t, testData.appInput.Name, gjson.Get(respBody, "value.0.title").String())
 			require.Equal(t, *testData.appInput.Description, gjson.Get(respBody, "value.0.description").String())
@@ -366,7 +366,7 @@ func TestORDService(stdT *testing.T) {
 			assertEqualAPIDefinitions(t, testData.appInput.Bundles[0].APIDefinitions, gjson.Get(respBody, "value.0.apis").String(), testData.apisMap, testData.client, testData.headers)
 		})
 		t.Run(fmt.Sprintf("Requesting System Instances with events for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
-			respBody := makeRequestWithHeaders(t, testData.client, testData.url+"/systemInstances?$format=json&$expand=events", testData.headers)
+			respBody := makeRequestWithHeaders(t, testData.client, testData.url+"/systemInstances?$expand=events&$format=json", testData.headers)
 			require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 			require.Equal(t, testData.appInput.Name, gjson.Get(respBody, "value.0.title").String())
 			require.Equal(t, *testData.appInput.Description, gjson.Get(respBody, "value.0.description").String())
