@@ -43,6 +43,9 @@ const (
 
 	serviceInstanceNameMaxLength = 50
 	serviceBindingMaxLengthName  = 100
+
+	beginCertTag = "-----BEGIN CERTIFICATE-----"
+	endCertTag   = "-----END CERTIFICATE-----"
 )
 
 type Handler struct {
@@ -572,6 +575,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			if inboundCert == "" {
+				log.C(ctx).Error("The inbound certificate cannot be empty")
+				reqBody := "{\"state\":\"CREATE_ERROR\", \"error\": \"The inbound certificate cannot be empty\"}"
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+			inboundCert = removeCertificateTags(inboundCert)
+
 			billingSvcKeyName := billingSvcInstanceName + "-key"
 			billingSvcKeyName = truncateString(ctx, billingSvcKeyName, serviceBindingMaxLengthName)
 			billingSvcKeyParams := fmt.Sprintf("{\"xsuaa\":{\"credential-type\":\"x509\",\"x509\":{\"certificate\":\"%s\",\"certificate-pinning\":false}}}", inboundCert)
@@ -599,15 +612,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if len(billingServiceKey.Credentials) < 0 {
 				log.C(ctx).Errorf("The credentials for MDI 'write' service key with ID: %q should not be empty", billingServiceKey.ID)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"The service key for the subscription billing instance shoud not be empty: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
-					log.C(ctx).Error(statusAPIErr)
-				}
-				return
-			}
-
-			if inboundCert == "" {
-				log.C(ctx).Error("The inbound certificate cannot be empty")
-				reqBody := "{\"state\":\"CREATE_ERROR\", \"error\": \"The inbound certificate cannot be empty\"}"
 				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
@@ -652,6 +656,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}()
+}
+
+func removeCertificateTags(cert string) string {
+	cert = strings.TrimPrefix(cert, beginCertTag)
+	cert = strings.TrimSuffix(cert, endCertTag)
+	cert = strings.Replace(cert, "\n", "", -1)
+
+	return cert
 }
 
 func truncateString(ctx context.Context, str string, maxLength int) string {
