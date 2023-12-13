@@ -1636,7 +1636,6 @@ func validateEntityTypeMappings(value interface{}) error {
 		return errors.New("entityTypeMappings should not be empty if present")
 	}
 	for _, entityTypeMapping := range entityTypeMappings {
-
 		// Validate EntityTypeTargets
 		var entityTypeTargets []*model.EntityTypeTarget
 		if err := json.Unmarshal(entityTypeMapping.EntityTypeTargets, &entityTypeTargets); err != nil {

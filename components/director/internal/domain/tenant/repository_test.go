@@ -46,7 +46,6 @@ var (
 )
 
 func TestPgRepository_Upsert(t *testing.T) {
-
 	testCases := []struct {
 		Name                 string
 		ConverterFn          func() *automock.Converter

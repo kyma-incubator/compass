@@ -63,7 +63,6 @@ var (
 	rtmSubtype                     = "rtm-subtype"
 	customerParentTenantResponse   = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.Customer)}
 	costObjectParentTenantResponse = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.CostObject)}
-	accountParentTenantResponse    = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.Account)}
 )
 
 func fixFormationAssignmentGQLModel(configValue *string) *graphql.FormationAssignment {
