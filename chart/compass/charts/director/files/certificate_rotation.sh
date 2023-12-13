@@ -80,7 +80,7 @@ else
  echo "$CERT_SVC_OAUTH_CLIENT_KEY" | openssl enc -base64 -d -A -out /tmp/client-key.pem
 fi
 
-TOKEN=$(curl \
+TOKEN_RESPONSE=$(curl \
   -s $SKIP_SSL_VALIDATION_FLAG \
   -m 30 \
   -X POST \
@@ -89,11 +89,13 @@ TOKEN=$(curl \
   "$CERT_SVC_OAUTH_URL$CERT_SVC_TOKEN_PATH" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -H "Accept: application/json" \
-  -d "grant_type=client_credentials&token_format=bearer&client_id=$CERT_SVC_CLIENT_ID" \
-  | jq -r .access_token)
+  -d "grant_type=client_credentials&token_format=bearer&client_id=$CERT_SVC_CLIENT_ID")
+
+TOKEN=$(echo $TOKEN_RESPONSE | jq -r .access_token)
 
 if [[ -z "$TOKEN" || $TOKEN == "null" ]]; then
-  echo -e "${RED}Bearer token should not be empty or null. Exiting... ${NC}"
+  echo -e "${RED}Token response: $TOKEN_RESPONSE${NC}"
+  echo -e "${RED}Bearer token is missing. Exiting... ${NC}"
   exit 1
 fi
 
