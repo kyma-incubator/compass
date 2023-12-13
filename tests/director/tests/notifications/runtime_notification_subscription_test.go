@@ -656,13 +656,11 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				require.Eventually(t, func() (doesNotHaveScenarioLabels bool) {
 					app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, app1.ID)
 					_, hasScenarios := app.Labels["scenarios"]
-					if hasScenarios {
-						t.Logf("Application with ID %q still has 'scenarios' label", app1.ID)
-						return
-					} else {
-						t.Logf("Successfully asserted application with ID %q scenario label", app1.ID)
-						return true
+					if hasScenarios != false {
+						log.C(ctx).Infof("Application with ID %s is still part of formation %s", app1.ID, formationName)
+						return false
 					}
+					return true
 				}, eventuallyTimeout, eventuallyTick)
 
 				t.Logf("Check that runtime context with ID %q is still assigned to formation %s", subscriptionConsumerSubaccountID, formationName)
