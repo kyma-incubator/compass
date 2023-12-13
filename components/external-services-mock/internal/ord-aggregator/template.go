@@ -1102,6 +1102,7 @@ const ordDocument = `{
       "aspects": [
         {
           "title": "ASPECT TITLE",
+		  "description": "Aspect desc",
           "mandatory": true,
           "eventResources": [
             {
@@ -1144,7 +1145,8 @@ const ordDocument = `{
 	  "mandatory": true,
       "aspects": [
         {
-          "title": "ASPECT TITLE",
+          "title": "ASPECT TITLE PRIVATE",
+		  "description": "Aspect private desc",
           "mandatory": true,
           "eventResources": [
             {
@@ -1187,7 +1189,8 @@ const ordDocument = `{
 	  "mandatory": true,
       "aspects": [
         {
-          "title": "ASPECT TITLE",
+          "title": "ASPECT TITLE INTERNAL",
+		  "description": "Aspect internal desc",
           "mandatory": true,
           "eventResources": [
             {

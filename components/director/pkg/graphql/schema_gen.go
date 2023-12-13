@@ -6014,11 +6014,11 @@ input ApplicationUpdateInput {
 }
 
 input AspectAPIDefinitionInput {
-	ordID: String!
+	ordId: String!
 }
 
 input AspectEventDefinitionInput {
-	ordID: String!
+	ordId: String!
 	subset: [AspectEventDefinitionSubsetInput]
 }
 
@@ -34837,7 +34837,7 @@ func (ec *executionContext) unmarshalInputAspectAPIDefinitionInput(ctx context.C
 
 	for k, v := range asMap {
 		switch k {
-		case "ordID":
+		case "ordId":
 			var err error
 			it.OrdID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -34855,7 +34855,7 @@ func (ec *executionContext) unmarshalInputAspectEventDefinitionInput(ctx context
 
 	for k, v := range asMap {
 		switch k {
-		case "ordID":
+		case "ordId":
 			var err error
 			it.OrdID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {

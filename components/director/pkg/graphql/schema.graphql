@@ -463,11 +463,11 @@ input ApplicationUpdateInput {
 }
 
 input AspectAPIDefinitionInput {
-	ordID: String!
+	ordId: String!
 }
 
 input AspectEventDefinitionInput {
-	ordID: String!
+	ordId: String!
 	subset: [AspectEventDefinitionSubsetInput]
 }
 

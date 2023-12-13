@@ -7808,7 +7808,7 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 					{
 						OrdID:      "sap.billing.sb:eventResource:FOO:v1",
 						MinVersion: str.Ptr("1.1.1"),
-						Subset:     json.RawMessage(`["eventType:""]`),
+						Subset:     json.RawMessage(`["eventType":""]`),
 					},
 				}
 
@@ -7822,7 +7822,7 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 					{
 						OrdID:      "sap.billing.sb:eventResource:FOO:v1",
 						MinVersion: str.Ptr("1.1.1"),
-						Subset:     json.RawMessage(`["eventType:"invalid-format"]`),
+						Subset:     json.RawMessage(`["eventType":"invalid-format"]`),
 					},
 				}
 
