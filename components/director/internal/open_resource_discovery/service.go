@@ -3,11 +3,12 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	"github.com/hashicorp/go-multierror"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 
