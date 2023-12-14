@@ -463,11 +463,11 @@ input ApplicationUpdateInput {
 }
 
 input AspectAPIDefinitionInput {
-	ordID: String!
+	ordId: String!
 }
 
 input AspectEventDefinitionInput {
-	ordID: String!
+	ordId: String!
 	subset: [AspectEventDefinitionSubsetInput]
 }
 
@@ -1084,6 +1084,10 @@ type AspectAPIDefinition {
 type AspectEventDefinition {
 	ordID: String!
 	subset: [AspectEventDefinitionSubset!]
+	created_at: Timestamp
+	updated_at: Timestamp
+	deleted_at: Timestamp
+	error: String
 }
 
 type AspectEventDefinitionSubset {

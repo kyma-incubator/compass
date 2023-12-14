@@ -41,25 +41,25 @@ func (_m *AspectConverter) MultipleInputFromGraphQL(in []*graphql.AspectInput) (
 	return r0, r1
 }
 
-// MultipleToGraphQL provides a mock function with given fields: in
-func (_m *AspectConverter) MultipleToGraphQL(in []*model.Aspect) ([]*graphql.Aspect, error) {
-	ret := _m.Called(in)
+// MultipleToGraphQL provides a mock function with given fields: in, aspectEventResourcesByAspectID
+func (_m *AspectConverter) MultipleToGraphQL(in []*model.Aspect, aspectEventResourcesByAspectID map[string][]*model.AspectEventResource) ([]*graphql.Aspect, error) {
+	ret := _m.Called(in, aspectEventResourcesByAspectID)
 
 	var r0 []*graphql.Aspect
 	var r1 error
-	if rf, ok := ret.Get(0).(func([]*model.Aspect) ([]*graphql.Aspect, error)); ok {
-		return rf(in)
+	if rf, ok := ret.Get(0).(func([]*model.Aspect, map[string][]*model.AspectEventResource) ([]*graphql.Aspect, error)); ok {
+		return rf(in, aspectEventResourcesByAspectID)
 	}
-	if rf, ok := ret.Get(0).(func([]*model.Aspect) []*graphql.Aspect); ok {
-		r0 = rf(in)
+	if rf, ok := ret.Get(0).(func([]*model.Aspect, map[string][]*model.AspectEventResource) []*graphql.Aspect); ok {
+		r0 = rf(in, aspectEventResourcesByAspectID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*graphql.Aspect)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func([]*model.Aspect) error); ok {
-		r1 = rf(in)
+	if rf, ok := ret.Get(1).(func([]*model.Aspect, map[string][]*model.AspectEventResource) error); ok {
+		r1 = rf(in, aspectEventResourcesByAspectID)
 	} else {
 		r1 = ret.Error(1)
 	}

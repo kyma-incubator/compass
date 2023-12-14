@@ -780,7 +780,7 @@ func (fp *GqlFieldsProvider) ForTenantAccess() string {
 	`
 }
 
-// ForIntegrationDependency missing godoc
+// ForIntegrationDependency returns integration dependency fields
 func (fp *GqlFieldsProvider) ForIntegrationDependency() string {
 	return fmt.Sprintf(`
 		id
@@ -796,7 +796,7 @@ func (fp *GqlFieldsProvider) ForIntegrationDependency() string {
 		`, fp.ForAspects())
 }
 
-// ForAspects returns tenant access fields
+// ForAspects returns aspects fields
 func (fp *GqlFieldsProvider) ForAspects() string {
 	return `
 		id

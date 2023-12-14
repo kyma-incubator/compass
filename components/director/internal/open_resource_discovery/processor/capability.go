@@ -18,7 +18,7 @@ type CapabilityService interface {
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Capability, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Capability, error)
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.CapabilityInput, spec []*model.SpecInput, capabilityHash uint64) (string, error)
-	Update(ctx context.Context, resourceType resource.Type, id string, in model.CapabilityInput, capabilityHash uint64) error
+	Update(ctx context.Context, resourceType resource.Type, id string, packageID *string, in model.CapabilityInput, capabilityHash uint64) error
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
 }
 
@@ -143,7 +143,7 @@ func (cp *CapabilityProcessor) resyncCapability(ctx context.Context, resourceTyp
 		return fetchRequests, nil
 	}
 
-	err := cp.capabilitySvc.Update(ctx, resourceType, capabilitiesFromDB[i].ID, capability, capabilityHash)
+	err := cp.capabilitySvc.Update(ctx, resourceType, capabilitiesFromDB[i].ID, packageID, capability, capabilityHash)
 	if err != nil {
 		return nil, err
 	}
