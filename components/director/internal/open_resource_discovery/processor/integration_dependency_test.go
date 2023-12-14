@@ -367,7 +367,7 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 			integrationDependencySvc := test.IntegrationDependencySvcFn()
 			aspectSvc := test.AspectSvcFn()
 
-			integrationDependencyProcessor := processor.NewIntegrationDependencyProcessor(tx, integrationDependencySvc, aspectSvc)
+			integrationDependencyProcessor := processor.NewIntegrationDependencyProcessor(tx, integrationDependencySvc, aspectSvc, nil)
 			result, err := integrationDependencyProcessor.Process(context.TODO(), test.InputResource, test.InputResourceID, fixPackages(), test.InputIntegrationDependencies, test.InputResourceHashes)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)

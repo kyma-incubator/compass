@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspect"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/capability"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/entitytypemapping"
@@ -204,7 +206,8 @@ func main() {
 	entityTypeConverter := entitytype.NewConverter(versionConverter)
 	entityTypeMappingConverter := entitytypemapping.NewConverter()
 	capabilityConverter := capability.NewConverter(versionConverter)
-	aspectConverter := aspect.NewConverter()
+	aspectEventResourceConverter := aspecteventresource.NewConverter()
+	aspectConverter := aspect.NewConverter(aspectEventResourceConverter)
 	integrationDependencyConverter := integrationdependency.NewConverter(versionConverter, aspectConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
@@ -242,6 +245,7 @@ func main() {
 	entityTypeMappingRepo := entitytypemapping.NewRepository(entityTypeMappingConverter)
 	capabilityRepo := capability.NewRepository(capabilityConverter)
 	aspectRepo := aspect.NewRepository(aspectConverter)
+	aspectEventResourceRepo := aspecteventresource.NewRepository(aspectEventResourceConverter)
 	integrationDependencyRepo := integrationdependency.NewRepository(integrationDependencyConverter)
 	specRepo := spec.NewRepository(specConverter)
 	docRepo := document.NewRepository(docConverter)
@@ -280,6 +284,7 @@ func main() {
 	entityTypeSvc := entitytype.NewService(entityTypeRepo, uidSvc)
 	capabilitySvc := capability.NewService(capabilityRepo, uidSvc, specSvc)
 	aspectSvc := aspect.NewService(aspectRepo, uidSvc)
+	aspectEventResourceSvc := aspecteventresource.NewService(aspectEventResourceRepo, uidSvc)
 	integrationDependencySvc := integrationdependency.NewService(integrationDependencyRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, tenantMappingConfig, cfg.TenantMappingCallbackURL)
@@ -316,7 +321,7 @@ func main() {
 	productProcessor := processor.NewProductProcessor(transact, productSvc)
 	apiProcessor := processor.NewAPIProcessor(transact, apiSvc, entityTypeSvc, entityTypeMappingSvc, bundleReferenceSvc, specSvc)
 	eventProcessor := processor.NewEventProcessor(transact, eventAPISvc, entityTypeSvc, entityTypeMappingSvc, bundleReferenceSvc, specSvc)
-	integrationDependencyProcessor := processor.NewIntegrationDependencyProcessor(transact, integrationDependencySvc, aspectSvc)
+	integrationDependencyProcessor := processor.NewIntegrationDependencyProcessor(transact, integrationDependencySvc, aspectSvc, aspectEventResourceSvc)
 	entityTypeProcessor := processor.NewEntityTypeProcessor(transact, entityTypeSvc)
 	capabilityProcessor := processor.NewCapabilityProcessor(transact, capabilitySvc, specSvc)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)

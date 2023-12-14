@@ -652,13 +652,19 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				assertSeveralFormationAssignmentsNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 1)
 
 				t.Logf("Check that application with ID %q is unassigned from formation %s", app1.ID, formationName)
-				app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, app1.ID)
-				scenarios, hasScenarios := app.Labels["scenarios"]
-				assert.False(t, hasScenarios)
+				require.Eventually(t, func() (doesNotHaveScenarioLabels bool) {
+					app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, app1.ID)
+					_, hasScenarios := app.Labels["scenarios"]
+					if hasScenarios != false {
+						log.C(ctx).Infof("Application with ID %s is still part of formation %s", app1.ID, formationName)
+						return false
+					}
+					return true
+				}, eventuallyTimeout, eventuallyTick)
 
 				t.Logf("Check that runtime context with ID %q is still assigned to formation %s", subscriptionConsumerSubaccountID, formationName)
 				actualRtmCtx := fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
-				scenarios, hasScenarios = actualRtmCtx.Labels["scenarios"]
+				scenarios, hasScenarios := actualRtmCtx.Labels["scenarios"]
 				assert.True(t, hasScenarios)
 				assert.Len(t, scenarios, 1)
 				assert.Contains(t, scenarios, formationName)
