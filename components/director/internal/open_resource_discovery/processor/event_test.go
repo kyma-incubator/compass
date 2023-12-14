@@ -23,6 +23,12 @@ func TestEventProcessor_Process(t *testing.T) {
 		fixEvent(eventID, str.Ptr(eventORDID)),
 	}
 
+	fixUpdatedEventDef := []*model.EventDefinition{
+		fixEvent(eventID, str.Ptr(eventORDID)),
+	}
+
+	fixUpdatedEventDef[0].PackageID = str.Ptr(packageID2)
+
 	fixEventDef2 := []*model.EventDefinition{
 		fixEvent(eventID, str.Ptr(eventORDID2)),
 	}
@@ -92,7 +98,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			EventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef, nil).Twice()
-				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixEventDef[0].ID, *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(nil).Once()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixEventDef[0].ID, str.Ptr(packageID1), *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(nil).Once()
 
 				return eventSvc
 			},
@@ -108,7 +114,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			InputResource:              resource.Application,
 			InputResourceID:            appID,
 			InputBundlesFromDB:         fixEmptyBundles(),
-			InputPackagesFromDB:        fixEmptyPackages(),
+			InputPackagesFromDB:        fixPackages(),
 			EventInput:                 fixEventInputs,
 			InputResourceHashes:        resourceHashes,
 			ExpectedEventDefOutput:     fixEventDef,
@@ -123,7 +129,7 @@ func TestEventProcessor_Process(t *testing.T) {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoNewerLastUpdate(), nil).Once()
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef, nil).Once()
-				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixEventDef[0].ID, *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(nil).Once()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixEventDef[0].ID, str.Ptr(packageID1), *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(nil).Once()
 				return eventSvc
 			},
 			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
@@ -137,7 +143,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			InputResource:              resource.Application,
 			InputResourceID:            appID,
 			InputBundlesFromDB:         fixEmptyBundles(),
-			InputPackagesFromDB:        fixEmptyPackages(),
+			InputPackagesFromDB:        fixPackages(),
 			EventInput:                 fixEventInputs,
 			InputResourceHashes:        resourceHashes,
 			ExpectedEventDefOutput:     fixEventDef,
@@ -151,7 +157,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			EventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef2, nil).Twice()
-				eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, str.Ptr(packageID), *fixEventInputs[0], nilSpecInputSlice, []string{}, emptyHash, "").Return(eventID, nil).Once()
+				eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, str.Ptr(packageID1), *fixEventInputs[0], nilSpecInputSlice, []string{}, emptyHash, "").Return(eventID, nil).Once()
 				return eventSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
@@ -257,7 +263,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			EventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef, nil).Once()
-				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixEventDef[0].ID, *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(testErr).Once()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixEventDef[0].ID, str.Ptr(packageID1), *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(testErr).Once()
 				return eventSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
@@ -270,7 +276,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			InputResource:        resource.Application,
 			InputResourceID:      appID,
 			InputBundlesFromDB:   fixEmptyBundles(),
-			InputPackagesFromDB:  fixEmptyPackages(),
+			InputPackagesFromDB:  fixPackages(),
 			EventInput:           fixEventInputs,
 			InputResourceHashes:  resourceHashes,
 			ExpectedErr:          testErr,
@@ -433,7 +439,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			EventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef, nil).Once()
-				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixEventDef[0].ID, *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(nil).Once()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixEventDef[0].ID, str.Ptr(packageID1), *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(nil).Once()
 				return eventSvc
 			},
 			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
@@ -446,7 +452,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
 			InputBundlesFromDB:  fixEmptyBundles(),
-			InputPackagesFromDB: fixEmptyPackages(),
+			InputPackagesFromDB: fixPackages(),
 			EventInput:          fixEventInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         testErr,
@@ -463,7 +469,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			EventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoNewerLastUpdate(), nil).Once()
-				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixEventDef[0].ID, *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(nil).Once()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixEventDef[0].ID, str.Ptr(packageID1), *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(nil).Once()
 				return eventSvc
 			},
 			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
@@ -477,7 +483,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
 			InputBundlesFromDB:  fixEmptyBundles(),
-			InputPackagesFromDB: fixEmptyPackages(),
+			InputPackagesFromDB: fixPackages(),
 			EventInput:          fixEventInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         testErr,
@@ -494,7 +500,7 @@ func TestEventProcessor_Process(t *testing.T) {
 			EventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixEventsNoNewerLastUpdate(), nil).Once()
-				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, fixEventDef[0].ID, *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(nil).Once()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, fixEventDef[0].ID, str.Ptr(packageID1), *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(nil).Once()
 				return eventSvc
 			},
 			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
@@ -508,10 +514,42 @@ func TestEventProcessor_Process(t *testing.T) {
 			InputResource:       resource.ApplicationTemplateVersion,
 			InputResourceID:     appTemplateVersionID,
 			InputBundlesFromDB:  fixEmptyBundles(),
-			InputPackagesFromDB: fixEmptyPackages(),
+			InputPackagesFromDB: fixPackages(),
 			EventInput:          fixEventInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         testErr,
+		},
+		{
+			Name: "Success when updating package id for Event",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
+			EventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				fixEventInputs[0].OrdPackageID = str.Ptr(packageORDID2)
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventDef, nil).Once()
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixUpdatedEventDef, nil).Once()
+				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixEventDef[0].ID, str.Ptr(packageID2), *fixEventInputs[0], nilSpecInput, []string{}, []string{}, []string{}, emptyHash, "").Return(nil).Once()
+
+				return eventSvc
+			},
+			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
+			BundleReferenceSvcFn:   successfulBundleReferenceGet,
+			SpecSvcFn: func() *automock.SpecService {
+				specSvc := &automock.SpecService{}
+				spec := fixEventInputs[0].ResourceDefinitions[0].ToSpec()
+				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.EventSpecReference, eventID).Return(nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec, resource.Application, model.EventSpecReference, eventID).Return("", nil, nil).Once()
+				return specSvc
+			},
+			InputResource:              resource.Application,
+			InputResourceID:            appID,
+			InputBundlesFromDB:         fixEmptyBundles(),
+			InputPackagesFromDB:        fixPackages(),
+			EventInput:                 fixEventInputs,
+			InputResourceHashes:        resourceHashes,
+			ExpectedEventDefOutput:     fixUpdatedEventDef,
+			ExpectedFetchRequestOutput: []*processor.OrdFetchRequest{{FetchRequest: nil, RefObjectOrdID: eventORDID}},
 		},
 	}
 
