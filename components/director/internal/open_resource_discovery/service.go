@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"github.com/hashicorp/go-multierror"
 	"strconv"
 	"strings"
 	"sync"
@@ -42,6 +43,9 @@ const (
 
 	customTypeProperty  = "customType"
 	callbackURLProperty = "callbackUrl"
+
+	ValidationErrorMsg = "error validating ORD documents"
+	ProcessingErrorMsg = "error processing ORD documents"
 )
 
 // ServiceConfig contains configuration for the ORD aggregator service
@@ -1280,20 +1284,24 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 				metricsPusher.ReportAggregationFailureORD(ctx, validationErrors[i])
 			}
 
-			log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error("error validating ORD documents")
+			log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error(ValidationErrorMsg)
 		}
+		var errs *multierror.Error
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
 
-			log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
-			return errors.Wrap(err, "error processing ORD documents")
+			log.C(ctx).WithError(err).Errorf("%s: %v", ProcessingErrorMsg, err)
+			errs = multierror.Append(errs, errors.Wrap(err, ProcessingErrorMsg))
 		}
 
 		if validationError != nil {
-			return errors.Wrap(err, "error validating ORD documents")
+			errs = multierror.Append(errs, errors.Wrap(validationError, ValidationErrorMsg))
 		}
 
+		if errs != nil {
+			return errs.ErrorOrNil()
+		}
 		log.C(ctx).Info("Successfully processed ORD documents")
 	}
 	return nil
