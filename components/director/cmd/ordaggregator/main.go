@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -107,8 +108,12 @@ type config struct {
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 
-	ClientTimeout     time.Duration `envconfig:"default=120s"`
-	SkipSSLValidation bool          `envconfig:"default=false"`
+	ClientTimeout                  time.Duration `envconfig:"default=120s"`
+	ClientMaxConnectionsPerHost    int           `envconfig:"APP_CLIENT_MAX_CONNECTIONS_PER_HOST,default=1000"`
+	ClientMaxIdlConnectionsPerHost int           `envconfig:"APP_CLIENT_MAX_IDLE_CONNECTIONS_PER_HOST,default=1000"`
+	ClientRetryAttempts            uint          `envconfig:"default=5"`
+	ClientRetryDelay               time.Duration `envconfig:"default=5s"`
+	SkipSSLValidation              bool          `envconfig:"default=false"`
 
 	RetryConfig                   retry.Config
 	CertLoaderConfig              credloader.CertConfig
@@ -182,6 +187,13 @@ func main() {
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   15 * time.Second,
+				KeepAlive: 15 * time.Second,
+			}).DialContext,
+			MaxConnsPerHost:     cfg.ClientMaxConnectionsPerHost,
+			MaxIdleConnsPerHost: cfg.ClientMaxIdlConnectionsPerHost,
+			MaxIdleConns:        cfg.ClientMaxIdlConnectionsPerHost,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
@@ -350,7 +362,7 @@ func main() {
 		shutdownMainSrv()
 	}()
 
-	clientConfig := ord.NewClientConfig(cfg.MaxParallelDocumentsPerApplication)
+	clientConfig := ord.NewClientConfig(cfg.MaxParallelDocumentsPerApplication, cfg.ClientRetryDelay, cfg.ClientRetryAttempts)
 	ordClientWithTenantExecutor := newORDClientWithTenantExecutor(cfg, clientConfig, certCache)
 	ordClientWithoutTenantExecutor := newORDClientWithoutTenantExecutor(cfg, clientConfig, certCache)
 
@@ -420,6 +432,13 @@ func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, c
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   15 * time.Second,
+				KeepAlive: 15 * time.Second,
+			}).DialContext,
+			MaxConnsPerHost:     cfg.ClientMaxConnectionsPerHost,
+			MaxIdleConnsPerHost: cfg.ClientMaxIdlConnectionsPerHost,
+			MaxIdleConns:        cfg.ClientMaxIdlConnectionsPerHost,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
@@ -433,6 +452,13 @@ func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   15 * time.Second,
+				KeepAlive: 15 * time.Second,
+			}).DialContext,
+			MaxConnsPerHost:     cfg.ClientMaxConnectionsPerHost,
+			MaxIdleConnsPerHost: cfg.ClientMaxIdlConnectionsPerHost,
+			MaxIdleConns:        cfg.ClientMaxIdlConnectionsPerHost,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
