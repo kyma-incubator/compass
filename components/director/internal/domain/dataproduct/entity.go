@@ -42,6 +42,7 @@ type Entity struct {
 	PolicyLevel                  sql.NullString `db:"policy_level"`
 	CustomPolicyLevel            sql.NullString `db:"custom_policy_level"`
 	SystemInstanceAware          sql.NullBool   `db:"system_instance_aware"`
+	ResourceHash                 sql.NullString `db:"resource_hash"`
 	version.Version
 	*repo.BaseEntity
 }

@@ -3,8 +3,11 @@ package model
 import (
 	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"strconv"
 )
 
+// DataProduct represent structure for DataProduct
 type DataProduct struct {
 	ApplicationID                *string
 	ApplicationTemplateVersionID *string
@@ -40,14 +43,16 @@ type DataProduct struct {
 	PolicyLevel                  *string
 	CustomPolicyLevel            *string
 	SystemInstanceAware          *bool
+	ResourceHash                 *string
 	*BaseEntity
 }
 
-// GetType missing godoc
+// GetType returns Type DataProduct
 func (*DataProduct) GetType() resource.Type {
 	return resource.DataProduct
 }
 
+// DataProductInput is an input for creating a new Data Product
 type DataProductInput struct {
 	OrdID               *string         `json:"ordID"`
 	LocalTenantID       *string         `json:"localId,omitempty"`
@@ -81,4 +86,64 @@ type DataProductInput struct {
 	CustomPolicyLevel   *string         `json:"customPolicyLevel"`
 	SystemInstanceAware *bool           `json:"systemInstanceAware"`
 	*VersionInput       `hash:"ignore"`
+}
+
+// ToDataProduct converts DataProductInput to DataProduct
+func (d *DataProductInput) ToDataProduct(id string, resourceType resource.Type, resourceID string, packageID *string, dataProductHash uint64) *DataProduct {
+	if d == nil {
+		return nil
+	}
+
+	var hash *string
+	if dataProductHash != 0 {
+		hash = str.Ptr(strconv.FormatUint(dataProductHash, 10))
+	}
+
+	dataProduct := &DataProduct{
+		OrdID:               d.OrdID,
+		LocalTenantID:       d.LocalTenantID,
+		CorrelationIDs:      d.CorrelationIDs,
+		Title:               d.Title,
+		ShortDescription:    d.ShortDescription,
+		Description:         d.Description,
+		PackageID:           packageID,
+		Version:             d.VersionInput.ToVersion(),
+		LastUpdate:          d.LastUpdate,
+		Visibility:          d.Visibility,
+		ReleaseStatus:       d.ReleaseStatus,
+		Disabled:            d.Disabled,
+		DeprecationDate:     d.DeprecationDate,
+		SunsetDate:          d.SunsetDate,
+		Successors:          d.Successors,
+		ChangeLogEntries:    d.ChangeLogEntries,
+		Type:                d.Type,
+		Category:            d.Category,
+		EntityTypes:         d.EntityTypes,
+		InputPorts:          d.InputPorts,
+		OutputPorts:         d.OutputPorts,
+		Responsible:         d.Responsible,
+		DataProductLinks:    d.DataProductLinks,
+		Links:               d.Links,
+		Industry:            d.Industry,
+		LineOfBusiness:      d.LineOfBusiness,
+		Tags:                d.Tags,
+		Labels:              d.Labels,
+		DocumentationLabels: d.DocumentationLabels,
+		PolicyLevel:         d.PolicyLevel,
+		CustomPolicyLevel:   d.CustomPolicyLevel,
+		SystemInstanceAware: d.SystemInstanceAware,
+		ResourceHash:        hash,
+		BaseEntity: &BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
+	}
+
+	if resourceType.IsTenantIgnorable() {
+		dataProduct.ApplicationTemplateVersionID = &resourceID
+	} else if resourceType == resource.Application {
+		dataProduct.ApplicationID = &resourceID
+	}
+
+	return dataProduct
 }

@@ -51,6 +51,10 @@ const (
 	EventOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// CapabilityOrdIDRegex represents the valid structure of the ordID of the Capability
 	CapabilityOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(capability):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+	// DataProductOrdIDRegex represents the valid structure of the ordID of the Data Product
+	DataProductOrdIDRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(dataProduct):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+	// DataProductOutputPortsRegex represents the valid structure of the output ports of the Data Product
+	DataProductOutputPortsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(apiResource|eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// CorrelationIDsRegex represents the valid structure of the field
 	CorrelationIDsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
 	// LabelsKeyRegex represents the valid structure of the field
@@ -78,6 +82,8 @@ const (
 	EventSuccessorsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// IntegrationDependencySuccessorsRegex represents the valid structure of the Integration Dependency successors array items
 	IntegrationDependencySuccessorsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+	// DataProductSuccessorsRegex represents the valid structure of the Integration Dependency successors array items
+	DataProductSuccessorsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(dataProduct):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 
 	// ResponsibleRegex represents the valid structure of the `responsible` field for API, Event and Data Product
 	ResponsibleRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
@@ -203,6 +209,13 @@ const (
 	// IntegrationDependencyVisibilityInternal is one of the available Integration Dependency visibility options
 	IntegrationDependencyVisibilityInternal = internal
 
+	// DataProductVisibilityPublic is one of the available Data Product visibility options
+	DataProductVisibilityPublic = public
+	// DataProductVisibilityPrivate is one of the available Data Product visibility options
+	DataProductVisibilityPrivate = private
+	// DataProductVisibilityInternal is one of the available Data Product visibility options
+	DataProductVisibilityInternal = internal
+
 	// APIImplementationStandardDocumentAPI is one of the available api implementation standard options
 	APIImplementationStandardDocumentAPI string = "sap:ord-document-api:v1"
 	// APIImplementationStandardServiceBroker is one of the available api implementation standard options
@@ -252,6 +265,18 @@ const (
 	APIUsageExternal = "external"
 	// APIUsageLocal is one of the available Usage options for API
 	APIUsageLocal = "local"
+
+	// DataProductTypeBase is one of the available Type options for Data Product
+	DataProductTypeBase = "base"
+	// DataProductTypeDerived is one of the available Type options for Data Product
+	DataProductTypeDerived = "derived"
+
+	// DataProductCategoryBusinessObject is one of the available Category options for Data Product
+	DataProductCategoryBusinessObject = "business-object"
+	// DataProductCategoryAnalytical is one of the available Category options for Data Product
+	DataProductCategoryAnalytical = "analytical"
+	// DataProductCategoryOther is one of the available Category options for Data Product
+	DataProductCategoryOther = "other"
 )
 
 var (
@@ -317,6 +342,14 @@ var (
 		"read",
 		"delete",
 		"update",
+	}
+
+	apiEventResourceLinkTypes = []interface{}{
+		"api-documentation", "authentication", "client-registration", "console", "payment", "service-level-agreement", "support", "custom",
+	}
+
+	dataProductResourceLinkTypes = []interface{}{
+		"payment", "service-level-agreement", "support", "custom",
 	}
 )
 
@@ -471,7 +504,7 @@ func validatePackageInput(pkg *model.PackageInput, docPolicyLevel *string) error
 			validation.Match(regexp.MustCompile(VendorOrdIDRegex)), validation.Length(1, 256)),
 		validation.Field(&pkg.PartOfProducts, partOfProductsRules()...),
 		validation.Field(&pkg.Tags, tagsRules()...),
-    validation.Field(&pkg.RuntimeRestriction, validation.NilOrNotEmpty, validation.In(PackageRuntimeRestriction)),
+		validation.Field(&pkg.RuntimeRestriction, validation.NilOrNotEmpty, validation.In(PackageRuntimeRestriction)),
 		validation.Field(&pkg.Labels, validation.By(validateORDLabels)),
 		validation.Field(&pkg.Countries, countriesRules()...),
 		validation.Field(&pkg.LineOfBusiness, lineOfBusinessRules(docPolicyLevel, pkg.PolicyLevel)...),
@@ -631,7 +664,9 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 		validation.Field(&api.ResourceDefinitions, validation.By(func(value interface{}) error {
 			return validateAPIResourceDefinitions(value, *api, docPolicyLevel)
 		})),
-		validation.Field(&api.APIResourceLinks, validation.By(validateResourceLinks)),
+		validation.Field(&api.APIResourceLinks, validation.By(func(value interface{}) error {
+			return validateResourceLinks(value, apiEventResourceLinkTypes)
+		})),
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In(common.ReleaseStatusBeta, common.ReleaseStatusActive, common.ReleaseStatusDeprecated)),
 		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == common.ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate))),
@@ -693,7 +728,9 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 			return validateEventResourceDefinition(value, *event, docPolicyLevel)
 		})),
 		validation.Field(&event.Links, validation.By(validateORDLinks)),
-		validation.Field(&event.EventResourceLinks, validation.By(validateResourceLinks)),
+		validation.Field(&event.EventResourceLinks, validation.By(func(value interface{}) error {
+			return validateResourceLinks(value, apiEventResourceLinkTypes)
+		})),
 		validation.Field(&event.ReleaseStatus, validation.Required, validation.In(common.ReleaseStatusBeta, common.ReleaseStatusActive, common.ReleaseStatusDeprecated)),
 		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == common.ReleaseStatusDeprecated, validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate))),
 		validation.Field(&event.Successors, validation.By(func(value interface{}) error {
@@ -841,6 +878,55 @@ func validateIntegrationDependencyInputWithSuppressedErrors(integrationDependenc
 	return validation.ValidateStruct(integrationDependency,
 		validation.Field(&integrationDependency.VersionInput.Value, validation.By(func(value interface{}) error {
 			return validateIntegrationDependencyVersionInput(value, *integrationDependency, integrationDependenciesFromDB, integrationDependencyHashes)
+		})))
+}
+
+func validateDataProductInput(dataProduct *model.DataProductInput, docPolicyLevel *string) error {
+	return validation.ValidateStruct(dataProduct,
+		validation.Field(&dataProduct.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(DataProductOrdIDRegex))),
+		validation.Field(&dataProduct.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
+		validation.Field(&dataProduct.CorrelationIDs, correlationIdsRules()...),
+		validation.Field(&dataProduct.Title, titleRules(docPolicyLevel, dataProduct.PolicyLevel)...),
+		validation.Field(&dataProduct.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, dataProduct.PolicyLevel, dataProduct.Title)...),
+		validation.Field(&dataProduct.Description, optionalDescriptionRules(docPolicyLevel, dataProduct.ShortDescription)...),
+		validation.Field(&dataProduct.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
+		validation.Field(&dataProduct.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(common.SemVerRegex))),
+		validation.Field(&dataProduct.LastUpdate, validation.When(dataProduct.LastUpdate != nil, validation.By(isValidDate))),
+		validation.Field(&dataProduct.Visibility, validation.Required, validation.In(DataProductVisibilityPublic, DataProductVisibilityInternal, DataProductVisibilityPrivate)),
+		validation.Field(&dataProduct.ReleaseStatus, validation.Required, validation.In(common.ReleaseStatusBeta, common.ReleaseStatusActive, common.ReleaseStatusDeprecated)),
+		validation.Field(&dataProduct.DeprecationDate, validation.NilOrNotEmpty, validation.When(*dataProduct.ReleaseStatus == common.ReleaseStatusDeprecated, validation.Required), validation.When(dataProduct.DeprecationDate != nil, validation.By(isValidDate))),
+		validation.Field(&dataProduct.SunsetDate, validation.NilOrNotEmpty, validation.When(*dataProduct.ReleaseStatus == common.ReleaseStatusDeprecated, validation.Required), validation.When(dataProduct.SunsetDate != nil, validation.By(isValidDate))),
+		validation.Field(&dataProduct.Successors, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(DataProductSuccessorsRegex))
+		})),
+		validation.Field(&dataProduct.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
+		validation.Field(&dataProduct.Type, validation.Required, validation.In(DataProductTypeBase, DataProductTypeDerived)),
+		validation.Field(&dataProduct.Category, validation.Required, validation.In(DataProductCategoryBusinessObject, DataProductCategoryAnalytical, DataProductCategoryOther)),
+		validation.Field(&dataProduct.EntityTypes, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EntityTypeOrdIDRegex))
+		})),
+		validation.Field(&dataProduct.InputPorts, validation.By(validateDataProductInputPorts)),
+		validation.Field(&dataProduct.OutputPorts, validation.By(validateDataProductOutputPorts)),
+		validation.Field(&dataProduct.Responsible, validation.Required, validation.Length(MinResponsibleLength, MaxResponsibleLength), validation.Match(regexp.MustCompile(ResponsibleRegex))),
+		validation.Field(&dataProduct.DataProductLinks, validation.By(func(value interface{}) error {
+			return validateResourceLinks(value, dataProductResourceLinkTypes)
+		})),
+		validation.Field(&dataProduct.Links, validation.By(validateORDLinks)),
+		validation.Field(&dataProduct.Industry, industryRules(docPolicyLevel, dataProduct.PolicyLevel)...),
+		validation.Field(&dataProduct.LineOfBusiness, lineOfBusinessRules(docPolicyLevel, dataProduct.PolicyLevel)...),
+		validation.Field(&dataProduct.Tags, tagsRules()...),
+		validation.Field(&dataProduct.Labels, validation.By(validateORDLabels)),
+		validation.Field(&dataProduct.DocumentationLabels, validation.By(validateDocumentationLabels)),
+		validation.Field(&dataProduct.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelCustom, PolicyLevelNone), validation.When(dataProduct.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
+		validation.Field(&dataProduct.CustomPolicyLevel, validation.When(dataProduct.PolicyLevel != nil && *dataProduct.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
+	)
+}
+
+// fields with validation errors will lead to persisting of the DataProduct resource
+func validateDataProductInputWithSuppressedErrors(dataProduct *model.DataProductInput, dataProductsFromDB map[string]*model.DataProduct, dataProductHashes map[string]uint64) error {
+	return validation.ValidateStruct(dataProduct,
+		validation.Field(&dataProduct.VersionInput.Value, validation.By(func(value interface{}) error {
+			return validateDataProductVersionInput(value, *dataProduct, dataProductsFromDB, dataProductHashes)
 		})))
 }
 
@@ -1090,11 +1176,11 @@ func validatePackageLinks(value interface{}) error {
 	})
 }
 
-func validateResourceLinks(value interface{}) error {
+func validateResourceLinks(value interface{}, resourceTypes []interface{}) error {
 	return common.ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"type": {
 			validation.Required,
-			validation.In("api-documentation", "authentication", "client-registration", "console", "payment", "service-level-agreement", "support", "custom"),
+			validation.In(resourceTypes...),
 		},
 		"url": {
 			validation.Required,
@@ -1109,6 +1195,26 @@ func validateResourceLinks(value interface{}) error {
 			}
 		}
 		return nil
+	})
+}
+
+func validateDataProductInputPorts(value interface{}) error {
+	return common.ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
+		"ordId": {
+			validation.Required,
+			validation.Length(MinOrdIDLength, MaxOrdIDLength),
+			validation.Match(regexp.MustCompile(common.IntegrationDependencyOrdIDRegex)),
+		},
+	})
+}
+
+func validateDataProductOutputPorts(value interface{}) error {
+	return common.ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
+		"ordId": {
+			validation.Required,
+			validation.Length(MinOrdIDLength, MaxOrdIDLength),
+			validation.Match(regexp.MustCompile(DataProductOutputPortsRegex)),
+		},
 	})
 }
 
@@ -1366,6 +1472,26 @@ func validateIntegrationDependencyVersionInput(value interface{}, integrationDep
 	hashDoc := strconv.FormatUint(integrationDependencyHashes[str.PtrStrToStr(integrationDependency.OrdID)], 10)
 
 	return checkHashEquality(integrationDependencyFromDB.Version.Value, integrationDependency.VersionInput.Value, hashDB, hashDoc)
+}
+
+func validateDataProductVersionInput(value interface{}, dataProduct model.DataProductInput, dataProductsFromDB map[string]*model.DataProduct, dataProductHashes map[string]uint64) error {
+	if value == nil {
+		return nil
+	}
+
+	if len(dataProductsFromDB) == 0 {
+		return nil
+	}
+
+	dataProductFromDB, ok := dataProductsFromDB[str.PtrStrToStr(dataProduct.OrdID)]
+	if !ok || isResourceHashMissing(dataProductFromDB.ResourceHash) {
+		return nil
+	}
+
+	hashDB := str.PtrStrToStr(dataProductFromDB.ResourceHash)
+	hashDoc := strconv.FormatUint(dataProductHashes[str.PtrStrToStr(dataProduct.OrdID)], 10)
+
+	return checkHashEquality(dataProductFromDB.Version.Value, dataProduct.VersionInput.Value, hashDB, hashDoc)
 }
 
 func normalizeAPIDefinition(api *model.APIDefinitionInput) (model.APIDefinitionInput, error) {

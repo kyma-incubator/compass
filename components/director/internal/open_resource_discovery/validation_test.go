@@ -28,6 +28,7 @@ const (
 	invalidTitleLengthSapCorePolicy             = 121 // max allowed: 120
 	invalidOrdIDLength                          = 256 // max allowed: 255
 	invalidLocalTenantIDLength                  = 256 // max allowed: 255
+	invalidResponsibleLength                    = 256 // max allowed: 255
 	maxDescriptionLength                        = 5000
 	maxDescriptionLengthEntityTypeSapCorePolicy = 1000
 	invalidVersion                              = "invalidVersion"
@@ -39,7 +40,7 @@ const (
 	invalidMediaType                            = "invalid/type"
 	invalidBundleOrdID                          = "ns:wrongConsumptionBundle:v1"
 	invalidShortDescSapCore                     = "no:colons:no&special%chars"
-  invalidRuntimeRestriction                  = "wrongRuntimeRestriction"
+	invalidRuntimeRestriction                   = "wrongRuntimeRestriction"
 
 	unknownVendorOrdID  = "nsUNKNOWN:vendor:id:"
 	unknownProductOrdID = "nsUNKNOWN:product:id:"
@@ -2752,8 +2753,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].SupportedUseCases = json.RawMessage(validSupportedUseCasesValue)
-				fmt.Println("HERE")
-				fmt.Println(doc.APIResources[0].SupportedUseCases)
 				return []*ord.Document{doc}
 			},
 			ExpectedToBeValid: true,

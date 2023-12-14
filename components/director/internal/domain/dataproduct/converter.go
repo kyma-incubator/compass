@@ -61,6 +61,7 @@ func (c *converter) FromEntity(entity *Entity) *model.DataProduct {
 		PolicyLevel:                  repo.StringPtrFromNullableString(entity.PolicyLevel),
 		CustomPolicyLevel:            repo.StringPtrFromNullableString(entity.CustomPolicyLevel),
 		SystemInstanceAware:          repo.BoolPtrFromNullableBool(entity.SystemInstanceAware),
+		ResourceHash:                 repo.StringPtrFromNullableString(entity.ResourceHash),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -113,6 +114,7 @@ func (c *converter) ToEntity(dataProductModel *model.DataProduct) *Entity {
 		PolicyLevel:                  repo.NewNullableString(dataProductModel.PolicyLevel),
 		CustomPolicyLevel:            repo.NewNullableString(dataProductModel.CustomPolicyLevel),
 		SystemInstanceAware:          repo.NewNullableBool(dataProductModel.SystemInstanceAware),
+		ResourceHash:                 repo.NewNullableString(dataProductModel.ResourceHash),
 		Version:                      c.convertVersionToEntity(dataProductModel.Version),
 
 		BaseEntity: &repo.BaseEntity{

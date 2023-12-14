@@ -504,7 +504,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, dataProduct := range doc.DataProducts {
-			if err := validateDataProductInputWithSuppressedErrors(dataProduct, resourcesFromDB.IntegrationDependencies, resourceHashes); err != nil {
+			if err := validateDataProductInputWithSuppressedErrors(dataProduct, resourcesFromDB.DataProducts, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating data product with ord id %q", stringPtrToString(dataProduct.OrdID)))
 			}
 			if err := validateDataProductInput(dataProduct, doc.PolicyLevel); err != nil {
