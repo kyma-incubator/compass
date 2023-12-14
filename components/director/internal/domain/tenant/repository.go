@@ -301,11 +301,14 @@ func (r *pgRepository) ListByExternalTenants(ctx context.Context, externalTenant
 }
 
 func (r *pgRepository) listByExternalTenantIDs(ctx context.Context, externalTenant []string) ([]*model.BusinessTenantMapping, error) {
-	var entityCollection tenant.EntityCollection
+	if len(externalTenant) == 0 {
+		return []*model.BusinessTenantMapping{}, nil
+	}
 
 	conditions := repo.Conditions{
 		repo.NewInConditionForStringValues(externalTenantColumn, externalTenant)}
 
+	var entityCollection tenant.EntityCollection
 	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
 		return nil, err
 	}
@@ -448,7 +451,6 @@ func (r *pgRepository) removeParent(ctx context.Context, internalParentID, inter
 	return nil
 }
 
-// TODO try to delete subaccount with existing app in it to see if the cascade will work
 // DeleteByExternalTenant removes a tenant with matching external ID from the Compass storage.
 // It also deletes all the accesses for resources that the tenant is owning for its parents.
 func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenant string) error {
@@ -460,38 +462,38 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 		return errors.Wrapf(err, "while getting tenant with external ID %s", externalTenant)
 	}
 
-	for topLevelEntity, topLevelEntityTable := range resource.TopLevelEntities {
-		if _, ok := topLevelEntity.IgnoredTenantAccessTable(); ok {
-			log.C(ctx).Debugf("top level entity %s does not need a tenant access table", topLevelEntity)
-			continue
-		}
-
-		m2mTable, ok := topLevelEntity.TenantAccessTable()
-		if !ok {
-			return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
-		}
-
-		tenantAccesses := repo.TenantAccessCollection{}
-
-		tenantAccessLister := repo.NewListerGlobal(resource.TenantAccess, m2mTable, repo.M2MColumns)
-		if err := tenantAccessLister.ListGlobal(ctx, &tenantAccesses, repo.NewEqualCondition(repo.M2MTenantIDColumn, tnt.ID), repo.NewEqualCondition(repo.M2MOwnerColumn, true)); err != nil {
-			return errors.Wrapf(err, "while listing tenant access records for tenant with id %s", tnt.ID)
-		}
-
-		if len(tenantAccesses) > 0 {
-			resourceIDs := make([]string, 0, len(tenantAccesses))
-			for _, ta := range tenantAccesses {
-				resourceIDs = append(resourceIDs, ta.ResourceID)
-			}
-
-			deleter := repo.NewDeleterGlobal(topLevelEntity, topLevelEntityTable)
-			if err := deleter.DeleteManyGlobal(ctx, repo.Conditions{repo.NewInConditionForStringValues("id", resourceIDs)}); err != nil {
-				return errors.Wrapf(err, "while deleting resources owned by tenant %s", tnt.ID)
-			}
-		}
-	}
-
 	if tnt.Type != tenant.CostObject {
+		for topLevelEntity, topLevelEntityTable := range resource.TopLevelEntities {
+			if _, ok := topLevelEntity.IgnoredTenantAccessTable(); ok {
+				log.C(ctx).Debugf("top level entity %s does not need a tenant access table", topLevelEntity)
+				continue
+			}
+
+			m2mTable, ok := topLevelEntity.TenantAccessTable()
+			if !ok {
+				return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
+			}
+
+			tenantAccesses := repo.TenantAccessCollection{}
+
+			tenantAccessLister := repo.NewListerGlobal(resource.TenantAccess, m2mTable, repo.M2MColumns)
+			if err := tenantAccessLister.ListGlobal(ctx, &tenantAccesses, repo.NewEqualCondition(repo.M2MTenantIDColumn, tnt.ID), repo.NewEqualCondition(repo.M2MOwnerColumn, true)); err != nil {
+				return errors.Wrapf(err, "while listing tenant access records for tenant with id %s", tnt.ID)
+			}
+
+			if len(tenantAccesses) > 0 {
+				resourceIDs := make([]string, 0, len(tenantAccesses))
+				for _, ta := range tenantAccesses {
+					resourceIDs = append(resourceIDs, ta.ResourceID)
+				}
+
+				deleter := repo.NewDeleterGlobal(topLevelEntity, topLevelEntityTable)
+				if err := deleter.DeleteManyGlobal(ctx, repo.Conditions{repo.NewInConditionForStringValues("id", resourceIDs)}); err != nil {
+					return errors.Wrapf(err, "while deleting resources owned by tenant %s", tnt.ID)
+				}
+			}
+		}
+
 		if err = r.deleteChildTenantsRecursively(ctx, tnt.ID); err != nil {
 			return err
 		}

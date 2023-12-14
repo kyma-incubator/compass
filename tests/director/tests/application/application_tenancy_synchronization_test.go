@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
@@ -47,6 +48,125 @@ func TestCreateTenantAccessForNewApplication(t *testing.T) {
 	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualApp.Status.Condition)
 
 	app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
+	assert.Equal(t, actualApp.ID, app.ID)
+}
+
+func TestCreateTenantAccessForNewApplicationInTenantWithCostObjectAsRootParent(t *testing.T) {
+	ctx := context.TODO()
+
+	testProvider := "e2e-test-provider"
+	testLicenseType := "LICENSETYPE"
+
+	costObjectExternalTenant := "cost-object-external-tenant"
+	costObjectName := "cost-object-name"
+	costObjectSubdomain := "cost-object-subdomain"
+
+	organizationExternalTenant := "organization-external-tenant"
+	organizationName := "organization-name"
+	organizationSubdomain := "organization-subdomain"
+
+	folderExternalTenant := "folder-external-tenant"
+	folderName := "folder-name"
+	folderSubdomain := "folder-subdomain"
+
+	resourceGroupExternalTenant := "resource-group-external-tenant"
+	resourceGroupName := "resource-group-name"
+	resourceGroupSubdomain := "resource-group-subdomain"
+
+	accountExternalTenant := "account-external-tenant"
+	accountName := "account-name"
+	accountSubdomain := "account-subdomain"
+
+	region := "local"
+
+	tenants := []graphql.BusinessTenantMappingInput{
+		{
+			Name:           costObjectName,
+			ExternalTenant: costObjectExternalTenant,
+			Parents:        []*string{},
+			Subdomain:      &costObjectSubdomain,
+			Region:         &region,
+			Type:           string(tenant.CostObject),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           organizationName,
+			ExternalTenant: organizationExternalTenant,
+			Parents:        []*string{},
+			Subdomain:      &organizationSubdomain,
+			Region:         &region,
+			Type:           string(tenant.Organization),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           folderName,
+			ExternalTenant: folderExternalTenant,
+			Parents:        []*string{&costObjectExternalTenant, &organizationExternalTenant},
+			Subdomain:      &folderSubdomain,
+			Region:         &region,
+			Type:           string(tenant.Folder),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           resourceGroupName,
+			ExternalTenant: resourceGroupExternalTenant,
+			Parents:        []*string{&folderExternalTenant},
+			Subdomain:      &resourceGroupSubdomain,
+			Region:         &region,
+			Type:           string(tenant.ResourceGroup),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           accountName,
+			ExternalTenant: accountExternalTenant,
+			Parents:        []*string{&costObjectExternalTenant},
+			Subdomain:      &accountSubdomain,
+			Region:         &region,
+			Type:           string(tenant.Account),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+	}
+
+	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
+	assert.NoError(t, err)
+	defer func() { // cleanup tenants
+		err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenants)
+		assert.NoError(t, err)
+		log.D().Info("Successfully cleanup tenants")
+	}()
+
+	in := graphql.ApplicationRegisterInput{
+		Name:           "test-atom-application",
+		ProviderName:   ptr.String("provider name"),
+		Description:    ptr.String("my first wordpress application"),
+		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
+		Labels: graphql.Labels{
+			"group": []interface{}{"production", "experimental"},
+		},
+	}
+
+	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
+	require.NoError(t, err)
+
+	// WHEN
+	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
+
+	actualApp := graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, resourceGroupExternalTenant, request, &actualApp)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, resourceGroupExternalTenant, &actualApp)
+	require.NoError(t, err)
+
+	//THEN
+	require.NotEmpty(t, actualApp)
+	require.NotEmpty(t, actualApp.ID)
+	assertions.AssertApplication(t, in, actualApp)
+
+	app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, accountExternalTenant, actualApp.ID)
 	assert.Equal(t, actualApp.ID, app.ID)
 }
 
