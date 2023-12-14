@@ -122,7 +122,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			ctx = log.ContextWithLogger(ctx, logger)
 
 			reqBody := "{\"state\":\"CONFIG_PENDING\"}"
-			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 				log.C(ctx).Error(statusAPIErr)
 			}
 		}()
@@ -178,7 +178,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					log.C(ctx).Error(err)
 					reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
-					if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 						log.C(ctx).Error(statusAPIErr)
 					}
 					return
@@ -188,7 +188,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					if err := h.deleteServiceKeys(ctx, mdiSvcInstanceID, mdiReadSvcInstanceName); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting service key(s) for MDI 'read' instance: %s\"}", err.Error())
-						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 							log.C(ctx).Error(statusAPIErr)
 						}
 						return
@@ -196,14 +196,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					if err := h.deleteServiceInstance(ctx, mdiSvcInstanceID, mdiReadSvcInstanceName); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting MDI 'read' instance: %s\"}", err.Error())
-						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 							log.C(ctx).Error(statusAPIErr)
 						}
 						return
 					}
 				}
 
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, readyResp, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, readyResp); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -214,7 +214,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -224,7 +224,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service plans: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -235,7 +235,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating MDI 'read' service instance: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -248,7 +248,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating MDI 'read' service key: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -258,7 +258,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving MDI 'read' service key: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -267,7 +267,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if len(mdiReadServiceKey.Credentials) < 0 {
 				log.C(ctx).Errorf("The credentials for MDI 'read' service key with ID: %q should not be empty", mdiReadServiceKey.ID)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"The service key for the MDI 'read' instance shoud not be empty: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -277,7 +277,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Errorf("An error occurred while building template data with the MDI 'read' service key: %s", err.Error())
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while building template data with the MDI 'read' service key: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -288,7 +288,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Errorf("An error occurred while parsing template: %s", err.Error())
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while parsing MDI 'read' template: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -298,14 +298,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err = t.Execute(res, data); err != nil {
 				log.C(ctx).Errorf("An error occurred while executing template: %s", err.Error())
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while executing MDI 'read' template: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
 			}
 
 			log.C(ctx).Infof("Successfully processed tenant mapping notification about CIM")
-			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, res.String(), correlationID); statusAPIErr != nil {
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, res.String()); statusAPIErr != nil {
 				log.C(ctx).Error(statusAPIErr)
 			}
 			return
@@ -321,7 +321,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					log.C(ctx).Error(err)
 					reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
-					if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 						log.C(ctx).Error(statusAPIErr)
 					}
 					return
@@ -331,7 +331,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					if err := h.deleteServiceKeys(ctx, svcInstanceIDMDI, mdiWriteSvcInstance); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting service key(s) for MDI 'write' instance: %s\"}", err.Error())
-						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 							log.C(ctx).Error(statusAPIErr)
 						}
 						return
@@ -339,14 +339,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					if err := h.deleteServiceInstance(ctx, svcInstanceIDMDI, mdiWriteSvcInstance); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting MDI 'write' instance: %s\"}", err.Error())
-						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 							log.C(ctx).Error(statusAPIErr)
 						}
 						return
 					}
 				}
 
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, readyResp, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, readyResp); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -362,7 +362,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if bizSystemID == "" {
 					log.C(ctx).Error("The business system ID property in the assigned tenant configuration cannot be empty")
 					reqBody := "{\"state\":\"CREATE_ERROR\", \"error\": \"The business system ID property in the assigned tenant configuration cannot be empty\"}"
-					if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 						log.C(ctx).Error(statusAPIErr)
 					}
 					return
@@ -378,7 +378,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if tm.Context.Operation == AssignOperation && tm.ReceiverTenant.Subdomain == "" {
 				log.C(ctx).Error("The receiver subdomain cannot be empty")
 				reqBody := "{\"state\":\"CREATE_ERROR\", \"error\": \"The receiver subdomain cannot be empty\"}"
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -388,7 +388,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -398,7 +398,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service plans: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -409,7 +409,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating MDI 'write' service instance: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -422,7 +422,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating MDI 'write' service key: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -432,7 +432,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving MDI 'write' service key: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -441,7 +441,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if len(mdiWriteServiceKey.Credentials) < 0 {
 				log.C(ctx).Errorf("The credentials for MDI 'write' service key with ID: %q should not be empty", mdiWriteServiceKey.ID)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"The service key for the MDI 'write' instance shoud not be empty: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -451,7 +451,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Errorf("An error occurred while building template data with the MDI 'write' service key: %s", err.Error())
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while building template data with the MDI 'write' service key: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -464,7 +464,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Errorf("An error occurred while parsing template: %s", err.Error())
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while parsing MDI 'write' template: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -474,14 +474,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err = t.Execute(res, data); err != nil {
 				log.C(ctx).Errorf("An error occurred while executing template: %s", err.Error())
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while executing MDI 'write' template: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
 			}
 
 			log.C(ctx).Infof("Successfully processed tenant mapping notification about S4")
-			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, res.String(), correlationID); statusAPIErr != nil {
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, res.String()); statusAPIErr != nil {
 				log.C(ctx).Error(statusAPIErr)
 			}
 			return
@@ -496,7 +496,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if cert == "" {
 					log.C(ctx).Error("The OAuth2 mTLS certificate in the assigned tenant configuration cannot be empty")
 					reqBody := "{\"state\":\"CREATE_ERROR\", \"error\": \"The OAuth2 mTLS certificate in the assigned tenant configuration cannot be empty\"}"
-					if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 						log.C(ctx).Error(statusAPIErr)
 					}
 					return
@@ -513,7 +513,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					log.C(ctx).Error(err)
 					reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
-					if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+					if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 						log.C(ctx).Error(statusAPIErr)
 					}
 					return
@@ -523,7 +523,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					if err := h.deleteServiceKeys(ctx, billingSvcInstanceID, billingSvcInstanceName); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting service key(s) for subscription billing instance: %s\"}", err.Error())
-						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 							log.C(ctx).Error(statusAPIErr)
 						}
 						return
@@ -531,14 +531,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					if err := h.deleteServiceInstance(ctx, billingSvcInstanceID, billingSvcInstanceName); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting subscription billing instance: %s\"}", err.Error())
-						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 							log.C(ctx).Error(statusAPIErr)
 						}
 						return
 					}
 				}
 
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, readyResp, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, readyResp); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -549,7 +549,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -559,7 +559,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service plans: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -569,7 +569,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating subscription billing service instance: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -578,7 +578,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if inboundCert == "" {
 				log.C(ctx).Error("The inbound certificate cannot be empty")
 				reqBody := "{\"state\":\"CREATE_ERROR\", \"error\": \"The inbound certificate cannot be empty\"}"
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -593,7 +593,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating subscription billing service key: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -603,7 +603,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving MDI 'write' service key: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -612,7 +612,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if len(billingServiceKey.Credentials) < 0 {
 				log.C(ctx).Errorf("The credentials for MDI 'write' service key with ID: %q should not be empty", billingServiceKey.ID)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"The service key for the subscription billing instance shoud not be empty: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -622,7 +622,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Errorf("An error occurred while building template data with the MDI 'write' service key: %s", err.Error())
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while building template data with the MDI 'write' service key: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -633,7 +633,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.C(ctx).Errorf("An error occurred while parsing template: %s", err.Error())
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while parsing subscription billing template: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
@@ -643,14 +643,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err = t.Execute(res, data); err != nil {
 				log.C(ctx).Errorf("An error occurred while executing subscription billing template: %s", err.Error())
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while executing subscription billing template: %s\"}", err.Error())
-				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody, correlationID); statusAPIErr != nil {
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
 				return
 			}
 
 			log.C(ctx).Infof("Successfully processed tenant mapping notification for subscription billing")
-			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, res.String(), correlationID); statusAPIErr != nil {
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, res.String()); statusAPIErr != nil {
 				log.C(ctx).Error(statusAPIErr)
 			}
 			return
@@ -676,15 +676,12 @@ func truncateString(ctx context.Context, str string, maxLength int) string {
 	return str
 }
 
-func (h *Handler) sendStatusAPIRequest(ctx context.Context, statusAPIURL, reqBody, correlationID string) error {
-	req, err := http.NewRequest(http.MethodPatch, statusAPIURL, bytes.NewBuffer([]byte(reqBody)))
+func (h *Handler) sendStatusAPIRequest(ctx context.Context, statusAPIURL, reqBody string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, statusAPIURL, bytes.NewBuffer([]byte(reqBody)))
 	if err != nil {
 		return errors.Wrapf(err, "An error occurred while building status API request")
 	}
-
-	req.Header.Set(correlation.RequestIDHeaderKey, correlationID)
 	req.Header.Set(contentTypeHeaderKey, contentTypeApplicationJSON)
-	req = req.WithContext(ctx)
 
 	log.C(ctx).Infof("Sending notification status response to the status API URL: %s ...", statusAPIURL)
 	resp, err := h.mtlsHTTPClient.Do(req)
