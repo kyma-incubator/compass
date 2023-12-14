@@ -33,6 +33,12 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 		fixIntegrationDependencyModel(integrationDependencyID, integrationDependencyORDID),
 	}
 
+	updatedIntegrationDependencyModel := []*model.IntegrationDependency{
+		fixIntegrationDependencyModel(integrationDependencyID, integrationDependencyORDID),
+	}
+
+	updatedIntegrationDependencyModel[0].PackageID = str.Ptr(packageID2)
+
 	hashIntegrationDependency, _ := ord.HashObject(integrationDependencyModel)
 	resourceHashes := map[string]uint64{
 		integrationDependencyORDID: hashIntegrationDependency,
@@ -66,7 +72,7 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 			IntegrationDependencySvcFn: func() *automock.IntegrationDependencyService {
 				integrationDependencySvc := &automock.IntegrationDependencyService{}
 				integrationDependencySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(integrationDependencyModel, nil).Twice()
-				integrationDependencySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyModel[0].ID, *integrationDependencyInputs[0], hashIntegrationDependency).Return(nil).Once()
+				integrationDependencySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyModel[0].ID, str.Ptr(packageID1), *integrationDependencyInputs[0], hashIntegrationDependency).Return(nil).Once()
 				return integrationDependencySvc
 			},
 			AspectSvcFn: func() *automock.AspectService {
@@ -89,7 +95,7 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 			IntegrationDependencySvcFn: func() *automock.IntegrationDependencyService {
 				integrationDependencySvc := &automock.IntegrationDependencyService{}
 				integrationDependencySvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(integrationDependencyModel, nil).Twice()
-				integrationDependencySvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, integrationDependencyModel[0].ID, *integrationDependencyInputs[0], hashIntegrationDependency).Return(nil).Once()
+				integrationDependencySvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, integrationDependencyModel[0].ID, str.Ptr(packageID1), *integrationDependencyInputs[0], hashIntegrationDependency).Return(nil).Once()
 				return integrationDependencySvc
 			},
 			AspectSvcFn: func() *automock.AspectService {
@@ -112,7 +118,7 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 			IntegrationDependencySvcFn: func() *automock.IntegrationDependencyService {
 				integrationDependencySvc := &automock.IntegrationDependencyService{}
 				integrationDependencySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return([]*model.IntegrationDependency{}, nil).Once()
-				integrationDependencySvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID), *integrationDependencyInputs[0], mock.Anything).Return(integrationDependencyID, nil).Once()
+				integrationDependencySvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID1), *integrationDependencyInputs[0], mock.Anything).Return(integrationDependencyID, nil).Once()
 				integrationDependencySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(integrationDependencyModel, nil).Once()
 				return integrationDependencySvc
 			},
@@ -215,7 +221,7 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 			IntegrationDependencySvcFn: func() *automock.IntegrationDependencyService {
 				integrationDependencySvc := &automock.IntegrationDependencyService{}
 				integrationDependencySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(integrationDependencyModel, nil).Once()
-				integrationDependencySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyModel[0].ID, *integrationDependencyInputs[0], hashIntegrationDependency).Return(testErr).Once()
+				integrationDependencySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyModel[0].ID, str.Ptr(packageID1), *integrationDependencyInputs[0], hashIntegrationDependency).Return(testErr).Once()
 				return integrationDependencySvc
 			},
 			AspectSvcFn: func() *automock.AspectService {
@@ -238,7 +244,7 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 			IntegrationDependencySvcFn: func() *automock.IntegrationDependencyService {
 				integrationDependencySvc := &automock.IntegrationDependencyService{}
 				integrationDependencySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(integrationDependencyModel, nil).Once()
-				integrationDependencySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyModel[0].ID, *integrationDependencyInputs[0], hashIntegrationDependency).Return(nil).Once()
+				integrationDependencySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyModel[0].ID, str.Ptr(packageID1), *integrationDependencyInputs[0], hashIntegrationDependency).Return(nil).Once()
 				return integrationDependencySvc
 			},
 			AspectSvcFn: func() *automock.AspectService {
@@ -263,7 +269,7 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 			IntegrationDependencySvcFn: func() *automock.IntegrationDependencyService {
 				integrationDependencySvc := &automock.IntegrationDependencyService{}
 				integrationDependencySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(integrationDependencyModel, nil).Once()
-				integrationDependencySvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID), *integrationDependencyCreateInputs[0], mock.Anything).Return("", testErr).Once()
+				integrationDependencySvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID1), *integrationDependencyCreateInputs[0], mock.Anything).Return("", testErr).Once()
 				return integrationDependencySvc
 			},
 			AspectSvcFn: func() *automock.AspectService {
@@ -286,7 +292,7 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 			IntegrationDependencySvcFn: func() *automock.IntegrationDependencyService {
 				integrationDependencySvc := &automock.IntegrationDependencyService{}
 				integrationDependencySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return([]*model.IntegrationDependency{}, nil).Once()
-				integrationDependencySvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID), *integrationDependencyCreateInputs[0], mock.Anything).Return(integrationDependencyID, nil).Once()
+				integrationDependencySvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID1), *integrationDependencyCreateInputs[0], mock.Anything).Return(integrationDependencyID, nil).Once()
 				return integrationDependencySvc
 			},
 			AspectSvcFn: func() *automock.AspectService {
@@ -314,7 +320,7 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 				integrationDependencySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(integrationDependencyModel, nil).Once()
 				integrationDependencySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 
-				integrationDependencySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyModel[0].ID, *integrationDependencyInputs[0], hashIntegrationDependency).Return(nil).Once()
+				integrationDependencySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyModel[0].ID, str.Ptr(packageID1), *integrationDependencyInputs[0], hashIntegrationDependency).Return(nil).Once()
 				return integrationDependencySvc
 			},
 			AspectSvcFn: func() *automock.AspectService {
@@ -328,6 +334,31 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 			InputIntegrationDependencies: integrationDependencyInputs,
 			InputResourceHashes:          resourceHashes,
 			ExpectedErr:                  testErr,
+		},
+		{
+			Name: "Success when updating package id for Integration Dependency",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
+			IntegrationDependencySvcFn: func() *automock.IntegrationDependencyService {
+				integrationDependencySvc := &automock.IntegrationDependencyService{}
+				integrationDependencyInputs[0].OrdPackageID = str.Ptr(packageORDID2)
+				integrationDependencySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(integrationDependencyModel, nil).Once()
+				integrationDependencySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(updatedIntegrationDependencyModel, nil).Once()
+				integrationDependencySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyModel[0].ID, str.Ptr(packageID2), *integrationDependencyInputs[0], hashIntegrationDependency).Return(nil).Once()
+				return integrationDependencySvc
+			},
+			AspectSvcFn: func() *automock.AspectService {
+				aspectSvc := &automock.AspectService{}
+				aspectSvc.On("DeleteByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(nil).Once()
+				aspectSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyID, *integrationDependencyInputs[0].Aspects[0]).Return(aspectID, nil).Once()
+				return aspectSvc
+			},
+			InputResource:                resource.Application,
+			InputResourceID:              appID,
+			InputIntegrationDependencies: integrationDependencyInputs,
+			InputResourceHashes:          resourceHashes,
+			ExpectedOutput:               updatedIntegrationDependencyModel,
 		},
 	}
 	for _, test := range testCases {

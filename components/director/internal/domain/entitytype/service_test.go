@@ -118,6 +118,7 @@ func TestService_Update(t *testing.T) {
 		Name              string
 		InputResourceType resource.Type
 		InputID           string
+		InputPackageID    string
 		EntityTypeInput   model.EntityTypeInput
 		EntityTypeRepoFn  func() *automock.EntityTypeRepository
 		ExpectedError     error
@@ -207,9 +208,9 @@ func TestService_Update(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			entityTypeRepo := testCase.EntityTypeRepoFn()
 			svc := entitytype.NewService(entityTypeRepo, nil)
-
+			testCase.InputPackageID = packageUUID
 			// WHEN
-			err := svc.Update(ctx, testCase.InputResourceType, testCase.InputID, testCase.EntityTypeInput, 123)
+			err := svc.Update(ctx, testCase.InputResourceType, testCase.InputID, testCase.InputPackageID, testCase.EntityTypeInput, 123)
 
 			// THEN
 			if testCase.ExpectedError != nil {

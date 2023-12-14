@@ -106,13 +106,13 @@ func (_m *IntegrationDependencyService) ListByApplicationTemplateVersionID(ctx c
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, resourceType, resourceID, id, in, integrationDependencyHash
-func (_m *IntegrationDependencyService) Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) error {
-	ret := _m.Called(ctx, resourceType, resourceID, id, in, integrationDependencyHash)
+// Update provides a mock function with given fields: ctx, resourceType, resourceID, id, packageID, in, integrationDependencyHash
+func (_m *IntegrationDependencyService) Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, packageID *string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) error {
+	ret := _m.Called(ctx, resourceType, resourceID, id, packageID, in, integrationDependencyHash)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.IntegrationDependencyInput, uint64) error); ok {
-		r0 = rf(ctx, resourceType, resourceID, id, in, integrationDependencyHash)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, *string, model.IntegrationDependencyInput, uint64) error); ok {
+		r0 = rf(ctx, resourceType, resourceID, id, packageID, in, integrationDependencyHash)
 	} else {
 		r0 = ret.Error(0)
 	}
