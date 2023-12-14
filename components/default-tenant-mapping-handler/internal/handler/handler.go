@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/default-tenant-mapping-handler/internal/types"
-	"github.com/pkg/errors"
 	"io"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/default-tenant-mapping-handler/internal/types"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
@@ -31,7 +32,7 @@ type DefaultTenantMappingHandler struct {
 	mtlsHTTPClient mtlsHTTPClient
 }
 
-// NewHandler creates an DefaultTenantMappingHandler
+// NewHandler creates a DefaultTenantMappingHandler
 func NewHandler(mtlsHTTPClient mtlsHTTPClient) *DefaultTenantMappingHandler {
 	return &DefaultTenantMappingHandler{
 		mtlsHTTPClient: mtlsHTTPClient,
@@ -57,7 +58,7 @@ func (tmh *DefaultTenantMappingHandler) HandlerFunc(w http.ResponseWriter, r *ht
 		httputils.RespondWithError(ctx, w, http.StatusBadRequest, errors.New("Invalid json"))
 		return
 	}
-	log.C(ctx).Infof(tm.Print())
+	log.C(ctx).Info(tm.String())
 
 	uclStatusAPIUrl := r.Header.Get(locationHeader)
 

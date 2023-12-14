@@ -50,8 +50,8 @@ type Context struct {
 	Operation       string `json:"operation"`
 }
 
-// Print prints the data in the tenant mapping notifications excepts the configuration part because it could have sensitive data.
+// String prints the data in the tenant mapping notifications excepts the configuration part because it could have sensitive data.
 // We should NOT include the configuration in this method.
-func (tm *TenantMapping) Print() string {
+func (tm *TenantMapping) String() string {
 	return fmt.Sprintf("Context: {Platform: %s, CrmID: %s, AccountID: %s, FormationID: %s, FormationName: %s, FormationTypeID: %s, Operation: %s}, ReceiverTenant: {State: %s, AssignmentID: %s, DeploymentRegion: %s, ApplicationNamespace: %s, ApplicationURL: %s, ApplicationTenantID: %s, SubaccountID: %s, Subdomain: %s, SystemName: %s, SystemTenantID: %s}, AssignedTenant: {State: %s, AssignmentID: %s, DeploymentRegion: %s, ApplicationNamespace: %s, ApplicationURL: %s, ApplicationTenantID: %s, SubaccountID: %s, Subdomain: %s, SystemName: %s, SystemTenantID: %s}", tm.Context.Platform, tm.Context.CrmID, tm.Context.AccountID, tm.Context.FormationID, tm.Context.FormationName, tm.Context.FormationTypeID, tm.Context.Operation, tm.ReceiverTenant.State, tm.ReceiverTenant.AssignmentID, tm.ReceiverTenant.DeploymentRegion, tm.ReceiverTenant.ApplicationNamespace, tm.ReceiverTenant.ApplicationURL, tm.ReceiverTenant.ApplicationTenantID, tm.ReceiverTenant.SubaccountID, tm.ReceiverTenant.Subdomain, tm.ReceiverTenant.SystemName, tm.ReceiverTenant.SystemTenantID, tm.AssignedTenant.State, tm.AssignedTenant.AssignmentID, tm.AssignedTenant.DeploymentRegion, tm.AssignedTenant.ApplicationNamespace, tm.AssignedTenant.ApplicationURL, tm.AssignedTenant.ApplicationTenantID, tm.AssignedTenant.SubaccountID, tm.AssignedTenant.Subdomain, tm.AssignedTenant.SystemName, tm.AssignedTenant.SystemTenantID)
 }
