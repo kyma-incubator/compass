@@ -44,7 +44,9 @@ const (
 	customTypeProperty  = "customType"
 	callbackURLProperty = "callbackUrl"
 
+	// ValidationErrorMsg is the error message for validation error in ORD Documents
 	ValidationErrorMsg = "error validating ORD documents"
+	// ProcessingErrorMsg is the error message for processing error in ORD Documents
 	ProcessingErrorMsg = "error processing ORD documents"
 )
 
@@ -1300,7 +1302,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 		}
 
 		if errs != nil {
-			return errs.ErrorOrNil()
+			return errs
 		}
 		log.C(ctx).Info("Successfully processed ORD documents")
 	}
