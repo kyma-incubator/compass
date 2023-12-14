@@ -94,7 +94,7 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 	secondAspectEntity := fixEntityAspect(secondAspectID, secondAppID, secondIntDepID)
 	appIDs := []string{firstAppID, secondAppID}
 
-	selectQueryForAspects := `^\(SELECT id, app_id, app_template_version_id, integration_dependency_id, title, description, mandatory, support_multiple_providers, api_resources, event_resources, ready, created_at, updated_at, deleted_at, error FROM public.aspects WHERE \(id IN \(SELECT id FROM aspects_tenants WHERE tenant_id = \$1\)\) AND app_id = \$2 ORDER BY integration_dependency_id ASC, app_id ASC LIMIT \$3 OFFSET \$4\) UNION \(SELECT id, app_id, app_template_version_id, integration_dependency_id, title, description, mandatory, support_multiple_providers, api_resources, event_resources, ready, created_at, updated_at, deleted_at, error FROM public.aspects WHERE \(id IN \(SELECT id FROM aspects_tenants WHERE tenant_id = \$5\)\) AND app_id = \$6 ORDER BY integration_dependency_id ASC, app_id ASC LIMIT \$7 OFFSET \$8\)`
+	selectQueryForAspects := `^\(SELECT id, app_id, app_template_version_id, integration_dependency_id, title, description, mandatory, support_multiple_providers, api_resources, ready, created_at, updated_at, deleted_at, error FROM public.aspects WHERE \(id IN \(SELECT id FROM aspects_tenants WHERE tenant_id = \$1\)\) AND app_id = \$2 ORDER BY integration_dependency_id ASC, app_id ASC LIMIT \$3 OFFSET \$4\) UNION \(SELECT id, app_id, app_template_version_id, integration_dependency_id, title, description, mandatory, support_multiple_providers, api_resources, ready, created_at, updated_at, deleted_at, error FROM public.aspects WHERE \(id IN \(SELECT id FROM aspects_tenants WHERE tenant_id = \$5\)\) AND app_id = \$6 ORDER BY integration_dependency_id ASC, app_id ASC LIMIT \$7 OFFSET \$8\)`
 
 	countQueryForAspects := `SELECT app_id AS id, COUNT\(\*\) AS total_count FROM public.aspects WHERE \(id IN \(SELECT id FROM aspects_tenants WHERE tenant_id = \$1\)\) GROUP BY app_id ORDER BY app_id ASC`
 
@@ -185,7 +185,7 @@ func TestPgRepository_ListByIntegrationDependencyID(t *testing.T) {
 		Name: "List Aspects",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, integration_dependency_id, title, description, mandatory, support_multiple_providers, api_resources, event_resources, ready, created_at, updated_at, deleted_at, error FROM public.aspects WHERE integration_dependency_id = $1 AND (id IN (SELECT id FROM aspects_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, integration_dependency_id, title, description, mandatory, support_multiple_providers, api_resources, ready, created_at, updated_at, deleted_at, error FROM public.aspects WHERE integration_dependency_id = $1 AND (id IN (SELECT id FROM aspects_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{integrationDependencyID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {

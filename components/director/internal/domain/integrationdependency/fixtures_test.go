@@ -177,7 +177,13 @@ func fixIntegrationDependencyInputModelWithPackageOrdID(packageOrdID string) mod
 				Mandatory:                &mandatory,
 				SupportMultipleProviders: &supportMultipleProviders,
 				APIResources:             json.RawMessage("[]"),
-				EventResources:           json.RawMessage("[]"),
+				EventResources: []*model.AspectEventResourceInput{
+					{
+						OrdID:      ordID,
+						MinVersion: str.Ptr("1.0.0"),
+						Subset:     json.RawMessage("[]"),
+					},
+				},
 			},
 		},
 		RelatedIntegrationDependencies: json.RawMessage("[]"),

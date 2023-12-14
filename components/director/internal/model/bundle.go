@@ -69,7 +69,7 @@ type BundleCreateInput struct {
 	InstanceAuthRequestInputSchema *string                 `json:",omitempty"`
 	DefaultInstanceAuth            *AuthInput              `json:",omitempty"`
 	OrdID                          *string                 `json:"ordId"`
-	LocalTenantID                  *string                 `json:"localTenantId"`
+	LocalTenantID                  *string                 `json:"localId"`
 	ShortDescription               *string                 `json:"shortDescription"`
 	Links                          json.RawMessage         `json:"links"`
 	Labels                         json.RawMessage         `json:"labels"`

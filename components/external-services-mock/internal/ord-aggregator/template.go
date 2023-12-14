@@ -120,8 +120,7 @@ const ordDocument = `{
    "entityTypes":[
       {
          "ordId":"ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1",
-         "vendor":"sap:vendor:SAP:",
-         "localTenantId":"BusinessPartner",
+         "localId":"BusinessPartner",
          "level":"aggregate",
          "title":"ENTITYTYPE 1 TITLE",
          "shortDescription":"short desc",
@@ -1103,10 +1102,11 @@ const ordDocument = `{
       "aspects": [
         {
           "title": "ASPECT TITLE",
+		  "description": "Aspect desc",
           "mandatory": true,
           "eventResources": [
             {
-              "ordId": "ns:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
+              "ordId": "ns1:eventResource:ASPECT_EVENT_RESOURCE_ID{{ .randomSuffix }}:v1",
               "subset": [
                 {
                   "eventType": "sap.billing.sb.Subscription.Created.v1"
@@ -1145,11 +1145,12 @@ const ordDocument = `{
 	  "mandatory": true,
       "aspects": [
         {
-          "title": "ASPECT TITLE",
+          "title": "ASPECT TITLE PRIVATE",
+		  "description": "Aspect private desc",
           "mandatory": true,
           "eventResources": [
             {
-              "ordId": "ns:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
+              "ordId": "ns2:eventResource:ASPECT_EVENT_RESOURCE_ID{{ .randomSuffix }}:v1",
               "subset": [
                 {
                   "eventType": "sap.billing.sb.Subscription.Created.v1"
@@ -1188,11 +1189,12 @@ const ordDocument = `{
 	  "mandatory": true,
       "aspects": [
         {
-          "title": "ASPECT TITLE",
+          "title": "ASPECT TITLE INTERNAL",
+		  "description": "Aspect internal desc",
           "mandatory": true,
           "eventResources": [
             {
-              "ordId": "ns:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
+              "ordId": "ns3:eventResource:ASPECT_EVENT_RESOURCE_ID{{ .randomSuffix }}:v1",
               "subset": [
                 {
                   "eventType": "sap.billing.sb.Subscription.Created.v1"

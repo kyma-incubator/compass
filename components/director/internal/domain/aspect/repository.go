@@ -19,7 +19,7 @@ const (
 
 var (
 	aspectColumns = []string{"id", "app_id", "app_template_version_id", "integration_dependency_id", "title", "description", "mandatory", "support_multiple_providers",
-		"api_resources", "event_resources", "ready", "created_at", "updated_at", "deleted_at", "error"}
+		"api_resources", "ready", "created_at", "updated_at", "deleted_at", "error"}
 )
 
 // AspectConverter converts Aspects between the model.Aspect service-layer representation and the repo-layer representation Entity.
