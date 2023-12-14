@@ -66,16 +66,6 @@ const (
 	localTenantID            = "localTenantID"
 	webhookID                = "webhookID"
 
-	api1spec1ID       = "api1spec1ID"
-	api1spec2ID       = "api1spec2ID"
-	api1spec3ID       = "api1spec3ID"
-	api2spec1ID       = "api2spec1ID"
-	api2spec2ID       = "api2spec2ID"
-	event1specID      = "event1specID"
-	event2specID      = "event2specID"
-	capability1SpecID = "capability1SpecID"
-	capability2SpecID = "capability2SpecID"
-
 	cursor                    = "cursor"
 	apiImplementationStandard = "cff:open-service-broker:v2"
 	correlationIDs            = `["foo.bar.baz:foo:123456","foo.bar.baz:bar:654321"]`
@@ -89,14 +79,13 @@ const (
 
 	applicationTypeLabelValue = "customType"
 
-	entityTypeID        = "entity-type-id"
-	entityTypeMappingID = "entity-type-mapping-id"
-	ordID               = "com.compass.v1"
-	level               = "aggregate"
-	title               = "BusinessPartner"
-	publicVisibility    = "public"
-	products            = `["sap:product:S4HANA_OD:"]`
-	releaseStatus       = "active"
+	entityTypeID     = "entity-type-id"
+	ordID            = "com.compass.v1"
+	level            = "aggregate"
+	title            = "BusinessPartner"
+	publicVisibility = "public"
+	products         = `["sap:product:S4HANA_OD:"]`
+	releaseStatus    = "active"
 )
 
 var (
@@ -524,11 +513,11 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		ConsumptionBundles: []*model.BundleCreateInput{
 			{
 				Name:                         "BUNDLE TITLE",
-				Description:                  str.Ptr("lorem ipsum dolor nsq sme"),
+				Description:                  str.Ptr("Bundle description"),
 				Version:                      str.Ptr("1.1.2"),
 				OrdID:                        str.Ptr(bundleORDID),
 				LocalTenantID:                str.Ptr(localTenantID),
-				ShortDescription:             str.Ptr("lorem ipsum"),
+				ShortDescription:             str.Ptr("Short description for bundle"),
 				Links:                        json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				Tags:                         json.RawMessage(tags),
 				Labels:                       json.RawMessage(labels),
@@ -942,7 +931,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						Mandatory:                &mandatoryTrue,
 						SupportMultipleProviders: &mandatoryTrue,
 						APIResources:             json.RawMessage("[]"),
-						EventResources:           json.RawMessage("[]"),
+						EventResources:           []*model.AspectEventResourceInput{},
 					},
 				},
 				ReleaseStatus:       str.Ptr("active"),
@@ -1674,10 +1663,6 @@ func fixAPI1SpecInputs(url string) []*model.SpecInput {
 	}
 }
 
-func fixAPI1IDs() []string {
-	return []string{api1spec1ID, api1spec2ID, api1spec3ID}
-}
-
 func fixAPI2SpecInputs(url string) []*model.SpecInput {
 	edmxAPIType := model.APISpecTypeEDMX
 	openAPIType := model.APISpecTypeOpenAPIV3
@@ -1703,10 +1688,6 @@ func fixAPI2SpecInputs(url string) []*model.SpecInput {
 	}
 }
 
-func fixAPI2IDs() []string {
-	return []string{api2spec1ID, api2spec2ID}
-}
-
 func fixEvent1SpecInputs() []*model.SpecInput {
 	eventType := model.EventSpecTypeAsyncAPIV2
 	return []*model.SpecInput{
@@ -1722,10 +1703,6 @@ func fixEvent1SpecInputs() []*model.SpecInput {
 	}
 }
 
-func fixEvent1IDs() []string {
-	return []string{event1specID}
-}
-
 func fixEvent2SpecInputs(url string) []*model.SpecInput {
 	eventType := model.EventSpecTypeAsyncAPIV2
 	return []*model.SpecInput{
@@ -1739,18 +1716,6 @@ func fixEvent2SpecInputs(url string) []*model.SpecInput {
 			},
 		},
 	}
-}
-
-func fixEvent2IDs() []string {
-	return []string{event2specID}
-}
-
-func fixCapability1IDs() []string {
-	return []string{capability1SpecID}
-}
-
-func fixCapability2IDs() []string {
-	return []string{capability2SpecID}
 }
 
 func fixCapabilitySpecInputs() []*model.SpecInput {
@@ -1872,53 +1837,6 @@ func fixEntityTypes() []*model.EntityType {
 			ResourceHash:                 &resourceHash,
 		},
 	}
-}
-
-func fixEntityTypeMappingInput(apiID, eventID string) *model.EntityTypeMappingInput {
-	entityTypeMapping := &model.EntityTypeMappingInput{}
-	if apiID != "" {
-		entityTypeMapping.APIModelSelectors = json.RawMessage(apiAPIModelSelectors)
-		entityTypeMapping.EntityTypeTargets = json.RawMessage(apiEntityTypeTargets)
-	} else if eventID != "" {
-		entityTypeMapping.APIModelSelectors = json.RawMessage(eventAPIModelSelectors)
-		entityTypeMapping.EntityTypeTargets = json.RawMessage(eventEntityTypeTargets)
-	}
-	return entityTypeMapping
-}
-
-func fixEntityTypeMappingInputsEmpty() []*model.EntityTypeMappingInput {
-	return []*model.EntityTypeMappingInput{}
-}
-
-func fixEntityTypeMapping(apiID, eventID string) *model.EntityTypeMapping {
-	entityTypeMapping := &model.EntityTypeMapping{
-		BaseEntity: &model.BaseEntity{
-			ID:        entityTypeMappingID,
-			Ready:     true,
-			CreatedAt: &fixedTimestamp,
-			UpdatedAt: &time.Time{},
-			DeletedAt: &time.Time{},
-			Error:     nil,
-		},
-	}
-	if apiID != "" {
-		entityTypeMapping.APIDefinitionID = &apiID
-		entityTypeMapping.APIModelSelectors = json.RawMessage(apiAPIModelSelectors)
-		entityTypeMapping.EntityTypeTargets = json.RawMessage(apiEntityTypeTargets)
-	} else if eventID != "" {
-		entityTypeMapping.EventDefinitionID = &eventID
-		entityTypeMapping.APIModelSelectors = json.RawMessage(eventAPIModelSelectors)
-		entityTypeMapping.EntityTypeTargets = json.RawMessage(eventEntityTypeTargets)
-	}
-	return entityTypeMapping
-}
-
-func fixEntityTypeMappings(apiID, eventID string) []*model.EntityTypeMapping {
-	return []*model.EntityTypeMapping{fixEntityTypeMapping(apiID, eventID)}
-}
-
-func fixEntityTypeMappingsEmpty() []*model.EntityTypeMapping {
-	return []*model.EntityTypeMapping{}
 }
 
 func fixVersionModel(value string, deprecated bool, deprecatedSince string, forRemoval bool) *model.Version {

@@ -1,6 +1,9 @@
 package pairing
 
-import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+import (
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+)
 
 // ScenarioGroup represents a token scenario group
 type ScenarioGroup struct {
@@ -12,6 +15,7 @@ type ScenarioGroup struct {
 type RequestData struct {
 	Application    graphql.Application
 	Tenant         string
+	TenantType     tenant.Type
 	ClientUser     string
 	ScenarioGroups []ScenarioGroup
 }

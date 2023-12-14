@@ -12,7 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 )
 
 // HTTPRoundTripper missing godoc
@@ -25,14 +25,14 @@ type HTTPRoundTripper interface {
 const tenantHeader = "Tenant_Id"
 
 type cmpMTLSAccessStrategyExecutor struct {
-	certCache                    certloader.Cache
+	certCache                    credloader.CertCache
 	tenantProviderFunc           func(ctx context.Context) (string, error)
 	externalClientCertSecretName string
 	extSvcClientCertSecretName   string
 }
 
 // NewCMPmTLSAccessStrategyExecutor creates a new Executor for the CMP mTLS Access Strategy
-func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProviderFunc func(ctx context.Context) (string, error), externalClientCertSecretName, extSvcClientCertSecretName string) *cmpMTLSAccessStrategyExecutor {
+func NewCMPmTLSAccessStrategyExecutor(certCache credloader.CertCache, tenantProviderFunc func(ctx context.Context) (string, error), externalClientCertSecretName, extSvcClientCertSecretName string) *cmpMTLSAccessStrategyExecutor {
 	return &cmpMTLSAccessStrategyExecutor{
 		certCache:                    certCache,
 		tenantProviderFunc:           tenantProviderFunc,
@@ -95,7 +95,7 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		if len(clientCerts) != 2 {
 			return nil, errors.Errorf("There must be exactly 2 certificates in the cert cache. Actual number of certificates: %d", len(clientCerts))
 		}
-		log.C(ctx).Info("Failed to execute request with initial mtls certificate. Will retry with backup certificate...")
+		log.C(ctx).Infof("Failed to execute request %q with initial mtls certificate. Will retry with backup certificate...", req.URL.String())
 		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.extSvcClientCertSecretName]}
 		client.Transport = tr
 		return client.Do(req)

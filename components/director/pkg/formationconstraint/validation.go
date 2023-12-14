@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -18,6 +20,8 @@ const (
 	IsNotAssignedToAnyFormationOfType string = "IsNotAssignedToAnyFormationOfType"
 	// DoesNotContainResourceOfSubtype contains the name of the DoesNotContainResourceOfSubtype operator
 	DoesNotContainResourceOfSubtype = "DoesNotContainResourceOfSubtype"
+	// ContainsScenarioGroups contains the name of the ContainsScenarioGroups operator
+	ContainsScenarioGroups = "ContainsScenarioGroups"
 	// DoNotGenerateFormationAssignmentNotificationOperator represents the DoNotGenerateFormationAssignmentNotification operator
 	DoNotGenerateFormationAssignmentNotificationOperator = "DoNotGenerateFormationAssignmentNotification"
 	// DoNotGenerateFormationAssignmentNotificationForLoopsOperator represents the DoNotGenerateFormationAssignmentNotificationForLoops operator
@@ -37,6 +41,7 @@ type OperatorInput interface{}
 var FormationConstraintInputByOperator = map[string]OperatorInput{
 	IsNotAssignedToAnyFormationOfType:                            &IsNotAssignedToAnyFormationOfTypeInput{},
 	DoesNotContainResourceOfSubtype:                              &DoesNotContainResourceOfSubtypeInput{},
+	ContainsScenarioGroups:                                       &ContainsScenarioGroupsInput{},
 	DoNotGenerateFormationAssignmentNotificationOperator:         &DoNotGenerateFormationAssignmentNotificationInput{},
 	DoNotGenerateFormationAssignmentNotificationForLoopsOperator: &DoNotGenerateFormationAssignmentNotificationInput{},
 	DestinationCreator:                                           &DestinationCreatorInput{},
@@ -180,7 +185,31 @@ func emptySendNotificationOperationDetails() *SendNotificationOperationDetails {
 		Webhook: &graphql.Webhook{
 			CreatedAt: &graphql.Timestamp{},
 		},
-		TemplateInput:              nil,
+		TemplateInput: &webhook.ApplicationTenantMappingInput{
+			Operation: model.AssignFormation,
+			Formation: &model.Formation{},
+			SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixLabels(),
+			},
+			SourceApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(),
+				Labels:      fixLabels(),
+			},
+			TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixLabels(),
+			},
+			TargetApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(),
+				Labels:      fixLabels(),
+			},
+			CustomerTenantContext: &webhook.CustomerTenantContext{},
+			// The assignment and reverse assignment are present on top level in the joinPointDetails and should be used from there.
+			// Here they are intentionally set to nil so that if a template that uses them will fail to register.
+			Assignment:        nil,
+			ReverseAssignment: nil,
+		},
 		FormationAssignment:        &model.FormationAssignment{},
 		ReverseFormationAssignment: &model.FormationAssignment{},
 		Formation:                  &model.Formation{},
@@ -189,8 +218,9 @@ func emptySendNotificationOperationDetails() *SendNotificationOperationDetails {
 
 func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturnedOperationDetails {
 	return &NotificationStatusReturnedOperationDetails{
-		Location:            JoinPointLocation{},
-		FormationAssignment: &model.FormationAssignment{},
+		Location:                 JoinPointLocation{},
+		FormationAssignment:      &model.FormationAssignment{},
+		NotificationStatusReport: &statusreport.NotificationStatusReport{},
 		FormationAssignmentTemplateInput: &webhook.ApplicationTenantMappingInput{
 			Operation: model.AssignFormation,
 			Formation: &model.Formation{},
@@ -210,6 +240,7 @@ func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturn
 				Application: fixApplicationModel(),
 				Labels:      fixLabels(),
 			},
+			CustomerTenantContext: &webhook.CustomerTenantContext{},
 			// The assignment and reverse assignment are present on top level in the joinPointDetails and should be used from there.
 			// Here they are intentionally set to nil so that if a template that uses them will fail to register.
 			Assignment:        nil,

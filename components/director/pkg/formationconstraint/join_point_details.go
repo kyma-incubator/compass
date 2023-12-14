@@ -1,6 +1,7 @@
 package formationconstraint
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -152,18 +153,17 @@ func (d *SendNotificationOperationDetails) GetMatchingDetails() MatchingDetails 
 
 // NotificationStatusReturnedOperationDetails contains details applicable to notification status returned join point
 type NotificationStatusReturnedOperationDetails struct {
-	ResourceType                         model.ResourceType
-	ResourceSubtype                      string
-	Location                             JoinPointLocation
-	LastFormationAssignmentState         string
-	LastFormationAssignmentConfiguration string
-	Tenant                               string
-	FormationAssignmentTemplateInput     webhook.FormationAssignmentTemplateInput
-	Operation                            model.FormationOperation
-	FormationAssignment                  *model.FormationAssignment
-	ReverseFormationAssignment           *model.FormationAssignment
-	Formation                            *model.Formation
-	FormationTemplate                    *model.FormationTemplate
+	ResourceType                     model.ResourceType
+	ResourceSubtype                  string
+	Location                         JoinPointLocation
+	NotificationStatusReport         *statusreport.NotificationStatusReport
+	Tenant                           string
+	FormationAssignmentTemplateInput webhook.FormationAssignmentTemplateInput
+	Operation                        model.FormationOperation
+	FormationAssignment              *model.FormationAssignment
+	ReverseFormationAssignment       *model.FormationAssignment
+	Formation                        *model.Formation
+	FormationTemplate                *model.FormationTemplate
 }
 
 // GetMatchingDetails returns matching details for NotificationStatusReturnedOperationDetails

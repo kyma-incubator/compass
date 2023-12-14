@@ -1,6 +1,6 @@
 package config
 
-import "github.com/kyma-incubator/compass/components/director/pkg/certloader"
+import "github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 type ConnectorTestConfig struct {
 	Tenant                         string `envconfig:"default=3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
@@ -17,7 +17,7 @@ type ConnectorTestConfig struct {
 	RevocationConfigMapNamespace string `envconfig:"default=compass-system"`
 	ApplicationTypeLabelKey      string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 
-	CertLoaderConfig certloader.Config
+	CertLoaderConfig credloader.CertConfig
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }

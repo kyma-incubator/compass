@@ -50,14 +50,14 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 # Exit when tenant is not provided
 if [[  ${APP_VERIFY_TENANT} == "" ]]; then
-    echo -e "${RED}Tenant not provided. Use --tenant. ${NC}" 
+    echo -e "${RED}Tenant not provided. Use --tenant. ${NC}"
     exit 1
 fi
 
 GCLOUD_LOGGED=$(gcloud auth list --format="json" | jq '. | length')
 
 if [[  ${GCLOUD_LOGGED} == "0" ]]; then
-    echo -e "${RED}Login to GCloud. Use 'gcloud auth login'. ${NC}" 
+    echo -e "${RED}Login to GCloud. Use 'gcloud auth login'. ${NC}"
     exit 1
 fi
 
@@ -76,6 +76,7 @@ STAGE_CONTEXT="gke_sap-cp-cmp-stage_europe-west1_sap-cp-cmp-stage"
 CLIENT_CERT_SECRET_NAMESPACE="default"
 CLIENT_CERT_SECRET_NAME="external-client-certificate"
 EXT_SVC_CERT_SECRET_NAME="ext-svc-client-certificate"
+SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_NAME="system-fetcher-external-keys"
 
 function cleanup() {
     if [[ ${DEBUG} == true ]]; then
@@ -96,7 +97,7 @@ function execute_gql_query(){
     if [ "" != "${MUTATION}" ]; then
         local GQL_QUERY='{ "query": "'${MUTATION}'" }'
     fi
-    curl --request POST --url "${URL}" --header "Content-Type: application/json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" -d "${GQL_QUERY}" 
+    curl --request POST --url "${URL}" --header "Content-Type: application/json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" -d "${GQL_QUERY}"
 }
 
 echo -e "${GREEN}Starting application${NC}"
@@ -135,6 +136,9 @@ export APP_EXT_SVC_CLIENT_CERT_SECRET=${CLIENT_CERT_SECRET_NAMESPACE}/${EXT_SVC_
 export APP_EXT_SVC_CLIENT_CERT_KEY="tls.crt"
 export APP_EXT_SVC_CLIENT_KEY_KEY="tls.key"
 export APP_EXT_SVC_CLIENT_CERT_SECRET_NAME=${EXT_SVC_CERT_SECRET_NAME}-stage
+export APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_NAME=${SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_NAME}
+export APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET=${CLIENT_CERT_SECRET_NAMESPACE}/${SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_NAME}
+export APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_DATA_KEY="data"
 export APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY="xsappname"
 export APP_CONFIGURATION_FILE="$GOPATH/src/github.com/kyma-incubator/compass/components/director/run/config.yaml"
 export APP_TEMPLATES_FILE_LOCATION="$GOPATH/src/github.com/kyma-incubator/compass/components/director/run/templates/"
@@ -151,6 +155,9 @@ export APP_EXTERNAL_CLIENT_CERT_VALUE=$(kubectl get secret -n compass-system ${C
 export APP_EXTERNAL_CLIENT_KEY_VALUE=$(kubectl get secret -n compass-system ${CLIENT_CERT_SECRET_NAME} -o json | jq -r '.data."tls.key"' | base64 --decode)
 export APP_EXT_SVC_CLIENT_CERT_VALUE=$(kubectl get secret -n compass-system ${EXT_SVC_CERT_SECRET_NAME} -o json | jq -r '.data."tls.crt"' | base64 --decode)
 export APP_EXT_SVC_CLIENT_KEY_VALUE=$(kubectl get secret -n compass-system ${EXT_SVC_CERT_SECRET_NAME} -o json | jq -r '.data."tls.key"' | base64 --decode)
+export APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_VALUE=$(kubectl get secret -n compass-system ${SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_NAME} -o json | jq -r '.data.data' | base64 --decode)
+export APP_JWT_EXPIRE_AFTER="60m"
+export APP_SYNC_GLOBAL_ACCOUNTS="true"
 
 ENV_VARS=$(kubectl get cronjob -n compass-system compass-system-fetcher -o=jsonpath='{.spec.jobTemplate.spec.template.spec.containers[?(@.name=="system-fetcher")]}' | jq -r '.env')
 
@@ -166,6 +173,7 @@ export APP_ORD_WEBHOOK_MAPPINGS=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.nam
 kubectl config use-context ${K3D_CONTEXT}
 kubectl create secret generic "$CLIENT_CERT_SECRET_NAME"-stage --from-literal="$APP_EXTERNAL_CLIENT_CERT_KEY"="$APP_EXTERNAL_CLIENT_CERT_VALUE" --from-literal="$APP_EXTERNAL_CLIENT_KEY_KEY"="$APP_EXTERNAL_CLIENT_KEY_VALUE" --save-config --dry-run=client -o yaml | kubectl apply -f -
 kubectl create secret generic "$EXT_SVC_CERT_SECRET_NAME"-stage --from-literal="$APP_EXT_SVC_CLIENT_CERT_KEY"="$APP_EXT_SVC_CLIENT_CERT_VALUE" --from-literal="$APP_EXT_SVC_CLIENT_KEY_KEY"="$APP_EXT_SVC_CLIENT_KEY_VALUE" --save-config --dry-run=client -o yaml | kubectl apply -f -
+kubectl create secret generic "$SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_NAME" --from-literal="$APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_DATA_KEY"="$APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_VALUE" --save-config --dry-run=client -o yaml | kubectl apply -f -
 
 # Create tenant if requested
 if [[  ${TENANT_CREATION} == true ]]; then

@@ -102,33 +102,34 @@ type ComplexityRoot struct {
 	}
 
 	Application struct {
-		APIDefinition         func(childComplexity int, id string) int
-		ApplicationNamespace  func(childComplexity int) int
-		ApplicationTemplate   func(childComplexity int) int
-		ApplicationTemplateID func(childComplexity int) int
-		Auths                 func(childComplexity int) int
-		BaseURL               func(childComplexity int) int
-		Bundle                func(childComplexity int, id string) int
-		Bundles               func(childComplexity int, first *int, after *PageCursor) int
-		CreatedAt             func(childComplexity int) int
-		DeletedAt             func(childComplexity int) int
-		Description           func(childComplexity int) int
-		Error                 func(childComplexity int) int
-		EventDefinition       func(childComplexity int, id string) int
-		EventingConfiguration func(childComplexity int) int
-		HealthCheckURL        func(childComplexity int) int
-		ID                    func(childComplexity int) int
-		IntegrationSystemID   func(childComplexity int) int
-		Labels                func(childComplexity int, key *string) int
-		LocalTenantID         func(childComplexity int) int
-		Name                  func(childComplexity int) int
-		ProviderName          func(childComplexity int) int
-		Status                func(childComplexity int) int
-		SystemNumber          func(childComplexity int) int
-		SystemStatus          func(childComplexity int) int
-		TenantBusinessType    func(childComplexity int) int
-		UpdatedAt             func(childComplexity int) int
-		Webhooks              func(childComplexity int) int
+		APIDefinition           func(childComplexity int, id string) int
+		ApplicationNamespace    func(childComplexity int) int
+		ApplicationTemplate     func(childComplexity int) int
+		ApplicationTemplateID   func(childComplexity int) int
+		Auths                   func(childComplexity int) int
+		BaseURL                 func(childComplexity int) int
+		Bundle                  func(childComplexity int, id string) int
+		Bundles                 func(childComplexity int, first *int, after *PageCursor) int
+		CreatedAt               func(childComplexity int) int
+		DeletedAt               func(childComplexity int) int
+		Description             func(childComplexity int) int
+		Error                   func(childComplexity int) int
+		EventDefinition         func(childComplexity int, id string) int
+		EventingConfiguration   func(childComplexity int) int
+		HealthCheckURL          func(childComplexity int) int
+		ID                      func(childComplexity int) int
+		IntegrationDependencies func(childComplexity int, first *int, after *PageCursor) int
+		IntegrationSystemID     func(childComplexity int) int
+		Labels                  func(childComplexity int, key *string) int
+		LocalTenantID           func(childComplexity int) int
+		Name                    func(childComplexity int) int
+		ProviderName            func(childComplexity int) int
+		Status                  func(childComplexity int) int
+		SystemNumber            func(childComplexity int) int
+		SystemStatus            func(childComplexity int) int
+		TenantBusinessType      func(childComplexity int) int
+		UpdatedAt               func(childComplexity int) int
+		Webhooks                func(childComplexity int) int
 	}
 
 	ApplicationEventingConfiguration struct {
@@ -164,6 +165,36 @@ type ComplexityRoot struct {
 		Data       func(childComplexity int) int
 		PageInfo   func(childComplexity int) int
 		TotalCount func(childComplexity int) int
+	}
+
+	Aspect struct {
+		APIResources   func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		DeletedAt      func(childComplexity int) int
+		Description    func(childComplexity int) int
+		Error          func(childComplexity int) int
+		EventResources func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Mandatory      func(childComplexity int) int
+		Name           func(childComplexity int) int
+		UpdatedAt      func(childComplexity int) int
+	}
+
+	AspectAPIDefinition struct {
+		OrdID func(childComplexity int) int
+	}
+
+	AspectEventDefinition struct {
+		CreatedAt func(childComplexity int) int
+		DeletedAt func(childComplexity int) int
+		Error     func(childComplexity int) int
+		OrdID     func(childComplexity int) int
+		Subset    func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+	}
+
+	AspectEventDefinitionSubset struct {
+		EventType func(childComplexity int) int
 	}
 
 	Auth struct {
@@ -445,6 +476,29 @@ type ComplexityRoot struct {
 		Type              func(childComplexity int) int
 	}
 
+	IntegrationDependency struct {
+		Aspects       func(childComplexity int) int
+		CreatedAt     func(childComplexity int) int
+		DeletedAt     func(childComplexity int) int
+		Description   func(childComplexity int) int
+		Error         func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Mandatory     func(childComplexity int) int
+		Name          func(childComplexity int) int
+		OrdID         func(childComplexity int) int
+		PartOfPackage func(childComplexity int) int
+		ReleaseStatus func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
+		Version       func(childComplexity int) int
+		Visibility    func(childComplexity int) int
+	}
+
+	IntegrationDependencyPage struct {
+		Data       func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
 	IntegrationSystem struct {
 		Auths       func(childComplexity int) int
 		Description func(childComplexity int) int
@@ -475,6 +529,7 @@ type ComplexityRoot struct {
 		AddDocumentToBundle                          func(childComplexity int, bundleID string, in DocumentInput) int
 		AddEventDefinitionToApplication              func(childComplexity int, appID string, in EventDefinitionInput) int
 		AddEventDefinitionToBundle                   func(childComplexity int, bundleID string, in EventDefinitionInput) int
+		AddIntegrationDependencyToApplication        func(childComplexity int, appID string, in IntegrationDependencyInput) int
 		AddTenantAccess                              func(childComplexity int, in TenantAccessInput) int
 		AddWebhook                                   func(childComplexity int, applicationID *string, applicationTemplateID *string, runtimeID *string, formationTemplateID *string, in WebhookInput) int
 		AssignFormation                              func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
@@ -498,6 +553,7 @@ type ComplexityRoot struct {
 		DeleteFormation                              func(childComplexity int, formation FormationInput) int
 		DeleteFormationConstraint                    func(childComplexity int, id string) int
 		DeleteFormationTemplate                      func(childComplexity int, id string) int
+		DeleteIntegrationDependency                  func(childComplexity int, id string) int
 		DeleteRuntimeLabel                           func(childComplexity int, runtimeID string, key string) int
 		DeleteSystemAuthForApplication               func(childComplexity int, authID string) int
 		DeleteSystemAuthForIntegrationSystem         func(childComplexity int, authID string) int
@@ -783,6 +839,7 @@ type ApplicationResolver interface {
 	Bundle(ctx context.Context, obj *Application, id string) (*Bundle, error)
 	APIDefinition(ctx context.Context, obj *Application, id string) (*APIDefinition, error)
 	EventDefinition(ctx context.Context, obj *Application, id string) (*EventDefinition, error)
+	IntegrationDependencies(ctx context.Context, obj *Application, first *int, after *PageCursor) (*IntegrationDependencyPage, error)
 	Auths(ctx context.Context, obj *Application) ([]*AppSystemAuth, error)
 	EventingConfiguration(ctx context.Context, obj *Application) (*ApplicationEventingConfiguration, error)
 }
@@ -853,6 +910,8 @@ type MutationResolver interface {
 	UpdateAPIDefinitionForApplication(ctx context.Context, id string, in APIDefinitionInput) (*APIDefinition, error)
 	DeleteAPIDefinition(ctx context.Context, id string) (*APIDefinition, error)
 	RefetchAPISpec(ctx context.Context, apiID string) (*APISpec, error)
+	AddIntegrationDependencyToApplication(ctx context.Context, appID string, in IntegrationDependencyInput) (*IntegrationDependency, error)
+	DeleteIntegrationDependency(ctx context.Context, id string) (*IntegrationDependency, error)
 	RequestOneTimeTokenForRuntime(ctx context.Context, id string, systemAuthID *string) (*OneTimeTokenForRuntime, error)
 	RequestOneTimeTokenForApplication(ctx context.Context, id string, systemAuthID *string) (*OneTimeTokenForApplication, error)
 	RequestClientCredentialsForRuntime(ctx context.Context, id string) (SystemAuth, error)
@@ -1295,6 +1354,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Application.ID(childComplexity), true
 
+	case "Application.integrationDependencies":
+		if e.complexity.Application.IntegrationDependencies == nil {
+			break
+		}
+
+		args, err := ec.field_Application_integrationDependencies_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Application.IntegrationDependencies(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
+
 	case "Application.integrationSystemID":
 		if e.complexity.Application.IntegrationSystemID == nil {
 			break
@@ -1521,6 +1592,132 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ApplicationTemplatePage.TotalCount(childComplexity), true
+
+	case "Aspect.apiResources":
+		if e.complexity.Aspect.APIResources == nil {
+			break
+		}
+
+		return e.complexity.Aspect.APIResources(childComplexity), true
+
+	case "Aspect.created_at":
+		if e.complexity.Aspect.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Aspect.CreatedAt(childComplexity), true
+
+	case "Aspect.deleted_at":
+		if e.complexity.Aspect.DeletedAt == nil {
+			break
+		}
+
+		return e.complexity.Aspect.DeletedAt(childComplexity), true
+
+	case "Aspect.description":
+		if e.complexity.Aspect.Description == nil {
+			break
+		}
+
+		return e.complexity.Aspect.Description(childComplexity), true
+
+	case "Aspect.error":
+		if e.complexity.Aspect.Error == nil {
+			break
+		}
+
+		return e.complexity.Aspect.Error(childComplexity), true
+
+	case "Aspect.eventResources":
+		if e.complexity.Aspect.EventResources == nil {
+			break
+		}
+
+		return e.complexity.Aspect.EventResources(childComplexity), true
+
+	case "Aspect.id":
+		if e.complexity.Aspect.ID == nil {
+			break
+		}
+
+		return e.complexity.Aspect.ID(childComplexity), true
+
+	case "Aspect.mandatory":
+		if e.complexity.Aspect.Mandatory == nil {
+			break
+		}
+
+		return e.complexity.Aspect.Mandatory(childComplexity), true
+
+	case "Aspect.name":
+		if e.complexity.Aspect.Name == nil {
+			break
+		}
+
+		return e.complexity.Aspect.Name(childComplexity), true
+
+	case "Aspect.updated_at":
+		if e.complexity.Aspect.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Aspect.UpdatedAt(childComplexity), true
+
+	case "AspectAPIDefinition.ordID":
+		if e.complexity.AspectAPIDefinition.OrdID == nil {
+			break
+		}
+
+		return e.complexity.AspectAPIDefinition.OrdID(childComplexity), true
+
+	case "AspectEventDefinition.created_at":
+		if e.complexity.AspectEventDefinition.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.AspectEventDefinition.CreatedAt(childComplexity), true
+
+	case "AspectEventDefinition.deleted_at":
+		if e.complexity.AspectEventDefinition.DeletedAt == nil {
+			break
+		}
+
+		return e.complexity.AspectEventDefinition.DeletedAt(childComplexity), true
+
+	case "AspectEventDefinition.error":
+		if e.complexity.AspectEventDefinition.Error == nil {
+			break
+		}
+
+		return e.complexity.AspectEventDefinition.Error(childComplexity), true
+
+	case "AspectEventDefinition.ordID":
+		if e.complexity.AspectEventDefinition.OrdID == nil {
+			break
+		}
+
+		return e.complexity.AspectEventDefinition.OrdID(childComplexity), true
+
+	case "AspectEventDefinition.subset":
+		if e.complexity.AspectEventDefinition.Subset == nil {
+			break
+		}
+
+		return e.complexity.AspectEventDefinition.Subset(childComplexity), true
+
+	case "AspectEventDefinition.updated_at":
+		if e.complexity.AspectEventDefinition.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.AspectEventDefinition.UpdatedAt(childComplexity), true
+
+	case "AspectEventDefinitionSubset.eventType":
+		if e.complexity.AspectEventDefinitionSubset.EventType == nil {
+			break
+		}
+
+		return e.complexity.AspectEventDefinitionSubset.EventType(childComplexity), true
 
 	case "Auth.accessStrategy":
 		if e.complexity.Auth.AccessStrategy == nil {
@@ -2806,6 +3003,125 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.IntSysSystemAuth.Type(childComplexity), true
 
+	case "IntegrationDependency.aspects":
+		if e.complexity.IntegrationDependency.Aspects == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependency.Aspects(childComplexity), true
+
+	case "IntegrationDependency.created_at":
+		if e.complexity.IntegrationDependency.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependency.CreatedAt(childComplexity), true
+
+	case "IntegrationDependency.deleted_at":
+		if e.complexity.IntegrationDependency.DeletedAt == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependency.DeletedAt(childComplexity), true
+
+	case "IntegrationDependency.description":
+		if e.complexity.IntegrationDependency.Description == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependency.Description(childComplexity), true
+
+	case "IntegrationDependency.error":
+		if e.complexity.IntegrationDependency.Error == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependency.Error(childComplexity), true
+
+	case "IntegrationDependency.id":
+		if e.complexity.IntegrationDependency.ID == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependency.ID(childComplexity), true
+
+	case "IntegrationDependency.mandatory":
+		if e.complexity.IntegrationDependency.Mandatory == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependency.Mandatory(childComplexity), true
+
+	case "IntegrationDependency.name":
+		if e.complexity.IntegrationDependency.Name == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependency.Name(childComplexity), true
+
+	case "IntegrationDependency.ordID":
+		if e.complexity.IntegrationDependency.OrdID == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependency.OrdID(childComplexity), true
+
+	case "IntegrationDependency.partOfPackage":
+		if e.complexity.IntegrationDependency.PartOfPackage == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependency.PartOfPackage(childComplexity), true
+
+	case "IntegrationDependency.releaseStatus":
+		if e.complexity.IntegrationDependency.ReleaseStatus == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependency.ReleaseStatus(childComplexity), true
+
+	case "IntegrationDependency.updated_at":
+		if e.complexity.IntegrationDependency.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependency.UpdatedAt(childComplexity), true
+
+	case "IntegrationDependency.version":
+		if e.complexity.IntegrationDependency.Version == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependency.Version(childComplexity), true
+
+	case "IntegrationDependency.visibility":
+		if e.complexity.IntegrationDependency.Visibility == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependency.Visibility(childComplexity), true
+
+	case "IntegrationDependencyPage.data":
+		if e.complexity.IntegrationDependencyPage.Data == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependencyPage.Data(childComplexity), true
+
+	case "IntegrationDependencyPage.pageInfo":
+		if e.complexity.IntegrationDependencyPage.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependencyPage.PageInfo(childComplexity), true
+
+	case "IntegrationDependencyPage.totalCount":
+		if e.complexity.IntegrationDependencyPage.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependencyPage.TotalCount(childComplexity), true
+
 	case "IntegrationSystem.auths":
 		if e.complexity.IntegrationSystem.Auths == nil {
 			break
@@ -2954,6 +3270,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.AddEventDefinitionToBundle(childComplexity, args["bundleID"].(string), args["in"].(EventDefinitionInput)), true
+
+	case "Mutation.addIntegrationDependencyToApplication":
+		if e.complexity.Mutation.AddIntegrationDependencyToApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addIntegrationDependencyToApplication_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddIntegrationDependencyToApplication(childComplexity, args["appID"].(string), args["in"].(IntegrationDependencyInput)), true
 
 	case "Mutation.addTenantAccess":
 		if e.complexity.Mutation.AddTenantAccess == nil {
@@ -3230,6 +3558,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteFormationTemplate(childComplexity, args["id"].(string)), true
+
+	case "Mutation.deleteIntegrationDependency":
+		if e.complexity.Mutation.DeleteIntegrationDependency == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteIntegrationDependency_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteIntegrationDependency(childComplexity, args["id"].(string)), true
 
 	case "Mutation.deleteRuntimeLabel":
 		if e.complexity.Mutation.DeleteRuntimeLabel == nil {
@@ -5673,6 +6013,27 @@ input ApplicationUpdateInput {
 	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
 }
 
+input AspectAPIDefinitionInput {
+	ordId: String!
+}
+
+input AspectEventDefinitionInput {
+	ordId: String!
+	subset: [AspectEventDefinitionSubsetInput]
+}
+
+input AspectEventDefinitionSubsetInput {
+	eventType: String
+}
+
+input AspectInput {
+	name: String!
+	description: String
+	mandatory: Boolean
+	apiResources: [AspectAPIDefinitionInput!]
+	eventResources: [AspectEventDefinitionInput!]
+}
+
 input AuthInput {
 	credential: CredentialDataInput
 	accessStrategy: String
@@ -5959,6 +6320,18 @@ input FormationTemplateInput {
 	supportsReset: Boolean
 }
 
+input IntegrationDependencyInput {
+	name: String!
+	description: String
+	ordID: String
+	partOfPackage: String
+	visibility: String
+	releaseStatus: String
+	mandatory: Boolean
+	aspects: [AspectInput!]
+	version: VersionInput
+}
+
 input IntegrationSystemInput {
 	"""
 	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
@@ -6196,6 +6569,7 @@ type Application {
 	bundle(id: ID!): Bundle
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
+	integrationDependencies(first: Int = 200, after: PageCursor): IntegrationDependencyPage
 	auths: [AppSystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
 	applicationNamespace: String
@@ -6239,6 +6613,36 @@ type ApplicationTemplatePage implements Pageable {
 	data: [ApplicationTemplate!]!
 	pageInfo: PageInfo!
 	totalCount: Int!
+}
+
+type Aspect {
+	id: ID!
+	name: String!
+	description: String
+	mandatory: Boolean
+	apiResources: [AspectAPIDefinition!]
+	eventResources: [AspectEventDefinition!]
+	created_at: Timestamp
+	updated_at: Timestamp
+	deleted_at: Timestamp
+	error: String
+}
+
+type AspectAPIDefinition {
+	ordID: String!
+}
+
+type AspectEventDefinition {
+	ordID: String!
+	subset: [AspectEventDefinitionSubset!]
+	created_at: Timestamp
+	updated_at: Timestamp
+	deleted_at: Timestamp
+	error: String
+}
+
+type AspectEventDefinitionSubset {
+	eventType: String
 }
 
 type Auth {
@@ -6557,6 +6961,29 @@ type IntSysSystemAuth implements SystemAuth {
 	type: SystemAuthReferenceType
 	tenantId: String
 	referenceObjectId: ID
+}
+
+type IntegrationDependency {
+	id: ID!
+	name: String!
+	description: String
+	ordID: String
+	partOfPackage: String
+	visibility: String
+	releaseStatus: String
+	mandatory: Boolean
+	aspects: [Aspect!]
+	version: Version
+	created_at: Timestamp
+	updated_at: Timestamp
+	deleted_at: Timestamp
+	error: String
+}
+
+type IntegrationDependencyPage implements Pageable {
+	data: [IntegrationDependency!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
 type IntegrationSystem {
@@ -7046,6 +7473,16 @@ type Mutation {
 	- [refetch api spec](examples/refetch-api-spec/refetch-api-spec.graphql)
 	"""
 	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
+	"""
+	**Examples**
+	- [add integration dependency to application](examples/add-integration-dependency-to-application/add-integration-dependency-to-application.graphql)
+	"""
+	addIntegrationDependencyToApplication(appID: ID!, in: IntegrationDependencyInput! @validate): IntegrationDependency! @hasScopes(path: "graphql.mutation.addIntegrationDependencyToApplication")
+	"""
+	**Examples**
+	- [delete integration dependency](examples/delete-integration-dependency/delete-integration-dependency.graphql)
+	"""
+	deleteIntegrationDependency(id: ID!): IntegrationDependency! @hasScopes(path: "graphql.mutation.deleteIntegrationDependency")
 	requestOneTimeTokenForRuntime(id: ID!, systemAuthID: ID): OneTimeTokenForRuntime! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")
 	requestOneTimeTokenForApplication(id: ID!, systemAuthID: ID): OneTimeTokenForApplication! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForApplication")
 	requestClientCredentialsForRuntime(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForRuntime")
@@ -7461,6 +7898,28 @@ func (ec *executionContext) field_Application_eventDefinition_args(ctx context.C
 	return args, nil
 }
 
+func (ec *executionContext) field_Application_integrationDependencies_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg0
+	var arg1 *PageCursor
+	if tmp, ok := rawArgs["after"]; ok {
+		arg1, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Application_labels_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -7865,6 +8324,43 @@ func (ec *executionContext) field_Mutation_addEventDefinitionToBundle_args(ctx c
 			arg1 = data
 		} else {
 			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.EventDefinitionInput`, tmp)
+		}
+	}
+	args["in"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_addIntegrationDependencyToApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["appID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["appID"] = arg0
+	var arg1 IntegrationDependencyInput
+	if tmp, ok := rawArgs["in"]; ok {
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNIntegrationDependencyInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationDependencyInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Validate == nil {
+				return nil, errors.New("directive validate is not implemented")
+			}
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(IntegrationDependencyInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.IntegrationDependencyInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -8367,6 +8863,20 @@ func (ec *executionContext) field_Mutation_deleteFormation_args(ctx context.Cont
 		}
 	}
 	args["formation"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteIntegrationDependency_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -12277,6 +12787,44 @@ func (ec *executionContext) _Application_eventDefinition(ctx context.Context, fi
 	return ec.marshalOEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Application_integrationDependencies(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Application_integrationDependencies_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Application().IntegrationDependencies(rctx, obj, args["first"].(*int), args["after"].(*PageCursor))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*IntegrationDependencyPage)
+	fc.Result = res
+	return ec.marshalOIntegrationDependencyPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationDependencyPage(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Application_auths(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -13222,6 +13770,576 @@ func (ec *executionContext) _ApplicationTemplatePage_totalCount(ctx context.Cont
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Aspect_id(ctx context.Context, field graphql.CollectedField, obj *Aspect) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Aspect",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Aspect_name(ctx context.Context, field graphql.CollectedField, obj *Aspect) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Aspect",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Aspect_description(ctx context.Context, field graphql.CollectedField, obj *Aspect) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Aspect",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Aspect_mandatory(ctx context.Context, field graphql.CollectedField, obj *Aspect) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Aspect",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Mandatory, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Aspect_apiResources(ctx context.Context, field graphql.CollectedField, obj *Aspect) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Aspect",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.APIResources, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*AspectAPIDefinition)
+	fc.Result = res
+	return ec.marshalOAspectAPIDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectAPIDefinitionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Aspect_eventResources(ctx context.Context, field graphql.CollectedField, obj *Aspect) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Aspect",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EventResources, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*AspectEventDefinition)
+	fc.Result = res
+	return ec.marshalOAspectEventDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Aspect_created_at(ctx context.Context, field graphql.CollectedField, obj *Aspect) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Aspect",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Aspect_updated_at(ctx context.Context, field graphql.CollectedField, obj *Aspect) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Aspect",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Aspect_deleted_at(ctx context.Context, field graphql.CollectedField, obj *Aspect) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Aspect",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeletedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Aspect_error(ctx context.Context, field graphql.CollectedField, obj *Aspect) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Aspect",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AspectAPIDefinition_ordID(ctx context.Context, field graphql.CollectedField, obj *AspectAPIDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AspectAPIDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OrdID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AspectEventDefinition_ordID(ctx context.Context, field graphql.CollectedField, obj *AspectEventDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AspectEventDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OrdID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AspectEventDefinition_subset(ctx context.Context, field graphql.CollectedField, obj *AspectEventDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AspectEventDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Subset, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*AspectEventDefinitionSubset)
+	fc.Result = res
+	return ec.marshalOAspectEventDefinitionSubset2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AspectEventDefinition_created_at(ctx context.Context, field graphql.CollectedField, obj *AspectEventDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AspectEventDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AspectEventDefinition_updated_at(ctx context.Context, field graphql.CollectedField, obj *AspectEventDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AspectEventDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AspectEventDefinition_deleted_at(ctx context.Context, field graphql.CollectedField, obj *AspectEventDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AspectEventDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeletedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AspectEventDefinition_error(ctx context.Context, field graphql.CollectedField, obj *AspectEventDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AspectEventDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AspectEventDefinitionSubset_eventType(ctx context.Context, field graphql.CollectedField, obj *AspectEventDefinitionSubset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AspectEventDefinitionSubset",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EventType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auth_credential(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
@@ -19266,6 +20384,548 @@ func (ec *executionContext) _IntSysSystemAuth_referenceObjectId(ctx context.Cont
 	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _IntegrationDependency_id(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependency",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependency_name(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependency",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependency_description(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependency",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependency_ordID(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependency",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OrdID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependency_partOfPackage(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependency",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PartOfPackage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependency_visibility(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependency",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Visibility, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependency_releaseStatus(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependency",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReleaseStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependency_mandatory(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependency",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Mandatory, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependency_aspects(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependency",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Aspects, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*Aspect)
+	fc.Result = res
+	return ec.marshalOAspect2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependency_version(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependency",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Version)
+	fc.Result = res
+	return ec.marshalOVersion2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersion(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependency_created_at(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependency",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependency_updated_at(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependency",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependency_deleted_at(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependency",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeletedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependency_error(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependency",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependencyPage_data(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependencyPage) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependencyPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*IntegrationDependency)
+	fc.Result = res
+	return ec.marshalNIntegrationDependency2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationDependencyᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependencyPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependencyPage) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependencyPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _IntegrationDependencyPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependencyPage) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "IntegrationDependencyPage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _IntegrationSystem_id(ctx context.Context, field graphql.CollectedField, obj *IntegrationSystem) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -21468,6 +23128,136 @@ func (ec *executionContext) _Mutation_refetchAPISpec(ctx context.Context, field 
 	res := resTmp.(*APISpec)
 	fc.Result = res
 	return ec.marshalNAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_addIntegrationDependencyToApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_addIntegrationDependencyToApplication_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().AddIntegrationDependencyToApplication(rctx, args["appID"].(string), args["in"].(IntegrationDependencyInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.addIntegrationDependencyToApplication")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*IntegrationDependency); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.IntegrationDependency`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*IntegrationDependency)
+	fc.Result = res
+	return ec.marshalNIntegrationDependency2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationDependency(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteIntegrationDependency(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteIntegrationDependency_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteIntegrationDependency(rctx, args["id"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteIntegrationDependency")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*IntegrationDependency); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.IntegrationDependency`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*IntegrationDependency)
+	fc.Result = res
+	return ec.marshalNIntegrationDependency2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationDependency(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_requestOneTimeTokenForRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33041,6 +34831,108 @@ func (ec *executionContext) unmarshalInputApplicationUpdateInput(ctx context.Con
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputAspectAPIDefinitionInput(ctx context.Context, obj interface{}) (AspectAPIDefinitionInput, error) {
+	var it AspectAPIDefinitionInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "ordId":
+			var err error
+			it.OrdID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputAspectEventDefinitionInput(ctx context.Context, obj interface{}) (AspectEventDefinitionInput, error) {
+	var it AspectEventDefinitionInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "ordId":
+			var err error
+			it.OrdID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "subset":
+			var err error
+			it.Subset, err = ec.unmarshalOAspectEventDefinitionSubsetInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputAspectEventDefinitionSubsetInput(ctx context.Context, obj interface{}) (AspectEventDefinitionSubsetInput, error) {
+	var it AspectEventDefinitionSubsetInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "eventType":
+			var err error
+			it.EventType, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputAspectInput(ctx context.Context, obj interface{}) (AspectInput, error) {
+	var it AspectInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "mandatory":
+			var err error
+			it.Mandatory, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "apiResources":
+			var err error
+			it.APIResources, err = ec.unmarshalOAspectAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectAPIDefinitionInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "eventResources":
+			var err error
+			it.EventResources, err = ec.unmarshalOAspectEventDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputAuthInput(ctx context.Context, obj interface{}) (AuthInput, error) {
 	var it AuthInput
 	var asMap = obj.(map[string]interface{})
@@ -33998,6 +35890,72 @@ func (ec *executionContext) unmarshalInputFormationTemplateInput(ctx context.Con
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputIntegrationDependencyInput(ctx context.Context, obj interface{}) (IntegrationDependencyInput, error) {
+	var it IntegrationDependencyInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "ordID":
+			var err error
+			it.OrdID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "partOfPackage":
+			var err error
+			it.PartOfPackage, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "visibility":
+			var err error
+			it.Visibility, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "releaseStatus":
+			var err error
+			it.ReleaseStatus, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "mandatory":
+			var err error
+			it.Mandatory, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "aspects":
+			var err error
+			it.Aspects, err = ec.unmarshalOAspectInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "version":
+			var err error
+			it.Version, err = ec.unmarshalOVersionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersionInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputIntegrationSystemInput(ctx context.Context, obj interface{}) (IntegrationSystemInput, error) {
 	var it IntegrationSystemInput
 	var asMap = obj.(map[string]interface{})
@@ -34709,6 +36667,13 @@ func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet,
 			return graphql.Null
 		}
 		return ec._HealthCheckPage(ctx, sel, obj)
+	case IntegrationDependencyPage:
+		return ec._IntegrationDependencyPage(ctx, sel, &obj)
+	case *IntegrationDependencyPage:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._IntegrationDependencyPage(ctx, sel, obj)
 	case IntegrationSystemPage:
 		return ec._IntegrationSystemPage(ctx, sel, &obj)
 	case *IntegrationSystemPage:
@@ -35090,6 +37055,17 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 				res = ec._Application_eventDefinition(ctx, field, obj)
 				return res
 			})
+		case "integrationDependencies":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Application_integrationDependencies(ctx, field, obj)
+				return res
+			})
 		case "auths":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -35340,6 +37316,142 @@ func (ec *executionContext) _ApplicationTemplatePage(ctx context.Context, sel as
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var aspectImplementors = []string{"Aspect"}
+
+func (ec *executionContext) _Aspect(ctx context.Context, sel ast.SelectionSet, obj *Aspect) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, aspectImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Aspect")
+		case "id":
+			out.Values[i] = ec._Aspect_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Aspect_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			out.Values[i] = ec._Aspect_description(ctx, field, obj)
+		case "mandatory":
+			out.Values[i] = ec._Aspect_mandatory(ctx, field, obj)
+		case "apiResources":
+			out.Values[i] = ec._Aspect_apiResources(ctx, field, obj)
+		case "eventResources":
+			out.Values[i] = ec._Aspect_eventResources(ctx, field, obj)
+		case "created_at":
+			out.Values[i] = ec._Aspect_created_at(ctx, field, obj)
+		case "updated_at":
+			out.Values[i] = ec._Aspect_updated_at(ctx, field, obj)
+		case "deleted_at":
+			out.Values[i] = ec._Aspect_deleted_at(ctx, field, obj)
+		case "error":
+			out.Values[i] = ec._Aspect_error(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var aspectAPIDefinitionImplementors = []string{"AspectAPIDefinition"}
+
+func (ec *executionContext) _AspectAPIDefinition(ctx context.Context, sel ast.SelectionSet, obj *AspectAPIDefinition) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, aspectAPIDefinitionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AspectAPIDefinition")
+		case "ordID":
+			out.Values[i] = ec._AspectAPIDefinition_ordID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var aspectEventDefinitionImplementors = []string{"AspectEventDefinition"}
+
+func (ec *executionContext) _AspectEventDefinition(ctx context.Context, sel ast.SelectionSet, obj *AspectEventDefinition) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, aspectEventDefinitionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AspectEventDefinition")
+		case "ordID":
+			out.Values[i] = ec._AspectEventDefinition_ordID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "subset":
+			out.Values[i] = ec._AspectEventDefinition_subset(ctx, field, obj)
+		case "created_at":
+			out.Values[i] = ec._AspectEventDefinition_created_at(ctx, field, obj)
+		case "updated_at":
+			out.Values[i] = ec._AspectEventDefinition_updated_at(ctx, field, obj)
+		case "deleted_at":
+			out.Values[i] = ec._AspectEventDefinition_deleted_at(ctx, field, obj)
+		case "error":
+			out.Values[i] = ec._AspectEventDefinition_error(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var aspectEventDefinitionSubsetImplementors = []string{"AspectEventDefinitionSubset"}
+
+func (ec *executionContext) _AspectEventDefinitionSubset(ctx context.Context, sel ast.SelectionSet, obj *AspectEventDefinitionSubset) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, aspectEventDefinitionSubsetImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AspectEventDefinitionSubset")
+		case "eventType":
+			out.Values[i] = ec._AspectEventDefinitionSubset_eventType(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -36897,6 +39009,99 @@ func (ec *executionContext) _IntSysSystemAuth(ctx context.Context, sel ast.Selec
 	return out
 }
 
+var integrationDependencyImplementors = []string{"IntegrationDependency"}
+
+func (ec *executionContext) _IntegrationDependency(ctx context.Context, sel ast.SelectionSet, obj *IntegrationDependency) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, integrationDependencyImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("IntegrationDependency")
+		case "id":
+			out.Values[i] = ec._IntegrationDependency_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._IntegrationDependency_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			out.Values[i] = ec._IntegrationDependency_description(ctx, field, obj)
+		case "ordID":
+			out.Values[i] = ec._IntegrationDependency_ordID(ctx, field, obj)
+		case "partOfPackage":
+			out.Values[i] = ec._IntegrationDependency_partOfPackage(ctx, field, obj)
+		case "visibility":
+			out.Values[i] = ec._IntegrationDependency_visibility(ctx, field, obj)
+		case "releaseStatus":
+			out.Values[i] = ec._IntegrationDependency_releaseStatus(ctx, field, obj)
+		case "mandatory":
+			out.Values[i] = ec._IntegrationDependency_mandatory(ctx, field, obj)
+		case "aspects":
+			out.Values[i] = ec._IntegrationDependency_aspects(ctx, field, obj)
+		case "version":
+			out.Values[i] = ec._IntegrationDependency_version(ctx, field, obj)
+		case "created_at":
+			out.Values[i] = ec._IntegrationDependency_created_at(ctx, field, obj)
+		case "updated_at":
+			out.Values[i] = ec._IntegrationDependency_updated_at(ctx, field, obj)
+		case "deleted_at":
+			out.Values[i] = ec._IntegrationDependency_deleted_at(ctx, field, obj)
+		case "error":
+			out.Values[i] = ec._IntegrationDependency_error(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var integrationDependencyPageImplementors = []string{"IntegrationDependencyPage", "Pageable"}
+
+func (ec *executionContext) _IntegrationDependencyPage(ctx context.Context, sel ast.SelectionSet, obj *IntegrationDependencyPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, integrationDependencyPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("IntegrationDependencyPage")
+		case "data":
+			out.Values[i] = ec._IntegrationDependencyPage_data(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._IntegrationDependencyPage_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._IntegrationDependencyPage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var integrationSystemImplementors = []string{"IntegrationSystem"}
 
 func (ec *executionContext) _IntegrationSystem(ctx context.Context, sel ast.SelectionSet, obj *IntegrationSystem) graphql.Marshaler {
@@ -37187,6 +39392,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "refetchAPISpec":
 			out.Values[i] = ec._Mutation_refetchAPISpec(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "addIntegrationDependencyToApplication":
+			out.Values[i] = ec._Mutation_addIntegrationDependencyToApplication(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deleteIntegrationDependency":
+			out.Values[i] = ec._Mutation_deleteIntegrationDependency(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -39498,6 +41713,98 @@ func (ec *executionContext) unmarshalNApplicationUpdateInput2githubᚗcomᚋkyma
 	return ec.unmarshalInputApplicationUpdateInput(ctx, v)
 }
 
+func (ec *executionContext) marshalNAspect2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspect(ctx context.Context, sel ast.SelectionSet, v Aspect) graphql.Marshaler {
+	return ec._Aspect(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAspect2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspect(ctx context.Context, sel ast.SelectionSet, v *Aspect) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Aspect(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAspectAPIDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectAPIDefinition(ctx context.Context, sel ast.SelectionSet, v AspectAPIDefinition) graphql.Marshaler {
+	return ec._AspectAPIDefinition(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAspectAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectAPIDefinition(ctx context.Context, sel ast.SelectionSet, v *AspectAPIDefinition) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AspectAPIDefinition(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNAspectAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectAPIDefinitionInput(ctx context.Context, v interface{}) (AspectAPIDefinitionInput, error) {
+	return ec.unmarshalInputAspectAPIDefinitionInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNAspectAPIDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectAPIDefinitionInput(ctx context.Context, v interface{}) (*AspectAPIDefinitionInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNAspectAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectAPIDefinitionInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalNAspectEventDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinition(ctx context.Context, sel ast.SelectionSet, v AspectEventDefinition) graphql.Marshaler {
+	return ec._AspectEventDefinition(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAspectEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinition(ctx context.Context, sel ast.SelectionSet, v *AspectEventDefinition) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AspectEventDefinition(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNAspectEventDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionInput(ctx context.Context, v interface{}) (AspectEventDefinitionInput, error) {
+	return ec.unmarshalInputAspectEventDefinitionInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNAspectEventDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionInput(ctx context.Context, v interface{}) (*AspectEventDefinitionInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNAspectEventDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalNAspectEventDefinitionSubset2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubset(ctx context.Context, sel ast.SelectionSet, v AspectEventDefinitionSubset) graphql.Marshaler {
+	return ec._AspectEventDefinitionSubset(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAspectEventDefinitionSubset2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubset(ctx context.Context, sel ast.SelectionSet, v *AspectEventDefinitionSubset) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AspectEventDefinitionSubset(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNAspectInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectInput(ctx context.Context, v interface{}) (AspectInput, error) {
+	return ec.unmarshalInputAspectInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNAspectInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectInput(ctx context.Context, v interface{}) (*AspectInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNAspectInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalNAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx context.Context, v interface{}) (AuthInput, error) {
 	return ec.unmarshalInputAuthInput(ctx, v)
 }
@@ -40442,6 +42749,61 @@ func (ec *executionContext) marshalNIntSysSystemAuth2ᚖgithubᚗcomᚋkymaᚑin
 		return graphql.Null
 	}
 	return ec._IntSysSystemAuth(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNIntegrationDependency2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationDependency(ctx context.Context, sel ast.SelectionSet, v IntegrationDependency) graphql.Marshaler {
+	return ec._IntegrationDependency(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNIntegrationDependency2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationDependencyᚄ(ctx context.Context, sel ast.SelectionSet, v []*IntegrationDependency) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNIntegrationDependency2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationDependency(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNIntegrationDependency2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationDependency(ctx context.Context, sel ast.SelectionSet, v *IntegrationDependency) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._IntegrationDependency(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNIntegrationDependencyInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationDependencyInput(ctx context.Context, v interface{}) (IntegrationDependencyInput, error) {
+	return ec.unmarshalInputIntegrationDependencyInput(ctx, v)
 }
 
 func (ec *executionContext) marshalNIntegrationSystem2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx context.Context, sel ast.SelectionSet, v IntegrationSystem) graphql.Marshaler {
@@ -41555,6 +43917,258 @@ func (ec *executionContext) marshalOArtifactType2ᚖgithubᚗcomᚋkymaᚑincuba
 	return v
 }
 
+func (ec *executionContext) marshalOAspect2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectᚄ(ctx context.Context, sel ast.SelectionSet, v []*Aspect) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAspect2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspect(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOAspectAPIDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectAPIDefinitionᚄ(ctx context.Context, sel ast.SelectionSet, v []*AspectAPIDefinition) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAspectAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectAPIDefinition(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalOAspectAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectAPIDefinitionInputᚄ(ctx context.Context, v interface{}) ([]*AspectAPIDefinitionInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*AspectAPIDefinitionInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNAspectAPIDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectAPIDefinitionInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOAspectEventDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionᚄ(ctx context.Context, sel ast.SelectionSet, v []*AspectEventDefinition) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAspectEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinition(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalOAspectEventDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionInputᚄ(ctx context.Context, v interface{}) ([]*AspectEventDefinitionInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*AspectEventDefinitionInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNAspectEventDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOAspectEventDefinitionSubset2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetᚄ(ctx context.Context, sel ast.SelectionSet, v []*AspectEventDefinitionSubset) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAspectEventDefinitionSubset2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubset(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalOAspectEventDefinitionSubsetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetInput(ctx context.Context, v interface{}) (AspectEventDefinitionSubsetInput, error) {
+	return ec.unmarshalInputAspectEventDefinitionSubsetInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOAspectEventDefinitionSubsetInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetInput(ctx context.Context, v interface{}) ([]*AspectEventDefinitionSubsetInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*AspectEventDefinitionSubsetInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOAspectEventDefinitionSubsetInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOAspectEventDefinitionSubsetInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetInput(ctx context.Context, v interface{}) (*AspectEventDefinitionSubsetInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOAspectEventDefinitionSubsetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectEventDefinitionSubsetInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOAspectInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectInputᚄ(ctx context.Context, v interface{}) ([]*AspectInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*AspectInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNAspectInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspectInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) marshalOAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx context.Context, sel ast.SelectionSet, v Auth) graphql.Marshaler {
 	return ec._Auth(ctx, sel, &v)
 }
@@ -42337,6 +44951,17 @@ func (ec *executionContext) marshalOIntSysSystemAuth2ᚕᚖgithubᚗcomᚋkyma�
 	}
 	wg.Wait()
 	return ret
+}
+
+func (ec *executionContext) marshalOIntegrationDependencyPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationDependencyPage(ctx context.Context, sel ast.SelectionSet, v IntegrationDependencyPage) graphql.Marshaler {
+	return ec._IntegrationDependencyPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOIntegrationDependencyPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationDependencyPage(ctx context.Context, sel ast.SelectionSet, v *IntegrationDependencyPage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._IntegrationDependencyPage(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOIntegrationSystem2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx context.Context, sel ast.SelectionSet, v IntegrationSystem) graphql.Marshaler {

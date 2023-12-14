@@ -56,26 +56,34 @@ func fixAppInputBySystem(t *testing.T, system systemfetcher.System) model.Applic
 	systemPayload, err := json.Marshal(system.SystemPayload)
 	require.NoError(t, err)
 
-	initStatusCond := model.ApplicationStatusConditionInitial
+	connectedStatusCond := model.ApplicationStatusConditionConnected
 	return model.ApplicationRegisterInput{
 		Name:            gjson.GetBytes(systemPayload, "displayName").String(),
 		Description:     str.Ptr(gjson.GetBytes(systemPayload, "productDescription").String()),
 		BaseURL:         str.Ptr(gjson.GetBytes(systemPayload, "baseUrl").String()),
 		ProviderName:    str.Ptr(gjson.GetBytes(systemPayload, "infrastructureProvider").String()),
 		SystemNumber:    str.Ptr(gjson.GetBytes(systemPayload, "systemNumber").String()),
-		StatusCondition: &initStatusCond,
+		StatusCondition: &connectedStatusCond,
 		Labels: map[string]interface{}{
 			"managed": "true",
 		},
 	}
 }
 
-func fixWebhookModel(id string, whMode model.WebhookMode) model.Webhook {
+func fixWebhookModel(id string, whMode model.WebhookMode, whType model.WebhookType) model.Webhook {
 	return model.Webhook{
 		ID:         id,
 		ObjectID:   id,
-		ObjectType: model.ApplicationWebhookReference,
-		Type:       model.WebhookTypeConfigurationChanged,
+		ObjectType: model.ApplicationTemplateWebhookReference,
+		Type:       whType,
 		Mode:       &whMode,
+	}
+}
+
+func fixWebhookInputModel(id string, whMode model.WebhookMode, whType model.WebhookType) model.WebhookInput {
+	return model.WebhookInput{
+		ID:   id,
+		Type: whType,
+		Mode: &whMode,
 	}
 }

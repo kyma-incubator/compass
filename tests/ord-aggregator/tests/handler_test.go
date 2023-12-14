@@ -44,69 +44,80 @@ const (
 	tenantHeader            = "Tenant"
 	internalVisibilityScope = "internal_visibility:read"
 
-	descriptionField             = "description"
-	shortDescriptionField        = "shortDescription"
-	apisField                    = "apis"
-	eventsField                  = "events"
-	capabilitiesField            = "capabilities"
-	integrationDependenciesField = "integrationDependencies"
-	publicAPIsField              = "publicAPIs"
-	publicEventsField            = "publicEvents"
+	descriptionField                   = "description"
+	shortDescriptionField              = "shortDescription"
+	apisField                          = "apis"
+	eventsField                        = "events"
+	capabilitiesField                  = "capabilities"
+	integrationDependenciesField       = "integrationDependencies"
+	publicIntegrationDependenciesField = "publicIntegrationDependencies"
+	publicAPIsField                    = "publicAPIs"
+	publicEventsField                  = "publicEvents"
 
-	expectedSpecType                         = "openapi-v3"
-	expectedCapabilitySpecType               = "sap.mdo:mdi-capability-definition:v1"
-	expectedSpecFormat                       = "application/json"
-	expectedSystemInstanceName               = "test-app"
-	expectedSecondSystemInstanceName         = "second-test-app"
-	expectedThirdSystemInstanceName          = "third-test-app"
-	expectedFourthSystemInstanceName         = "fourth-test-app"
-	expectedFifthSystemInstanceName          = "fifth-test-app"
-	expectedSixthSystemInstanceName          = "sixth-test-app"
-	expectedSeventhSystemInstanceName        = "seventh-test-app"
-	expectedSystemInstanceDescription        = "test-app1-description"
-	expectedSecondSystemInstanceDescription  = "test-app2-description"
-	expectedThirdSystemInstanceDescription   = "test-app3-description"
-	expectedFourthSystemInstanceDescription  = "test-app4-description"
-	expectedFifthSystemInstanceDescription   = "test-app5-description"
-	expectedSixthSystemInstanceDescription   = "test-app6-description"
-	expectedSeventhSystemInstanceDescription = "test-app7-description"
-	expectedBundleTitle                      = "BUNDLE TITLE"
-	secondExpectedBundleTitle                = "BUNDLE TITLE 2"
-	expectedBundleDescription                = "lorem ipsum dolor nsq sme"
-	secondExpectedBundleDescription          = ""
-	firstBundleOrdIDRegex                    = "ns:consumptionBundle:BUNDLE_ID(.+):v1"
-	expectedPackageTitle                     = "PACKAGE 1 TITLE"
-	expectedPackageDescription               = "lorem ipsum dolor set"
-	expectedEntityTypeTitle                  = "ENTITYTYPE 1 TITLE"
-	expectedEntityTypeDescription            = "lorem ipsum dolor set"
-	firstProductTitle                        = "PRODUCT TITLE"
-	firstProductShortDescription             = "lorem ipsum"
-	secondProductTitle                       = "SAP Business Technology Platform"
-	secondProductShortDescription            = "Accelerate business outcomes with integration, data to value, and extensibility."
-	firstAPIExpectedTitle                    = "API TITLE"
-	firstAPIExpectedDescription              = "lorem ipsum dolor sit amet"
-	firstAPIExpectedNumberOfSpecs            = 3
-	secondAPIExpectedTitle                   = "API TITLE INTERNAL"
-	secondAPIExpectedDescription             = "Test description internal"
-	secondAPIExpectedNumberOfSpecs           = 2
-	thirdAPIExpectedTitle                    = "API TITLE PRIVATE"
-	thirdAPIExpectedDescription              = "Test description private"
-	thirdAPIExpectedNumberOfSpecs            = 2
-	firstEventTitle                          = "EVENT TITLE"
-	firstEventDescription                    = "lorem ipsum dolor sit amet"
-	secondEventTitle                         = "EVENT TITLE 2"
-	secondEventDescription                   = "lorem ipsum dolor sit amet"
-	thirdEventTitle                          = "EVENT TITLE INTERNAL"
-	thirdEventDescription                    = "Test description internal"
-	fourthEventTitle                         = "EVENT TITLE PRIVATE"
-	fourthEventDescription                   = "Test description private"
-	expectedCapabilityTitle                  = "CAPABILITY TITLE"
-	expectedCapabilityDescription            = "Optional, longer description"
-	expectedCapabilityNumberOfSpecs          = 1
-	expectedIntegrationDependencyTitle       = "INTEGRATION DEPENDENCY TITLE"
-	expectedIntegrationDependencyDescription = "longer description of an integration dependency"
-	expectedTombstoneOrdIDRegex              = "ns:apiResource:API_ID2(.+):v1"
-	expectedVendorTitle                      = "SAP SE"
+	expectedSpecType                               = "openapi-v3"
+	expectedCapabilitySpecType                     = "sap.mdo:mdi-capability-definition:v1"
+	expectedSpecFormat                             = "application/json"
+	expectedSystemInstanceName                     = "test-app"
+	expectedSecondSystemInstanceName               = "second-test-app"
+	expectedThirdSystemInstanceName                = "third-test-app"
+	expectedFourthSystemInstanceName               = "fourth-test-app"
+	expectedFifthSystemInstanceName                = "fifth-test-app"
+	expectedSixthSystemInstanceName                = "sixth-test-app"
+	expectedSeventhSystemInstanceName              = "seventh-test-app"
+	expectedSystemInstanceDescription              = "test-app1-description"
+	expectedSecondSystemInstanceDescription        = "test-app2-description"
+	expectedThirdSystemInstanceDescription         = "test-app3-description"
+	expectedFourthSystemInstanceDescription        = "test-app4-description"
+	expectedFifthSystemInstanceDescription         = "test-app5-description"
+	expectedSixthSystemInstanceDescription         = "test-app6-description"
+	expectedSeventhSystemInstanceDescription       = "test-app7-description"
+	expectedBundleTitle                            = "BUNDLE TITLE"
+	secondExpectedBundleTitle                      = "BUNDLE TITLE 2"
+	expectedBundleDescription                      = "lorem ipsum dolor nsq sme"
+	secondExpectedBundleDescription                = ""
+	firstBundleOrdIDRegex                          = "ns:consumptionBundle:BUNDLE_ID(.+):v1"
+	expectedPackageTitle                           = "PACKAGE 1 TITLE"
+	expectedPackageDescription                     = "lorem ipsum dolor set"
+	expectedEntityTypeTitle                        = "ENTITYTYPE 1 TITLE"
+	expectedEntityTypeDescription                  = "lorem ipsum dolor set"
+	firstProductTitle                              = "PRODUCT TITLE"
+	firstProductShortDescription                   = "lorem ipsum"
+	secondProductTitle                             = "SAP Business Technology Platform"
+	secondProductShortDescription                  = "Accelerate business outcomes with integration, data to value, and extensibility."
+	firstAPIExpectedTitle                          = "API TITLE"
+	firstAPIExpectedDescription                    = "lorem ipsum dolor sit amet"
+	firstAPIExpectedNumberOfSpecs                  = 3
+	secondAPIExpectedTitle                         = "API TITLE INTERNAL"
+	secondAPIExpectedDescription                   = "Test description internal"
+	secondAPIExpectedNumberOfSpecs                 = 2
+	thirdAPIExpectedTitle                          = "API TITLE PRIVATE"
+	thirdAPIExpectedDescription                    = "Test description private"
+	thirdAPIExpectedNumberOfSpecs                  = 2
+	firstEventTitle                                = "EVENT TITLE"
+	firstEventDescription                          = "lorem ipsum dolor sit amet"
+	secondEventTitle                               = "EVENT TITLE 2"
+	secondEventDescription                         = "lorem ipsum dolor sit amet"
+	thirdEventTitle                                = "EVENT TITLE INTERNAL"
+	thirdEventDescription                          = "Test description internal"
+	fourthEventTitle                               = "EVENT TITLE PRIVATE"
+	fourthEventDescription                         = "Test description private"
+	expectedCapabilityTitle                        = "CAPABILITY TITLE"
+	expectedCapabilityDescription                  = "Optional, longer description"
+	expectedCapabilityNumberOfSpecs                = 1
+	firstIntegrationDependencyExpectedTitle        = "INTEGRATION DEPENDENCY TITLE"
+	firstIntegrationDependencyExpectedDescription  = "longer description of an integration dependency"
+	secondIntegrationDependencyExpectedTitle       = "INTEGRATION DEPENDENCY TITLE PRIVATE"
+	secondIntegrationDependencyExpectedDescription = "longer description of a private integration dependency"
+	thirdIntegrationDependencyExpectedTitle        = "INTEGRATION DEPENDENCY TITLE INTERNAL"
+	thirdIntegrationDependencyExpectedDescription  = "longer description of an internal integration dependency"
+	firstAspectExpectedTitle                       = "ASPECT TITLE"
+	firstAspectExpectedDescription                 = "Aspect desc"
+	secondAspectExpectedTitle                      = "ASPECT TITLE PRIVATE"
+	secondAspectExpectedDescription                = "Aspect private desc"
+	thirdAspectExpectedTitle                       = "ASPECT TITLE INTERNAL"
+	thirdAspectExpectedDescription                 = "Aspect internal desc"
+	expectedTombstoneOrdIDRegex                    = "ns:apiResource:API_ID2(.+):v1"
+	expectedVendorTitle                            = "SAP SE"
 
 	expectedNumberOfSystemInstances                       = 7
 	expectedNumberOfSystemInstancesInSubscription         = 1
@@ -122,15 +133,23 @@ const (
 	expectedNumberOfEventsInSubscription                  = 4
 	expectedNumberOfCapabilities                          = 7
 	expectedNumberOfCapabilitiesInSubscription            = 1
-	expectedNumberOfIntegrationDependencies               = 7
-	expectedNumberOfIntegrationDependenciesInSubscription = 1
+	expectedNumberOfIntegrationDependencies               = 21
+	expectedNumberOfIntegrationDependenciesInSubscription = 3
+	expectedNumberOfAspects                               = 21
+	expectedNumberOfAspectsInSubscription                 = 3
+	expectedNumberOfAspectsApiResources                   = 21
+	expectedNumberOfAspectsApiResourcesInSubscription     = 3
+	expectedNumberOfAspectsEventResources                 = 21
+	expectedNumberOfAspectsEventResourcesInSubscription   = 3
 	expectedNumberOfTombstones                            = 7
 	expectedNumberOfTombstonesInSubscription              = 1
 
-	expectedNumberOfPublicAPIs                    = 7
-	expectedNumberOfPublicEvents                  = 14
-	expectedNumberOfPublicCapabilities            = 7
-	expectedNumberOfPublicIntegrationDependencies = 7
+	expectedNumberOfPublicAPIs                             = 7
+	expectedNumberOfPublicEvents                           = 14
+	expectedNumberOfPublicCapabilities                     = 7
+	expectedNumberOfPublicIntegrationDependencies          = 7
+	expectedNumberOfPublicIntegrationDependenciesForOneApp = 1
+	expectedNumberOfIntegrationDependenciesForOneApp       = 3
 
 	expectedNumberOfAPIsInFirstBundle    = 2
 	expectedNumberOfAPIsInSecondBundle   = 2
@@ -244,10 +263,21 @@ func TestORDAggregator(stdT *testing.T) {
 		capabilitySpecsMap[expectedCapabilityTitle] = expectedCapabilityNumberOfSpecs
 
 		integrationDependenciesMap := make(map[string]string)
-		integrationDependenciesMap[expectedIntegrationDependencyTitle] = expectedIntegrationDependencyDescription
+		integrationDependenciesMap[firstIntegrationDependencyExpectedTitle] = firstIntegrationDependencyExpectedDescription
+		integrationDependenciesMap[secondIntegrationDependencyExpectedTitle] = secondIntegrationDependencyExpectedDescription
+		integrationDependenciesMap[thirdIntegrationDependencyExpectedTitle] = thirdIntegrationDependencyExpectedDescription
 
 		publicIntegrationDependenciesMap := make(map[string]string)
-		publicIntegrationDependenciesMap[expectedIntegrationDependencyTitle] = expectedIntegrationDependencyDescription
+		publicIntegrationDependenciesMap[firstIntegrationDependencyExpectedTitle] = firstIntegrationDependencyExpectedDescription
+
+		integrationDependenciesNumber := make(map[string]int)
+		integrationDependenciesNumber[integrationDependenciesField] = expectedNumberOfIntegrationDependenciesForOneApp
+		integrationDependenciesNumber[publicIntegrationDependenciesField] = expectedNumberOfPublicIntegrationDependenciesForOneApp
+
+		aspectsMap := make(map[string]string)
+		aspectsMap[firstAspectExpectedTitle] = firstAspectExpectedDescription
+		aspectsMap[secondAspectExpectedTitle] = secondAspectExpectedDescription
+		aspectsMap[thirdAspectExpectedTitle] = thirdAspectExpectedDescription
 
 		apisAndEventsNumber := make(map[string]int)
 		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
@@ -574,6 +604,35 @@ func TestORDAggregator(stdT *testing.T) {
 			// verify public integration dependencies via ORD Service
 			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicIntegrationDependenciesMap, integrationDependenciesField, expectedNumberOfPublicIntegrationDependencies)
 
+			// verify integration dependencies visibility via Director's graphql
+			verifyIntegrationDependenciesEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, integrationDependenciesMap, publicIntegrationDependenciesMap, integrationDependenciesNumber, app.ID)
+
+			// Verify aspects
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspects {
+				t.Log("Missing Aspects...will try again")
+				return false
+			}
+
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, aspectsMap, expectedNumberOfAspects, descriptionField)
+			t.Log("Successfully verified aspects")
+
+			// Verify aspects api resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectApiResources&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspectsApiResources {
+				t.Log("Missing Aspects API Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects api resources")
+
+			// Verify aspects event resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectEventResources&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspectsEventResources {
+				t.Log("Missing Aspects Event Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects event resources")
+
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfTombstones {
@@ -640,10 +699,17 @@ func TestORDAggregator(stdT *testing.T) {
 		capabilitySpecsMap[expectedCapabilityTitle] = expectedCapabilityNumberOfSpecs
 
 		integrationDependenciesMap := make(map[string]string)
-		integrationDependenciesMap[expectedIntegrationDependencyTitle] = expectedIntegrationDependencyDescription
+		integrationDependenciesMap[firstIntegrationDependencyExpectedTitle] = firstIntegrationDependencyExpectedDescription
+		integrationDependenciesMap[secondIntegrationDependencyExpectedTitle] = secondIntegrationDependencyExpectedDescription
+		integrationDependenciesMap[thirdIntegrationDependencyExpectedTitle] = thirdIntegrationDependencyExpectedDescription
 
 		publicIntegrationDependenciesMap := make(map[string]string)
-		publicIntegrationDependenciesMap[expectedIntegrationDependencyTitle] = expectedIntegrationDependencyDescription
+		publicIntegrationDependenciesMap[firstIntegrationDependencyExpectedTitle] = firstIntegrationDependencyExpectedDescription
+
+		aspectsMap := make(map[string]string)
+		aspectsMap[firstAspectExpectedTitle] = firstAspectExpectedDescription
+		aspectsMap[secondAspectExpectedTitle] = secondAspectExpectedDescription
+		aspectsMap[thirdAspectExpectedTitle] = thirdAspectExpectedDescription
 
 		apisAndEventsNumber := make(map[string]int)
 		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
@@ -999,6 +1065,32 @@ func TestORDAggregator(stdT *testing.T) {
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, integrationDependenciesMap, expectedNumberOfIntegrationDependenciesInSubscription, descriptionField)
 			t.Log("Successfully verified integration dependencies")
 
+			// Verify aspects
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspectsInSubscription {
+				t.Log("Missing Aspects...will try again")
+				return false
+			}
+
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, aspectsMap, expectedNumberOfAspectsInSubscription, descriptionField)
+			t.Log("Successfully verified aspects")
+
+			// Verify aspects api resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectApiResources&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspectsApiResourcesInSubscription {
+				t.Log("Missing Aspects API Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects api resources")
+
+			// Verify aspects event resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectEventResources&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspectsEventResourcesInSubscription {
+				t.Log("Missing Aspects Event Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects event resources")
+
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfTombstonesInSubscription {
@@ -1036,7 +1128,10 @@ func TestORDAggregator(stdT *testing.T) {
 		numberOfPublicEvents := 2
 		numberOfCapabilities := 1
 		numberOfPublicCapabilities := 1
-		numberOfIntegrationDependencies := 1
+		numberOfIntegrationDependencies := 3
+		numberOfAspects := 3
+		numberOfAspectsApiResources := 3
+		numberOfAspectsEventResources := 3
 		numberOfPublicIntegrationDependencies := 1
 		numberOfTombstones := 1
 
@@ -1114,10 +1209,21 @@ func TestORDAggregator(stdT *testing.T) {
 		capabilitySpecsMap[expectedCapabilityTitle] = expectedCapabilityNumberOfSpecs
 
 		integrationDependenciesMap := make(map[string]string)
-		integrationDependenciesMap[expectedIntegrationDependencyTitle] = expectedIntegrationDependencyDescription
+		integrationDependenciesMap[firstIntegrationDependencyExpectedTitle] = firstIntegrationDependencyExpectedDescription
+		integrationDependenciesMap[secondIntegrationDependencyExpectedTitle] = secondIntegrationDependencyExpectedDescription
+		integrationDependenciesMap[thirdIntegrationDependencyExpectedTitle] = thirdIntegrationDependencyExpectedDescription
+
+		aspectsMap := make(map[string]string)
+		aspectsMap[firstAspectExpectedTitle] = firstAspectExpectedDescription
+		aspectsMap[secondAspectExpectedTitle] = secondAspectExpectedDescription
+		aspectsMap[thirdAspectExpectedTitle] = thirdAspectExpectedDescription
 
 		publicIntegrationDependenciesMap := make(map[string]string)
-		publicIntegrationDependenciesMap[expectedIntegrationDependencyTitle] = expectedIntegrationDependencyDescription
+		publicIntegrationDependenciesMap[firstIntegrationDependencyExpectedTitle] = firstIntegrationDependencyExpectedDescription
+
+		integrationDependenciesNumber := make(map[string]int)
+		integrationDependenciesNumber[integrationDependenciesField] = expectedNumberOfIntegrationDependenciesForOneApp
+		integrationDependenciesNumber[publicIntegrationDependenciesField] = expectedNumberOfPublicIntegrationDependenciesForOneApp
 
 		entityTypesMap := make(map[string]string)
 		entityTypesMap[expectedEntityTypeTitle] = expectedEntityTypeDescription
@@ -1404,6 +1510,35 @@ func TestORDAggregator(stdT *testing.T) {
 			// verify public integration dependencies via ORD Service
 			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicIntegrationDependenciesMap, integrationDependenciesField, numberOfPublicIntegrationDependencies)
 
+			// verify integration dependencies visibility via Director's graphql
+			verifyIntegrationDependenciesEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, integrationDependenciesMap, publicIntegrationDependenciesMap, integrationDependenciesNumber, app.ID)
+
+			// Verify aspects
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfAspects {
+				t.Log("Missing Aspects...will try again")
+				return false
+			}
+
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, aspectsMap, numberOfAspects, descriptionField)
+			t.Log("Successfully verified aspects")
+
+			// Verify aspects api resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectApiResources&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfAspectsApiResources {
+				t.Log("Missing Aspects API Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects api resources")
+
+			// Verify aspects event resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectEventResources&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfAspectsEventResources {
+				t.Log("Missing Aspects Event Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects event resources")
+
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 			if len(gjson.Get(respBody, "value").Array()) < numberOfTombstones {
@@ -1522,6 +1657,28 @@ func verifyEntitiesVisibilityViaGraphql(t *testing.T, clientWithInternalScope, c
 	require.Equal(t, len(publicEvents), expectedNumberOfEntities[publicEventsField])
 	t.Log("Successfully verified public Events via Director graphql api")
 
+}
+
+func verifyIntegrationDependenciesEntitiesVisibilityViaGraphql(t *testing.T, clientWithInternalScope, clientWithoutInternalScope *gcli.Client, entitiesMap, publicEntitiesMap map[string]string, expectedNumberOfEntities map[string]int, appID string) {
+	appWithAllEntities := fixtures.GetApplication(t, context.Background(), clientWithInternalScope, testConfig.DefaultTestTenant, appID)
+	appWithPublicEntities := fixtures.GetApplication(t, context.Background(), clientWithoutInternalScope, testConfig.DefaultTestTenant, appID)
+
+	allIntDeps := appWithAllEntities.IntegrationDependencies.Data
+	publicIntDeps := appWithPublicEntities.IntegrationDependencies.Data
+
+	t.Log("Start verifying all Integration Dependencies via Director graphql api")
+	for _, intDep := range allIntDeps {
+		require.Equal(t, entitiesMap[intDep.Name], *intDep.Description)
+	}
+	require.Equal(t, len(allIntDeps), expectedNumberOfEntities[integrationDependenciesField])
+	t.Log("Successfully verified all Integration Dependencies via Director graphql api")
+
+	t.Log("Start verifying public Integration Dependencies via Director graphql api")
+	for _, intDep := range publicIntDeps {
+		require.Equal(t, publicEntitiesMap[intDep.Name], *intDep.Description)
+	}
+	require.Equal(t, len(publicIntDeps), expectedNumberOfEntities[publicIntegrationDependenciesField])
+	t.Log("Successfully verified public Integration Dependencies via Director graphql api")
 }
 
 func getGlobalResourcesNumber(ctx context.Context, t *testing.T, httpClient *http.Client) (int, int) {

@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	jsonutils "github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -30,30 +31,30 @@ import (
 )
 
 const (
-	assignOperation              = "assign"
-	unassignOperation            = "unassign"
-	createFormationOperation     = "createFormation"
-	deleteFormationOperation     = "deleteFormation"
-	emptyParentCustomerID        = "" // in the respective tests, the used GA tenant does not have customer parent, thus we assert that it is empty
-	supportReset                 = true
-	doesNotSupportReset          = false
-	consumerType                 = "Integration System" // should be a valid consumer type
-	exceptionSystemType          = "exception-type"
-	basicAuthType                = "Basic"
-	samlAuthType                 = "SAML2.0"
-	eventuallyTimeout            = 60 * time.Second
-	eventuallyTick               = 2 * time.Second
-	readyAssignmentState         = "READY"
-	initialAssignmentState       = "INITIAL"
-	configPendingAssignmentState = "CONFIG_PENDING"
-	deletingAssignmentState      = "DELETING"
+	assignOperation                  = "assign"
+	unassignOperation                = "unassign"
+	createFormationOperation         = "createFormation"
+	deleteFormationOperation         = "deleteFormation"
+	emptyParentCustomerID            = "" // in the respective tests, the used GA tenant does not have customer parent, thus we assert that it is empty
+	supportReset                     = true
+	doesNotSupportReset              = false
+	consumerType                     = "Integration System" // should be a valid consumer type
+	exceptionSystemType              = "exception-type"
+	eventuallyTimeoutForDestinations = 60 * time.Second
+	eventuallyTickForDestinations    = 2 * time.Second
+	eventuallyTimeout                = 8 * time.Second
+	eventuallyTick                   = 50 * time.Millisecond
+	readyAssignmentState             = "READY"
+	initialAssignmentState           = "INITIAL"
+	configPendingAssignmentState     = "CONFIG_PENDING"
+	deletingAssignmentState          = "DELETING"
+	basicAuthType                    = "Basic"
+	samlAuthType                     = "SAML2.0"
+	oauth2AuthType                   = "bearer"
 )
 
 var (
-	samlDestinationAssertionIssuerPath     = directordestinationcreator.SAMLAssertionDestPath + ".assertionIssuer"
-	samlDestinationCertChainPath           = directordestinationcreator.SAMLAssertionDestPath + ".certificate"
-	clientCertAuthDestinationCertChainPath = directordestinationcreator.ClientCertAuthDestPath + ".certificate"
-	tenantAccessLevels                     = []string{"account", "global"} // should be a valid tenant access level
+	tenantAccessLevels = []string{"account", "global"} // should be a valid tenant access level
 )
 
 func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
@@ -86,94 +87,7 @@ func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, for
 	}
 }
 
-func assertFormationAssignmentsWithDestinationConfig(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, sourceAppID, targetAppID string) {
-	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
-	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
-	assignments := assignmentsPage.Data
-	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
-
-	assertStateAndConfigFunc := func(assignment *graphql.FormationAssignment, assignmentConfig string) {
-		targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
-		require.Truef(t, ok, "Could not find expectations for assignment with source %q", assignment.Source)
-
-		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
-		require.Truef(t, ok, "Could not find expectations for assignment with source %q and target %q", assignment.Source, assignment.Target)
-
-		require.Equal(t, assignmentExpectation.State, assignment.State)
-
-		expectedAssignmentConfigStr := str.PtrStrToStr(assignmentExpectation.Config)
-		if expectedAssignmentConfigStr != "" && expectedAssignmentConfigStr != "\"\"" && assignmentConfig != "" && assignmentConfig != "\"\"" {
-			require.JSONEq(t, expectedAssignmentConfigStr, assignmentConfig)
-		} else {
-			require.Equal(t, expectedAssignmentConfigStr, assignmentConfig)
-		}
-	}
-
-	for _, assignment := range assignments {
-		// this is required because during SAML destination creation, the formation assignment config is enriched with destination certificate data
-		// and one of the properties is the cert chain itself that we cannot assert because it's dynamically created
-		if assignment.Source == sourceAppID && assignment.Target == targetAppID {
-			modifiedConfig := validateSamlAssertionDestinationCertData(t, assignment.Value)
-			modifiedConfig = validateClientCertAuthDestinationCertData(t, &modifiedConfig)
-
-			assertStateAndConfigFunc(assignment, modifiedConfig)
-			continue
-		}
-
-		assertStateAndConfigFunc(assignment, str.PtrStrToStr(assignment.Value))
-	}
-}
-
-func validateSamlAssertionDestinationCertData(t *testing.T, assignmentConfig *string) string {
-	modifiedConfig := validateDestinationCertData(t, assignmentConfig, samlDestinationCertChainPath)
-	return validateDestinationCertData(t, &modifiedConfig, samlDestinationAssertionIssuerPath)
-}
-
-func validateClientCertAuthDestinationCertData(t *testing.T, assignmentConfig *string) string {
-	return validateDestinationCertData(t, assignmentConfig, clientCertAuthDestinationCertChainPath)
-}
-
-func validateDestinationCertData(t *testing.T, assignmentConfig *string, path string) string {
-	require.NotEmpty(t, assignmentConfig)
-	destinationCertDataResult := gjson.Get(*assignmentConfig, path)
-	require.True(t, destinationCertDataResult.Exists())
-	require.NotEmpty(t, destinationCertDataResult.String())
-	modifiedConfig, err := sjson.Delete(*assignmentConfig, path)
-	require.NoError(t, err)
-
-	return modifiedConfig
-}
-
-func assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, asyncStatusAPIProcessingDelay int64) {
-	t.Logf("Sleeping for %d seconds while the async formation assignment status is proccessed...", conf.TenantMappingAsyncResponseDelay+asyncStatusAPIProcessingDelay)
-	time.Sleep(time.Second * time.Duration(conf.TenantMappingAsyncResponseDelay+asyncStatusAPIProcessingDelay))
-	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
-	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
-	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
-
-	assignments := assignmentsPage.Data
-	for _, assignment := range assignments {
-		targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
-		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q and source %q", assignment.ID, assignment.Source)
-
-		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
-		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q, source %q and target %q", assignment.ID, assignment.Source, assignment.Target)
-		require.Equal(t, assignmentExpectation.State, assignment.State, "Assignment with ID: %q has different state than expected", assignment.ID)
-
-		require.Equal(t, str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error))
-
-		expectedAssignmentConfigStr := str.PtrStrToStr(assignmentExpectation.Config)
-		actualAssignmentConfigStr := str.PtrStrToStr(assignment.Configuration)
-		if expectedAssignmentConfigStr != "" && expectedAssignmentConfigStr != "\"\"" && actualAssignmentConfigStr != "" && actualAssignmentConfigStr != "\"\"" {
-			require.JSONEq(t, expectedAssignmentConfigStr, actualAssignmentConfigStr)
-			require.JSONEq(t, str.PtrStrToStr(assignmentExpectation.Config), actualAssignmentConfigStr)
-		} else {
-			require.Equal(t, expectedAssignmentConfigStr, actualAssignmentConfigStr)
-		}
-	}
-}
-
-func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
+func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, timeout, tick time.Duration) {
 	t.Logf("Asserting formation assignments with eventually...")
 	require.Eventually(t, func() (isOkay bool) {
 		t.Logf("Getting formation assignments...")
@@ -187,12 +101,12 @@ func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx co
 
 		assignments := assignmentsPage.Data
 		for _, assignment := range assignments {
-			targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
+			sourceAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
 			if !ok {
 				t.Logf("Could not find expectations for assignment with ID: %q and source ID: %q", assignment.ID, assignment.Source)
 				return
 			}
-			assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
+			assignmentExpectation, ok := sourceAssignmentsExpectations[assignment.Target]
 			if !ok {
 				t.Logf("Could not find expectations for assignment with ID: %q, source ID: %q and target ID: %q", assignment.ID, assignment.Source, assignment.Target)
 				return
@@ -201,11 +115,11 @@ func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx co
 				t.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
 				return
 			}
-			if isEqual := assertJSONStringEquality(t, assignmentExpectation.Error, assignment.Error); !isEqual {
+			if isEqual := jsonutils.AssertJSONStringEquality(t, assignmentExpectation.Error, assignment.Error); !isEqual {
 				t.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
 				return
 			}
-			if isEqual := assertJSONStringEquality(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
+			if isEqual := jsonutils.AssertJSONStringEquality(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
 				t.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
 				return
 			}
@@ -213,24 +127,7 @@ func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx co
 
 		t.Logf("Successfully asserted formation asssignments asynchronously")
 		return true
-	}, eventuallyTimeout, eventuallyTick)
-}
-
-func assertJSONStringEquality(t *testing.T, expectedValue, actualValue *string) bool {
-	expectedValueStr := str.PtrStrToStr(expectedValue)
-	actualValueStr := str.PtrStrToStr(actualValue)
-	if !isJSONStringEmpty(expectedValueStr) && !isJSONStringEmpty(actualValueStr) {
-		return assert.JSONEq(t, expectedValueStr, actualValueStr)
-	} else {
-		return assert.Equal(t, expectedValueStr, actualValueStr)
-	}
-}
-
-func isJSONStringEmpty(json string) bool {
-	if json != "" && json != "\"\"" {
-		return false
-	}
-	return true
+	}, timeout, tick)
 }
 
 func assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationID string, expectedFormationStatus graphql.FormationStatus) {
@@ -269,7 +166,7 @@ func attachDestinationCreatorConstraints(t *testing.T, ctx context.Context, form
 		Operator:        formationconstraintpkg.DestinationCreator,
 		ResourceType:    statusReturnedConstraintResourceType,
 		ResourceSubtype: "ANY",
-		InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
+		InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .NotificationStatusReport }}\\\"notification_status_report_memory_address\\\":{{ .NotificationStatusReport.GetAddress }},{{ end }}{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
@@ -287,7 +184,7 @@ func attachDestinationCreatorConstraints(t *testing.T, ctx context.Context, form
 		Operator:        formationconstraintpkg.DestinationCreator,
 		ResourceType:    sendNotificationConstraintResourceType,
 		ResourceSubtype: "ANY",
-		InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
+		InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
@@ -436,6 +333,27 @@ func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationCl
 	}
 }
 
+func assertOAuth2ClientCredsDestination(t *testing.T, client *clients.DestinationClient, serviceURL, oauth2ClientCredsDestinationName, oauth2ClientCredsDestinationURL, instanceID, ownerSubaccountID, authToken string, expectedNumberOfAuthTokens int) {
+	oauth2ClientCredsDestBytes := client.FindDestinationByName(t, serviceURL, oauth2ClientCredsDestinationName, authToken, "", http.StatusOK)
+	var oauth2ClientCredsDest esmdestinationcreator.DestinationSvcOAuth2ClientCredsDestResponse
+	err := json.Unmarshal(oauth2ClientCredsDestBytes, &oauth2ClientCredsDest)
+	require.NoError(t, err)
+	require.Equal(t, ownerSubaccountID, oauth2ClientCredsDest.Owner.SubaccountID)
+	require.Equal(t, instanceID, oauth2ClientCredsDest.Owner.InstanceID)
+	require.Equal(t, oauth2ClientCredsDestinationName, oauth2ClientCredsDest.DestinationConfiguration.Name)
+	require.Equal(t, directordestinationcreator.TypeHTTP, oauth2ClientCredsDest.DestinationConfiguration.Type)
+	require.Equal(t, oauth2ClientCredsDestinationURL, oauth2ClientCredsDest.DestinationConfiguration.URL)
+	require.Equal(t, directordestinationcreator.AuthTypeOAuth2ClientCredentials, oauth2ClientCredsDest.DestinationConfiguration.Authentication)
+	require.Equal(t, directordestinationcreator.ProxyTypeInternet, oauth2ClientCredsDest.DestinationConfiguration.ProxyType)
+
+	for i := 0; i < expectedNumberOfAuthTokens; i++ {
+		require.NotEmpty(t, oauth2ClientCredsDest.AuthTokens)
+		require.NotEmpty(t, oauth2ClientCredsDest.AuthTokens[i].Type)
+		require.Equal(t, oauth2AuthType, oauth2ClientCredsDest.AuthTokens[i].Type)
+		require.NotEmpty(t, oauth2ClientCredsDest.AuthTokens[i].Value)
+	}
+}
+
 func assertFormationAssignmentsNotificationWithItemsStructure(t *testing.T, notification gjson.Result, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID string) {
 	assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t, notification, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID, nil)
 }
@@ -464,12 +382,27 @@ func assertNoNotificationsAreSent(t *testing.T, client *http.Client, objectID st
 	require.Len(t, notifications.Array(), 0)
 }
 
+func assertNotificationsCountMoreThanForTenant(t *testing.T, body []byte, tenantID string, count int) {
+	assertNotificationsCountMoreThan(t, body, tenantID, count)
+}
+
 func assertNotificationsCountForTenant(t *testing.T, body []byte, tenantID string, count int) {
 	assertNotificationsCount(t, body, tenantID, count)
 }
 
 func assertNotificationsCountForFormationID(t *testing.T, body []byte, formationID string, count int) {
 	assertNotificationsCount(t, body, formationID, count)
+}
+
+func assertNotificationsCountMoreThan(t *testing.T, body []byte, objectID string, count int) {
+	notifications := gjson.GetBytes(body, objectID)
+	if count > 0 {
+		require.True(t, notifications.Exists())
+		length := len(notifications.Array())
+		require.GreaterOrEqual(t, length, count)
+	} else {
+		require.False(t, notifications.Exists())
+	}
 }
 
 func assertNotificationsCount(t *testing.T, body []byte, objectID string, count int) {
@@ -560,17 +493,16 @@ func assertFormationNotificationFromCreationOrDeletion(t *testing.T, body []byte
 	t.Logf("Synchronous formation lifecycle notifications are successfully validated for %q operation.", formationOperation)
 }
 
-func assertAsyncFormationNotificationFromCreationOrDeletion(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string) {
+func assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, timeout, tick time.Duration) {
 	var shouldExpectDeleted bool
 	if formationOperation == createFormationOperation || formationState == "DELETE_ERROR" {
 		shouldExpectDeleted = false
 	} else {
 		shouldExpectDeleted = true
 	}
-	assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDeleted(t, ctx, body, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID, shouldExpectDeleted)
+	assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEventually(t, ctx, body, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID, shouldExpectDeleted, timeout, tick)
 }
-
-func assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDeleted(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, shouldExpectDeleted bool) {
+func assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEventually(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, shouldExpectDeleted bool, timeout, tick time.Duration) {
 	t.Logf("Assert asynchronous formation lifecycle notifications are sent for %q operation...", formationOperation)
 	notificationsForFormation := gjson.GetBytes(body, formationID)
 	require.True(t, notificationsForFormation.Exists())
@@ -586,22 +518,41 @@ func assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDelet
 	require.Equal(t, formationID, notificationForFormationDetails.Get("id").String())
 	require.Equal(t, formationName, notificationForFormationDetails.Get("name").String())
 
-	t.Logf("Sleeping for %d seconds while the async formation status is proccessed...", conf.TenantMappingAsyncResponseDelay+3)
-	time.Sleep(time.Second * time.Duration(conf.TenantMappingAsyncResponseDelay+3))
+	t.Logf("Asserting formation with eventually...")
+	require.Eventually(t, func() (isOkay bool) {
+		t.Log("Assert formation lifecycle notifications are successfully processed...")
+		formationPage := fixtures.ListFormationsWithinTenant(t, ctx, tenantID, certSecuredGraphQLClient)
+		if shouldExpectDeleted {
+			if formationPage.TotalCount != 0 {
+				t.Logf("Formation lifecycle notification is expected to have deleted formation with ID %q, but it is still there", formationID)
+				return
+			}
+			if formationPage.Data != nil && len(formationPage.Data) > 0 {
+				t.Logf("Formation lifecycle notification is expected to have deleted formation with ID %q, but it is still there", formationID)
+				return
+			}
+		} else {
+			if formationPage.TotalCount != 1 {
+				t.Log("Formation count does not match")
+				return
+			}
+			if formationPage.Data[0].State != formationState {
+				t.Logf("Formation state for formation with ID %q is %q, expected: %q", formationID, formationPage.Data[0].State, formationState)
+				return
+			}
+			if formationPage.Data[0].ID != formationID {
+				t.Logf("Formation ID is %q, expected: %q", formationPage.Data[0].ID, formationID)
+				return
+			}
+			if formationPage.Data[0].Name != formationName {
+				t.Logf("Formation name is %q, expected: %q", formationPage.Data[0].Name, formationName)
+				return
+			}
+		}
 
-	t.Log("Assert formation lifecycle notifications are successfully processed...")
-	formationPage := fixtures.ListFormationsWithinTenant(t, ctx, tenantID, certSecuredGraphQLClient)
-	if shouldExpectDeleted {
-		require.Equal(t, 0, formationPage.TotalCount)
-		require.Empty(t, formationPage.Data)
-	} else {
-		require.Equal(t, 1, formationPage.TotalCount)
-		require.Equal(t, formationState, formationPage.Data[0].State)
-		require.Equal(t, formationID, formationPage.Data[0].ID)
-		require.Equal(t, formationName, formationPage.Data[0].Name)
-	}
-
-	t.Logf("Asynchronous formation lifecycle notifications are successfully validated for %q operation.", formationOperation)
+		t.Logf("Asynchronous formation lifecycle notifications are successfully validated for %q operation.", formationOperation)
+		return true
+	}, timeout, tick)
 }
 
 func assertSeveralFormationAssignmentsNotifications(t *testing.T, notificationsForConsumerTenant gjson.Result, rtCtx *graphql.RuntimeContextExt, formationID, region, operationType, expectedTenant, expectedCustomerID string, expectedNumberOfNotifications int) {

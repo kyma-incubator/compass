@@ -17,8 +17,13 @@ func TestVersionInput_Validate_Value(t *testing.T) {
 	}{
 		{
 			Name:          "ExpectedValid",
-			Value:         "ExpectedValid",
+			Value:         "1.0.0",
 			ExpectedValid: true,
+		},
+		{
+			Name:          "ExpectedInvalid",
+			Value:         "invalidValue",
+			ExpectedValid: false,
 		},
 		{
 			Name:          "Empty string",
@@ -183,5 +188,5 @@ func TestVersionInput_Validate_ForRemoval(t *testing.T) {
 func fixValidVersionInput() graphql.VersionInput {
 	boolean := true
 	return graphql.VersionInput{
-		Value: "value", Deprecated: &boolean, ForRemoval: &boolean}
+		Value: "1.0.0", Deprecated: &boolean, ForRemoval: &boolean}
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -129,9 +131,6 @@ var (
 	}
 	applicationTypeLabel = &model.Label{Value: appSubtype}
 	runtimeTypeLabel     = &model.Label{Value: rtmSubtype}
-
-	lastFormationAssignmentState         = configPendingState
-	lastFormationAssignmentConfiguration = "{}"
 )
 
 func Test_GenerateFormationAssignmentNotification(t *testing.T) {
@@ -1958,16 +1957,18 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 		ObjectType: model.RuntimeLabelableObject,
 	}
 
-	expectedDetailsForApp := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, reverseFaWithTargetTypeApplication, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID)
+	notificationStatusReport := fixNotificationStatusReport()
+
+	expectedDetailsForApp := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, reverseFaWithTargetTypeApplication, formationconstraint.JoinPointLocation{}, TestTenantID, notificationStatusReport)
 	expectedDetailsForApp.FormationAssignmentTemplateInput = testAppNotificationReqWithTenantMappingType.Object
 
-	expectedDetailsForAppWithoutReverseAssignment := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, nil, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID)
+	expectedDetailsForAppWithoutReverseAssignment := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, nil, formationconstraint.JoinPointLocation{}, TestTenantID, notificationStatusReport)
 	expectedDetailsForAppWithoutReverseAssignment.FormationAssignmentTemplateInput = testAppNotificationReqWithTenantMappingTypeWithoutReverseAssignment.Object
 
-	expectedDetailsForRuntime := fixNotificationStatusReturnedDetails(model.RuntimeResourceType, rtmSubtype, faWithTargetTypeRuntime, reverseFaWithTargetTypeRuntime, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID)
+	expectedDetailsForRuntime := fixNotificationStatusReturnedDetails(model.RuntimeResourceType, rtmSubtype, faWithTargetTypeRuntime, reverseFaWithTargetTypeRuntime, formationconstraint.JoinPointLocation{}, TestTenantID, notificationStatusReport)
 	expectedDetailsForRuntime.FormationAssignmentTemplateInput = testRuntimeNotificationReqWithConfigurationChangedType.Object
 
-	expectedDetailsForRuntimeContext := fixNotificationStatusReturnedDetails(model.RuntimeContextResourceType, rtmSubtype, faWithTargetTypeRuntimeCtx, reverseFaWithTargetTypeRuntimeCtx, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState, lastFormationAssignmentConfiguration, TestTenantID)
+	expectedDetailsForRuntimeContext := fixNotificationStatusReturnedDetails(model.RuntimeContextResourceType, rtmSubtype, faWithTargetTypeRuntimeCtx, reverseFaWithTargetTypeRuntimeCtx, formationconstraint.JoinPointLocation{}, TestTenantID, notificationStatusReport)
 	expectedDetailsForRuntimeContext.FormationAssignmentTemplateInput = testRuntimeContextNotificationReqWithConfigurationChangedType.Object
 
 	details := &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{}
@@ -1975,18 +1976,19 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 	var emptyRuntimeCtx *webhook.RuntimeContextWithLabels
 
 	testCases := []struct {
-		name                    string
-		formationAssignment     *model.FormationAssignment
-		webhookRepo             func() *automock.WebhookRepository
-		webhookDataInputBuilder func() *databuilderautomock.DataInputBuilder
-		formationAssignmentRepo func() *automock.FormationAssignmentRepository
-		formationRepo           func() *automock.FormationRepository
-		labelSvc                func() *automock.LabelService
-		notificationBuilder     func() *automock.NotificationBuilder
-		tenantRepo              func() *automock.TenantRepository
-		runtimeCtxRepo          func() *automock.RuntimeContextRepository
-		expectedDetails         *formationconstraint.NotificationStatusReturnedOperationDetails
-		expectedErrMsg          string
+		name                     string
+		formationAssignment      *model.FormationAssignment
+		webhookRepo              func() *automock.WebhookRepository
+		webhookDataInputBuilder  func() *databuilderautomock.DataInputBuilder
+		formationAssignmentRepo  func() *automock.FormationAssignmentRepository
+		formationRepo            func() *automock.FormationRepository
+		labelSvc                 func() *automock.LabelService
+		notificationBuilder      func() *automock.NotificationBuilder
+		tenantRepo               func() *automock.TenantRepository
+		runtimeCtxRepo           func() *automock.RuntimeContextRepository
+		notificationStatusReport *statusreport.NotificationStatusReport
+		expectedDetails          *formationconstraint.NotificationStatusReturnedOperationDetails
+		expectedErrMsg           string
 	}{
 		{
 			name:                "Success for FA with target type application",
@@ -2031,7 +2033,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 
 				return notificationsBuilder
 			},
-			expectedDetails: expectedDetailsForApp,
+			notificationStatusReport: notificationStatusReport,
+			expectedDetails:          expectedDetailsForApp,
 		},
 		{
 			name:                "Success for FA with target type runtime",
@@ -2076,7 +2079,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 
 				return notificationsBuilder
 			},
-			expectedDetails: expectedDetailsForRuntime,
+			notificationStatusReport: notificationStatusReport,
+			expectedDetails:          expectedDetailsForRuntime,
 		},
 		{
 			name:                "Success for FA with target type runtime context",
@@ -2127,8 +2131,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 
 				return notificationsBuilder
 			},
-
-			expectedDetails: expectedDetailsForRuntimeContext,
+			notificationStatusReport: notificationStatusReport,
+			expectedDetails:          expectedDetailsForRuntimeContext,
 		},
 		{
 			name:                "Success for application when there is no reverse fa",
@@ -2173,7 +2177,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 
 				return notificationsBuilder
 			},
-			expectedDetails: expectedDetailsForAppWithoutReverseAssignment,
+			notificationStatusReport: notificationStatusReport,
+			expectedDetails:          expectedDetailsForAppWithoutReverseAssignment,
 		},
 		{
 			name:                "Error when can't get reverse fa",
@@ -2208,7 +2213,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				lblSvc.On("GetLabel", emptyCtx, TestTenantID, applicationLabelInput).Return(applicationTypeLabel, nil).Once()
 				return lblSvc
 			},
-			expectedErrMsg: testErr.Error(),
+			notificationStatusReport: notificationStatusReport,
+			expectedErrMsg:           testErr.Error(),
 		},
 		{
 			name:                "Error when can't get application label",
@@ -2218,7 +2224,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				lblSvc.On("GetLabel", emptyCtx, TestTenantID, applicationLabelInput).Return(nil, testErr).Once()
 				return lblSvc
 			},
-			expectedErrMsg: testErr.Error(),
+			notificationStatusReport: notificationStatusReport,
+			expectedErrMsg:           testErr.Error(),
 		},
 		{
 			name:                "Error when can't get runtime label when target type is runtime",
@@ -2228,7 +2235,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				lblSvc.On("GetLabel", emptyCtx, TestTenantID, runtimeLabelInput).Return(nil, testErr).Once()
 				return lblSvc
 			},
-			expectedErrMsg: testErr.Error(),
+			notificationStatusReport: notificationStatusReport,
+			expectedErrMsg:           testErr.Error(),
 		},
 		{
 			name:                "Error when can't get runtime label when target type is runtime context",
@@ -2243,7 +2251,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				rtmCtxRepo.On("GetByID", emptyCtx, TestTenantID, TestTarget).Return(&model.RuntimeContext{RuntimeID: TestTarget}, nil).Once()
 				return rtmCtxRepo
 			},
-			expectedErrMsg: testErr.Error(),
+			notificationStatusReport: notificationStatusReport,
+			expectedErrMsg:           testErr.Error(),
 		},
 		{
 			name:                "Error when can't get runtime context",
@@ -2253,12 +2262,14 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				rtmCtxRepo.On("GetByID", emptyCtx, TestTenantID, TestTarget).Return(nil, testErr).Once()
 				return rtmCtxRepo
 			},
-			expectedErrMsg: testErr.Error(),
+			notificationStatusReport: notificationStatusReport,
+			expectedErrMsg:           testErr.Error(),
 		},
 		{
-			name:                "Error when the object type is unknown",
-			formationAssignment: &model.FormationAssignment{TargetType: "unknown"},
-			expectedErrMsg:      fmt.Sprintf("unknown object type %q", "unknown"),
+			name:                     "Error when the object type is unknown",
+			formationAssignment:      &model.FormationAssignment{TargetType: "unknown"},
+			notificationStatusReport: notificationStatusReport,
+			expectedErrMsg:           fmt.Sprintf("unknown object type %q", "unknown"),
 		},
 	}
 
@@ -2305,7 +2316,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 			faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(faRepo, nil, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationBuilder, rtmCtxSvc, labelSvc, rtmTypeLabelKey, appTypeLabelKey)
 
 			// WHEN
-			notificationReq, err := faNotificationSvc.PrepareDetailsForNotificationStatusReturned(emptyCtx, TestTenantID, tCase.formationAssignment, model.AssignFormation, lastFormationAssignmentState, lastFormationAssignmentConfiguration)
+			notificationStatusReturnedDetails, err := faNotificationSvc.PrepareDetailsForNotificationStatusReturned(emptyCtx, TestTenantID, tCase.formationAssignment, model.AssignFormation, tCase.notificationStatusReport)
 
 			// THEN
 			if tCase.expectedErrMsg != "" {
@@ -2314,7 +2325,8 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				require.Nil(t, tCase.expectedDetails)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, tCase.expectedDetails, notificationReq)
+				require.Equal(t, tCase.expectedDetails, notificationStatusReturnedDetails)
+				require.Equal(t, tCase.notificationStatusReport, notificationStatusReturnedDetails.NotificationStatusReport)
 			}
 		})
 	}

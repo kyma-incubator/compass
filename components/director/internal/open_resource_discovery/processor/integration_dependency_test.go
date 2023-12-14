@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
@@ -11,7 +13,6 @@ import (
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -335,7 +336,7 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 			integrationDependencySvc := test.IntegrationDependencySvcFn()
 			aspectSvc := test.AspectSvcFn()
 
-			integrationDependencyProcessor := processor.NewIntegrationDependencyProcessor(tx, integrationDependencySvc, aspectSvc)
+			integrationDependencyProcessor := processor.NewIntegrationDependencyProcessor(tx, integrationDependencySvc, aspectSvc, nil)
 			result, err := integrationDependencyProcessor.Process(context.TODO(), test.InputResource, test.InputResourceID, fixPackages(), test.InputIntegrationDependencies, test.InputResourceHashes)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)

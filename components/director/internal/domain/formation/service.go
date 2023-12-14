@@ -890,8 +890,14 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 
 	initialAssignmentsClones := make([]*model.FormationAssignment, 0, len(initialAssignmentsData))
+	initialParticipants := make(map[string]bool, len(initialAssignmentsData)*2)
+	// If by any chance we are coming from the status API or are being called to clean up the scenario label,
+	// we still want to check for the object that is unassigned
+	initialParticipants[objectID] = true
 	for _, ia := range initialAssignmentsData {
 		initialAssignmentsClones = append(initialAssignmentsClones, ia.Clone())
+		initialParticipants[ia.Source] = true
+		initialParticipants[ia.Target] = true
 	}
 
 	// Flag that is used to determine whether to revert the changes made in the transaction below or not.
@@ -1012,17 +1018,19 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	scenarioTransactionCtx := persistence.SaveToContext(ctx, scenarioTx)
 	defer s.transact.RollbackUnlessCommitted(scenarioTransactionCtx, scenarioTx)
 
-	pendingAsyncAssignments, nerr := s.formationAssignmentService.ListFormationAssignmentsForObjectID(scenarioTransactionCtx, formationFromDB.ID, objectID)
-	err = nerr
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
-	}
-
-	if len(pendingAsyncAssignments) == 0 {
-		log.C(ctx).Infof("There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationFromDB.ID, objectType, objectID, formationFromDB.ID)
-		err = s.unassign(scenarioTransactionCtx, tnt, objectID, objectType, formationFromDB)
+	for participantID := range initialParticipants {
+		pendingAsyncAssignments, nerr := s.formationAssignmentService.ListFormationAssignmentsForObjectID(scenarioTransactionCtx, formationFromDB.ID, participantID)
+		err = nerr
 		if err != nil {
-			return nil, errors.Wrapf(err, "while unassigning from formation")
+			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, participantID)
+		}
+
+		if len(pendingAsyncAssignments) == 0 {
+			log.C(ctx).Infof("There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationFromDB.ID, objectType, objectID, formationFromDB.ID)
+			err = s.unassign(scenarioTransactionCtx, tnt, participantID, objectType, formationFromDB)
+			if err != nil && !apperrors.IsNotFoundError(err) {
+				return nil, errors.Wrapf(err, "while unassigning from formation")
+			}
 		}
 	}
 
@@ -1048,7 +1056,7 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 
 	formation, err := s.formationRepository.Get(ctx, formationID, tenantID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
+		return nil, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", formationID, tenantID)
 	}
 
 	if formation.State != model.ReadyFormationState {
@@ -1071,7 +1079,9 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Context, tenantID string, formation *model.Formation, shouldReset bool) (*model.Formation, error) {
 	resyncableFormationAssignments := make([]*model.FormationAssignment, 0)
 	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0)
-	assignmentIDToAssignmentPair := make(map[string]formationassignment.AssignmentMappingPairWithOperation)
+	assignmentMappingNoNotificationPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
+	assignmentMappingSyncPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
+	assignmentMappingAsyncPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
 
 	formationID := formation.ID
 	if err := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
@@ -1169,7 +1179,24 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				Operation: operation,
 			}
 
-			assignmentIDToAssignmentPair[fa.ID] = assignmentPair
+			// We separate the assignment pairs in 3 groups
+			// 1. With no requests for the assignment
+			// 2. With synchronous webhook requests for the assignments
+			// 3. With asynchronous webhook requests for the assignments
+			// We do this, so that we can order the processing of the formation assignments
+			// This makes the notification count deterministic (we don't send asynchronous notifications before synchronous ones),
+			// and we assure that the notification receivers always receive the reverse as READY,
+			// if it has no request associated, rather than being sometimes INITIAL, sometimes READY.
+			if notificationForFA == nil {
+				assignmentMappingNoNotificationPairs = append(assignmentMappingNoNotificationPairs, &assignmentPair)
+			} else if notificationForFA != nil &&
+				notificationForFA.Webhook != nil &&
+				notificationForFA.Webhook.Mode != nil &&
+				*notificationForFA.Webhook.Mode == graphql.WebhookModeAsyncCallback {
+				assignmentMappingAsyncPairs = append(assignmentMappingAsyncPairs, &assignmentPair)
+			} else {
+				assignmentMappingSyncPairs = append(assignmentMappingSyncPairs, &assignmentPair)
+			}
 		}
 
 		return nil
@@ -1177,17 +1204,26 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 		return nil, err
 	}
 
+	alreadyProcessedFAs := make(map[string]bool, 0)
+	assignmentMappingPairs := append(assignmentMappingNoNotificationPairs, append(assignmentMappingSyncPairs, assignmentMappingAsyncPairs...)...)
 	var errs *multierror.Error
 	if err := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
-		for _, fa := range resyncableFormationAssignments {
-			assignmentPair := assignmentIDToAssignmentPair[fa.ID]
+		for _, assignmentPair := range assignmentMappingPairs {
+			if alreadyProcessedFAs[assignmentPair.AssignmentReqMapping.FormationAssignment.ID] {
+				continue
+			}
 			switch assignmentPair.Operation {
 			case model.AssignFormation:
-				if _, err := s.formationAssignmentService.ProcessFormationAssignmentPair(ctxWithTransact, &assignmentPair); err != nil {
+				isReverseProcessed, err := s.formationAssignmentService.ProcessFormationAssignmentPair(ctxWithTransact, assignmentPair)
+				if err != nil {
 					errs = multierror.Append(errs, err)
 				}
+				// It is probably impossible for the reverse assignment to be nil if the reverse is processed, but it's better to safeguard against it anyway
+				if isReverseProcessed && assignmentPair.ReverseAssignmentReqMapping != nil && assignmentPair.ReverseAssignmentReqMapping.FormationAssignment != nil {
+					alreadyProcessedFAs[assignmentPair.ReverseAssignmentReqMapping.FormationAssignment.ID] = true
+				}
 			case model.UnassignFormation:
-				if _, err := s.formationAssignmentService.CleanupFormationAssignment(ctxWithTransact, &assignmentPair); err != nil {
+				if _, err := s.formationAssignmentService.CleanupFormationAssignment(ctxWithTransact, assignmentPair); err != nil {
 					errs = multierror.Append(errs, err)
 				}
 			}
@@ -1282,7 +1318,7 @@ func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenan
 
 	formation, err = s.formationRepository.Get(formationResyncTransactionCtx, formationID, tenantID)
 	if err != nil {
-		return nil, false, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
+		return nil, false, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", formationID, tenantID)
 	}
 
 	err = formationResyncTx.Commit()
@@ -1532,13 +1568,25 @@ func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID, f
 	// can not set scenario label to empty value, violates the scenario label definition
 	if len(formations) == 0 {
 		log.C(ctx).Infof("After the modifications, the %q label is empty. Deleting empty label...", model.ScenariosKey)
-		return s.labelRepository.Delete(ctx, tnt, objectType, objectID, model.ScenariosKey)
+		if err = s.labelRepository.Delete(ctx, tnt, objectType, objectID, model.ScenariosKey); err != nil {
+			if apperrors.IsUnauthorizedError(err) {
+				return apperrors.NewNotFoundError(resource.Label, existingLabel.ID)
+			}
+			return err
+		}
+		return nil
 	}
 
 	labelInput.Value = formations
 	labelInput.Version = existingLabel.Version
 	log.C(ctx).Infof("Updating formations list to %q", formations)
-	return s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput)
+	if err = s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput); err != nil {
+		if apperrors.IsUnauthorizedError(err) || apperrors.IsNewInvalidOperationError(err) {
+			return apperrors.NewNotFoundError(resource.Label, existingLabel.ID)
+		}
+		return err
+	}
+	return nil
 }
 
 type modificationFunc func(formationNames []string, formationName string) []string

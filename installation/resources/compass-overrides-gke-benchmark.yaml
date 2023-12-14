@@ -33,6 +33,8 @@ global:
     secrets:
       externalCertSvcSecret:
         manage: true
+      publicPrivateKeysSecret:
+        manage: true
   extSvcCertConfiguration:
     secrets:
       extSvcCertSvcSecret:

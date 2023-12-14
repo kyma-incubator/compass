@@ -49,6 +49,8 @@ const (
 	TestAtomOrganization                                       = "TestAtomOrganization"
 	TestTenantSubstitutionAccount                              = "Test Tenant Substitution Account"
 	TestTenantSubstitutionSubaccount                           = "Test Tenant Substitution Subaccount"
+	TestTenantSubstitutionAccount2                             = "Test Tenant Substitution Account 2"
+	TestTenantSubstitutionSubaccount2                          = "Test Tenant Substitution Subaccount 2"
 )
 
 type Tenant struct {
@@ -81,7 +83,7 @@ func (mgr *TestTenantsManager) Init() {
 			Name:           testDefaultSubaccountTenant,
 			ExternalTenant: "777ce47b-d901-4647-9223-14e94819830b",
 			ProviderName:   testProvider,
-			Type:           Account,
+			Type:           Subaccount,
 			Parent:         testDefaultTenant,
 			Status:         Active,
 		},
@@ -284,6 +286,21 @@ func (mgr *TestTenantsManager) Init() {
 			Status:         Active,
 			Parent:         TestTenantSubstitutionAccount,
 		},
+		TestTenantSubstitutionAccount2: {
+			Name:           TestTenantSubstitutionAccount2,
+			ExternalTenant: "46c189a1-9e04-4cbf-9c59-ba7b120492ad",
+			ProviderName:   testProvider,
+			Type:           Account,
+			Status:         Active,
+		},
+		TestTenantSubstitutionSubaccount2: {
+			Name:           TestTenantSubstitutionSubaccount2,
+			ExternalTenant: "e1e2f861-2b2e-42a9-ba9f-404d292e5471",
+			ProviderName:   testProvider,
+			Type:           Subaccount,
+			Status:         Active,
+			Parent:         TestTenantSubstitutionAccount2,
+		},
 	}
 }
 
@@ -291,6 +308,10 @@ func (mgr TestTenantsManager) GetIDByName(t require.TestingT, name string) strin
 	val, ok := mgr.tenantsByName[name]
 	require.True(t, ok)
 	return val.ExternalTenant
+}
+
+func (mgr TestTenantsManager) GetDefaultCustomerTenantID() string {
+	return mgr.tenantsByName[TestDefaultCustomerTenant].ExternalTenant
 }
 
 func (mgr TestTenantsManager) GetDefaultTenantID() string {
