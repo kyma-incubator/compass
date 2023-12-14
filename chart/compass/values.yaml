@@ -188,7 +188,7 @@ global:
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3460"
+      version: "PR-3540"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
@@ -217,7 +217,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3536"
+      version: "PR-3540"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
