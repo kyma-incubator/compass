@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Entity is a representation of a Data Product in the database.
@@ -43,4 +44,26 @@ type Entity struct {
 	SystemInstanceAware          sql.NullBool   `db:"system_instance_aware"`
 	version.Version
 	*repo.BaseEntity
+}
+
+// GetParent returns the parent type and the parent ID of the entity.
+func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
+	if e.ApplicationID.Valid {
+		return resource.Application, e.ApplicationID.String
+	} else if e.ApplicationTemplateVersionID.Valid {
+		return resource.ApplicationTemplateVersion, e.ApplicationTemplateVersionID.String
+	}
+
+	return "", ""
+}
+
+// DecorateWithTenantID decorates the entity with the given tenant ID.
+func (e *Entity) DecorateWithTenantID(tenant string) interface{} {
+	return struct {
+		*Entity
+		TenantID string `db:"tenant_id"`
+	}{
+		Entity:   e,
+		TenantID: tenant,
+	}
 }

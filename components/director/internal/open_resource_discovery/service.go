@@ -97,6 +97,7 @@ type Service struct {
 	entityTypeSvc                  EntityTypeService
 	capabilitySvc                  CapabilityService
 	integrationDependencySvc       IntegrationDependencyService
+	dataProductSvc                 DataProductService
 	specSvc                        SpecService
 	fetchReqSvc                    FetchRequestService
 	packageSvc                     PackageService
@@ -106,6 +107,7 @@ type Service struct {
 	entityTypeProcessor            EntityTypeProcessor
 	entityTypeMappingSvc           EntityTypeMappingService
 	integrationDependencyProcessor IntegrationDependencyProcessor
+	dataProductProcessor           DataProductProcessor
 	tenantSvc                      TenantService
 	appTemplateVersionSvc          ApplicationTemplateVersionService
 	appTemplateSvc                 ApplicationTemplateService
@@ -438,6 +440,13 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		}
 		log.C(ctx).Infof("Finished processing integration dependencies for %s with id: %q", resource.Type, resource.ID)
 
+		log.C(ctx).Infof("Starting processing integration dependencies for %s with id: %q", resource.Type, resource.ID)
+		dataProductsFromDB, err := s.dataProductProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.DataProducts, resourceHashes)
+		if err != nil {
+			return err
+		}
+		log.C(ctx).Infof("Finished processing integration dependencies for %s with id: %q", resource.Type, resource.ID)
+
 		log.C(ctx).Infof("Starting processing tombstones for %s with id: %q", resource.Type, resource.ID)
 		tombstonesFromDB, err := s.tombstoneProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Tombstones)
 		if err != nil {
@@ -447,7 +456,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 
 		fetchRequests := appendFetchRequests(apiFetchRequests, eventFetchRequests, capabilitiesFetchRequests)
 		log.C(ctx).Infof("Starting deleting tombstoned resources for %s with id: %q", resource.Type, resource.ID)
-		fetchRequests, err = s.deleteTombstonedResources(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, tombstonesFromDB, fetchRequests)
+		fetchRequests, err = s.deleteTombstonedResources(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, dataProductsFromDB, tombstonesFromDB, fetchRequests)
 		if err != nil {
 			return err
 		}
@@ -593,7 +602,7 @@ func (s *Service) processFetchRequestResultGlobal(ctx context.Context, result *f
 	return s.fetchReqSvc.UpdateGlobal(ctx, result.fetchRequest)
 }
 
-func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType directorresource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, entityTypesFromDB []*model.EntityType, capabilitiesFromDB []*model.Capability, integrationDependenciesFromDB []*model.IntegrationDependency, tombstonesFromDB []*model.Tombstone, fetchRequests []*ordFetchRequest) ([]*ordFetchRequest, error) {
+func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType directorresource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, entityTypesFromDB []*model.EntityType, capabilitiesFromDB []*model.Capability, integrationDependenciesFromDB []*model.IntegrationDependency, dataProductsFromDB []*model.DataProduct, tombstonesFromDB []*model.Tombstone, fetchRequests []*ordFetchRequest) ([]*ordFetchRequest, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -643,6 +652,13 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType di
 			return equalStrings(integrationDependenciesFromDB[i].OrdID, &ts.OrdID)
 		}); found {
 			if err := s.integrationDependencySvc.Delete(ctx, resourceType, integrationDependenciesFromDB[i].ID); err != nil {
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+			}
+		}
+		if i, found := searchInSlice(len(dataProductsFromDB), func(i int) bool {
+			return equalStrings(dataProductsFromDB[i].OrdID, &ts.OrdID)
+		}); found {
+			if err := s.dataProductSvc.Delete(ctx, resourceType, dataProductsFromDB[i].ID); err != nil {
 				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
@@ -1823,6 +1839,31 @@ func (s *Service) fetchEntityTypesFromDB(ctx context.Context, resourceType direc
 	return entityTypesDataFromDB, nil
 }
 
+func (s *Service) fetchDataProductsFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.DataProduct, error) {
+	var (
+		dataProductsFromDB []*model.DataProduct
+		err                error
+	)
+
+	if resourceType == directorresource.ApplicationTemplateVersion {
+		dataProductsFromDB, err = s.dataProductSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+	} else {
+		dataProductsFromDB, err = s.dataProductSvc.ListByApplicationID(ctx, resourceID)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	dataProductDataFromDB := make(map[string]*model.DataProduct, len(dataProductsFromDB))
+
+	for _, dataProduct := range dataProductsFromDB {
+		dataProductOrdID := str.PtrStrToStr(dataProduct.OrdID)
+		dataProductDataFromDB[dataProductOrdID] = dataProduct
+	}
+
+	return dataProductDataFromDB, nil
+}
+
 func (s *Service) fetchPackagesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Package, error) {
 	var (
 		packagesFromDB []*model.Package
@@ -1934,6 +1975,7 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 	capabilitiesDataFromDB := make(map[string]*model.Capability)
 	integrationDependenciesFromDB := make(map[string]*model.IntegrationDependency)
 	entityTypesDataFromDB := make(map[string]*model.EntityType)
+	dataProductDataFromDB := make(map[string]*model.DataProduct)
 
 	for resourceID, resourceType := range resourceIDs {
 		apiData, err := s.fetchAPIDefFromDB(ctx, resourceType, resourceID)
@@ -1971,6 +2013,11 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching entity types for %s with id %s", resourceType, resourceID)
 		}
 
+		dataProductData, err := s.fetchDataProductsFromDB(ctx, resourceType, resourceID)
+		if err != nil {
+			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching data products for %s with id %s", resourceType, resourceID)
+		}
+
 		if err = mergo.Merge(&apiDataFromDB, apiData); err != nil {
 			return ResourcesFromDB{}, err
 		}
@@ -1992,6 +2039,9 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 		if err = mergo.Merge(&entityTypesDataFromDB, entityTypeData); err != nil {
 			return ResourcesFromDB{}, err
 		}
+		if err = mergo.Merge(&dataProductDataFromDB, dataProductData); err != nil {
+			return ResourcesFromDB{}, err
+		}
 	}
 
 	return ResourcesFromDB{
@@ -2002,6 +2052,7 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 		Capabilities:            capabilitiesDataFromDB,
 		IntegrationDependencies: integrationDependenciesFromDB,
 		EntityTypes:             entityTypesDataFromDB,
+		DataProducts:            dataProductDataFromDB,
 	}, tx.Commit()
 }
 

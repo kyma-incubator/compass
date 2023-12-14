@@ -113,6 +113,22 @@ type IntegrationDependencyProcessor interface {
 	Process(ctx context.Context, resourceType resource.Type, resourceID string, packagesFromDB []*model.Package, integrationDependencies []*model.IntegrationDependencyInput, resourceHashes map[string]uint64) ([]*model.IntegrationDependency, error)
 }
 
+// DataProductProcessor is responsible for processing of data product entities.
+//
+//go:generate mockery --name=DataProductProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type DataProductProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, packagesFromDB []*model.Package, dataProducts []*model.DataProductInput, resourceHashes map[string]uint64) ([]*model.DataProduct, error)
+}
+
+// DataProductService is responsible for the service-layer DataProduct operations.
+//
+//go:generate mockery --name=DataProductService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type DataProductService interface {
+	ListByApplicationID(ctx context.Context, appID string) ([]*model.DataProduct, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.DataProduct, error)
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
+}
+
 // SpecService is responsible for the service-layer Specification operations.
 //
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string
