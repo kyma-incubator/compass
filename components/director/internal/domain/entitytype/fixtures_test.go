@@ -26,6 +26,7 @@ const (
 	level            = "aggregate"
 	title            = "BusinessPartner"
 	packageID        = "sap.xref:package:SomePackage:v1"
+	packageUUID      = "b0810848-b198-4539-9a9d-273a76304fe1"
 	publicVisibility = "public"
 	products         = `["sap:product:S4HANA_OD:"]`
 	releaseStatus    = "active"
