@@ -168,7 +168,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3536"
+      version: "PR-3530"
       name: compass-director
     hydrator:
       dir: dev/incubator/
