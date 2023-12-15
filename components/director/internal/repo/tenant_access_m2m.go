@@ -26,7 +26,7 @@ const (
 	// CreateSingleTenantAccessQuery is a SQL query that creates a tenant access record
 	CreateSingleTenantAccessQuery = `INSERT INTO %s ( %s ) VALUES ( %s ) ON CONFLICT ON CONSTRAINT tenant_applications_pkey DO NOTHING`
 
-	// RecursiveCreateTenantAccessCTEQuery is a recursive SQL query that creates a tenant access record for a tenant and all its parents.// %s::uuid AS child_id
+	// RecursiveCreateTenantAccessCTEQuery is a recursive SQL query that creates a tenant access record for a tenant and all its parents.
 	RecursiveCreateTenantAccessCTEQuery = `WITH RECURSIVE parents AS
                    (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST(:source AS uuid) AS child_id
                     FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
