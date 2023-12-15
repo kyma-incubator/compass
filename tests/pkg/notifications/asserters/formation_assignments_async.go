@@ -41,7 +41,7 @@ func (a *FormationAssignmentsAsyncAsserter) AssertExpectations(t *testing.T, ctx
 
 func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, certSecuredGraphQLClient *graphql.Client, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
 	t.Logf("Asserting formation assignments with eventually...")
-	tOnce := testingx.NewLoggerWithOnlyOnce(t)
+	tOnce := testingx.NewOnceLogger(t)
 	require.Eventually(t, func() (isOkay bool) {
 		tOnce.Logf("Getting formation assignments...")
 		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)

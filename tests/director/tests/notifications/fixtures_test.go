@@ -90,7 +90,7 @@ func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, for
 
 func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, timeout, tick time.Duration) {
 	t.Logf("Asserting formation assignments with eventually...")
-	tOnce := testingx.NewLoggerWithOnlyOnce(t)
+	tOnce := testingx.NewOnceLogger(t)
 	require.Eventually(t, func() (isOkay bool) {
 		tOnce.Logf("Getting formation assignments...")
 		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
@@ -521,7 +521,7 @@ func assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEven
 	require.Equal(t, formationName, notificationForFormationDetails.Get("name").String())
 
 	t.Logf("Asserting formation with eventually...")
-	tOnce := testingx.NewLoggerWithOnlyOnce(t)
+	tOnce := testingx.NewOnceLogger(t)
 	require.Eventually(t, func() (isOkay bool) {
 		tOnce.Log("Assert formation lifecycle notifications are successfully processed...")
 		formationPage := fixtures.ListFormationsWithinTenant(t, ctx, tenantID, certSecuredGraphQLClient)

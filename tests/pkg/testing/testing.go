@@ -25,19 +25,25 @@ type Logger interface {
 	FailNow()
 }
 
-type LoggerWithOnlyOnce struct {
+// OnceLogger is a logger that logs only once.
+// It is useful in the cases that use WithEventually and also want to log something
+// As WithEventually will print the log a lot of times while trying over and over,
+// with the OnceLogger it will print it just once and if the WithEventually
+// reaches another log, it will print it as well just once, making the logs more readable.
+type OnceLogger struct {
 	logger        Logger
 	alreadyLogged map[string]bool
 }
 
-func NewLoggerWithOnlyOnce(logger Logger) LoggerWithOnlyOnce {
-	return LoggerWithOnlyOnce{
+// NewOnceLogger returns a new OnceLogger that logs each log only once
+func NewOnceLogger(logger Logger) OnceLogger {
+	return OnceLogger{
 		logger:        logger,
 		alreadyLogged: map[string]bool{},
 	}
 }
 
-func (l *LoggerWithOnlyOnce) Log(log string, args ...any) {
+func (l *OnceLogger) Log(log string, args ...any) {
 	if l.alreadyLogged[log] {
 		return
 	}
@@ -45,7 +51,7 @@ func (l *LoggerWithOnlyOnce) Log(log string, args ...any) {
 	l.logger.Log(append([]any{log}, args...)...)
 }
 
-func (l *LoggerWithOnlyOnce) Logf(format string, args ...any) {
+func (l *OnceLogger) Logf(format string, args ...any) {
 	if l.alreadyLogged[format] {
 		return
 	}
@@ -53,10 +59,10 @@ func (l *LoggerWithOnlyOnce) Logf(format string, args ...any) {
 	l.logger.Logf(format, args...)
 }
 
-func (l LoggerWithOnlyOnce) Errorf(format string, args ...interface{}) {
+func (l OnceLogger) Errorf(format string, args ...interface{}) {
 	l.logger.Errorf(format, args)
 }
-func (l LoggerWithOnlyOnce) FailNow() {
+func (l OnceLogger) FailNow() {
 	l.logger.FailNow()
 }
 
