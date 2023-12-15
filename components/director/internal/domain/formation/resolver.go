@@ -459,7 +459,7 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 					Message:      assignmentError.Error.Message,
 					ErrorCode:    int(assignmentError.Error.ErrorCode),
 				})
-			} else if condition != graphql.FormationStatusConditionError && fa.IsInErrorState() {
+			} else if condition != graphql.FormationStatusConditionError && fa.IsInProgressState() {
 				condition = graphql.FormationStatusConditionInProgress
 			}
 		}
