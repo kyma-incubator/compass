@@ -108,22 +108,22 @@ func TestIntegrationDependencyInput_Validate_Description(t *testing.T) {
 func TestIntegrationDependencyInput_Validate_OrdID(t *testing.T) {
 	testCases := []struct {
 		Name          string
-		Value         *string
+		Value         string
 		ExpectedValid bool
 	}{
 		{
 			Name:          "ExpectedValid",
-			Value:         str.Ptr("sap.foo.bar:integrationDependency:CustomerOrder:v1"),
+			Value:         "sap.foo.bar:integrationDependency:CustomerOrder:v1",
 			ExpectedValid: true,
 		},
 		{
 			Name:          "Empty string",
-			Value:         str.Ptr(inputvalidationtest.EmptyString),
+			Value:         inputvalidationtest.EmptyString,
 			ExpectedValid: false,
 		},
 		{
 			Name:          "String longer than 255 chars",
-			Value:         str.Ptr(inputvalidationtest.String257Long),
+			Value:         inputvalidationtest.String257Long,
 			ExpectedValid: false,
 		},
 	}
@@ -152,11 +152,6 @@ func TestIntegrationDependencyInput_Validate_PartOfPackage(t *testing.T) {
 		ExpectedValid bool
 	}{
 		{
-			Name:          "ExpectedValid",
-			Value:         str.Ptr("sap.xref:package:SomePackage:v1"),
-			ExpectedValid: true,
-		},
-		{
 			Name:          "Nil pointer",
 			Value:         nil,
 			ExpectedValid: true,
@@ -164,11 +159,6 @@ func TestIntegrationDependencyInput_Validate_PartOfPackage(t *testing.T) {
 		{
 			Name:          "Empty string",
 			Value:         str.Ptr(inputvalidationtest.EmptyString),
-			ExpectedValid: false,
-		},
-		{
-			Name:          "String longer than 255 chars",
-			Value:         str.Ptr(inputvalidationtest.String257Long),
 			ExpectedValid: false,
 		},
 	}
@@ -648,7 +638,7 @@ func TestAspectEventDefinitionSubsetInput_Validate_EventType(t *testing.T) {
 func fixValidIntegrationDependencyInput() graphql.IntegrationDependencyInput {
 	return graphql.IntegrationDependencyInput{
 		Name:  inputvalidationtest.ValidName,
-		OrdID: str.Ptr("app.test:integrationDependency:INTDEP1:v1"),
+		OrdID: "app.test:integrationDependency:INTDEP1:v1",
 	}
 }
 

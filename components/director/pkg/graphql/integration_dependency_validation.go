@@ -14,7 +14,7 @@ func (i IntegrationDependencyInput) Validate() error {
 		validation.Field(&i.Name, validation.Required, is.PrintableASCII, validation.Length(common.MinTitleLength, common.MaxTitleLength)),
 		validation.Field(&i.Description, validation.NilOrNotEmpty, validation.Length(common.MinDescriptionLength, descriptionStringLengthLimit)),
 		validation.Field(&i.OrdID, validation.Required, validation.Length(common.MinOrdIDLength, common.MaxOrdIDLength), validation.Match(regexp.MustCompile(common.IntegrationDependencyOrdIDRegexGQL))),
-		validation.Field(&i.PartOfPackage, validation.NilOrNotEmpty, validation.Length(common.MinOrdIDLength, common.MaxOrdIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
+		validation.Field(&i.PartOfPackage, validation.NilOrNotEmpty),
 		validation.Field(&i.Visibility, validation.NilOrNotEmpty, validation.In("public", "internal", "private")),
 		validation.Field(&i.ReleaseStatus, validation.NilOrNotEmpty, validation.In(common.ReleaseStatusBeta, common.ReleaseStatusActive, common.ReleaseStatusDeprecated)),
 		validation.Field(&i.Mandatory),

@@ -80,6 +80,7 @@ type PackageService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.PackageInput, pkgHash uint64) (string, error)
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Package, error)
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
+	Get(ctx context.Context, id string) (*model.Package, error)
 }
 
 // Resolver is an object responsible for resolver-layer Integration Dependency operations
@@ -139,9 +140,9 @@ func (r *Resolver) AddIntegrationDependencyToApplication(ctx context.Context, ap
 		if err != nil {
 			return nil, err
 		}
-		in.PartOfPackage = &pkgOrdID
+		in.PartOfPackage = &packageID
 	} else {
-		log.C(ctx).Infof("Part of package field is provided. Getting a package with ordID %q for application with id %q", *in.PartOfPackage, appID)
+		log.C(ctx).Infof("Part of package field is provided. Getting a package with id %q for application with id %q", *in.PartOfPackage, appID)
 		packageID, err = r.getPackageID(ctx, appID, in.PartOfPackage)
 		if err != nil {
 			return nil, err
@@ -302,12 +303,12 @@ func (r *Resolver) getApplicationNamespace(ctx context.Context, appID string) (s
 			return *appTemplate.ApplicationNamespace, nil
 		}
 
-		log.C(ctx).Infof("application namespace is missing for both application template with id %q and application with id %q", appTemplate.ID, appID)
+		log.C(ctx).Infof("Application namespace is missing for both application template with id %q and application with id %q", appTemplate.ID, appID)
 
 		return "", nil
 	}
 
-	log.C(ctx).Infof("application namespace is missing for application with id %q", appID)
+	log.C(ctx).Infof("Application namespace is missing for application with id %q", appID)
 
 	return "", nil
 }
@@ -329,17 +330,17 @@ func (r *Resolver) createPackage(ctx context.Context, appID, pkgOrdID string) (s
 	return packageID, nil
 }
 
-func (r *Resolver) getPackageID(ctx context.Context, appID string, packageOrdID *string) (string, error) {
+func (r *Resolver) getPackageID(ctx context.Context, appID string, packageID *string) (string, error) {
 	packagesFromDB, err := r.packageSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while listing packages for application with id %q", appID)
 	}
 	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
-		return equalStrings(&packagesFromDB[i].OrdID, packageOrdID)
+		return equalStrings(&packagesFromDB[i].ID, packageID)
 	}); found {
 		return packagesFromDB[i].ID, nil
 	}
-	return "", errors.Errorf("package with ord ID: %q does not exist", *packageOrdID)
+	return "", errors.Errorf("package with ID: %q does not exist", *packageID)
 }
 
 func (r *Resolver) getAspectEventResourcesByAspectID(ctx context.Context, aspects []*model.Aspect) (map[string][]*model.AspectEventResource, error) {
