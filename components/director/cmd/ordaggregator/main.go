@@ -4,9 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"net"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspect"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/capability"
@@ -105,8 +108,12 @@ type config struct {
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 
-	ClientTimeout     time.Duration `envconfig:"default=120s"`
-	SkipSSLValidation bool          `envconfig:"default=false"`
+	ClientTimeout                  time.Duration `envconfig:"default=120s"`
+	ClientMaxConnectionsPerHost    int           `envconfig:"APP_CLIENT_MAX_CONNECTIONS_PER_HOST,default=1000"`
+	ClientMaxIdlConnectionsPerHost int           `envconfig:"APP_CLIENT_MAX_IDLE_CONNECTIONS_PER_HOST,default=1000"`
+	ClientRetryAttempts            uint          `envconfig:"default=5"`
+	ClientRetryDelay               time.Duration `envconfig:"default=5s"`
+	SkipSSLValidation              bool          `envconfig:"default=false"`
 
 	RetryConfig                   retry.Config
 	CertLoaderConfig              credloader.CertConfig
@@ -180,6 +187,13 @@ func main() {
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   15 * time.Second,
+				KeepAlive: 15 * time.Second,
+			}).DialContext,
+			MaxConnsPerHost:     cfg.ClientMaxConnectionsPerHost,
+			MaxIdleConnsPerHost: cfg.ClientMaxIdlConnectionsPerHost,
+			MaxIdleConns:        cfg.ClientMaxIdlConnectionsPerHost,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
@@ -204,7 +218,8 @@ func main() {
 	entityTypeConverter := entitytype.NewConverter(versionConverter)
 	entityTypeMappingConverter := entitytypemapping.NewConverter()
 	capabilityConverter := capability.NewConverter(versionConverter)
-	aspectConverter := aspect.NewConverter()
+	aspectEventResourceConverter := aspecteventresource.NewConverter()
+	aspectConverter := aspect.NewConverter(aspectEventResourceConverter)
 	integrationDependencyConverter := integrationdependency.NewConverter(versionConverter, aspectConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
@@ -242,6 +257,7 @@ func main() {
 	entityTypeMappingRepo := entitytypemapping.NewRepository(entityTypeMappingConverter)
 	capabilityRepo := capability.NewRepository(capabilityConverter)
 	aspectRepo := aspect.NewRepository(aspectConverter)
+	aspectEventResourceRepo := aspecteventresource.NewRepository(aspectEventResourceConverter)
 	integrationDependencyRepo := integrationdependency.NewRepository(integrationDependencyConverter)
 	specRepo := spec.NewRepository(specConverter)
 	docRepo := document.NewRepository(docConverter)
@@ -280,6 +296,7 @@ func main() {
 	entityTypeSvc := entitytype.NewService(entityTypeRepo, uidSvc)
 	capabilitySvc := capability.NewService(capabilityRepo, uidSvc, specSvc)
 	aspectSvc := aspect.NewService(aspectRepo, uidSvc)
+	aspectEventResourceSvc := aspecteventresource.NewService(aspectEventResourceRepo, uidSvc)
 	integrationDependencySvc := integrationdependency.NewService(integrationDependencyRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, tenantMappingConfig, cfg.TenantMappingCallbackURL)
@@ -316,7 +333,7 @@ func main() {
 	productProcessor := processor.NewProductProcessor(transact, productSvc)
 	apiProcessor := processor.NewAPIProcessor(transact, apiSvc, entityTypeSvc, entityTypeMappingSvc, bundleReferenceSvc, specSvc)
 	eventProcessor := processor.NewEventProcessor(transact, eventAPISvc, entityTypeSvc, entityTypeMappingSvc, bundleReferenceSvc, specSvc)
-	integrationDependencyProcessor := processor.NewIntegrationDependencyProcessor(transact, integrationDependencySvc, aspectSvc)
+	integrationDependencyProcessor := processor.NewIntegrationDependencyProcessor(transact, integrationDependencySvc, aspectSvc, aspectEventResourceSvc)
 	entityTypeProcessor := processor.NewEntityTypeProcessor(transact, entityTypeSvc)
 	capabilityProcessor := processor.NewCapabilityProcessor(transact, capabilitySvc, specSvc)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
@@ -348,7 +365,7 @@ func main() {
 		shutdownMainSrv()
 	}()
 
-	clientConfig := ord.NewClientConfig(cfg.MaxParallelDocumentsPerApplication)
+	clientConfig := ord.NewClientConfig(cfg.MaxParallelDocumentsPerApplication, cfg.ClientRetryDelay, cfg.ClientRetryAttempts)
 	ordClientWithTenantExecutor := newORDClientWithTenantExecutor(cfg, clientConfig, certCache)
 	ordClientWithoutTenantExecutor := newORDClientWithoutTenantExecutor(cfg, clientConfig, certCache)
 
@@ -418,6 +435,13 @@ func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, c
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   15 * time.Second,
+				KeepAlive: 15 * time.Second,
+			}).DialContext,
+			MaxConnsPerHost:     cfg.ClientMaxConnectionsPerHost,
+			MaxIdleConnsPerHost: cfg.ClientMaxIdlConnectionsPerHost,
+			MaxIdleConns:        cfg.ClientMaxIdlConnectionsPerHost,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
@@ -431,6 +455,13 @@ func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   15 * time.Second,
+				KeepAlive: 15 * time.Second,
+			}).DialContext,
+			MaxConnsPerHost:     cfg.ClientMaxConnectionsPerHost,
+			MaxIdleConnsPerHost: cfg.ClientMaxIdlConnectionsPerHost,
+			MaxIdleConns:        cfg.ClientMaxIdlConnectionsPerHost,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},

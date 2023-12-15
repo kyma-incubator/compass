@@ -510,10 +510,18 @@ func fixIntegrationDependencyPage(integrationDependencies []*model.IntegrationDe
 	}
 }
 
-func fixModelIntegrationDependencyAspect(appID, intDepID string) *model.Aspect {
+func fixModelIntegrationDependencyAspect(id, appID, intDepID string) *model.Aspect {
 	return &model.Aspect{
 		ApplicationID:           str.Ptr(appID),
 		IntegrationDependencyID: intDepID,
+		BaseEntity:              &model.BaseEntity{ID: id},
+	}
+}
+
+func fixModelAspectEventResource(appID, aspectID string) *model.AspectEventResource {
+	return &model.AspectEventResource{
+		ApplicationID: str.Ptr(appID),
+		AspectID:      aspectID,
 	}
 }
 

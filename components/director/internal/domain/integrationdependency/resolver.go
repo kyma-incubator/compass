@@ -41,7 +41,7 @@ type IntegrationDependencyService interface {
 //
 //go:generate mockery --name=IntegrationDepConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationDepConverter interface {
-	ToGraphQL(in *model.IntegrationDependency, aspects []*model.Aspect) (*graphql.IntegrationDependency, error)
+	ToGraphQL(in *model.IntegrationDependency, aspects []*model.Aspect, aspectEventResourcesByAspectID map[string][]*model.AspectEventResource) (*graphql.IntegrationDependency, error)
 	InputFromGraphQL(in *graphql.IntegrationDependencyInput) (*model.IntegrationDependencyInput, error)
 }
 
@@ -51,6 +51,14 @@ type IntegrationDepConverter interface {
 type AspectService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyID string, in model.AspectInput) (string, error)
 	ListByIntegrationDependencyID(ctx context.Context, integrationDependencyID string) ([]*model.Aspect, error)
+}
+
+// AspectEventResourceService is responsible for the service-layer Aspect Event Resource operations.
+//
+//go:generate mockery --name=AspectEventResourceService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type AspectEventResourceService interface {
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, aspectID string, in model.AspectEventResourceInput) (string, error)
+	ListByAspectID(ctx context.Context, aspectID string) ([]*model.AspectEventResource, error)
 }
 
 // ApplicationService is responsible for the service-layer Application operations.
@@ -82,18 +90,20 @@ type Resolver struct {
 	integrationDependencySvc       IntegrationDependencyService
 	integrationDependencyConverter IntegrationDepConverter
 	aspectSvc                      AspectService
+	aspectEventResourceSvc         AspectEventResourceService
 	appSvc                         ApplicationService
 	appTemplateSvc                 ApplicationTemplateService
 	packageSvc                     PackageService
 }
 
 // NewResolver returns a new object responsible for resolver-layer Integration Dependency operations.
-func NewResolver(transact persistence.Transactioner, integrationDependencySvc IntegrationDependencyService, integrationDependencyConverter IntegrationDepConverter, aspectSvc AspectService, appSvc ApplicationService, appTemplateSvc ApplicationTemplateService, packageSvc PackageService) *Resolver {
+func NewResolver(transact persistence.Transactioner, integrationDependencySvc IntegrationDependencyService, integrationDependencyConverter IntegrationDepConverter, aspectSvc AspectService, aspectEventResourceSvc AspectEventResourceService, appSvc ApplicationService, appTemplateSvc ApplicationTemplateService, packageSvc PackageService) *Resolver {
 	return &Resolver{
 		transact:                       transact,
 		integrationDependencySvc:       integrationDependencySvc,
 		integrationDependencyConverter: integrationDependencyConverter,
 		aspectSvc:                      aspectSvc,
+		aspectEventResourceSvc:         aspectEventResourceSvc,
 		appSvc:                         appSvc,
 		appTemplateSvc:                 appTemplateSvc,
 		packageSvc:                     packageSvc,
@@ -159,8 +169,17 @@ func (r *Resolver) AddIntegrationDependencyToApplication(ctx context.Context, ap
 	}
 
 	log.C(ctx).Infof("Creating aspects for integration dependency with id %q and application with id %q", integrationDependencyID, appID)
-	if err = r.createAspects(ctx, resource.Application, appID, integrationDependencyID, convertedIn.Aspects); err != nil {
+	aspectEventResourcesByAspectIDInput, err := r.createAspects(ctx, resource.Application, appID, integrationDependencyID, convertedIn.Aspects)
+	if err != nil {
 		return nil, errors.Wrapf(err, "error occurred while creating Aspects for Integration Dependency with id %q in the context of an application with id %q", integrationDependencyID, appID)
+	}
+
+	for aspectID, aspectEventResourcesInput := range aspectEventResourcesByAspectIDInput {
+		log.C(ctx).Infof("Creating aspect event resources for aspect with id %q and application with id %q", aspectID, appID)
+		err = r.createAspectEventResources(ctx, resource.Application, appID, aspectID, aspectEventResourcesInput)
+		if err != nil {
+			return nil, errors.Wrapf(err, "error occurred while creating Aspect Event Resources for Aspect with id %q in the context of an application with id %q", aspectID, appID)
+		}
 	}
 
 	integrationDependency, err := r.integrationDependencySvc.Get(ctx, integrationDependencyID)
@@ -173,7 +192,12 @@ func (r *Resolver) AddIntegrationDependencyToApplication(ctx context.Context, ap
 		return nil, errors.Wrapf(err, "while getting Aspects for Integration Dependency with id %q", integrationDependencyID)
 	}
 
-	gqlIntegrationDependency, err := r.integrationDependencyConverter.ToGraphQL(integrationDependency, aspects)
+	aspectEventResourcesByAspectID, err := r.getAspectEventResourcesByAspectID(ctx, aspects)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlIntegrationDependency, err := r.integrationDependencyConverter.ToGraphQL(integrationDependency, aspects, aspectEventResourcesByAspectID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting Integration Dependency with id %q to graphQL", integrationDependencyID)
 	}
@@ -208,7 +232,12 @@ func (r *Resolver) DeleteIntegrationDependency(ctx context.Context, id string) (
 		return nil, errors.Wrapf(err, "while getting aspects for Integration Dependency with id %q", id)
 	}
 
-	gqlIntegrationDependency, err := r.integrationDependencyConverter.ToGraphQL(integrationDependency, aspects)
+	aspectEventResourcesByAspectID, err := r.getAspectEventResourcesByAspectID(ctx, aspects)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlIntegrationDependency, err := r.integrationDependencyConverter.ToGraphQL(integrationDependency, aspects, aspectEventResourcesByAspectID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting Integration Dependency with id %q to graphQL", id)
 	}
@@ -239,9 +268,22 @@ func (r *Resolver) DeleteIntegrationDependency(ctx context.Context, id string) (
 	return gqlIntegrationDependency, nil
 }
 
-func (r *Resolver) createAspects(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyID string, aspects []*model.AspectInput) error {
+func (r *Resolver) createAspects(ctx context.Context, resourceType resource.Type, resourceID string, integrationDependencyID string, aspects []*model.AspectInput) (map[string][]*model.AspectEventResourceInput, error) {
+	aspectEventResourcesByAspectIDInput := make(map[string][]*model.AspectEventResourceInput, 0)
 	for _, aspect := range aspects {
-		_, err := r.aspectSvc.Create(ctx, resourceType, resourceID, integrationDependencyID, *aspect)
+		id, err := r.aspectSvc.Create(ctx, resourceType, resourceID, integrationDependencyID, *aspect)
+		if err != nil {
+			return nil, err
+		}
+		aspectEventResourcesByAspectIDInput[id] = aspect.EventResources
+	}
+
+	return aspectEventResourcesByAspectIDInput, nil
+}
+
+func (r *Resolver) createAspectEventResources(ctx context.Context, resourceType resource.Type, resourceID string, aspectID string, aspectEventResources []*model.AspectEventResourceInput) error {
+	for _, aspectEventResource := range aspectEventResources {
+		_, err := r.aspectEventResourceSvc.Create(ctx, resourceType, resourceID, aspectID, *aspectEventResource)
 		if err != nil {
 			return err
 		}
@@ -302,6 +344,19 @@ func (r *Resolver) getPackageID(ctx context.Context, appID string, packageOrdID 
 		return packagesFromDB[i].ID, nil
 	}
 	return "", errors.Errorf("package with ord ID: %q does not exist", *packageOrdID)
+}
+
+func (r *Resolver) getAspectEventResourcesByAspectID(ctx context.Context, aspects []*model.Aspect) (map[string][]*model.AspectEventResource, error) {
+	aspectEventResourcesByAspectID := make(map[string][]*model.AspectEventResource)
+	for _, aspect := range aspects {
+		aspectEventResources, err := r.aspectEventResourceSvc.ListByAspectID(ctx, aspect.ID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting Aspect Event Resources for Aspect with id %q", aspect.ID)
+		}
+		aspectEventResourcesByAspectID[aspect.ID] = aspectEventResources
+	}
+
+	return aspectEventResourcesByAspectID, nil
 }
 
 func searchInSlice(length int, f func(i int) bool) (int, bool) {

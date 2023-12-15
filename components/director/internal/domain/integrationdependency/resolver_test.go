@@ -37,7 +37,6 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			Mandatory:                    &mandatory,
 			SupportMultipleProviders:     &supportMultipleProviders,
 			APIResources:                 json.RawMessage("[]"),
-			EventResources:               json.RawMessage("[]"),
 			BaseEntity: &model.BaseEntity{
 				ID:        aspectID,
 				Ready:     ready,
@@ -48,7 +47,25 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			},
 		},
 	}
-
+	aspectEventResourceID := "aspectEventResourceID"
+	modelAspectEventResources := []*model.AspectEventResource{
+		{
+			ApplicationID:                &appID,
+			ApplicationTemplateVersionID: &appTemplateVersionID,
+			AspectID:                     aspectID,
+			OrdID:                        ordID,
+			MinVersion:                   str.Ptr("1.0.0"),
+			Subset:                       json.RawMessage("[]"),
+			BaseEntity: &model.BaseEntity{
+				ID:        aspectEventResourceID,
+				Ready:     ready,
+				CreatedAt: &fixedTimestamp,
+				UpdatedAt: &time.Time{},
+				DeletedAt: &time.Time{},
+				Error:     nil,
+			},
+		},
+	}
 	appNamespace := "test.ns"
 	modelApp := &model.Application{
 		BaseEntity: &model.BaseEntity{
@@ -109,6 +126,7 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 		InputObject                    *graphql.IntegrationDependencyInput
 		IntegrationDependencyServiceFn func() *automock.IntegrationDependencyService
 		AspectServiceFn                func() *automock.AspectService
+		AspectEventResourceServiceFn   func() *automock.AspectEventResourceService
 		ConverterFn                    func() *automock.IntegrationDepConverter
 		AppServiceFn                   func() *automock.ApplicationService
 		AppTemplateServiceFn           func() *automock.ApplicationTemplateService
@@ -132,10 +150,16 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 				svc.On("ListByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelAspects, nil).Once()
 				return svc
 			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, aspectID, *modelIntDepInput.Aspects[0].EventResources[0]).Return(mock.Anything, nil).Once()
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
 				conv.On("InputFromGraphQL", gqlIntDepInputWithPackage).Return(&modelIntDepInput, nil).Once()
-				conv.On("ToGraphQL", modelIntDep, modelAspects).Return(gqlIntDep, nil).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(gqlIntDep, nil).Once()
 				return conv
 			},
 			AppServiceFn: func() *automock.ApplicationService {
@@ -172,10 +196,16 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 				svc.On("ListByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelAspects, nil).Once()
 				return svc
 			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, aspectID, *modelIntDepInputWithVersion.Aspects[0].EventResources[0]).Return(mock.Anything, nil).Once()
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
 				conv.On("InputFromGraphQL", gqlIntDepInputWithPackageAndVersion).Return(&modelIntDepInputWithVersion, nil).Once()
-				conv.On("ToGraphQL", modelIntDep, modelAspects).Return(gqlIntDep, nil).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(gqlIntDep, nil).Once()
 				return conv
 			},
 			AppServiceFn: func() *automock.ApplicationService {
@@ -212,10 +242,16 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 				svc.On("ListByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelAspects, nil).Once()
 				return svc
 			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, aspectID, *modelIntDepInput.Aspects[0].EventResources[0]).Return(mock.Anything, nil).Once()
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
 				conv.On("InputFromGraphQL", gqlIntDepInputWithPackage).Return(&modelIntDepInput, nil).Once()
-				conv.On("ToGraphQL", modelIntDep, modelAspects).Return(gqlIntDep, nil).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(gqlIntDep, nil).Once()
 				return conv
 			},
 			AppServiceFn: func() *automock.ApplicationService {
@@ -256,6 +292,12 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 				svc.On("ListByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelAspects, nil).Once()
 				return svc
 			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, aspectID, *modelIntDepInput.Aspects[0].EventResources[0]).Return(mock.Anything, nil).Once()
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
 				modelIntDepInput.OrdID = str.Ptr(fmt.Sprintf("%s:integrationDependency:%s:v1", appNamespace, strings.ToUpper(title)))
@@ -263,7 +305,7 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 				modelIntDepInput.Visibility = publicVisibility
 				modelIntDepInput.ReleaseStatus = str.Ptr(releaseStatus)
 				conv.On("InputFromGraphQL", gqlIntDepInputWithPackageAndWithGeneratedProps).Return(&modelIntDepInput, nil).Once()
-				conv.On("ToGraphQL", modelIntDep, modelAspects).Return(gqlIntDepWithGeneratedProperties, nil).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(gqlIntDepWithGeneratedProperties, nil).Once()
 				return conv
 			},
 			AppServiceFn: func() *automock.ApplicationService {
@@ -300,10 +342,16 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 				svc.On("ListByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelAspects, nil).Once()
 				return svc
 			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, aspectID, *modelIntDepInput.Aspects[0].EventResources[0]).Return(mock.Anything, nil).Once()
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
 				conv.On("InputFromGraphQL", gqlIntDepInputWithPackage).Return(&modelIntDepInput, nil).Once()
-				conv.On("ToGraphQL", modelIntDep, modelAspects).Return(gqlIntDep, nil).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(gqlIntDep, nil).Once()
 				return conv
 			},
 			AppServiceFn: func() *automock.ApplicationService {
@@ -337,6 +385,9 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			AspectServiceFn: func() *automock.AspectService {
 				return &automock.AspectService{}
 			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				return &automock.AspectEventResourceService{}
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				return &automock.IntegrationDepConverter{}
 			},
@@ -367,6 +418,9 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			},
 			AspectServiceFn: func() *automock.AspectService {
 				return &automock.AspectService{}
+			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				return &automock.AspectEventResourceService{}
 			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				return &automock.IntegrationDepConverter{}
@@ -399,6 +453,9 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			AspectServiceFn: func() *automock.AspectService {
 				return &automock.AspectService{}
 			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				return &automock.AspectEventResourceService{}
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				return &automock.IntegrationDepConverter{}
 			},
@@ -426,6 +483,9 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			},
 			AspectServiceFn: func() *automock.AspectService {
 				return &automock.AspectService{}
+			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				return &automock.AspectEventResourceService{}
 			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				return &automock.IntegrationDepConverter{}
@@ -455,6 +515,9 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			},
 			AspectServiceFn: func() *automock.AspectService {
 				return &automock.AspectService{}
+			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				return &automock.AspectEventResourceService{}
 			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				return &automock.IntegrationDepConverter{}
@@ -487,6 +550,9 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			AspectServiceFn: func() *automock.AspectService {
 				return &automock.AspectService{}
 			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				return &automock.AspectEventResourceService{}
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				return &automock.IntegrationDepConverter{}
 			},
@@ -518,6 +584,9 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			AspectServiceFn: func() *automock.AspectService {
 				return &automock.AspectService{}
 			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				return &automock.AspectEventResourceService{}
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				return &automock.IntegrationDepConverter{}
 			},
@@ -548,6 +617,9 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			},
 			AspectServiceFn: func() *automock.AspectService {
 				return &automock.AspectService{}
+			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				return &automock.AspectEventResourceService{}
 			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
@@ -585,6 +657,9 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			},
 			AspectServiceFn: func() *automock.AspectService {
 				return &automock.AspectService{}
+			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				return &automock.AspectEventResourceService{}
 			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
@@ -626,6 +701,55 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 
 				return svc
 			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				return &automock.AspectEventResourceService{}
+			},
+			ConverterFn: func() *automock.IntegrationDepConverter {
+				conv := &automock.IntegrationDepConverter{}
+				conv.On("InputFromGraphQL", gqlIntDepInputWithPackage).Return(&modelIntDepInput, nil).Once()
+
+				return conv
+			},
+			AppServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), appID).Return(modelApp, nil).Once()
+
+				return svc
+			},
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				return &automock.ApplicationTemplateService{}
+			},
+			PackageServiceFn: func() *automock.PackageService {
+				svc := &automock.PackageService{}
+				svc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return([]*model.Package{{ID: packageID, OrdID: buildPackageOrdID}}, nil).Once()
+
+				return svc
+			},
+			ExpectedIntegrationDependency: nil,
+			ExpectedErr:                   testErr,
+		},
+		{
+			Name:            "Error when create Aspect Event Resources fails",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			InputObject:     gqlIntDepInputWithPackage,
+			IntegrationDependencyServiceFn: func() *automock.IntegrationDependencyService {
+				svc := &automock.IntegrationDependencyService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID), modelIntDepInput, mock.Anything).Return(integrationDependencyID, nil).Once()
+
+				return svc
+			},
+			AspectServiceFn: func() *automock.AspectService {
+				svc := &automock.AspectService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyID, *modelIntDepInput.Aspects[0]).Return(mock.Anything, nil).Once()
+
+				return svc
+			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, aspectID, *modelIntDepInput.Aspects[0].EventResources[0]).Return(mock.Anything, testErr).Once()
+
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
 				conv.On("InputFromGraphQL", gqlIntDepInputWithPackage).Return(&modelIntDepInput, nil).Once()
@@ -664,6 +788,12 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			AspectServiceFn: func() *automock.AspectService {
 				svc := &automock.AspectService{}
 				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyID, *modelIntDepInput.Aspects[0]).Return(mock.Anything, nil).Once()
+
+				return svc
+			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, aspectID, *modelIntDepInput.Aspects[0].EventResources[0]).Return(mock.Anything, nil).Once()
 
 				return svc
 			},
@@ -709,6 +839,61 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 
 				return svc
 			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, aspectID, *modelIntDepInput.Aspects[0].EventResources[0]).Return(mock.Anything, nil).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.IntegrationDepConverter {
+				conv := &automock.IntegrationDepConverter{}
+				conv.On("InputFromGraphQL", gqlIntDepInputWithPackage).Return(&modelIntDepInput, nil).Once()
+
+				return conv
+			},
+			AppServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), appID).Return(modelApp, nil).Once()
+
+				return svc
+			},
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				return &automock.ApplicationTemplateService{}
+			},
+			PackageServiceFn: func() *automock.PackageService {
+				svc := &automock.PackageService{}
+				svc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return([]*model.Package{{ID: packageID, OrdID: buildPackageOrdID}}, nil).Once()
+
+				return svc
+			},
+			ExpectedIntegrationDependency: nil,
+			ExpectedErr:                   testErr,
+		},
+		{
+			Name:            "Error when get Aspect Event Resources by Aspect id fails",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			InputObject:     gqlIntDepInputWithPackage,
+			IntegrationDependencyServiceFn: func() *automock.IntegrationDependencyService {
+				svc := &automock.IntegrationDependencyService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID), modelIntDepInput, mock.Anything).Return(integrationDependencyID, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelIntDep, nil).Once()
+
+				return svc
+			},
+			AspectServiceFn: func() *automock.AspectService {
+				svc := &automock.AspectService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyID, *modelIntDepInput.Aspects[0]).Return(mock.Anything, nil).Once()
+				svc.On("ListByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelAspects, nil).Once()
+
+				return svc
+			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, aspectID, *modelIntDepInput.Aspects[0].EventResources[0]).Return(mock.Anything, nil).Once()
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(nil, testErr).Once()
+
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
 				conv.On("InputFromGraphQL", gqlIntDepInputWithPackage).Return(&modelIntDepInput, nil).Once()
@@ -751,10 +936,16 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 
 				return svc
 			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, aspectID, *modelIntDepInput.Aspects[0].EventResources[0]).Return(mock.Anything, nil).Once()
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
 				conv.On("InputFromGraphQL", gqlIntDepInputWithPackage).Return(&modelIntDepInput, nil).Once()
-				conv.On("ToGraphQL", modelIntDep, modelAspects).Return(nil, testErr).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(nil, testErr).Once()
 
 				return conv
 			},
@@ -794,10 +985,16 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 
 				return svc
 			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, aspectID, *modelIntDepInput.Aspects[0].EventResources[0]).Return(mock.Anything, nil).Once()
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
 				conv.On("InputFromGraphQL", gqlIntDepInputWithPackage).Return(&modelIntDepInput, nil).Once()
-				conv.On("ToGraphQL", modelIntDep, modelAspects).Return(gqlIntDep, nil).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(gqlIntDep, nil).Once()
 
 				return conv
 			},
@@ -829,6 +1026,9 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			AspectServiceFn: func() *automock.AspectService {
 				return &automock.AspectService{}
 			},
+			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
+				return &automock.AspectEventResourceService{}
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				return &automock.IntegrationDepConverter{}
 			},
@@ -852,13 +1052,14 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			intDepSvc := testCase.IntegrationDependencyServiceFn()
 			aspectSvc := testCase.AspectServiceFn()
+			aspectEventResourceSvc := testCase.AspectEventResourceServiceFn()
 			converter := testCase.ConverterFn()
 			appSvc := testCase.AppServiceFn()
 			appTemplateSvc := testCase.AppTemplateServiceFn()
 			packageSvc := testCase.PackageServiceFn()
-			defer mock.AssertExpectationsForObjects(t, persist, transact, intDepSvc, aspectSvc, converter, appSvc, appTemplateSvc, packageSvc)
+			defer mock.AssertExpectationsForObjects(t, persist, transact, intDepSvc, aspectSvc, aspectEventResourceSvc, converter, appSvc, appTemplateSvc, packageSvc)
 
-			resolver := integrationdependency.NewResolver(transact, intDepSvc, converter, aspectSvc, appSvc, appTemplateSvc, packageSvc)
+			resolver := integrationdependency.NewResolver(transact, intDepSvc, converter, aspectSvc, aspectEventResourceSvc, appSvc, appTemplateSvc, packageSvc)
 
 			// WHEN
 			result, err := resolver.AddIntegrationDependencyToApplication(context.TODO(), appID, *testCase.InputObject)
@@ -890,9 +1091,27 @@ func TestResolver_DeleteIntegrationDependency(t *testing.T) {
 			Mandatory:                    &mandatory,
 			SupportMultipleProviders:     &supportMultipleProviders,
 			APIResources:                 json.RawMessage("[]"),
-			EventResources:               json.RawMessage("[]"),
 			BaseEntity: &model.BaseEntity{
 				ID:        aspectID,
+				Ready:     ready,
+				CreatedAt: &fixedTimestamp,
+				UpdatedAt: &time.Time{},
+				DeletedAt: &time.Time{},
+				Error:     nil,
+			},
+		},
+	}
+	aspectEventResourceID := "aspectEventResourceID"
+	modelAspectEventResources := []*model.AspectEventResource{
+		{
+			ApplicationID:                &appID,
+			ApplicationTemplateVersionID: &appTemplateVersionID,
+			AspectID:                     aspectID,
+			OrdID:                        ordID,
+			MinVersion:                   str.Ptr("1.0.0"),
+			Subset:                       json.RawMessage("[]"),
+			BaseEntity: &model.BaseEntity{
+				ID:        aspectEventResourceID,
 				Ready:     ready,
 				CreatedAt: &fixedTimestamp,
 				UpdatedAt: &time.Time{},
@@ -927,6 +1146,7 @@ func TestResolver_DeleteIntegrationDependency(t *testing.T) {
 		TransactionerFn                func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		IntegrationDependencyServiceFn func() *automock.IntegrationDependencyService
 		AspectServiceFn                func() *automock.AspectService
+		AspectEventResourcesServiceFn  func() *automock.AspectEventResourceService
 		ConverterFn                    func() *automock.IntegrationDepConverter
 		PackageServiceFn               func() *automock.PackageService
 		ExpectedIntegrationDependency  *graphql.IntegrationDependency
@@ -947,9 +1167,14 @@ func TestResolver_DeleteIntegrationDependency(t *testing.T) {
 				svc.On("ListByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelAspects, nil).Once()
 				return svc
 			},
+			AspectEventResourcesServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
-				conv.On("ToGraphQL", modelIntDep, modelAspects).Return(gqlIntDep, nil).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(gqlIntDep, nil).Once()
 				return conv
 			},
 			PackageServiceFn: func() *automock.PackageService {
@@ -977,9 +1202,14 @@ func TestResolver_DeleteIntegrationDependency(t *testing.T) {
 				svc.On("ListByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelAspects, nil).Once()
 				return svc
 			},
+			AspectEventResourcesServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
-				conv.On("ToGraphQL", modelIntDep, modelAspects).Return(gqlIntDep, nil).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(gqlIntDep, nil).Once()
 				return conv
 			},
 			PackageServiceFn: func() *automock.PackageService {
@@ -999,6 +1229,9 @@ func TestResolver_DeleteIntegrationDependency(t *testing.T) {
 			},
 			AspectServiceFn: func() *automock.AspectService {
 				return &automock.AspectService{}
+			},
+			AspectEventResourcesServiceFn: func() *automock.AspectEventResourceService {
+				return &automock.AspectEventResourceService{}
 			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				return &automock.IntegrationDepConverter{}
@@ -1022,6 +1255,37 @@ func TestResolver_DeleteIntegrationDependency(t *testing.T) {
 				svc := &automock.AspectService{}
 				svc.On("ListByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(nil, testErr).Once()
 
+				return svc
+			},
+			AspectEventResourcesServiceFn: func() *automock.AspectEventResourceService {
+				return &automock.AspectEventResourceService{}
+			},
+			ConverterFn: func() *automock.IntegrationDepConverter {
+				return &automock.IntegrationDepConverter{}
+			},
+			PackageServiceFn: func() *automock.PackageService {
+				return &automock.PackageService{}
+			},
+			ExpectedIntegrationDependency: nil,
+			ExpectedErr:                   testErr,
+		},
+		{
+			Name:            "Error when getting Aspect Event Resources by Aspect id fails",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			IntegrationDependencyServiceFn: func() *automock.IntegrationDependencyService {
+				svc := &automock.IntegrationDependencyService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelIntDep, nil).Once()
+
+				return svc
+			},
+			AspectServiceFn: func() *automock.AspectService {
+				svc := &automock.AspectService{}
+				svc.On("ListByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelAspects, nil).Once()
+				return svc
+			},
+			AspectEventResourcesServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
@@ -1048,9 +1312,14 @@ func TestResolver_DeleteIntegrationDependency(t *testing.T) {
 
 				return svc
 			},
+			AspectEventResourcesServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
-				conv.On("ToGraphQL", modelIntDep, modelAspects).Return(nil, testErr).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(nil, testErr).Once()
 				return conv
 			},
 			PackageServiceFn: func() *automock.PackageService {
@@ -1075,9 +1344,14 @@ func TestResolver_DeleteIntegrationDependency(t *testing.T) {
 
 				return svc
 			},
+			AspectEventResourcesServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
-				conv.On("ToGraphQL", modelIntDep, modelAspects).Return(gqlIntDep, nil).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(gqlIntDep, nil).Once()
 				return conv
 			},
 			PackageServiceFn: func() *automock.PackageService {
@@ -1087,7 +1361,7 @@ func TestResolver_DeleteIntegrationDependency(t *testing.T) {
 			ExpectedErr:                   testErr,
 		},
 		{
-			Name:            "Error getting Integration Dependencies by Package id fails",
+			Name:            "Error when deleting Package fails",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			IntegrationDependencyServiceFn: func() *automock.IntegrationDependencyService {
 				svc := &automock.IntegrationDependencyService{}
@@ -1102,9 +1376,14 @@ func TestResolver_DeleteIntegrationDependency(t *testing.T) {
 
 				return svc
 			},
+			AspectEventResourcesServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
-				conv.On("ToGraphQL", modelIntDep, modelAspects).Return(gqlIntDep, nil).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(gqlIntDep, nil).Once()
 				return conv
 			},
 			PackageServiceFn: func() *automock.PackageService {
@@ -1117,7 +1396,7 @@ func TestResolver_DeleteIntegrationDependency(t *testing.T) {
 			ExpectedErr:                   testErr,
 		},
 		{
-			Name:            "Error getting Integration Dependencies by Package id fails",
+			Name:            "Error when deleting Integration Dependency fails",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			IntegrationDependencyServiceFn: func() *automock.IntegrationDependencyService {
 				svc := &automock.IntegrationDependencyService{}
@@ -1133,9 +1412,14 @@ func TestResolver_DeleteIntegrationDependency(t *testing.T) {
 
 				return svc
 			},
+			AspectEventResourcesServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
-				conv.On("ToGraphQL", modelIntDep, modelAspects).Return(gqlIntDep, nil).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(gqlIntDep, nil).Once()
 				return conv
 			},
 			PackageServiceFn: func() *automock.PackageService {
@@ -1159,9 +1443,14 @@ func TestResolver_DeleteIntegrationDependency(t *testing.T) {
 				svc.On("ListByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelAspects, nil).Once()
 				return svc
 			},
+			AspectEventResourcesServiceFn: func() *automock.AspectEventResourceService {
+				svc := &automock.AspectEventResourceService{}
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
-				conv.On("ToGraphQL", modelIntDep, modelAspects).Return(gqlIntDep, nil).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(gqlIntDep, nil).Once()
 				return conv
 			},
 			PackageServiceFn: func() *automock.PackageService {
@@ -1182,6 +1471,9 @@ func TestResolver_DeleteIntegrationDependency(t *testing.T) {
 			AspectServiceFn: func() *automock.AspectService {
 				return &automock.AspectService{}
 			},
+			AspectEventResourcesServiceFn: func() *automock.AspectEventResourceService {
+				return &automock.AspectEventResourceService{}
+			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				return &automock.IntegrationDepConverter{}
 			},
@@ -1199,11 +1491,12 @@ func TestResolver_DeleteIntegrationDependency(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			intDepSvc := testCase.IntegrationDependencyServiceFn()
 			aspectSvc := testCase.AspectServiceFn()
+			aspectEventResourceSvc := testCase.AspectEventResourcesServiceFn()
 			converter := testCase.ConverterFn()
 			packageSvc := testCase.PackageServiceFn()
 			defer mock.AssertExpectationsForObjects(t, persist, transact, intDepSvc, aspectSvc, converter, packageSvc)
 
-			resolver := integrationdependency.NewResolver(transact, intDepSvc, converter, aspectSvc, nil, nil, packageSvc)
+			resolver := integrationdependency.NewResolver(transact, intDepSvc, converter, aspectSvc, aspectEventResourceSvc, nil, nil, packageSvc)
 
 			// WHEN
 			result, err := resolver.DeleteIntegrationDependency(context.TODO(), integrationDependencyID)

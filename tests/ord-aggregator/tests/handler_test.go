@@ -110,6 +110,12 @@ const (
 	secondIntegrationDependencyExpectedDescription = "longer description of a private integration dependency"
 	thirdIntegrationDependencyExpectedTitle        = "INTEGRATION DEPENDENCY TITLE INTERNAL"
 	thirdIntegrationDependencyExpectedDescription  = "longer description of an internal integration dependency"
+	firstAspectExpectedTitle                       = "ASPECT TITLE"
+	firstAspectExpectedDescription                 = "Aspect desc"
+	secondAspectExpectedTitle                      = "ASPECT TITLE PRIVATE"
+	secondAspectExpectedDescription                = "Aspect private desc"
+	thirdAspectExpectedTitle                       = "ASPECT TITLE INTERNAL"
+	thirdAspectExpectedDescription                 = "Aspect internal desc"
 	expectedTombstoneOrdIDRegex                    = "ns:apiResource:API_ID2(.+):v1"
 	expectedVendorTitle                            = "SAP SE"
 
@@ -129,6 +135,12 @@ const (
 	expectedNumberOfCapabilitiesInSubscription            = 1
 	expectedNumberOfIntegrationDependencies               = 21
 	expectedNumberOfIntegrationDependenciesInSubscription = 3
+	expectedNumberOfAspects                               = 21
+	expectedNumberOfAspectsInSubscription                 = 3
+	expectedNumberOfAspectsApiResources                   = 21
+	expectedNumberOfAspectsApiResourcesInSubscription     = 3
+	expectedNumberOfAspectsEventResources                 = 21
+	expectedNumberOfAspectsEventResourcesInSubscription   = 3
 	expectedNumberOfTombstones                            = 7
 	expectedNumberOfTombstonesInSubscription              = 1
 
@@ -261,6 +273,11 @@ func TestORDAggregator(stdT *testing.T) {
 		integrationDependenciesNumber := make(map[string]int)
 		integrationDependenciesNumber[integrationDependenciesField] = expectedNumberOfIntegrationDependenciesForOneApp
 		integrationDependenciesNumber[publicIntegrationDependenciesField] = expectedNumberOfPublicIntegrationDependenciesForOneApp
+
+		aspectsMap := make(map[string]string)
+		aspectsMap[firstAspectExpectedTitle] = firstAspectExpectedDescription
+		aspectsMap[secondAspectExpectedTitle] = secondAspectExpectedDescription
+		aspectsMap[thirdAspectExpectedTitle] = thirdAspectExpectedDescription
 
 		apisAndEventsNumber := make(map[string]int)
 		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
@@ -590,6 +607,32 @@ func TestORDAggregator(stdT *testing.T) {
 			// verify integration dependencies visibility via Director's graphql
 			verifyIntegrationDependenciesEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, integrationDependenciesMap, publicIntegrationDependenciesMap, integrationDependenciesNumber, app.ID)
 
+			// Verify aspects
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspects {
+				t.Log("Missing Aspects...will try again")
+				return false
+			}
+
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, aspectsMap, expectedNumberOfAspects, descriptionField)
+			t.Log("Successfully verified aspects")
+
+			// Verify aspects api resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectApiResources&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspectsApiResources {
+				t.Log("Missing Aspects API Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects api resources")
+
+			// Verify aspects event resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectEventResources&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspectsEventResources {
+				t.Log("Missing Aspects Event Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects event resources")
+
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfTombstones {
@@ -662,6 +705,11 @@ func TestORDAggregator(stdT *testing.T) {
 
 		publicIntegrationDependenciesMap := make(map[string]string)
 		publicIntegrationDependenciesMap[firstIntegrationDependencyExpectedTitle] = firstIntegrationDependencyExpectedDescription
+
+		aspectsMap := make(map[string]string)
+		aspectsMap[firstAspectExpectedTitle] = firstAspectExpectedDescription
+		aspectsMap[secondAspectExpectedTitle] = secondAspectExpectedDescription
+		aspectsMap[thirdAspectExpectedTitle] = thirdAspectExpectedDescription
 
 		apisAndEventsNumber := make(map[string]int)
 		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
@@ -1017,6 +1065,32 @@ func TestORDAggregator(stdT *testing.T) {
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, integrationDependenciesMap, expectedNumberOfIntegrationDependenciesInSubscription, descriptionField)
 			t.Log("Successfully verified integration dependencies")
 
+			// Verify aspects
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspectsInSubscription {
+				t.Log("Missing Aspects...will try again")
+				return false
+			}
+
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, aspectsMap, expectedNumberOfAspectsInSubscription, descriptionField)
+			t.Log("Successfully verified aspects")
+
+			// Verify aspects api resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectApiResources&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspectsApiResourcesInSubscription {
+				t.Log("Missing Aspects API Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects api resources")
+
+			// Verify aspects event resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectEventResources&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspectsEventResourcesInSubscription {
+				t.Log("Missing Aspects Event Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects event resources")
+
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfTombstonesInSubscription {
@@ -1055,6 +1129,9 @@ func TestORDAggregator(stdT *testing.T) {
 		numberOfCapabilities := 1
 		numberOfPublicCapabilities := 1
 		numberOfIntegrationDependencies := 3
+		numberOfAspects := 3
+		numberOfAspectsApiResources := 3
+		numberOfAspectsEventResources := 3
 		numberOfPublicIntegrationDependencies := 1
 		numberOfTombstones := 1
 
@@ -1135,6 +1212,11 @@ func TestORDAggregator(stdT *testing.T) {
 		integrationDependenciesMap[firstIntegrationDependencyExpectedTitle] = firstIntegrationDependencyExpectedDescription
 		integrationDependenciesMap[secondIntegrationDependencyExpectedTitle] = secondIntegrationDependencyExpectedDescription
 		integrationDependenciesMap[thirdIntegrationDependencyExpectedTitle] = thirdIntegrationDependencyExpectedDescription
+
+		aspectsMap := make(map[string]string)
+		aspectsMap[firstAspectExpectedTitle] = firstAspectExpectedDescription
+		aspectsMap[secondAspectExpectedTitle] = secondAspectExpectedDescription
+		aspectsMap[thirdAspectExpectedTitle] = thirdAspectExpectedDescription
 
 		publicIntegrationDependenciesMap := make(map[string]string)
 		publicIntegrationDependenciesMap[firstIntegrationDependencyExpectedTitle] = firstIntegrationDependencyExpectedDescription
@@ -1430,6 +1512,32 @@ func TestORDAggregator(stdT *testing.T) {
 
 			// verify integration dependencies visibility via Director's graphql
 			verifyIntegrationDependenciesEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, integrationDependenciesMap, publicIntegrationDependenciesMap, integrationDependenciesNumber, app.ID)
+
+			// Verify aspects
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfAspects {
+				t.Log("Missing Aspects...will try again")
+				return false
+			}
+
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, aspectsMap, numberOfAspects, descriptionField)
+			t.Log("Successfully verified aspects")
+
+			// Verify aspects api resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectApiResources&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfAspectsApiResources {
+				t.Log("Missing Aspects API Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects api resources")
+
+			// Verify aspects event resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectEventResources&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfAspectsEventResources {
+				t.Log("Missing Aspects Event Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects event resources")
 
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
