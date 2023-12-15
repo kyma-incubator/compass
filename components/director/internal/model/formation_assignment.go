@@ -167,8 +167,7 @@ func (f *FormationAssignment) SetStateToDeleting() bool {
 // GetOperation returns the formation operation that is determined based on the state of the assignment
 func (f *FormationAssignment) GetOperation() FormationOperation {
 	operation := AssignFormation
-	if f.State == string(DeleteErrorAssignmentState) || f.State == string(DeletingAssignmentState) ||
-		f.State == string(InstanceCreatorDeleteErrorAssignmentState) || f.State == string(InstanceCreatorDeletingAssignmentState) {
+	if strings.HasSuffix(f.State, string(DeleteErrorAssignmentState)) || strings.HasSuffix(f.State, string(DeletingAssignmentState)) {
 		operation = UnassignFormation
 	}
 	return operation
@@ -178,8 +177,8 @@ func (f *FormationAssignment) GetOperation() FormationOperation {
 // and is exposed to the GraphQL layer
 func (f *FormationAssignment) GetNotificationState() string {
 	state := f.State
-	if strings.HasSuffix(state, string(DeleteErrorFormationState)) {
-		state = string(DeleteErrorFormationState)
+	if strings.HasSuffix(state, string(DeleteErrorAssignmentState)) {
+		state = string(DeleteErrorAssignmentState)
 	} else if f.isInProgressUnassignState() {
 		state = string(DeletingAssignmentState)
 	}
