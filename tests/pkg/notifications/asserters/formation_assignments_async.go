@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/json"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/json"
 	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
 )
@@ -41,43 +41,44 @@ func (a *FormationAssignmentsAsyncAsserter) AssertExpectations(t *testing.T, ctx
 
 func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, certSecuredGraphQLClient *graphql.Client, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
 	t.Logf("Asserting formation assignments with eventually...")
+	tOnce := testingx.NewLoggerWithOnlyOnce(t)
 	require.Eventually(t, func() (isOkay bool) {
-		t.Logf("Getting formation assignments...")
+		tOnce.Logf("Getting formation assignments...")
 		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
 		if expectedAssignmentsCount != assignmentsPage.TotalCount {
-			t.Logf("The expected assignments count: %d didn't match the actual: %d", expectedAssignmentsCount, assignmentsPage.TotalCount)
+			tOnce.Logf("The expected assignments count: %d didn't match the actual: %d", expectedAssignmentsCount, assignmentsPage.TotalCount)
 			return
 		}
-		t.Logf("There is/are: %d assignment(s), assert them with the expected ones...", assignmentsPage.TotalCount)
+		tOnce.Logf("There is/are: %d assignment(s), assert them with the expected ones...", assignmentsPage.TotalCount)
 
 		assignments := assignmentsPage.Data
 		for _, assignment := range assignments {
 			sourceAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
 			if !ok {
-				t.Logf("Could not find expectations for assignment with ID: %q and source ID: %q", assignment.ID, assignment.Source)
+				tOnce.Logf("Could not find expectations for assignment with ID: %q and source ID: %q", assignment.ID, assignment.Source)
 				return
 			}
 			assignmentExpectation, ok := sourceAssignmentsExpectations[assignment.Target]
 			if !ok {
-				t.Logf("Could not find expectations for assignment with ID: %q, source ID: %q and target ID: %q", assignment.ID, assignment.Source, assignment.Target)
+				tOnce.Logf("Could not find expectations for assignment with ID: %q, source ID: %q and target ID: %q", assignment.ID, assignment.Source, assignment.Target)
 				return
 			}
 			if assignmentExpectation.State != assignment.State {
-				t.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
+				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
 				return
 			}
 			if isEqual := json.AssertJSONStringEquality(t, assignmentExpectation.Error, assignment.Error); !isEqual {
-				t.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
+				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
 				return
 			}
 			if isEqual := json.AssertJSONStringEquality(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
-				t.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
+				tOnce.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
 				return
 			}
 		}
 
-		t.Logf("Successfully asserted formation asssignments asynchronously")
+		tOnce.Logf("Successfully asserted formation asssignments asynchronously")
 		return true
 	}, a.timeout, a.tick)
 }

@@ -18,6 +18,48 @@ func NewT(t *testing.T) *T {
 	}
 }
 
+type Logger interface {
+	Log(args ...any)
+	Logf(format string, args ...any)
+	Errorf(format string, args ...interface{})
+	FailNow()
+}
+
+type LoggerWithOnlyOnce struct {
+	logger        Logger
+	alreadyLogged map[string]bool
+}
+
+func NewLoggerWithOnlyOnce(logger Logger) LoggerWithOnlyOnce {
+	return LoggerWithOnlyOnce{
+		logger:        logger,
+		alreadyLogged: map[string]bool{},
+	}
+}
+
+func (l *LoggerWithOnlyOnce) Log(log string, args ...any) {
+	if l.alreadyLogged[log] {
+		return
+	}
+	l.alreadyLogged[log] = true
+	l.logger.Log(append([]any{log}, args...)...)
+}
+
+func (l *LoggerWithOnlyOnce) Logf(format string, args ...any) {
+	if l.alreadyLogged[format] {
+		return
+	}
+	l.alreadyLogged[format] = true
+	l.logger.Logf(format, args...)
+}
+
+func (l LoggerWithOnlyOnce) Errorf(format string, args ...interface{}) {
+	l.logger.Errorf(format, args)
+}
+func (l LoggerWithOnlyOnce) FailNow() {
+	l.logger.FailNow()
+}
+
 func (t *T) Run(name string, f func(t *testing.T)) bool {
 	newF := f
 
