@@ -912,12 +912,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	// FA status update request, he will have the latest state of the formation assignment even when we didn't finish the sync notification processing.
 	if err := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
 		for _, ia := range initialAssignmentsData {
-			if ia.State != string(model.InstanceCreatorDeletingAssignmentState) {
-				if ia.State == string(model.InstanceCreatorDeleteErrorAssignmentState) {
-					ia.State = string(model.InstanceCreatorDeletingAssignmentState)
-				} else {
-					ia.State = string(model.DeletingAssignmentState)
-				}
+			if ia.SetStateToDeleting() {
 				log.C(ctx).Infof("Update and persist in the DB '%s' state of formation assignment with ID: '%s'", ia.State, ia.ID)
 				formationassignment.ResetAssignmentConfigAndError(ia)
 				if err := s.formationAssignmentService.Update(ctxWithTransact, ia.ID, ia); err != nil {
@@ -1116,13 +1111,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			}
 		}
 
-		resyncableFAs, err := s.formationAssignmentService.GetAssignmentsForFormationWithStates(ctxWithTransact, tenantID, formationID,
-			[]string{string(model.InitialAssignmentState),
-				string(model.DeletingAssignmentState),
-				string(model.InstanceCreatorDeletingAssignmentState),
-				string(model.CreateErrorAssignmentState),
-				string(model.DeleteErrorAssignmentState),
-				string(model.InstanceCreatorDeleteErrorAssignmentState)})
+		resyncableFAs, err := s.formationAssignmentService.GetAssignmentsForFormationWithStates(ctxWithTransact, tenantID, formationID, model.ResynchronizableFormationAssignmentStates)
 		if err != nil {
 			return errors.Wrap(err, "while getting formation assignments with synchronizing and error states")
 		}
@@ -1135,11 +1124,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 		resyncableFormationAssignments = resyncableFAs
 
 		for _, fa := range resyncableFormationAssignments {
-			operation := model.AssignFormation
-			if fa.State == string(model.DeleteErrorAssignmentState) || fa.State == string(model.DeletingAssignmentState) ||
-				fa.State == string(model.InstanceCreatorDeleteErrorAssignmentState) || fa.State == string(model.InstanceCreatorDeletingAssignmentState) {
-				operation = model.UnassignFormation
-			}
+			operation := fa.GetOperation()
 			var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
 			notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, fa, operation)
 			if err != nil {
@@ -1168,11 +1153,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			if notificationForFA != nil {
 				faClone := fa.Clone()
 				if operation == model.UnassignFormation {
-					if faClone.State != string(model.InstanceCreatorDeletingAssignmentState) && faClone.State != string(model.InstanceCreatorDeleteErrorAssignmentState) {
-						faClone.State = string(model.DeletingAssignmentState)
-					} else if faClone.State == string(model.InstanceCreatorDeleteErrorAssignmentState) {
-						faClone.State = string(model.InstanceCreatorDeletingAssignmentState)
-					}
+					faClone.SetStateToDeleting()
 					formationassignment.ResetAssignmentConfigAndError(faClone)
 				} else if operation == model.AssignFormation {
 					faClone.State = string(model.InitialAssignmentState)

@@ -2594,12 +2594,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 	transactionError := errors.New("transaction error")
 	txGen := txtest.NewTransactionContextGenerator(transactionError)
 
-	allStates := []string{string(model.InitialAssignmentState),
-		string(model.DeletingAssignmentState),
-		string(model.InstanceCreatorDeletingAssignmentState),
-		string(model.CreateErrorAssignmentState),
-		string(model.DeleteErrorAssignmentState),
-		string(model.InstanceCreatorDeleteErrorAssignmentState)}
+	allStates := model.ResynchronizableFormationAssignmentStates
 
 	testFormation := fixFormationModelWithState(model.ReadyFormationState)
 	formationInCreateErrorState := fixFormationModelWithStateAndAssignmentError(t, model.CreateErrorFormationState, testErr.Error(), formationassignment.ClientError)

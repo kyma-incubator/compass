@@ -618,12 +618,7 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 	if formationAssignment == nil {
 		return &webhook.FormationAssignment{}
 	}
-	state := formationAssignment.State
-	if state == string(model.InstanceCreatorDeleteErrorAssignmentState) {
-		state = string(model.DeleteErrorFormationState)
-	} else if state == string(model.InstanceCreatorDeletingAssignmentState) {
-		state = string(model.DeletingAssignmentState)
-	}
+	state := formationAssignment.GetNotificationState()
 	return &webhook.FormationAssignment{
 		ID:          formationAssignment.ID,
 		FormationID: formationAssignment.FormationID,

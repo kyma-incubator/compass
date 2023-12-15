@@ -441,7 +441,7 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 		}
 
 		for _, fa := range formationAssignments {
-			if isInErrorState(fa.State) {
+			if fa.IsInErrorState() {
 				condition = graphql.FormationStatusConditionError
 
 				if fa.Error == nil {
@@ -459,7 +459,7 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 					Message:      assignmentError.Error.Message,
 					ErrorCode:    int(assignmentError.Error.ErrorCode),
 				})
-			} else if condition != graphql.FormationStatusConditionError && isInProgressState(fa.State) {
+			} else if condition != graphql.FormationStatusConditionError && fa.IsInErrorState() {
 				condition = graphql.FormationStatusConditionInProgress
 			}
 		}
@@ -498,15 +498,4 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 	}
 
 	return r.conv.ToGraphQL(updatedFormation)
-}
-
-func isInErrorState(state string) bool {
-	return state == string(model.CreateErrorAssignmentState) || state == string(model.DeleteErrorAssignmentState) || state == string(model.InstanceCreatorDeleteErrorAssignmentState)
-}
-
-func isInProgressState(state string) bool {
-	return state == string(model.InitialAssignmentState) ||
-		state == string(model.DeletingAssignmentState) ||
-		state == string(model.ConfigPendingAssignmentState) ||
-		state == string(model.InstanceCreatorDeletingAssignmentState)
 }
