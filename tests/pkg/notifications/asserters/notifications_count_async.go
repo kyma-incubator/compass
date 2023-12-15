@@ -25,8 +25,8 @@ func NewNotificationsCountAsyncAsserter(expectedNotificationsCount int, op strin
 			externalServicesMockMtlsSecuredURL: externalServicesMockMtlsSecuredURL,
 			client:                             client,
 		},
-		timeout: time.Second * 8,
-		tick:    time.Millisecond * 50,
+		timeout: eventuallyTimeout,
+		tick:    eventuallyTick,
 	}
 }
 

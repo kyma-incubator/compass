@@ -95,6 +95,8 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 	}
 }
 
+// GenerateFormationAssignmentPair generates a formation assignment pair with operation given an assignment and reverse assignment
+// If there is a missing reverse assignment, it still generates a pair with an empty ReverseAssignmentReqMapping
 func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*AssignmentMappingPairWithOperation, error) {
 	log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
 	notificationReq, err := fan.GenerateFormationAssignmentNotification(ctx, fa, operation)

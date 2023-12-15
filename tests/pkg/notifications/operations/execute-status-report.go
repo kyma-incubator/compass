@@ -35,6 +35,7 @@ type ExecuteStatusReportOperation struct {
 	assignmentSource                   string
 	assignmentTarget                   string
 	config                             string
+	state                              string
 	statusCode                         int
 	asserters                          []asserters.Asserter
 }
@@ -42,6 +43,7 @@ type ExecuteStatusReportOperation struct {
 func NewExecuteStatusReportOperation() *ExecuteStatusReportOperation {
 	return &ExecuteStatusReportOperation{
 		statusCode: http.StatusOK,
+		state:      "READY",
 	}
 }
 
@@ -71,6 +73,11 @@ func (o *ExecuteStatusReportOperation) WithTenant(tenant string) *ExecuteStatusR
 	return o
 }
 
+func (o *ExecuteStatusReportOperation) WithState(state string) *ExecuteStatusReportOperation {
+	o.state = state
+	return o
+}
+
 func (o *ExecuteStatusReportOperation) WithAsserters(asserters ...asserters.Asserter) *ExecuteStatusReportOperation {
 	for i, _ := range asserters {
 		o.asserters = append(o.asserters, asserters[i])
@@ -91,7 +98,7 @@ func (o *ExecuteStatusReportOperation) Execute(t *testing.T, ctx context.Context
 	faAsyncStatusAPIURL := strings.Replace(o.externalServicesMockMtlsSecuredURL, fmt.Sprintf("{%s}", formationIDPathParam), formationID, 1)
 	faAsyncStatusAPIURL = strings.Replace(faAsyncStatusAPIURL, fmt.Sprintf("{%s}", formationAssignmentIDPathParam), formationAssignmentID, 1)
 	reqBody := FormationAssignmentRequestBody{
-		State: "READY",
+		State: o.state,
 	}
 	if o.config != "" {
 		reqBody.Configuration = json.RawMessage(o.config)
