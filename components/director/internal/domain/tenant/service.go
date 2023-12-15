@@ -266,7 +266,7 @@ func (s *service) DeleteTenantAccessForResourceRecursively(ctx context.Context, 
 
 	ta := s.converter.TenantAccessToEntity(tenantAccess)
 
-	if err := repo.DeleteTenantAccessRecursively(ctx, m2mTable, tenantAccess.InternalTenantID, []string{tenantAccess.ResourceID}); err != nil {
+	if err := repo.DeleteTenantAccessRecursively(ctx, m2mTable, tenantAccess.InternalTenantID, []string{tenantAccess.ResourceID}, tenantAccess.InternalTenantID); err != nil {
 		return errors.Wrapf(err, "while deleting tenant acccess for resource type %q with ID %q for tenant %q", string(resourceType), ta.ResourceID, ta.TenantID)
 	}
 

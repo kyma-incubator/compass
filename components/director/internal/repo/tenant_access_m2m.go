@@ -23,12 +23,12 @@ const (
 	// M2MSourceColumn is the column name of the source in each tenant access table / view.
 	M2MSourceColumn = "source"
 
-	// CreateSingleTenantAccessQuery sda
+	// CreateSingleTenantAccessQuery is a SQL query that creates a tenant access record
 	CreateSingleTenantAccessQuery = `INSERT INTO %s ( %s ) VALUES ( %s ) ON CONFLICT ON CONSTRAINT tenant_applications_pkey DO NOTHING`
 
-	// RecursiveCreateTenantAccessCTEQuery is a recursive SQL query that creates a tenant access record for a tenant and all its parents.
+	// RecursiveCreateTenantAccessCTEQuery is a recursive SQL query that creates a tenant access record for a tenant and all its parents.// %s::uuid AS child_id
 	RecursiveCreateTenantAccessCTEQuery = `WITH RECURSIVE parents AS
-                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id
+                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST(:source AS uuid) AS child_id
                     FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
                     WHERE id=:tenant_id
                     UNION ALL
@@ -42,7 +42,7 @@ const (
 
 	// RecursiveDeleteTenantAccessCTEQuery is a recursive SQL query that deletes tenant accesses based on given conditions for a tenant and all its parents.
 	RecursiveDeleteTenantAccessCTEQuery = `WITH RECURSIVE parents AS
-                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id
+                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST(? AS uuid) AS child_id
                     FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
                     WHERE id = ?
                     UNION ALL
@@ -111,6 +111,9 @@ func CreateSingleTenantAccess(ctx context.Context, m2mTable string, tenantAccess
 // CreateTenantAccessRecursively creates the given tenantAccess in the provided m2mTable while making sure to recursively
 // add it to all the parents of the given tenant. In case of conflict the entry is not updated
 func CreateTenantAccessRecursively(ctx context.Context, m2mTable string, tenantAccess *TenantAccess) error {
+	if tenantAccess.Source == "" {
+		tenantAccess.Source = tenantAccess.TenantID
+	}
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
@@ -125,9 +128,13 @@ func CreateTenantAccessRecursively(ctx context.Context, m2mTable string, tenantA
 }
 
 // DeleteTenantAccessRecursively deletes all the accesses to the provided resource IDs for the given tenant and all its parents.
-func DeleteTenantAccessRecursively(ctx context.Context, m2mTable string, tenant string, resourceIDs []string) error {
+func DeleteTenantAccessRecursively(ctx context.Context, m2mTable string, tenant string, resourceIDs []string, childTenant string) error {
 	if len(resourceIDs) == 0 {
 		return errors.New("resourceIDs cannot be empty")
+	}
+
+	if childTenant == "" {
+		childTenant = tenant
 	}
 
 	persist, err := persistence.FromCtx(ctx)
@@ -136,6 +143,7 @@ func DeleteTenantAccessRecursively(ctx context.Context, m2mTable string, tenant 
 	}
 
 	args := make([]interface{}, 0, len(resourceIDs)+1)
+	args = append(args, childTenant)
 	args = append(args, tenant)
 
 	inCond := NewInConditionForStringValues(M2MResourceIDColumn, resourceIDs)

@@ -2173,7 +2173,7 @@ func TestPgRepository_Update(t *testing.T) {
 						WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
 
 					dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
-						WithArgs(testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
+						WithArgs(testID, testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 					dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM `)+`(.+)`+regexp.QuoteMeta(` WHERE tenant_id = $1 AND source = $2`)).
 						WithArgs(testID, testParentID).
@@ -2190,7 +2190,7 @@ func TestPgRepository_Update(t *testing.T) {
 					dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
 						WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
 					dbMock.ExpectExec(fixInsertTenantAccessesQuery()).
-						WithArgs(testParentID2, tenantAccesses[0].ResourceID, tenantAccesses[0].Owner).WillReturnResult(sqlmock.NewResult(-1, 1))
+						WithArgs(testID, testParentID2, tenantAccesses[0].ResourceID, tenantAccesses[0].Owner).WillReturnResult(sqlmock.NewResult(-1, 1))
 				}
 
 				return db, dbMock
@@ -2255,7 +2255,7 @@ func TestPgRepository_Update(t *testing.T) {
 					WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
 
 				dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
-					WithArgs(testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
+					WithArgs(testID, testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 				dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM `)+`(.+)`+regexp.QuoteMeta(` WHERE tenant_id = $1 AND source = $2`)).
 					WithArgs(testID, testParentID).WillReturnError(testError)
@@ -2509,7 +2509,7 @@ func TestPgRepository_Update(t *testing.T) {
 					WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
 
 				dbMock.ExpectExec(fixInsertTenantAccessesQuery()).
-					WithArgs(testParentID2, tenantAccesses[0].ResourceID, tenantAccesses[0].Owner).
+					WithArgs(testID, testParentID2, tenantAccesses[0].ResourceID, tenantAccesses[0].Owner).
 					WillReturnError(testError)
 
 				return db, dbMock

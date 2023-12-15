@@ -1378,7 +1378,7 @@ func TestService_CreateTenantAccessForResourceRecursively(t *testing.T) {
 				db, dbMock := testdb.MockDatabase(t)
 
 				dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS
-                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id
+                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST(? AS uuid) AS child_id
                     FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
                     WHERE id=?
                     UNION ALL
@@ -1389,7 +1389,7 @@ func TestService_CreateTenantAccessForResourceRecursively(t *testing.T) {
                                                                                                                  OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object'))
 					)
 			ON CONFLICT ( tenant_id, id, source ) DO NOTHING`)).
-					WithArgs(testInternal, testID, true).
+					WithArgs(testInternal, testInternal, testID, true).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 				return db, dbMock
 			},
@@ -1461,15 +1461,15 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
 				db, dbMock := testdb.MockDatabase(t)
 				dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS
-                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id
+                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST($1 AS uuid) AS child_id
                     FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
-                    WHERE id = $1
+                    WHERE id = $2
                     UNION ALL
                     SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
                     FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
                                                      INNER JOIN parents p on p.parent_id = t2.id)
-			DELETE FROM tenant_applications WHERE id IN ($2) AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)`)).
-					WithArgs(testInternal, testID).
+			DELETE FROM tenant_applications WHERE id IN ($3) AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)`)).
+					WithArgs(testInternal, testInternal, testID).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 				return db, dbMock
 			},

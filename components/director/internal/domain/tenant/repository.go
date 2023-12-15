@@ -438,7 +438,7 @@ func (r *pgRepository) removeParent(ctx context.Context, internalParentID, inter
 		}
 
 		if len(resourceIDs) > 0 {
-			if err := repo.DeleteTenantAccessRecursively(ctx, m2mTable, internalParentID, resourceIDs); err != nil {
+			if err := repo.DeleteTenantAccessRecursively(ctx, m2mTable, internalParentID, resourceIDs, internalChildID); err != nil {
 				return errors.Wrapf(err, "while deleting tenant accesses for the old parent %s of the tenant %s", internalParentID, internalChildID)
 			}
 		}
