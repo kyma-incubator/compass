@@ -456,7 +456,7 @@ func (b FormationRequestBody) Validate() error {
 func (h *Handler) processFormationAssignmentUnassignStatusUpdate(ctx context.Context, fa *model.FormationAssignment, statusReport *statusreport.NotificationStatusReport) (bool, error) {
 	stateFromStatusReport := model.FormationAssignmentState(statusReport.State)
 
-	if !isRegularUnassignAssignmentState(fa) {
+	if !fa.IsInRegularUnassignState() {
 		consumerInfo, err := consumer.LoadFromContext(ctx)
 		if err != nil {
 			return false, err
@@ -710,12 +710,6 @@ func determineOperationBasedOnFormationAssignmentState(fa *model.FormationAssign
 		return model.AssignFormation
 	}
 	return model.UnassignFormation
-}
-
-func isRegularUnassignAssignmentState(fa *model.FormationAssignment) bool {
-	unassignOperationStates := []string{string(model.DeletingAssignmentState),
-		string(model.DeleteErrorAssignmentState)}
-	return str.ValueIn(fa.State, unassignOperationStates)
 }
 
 func (mr *malformedRequest) Error() string {

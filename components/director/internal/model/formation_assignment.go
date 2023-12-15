@@ -6,6 +6,7 @@ import (
 	"unsafe"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
 // FormationAssignmentType describes possible source and target types
@@ -141,6 +142,13 @@ func (f *FormationAssignment) IsInErrorState() bool {
 // IsInProgressState returns if the formation assignment is in progress state
 func (f *FormationAssignment) IsInProgressState() bool {
 	return f.isInProgressAssignState() || f.isInProgressUnassignState()
+}
+
+// IsInRegularUnassignState returns if the formation assignment is in regular unassign stage
+func (f *FormationAssignment) IsInRegularUnassignState() bool {
+	unassignOperationStates := []string{string(DeletingAssignmentState),
+		string(DeleteErrorAssignmentState)}
+	return str.ValueIn(f.State, unassignOperationStates)
 }
 
 // SetStateToDeleting sets the state to deleting and returns if the formation assignment is updated
