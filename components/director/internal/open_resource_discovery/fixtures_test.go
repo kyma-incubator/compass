@@ -45,6 +45,7 @@ const (
 	capability2ORDID            = "sap2.foo.bar:capability:fieldExtensibility:v1"
 	integrationDependency1ORDID = "sap.foo.bar:integrationDependency:CustomerOrder:v1"
 	integrationDependency2ORDID = "sap2.foo.bar:integrationDependency:CustomerOrder:v1"
+	dataProductORDID            = "sap.foo.bar:dataProduct:CustomerOrder:v1"
 
 	whID                     = "testWh"
 	tenantID                 = "testTenant"
@@ -266,6 +267,24 @@ var (
 		},
 		{
 		  "correlationId": "sap.s4:csnEntity:CostCenter_v1"
+		}
+	  ]`)
+
+	dataProductEntityTypes = `["sap.odm:entityType:CustomerOrder:v1","sap.odm:entityType:BusinessPartner:v1"]`
+
+	dataProductOutputPorts = removeWhitespace(`[
+		{
+			"ordId": "sap.cic:apiResource:RetailTransactionOData:v1"
+		},
+		{
+			"ordId": "sap.cic:eventResource:RawCustomerOrder:v2"
+		}
+	  ]`)
+
+	dataProductLinks = removeWhitespace(`[
+		{
+  			"type": "support",
+  			"url": "https://support.sap.com/CIC_DP_RT/issue/"
 		}
 	  ]`)
 
@@ -958,6 +977,41 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Visibility:          "public",
 				LastUpdate:          str.Ptr("2022-01-26T15:47:04+00:00"),
 				DocumentationLabels: json.RawMessage(documentLabels),
+				VersionInput: &model.VersionInput{
+					Value: "1.1.1",
+				},
+			},
+		},
+		DataProducts: []*model.DataProductInput{
+			{
+				OrdID:               str.Ptr(dataProductORDID),
+				LocalTenantID:       str.Ptr(localTenantID),
+				CorrelationIDs:      json.RawMessage(correlationIDs),
+				Title:               "Data Product Title",
+				ShortDescription:    str.Ptr("Short description for Data Product"),
+				Description:         str.Ptr("Description for Data Product"),
+				OrdPackageID:        str.Ptr(packageORDID),
+				LastUpdate:          str.Ptr("2023-12-14T15:47:04+00:00"),
+				Visibility:          str.Ptr("public"),
+				ReleaseStatus:       str.Ptr("active"),
+				Disabled:            &boolPtr,
+				SunsetDate:          nil,
+				Successors:          nil,
+				ChangeLogEntries:    json.RawMessage(changeLogEntries),
+				Type:                "base",
+				Category:            "other",
+				EntityTypes:         json.RawMessage(dataProductEntityTypes),
+				InputPorts:          nil,
+				OutputPorts:         json.RawMessage(dataProductOutputPorts),
+				Responsible:         str.Ptr("sap:ach:CIC-DP-CO"),
+				DataProductLinks:    json.RawMessage(dataProductLinks),
+				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+				LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
+				Tags:                json.RawMessage(`["dataProductTestTag"]`),
+				Labels:              json.RawMessage(labels),
+				DocumentationLabels: json.RawMessage(documentLabels),
+				SystemInstanceAware: &boolPtr,
 				VersionInput: &model.VersionInput{
 					Value: "1.1.1",
 				},

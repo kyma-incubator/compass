@@ -435,7 +435,7 @@ var (
 	  ]`
 
 	invalidCorrelationIDsElement          = `["foo.bar.baz:123456", "wrongID"]`
-	invalidCorrelationIDsNonStringElement = `["foo.bar.baz:123456", 992]`
+	invalidCorrelationIDsNonStringElement = `[1, "foo.bar.baz:123456", 992]`
 
 	invalidEntryPointURI               = `["invalidUrl"]`
 	invalidEntryPointsDueToDuplicates  = `["/test/v1", "/test/v1"]`
@@ -7439,7 +7439,7 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Exceed length of `title` field for Integration Dependency",
+			Name: "Exceeded length of `title` field for Integration Dependency",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.PolicyLevel = nil
@@ -7465,7 +7465,7 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Exceed length of `title` field when document policy is sap:core:v1 for Integration Dependency",
+			Name: "Exceeded length of `title` field when document policy is sap:core:v1 for Integration Dependency",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.PolicyLevel = str.Ptr(policyLevel)
@@ -8158,7 +8158,7 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 			}
 
 			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
-
+			fmt.Println(err)
 			if test.AfterTest != nil {
 				test.AfterTest()
 			}
@@ -8169,6 +8169,124 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDocuments_ValidateDataProduct(t *testing.T) {
+	var tests = []struct {
+		Name              string
+		DocumentProvider  func() []*ord.Document
+		ExpectedToBeValid bool
+		AfterTest         func()
+	}{
+		{
+			Name: "Missing `ordID` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].OrdID = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `ordID` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].OrdID = str.Ptr(invalidOrdID)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `ordID` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].OrdID = str.Ptr(strings.Repeat("a", invalidOrdIDLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `localTenantID` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].LocalTenantID = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Exceeded length of `localTenantID` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].LocalTenantID = str.Ptr(strings.Repeat("a", invalidLocalTenantIDLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `localTenantID` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].LocalTenantID = str.Ptr("")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it is invalid JSON for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].CorrelationIDs = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `correlationIds` field when it isn't a JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].CorrelationIDs = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `correlationIds` field when the JSON array is empty for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].CorrelationIDs = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `correlationIds` field when it contains non string value for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsNonStringElement)
+
+				return []*ord.Document{doc}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			docs := ord.Documents{test.DocumentProvider()[0]}
+			resourcesFromDB := ord.ResourcesFromDB{
+				APIs:                    apisFromDB,
+				Events:                  eventsFromDB,
+				IntegrationDependencies: integrationDependenciesFromDB,
+				Packages:                pkgsFromDB,
+				Bundles:                 bndlsFromDB,
+			} // add only data products?
+
+			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
+			fmt.Println(err)
+			if test.AfterTest != nil {
+				test.AfterTest()
+			}
+			if test.ExpectedToBeValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+
 }
 
 func TestDocuments_ValidateProduct(t *testing.T) {
