@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -198,6 +196,7 @@ func fixIntegrationDependencyInputModelWithPackageOrdID(packageOrdID string) mod
 func fixGQLIntegrationDependencyInputWithPackageAndWithoutProperties(packageOrdID string) *graphql.IntegrationDependencyInput {
 	return &graphql.IntegrationDependencyInput{
 		Name:          title,
+		OrdID:         str.Ptr(ordID),
 		PartOfPackage: str.Ptr(packageOrdID),
 		Description:   str.Ptr(description),
 		Aspects: []*graphql.AspectInput{
@@ -215,7 +214,7 @@ func fixGQLIntegrationDependencyInputWithPackageAndWithoutProperties(packageOrdI
 func fixGQLIntegrationDependencyInputWithPackageAndWithProperties(appNamespace, packageOrdID string) *graphql.IntegrationDependencyInput {
 	return &graphql.IntegrationDependencyInput{
 		Name:          title,
-		OrdID:         str.Ptr(fmt.Sprintf("%s:integrationDependency:%s:v1", appNamespace, strings.ToUpper(title))),
+		OrdID:         str.Ptr(ordID),
 		Mandatory:     &mandatory,
 		Visibility:    str.Ptr(publicVisibility),
 		ReleaseStatus: str.Ptr(releaseStatus),
@@ -238,7 +237,7 @@ func fixGQLIntegrationDependencyWithGeneratedProperties(appNamespace, aspectID, 
 		Name:          title,
 		Description:   str.Ptr(description),
 		Mandatory:     &mandatory,
-		OrdID:         str.Ptr(fmt.Sprintf("%s:integrationDependency:%s:v1", appNamespace, strings.ToUpper(title))),
+		OrdID:         str.Ptr(ordID),
 		PartOfPackage: str.Ptr(packageOrdID),
 		Visibility:    str.Ptr(publicVisibility),
 		ReleaseStatus: str.Ptr(releaseStatus),

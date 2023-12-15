@@ -3,8 +3,6 @@ package integrationdependency
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -128,20 +126,13 @@ func (r *Resolver) AddIntegrationDependencyToApplication(ctx context.Context, ap
 		return nil, err
 	}
 
-	versionValue := defaultVersionValue
-	if in.Version != nil {
-		// the input version value comes in this format: "1.0.0", but we need v1
-		versionValue = fmt.Sprintf("v%s", strings.Split(in.Version.Value, ".")[0])
-	}
-	// generate values which are mandatory by ORD spec if they are missing
-	in.OrdID = getOrdID(in.OrdID, appNamespace, in.Name, versionValue)
 	in.Visibility = getVisibility(in.Visibility)
 	in.ReleaseStatus = getReleaseStatus(in.ReleaseStatus)
 	in.Mandatory = getMandatory(in.Mandatory)
 
 	var packageID string
 	if in.PartOfPackage == nil {
-		pkgOrdID := fmt.Sprintf("%s:%s:%s", appNamespace, manuallyAddedIntegrationDependenciesPackageOrdID, versionValue)
+		pkgOrdID := fmt.Sprintf("%s:%s:%s", appNamespace, manuallyAddedIntegrationDependenciesPackageOrdID, defaultVersionValue)
 		log.C(ctx).Infof("Part of package field is missing. Creating a package with ordID %q for application with id %q", pkgOrdID, appID)
 
 		packageID, err = r.createPackage(ctx, appID, pkgOrdID)
@@ -305,15 +296,20 @@ func (r *Resolver) getApplicationNamespace(ctx context.Context, appID string) (s
 	if app.ApplicationTemplateID != nil {
 		appTemplate, err := r.appTemplateSvc.Get(ctx, *app.ApplicationTemplateID)
 		if err != nil {
-			return "", errors.Wrapf(err, "failed to retrieve application template for application with ID %q", appID)
+			return "", errors.Wrapf(err, "failed to retrieve application template for application with id %q", appID)
 		}
 		if appTemplate.ApplicationNamespace != nil {
 			return *appTemplate.ApplicationNamespace, nil
 		}
-		return "", errors.Errorf("application namespace is missing for both application template with ID %q and application with id %q", appTemplate.ID, appID)
+
+		log.C(ctx).Infof("application namespace is missing for both application template with id %q and application with id %q", appTemplate.ID, appID)
+
+		return "", nil
 	}
 
-	return "", errors.Errorf("application namespace is missing for application %q", appID)
+	log.C(ctx).Infof("application namespace is missing for application with id %q", appID)
+
+	return "", nil
 }
 
 func (r *Resolver) createPackage(ctx context.Context, appID, pkgOrdID string) (string, error) {
@@ -370,14 +366,6 @@ func searchInSlice(length int, f func(i int) bool) (int, bool) {
 
 func equalStrings(first, second *string) bool {
 	return first != nil && second != nil && *first == *second
-}
-
-func getOrdID(inputOrdID *string, appNamespace, name, versionValue string) *string {
-	if inputOrdID == nil {
-		name = strings.ToUpper(strings.ReplaceAll(name, " ", ""))
-		inputOrdID = str.Ptr(fmt.Sprintf("%s:%s:%s:%s", appNamespace, integrationDependencyKeyWord, name, versionValue))
-	}
-	return inputOrdID
 }
 
 func getVisibility(inputVisibility *string) *string {

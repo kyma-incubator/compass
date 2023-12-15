@@ -117,11 +117,6 @@ func TestIntegrationDependencyInput_Validate_OrdID(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name:          "Nil pointer",
-			Value:         nil,
-			ExpectedValid: true,
-		},
-		{
 			Name:          "Empty string",
 			Value:         str.Ptr(inputvalidationtest.EmptyString),
 			ExpectedValid: false,
@@ -652,7 +647,8 @@ func TestAspectEventDefinitionSubsetInput_Validate_EventType(t *testing.T) {
 
 func fixValidIntegrationDependencyInput() graphql.IntegrationDependencyInput {
 	return graphql.IntegrationDependencyInput{
-		Name: inputvalidationtest.ValidName,
+		Name:  inputvalidationtest.ValidName,
+		OrdID: str.Ptr("app.test:integrationDependency:INTDEP1:v1"),
 	}
 }
 
