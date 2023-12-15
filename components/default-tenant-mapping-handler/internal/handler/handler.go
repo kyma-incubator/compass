@@ -4,7 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/default-tenant-mapping-handler/internal/types"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
@@ -28,7 +32,7 @@ type DefaultTenantMappingHandler struct {
 	mtlsHTTPClient mtlsHTTPClient
 }
 
-// NewHandler creates an DefaultTenantMappingHandler
+// NewHandler creates a DefaultTenantMappingHandler
 func NewHandler(mtlsHTTPClient mtlsHTTPClient) *DefaultTenantMappingHandler {
 	return &DefaultTenantMappingHandler{
 		mtlsHTTPClient: mtlsHTTPClient,
@@ -40,6 +44,21 @@ func (tmh *DefaultTenantMappingHandler) HandlerFunc(w http.ResponseWriter, r *ht
 	ctx := r.Context()
 
 	log.C(ctx).Info("Default Tenant Mapping Handler was hit...")
+	reqBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.C(ctx).Errorf("Failed to read request body: %v", err)
+		httputils.RespondWithError(ctx, w, http.StatusBadRequest, errors.New("Failed to read request body"))
+		return
+	}
+
+	var tm types.TenantMapping
+	err = json.Unmarshal(reqBody, &tm)
+	if err != nil {
+		log.C(ctx).Errorf("Failed to unmarshal request body: %v", err)
+		httputils.RespondWithError(ctx, w, http.StatusBadRequest, errors.New("Invalid json"))
+		return
+	}
+	log.C(ctx).Info(tm.String())
 
 	uclStatusAPIUrl := r.Header.Get(locationHeader)
 
@@ -48,7 +67,6 @@ func (tmh *DefaultTenantMappingHandler) HandlerFunc(w http.ResponseWriter, r *ht
 
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
-	log.C(ctx).Info("Default Tenant Mapping Handler reports status to the UCL status API...")
 	go tmh.callUCLStatusAPI(uclStatusAPIUrl, correlationID)
 }
 
@@ -62,14 +80,14 @@ func (tmh *DefaultTenantMappingHandler) callUCLStatusAPI(statusAPIURL, correlati
 	logger := log.C(ctx).WithField(correlationIDKey, correlationID)
 	ctx = log.ContextWithLogger(ctx, logger)
 
-	reqBodyBytes, err := json.Marshal(SuccessResponse{State: readyState})
+	reqBodyBytes, err := json.Marshal(types.SuccessResponse{State: readyState})
 	if err != nil {
 		log.C(ctx).WithError(err).Error("error while marshalling request body")
 		return
 	}
 
 	if statusAPIURL == "" {
-		log.C(ctx).WithError(err).Error("status API URL is empty...")
+		log.C(ctx).Error("status API URL cannot be empty")
 		return
 	}
 
@@ -81,6 +99,7 @@ func (tmh *DefaultTenantMappingHandler) callUCLStatusAPI(statusAPIURL, correlati
 	req.Header.Set(contentTypeHeaderKey, contentTypeApplicationJSON)
 	req = req.WithContext(ctx)
 
+	log.C(ctx).Infof("Default Tenant Mapping Handler reports notification status response to the status API URL: %s", statusAPIURL)
 	resp, err := tmh.mtlsHTTPClient.Do(req)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("error while executing request to the status API")
@@ -88,8 +107,20 @@ func (tmh *DefaultTenantMappingHandler) callUCLStatusAPI(statusAPIURL, correlati
 	}
 	defer closeResponseBody(ctx, resp)
 
-	if resp.StatusCode != http.StatusOK {
-		log.C(ctx).WithError(err).Errorf("status API returned unexpected non OK status code: %d", resp.StatusCode)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.C(ctx).WithError(err).Error("An error occurred while reading status API response")
 		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.C(ctx).WithError(err).Errorf("An error occurred while calling UCL status API. Received status: %d and body: %s", resp.StatusCode, body)
+		return
+	}
+}
+
+func closeResponseBody(ctx context.Context, resp *http.Response) {
+	if err := resp.Body.Close(); err != nil {
+		log.C(ctx).Errorf("An error has occurred while closing response body: %v", err)
 	}
 }

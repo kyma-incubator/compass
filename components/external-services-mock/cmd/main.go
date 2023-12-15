@@ -11,6 +11,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/header"
+	panicrecovery "github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
@@ -210,7 +213,7 @@ func exitOnError(err error, context string) {
 func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client, destinationCreatorHandler *destinationcreator.Handler) *http.Server {
 	logger := logrus.New()
 	router := mux.NewRouter()
-	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint))
+	router.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint), header.AttachHeadersToContext())
 
 	router.HandleFunc(healthzEndpoint, health.HandleFunc)
 
@@ -349,7 +352,7 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 
 	selfRegisterHandler := selfreg.NewSelfRegisterHandler(cfg.SelfRegConfig)
 	selfRegRouter := router.PathPrefix(cfg.SelfRegConfig.Path).Subrouter()
-	selfRegRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator))
+	selfRegRouter.Use(correlation.AttachCorrelationIDToContext(), header.AttachHeadersToContext(), log.RequestLogger(), oauthMiddleware(&key.PublicKey, noopClaimsValidator))
 	selfRegRouter.HandleFunc("", selfRegisterHandler.HandleSelfRegPrep).Methods(http.MethodPost)
 	selfRegRouter.HandleFunc(fmt.Sprintf("/{%s}", selfreg.NamePath), selfRegisterHandler.HandleSelfRegCleanup).Methods(http.MethodDelete)
 
@@ -361,7 +364,7 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 
 func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, destinationCreatorHandler *destinationcreator.Handler) *http.Server {
 	router := mux.NewRouter()
-	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint))
+	router.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint), header.AttachHeadersToContext())
 
 	// Healthz handler
 	router.HandleFunc(healthzEndpoint, health.HandleFunc)
