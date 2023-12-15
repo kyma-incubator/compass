@@ -309,8 +309,8 @@ func TestRepository_Create(t *testing.T) {
 			},
 			{
 
-				Query:       regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id=? UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) INSERT INTO tenant_applications ( tenant_id, id, owner, source ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object' OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')) ) ON CONFLICT ( tenant_id, id, source ) DO NOTHING`),
-				Args:        []driver.Value{givenTenant(), givenID(), true},
+				Query:       regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST(? AS uuid) AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id=? UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) INSERT INTO tenant_applications ( tenant_id, id, owner, source ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object' OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')) ) ON CONFLICT ( tenant_id, id, source ) DO NOTHING`),
+				Args:        []driver.Value{givenTenant(), givenTenant(), givenID(), true},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},
@@ -356,8 +356,8 @@ func TestRepository_Create(t *testing.T) {
 			WithArgs(givenID(), nil, appModel.SystemNumber, appModel.LocalTenantID, appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.SystemStatus, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, appModel.ApplicationNamespace, repo.NewNullableStringFromJSONRawMessage(appModel.OrdLabels), appModel.Ready, appModel.CreatedAt, appModel.UpdatedAt, appModel.DeletedAt, appModel.Error, repo.NewNullableStringFromJSONRawMessage(appModel.CorrelationIDs), repo.NewNullableStringFromJSONRawMessage(appModel.Tags), repo.NewNullableStringFromJSONRawMessage(appModel.DocumentationLabels), appModel.TenantBusinessTypeID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id=? UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) INSERT INTO tenant_applications ( tenant_id, id, owner, source ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object' OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')) ) ON CONFLICT ( tenant_id, id, source ) DO NOTHING`)).
-			WithArgs(givenTenant(), givenID(), true).
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST(? AS uuid) AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id=? UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) INSERT INTO tenant_applications ( tenant_id, id, owner, source ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object' OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')) ) ON CONFLICT ( tenant_id, id, source ) DO NOTHING`)).
+			WithArgs(givenTenant(), givenTenant(), givenID(), true).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx = persistence.SaveToContext(ctx, db)
@@ -431,8 +431,8 @@ func TestRepository_Upsert(t *testing.T) {
 				IsSelect: true,
 			},
 			{
-				Query:       regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id=? UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) INSERT INTO tenant_applications ( tenant_id, id, owner, source ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object' OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')) ) ON CONFLICT ( tenant_id, id, source ) DO NOTHING`),
-				Args:        []driver.Value{givenTenant(), givenID(), true},
+				Query:       regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST(? AS uuid) AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id=? UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) INSERT INTO tenant_applications ( tenant_id, id, owner, source ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object' OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')) ) ON CONFLICT ( tenant_id, id, source ) DO NOTHING`),
+				Args:        []driver.Value{givenTenant(), givenTenant(), givenID(), true},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},
@@ -476,8 +476,8 @@ func TestRepository_TrustedUpsert(t *testing.T) {
 				IsSelect: true,
 			},
 			{
-				Query:       regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, t1.id AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id=? UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) INSERT INTO tenant_applications ( tenant_id, id, owner, source ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object' OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')) ) ON CONFLICT ( tenant_id, id, source ) DO NOTHING`),
-				Args:        []driver.Value{givenTenant(), givenID(), true},
+				Query:       regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST(? AS uuid) AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id=? UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) INSERT INTO tenant_applications ( tenant_id, id, owner, source ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object' OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')) ) ON CONFLICT ( tenant_id, id, source ) DO NOTHING`),
+				Args:        []driver.Value{givenTenant(), givenTenant(), givenID(), true},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},
