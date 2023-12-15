@@ -156,6 +156,7 @@ func (f *FormationAssignment) SetStateToDeleting() bool {
 	return true
 }
 
+// GetOperation returns the formation operation that is determined based on the state of the assignment
 func (f *FormationAssignment) GetOperation() FormationOperation {
 	operation := AssignFormation
 	if f.State == string(DeleteErrorAssignmentState) || f.State == string(DeletingAssignmentState) ||
@@ -165,6 +166,8 @@ func (f *FormationAssignment) GetOperation() FormationOperation {
 	return operation
 }
 
+// GetNotificationState returns the assignment state that is to be sent for notifications
+// and is exposed to the GraphQL layer
 func (f *FormationAssignment) GetNotificationState() string {
 	state := f.State
 	if strings.HasSuffix(state, string(DeleteErrorFormationState)) {
