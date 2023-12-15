@@ -784,7 +784,11 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 			},
 		}
-		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, time.Second*8, eventuallyTick)
+
+		// Formation creation actually sets the formation to READY state before sending notifications, so in some cases the timeout can be insufficient.
+		// The asynchronous assert passes whenever the formation is visibly READY, and we reach this assert,
+		// which usually starts after notifications are sent, but in this case it could be before/during sending of the notifications.
+		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, eventuallyTimeout*2, eventuallyTick)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
