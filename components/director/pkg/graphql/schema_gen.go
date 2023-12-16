@@ -6323,8 +6323,8 @@ input FormationTemplateInput {
 input IntegrationDependencyInput {
 	name: String!
 	description: String
-	ordID: String
-	partOfPackage: String
+	ordID: String!
+	partOfPackage: ID
 	visibility: String
 	releaseStatus: String
 	mandatory: Boolean
@@ -35910,13 +35910,13 @@ func (ec *executionContext) unmarshalInputIntegrationDependencyInput(ctx context
 			}
 		case "ordID":
 			var err error
-			it.OrdID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.OrdID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "partOfPackage":
 			var err error
-			it.PartOfPackage, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.PartOfPackage, err = ec.unmarshalOID2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

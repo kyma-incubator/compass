@@ -60,6 +60,7 @@ func fixIntegrationDependencyInput() graphql.IntegrationDependencyInput {
 	mandatory := false
 	return graphql.IntegrationDependencyInput{
 		Name:          "Int dep name",
+		OrdID:         "sap.foo.bar:integrationDependency:CustomerOrder:v1",
 		Mandatory:     &mandatory,
 		Visibility:    str.Ptr("public"),
 		ReleaseStatus: str.Ptr("active"),

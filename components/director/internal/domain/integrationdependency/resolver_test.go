@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -278,7 +277,7 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			InputObject:     gqlIntDepInputWithPackageAndWithoutGeneratedProps,
 			IntegrationDependencyServiceFn: func() *automock.IntegrationDependencyService {
 				svc := &automock.IntegrationDependencyService{}
-				modelIntDepInput.OrdID = str.Ptr(fmt.Sprintf("%s:integrationDependency:%s:v1", appNamespace, strings.ToUpper(title)))
+
 				modelIntDepInput.Mandatory = &mandatory
 				modelIntDepInput.Visibility = publicVisibility
 				modelIntDepInput.ReleaseStatus = str.Ptr(releaseStatus)
@@ -300,7 +299,7 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
-				modelIntDepInput.OrdID = str.Ptr(fmt.Sprintf("%s:integrationDependency:%s:v1", appNamespace, strings.ToUpper(title)))
+
 				modelIntDepInput.Mandatory = &mandatory
 				modelIntDepInput.Visibility = publicVisibility
 				modelIntDepInput.ReleaseStatus = str.Ptr(releaseStatus)
@@ -376,20 +375,33 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			ExpectedErr:                   nil,
 		},
 		{
-			Name:            "Error when Application does not have app namespace and Application Template does not have app namespace and part of package id is not provided",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			Name:            "Set empty application namespace when Application does not have app namespace and Application Template does not have app namespace and part of package id is not provided",
+			TransactionerFn: txGen.ThatSucceeds,
 			InputObject:     gqlIntDepInputWithoutPackage,
 			IntegrationDependencyServiceFn: func() *automock.IntegrationDependencyService {
-				return &automock.IntegrationDependencyService{}
+				svc := &automock.IntegrationDependencyService{}
+				//modelIntDepInput.OrdPackageID = str.Ptr(":package:manuallyAddedIntegrationDependencies:v1")
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID), modelIntDepInput, mock.Anything).Return(integrationDependencyID, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelIntDep, nil).Once()
+				return svc
 			},
 			AspectServiceFn: func() *automock.AspectService {
-				return &automock.AspectService{}
+				svc := &automock.AspectService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyID, *modelIntDepInput.Aspects[0]).Return(mock.Anything, nil).Once()
+				svc.On("ListByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelAspects, nil).Once()
+				return svc
 			},
 			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
-				return &automock.AspectEventResourceService{}
+				svc := &automock.AspectEventResourceService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, aspectID, *modelIntDepInput.Aspects[0].EventResources[0]).Return(mock.Anything, nil).Once()
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
 			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
-				return &automock.IntegrationDepConverter{}
+				conv := &automock.IntegrationDepConverter{}
+				conv.On("InputFromGraphQL", gqlIntDepInputWithPackage).Return(&modelIntDepInput, nil).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(gqlIntDep, nil).Once()
+				return conv
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
@@ -404,10 +416,13 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 				return svc
 			},
 			PackageServiceFn: func() *automock.PackageService {
-				return &automock.PackageService{}
+				svc := &automock.PackageService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, mock.Anything, mock.Anything).Return(packageID, nil).Once()
+
+				return svc
 			},
-			ExpectedIntegrationDependency: nil,
-			ExpectedErr:                   errors.New("application namespace is missing for both"),
+			ExpectedIntegrationDependency: gqlIntDep,
+			ExpectedErr:                   nil,
 		},
 		{
 			Name:            "Error when getting Application template fails",
@@ -475,36 +490,55 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			ExpectedErr:                   testErr,
 		},
 		{
-			Name:            "Error when Application does not have app namespace and app template",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			InputObject:     &graphql.IntegrationDependencyInput{},
+			Name:            "Set empty application namespace when Application does not have app namespace and app template",
+			TransactionerFn: txGen.ThatSucceeds,
+			InputObject:     gqlIntDepInputWithoutPackage,
 			IntegrationDependencyServiceFn: func() *automock.IntegrationDependencyService {
-				return &automock.IntegrationDependencyService{}
+				svc := &automock.IntegrationDependencyService{}
+				//modelIntDepInput.OrdPackageID = str.Ptr(":package:manuallyAddedIntegrationDependencies:v1")
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID), modelIntDepInput, mock.Anything).Return(integrationDependencyID, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelIntDep, nil).Once()
+				return svc
 			},
 			AspectServiceFn: func() *automock.AspectService {
-				return &automock.AspectService{}
+				svc := &automock.AspectService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, integrationDependencyID, *modelIntDepInput.Aspects[0]).Return(mock.Anything, nil).Once()
+				svc.On("ListByIntegrationDependencyID", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelAspects, nil).Once()
+				return svc
 			},
 			AspectEventResourceServiceFn: func() *automock.AspectEventResourceService {
-				return &automock.AspectEventResourceService{}
+				svc := &automock.AspectEventResourceService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, aspectID, *modelIntDepInput.Aspects[0].EventResources[0]).Return(mock.Anything, nil).Once()
+				svc.On("ListByAspectID", txtest.CtxWithDBMatcher(), aspectID).Return(modelAspectEventResources, nil).Once()
+				return svc
 			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
-				return &automock.IntegrationDepConverter{}
+				conv := &automock.IntegrationDepConverter{}
+				//gqlIntDepInputWithPackage.PartOfPackage = str.Ptr(":package:manuallyAddedIntegrationDependencies:v1")
+				conv.On("InputFromGraphQL", gqlIntDepInputWithPackage).Return(&modelIntDepInput, nil).Once()
+				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(gqlIntDep, nil).Once()
+				return conv
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				modelAppWithoutNamespace.ApplicationTemplateID = nil
 				svc.On("Get", txtest.CtxWithDBMatcher(), appID).Return(modelAppWithoutNamespace, nil).Once()
 
 				return svc
 			},
 			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
-				return &automock.ApplicationTemplateService{}
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), *modelAppWithoutNamespace.ApplicationTemplateID).Return(modelAppTemplateWithoutNamespace, nil).Once()
+
+				return svc
 			},
 			PackageServiceFn: func() *automock.PackageService {
-				return &automock.PackageService{}
+				svc := &automock.PackageService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, mock.Anything, mock.Anything).Return(packageID, nil).Once()
+
+				return svc
 			},
-			ExpectedIntegrationDependency: nil,
-			ExpectedErr:                   errors.New("application namespace is missing for application"),
+			ExpectedIntegrationDependency: gqlIntDep,
+			ExpectedErr:                   nil,
 		},
 		{
 			Name:            "Error when Create Package fails",
@@ -601,7 +635,7 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			},
 			PackageServiceFn: func() *automock.PackageService {
 				svc := &automock.PackageService{}
-				svc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return([]*model.Package{{ID: packageID, OrdID: "wrongOrdID"}}, nil).Once()
+				svc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return([]*model.Package{{ID: "package-id", OrdID: "wrongOrdID"}}, nil).Once()
 
 				return svc
 			},
@@ -1057,6 +1091,9 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			appSvc := testCase.AppServiceFn()
 			appTemplateSvc := testCase.AppTemplateServiceFn()
 			packageSvc := testCase.PackageServiceFn()
+
+			gqlIntDepInputWithPackage = fixGQLIntegrationDependencyInputWithPackageOrdID(buildPackageOrdID)
+
 			defer mock.AssertExpectationsForObjects(t, persist, transact, intDepSvc, aspectSvc, aspectEventResourceSvc, converter, appSvc, appTemplateSvc, packageSvc)
 
 			resolver := integrationdependency.NewResolver(transact, intDepSvc, converter, aspectSvc, aspectEventResourceSvc, appSvc, appTemplateSvc, packageSvc)

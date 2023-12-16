@@ -172,7 +172,7 @@ func (c *converter) InputFromGraphQL(in *graphql.IntegrationDependencyInput) (*m
 	return &model.IntegrationDependencyInput{
 		Title:         in.Name,
 		Description:   in.Description,
-		OrdID:         in.OrdID,
+		OrdID:         str.Ptr(in.OrdID),
 		OrdPackageID:  in.PartOfPackage,
 		Visibility:    str.PtrStrToStr(in.Visibility),
 		ReleaseStatus: in.ReleaseStatus,
