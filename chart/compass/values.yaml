@@ -191,7 +191,7 @@ global:
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3540"
+      version: "PR-3544"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
