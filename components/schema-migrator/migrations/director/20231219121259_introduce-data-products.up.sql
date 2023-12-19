@@ -66,7 +66,7 @@ CREATE TABLE data_products
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
     error JSONB
-)
+);
 
 -- Create index for data_products table
 CREATE INDEX IF NOT EXISTS data_products_app_id ON data_products(app_id);
