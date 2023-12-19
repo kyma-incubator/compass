@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -29,7 +30,7 @@ const (
 	serviceBindingKey         = "serviceBinding"
 	serviceInstanceServiceKey = "service"
 	serviceInstancePlanKey    = "plan"
-	parametersKey             = "parameters"
+	configurationKey          = "configuration"
 	nameKey                   = "name"
 	assignmentIDKey           = "assignment_id"
 	currentWaveHashKey        = "current_wave_hash"
@@ -199,6 +200,98 @@ func Test_HandlerFunc(t *testing.T) {
 	     }
 	   }`
 
+	assignedTenantConfigurationWithLocalInstancesWithJsonpaths := `{
+	     "credentials": {
+	       "inboundCommunication": {
+			  "auth_method_with_local_instances": {
+        		  "tokenServiceUrl": "$.credentials.inboundCommunication.auth_method_with_local_instances.serviceInstances[1].serviceBinding.url",
+        		  "clientId": "$.credentials.inboundCommunication.auth_method_with_local_instances.serviceInstances[1].serviceBinding.clientid",
+        		  "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+        		  "correlationIds": ["ASD"],
+        		  "serviceInstances": [
+        		    {
+        		      "service": "service-test",
+        		      "plan": "plan-test",
+        		      "configuration": {},
+        		      "serviceBinding": {
+        		        "configuration": {}
+        		      }
+        		    },
+        		    {
+        		      "service": "service-test-2",
+        		      "plan": "plan-test-2",
+        		      "configuration": {
+        		        "consumed-services": [
+        		          {
+        		            "first-service-instance-plan": "$.credentials.inboundCommunication.auth_method_with_local_instances.serviceInstances[0].plan"
+        		          }
+        		        ],
+        		        "xsuaa-cross-consumption": true
+        		      },
+        		      "serviceBinding": {
+						"url": "url",
+						"clientid": "clientid",
+        		        "configuration": {
+        		          "credential-type": "X509_PROVIDED",
+        		          "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----"
+        		        }
+        		      }
+        		    }
+        		  ]
+			  },
+			  "no-instances-auth-method": {
+	           "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----"
+			  }
+	       }
+	     }
+	   }`
+	substitutedAssignedTenantConfigurationWithLocalInstancesWithJsonpaths := `{
+	     "credentials": {
+	       "inboundCommunication": {
+			  "auth_method_with_local_instances": {
+        		  "tokenServiceUrl": "url",
+        		  "clientId": "clientid",
+        		  "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+        		  "correlationIds": ["ASD"],
+        		  "serviceInstances": [
+        		    {
+        		      "service": "service-test",
+        		      "plan": "plan-test",
+        		      "configuration": {},
+        		      "serviceBinding": {
+        		        "configuration": {}
+        		      }
+        		    },
+        		    {
+        		      "service": "service-test-2",
+        		      "plan": "plan-test-2",
+        		      "configuration": {
+        		        "consumed-services": [
+        		          {
+        		            "first-service-instance-plan": "plan-test"
+        		          }
+        		        ],
+        		        "xsuaa-cross-consumption": true
+        		      },
+        		      "serviceBinding": {
+						"url": "url",
+						"clientid": "clientid",
+        		        "configuration": {
+        		          "credential-type": "X509_PROVIDED",
+        		          "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----"
+        		        }
+        		      }
+        		    }
+        		  ]
+			  },
+			  "no-instances-auth-method": {
+	           "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----"
+			  }
+	       }
+	     }
+	   }`
+	expectedResponseForLocalInstances := `{"state":"READY","configuration":{"credentials":{"outboundCommunication":{"auth_method_with_local_instances":{"certificate":"-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----","clientId":"clientid","correlationIds":["ASD"],"tokenServiceUrl":"url"},"no-instances-auth-method":{"certificate":"-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----"}}}}}`
+
 	receiverTenantFormatter := `{
 		"deploymentRegion": %q,
 		"subaccountId": %q,
@@ -276,6 +369,417 @@ func Test_HandlerFunc(t *testing.T) {
 	    }
 	  }`
 	expectedResponseForGlobalInstancesWithInboundAndReverse := `{"state":"READY","configuration":{"credentials":{"inboundCommunication":{"no-instances-details-method":{"certificate":"-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----"},"reverse-paths-method":{"reverse-second-instance-plan":"application"}},"outboundCommunication":{"no-instances-auth-method":{"certificate":"-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----"},"refering-global-instances-auth-method":{"certificate":"-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----"}}}}}`
+
+	assignedTenantFullConfiguration := `{
+  "credentials": {
+    "inboundCommunication": {
+      "serviceInstances": [
+        {
+          "service": "global-service-service-test-1",
+          "plan": "global-service-plan-test-1",
+          "configuration": {},
+          "serviceBinding": {
+            "configuration": {}
+          }
+        },
+        {
+          "service": "global-service-service-test-2",
+          "plan": "global-service-plan-test-2",
+          "configuration": {
+            "global-service-instances-plans": [
+              {
+                "first-service-instance-plan": "$.credentials.inboundCommunication.serviceInstances[0].plan",
+                "second-service-instance-plan": "$.credentials.inboundCommunication.serviceInstances[1].plan"
+              }
+            ],
+            "xsuaa-cross-consumption": true
+          },
+          "serviceBinding": {
+            "url": "url",
+            "clientid": "clientid",
+            "configuration": {
+              "credential-type": "X509_PROVIDED",
+              "global-service-instances-plans": [
+                {
+                  "first-service-instance-plan": "$.credentials.inboundCommunication.serviceInstances[0].plan",
+                  "second-service-instance-plan": "$.credentials.inboundCommunication.serviceInstances[1].plan"
+                }
+              ],
+              "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----"
+            }
+          }
+        }
+      ],
+      "only_local_instances": {
+        "first-instance-service": "$.credentials.inboundCommunication.only_local_instances.serviceInstances[0].service",
+        "second-instance-binding-clientID": "$.credentials.inboundCommunication.only_local_instances.serviceInstances[1].serviceBinding.clientId",
+        "complex_json_paths": "{$.credentials.inboundCommunication.serviceInstances[0].service}/complex/{$.credentials.inboundCommunication.only_local_instances.serviceInstances[0].plan}",
+        "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+        "correlationIds": [
+          "CORR_ID"
+        ],
+        "serviceInstances": [
+          {
+            "service": "only-local-service-test",
+            "plan": "only-local-plan-test",
+            "configuration": {},
+            "serviceBinding": {
+              "configuration": {}
+            }
+          },
+          {
+            "service": "only-local-service-test-2",
+            "plan": "only-local-service-test-2",
+            "configuration": {
+              "service-instances-services": [
+                {
+                  "first-only-local-service-instance-name": "$.credentials.inboundCommunication.only_local_instances.serviceInstances[0].service",
+                  "second-only-local-service-instance-name": "$.credentials.inboundCommunication.only_local_instances.serviceInstances[1].service"
+                }
+              ],
+              "xsuaa-cross-consumption": true
+            },
+            "serviceBinding": {
+              "clientId": "client-id-test",
+              "configuration": {
+                "credential-type": "X509_PROVIDED",
+                "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+                "service-instance-plan": "$.credentials.inboundCommunication.only_local_instances.serviceInstances[1].plan"
+              }
+            }
+          }
+        ]
+      },
+      "without_instances": {
+        "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+        "correlationIds": [
+          "CORR_ID_2"
+        ]
+      },
+      "reffering_global_instances": {
+        "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+        "correlationIds": [
+          "CORR_ID_3"
+        ],
+        "global-instances-plans": [
+          {
+            "first-global-instance-plan": "$.credentials.inboundCommunication.serviceInstances[0].plan",
+            "second-global-instance-plan": "$.credentials.inboundCommunication.serviceInstances[1].plan"
+          }
+        ]
+      },
+      "local_and_reffering_global_instances": {
+        "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+        "correlationIds": [
+          "CORR_ID_4"
+        ],
+        "serviceInstances": [
+          {
+            "name": "local_and_reffering_global_instances_name",
+            "service": "local-and-reffering-global-service-test",
+            "plan": "local-and-reffering-global-plan-test",
+            "configuration": {},
+            "serviceBinding": {
+              "configuration": {}
+            }
+          },
+          {
+            "service": "local-and-reffering-global-service-test-2",
+            "plan": "local-and-reffering-global-plan-test-2",
+            "configuration": {
+              "service-instances-services": [
+                {
+                  "first-only-local-service-instance-service": "$.credentials.inboundCommunication.local_and_reffering_global_instances.serviceInstances[0].service",
+                  "second-only-local-service-instance-service": "$.credentials.inboundCommunication.local_and_reffering_global_instances.serviceInstances[1].service"
+                }
+              ],
+              "xsuaa-cross-consumption": true
+            },
+            "serviceBinding": {
+              "clientId": "client-id-test",
+              "configuration": {
+                "credential-type": "X509_PROVIDED",
+                "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+                "service-instance-plan": "$.credentials.inboundCommunication.local_and_reffering_global_instances.serviceInstances[1].plan"
+              }
+            }
+          }
+        ],
+        "global-instances-services": [
+          {
+            "first-global-instance-service": "$.credentials.inboundCommunication.serviceInstances[0].service",
+            "second-global-instance-service": "$.credentials.inboundCommunication.serviceInstances[1].service"
+          }
+        ]
+      }
+    }
+  }
+}`
+
+	substitutedAssignedTenantFullConfiguration := `{
+  "credentials": {
+    "inboundCommunication": {
+      "serviceInstances": [
+        {
+          "service": "global-service-service-test-1",
+          "plan": "global-service-plan-test-1",
+          "configuration": {},
+          "serviceBinding": {
+            "configuration": {}
+          }
+        },
+        {
+          "service": "global-service-service-test-2",
+          "plan": "global-service-plan-test-2",
+          "configuration": {
+            "global-service-instances-plans": [
+              {
+                "first-service-instance-plan": "global-service-plan-test-1",
+                "second-service-instance-plan": "global-service-plan-test-2"
+              }
+            ],
+            "xsuaa-cross-consumption": true
+          },
+          "serviceBinding": {
+            "url": "url",
+            "clientid": "clientid",
+            "configuration": {
+              "credential-type": "X509_PROVIDED",
+              "global-service-instances-plans": [
+                {
+                  "first-service-instance-plan": "global-service-plan-test-1",
+                  "second-service-instance-plan": "global-service-plan-test-2"
+                }
+              ],
+              "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----"
+            }
+          }
+        }
+      ],
+      "only_local_instances": {
+        "first-instance-service": "only-local-service-test",
+        "second-instance-binding-clientID": "client-id-test",
+        "complex_json_paths": "global-service-service-test-1/complex/only-local-plan-test",
+        "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+        "correlationIds": [
+          "CORR_ID"
+        ],
+        "serviceInstances": [
+          {
+            "service": "only-local-service-test",
+            "plan": "only-local-plan-test",
+            "configuration": {},
+            "serviceBinding": {
+              "configuration": {}
+            }
+          },
+          {
+            "service": "only-local-service-test-2",
+            "plan": "only-local-service-test-2",
+            "configuration": {
+              "service-instances-services": [
+                {
+                  "first-only-local-service-instance-name": "only-local-service-test",
+                  "second-only-local-service-instance-name": "only-local-service-test-2"
+                }
+              ],
+              "xsuaa-cross-consumption": true
+            },
+            "serviceBinding": {
+              "clientId": "client-id-test",
+              "configuration": {
+                "credential-type": "X509_PROVIDED",
+                "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+                "service-instance-plan": "only-local-service-test-2"
+              }
+            }
+          }
+        ]
+      },
+      "without_instances": {
+        "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+        "correlationIds": [
+          "CORR_ID_2"
+        ]
+      },
+      "reffering_global_instances": {
+        "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+        "correlationIds": [
+          "CORR_ID_3"
+        ],
+        "global-instances-plans": [
+          {
+            "first-global-instance-plan": "global-service-plan-test-1",
+            "second-global-instance-plan": "global-service-plan-test-2"
+          }
+        ]
+      },
+      "local_and_reffering_global_instances": {
+        "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+        "correlationIds": [
+          "CORR_ID_4"
+        ],
+        "serviceInstances": [
+          {
+            "name": "local_and_reffering_global_instances_name",
+            "service": "local-and-reffering-global-service-test",
+            "plan": "local-and-reffering-global-plan-test",
+            "configuration": {},
+            "serviceBinding": {
+              "configuration": {}
+            }
+          },
+          {
+            "service": "local-and-reffering-global-service-test-2",
+            "plan": "local-and-reffering-global-plan-test-2",
+            "configuration": {
+              "service-instances-services": [
+                {
+                  "first-only-local-service-instance-service": "local-and-reffering-global-service-test",
+                  "second-only-local-service-instance-service": "local-and-reffering-global-service-test-2"
+                }
+              ],
+              "xsuaa-cross-consumption": true
+            },
+            "serviceBinding": {
+              "clientId": "client-id-test",
+              "configuration": {
+                "credential-type": "X509_PROVIDED",
+                "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+                "service-instance-plan": "local-and-reffering-global-plan-test-2"
+              }
+            }
+          }
+        ],
+        "global-instances-services": [
+          {
+            "first-global-instance-service": "global-service-service-test-1",
+            "second-global-instance-service": "global-service-service-test-2"
+          }
+        ]
+      }
+    }
+  }
+}`
+
+	receiverTenantFullConfiguration := `{
+	  "credentials": {
+        "inboundCommunication": {
+          "serviceInstances": [
+            {
+              "service": "global-instance-service-test-1",
+              "plan": "global-instance-service-plan-1",
+              "parameters": {}
+            },
+            {
+              "service": "global-instance-service-test-2",
+              "plan": "global-instance-service-plan-2",
+              "xsuaa-cross-consumption": true,
+              "serviceBinding": {
+                "url": "url"
+              }
+            }
+          ],
+          "no-instances-details": {
+            "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----"
+          },
+          "reffering-global-details": {
+            "first-global-instance-plan": "$.credentials.inboundCommunication.serviceInstances[0].plan"
+          },
+          "local-details": {
+            "serviceInstances": [
+              {
+                "service": "local-instance-service-test-1",
+                "plan": "local-instance-service-plan-1",
+                "parameters": {}
+              }
+            ]
+          },
+          "reverse-paths-method": {
+            "reverse-second-global-instance-plan": "$.reverse.credentials.inboundCommunication.serviceInstances[1].plan",
+            "only-local-instances-second-instance-binding-clientID": "$.reverse.credentials.inboundCommunication.only_local_instances.serviceInstances[1].serviceBinding.clientId"
+          }
+        },
+        "outboundCommunication": {
+          "auth1": {
+            "correlationIds": [
+              "CORR_ID"
+            ]
+          },
+          "only_local_instances": {
+            "certificate": "-----BEGIN CERTIFICATE----- outbound cert -----END CERTIFICATE-----"
+          },
+          "without_instances": {
+            "certificate": "-----BEGIN CERTIFICATE----- outbound cert -----END CERTIFICATE-----",
+            "random-field": "random-value"
+          }
+        }
+      }
+	}`
+
+	expectedResponseForFullConfig := `{
+  "state": "READY",
+  "configuration": {
+    "credentials": {
+      "inboundCommunication": {
+        "no-instances-details": {
+          "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----"
+        },
+        "reverse-paths-method": {
+          "only-local-instances-second-instance-binding-clientID": "client-id-test",
+          "reverse-second-global-instance-plan": "global-service-plan-test-2"
+        }
+      },
+      "outboundCommunication": {
+        "auth1": {
+          "correlationIds": [
+            "CORR_ID"
+          ]
+        },
+        "local_and_reffering_global_instances": {
+          "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+          "correlationIds": [
+            "CORR_ID_4"
+          ],
+          "global-instances-services": [
+            {
+              "first-global-instance-service": "global-service-service-test-1",
+              "second-global-instance-service": "global-service-service-test-2"
+            }
+          ]
+        },
+        "only_local_instances": {
+          "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+          "complex_json_paths": "global-service-service-test-1/complex/only-local-plan-test",
+          "correlationIds": [
+            "CORR_ID"
+          ],
+          "first-instance-service": "only-local-service-test",
+          "second-instance-binding-clientID": "client-id-test"
+        },
+        "reffering_global_instances": {
+          "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+          "correlationIds": [
+            "CORR_ID_3"
+          ],
+          "global-instances-plans": [
+            {
+              "first-global-instance-plan": "global-service-plan-test-1",
+              "second-global-instance-plan": "global-service-plan-test-2"
+            }
+          ]
+        },
+        "without_instances": {
+          "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
+          "correlationIds": [
+            "CORR_ID_2"
+          ],
+          "random-field": "random-value"
+        }
+      }
+    }
+  }
+}`
 
 	testCases := []struct {
 		name                 string
@@ -473,7 +977,7 @@ func Test_HandlerFunc(t *testing.T) {
 			},
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody(`{"state":"READY","configuration":null}`)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasJSONBody(`{"state":"READY","configuration":null}`)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -483,7 +987,7 @@ func Test_HandlerFunc(t *testing.T) {
 			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, assignmentID, `{"credentials": {"inboundCommunication":{}}}`)),
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody(`{"state":"CONFIG_PENDING","configuration":null}`)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasJSONBody(`{"state":"CONFIG_PENDING","configuration":null}`)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -520,7 +1024,7 @@ func Test_HandlerFunc(t *testing.T) {
 			},
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody(expectedResponseForGlobalInstances)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasJSONBody(expectedResponseForGlobalInstances)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -559,7 +1063,7 @@ func Test_HandlerFunc(t *testing.T) {
 			},
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody(expectedResponseForGlobalInstances)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasJSONBody(expectedResponseForGlobalInstances)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -602,7 +1106,7 @@ func Test_HandlerFunc(t *testing.T) {
 			},
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody(expectedResponseForGlobalInstances)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasJSONBody(expectedResponseForGlobalInstances)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -639,7 +1143,7 @@ func Test_HandlerFunc(t *testing.T) {
 			},
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody(expectedResponseForGlobalInstances)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasJSONBody(expectedResponseForGlobalInstances)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -676,7 +1180,7 @@ func Test_HandlerFunc(t *testing.T) {
 			},
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody(expectedResponseForGlobalInstancesWithInbound)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasJSONBody(expectedResponseForGlobalInstancesWithInbound)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -713,7 +1217,131 @@ func Test_HandlerFunc(t *testing.T) {
 			},
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody(expectedResponseForGlobalInstancesWithInboundAndReverse)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasJSONBody(expectedResponseForGlobalInstancesWithInboundAndReverse)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				return client
+			},
+			expectedResponseCode: http.StatusAccepted,
+		},
+		{
+			name:        "Success - Operation is assign and there are only local service instances with jsonpaths.",
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, assignmentID, assignedTenantConfigurationWithLocalInstancesWithJsonpaths)),
+			smClientFn: func() *automock.Client {
+				client := &automock.Client{}
+				substitutedLocalServiceInstances := Configuration(substitutedAssignedTenantConfigurationWithLocalInstancesWithJsonpaths).GetLocalServiceInstances(inboundCommunicationKey, "auth_method_with_local_instances").ToArray()
+				client.On("RetrieveMultipleResourcesIDsByLabels", mock.Anything, region, subaccount, mock.Anything, smLabelsThatHaveAssignmentID(assignmentID)).Return(nil, nil).Once()
+
+				// First Instance
+				firstLocalServiceInstanceSubstituted := substitutedLocalServiceInstances[0]
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServiceOfferingMatchParameters{CatalogName: firstLocalServiceInstanceSubstituted.GetService()}).Return(serviceOfferingIDs[0], nil).Once()
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServicePlanMatchParameters{PlanName: firstLocalServiceInstanceSubstituted.GetPlan(), OfferingID: serviceOfferingIDs[0]}).Return(servicePlanIDs[0], nil).Once()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceInstanceReqBody(firstLocalServiceInstanceSubstituted.GetName(), servicePlanIDs[0], assignmentID, firstLocalServiceInstanceSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesIDs[0], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceInstance{ID: serviceInstancesIDs[0]}).Return(firstLocalServiceInstanceSubstituted.WithName(serviceInstancesNames[0]).ToJSONRawMessage(), nil).Once()
+
+				firstLocalServiceInstanceBindingSubstituted := firstLocalServiceInstanceSubstituted.GetServiceBinding()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceBindingReqBody(firstLocalServiceInstanceBindingSubstituted.GetName(), serviceInstancesIDs[0], firstLocalServiceInstanceBindingSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesBindingsIDs[0], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceKey{ID: serviceInstancesBindingsIDs[0]}).Return(firstLocalServiceInstanceBindingSubstituted.WithName(serviceInstanceBindingsNames[0]).ToJSONRawMessage(), nil).Once()
+
+				// Second Instance
+				secondLocalServiceInstanceSubstituted := substitutedLocalServiceInstances[1]
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServiceOfferingMatchParameters{CatalogName: secondLocalServiceInstanceSubstituted.GetService()}).Return(serviceOfferingIDs[1], nil).Once()
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServicePlanMatchParameters{PlanName: secondLocalServiceInstanceSubstituted.GetPlan(), OfferingID: serviceOfferingIDs[1]}).Return(servicePlanIDs[1], nil).Once()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceInstanceReqBody(secondLocalServiceInstanceSubstituted.GetName(), servicePlanIDs[1], assignmentID, secondLocalServiceInstanceSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesIDs[1], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceInstance{ID: serviceInstancesIDs[1]}).Return(secondLocalServiceInstanceSubstituted.WithName(serviceInstancesNames[1]).ToJSONRawMessage(), nil).Once()
+
+				secondLocalServiceInstanceBindingSubstituted := secondLocalServiceInstanceSubstituted.GetServiceBinding()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceBindingReqBody(secondLocalServiceInstanceBindingSubstituted.GetName(), serviceInstancesIDs[1], secondLocalServiceInstanceBindingSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesBindingsIDs[1], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceKey{ID: serviceInstancesBindingsIDs[1]}).Return(secondLocalServiceInstanceBindingSubstituted.WithName(serviceInstanceBindingsNames[1]).ToJSONRawMessage(), nil).Once()
+
+				return client
+			},
+			mtlsClientFn: func() *automock.MtlsHTTPClient {
+				client := &automock.MtlsHTTPClient{}
+				client.On("Do", requestThatHasJSONBody(expectedResponseForLocalInstances)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				return client
+			},
+			expectedResponseCode: http.StatusAccepted,
+		},
+		{
+			name:        "Success - Operation is assign with full config",
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, receiverTenantFullConfiguration), fmt.Sprintf(assignedTenantFormatter, assignmentID, assignedTenantFullConfiguration)),
+			smClientFn: func() *automock.Client {
+				client := &automock.Client{}
+				substitutedGlobalServiceInstances := Configuration(substitutedAssignedTenantFullConfiguration).GetGlobalServiceInstances(inboundCommunicationKey).ToArray()
+				client.On("RetrieveMultipleResourcesIDsByLabels", mock.Anything, region, subaccount, mock.Anything, smLabelsThatHaveAssignmentID(assignmentID)).Return(nil, nil).Times(3)
+
+				// Global Instances
+				firstGlobalServiceInstanceSubstituted := substitutedGlobalServiceInstances[0]
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServiceOfferingMatchParameters{CatalogName: firstGlobalServiceInstanceSubstituted.GetService()}).Return(serviceOfferingIDs[0], nil).Once()
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServicePlanMatchParameters{PlanName: firstGlobalServiceInstanceSubstituted.GetPlan(), OfferingID: serviceOfferingIDs[0]}).Return(servicePlanIDs[0], nil).Once()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceInstanceReqBody(firstGlobalServiceInstanceSubstituted.GetName(), servicePlanIDs[0], assignmentID, firstGlobalServiceInstanceSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesIDs[0], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceInstance{ID: serviceInstancesIDs[0]}).Return(firstGlobalServiceInstanceSubstituted.WithName(serviceInstancesNames[0]).ToJSONRawMessage(), nil).Once()
+
+				firstGlobalServiceInstanceBindingSubstituted := firstGlobalServiceInstanceSubstituted.GetServiceBinding()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceBindingReqBody(firstGlobalServiceInstanceBindingSubstituted.GetName(), serviceInstancesIDs[0], firstGlobalServiceInstanceBindingSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesBindingsIDs[0], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceKey{ID: serviceInstancesBindingsIDs[0]}).Return(firstGlobalServiceInstanceBindingSubstituted.WithName(serviceInstanceBindingsNames[0]).ToJSONRawMessage(), nil).Once()
+
+				secondGlobalServiceInstanceSubstituted := substitutedGlobalServiceInstances[1]
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServiceOfferingMatchParameters{CatalogName: secondGlobalServiceInstanceSubstituted.GetService()}).Return(serviceOfferingIDs[1], nil).Once()
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServicePlanMatchParameters{PlanName: secondGlobalServiceInstanceSubstituted.GetPlan(), OfferingID: serviceOfferingIDs[1]}).Return(servicePlanIDs[1], nil).Once()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceInstanceReqBody(secondGlobalServiceInstanceSubstituted.GetName(), servicePlanIDs[1], assignmentID, secondGlobalServiceInstanceSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesIDs[1], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceInstance{ID: serviceInstancesIDs[1]}).Return(secondGlobalServiceInstanceSubstituted.WithName(serviceInstancesNames[1]).ToJSONRawMessage(), nil).Once()
+
+				secondGlobalServiceInstanceBindingSubstituted := secondGlobalServiceInstanceSubstituted.GetServiceBinding()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceBindingReqBody(secondGlobalServiceInstanceBindingSubstituted.GetName(), serviceInstancesIDs[1], secondGlobalServiceInstanceBindingSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesBindingsIDs[1], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceKey{ID: serviceInstancesBindingsIDs[1]}).Return(secondGlobalServiceInstanceBindingSubstituted.WithName(serviceInstanceBindingsNames[1]).ToJSONRawMessage(), nil).Once()
+
+				// Local Instances for `only_local_instances` auth method
+				substitutedLocalServiceInstances := Configuration(substitutedAssignedTenantFullConfiguration).GetLocalServiceInstances(inboundCommunicationKey, "only_local_instances").ToArray()
+
+				firstLocalServiceInstanceSubstituted := substitutedLocalServiceInstances[0]
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServiceOfferingMatchParameters{CatalogName: firstLocalServiceInstanceSubstituted.GetService()}).Return(serviceOfferingIDs[0], nil).Once()
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServicePlanMatchParameters{PlanName: firstLocalServiceInstanceSubstituted.GetPlan(), OfferingID: serviceOfferingIDs[0]}).Return(servicePlanIDs[0], nil).Once()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceInstanceReqBody(firstLocalServiceInstanceSubstituted.GetName(), servicePlanIDs[0], assignmentID, firstLocalServiceInstanceSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesIDs[0], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceInstance{ID: serviceInstancesIDs[0]}).Return(firstLocalServiceInstanceSubstituted.WithName(serviceInstancesNames[0]).ToJSONRawMessage(), nil).Once()
+
+				firstLocalServiceInstanceBindingSubstituted := firstLocalServiceInstanceSubstituted.GetServiceBinding()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceBindingReqBody(firstLocalServiceInstanceBindingSubstituted.GetName(), serviceInstancesIDs[0], firstLocalServiceInstanceBindingSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesBindingsIDs[0], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceKey{ID: serviceInstancesBindingsIDs[0]}).Return(firstLocalServiceInstanceBindingSubstituted.WithName(serviceInstanceBindingsNames[0]).ToJSONRawMessage(), nil).Once()
+
+				secondLocalServiceInstanceSubstituted := substitutedLocalServiceInstances[1]
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServiceOfferingMatchParameters{CatalogName: secondLocalServiceInstanceSubstituted.GetService()}).Return(serviceOfferingIDs[1], nil).Once()
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServicePlanMatchParameters{PlanName: secondLocalServiceInstanceSubstituted.GetPlan(), OfferingID: serviceOfferingIDs[1]}).Return(servicePlanIDs[1], nil).Once()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceInstanceReqBody(secondLocalServiceInstanceSubstituted.GetName(), servicePlanIDs[1], assignmentID, secondLocalServiceInstanceSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesIDs[1], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceInstance{ID: serviceInstancesIDs[1]}).Return(secondLocalServiceInstanceSubstituted.WithName(serviceInstancesNames[1]).ToJSONRawMessage(), nil).Once()
+
+				secondLocalServiceInstanceBindingSubstituted := secondLocalServiceInstanceSubstituted.GetServiceBinding()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceBindingReqBody(secondLocalServiceInstanceBindingSubstituted.GetName(), serviceInstancesIDs[1], secondLocalServiceInstanceBindingSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesBindingsIDs[1], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceKey{ID: serviceInstancesBindingsIDs[1]}).Return(secondLocalServiceInstanceBindingSubstituted.WithName(serviceInstanceBindingsNames[1]).ToJSONRawMessage(), nil).Once()
+
+				// Local Instances for `local_and_reffering_global_instances` auth method
+				substitutedLocalServiceInstances = Configuration(substitutedAssignedTenantFullConfiguration).GetLocalServiceInstances(inboundCommunicationKey, "local_and_reffering_global_instances").ToArray()
+
+				firstLocalServiceInstanceSubstituted = substitutedLocalServiceInstances[0]
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServiceOfferingMatchParameters{CatalogName: firstLocalServiceInstanceSubstituted.GetService()}).Return(serviceOfferingIDs[0], nil).Once()
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServicePlanMatchParameters{PlanName: firstLocalServiceInstanceSubstituted.GetPlan(), OfferingID: serviceOfferingIDs[0]}).Return(servicePlanIDs[0], nil).Once()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceInstanceReqBody(firstLocalServiceInstanceSubstituted.GetName(), servicePlanIDs[0], assignmentID, firstLocalServiceInstanceSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesIDs[0], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceInstance{ID: serviceInstancesIDs[0]}).Return(firstLocalServiceInstanceSubstituted.WithName(serviceInstancesNames[0]).ToJSONRawMessage(), nil).Once()
+
+				firstLocalServiceInstanceBindingSubstituted = firstLocalServiceInstanceSubstituted.GetServiceBinding()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceBindingReqBody(firstLocalServiceInstanceBindingSubstituted.GetName(), serviceInstancesIDs[0], firstLocalServiceInstanceBindingSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesBindingsIDs[0], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceKey{ID: serviceInstancesBindingsIDs[0]}).Return(firstLocalServiceInstanceBindingSubstituted.WithName(serviceInstanceBindingsNames[0]).ToJSONRawMessage(), nil).Once()
+
+				// Second Instance
+				secondLocalServiceInstanceSubstituted = substitutedLocalServiceInstances[1]
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServiceOfferingMatchParameters{CatalogName: secondLocalServiceInstanceSubstituted.GetService()}).Return(serviceOfferingIDs[1], nil).Once()
+				client.On("RetrieveResource", mock.Anything, region, subaccount, mock.Anything, &types.ServicePlanMatchParameters{PlanName: secondLocalServiceInstanceSubstituted.GetPlan(), OfferingID: serviceOfferingIDs[1]}).Return(servicePlanIDs[1], nil).Once()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceInstanceReqBody(secondLocalServiceInstanceSubstituted.GetName(), servicePlanIDs[1], assignmentID, secondLocalServiceInstanceSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesIDs[1], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceInstance{ID: serviceInstancesIDs[1]}).Return(secondLocalServiceInstanceSubstituted.WithName(serviceInstancesNames[1]).ToJSONRawMessage(), nil).Once()
+
+				secondLocalServiceInstanceBindingSubstituted = secondLocalServiceInstanceSubstituted.GetServiceBinding()
+				client.On("CreateResource", mock.Anything, region, subaccount, serviceBindingReqBody(secondLocalServiceInstanceBindingSubstituted.GetName(), serviceInstancesIDs[1], secondLocalServiceInstanceBindingSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesBindingsIDs[1], nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceKey{ID: serviceInstancesBindingsIDs[1]}).Return(secondLocalServiceInstanceBindingSubstituted.WithName(serviceInstanceBindingsNames[1]).ToJSONRawMessage(), nil).Once()
+
+				return client
+			},
+			mtlsClientFn: func() *automock.MtlsHTTPClient {
+				client := &automock.MtlsHTTPClient{}
+				client.On("Do", requestThatHasJSONBody(expectedResponseForFullConfig)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -766,6 +1394,27 @@ func requestThatHasBody(expectedBody string) interface{} {
 	})
 }
 
+func requestThatHasJSONBody(expectedBody string) interface{} {
+	return mock.MatchedBy(func(actualReq *http.Request) bool {
+		bytes, err := io.ReadAll(actualReq.Body)
+		if err != nil {
+			return false
+		}
+		fmt.Printf("Expected Body %q\n", string(bytes))
+		var expectedJSONAsInterface, actualJSONAsInterface interface{}
+
+		if err := json.Unmarshal([]byte(expectedBody), &expectedJSONAsInterface); err != nil {
+			return false
+		}
+
+		if err := json.Unmarshal(bytes, &actualJSONAsInterface); err != nil {
+			return false
+		}
+
+		return reflect.DeepEqual(actualJSONAsInterface, expectedJSONAsInterface)
+	})
+}
+
 func fixHTTPResponse(statusCode int, body string) *http.Response {
 	return &http.Response{
 		StatusCode: statusCode,
@@ -812,7 +1461,9 @@ func (c Configuration) GetGlobalServiceInstances(typeCommunication string) Servi
 }
 
 func (c Configuration) GetLocalServiceInstances(typeCommunication, authMethod string) ServiceInstances {
-	return ServiceInstances(gjson.Get(string(c), fmt.Sprintf("%s.%s.%s", tenantmapping.FindKeyPath(gjson.Parse(string(c)).Value(), typeCommunication), authMethod, serviceInstancesKey)).String())
+	asd := tenantmapping.FindKeyPath(gjson.Parse(string(c)).Value(), typeCommunication)
+	ds := gjson.Get(string(c), fmt.Sprintf("%s.%s.%s", asd, authMethod, serviceInstancesKey))
+	return ServiceInstances(ds.String())
 }
 
 func (sis ServiceInstances) ToArray() []ServiceInstance {
@@ -841,7 +1492,7 @@ func (si ServiceInstance) GetName() string {
 }
 
 func (si ServiceInstance) GetParameters() string {
-	return gjson.Get(string(si), parametersKey).String()
+	return gjson.Get(string(si), configurationKey).String()
 }
 
 func (si ServiceInstance) GetServiceBinding() ServiceBinding {
@@ -858,7 +1509,7 @@ func (si ServiceInstance) ToJSONRawMessage() json.RawMessage {
 }
 
 func (sb ServiceBinding) GetParameters() string {
-	return gjson.Get(string(sb), parametersKey).String()
+	return gjson.Get(string(sb), configurationKey).String()
 }
 
 func (sb ServiceBinding) GetName() string {

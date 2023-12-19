@@ -37,7 +37,7 @@ const (
 	serviceBindingKey         = "serviceBinding"
 	serviceInstanceServiceKey = "service"
 	serviceInstancePlanKey    = "plan"
-	parametersKey             = "parameters"
+	configurationKey          = "configuration"
 	nameKey                   = "name"
 	assignmentIDKey           = "assignment_id"
 	currentWaveHashKey        = "current_wave_hash"
@@ -274,7 +274,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 
 	assignedTenantInboundCommunication = gjson.GetBytes(assignedTenantConfiguration, assignedTenantInboundCommunicationPath)
 	gjson.Parse(assignedTenantInboundCommunication.Raw).ForEach(func(auth, assignedTenantAuth gjson.Result) bool {
-		assignedTenantConfiguration, err = sjson.DeleteBytes(assignedTenantConfiguration, fmt.Sprintf("%s.%s.%s", assignedTenantInboundCommunicationPath, auth, serviceInstancesPath))
+		assignedTenantConfiguration, err = sjson.DeleteBytes(assignedTenantConfiguration, fmt.Sprintf("%s.%s.%s", assignedTenantInboundCommunicationPath, auth.Str, serviceInstancesKey))
 		if err != nil {
 			return false
 		}
@@ -291,7 +291,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 	receiverTenantOutboundCommunication := gjson.GetBytes(receiverTenantConfiguration, receiverTenantOutboundCommunicationPath)
 	assignedTenantInboundCommunication = gjson.GetBytes(assignedTenantConfiguration, assignedTenantInboundCommunicationPath)
 
-	mergedReceiverTenantOutboundCommunication := deepMergeJSON(assignedTenantInboundCommunication, receiverTenantOutboundCommunication)
+	mergedReceiverTenantOutboundCommunication := deepMergeJSON(receiverTenantOutboundCommunication, assignedTenantInboundCommunication)
 
 	responseConfig, err := sjson.SetBytes(receiverTenantConfiguration, receiverTenantOutboundCommunicationPath, mergedReceiverTenantOutboundCommunication.Value())
 	if err != nil {
@@ -450,7 +450,7 @@ func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, req
 
 		serviceOfferingCatalogName := gjson.Get(serviceInstance.Raw, serviceInstanceServiceKey).String()
 		servicePlanCatalogName := gjson.Get(serviceInstance.Raw, serviceInstancePlanKey).String()
-		serviceInstanceParameters := []byte(gjson.Get(serviceInstance.Raw, parametersKey).String())
+		serviceInstanceParameters := []byte(gjson.Get(serviceInstance.Raw, configurationKey).String())
 
 		// Get the Service Offering ID with catalog name(service from the contract)
 		serviceOfferingID, err := i.SMClient.RetrieveResource(ctx, region, subaccount, &types.ServiceOfferings{}, &types.ServiceOfferingMatchParameters{CatalogName: serviceOfferingCatalogName})
@@ -487,7 +487,7 @@ func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, req
 			return nil, err
 		}
 
-		serviceBindingParameters := []byte(gjson.Get(serviceInstanceBinding.Raw, parametersKey).String())
+		serviceBindingParameters := []byte(gjson.Get(serviceInstanceBinding.Raw, configurationKey).String())
 		if err != nil {
 			return nil, errors.Wrapf(err, "while extracting the parameters of service binding for a service instance with id: %d", idx)
 		}
@@ -561,18 +561,25 @@ func SubstituteGJSON(json gjson.Result, rootMap interface{}) (gjson.Result, erro
 		} else {
 			concreteVal := value.String()
 			if strings.Contains(concreteVal, "$.") {
-				var substitution interface{}
-
 				fmt.Printf("Before substituting: %q\n", concreteVal)
 				regex := regexp.MustCompile(`\{(\$.*?)\}`)
 				matches := regex.FindAllStringSubmatch(concreteVal, -1)
 				if len(matches) == 0 { // the value is something like "$.<>"
-					substitution, err = jsonpath.Get(concreteVal, rootMap)
+					substitution, err := jsonpath.Get(concreteVal, rootMap)
 					if err != nil {
 						fmt.Println(err)
 						return
 					}
+					substitutedJsonStr, err := sjson.Set(substitutedJson.String(), path, substitution)
+					if err != nil {
+						return
+					}
+
+					fmt.Printf("After substituting: %q\n", substitution)
+
+					substitutedJson = gjson.Parse(substitutedJsonStr)
 				} else { // the value contains jsonPaths with concatenated static strings. for example, "{$.<>}/string..."
+					substitution := concreteVal
 					for _, match := range matches {
 						var currentSubstitution interface{}
 						currentSubstitution, err = jsonpath.Get(match[1], rootMap)
@@ -580,17 +587,18 @@ func SubstituteGJSON(json gjson.Result, rootMap interface{}) (gjson.Result, erro
 							fmt.Println(err)
 							return
 						}
-						substitution = strings.ReplaceAll(concreteVal, match[0], currentSubstitution.(string))
+						substitution = strings.ReplaceAll(substitution, match[0], currentSubstitution.(string))
 					}
-				}
-				substitutedJsonStr, err := sjson.Set(substitutedJson.String(), path, substitution)
-				if err != nil {
-					return
+					substitutedJsonStr, err := sjson.Set(substitutedJson.String(), path, substitution)
+					if err != nil {
+						return
+					}
+
+					fmt.Printf("After substituting: %q\n", substitution)
+
+					substitutedJson = gjson.Parse(substitutedJsonStr)
 				}
 
-				fmt.Printf("After substituting: %q\n", substitution)
-
-				substitutedJson = gjson.Parse(substitutedJsonStr)
 			}
 		}
 	}
