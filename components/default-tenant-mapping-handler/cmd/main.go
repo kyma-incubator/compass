@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/default-tenant-mapping-handler/internal/claims"

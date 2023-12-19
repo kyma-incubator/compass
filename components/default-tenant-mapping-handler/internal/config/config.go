@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )

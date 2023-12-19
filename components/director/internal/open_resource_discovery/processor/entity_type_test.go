@@ -21,6 +21,12 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 		fixEntityTypeModel(entityTypeID),
 	}
 
+	updatedEntityTypeModels := []*model.EntityType{
+		fixEntityTypeModel(entityTypeID),
+	}
+
+	updatedEntityTypeModels[0].PackageID = packageID2
+
 	emptyEntityTypeModels := []*model.EntityType{}
 
 	entityTypeInputs := []*model.EntityTypeInput{
@@ -49,7 +55,7 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 			EntityTypeSvcFn: func() *automock.EntityTypeService {
 				entityTypeSvc := &automock.EntityTypeService{}
 				entityTypeSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(entityTypeModels, nil).Twice()
-				entityTypeSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, entityTypeModels[0].ID, *entityTypeInputs[0], uint64ResourceHash).Return(nil).Once()
+				entityTypeSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, entityTypeModels[0].ID, packageID1, *entityTypeInputs[0], uint64ResourceHash).Return(nil).Once()
 				return entityTypeSvc
 			},
 			InputResource:       resource.Application,
@@ -67,7 +73,7 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 				entityTypeSvc := &automock.EntityTypeService{}
 				entityTypeSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(emptyEntityTypeModels, nil).Once()
 				entityTypeSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(entityTypeModels, nil).Once()
-				entityTypeSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, packageID, *entityTypeInputs[0], uint64ResourceHash).Return(entityTypeID, nil).Once()
+				entityTypeSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, packageID1, *entityTypeInputs[0], uint64ResourceHash).Return(entityTypeID, nil).Once()
 				return entityTypeSvc
 			},
 			InputResource:       resource.Application,
@@ -84,7 +90,7 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 			EntityTypeSvcFn: func() *automock.EntityTypeService {
 				entityTypeSvc := &automock.EntityTypeService{}
 				entityTypeSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(entityTypeModels, nil).Twice()
-				entityTypeSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, entityTypeModels[0].ID, *entityTypeInputs[0], uint64ResourceHash).Return(nil).Once()
+				entityTypeSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, entityTypeModels[0].ID, packageID1, *entityTypeInputs[0], uint64ResourceHash).Return(nil).Once()
 				return entityTypeSvc
 			},
 			InputResource:       resource.ApplicationTemplateVersion,
@@ -102,7 +108,7 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 				entityTypeSvc := &automock.EntityTypeService{}
 				entityTypeSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(emptyEntityTypeModels, nil).Once()
 				entityTypeSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(entityTypeModels, nil).Once()
-				entityTypeSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, packageID, *entityTypeInputs[0], uint64ResourceHash).Return(entityTypeID, nil).Once()
+				entityTypeSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, packageID1, *entityTypeInputs[0], uint64ResourceHash).Return(entityTypeID, nil).Once()
 				return entityTypeSvc
 			},
 			InputResource:       resource.ApplicationTemplateVersion,
@@ -154,7 +160,7 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 			EntityTypeSvcFn: func() *automock.EntityTypeService {
 				entityTypeSvc := &automock.EntityTypeService{}
 				entityTypeSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(entityTypeModels, nil).Once()
-				entityTypeSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, entityTypeModels[0].ID, *entityTypeInputs[0], uint64ResourceHash).Return(testErr).Once()
+				entityTypeSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, entityTypeModels[0].ID, packageID1, *entityTypeInputs[0], uint64ResourceHash).Return(testErr).Once()
 				return entityTypeSvc
 			},
 			InputResource:       resource.Application,
@@ -174,7 +180,7 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 			EntityTypeSvcFn: func() *automock.EntityTypeService {
 				entityTypeSvc := &automock.EntityTypeService{}
 				entityTypeSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(emptyEntityTypeModels, nil).Once()
-				entityTypeSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, packageID, *entityTypeInputs[0], uint64ResourceHash).Return("", testErr).Once()
+				entityTypeSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, packageID1, *entityTypeInputs[0], uint64ResourceHash).Return("", testErr).Once()
 				return entityTypeSvc
 			},
 			InputResource:       resource.Application,
@@ -195,7 +201,7 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 				entityTypeSvc := &automock.EntityTypeService{}
 				entityTypeSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(emptyEntityTypeModels, nil).Once()
 				entityTypeSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, testErr).Once()
-				entityTypeSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, packageID, *entityTypeInputs[0], uint64ResourceHash).Return(entityTypeID, nil).Once()
+				entityTypeSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, packageID1, *entityTypeInputs[0], uint64ResourceHash).Return(entityTypeID, nil).Once()
 				return entityTypeSvc
 			},
 			InputResource:       resource.ApplicationTemplateVersion,
@@ -203,6 +209,25 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 			InputEntityTypes:    entityTypeInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         testErr,
+		},
+		{
+			Name: "Success when updating package id for Entity Type",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
+			EntityTypeSvcFn: func() *automock.EntityTypeService {
+				entityTypeSvc := &automock.EntityTypeService{}
+				entityTypeInputs[0].OrdPackageID = packageORDID2
+				entityTypeSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(entityTypeModels, nil).Once()
+				entityTypeSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(updatedEntityTypeModels, nil).Once()
+				entityTypeSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, entityTypeModels[0].ID, packageID2, *entityTypeInputs[0], uint64ResourceHash).Return(nil).Once()
+				return entityTypeSvc
+			},
+			InputResource:       resource.Application,
+			InputResourceID:     appID,
+			InputEntityTypes:    entityTypeInputs,
+			InputResourceHashes: resourceHashes,
+			ExpectedOutput:      updatedEntityTypeModels,
 		},
 	}
 	for _, test := range testCases {

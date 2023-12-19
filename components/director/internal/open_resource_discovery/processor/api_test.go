@@ -23,6 +23,12 @@ func TestAPIProcessor_Process(t *testing.T) {
 		fixAPI(apiID, str.Ptr(apiORDID)),
 	}
 
+	fixUpdatedAPIDef := []*model.APIDefinition{
+		fixAPI(apiID, str.Ptr(apiORDID)),
+	}
+
+	fixUpdatedAPIDef[0].PackageID = str.Ptr(packageID2)
+
 	fixAPIDef2 := []*model.APIDefinition{
 		fixAPI(apiID, str.Ptr(apiORDID2)),
 	}
@@ -92,7 +98,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef, nil).Twice()
-				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, str.Ptr(packageID1), *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
 				return apiSvc
 			},
 			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
@@ -111,7 +117,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputResource:              resource.Application,
 			InputResourceID:            appID,
 			InputBundlesFromDB:         fixEmptyBundles(),
-			InputPackagesFromDB:        fixEmptyPackages(),
+			InputPackagesFromDB:        fixPackages(),
 			APIInput:                   fixAPIInputs,
 			InputResourceHashes:        resourceHashes,
 			ExpectedAPIDefOutput:       fixAPIDef,
@@ -126,7 +132,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoNewerLastUpdate(), nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef, nil).Once()
-				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, str.Ptr(packageID1), *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
 				return apiSvc
 			},
 			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
@@ -140,7 +146,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputResource:              resource.Application,
 			InputResourceID:            appID,
 			InputBundlesFromDB:         fixEmptyBundles(),
-			InputPackagesFromDB:        fixEmptyPackages(),
+			InputPackagesFromDB:        fixPackages(),
 			APIInput:                   fixAPIInputs,
 			InputResourceHashes:        resourceHashes,
 			ExpectedAPIDefOutput:       fixAPIDef,
@@ -154,7 +160,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef2, nil).Twice()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, str.Ptr(packageID), *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(apiID, nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, str.Ptr(packageID1), *fixAPIInputs[0], nilSpecInputSlice, map[string]string{}, emptyHash, "").Return(apiID, nil).Once()
 				return apiSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
@@ -264,7 +270,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef, nil).Once()
-				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(testErr).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, str.Ptr(packageID1), *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(testErr).Once()
 				return apiSvc
 			},
 			EntityTypeMappingSvcFn: func() *automock.EntityTypeMappingService {
@@ -277,7 +283,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputResource:        resource.Application,
 			InputResourceID:      appID,
 			InputBundlesFromDB:   fixEmptyBundles(),
-			InputPackagesFromDB:  fixEmptyPackages(),
+			InputPackagesFromDB:  fixPackages(),
 			APIInput:             fixAPIInputs,
 			InputResourceHashes:  resourceHashes,
 			ExpectedErr:          testErr,
@@ -440,7 +446,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef, nil).Once()
-				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, str.Ptr(packageID1), *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
 				return apiSvc
 			},
 			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
@@ -453,7 +459,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
 			InputBundlesFromDB:  fixEmptyBundles(),
-			InputPackagesFromDB: fixEmptyPackages(),
+			InputPackagesFromDB: fixPackages(),
 			APIInput:            fixAPIInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         testErr,
@@ -470,7 +476,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoNewerLastUpdate(), nil).Once()
-				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, str.Ptr(packageID1), *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
 				return apiSvc
 			},
 			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
@@ -484,7 +490,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
 			InputBundlesFromDB:  fixEmptyBundles(),
-			InputPackagesFromDB: fixEmptyPackages(),
+			InputPackagesFromDB: fixPackages(),
 			APIInput:            fixAPIInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         testErr,
@@ -501,7 +507,7 @@ func TestAPIProcessor_Process(t *testing.T) {
 			APISvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixAPIsNoNewerLastUpdate(), nil).Once()
-				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, fixAPIDef[0].ID, *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, fixAPIDef[0].ID, str.Ptr(packageID1), *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
 				return apiSvc
 			},
 			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
@@ -515,10 +521,45 @@ func TestAPIProcessor_Process(t *testing.T) {
 			InputResource:       resource.ApplicationTemplateVersion,
 			InputResourceID:     appTemplateVersionID,
 			InputBundlesFromDB:  fixEmptyBundles(),
-			InputPackagesFromDB: fixEmptyPackages(),
+			InputPackagesFromDB: fixPackages(),
 			APIInput:            fixAPIInputs,
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         testErr,
+		},
+		{
+			Name: "Success when updating package id for API",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
+			APISvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				fixAPIInputs[0].OrdPackageID = str.Ptr(packageORDID2)
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIDef, nil).Once()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixUpdatedAPIDef, nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, fixAPIDef[0].ID, str.Ptr(packageID2), *fixAPIInputs[0], nilSpecInput, map[string]string{}, map[string]string{}, []string{}, emptyHash, "").Return(nil).Once()
+				return apiSvc
+			},
+			EntityTypeMappingSvcFn: successfulEntityTypeMapping,
+			BundleReferenceSvcFn:   successfulBundleReferenceGet,
+			SpecSvcFn: func() *automock.SpecService {
+				specSvc := &automock.SpecService{}
+				spec1 := fixAPIInputs[0].ResourceDefinitions[0].ToSpec()
+				spec2 := fixAPIInputs[0].ResourceDefinitions[1].ToSpec()
+				spec3 := fixAPIInputs[0].ResourceDefinitions[2].ToSpec()
+				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, apiID).Return(nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec1, resource.Application, model.APISpecReference, apiID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec2, resource.Application, model.APISpecReference, apiID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *spec3, resource.Application, model.APISpecReference, apiID).Return("", nil, nil).Once()
+				return specSvc
+			},
+			InputResource:              resource.Application,
+			InputResourceID:            appID,
+			InputBundlesFromDB:         fixEmptyBundles(),
+			InputPackagesFromDB:        fixPackages(),
+			APIInput:                   fixAPIInputs,
+			InputResourceHashes:        resourceHashes,
+			ExpectedAPIDefOutput:       fixUpdatedAPIDef,
+			ExpectedFetchRequestOutput: []*processor.OrdFetchRequest{{FetchRequest: nil, RefObjectOrdID: apiORDID}, {FetchRequest: nil, RefObjectOrdID: apiORDID}, {FetchRequest: nil, RefObjectOrdID: apiORDID}},
 		},
 	}
 

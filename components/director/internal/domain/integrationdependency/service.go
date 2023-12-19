@@ -105,13 +105,13 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 }
 
 // Update updates an existing Integration Dependency.
-func (s *service) Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) error {
+func (s *service) Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, packageID *string, in model.IntegrationDependencyInput, integrationDependencyHash uint64) error {
 	integrationDependency, err := s.getIntegrationDependency(ctx, id, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Integration Dependency with ID %s for %s", id, resourceType)
 	}
 
-	integrationDependency = in.ToIntegrationDependency(id, resourceType, resourceID, integrationDependency.PackageID, integrationDependencyHash)
+	integrationDependency = in.ToIntegrationDependency(id, resourceType, resourceID, packageID, integrationDependencyHash)
 
 	err = s.updateIntegrationDependency(ctx, integrationDependency, resourceType)
 	if err != nil {

@@ -442,17 +442,16 @@ func TestService_Update(t *testing.T) {
 		return capability.Name == modelInput.Name
 	})
 
-	capabilityModelForApp := &model.Capability{
-		Name:          "Bar",
-		Version:       &model.Version{},
-		ApplicationID: &appID,
-	}
+	modelCapabilityForApp := fixCapabilityWithPackageModel(id, "Bar")
+	modelCapabilityForApp.ApplicationID = &appID
 
 	capabilityModelForAppTemplateVersion := &model.Capability{
 		Name:                         "Bar",
 		Version:                      &model.Version{},
 		ApplicationTemplateVersionID: &appTemplateVersionID,
 	}
+
+	packageUUID := "338deb5e-96cf-4ae2-a69c-ff3697a01715"
 
 	ctx := context.TODO()
 	ctxWithTenant := tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -462,6 +461,7 @@ func TestService_Update(t *testing.T) {
 		RepositoryFn    func() *automock.CapabilityRepository
 		Input           model.CapabilityInput
 		InputID         string
+		InputPackageID  *string
 		DefaultBundleID string
 		ResourceType    resource.Type
 		Ctx             context.Context
@@ -471,7 +471,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Success for Application",
 			RepositoryFn: func() *automock.CapabilityRepository {
 				repo := &automock.CapabilityRepository{}
-				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(capabilityModelForApp, nil).Once()
+				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(modelCapabilityForApp, nil).Once()
 				repo.On("Update", ctxWithTenant, tenantID, inputCapabilityModel).Return(nil).Once()
 				return repo
 			},
@@ -498,7 +498,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Error while updating Capability",
 			RepositoryFn: func() *automock.CapabilityRepository {
 				repo := &automock.CapabilityRepository{}
-				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(capabilityModelForApp, nil).Once()
+				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(modelCapabilityForApp, nil).Once()
 				repo.On("Update", ctxWithTenant, tenantID, inputCapabilityModel).Return(testErr).Once()
 				return repo
 			},
@@ -520,9 +520,9 @@ func TestService_Update(t *testing.T) {
 			if testCase.Ctx != nil {
 				defaultCtx = testCase.Ctx
 			}
-
+			testCase.InputPackageID = &packageUUID
 			// WHEN
-			err := svc.Update(defaultCtx, testCase.ResourceType, testCase.InputID, testCase.Input, 0)
+			err := svc.Update(defaultCtx, testCase.ResourceType, testCase.InputID, testCase.InputPackageID, testCase.Input, 0)
 
 			// then
 			if testCase.ExpectedErr == nil {
@@ -538,7 +538,7 @@ func TestService_Update(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := capability.NewService(nil, nil, nil)
 		// WHEN
-		err := svc.Update(context.TODO(), resource.Application, "", model.CapabilityInput{}, 0)
+		err := svc.Update(context.TODO(), resource.Application, "", nil, model.CapabilityInput{}, 0)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
