@@ -178,8 +178,8 @@ const (
 	APIProtocolGraphql string = "graphql"
 	// APIProtocolDeltaSharing is one of the available api protocol options
 	APIProtocolDeltaSharing string = "delta-sharing"
-	// APIProtocolSapInaApiV1 is one of the available api protocol options
-	APIProtocolSapInaApiV1 string = "sap-ina-api-v1"
+	// APIProtocolSapInaAPIV1 is one of the available api protocol options
+	APIProtocolSapInaAPIV1 string = "sap-ina-api-v1"
 
 	// APIVisibilityPublic is one of the available api visibility options
 	APIVisibilityPublic = public
@@ -228,8 +228,8 @@ const (
 	APIImplementationStandardCdiAPI string = "sap:cdi-api:v1"
 	// APIImplementationStandardHdlfDeltaSharing is one of the available api implementation standard options
 	APIImplementationStandardHdlfDeltaSharing string = "sap:hdlf-delta-sharing:v1"
-	// APIImplementationStandardHanaCloudSql is one of the available api implementation standard options
-	APIImplementationStandardHanaCloudSql string = "sap:hana-cloud-sql:v1"
+	// APIImplementationStandardHanaCloudSQL is one of the available api implementation standard options
+	APIImplementationStandardHanaCloudSQL string = "sap:hana-cloud-sql:v1"
 	// APIImplementationStandardCustom is one of the available api implementation standard options
 	APIImplementationStandardCustom = custom
 
@@ -649,7 +649,7 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 		validation.Field(&api.CustomPolicyLevel, validation.When(api.PolicyLevel != nil && *api.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(common.SemVerRegex))),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
-		validation.Field(&api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc, APIProtocolWebsocket, APIProtocolSAPSQLAPIV1, APIProtocolGraphql, APIProtocolDeltaSharing, APIProtocolSapInaApiV1)),
+		validation.Field(&api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc, APIProtocolWebsocket, APIProtocolSAPSQLAPIV1, APIProtocolGraphql, APIProtocolDeltaSharing, APIProtocolSapInaAPIV1)),
 		validation.Field(&api.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
 		validation.Field(&api.PartOfProducts, partOfProductsRules()...),
 		validation.Field(&api.SupportedUseCases,
@@ -676,7 +676,7 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&api.TargetURLs, validation.By(validateEntryPoints), validation.When(api.TargetURLs == nil, validation.By(notPartOfConsumptionBundles(api.PartOfConsumptionBundles)))),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
-		validation.Field(&api.ImplementationStandard, validation.In(APIImplementationStandardDocumentAPI, APIImplementationStandardServiceBroker, APIImplementationStandardCsnExposure, APIImplementationStandardApeAPI, APIImplementationStandardCdiAPI, APIImplementationStandardHdlfDeltaSharing, APIImplementationStandardHanaCloudSql, APIImplementationStandardCustom)),
+		validation.Field(&api.ImplementationStandard, validation.In(APIImplementationStandardDocumentAPI, APIImplementationStandardServiceBroker, APIImplementationStandardCsnExposure, APIImplementationStandardApeAPI, APIImplementationStandardCdiAPI, APIImplementationStandardHdlfDeltaSharing, APIImplementationStandardHanaCloudSQL, APIImplementationStandardCustom)),
 		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == APIImplementationStandardCustom, validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
 		validation.Field(&api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == APIImplementationStandardCustom, validation.Required).Else(validation.Empty)),
 		validation.Field(&api.PartOfConsumptionBundles, validation.By(func(value interface{}) error {

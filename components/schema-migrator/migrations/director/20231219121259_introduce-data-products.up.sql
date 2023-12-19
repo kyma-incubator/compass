@@ -180,14 +180,14 @@ FROM data_products,
 -- input ports
 CREATE VIEW input_ports_data_products AS
 SELECT id                AS data_product_id,
-       input_ports."ordId"       AS ord_id,
+       input_ports."ordId"       AS ord_id
 FROM data_products,
      jsonb_to_recordset(data_products.input_ports) AS input_ports("ordId" TEXT);
 
 -- output ports
 CREATE VIEW output_ports_data_products AS
 SELECT id                AS data_product_id,
-       output_ports."ordId"       AS ord_id,
+       output_ports."ordId"       AS ord_id
 FROM data_products,
      jsonb_to_recordset(data_products.output_ports) AS output_ports("ordId" TEXT);
 

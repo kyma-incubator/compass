@@ -4369,7 +4369,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			if test.AfterTest != nil {
 				test.AfterTest()
 			}
-			fmt.Println(err)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -8220,7 +8219,6 @@ func TestDocuments_ValidateIntegrationDependency(t *testing.T) {
 			}
 
 			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
-			fmt.Println(err)
 			if test.AfterTest != nil {
 				test.AfterTest()
 			}
@@ -9392,7 +9390,6 @@ func TestDocuments_ValidateDataProduct(t *testing.T) {
 			} // add only data products?
 
 			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
-			fmt.Println(err)
 			if test.AfterTest != nil {
 				test.AfterTest()
 			}
@@ -9403,7 +9400,6 @@ func TestDocuments_ValidateDataProduct(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestDocuments_ValidateProduct(t *testing.T) {

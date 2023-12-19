@@ -1,10 +1,11 @@
 package model_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestDataProductInput_ToDataProduct(t *testing.T) {
