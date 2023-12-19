@@ -310,6 +310,10 @@ var (
 		integrationDependency2ORDID: fixIntegrationDependenciesWithHash()[1],
 	}
 
+	dataProductsFromDB = map[string]*model.DataProduct{
+		dataProductORDID: fixDataProductsWithHash()[0],
+	}
+
 	pkgsFromDB = map[string]*model.Package{
 		packageORDID: fixPackagesWithHash()[0],
 	}
@@ -377,6 +381,10 @@ func fixResourceHashesForDocument(doc *ord.Document) map[string]uint64 {
 	for _, resource := range doc.EntityTypes {
 		hash, _ := ord.HashObject(resource)
 		result[resource.OrdID] = hash
+	}
+	for _, resource := range doc.DataProducts {
+		hash, _ := ord.HashObject(resource)
+		result[*resource.OrdID] = hash
 	}
 	for _, resource := range doc.ConsumptionBundles {
 		hash, _ := ord.HashObject(resource)
@@ -1413,6 +1421,18 @@ func fixIntegrationDependenciesWithHash() []*model.IntegrationDependency {
 	return integrationDependencies
 }
 
+func fixDataProductsWithHash() []*model.DataProduct {
+	dataProducts := fixDataProducts()
+
+	for idx, dataProduct := range dataProducts {
+		ordID := str.PtrStrToStr(dataProduct.OrdID)
+		hash := str.Ptr(strconv.FormatUint(resourceHashes[ordID], 10))
+		dataProduct.ResourceHash = hash
+		dataProduct.Version.Value = fixORDDocument().DataProducts[idx].VersionInput.Value
+	}
+	return dataProducts
+}
+
 func fixPackagesWithHash() []*model.Package {
 	pkgs := fixPackages()
 
@@ -1889,6 +1909,46 @@ func fixEntityTypes() []*model.EntityType {
 			DocumentationLabels:          json.RawMessage(documentationLabels),
 			Version:                      fixVersionModel(versionValue, versionDeprecated, versionDeprecatedSince, versionForRemoval),
 			ResourceHash:                 &resourceHash,
+		},
+	}
+}
+
+func fixDataProducts() []*model.DataProduct {
+	return []*model.DataProduct{
+		{
+			OrdID:               str.Ptr(dataProductORDID),
+			LocalTenantID:       str.Ptr(localTenantID),
+			CorrelationIDs:      json.RawMessage(correlationIDs),
+			Title:               "Data Product Title",
+			ShortDescription:    str.Ptr("Short description for Data Product"),
+			Description:         str.Ptr("Description for Data Product"),
+			PackageID:           str.Ptr(packageID),
+			LastUpdate:          str.Ptr("2023-12-14T15:47:04+00:00"),
+			Visibility:          str.Ptr("public"),
+			ReleaseStatus:       str.Ptr("active"),
+			Disabled:            &boolPtr,
+			SunsetDate:          nil,
+			Successors:          nil,
+			ChangeLogEntries:    json.RawMessage(changeLogEntries),
+			Type:                "base",
+			Category:            "other",
+			EntityTypes:         json.RawMessage(dataProductEntityTypes),
+			InputPorts:          nil,
+			OutputPorts:         json.RawMessage(dataProductOutputPorts),
+			Responsible:         str.Ptr("sap:ach:CIC-DP-CO"),
+			DataProductLinks:    json.RawMessage(dataProductLinks),
+			Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+			LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
+			Tags:                json.RawMessage(`["dataProductTestTag"]`),
+			Labels:              json.RawMessage(labels),
+			DocumentationLabels: json.RawMessage(documentLabels),
+			SystemInstanceAware: &boolPtr,
+			Version:             fixVersionModel(versionValue, versionDeprecated, versionDeprecatedSince, versionForRemoval),
+			BaseEntity: &model.BaseEntity{
+				ID:    dataProductORDID,
+				Ready: true,
+			},
 		},
 	}
 }

@@ -906,7 +906,7 @@ func validateDataProductInput(dataProduct *model.DataProductInput, docPolicyLeve
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EntityTypeOrdIDRegex))
 		})),
 		validation.Field(&dataProduct.InputPorts, validation.By(validateDataProductInputPorts)),
-		validation.Field(&dataProduct.OutputPorts, validation.By(validateDataProductOutputPorts)),
+		validation.Field(&dataProduct.OutputPorts, validation.Required, validation.By(validateDataProductOutputPorts)),
 		validation.Field(&dataProduct.Responsible, validation.Required, validation.Length(MinResponsibleLength, MaxResponsibleLength), validation.Match(regexp.MustCompile(ResponsibleRegex))),
 		validation.Field(&dataProduct.DataProductLinks, validation.By(func(value interface{}) error {
 			return validateResourceLinks(value, dataProductResourceLinkTypes)

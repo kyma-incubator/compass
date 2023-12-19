@@ -214,13 +214,13 @@ var (
 	]`
 
 	invalidCountriesElement          = `["DE", "wrongCountry"]`
-	invalidCountriesNonStringElement = `["DE", 992]`
+	invalidCountriesNonStringElement = `[10, "DE", 992]`
 
 	invalidLineOfBusinessElement          = `["sales", "wrongLineOfBusiness!@#"]`
 	invalidLineOfBusinessNonStringElement = `["sales", 992]`
 
 	invalidIndustryElement          = `["banking", "wrongIndustry!@#"]`
-	invalidIndustryNonStringElement = `["banking", 992]`
+	invalidIndustryNonStringElement = `[10, "banking", 992]`
 
 	invalidBundleLinksDueToMissingTitle = `[
         {
@@ -434,6 +434,60 @@ var (
 		}
 	  ]`
 
+	invalidDataProductLinksDueToMissingType = `[
+        {
+          "url": "https://example.com/shell/discover"
+        },
+		{
+          "type": "payment",
+          "url": "%s/shell/discover/relative"
+        }
+      ]`
+
+	invalidDataProductLinksDueToWrongType = `[
+        {
+          "type": "wrong data product link type",
+          "url": "https://example.com/shell/discover"
+        }
+      ]`
+
+	invalidDataProductLinksDueToMissingCustomValueOfType = `[
+        {
+          "type": "payment",
+          "customType": "not empty",
+          "url": "https://example.com/shell/discover"
+        }
+      ]`
+
+	invalidDataProductLinksCustomFieldDueWrongFormat = `[
+		{
+		  "type": "custom",
+		  "customType": "%^&wrong:{}",
+		  "url": "https://example.com/shell/discover"
+		}
+	  ]`
+
+	validDataProductLinksCustomField = `[
+		{
+		  "type": "custom",
+		  "customType": "name.sap.com:spec.id:v1",
+		  "url": "https://example.com/shell/discover"
+		}
+	  ]`
+
+	invalidDataProductLinksDueToMissingURL = `[
+        {
+          "type": "payment"
+        }
+      ]`
+
+	invalidDataProductLinksDueToWrongURL = `[
+        {
+          "type": "payment",
+          "url": "wrongURL"
+        }
+      ]`
+
 	invalidCorrelationIDsElement          = `["foo.bar.baz:123456", "wrongID"]`
 	invalidCorrelationIDsNonStringElement = `[1, "foo.bar.baz:123456", 992]`
 
@@ -453,7 +507,7 @@ var (
 	invalidDescriptionFieldWithExceedingMaxLengthEntityType = strings.Repeat("a", maxDescriptionLengthEntityTypeSapCorePolicy+1)
 
 	invalidSuccessorsElement          = `["foo.bar.baz:123456", "invalidValue"]`
-	invalidSuccessorsNonStringElement = `["foo.bar.baz:123456", 992]`
+	invalidSuccessorsNonStringElement = `[10, "foo.bar.baz:123456", 992]`
 
 	validAPIResourceMissingMinVersion = `[{"ordId":"sap.s4:apiResource:FOO:v1"}]`
 	invalidAPIResourcesMissingOrdID   = `[{"minVersion":"1.1.1"}]`
@@ -462,6 +516,11 @@ var (
 
 	invalidRelatedIntegrationDependenciesValue               = `["invalid-value"]`
 	invalidRelatedIntegrationDependenciesValueIntegerElement = `[10,"string"]`
+
+	invalidEntityTypesForDataProductsElement         = `["invalid-entity-type"]`
+	invalidEntityTypesForDataProductNonStringElement = `[1, 2, "value"]`
+	dataProductInputPortsFormat                      = `[{"ordId": "%s"}]`
+	dataProductOutputPortsFormat                     = `[{"ordId": "%s"}]`
 )
 
 func TestConfig_ValidateConfig(t *testing.T) {
@@ -2918,7 +2977,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name:              "Valid `industry` field when `policyLevel` is `custom`",
+			Name:              "Valid `industry` field when `policyLevel` is `custom` for API",
 			ExpectedToBeValid: true,
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -2928,7 +2987,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name:              "Valid `industry` field when `policyLevel` is `none`",
+			Name:              "Valid `industry` field when `policyLevel` is `none` for API",
 			ExpectedToBeValid: true,
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -4309,7 +4368,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			if test.AfterTest != nil {
 				test.AfterTest()
 			}
-
+			fmt.Println(err)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -8260,6 +8319,1060 @@ func TestDocuments_ValidateDataProduct(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Missing `title` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Title = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `title` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = nil
+				doc.DataProducts[0].Title = strings.Repeat("a", invalidTitleLength)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `title` field contains new lines for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Title = `invalid name\n new line`
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `title` field contains terms when document policy is sap:core:v1 for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.DataProducts[0].Title = "name contains deprecated"
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `title` field when document policy is sap:core:v1 for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.DataProducts[0].Title = strings.Repeat("a", invalidTitleLengthSapCorePolicy)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid missing `shortDescription` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = nil
+				doc.DataProducts[0].ShortDescription = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Exceeded length of `shortDescription` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = nil
+				doc.DataProducts[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidShortDescriptionLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `shortDescription` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = nil
+				doc.DataProducts[0].ShortDescription = str.Ptr("")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `shortDescription` field contains new lines for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = nil
+				doc.DataProducts[0].ShortDescription = str.Ptr(`newLine\n`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `shortDescription` field when containing `name` field for Data Product and document policy level is sap:core:v1",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.DataProducts[0].Title = "Test name"
+				doc.DataProducts[0].ShortDescription = str.Ptr("Test name inside short description")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `shortDescription` field when document policy level is sap:core:v1 for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.DataProducts[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidShortDescriptionLengthSapCorePolicy))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `shortDescription` field when doesn't match regex for Data Product and document policy level is sap:core:v1",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.DataProducts[0].ShortDescription = str.Ptr(invalidShortDescSapCore)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid missing `description` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Description = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `description` field with exceeding max length for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Description = str.Ptr(invalidDescriptionFieldWithExceedingMaxLength)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `description` field when containing `shortDescription` field for Data Product and document policy level is sap:core:v1",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.DataProducts[0].Description = str.Ptr("description contains test short description")
+				doc.DataProducts[0].ShortDescription = str.Ptr("test short description")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `partOfPackage` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].OrdPackageID = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `partOfPackage` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].OrdPackageID = str.Ptr(invalidOrdID)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `partOfPackage` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].OrdPackageID = str.Ptr(strings.Repeat("a", invalidPartOfPackageLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `version` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].VersionInput.Value = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `version` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].VersionInput.Value = invalidVersion
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Not incremented `version` field when Data Product has been changed",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Industry = json.RawMessage(`["Mining"]`)
+
+				newHash, err := ord.HashObject(doc.DataProducts[0])
+				require.NoError(t, err)
+
+				resourceHashes[dataProductORDID] = newHash
+
+				return []*ord.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
+			},
+		},
+		{
+			Name: "Valid incremented `version` field when Data Product has changed",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Industry = json.RawMessage(`["Utilities"]`)
+				doc.DataProducts[0].VersionInput.Value = "2.1.4"
+
+				hash, err := ord.HashObject(doc.DataProducts[0])
+				require.NoError(t, err)
+
+				resourceHashes[dataProductORDID] = hash
+
+				return []*ord.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `lastUpdate` field value for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].LastUpdate = str.Ptr("string value")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `visibility` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Visibility = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `visibility` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Visibility = str.Ptr("wrongVisibility")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `releaseStatus` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ReleaseStatus = str.Ptr("")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `releaseStatus` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ReleaseStatus = str.Ptr("wrongValue")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `deprecationDate` field when `releaseStatus` field has value `deprecated` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ReleaseStatus = str.Ptr("deprecated")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `deprecationDate` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ReleaseStatus = str.Ptr("deprecated")
+				doc.DataProducts[0].DeprecationDate = str.Ptr("0000-00-00T09:35:30+0000")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `sunsetDate` field when `releaseStatus` field has value `deprecated` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ReleaseStatus = str.Ptr("deprecated")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `sunsetDate` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ReleaseStatus = str.Ptr("deprecated")
+				doc.DataProducts[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid value for `successors` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Successors = json.RawMessage(invalidSuccessorsElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` field when it is invalid JSON for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Successors = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `successors` field when it isn't a JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Successors = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `successors` field when the JSON array is empty for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Successors = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `successors` field when it contains non string value for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Successors = json.RawMessage(invalidSuccessorsNonStringElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing field `version` of field `changeLogEntries` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ChangeLogEntries = json.RawMessage(invalidChangeLogEntriesDueToMissingVersion)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `version` of field `changeLogEntries` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ChangeLogEntries = json.RawMessage(invalidChangeLogEntriesDueToWrongVersion)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing field `releaseStatus` of field `changeLogEntries` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ChangeLogEntries = json.RawMessage(invalidChangeLogEntriesDueToMissingReleaseStatus)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `releaseStatus` of field `changeLogEntries` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ChangeLogEntries = json.RawMessage(invalidChangeLogEntriesDueToWrongReleaseStatus)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing field `date` of field `changeLogEntries` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ChangeLogEntries = json.RawMessage(invalidChangeLogEntriesDueToMissingDate)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `date` of field `changeLogEntries` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ChangeLogEntries = json.RawMessage(invalidChangeLogEntriesDueToWrongDate)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `url` of field `changeLogEntries` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ChangeLogEntries = json.RawMessage(invalidChangeLogEntriesDueToWrongURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty field `description` of field `changeLogEntries` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ChangeLogEntries = json.RawMessage(fmt.Sprintf(invalidChangeLogEntriesDueToInvalidLengthOfDescription, ""))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `description` with exceeding length of field `changeLogEntries` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ChangeLogEntries = json.RawMessage(fmt.Sprintf(invalidChangeLogEntriesDueToInvalidLengthOfDescription, invalidDescriptionFieldWithExceedingMaxLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `changeLogEntries` field when it is invalid JSON for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ChangeLogEntries = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `changeLogEntries` field when it isn't a JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ChangeLogEntries = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `changeLogEntries` field when it is an empty JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].ChangeLogEntries = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Missing `type` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Type = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `type` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Type = "wrong type"
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `category` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Category = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `category` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Category = "wrong category"
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid value for `entityTypes` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].EntityTypes = json.RawMessage(invalidEntityTypesForDataProductsElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `entityTypes` field when it is invalid JSON for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].EntityTypes = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `entityTypes` field when it isn't a JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].EntityTypes = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `entityTypes` field when the JSON array is empty for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].EntityTypes = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `entityTypes` field when it contains non string value for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].EntityTypes = json.RawMessage(invalidEntityTypesForDataProductNonStringElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `inputPorts` field when it is invalid JSON for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].InputPorts = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `inputPorts` field when it isn't a JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].InputPorts = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `inputPorts` field when it is an empty JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].InputPorts = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Missing field `ordId` of field `inputPorts` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].InputPorts = json.RawMessage("[{}]")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `ordId` of field `inputPorts` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].InputPorts = json.RawMessage(fmt.Sprintf(dataProductInputPortsFormat, "invalid-ord-id"))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `ordId` field in `inputPorts` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].InputPorts = json.RawMessage(fmt.Sprintf(dataProductInputPortsFormat, strings.Repeat("a", invalidOrdIDLength)))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `outputPorts` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].OutputPorts = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `outputPorts` field when it is invalid JSON for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].OutputPorts = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `outputPorts` field when it isn't a JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].OutputPorts = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing field `ordId` of field `outputPorts` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].OutputPorts = json.RawMessage("[{}]")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `ordId` of field `outputPorts` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].OutputPorts = json.RawMessage(fmt.Sprintf(dataProductOutputPortsFormat, "invalid-ord-id"))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `ordId` field in `outputPorts` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].OutputPorts = json.RawMessage(fmt.Sprintf(dataProductOutputPortsFormat, strings.Repeat("a", invalidOrdIDLength)))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `responsible` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Responsible = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `responsible` field value for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Responsible = str.Ptr("invalid value")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `responsible` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Responsible = str.Ptr(strings.Repeat("a", invalidResponsibleLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `dataProductLinks` field when it is invalid JSON for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].DataProductLinks = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `dataProductLinks` field when it isn't a JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].DataProductLinks = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `dataProductLinks` field when it is an empty JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].DataProductLinks = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Missing `type` field for `dataProductLinks` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].DataProductLinks = json.RawMessage(invalidDataProductLinksDueToMissingType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `type` field for `dataProductLinks` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].DataProductLinks = json.RawMessage(invalidDataProductLinksDueToWrongType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `customType` when field `type` is not `custom` for `dataProductLinks` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].DataProductLinks = json.RawMessage(invalidDataProductLinksDueToMissingCustomValueOfType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `customType` for `dataProductLinks` when `type` is set to `custom` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].DataProductLinks = json.RawMessage(invalidDataProductLinksCustomFieldDueWrongFormat)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid field `customType` for `dataProductLinks` when `type` is set to `custom` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].DataProductLinks = json.RawMessage(validDataProductLinksCustomField)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Missing `url` field for `dataProductLinks` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].DataProductLinks = json.RawMessage(invalidDataProductLinksDueToMissingURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `url` field for `dataProductLinks` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].DataProductLinks = json.RawMessage(invalidDataProductLinksDueToWrongURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `title` field in `links` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Links = json.RawMessage(invalidLinkDueToMissingTitle)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `url` field in `links` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Links = json.RawMessage(invalidLinkDueToMissingURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `url` field in `links` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Links = json.RawMessage(invalidLinkDueToWrongURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `description` field with exceeding length in `links` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, invalidDescriptionFieldWithExceedingMaxLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `description` field in `links` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, ""))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `links` field when it is invalid JSON for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Links = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `links` field when it isn't a JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Links = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `links` field when it is an empty JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Links = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid value for `industry` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Industry = json.RawMessage(invalidIndustryElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when it is invalid JSON for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Industry = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when it isn't a JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Industry = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `industry` field when the JSON array is empty for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Industry = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `industry` field when it contains non string value for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Industry = json.RawMessage(invalidIndustryNonStringElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when `policyLevel` is `sap:core:v1` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSap)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `industry` field when `policyLevel` is `custom` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Valid `industry` field when `policyLevel` is `none` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelNone)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid value for `lineOfBusiness` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].LineOfBusiness = json.RawMessage(invalidLineOfBusinessElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when it is invalid JSON for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].LineOfBusiness = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when it isn't a JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].LineOfBusiness = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `lineOfBusiness` field when the JSON array is empty for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].LineOfBusiness = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `lineOfBusiness` field when it contains non string value for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].LineOfBusiness = json.RawMessage(invalidCountriesNonStringElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap:core:v1` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSap)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `lineOfBusiness` field when `policyLevel` is `custom` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Valid `lineOfBusiness` field when `policyLevel` is `none` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelNone)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid value for `tags` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Tags = json.RawMessage(invalidTagsValue)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it is invalid JSON for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Tags = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it isn't a JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Tags = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `tags` field when the JSON array is empty for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Tags = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `tags` field when it contains non string value for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Tags = json.RawMessage(invalidTagsValueIntegerElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `labels` field when it is invalid JSON for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Labels = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON object `labels` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Labels = json.RawMessage(`[]`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `labels` field when it isn't a JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Labels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `labels` field when it contains non string value for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Labels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid key for JSON `labels` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `documentationLabels` field when it is invalid JSON for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].DocumentationLabels = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON object `documentationLabels` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].DocumentationLabels = json.RawMessage(`[]`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `documentationLabels` field when it isn't a JSON array for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`Invalid `documentationLabels` field when it contains non string value for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `policyLevel` field for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].PolicyLevel = str.Ptr("invalid policy")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `policyLevel` value when `customPolicyLevel` has value for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].PolicyLevel = str.Ptr("sap:core:v1")
+				doc.DataProducts[0].CustomPolicyLevel = str.Ptr("name.sap.com:spec.id:v1")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `customPolicyLevel` field value when `policyLevel` is `custom` for Data Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].PolicyLevel = str.Ptr("custom")
+				doc.DataProducts[0].CustomPolicyLevel = str.Ptr("invalid custom policy")
+
+				return []*ord.Document{doc}
+			},
+		},
+
+		// Test invalid entity relations
+		{
+			Name: "Data Product has a reference to an unknown Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DataProducts[0].OrdPackageID = str.Ptr(unknownPackageOrdID)
+
+				return []*ord.Document{doc}
+			},
 		},
 	}
 
@@ -8270,6 +9383,7 @@ func TestDocuments_ValidateDataProduct(t *testing.T) {
 				APIs:                    apisFromDB,
 				Events:                  eventsFromDB,
 				IntegrationDependencies: integrationDependenciesFromDB,
+				DataProducts:            dataProductsFromDB,
 				Packages:                pkgsFromDB,
 				Bundles:                 bndlsFromDB,
 			} // add only data products?
