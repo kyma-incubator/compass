@@ -162,6 +162,7 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 		EntityTypeSvcFn              func() *automock.EntityTypeService
 		CapabilitySvcFn              func() *automock.CapabilityService
 		IntegrationDependencySvcFn   func() *automock.IntegrationDependencyService
+		DataProductSvcFn             func() *automock.DataProductService
 		VendorSvcFn                  func() *automock.VendorService
 		ProductSvcFn                 func() *automock.ProductService
 		BundleSvcFn                  func() *automock.BundleService
@@ -175,6 +176,7 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 		InputEntityTypes             []*model.EntityType
 		InputCapabilities            []*model.Capability
 		InputIntegrationDependencies []*model.IntegrationDependency
+		InputDataProducts            []*model.DataProduct
 		InputTombstones              []*model.Tombstone
 		InputFetchRequests           []*processor.OrdFetchRequest
 		ExpectedOutput               []*processor.OrdFetchRequest
@@ -498,6 +500,11 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 				integrationDependencySvc = test.IntegrationDependencySvcFn()
 			}
 
+			dataProductSvc := &automock.DataProductService{}
+			if test.DataProductSvcFn != nil {
+				dataProductSvc = test.DataProductSvcFn()
+			}
+
 			vendorSvc := &automock.VendorService{}
 			if test.VendorSvcFn != nil {
 				vendorSvc = test.VendorSvcFn()
@@ -513,8 +520,8 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 				bundleSvc = test.BundleSvcFn()
 			}
 
-			tombstonedResourcesDeleter := processor.NewTombstonedResourcesDeleter(tx, packageSvc, apiSvc, eventSvc, entityTypeSvc, capabilitySvc, integrationDependencySvc, vendorSvc, productSvc, bundleSvc)
-			result, err := tombstonedResourcesDeleter.Delete(context.TODO(), test.InputResource, test.InputVendors, test.InputProducts, test.InputPackages, test.InputBundles, test.InputAPIs, test.InputEvents, test.InputEntityTypes, test.InputCapabilities, test.InputIntegrationDependencies, test.InputTombstones, test.InputFetchRequests)
+			tombstonedResourcesDeleter := processor.NewTombstonedResourcesDeleter(tx, packageSvc, apiSvc, eventSvc, entityTypeSvc, capabilitySvc, integrationDependencySvc, dataProductSvc, vendorSvc, productSvc, bundleSvc)
+			result, err := tombstonedResourcesDeleter.Delete(context.TODO(), test.InputResource, test.InputVendors, test.InputProducts, test.InputPackages, test.InputBundles, test.InputAPIs, test.InputEvents, test.InputEntityTypes, test.InputCapabilities, test.InputIntegrationDependencies, test.InputDataProducts, test.InputTombstones, test.InputFetchRequests)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), test.ExpectedErr.Error())

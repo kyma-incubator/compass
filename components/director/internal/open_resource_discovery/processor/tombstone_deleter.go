@@ -36,7 +36,7 @@ type TombstonedResourcesDeleter struct {
 }
 
 // NewTombstonedResourcesDeleter creates new instance of TombstonedResourcesDeleter
-func NewTombstonedResourcesDeleter(transact persistence.Transactioner, packageSvc PackageService, apiSvc APIService, eventSvc EventService, entityTypeSvc EntityTypeService, capabilitySvc CapabilityService, integrationDependencySvc IntegrationDependencyService, vendorSvc VendorService, productSvc ProductService, bundleSvc BundleService) *TombstonedResourcesDeleter {
+func NewTombstonedResourcesDeleter(transact persistence.Transactioner, packageSvc PackageService, apiSvc APIService, eventSvc EventService, entityTypeSvc EntityTypeService, capabilitySvc CapabilityService, integrationDependencySvc IntegrationDependencyService, dataProductSvc DataProductService, vendorSvc VendorService, productSvc ProductService, bundleSvc BundleService) *TombstonedResourcesDeleter {
 	return &TombstonedResourcesDeleter{
 		transact:                 transact,
 		packageSvc:               packageSvc,
@@ -45,6 +45,7 @@ func NewTombstonedResourcesDeleter(transact persistence.Transactioner, packageSv
 		entityTypeSvc:            entityTypeSvc,
 		capabilitySvc:            capabilitySvc,
 		integrationDependencySvc: integrationDependencySvc,
+		dataProductSvc:           dataProductSvc,
 		vendorSvc:                vendorSvc,
 		productSvc:               productSvc,
 		bundleSvc:                bundleSvc,

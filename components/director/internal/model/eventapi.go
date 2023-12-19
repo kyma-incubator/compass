@@ -131,7 +131,7 @@ func (rd *EventResourceDefinition) Validate() error {
 		validation.Field(&rd.CustomType, validation.When(rd.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex)))),
 		validation.Field(&rd.MediaType, validation.Required, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML, SpecFormatApplicationXML, SpecFormatPlainText, SpecFormatOctetStream)),
 		validation.Field(&rd.URL, validation.Required, is.RequestURI),
-		validation.Field(&rd.AccessStrategy, validation.Required),
+		validation.Field(&rd.AccessStrategy),
 	)
 }
 

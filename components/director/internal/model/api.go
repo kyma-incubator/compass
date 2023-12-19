@@ -143,7 +143,7 @@ func (rd *APIResourceDefinition) Validate() error {
 			validation.When(rd.Type == APISpecTypeSQLAPIDefinitionV1, validation.In(SpecFormatApplicationJSON)),
 			validation.When(rd.Type == APISpecTypeGraphqlSDL, validation.In(SpecFormatPlainText))),
 		validation.Field(&rd.URL, validation.Required, is.RequestURI),
-		validation.Field(&rd.AccessStrategy, validation.Required),
+		validation.Field(&rd.AccessStrategy),
 	)
 }
 

@@ -37,9 +37,9 @@ const (
 	// AspectResourcesMinVersionRegex represents the valid structure of the minVersion for apiResources and eventResources in Aspect
 	AspectResourcesMinVersionRegex = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 	// IntegrationDependencyOrdIDRegex represents the valid structure of the ordID of the Integration Dependency
-	IntegrationDependencyOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(integrationDependency):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
+	IntegrationDependencyOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// IntegrationDependencyOrdIDRegexGQL represents the valid structure of the ordID of the Integration Dependency for the GraphQL scenario - app namespace can be empty
-	IntegrationDependencyOrdIDRegexGQL = "^(([a-z0-9-]+(?:[.][a-z0-9-]+)*))*:(integrationDependency):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
+	IntegrationDependencyOrdIDRegexGQL = "^(([a-z0-9-]+(?:[.][a-z0-9-]+)*))*:(integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// PackageOrdIDRegex represents the valid structure of the ordID of the Package
 	PackageOrdIDRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(package):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// AspectMsg represents the resource name for Aspect used in error message

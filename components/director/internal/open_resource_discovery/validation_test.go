@@ -3153,13 +3153,14 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Missing field `accessStrategies` of `resourceDefinitions` field for API",
+			Name: "Valid missing field `accessStrategies` of `resourceDefinitions` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy = nil
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Missing field `type` for `accessStrategies` of `resourceDefinitions` field for API",
 			DocumentProvider: func() []*ord.Document {
@@ -4882,13 +4883,14 @@ func TestDocument_ValidateCapability(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Missing field `accessStrategies` of `capabilityDefinitions` field for Capability",
+			Name: "Valid missing field `accessStrategies` of `capabilityDefinitions` field for Capability",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Capabilities[0].CapabilityDefinitions[0].AccessStrategy = nil
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Missing field `type` for `accessStrategies` of `capabilityDefinitions` field for Capability",
 			DocumentProvider: func() []*ord.Document {
@@ -5767,13 +5769,14 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Missing field `accessStrategies` of `resourceDefinitions` field for Event",
+			Name: "Valid missing field `accessStrategies` of `resourceDefinitions` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy = nil
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Missing field `type` for `accessStrategies` of `resourceDefinitions` field for Event",
 			DocumentProvider: func() []*ord.Document {
