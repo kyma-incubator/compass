@@ -184,7 +184,7 @@ global:
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3553"
+      version: "PR-3560"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
