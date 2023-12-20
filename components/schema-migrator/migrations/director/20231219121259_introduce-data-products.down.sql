@@ -46,7 +46,7 @@ ALTER TABLE api_definitions
     DROP COLUMN usage;
 
 -- Drop `responsible` column from Event
-ALTER TABLE event_definitions
+ALTER TABLE event_api_definitions
     DROP COLUMN responsible;
 
 
