@@ -35,7 +35,7 @@ func TestOperationsManager_MarkOperationCompleted(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			OperationSvcFn: func() *automock.OperationService {
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("MarkAsCompleted", txtest.CtxWithDBMatcher(), operationID).Return(nil).Once()
+				operationSvc.On("MarkAsCompleted", txtest.CtxWithDBMatcher(), operationID, "").Return(nil).Once()
 				return operationSvc
 			},
 			Input: operationID,
@@ -45,7 +45,7 @@ func TestOperationsManager_MarkOperationCompleted(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			OperationSvcFn: func() *automock.OperationService {
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("MarkAsCompleted", txtest.CtxWithDBMatcher(), operationID).Return(testError).Once()
+				operationSvc.On("MarkAsCompleted", txtest.CtxWithDBMatcher(), operationID, "").Return(testError).Once()
 				return operationSvc
 			},
 			Input:         operationID,
@@ -65,7 +65,7 @@ func TestOperationsManager_MarkOperationCompleted(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			OperationSvcFn: func() *automock.OperationService {
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("MarkAsCompleted", txtest.CtxWithDBMatcher(), operationID).Return(nil).Once()
+				operationSvc.On("MarkAsCompleted", txtest.CtxWithDBMatcher(), operationID, "").Return(nil).Once()
 				return operationSvc
 			},
 			Input:         operationID,
@@ -81,7 +81,7 @@ func TestOperationsManager_MarkOperationCompleted(t *testing.T) {
 			opManager := NewOperationsManager(transact, operationSvc, model.OperationTypeOrdAggregation, OperationsManagerConfig{})
 
 			// WHEN
-			err := opManager.MarkOperationCompleted(context.TODO(), testCase.Input)
+			err := opManager.MarkOperationCompleted(context.TODO(), testCase.Input, "")
 
 			// THEN
 			if testCase.ExpectedError != nil {

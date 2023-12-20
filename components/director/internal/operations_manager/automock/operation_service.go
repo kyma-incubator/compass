@@ -196,13 +196,13 @@ func (_m *OperationService) LockOperation(ctx context.Context, operationID strin
 	return r0, r1
 }
 
-// MarkAsCompleted provides a mock function with given fields: ctx, id
-func (_m *OperationService) MarkAsCompleted(ctx context.Context, id string) error {
-	ret := _m.Called(ctx, id)
+// MarkAsCompleted provides a mock function with given fields: ctx, id, errorMsg
+func (_m *OperationService) MarkAsCompleted(ctx context.Context, id string, errorMsg string) error {
+	ret := _m.Called(ctx, id, errorMsg)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, id, errorMsg)
 	} else {
 		r0 = ret.Error(0)
 	}
