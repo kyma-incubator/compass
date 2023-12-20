@@ -20,9 +20,9 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/kelseyhightower/envconfig v1.3.0
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231213152457-b0ccc6532545
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231213152457-b0ccc6532545
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231213152457-b0ccc6532545
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231215122547-1bef112a2d63
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231215122547-1bef112a2d63
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231215122547-1bef112a2d63
 	github.com/lestrrat-go/iter v1.0.2
 	github.com/lestrrat-go/jwx v1.2.26
 	github.com/lib/pq v1.10.9
@@ -126,3 +126,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
+replace sourcegraph.com/sourcegraph/appdash-data => github.com/sourcegraph/appdash-data v0.0.0-20151005221446-73f23eafcf67

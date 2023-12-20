@@ -772,8 +772,8 @@ input FormationTemplateInput {
 input IntegrationDependencyInput {
 	name: String!
 	description: String
-	ordID: String
-	partOfPackage: String
+	ordID: String!
+	partOfPackage: ID
 	visibility: String
 	releaseStatus: String
 	mandatory: Boolean
