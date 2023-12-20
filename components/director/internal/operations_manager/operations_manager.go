@@ -123,7 +123,7 @@ func (om *OperationsManager) FindOperationByData(ctx context.Context, data inter
 }
 
 // MarkOperationCompleted marks the operation with the given ID as completed
-func (om *OperationsManager) MarkOperationCompleted(ctx context.Context, id string) error {
+func (om *OperationsManager) MarkOperationCompleted(ctx context.Context, id, errorMsg string) error {
 	tx, err := om.transact.Begin()
 	if err != nil {
 		return err
@@ -131,7 +131,7 @@ func (om *OperationsManager) MarkOperationCompleted(ctx context.Context, id stri
 	defer om.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := om.opSvc.MarkAsCompleted(ctx, id); err != nil {
+	if err := om.opSvc.MarkAsCompleted(ctx, id, errorMsg); err != nil {
 		return errors.Wrapf(err, "while marking operation with id %q as completed", id)
 	}
 
