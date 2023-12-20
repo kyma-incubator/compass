@@ -788,7 +788,9 @@ func Test_UpsertSingle(t *testing.T) {
 			Name:        "Success",
 			tenantInput: tenantInput,
 			TenantMappingRepoFn: func(createRepoFunc string) *automock.TenantMappingRepository {
-				return createRepoSvc(ctx, createRepoFunc, *tenantModel)
+				tmRepoSvc := createRepoSvc(ctx, createRepoFunc, *tenantModel)
+				tmRepoSvc.On("ListByExternalTenants", ctx, []string{}).Return([]*model.BusinessTenantMapping{}, nil)
+				return tmRepoSvc
 			},
 			UIDSvcFn:         uidSvcFn,
 			LabelRepoFn:      noopLabelRepo,
@@ -800,7 +802,9 @@ func Test_UpsertSingle(t *testing.T) {
 			Name:        "Success when subdomain should be added",
 			tenantInput: tenantInputWithSubdomain,
 			TenantMappingRepoFn: func(createFuncName string) *automock.TenantMappingRepository {
-				return createRepoSvc(ctx, createFuncName, *tenantInputWithSubdomain.ToBusinessTenantMapping(testID))
+				tmRepoSvc := createRepoSvc(ctx, createFuncName, *tenantInputWithSubdomain.ToBusinessTenantMapping(testID))
+				tmRepoSvc.On("ListByExternalTenants", ctx, []string{}).Return([]*model.BusinessTenantMapping{}, nil)
+				return tmRepoSvc
 			},
 			UIDSvcFn:    uidSvcFn,
 			LabelRepoFn: noopLabelRepo,
@@ -822,7 +826,9 @@ func Test_UpsertSingle(t *testing.T) {
 			Name:        "Success when region should be added",
 			tenantInput: tenantInputWithRegion,
 			TenantMappingRepoFn: func(createFuncName string) *automock.TenantMappingRepository {
-				return createRepoSvc(ctx, createFuncName, *tenantInputWithRegion.ToBusinessTenantMapping(testID))
+				tmRepoSvc := createRepoSvc(ctx, createFuncName, *tenantInputWithRegion.ToBusinessTenantMapping(testID))
+				tmRepoSvc.On("ListByExternalTenants", ctx, []string{}).Return([]*model.BusinessTenantMapping{}, nil)
+				return tmRepoSvc
 			},
 			UIDSvcFn:    uidSvcFn,
 			LabelRepoFn: noopLabelRepo,
@@ -841,10 +847,29 @@ func Test_UpsertSingle(t *testing.T) {
 			ExpectedResult: testID,
 		},
 		{
+			Name:        "Error when listing tenants by external ids",
+			tenantInput: tenantInputWithSubdomain,
+			TenantMappingRepoFn: func(createFuncName string) *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("ListByExternalTenants", ctx, []string{}).Return([]*model.BusinessTenantMapping{}, testError)
+				return tenantMappingRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelRepoFn: noopLabelRepo,
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
+			ExpectedError:  testError,
+			ExpectedResult: "",
+		},
+		{
 			Name:        "Error when subdomain label setting fails",
 			tenantInput: tenantInputWithSubdomain,
 			TenantMappingRepoFn: func(createFuncName string) *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("ListByExternalTenants", ctx, []string{}).Return([]*model.BusinessTenantMapping{}, nil)
 				tenantMappingRepo.On(createFuncName, ctx, *tenantInputWithSubdomain.ToBusinessTenantMapping(testID)).Return(testID, nil).Once()
 				return tenantMappingRepo
 			},
@@ -869,6 +894,7 @@ func Test_UpsertSingle(t *testing.T) {
 			tenantInput: tenantInputWithRegion,
 			TenantMappingRepoFn: func(createFuncName string) *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("ListByExternalTenants", ctx, []string{}).Return([]*model.BusinessTenantMapping{}, nil)
 				tenantMappingRepo.On(createFuncName, ctx, *tenantInputWithRegion.ToBusinessTenantMapping(testID)).Return(testID, nil).Once()
 				return tenantMappingRepo
 			},
@@ -893,6 +919,7 @@ func Test_UpsertSingle(t *testing.T) {
 			tenantInput: tenantInput,
 			TenantMappingRepoFn: func(createFuncName string) *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("ListByExternalTenants", ctx, []string{}).Return([]*model.BusinessTenantMapping{}, nil)
 				tenantMappingRepo.On(createFuncName, ctx, *tenantModel).Return("", testError).Once()
 				return tenantMappingRepo
 			},
@@ -1614,7 +1641,6 @@ func createRepoSvc(ctx context.Context, createFuncName string, tenants ...model.
 	tenantMappingRepo := &automock.TenantMappingRepository{}
 	for _, t := range tenants {
 		tenantMappingRepo.On(createFuncName, ctx, t).Return(t.ID, nil).Once()
-		//tenantMappingRepo.On("GetByExternalTenant", ctx, t.ExternalTenant).Return(&t, nil).Once()
 	}
 	return tenantMappingRepo
 }

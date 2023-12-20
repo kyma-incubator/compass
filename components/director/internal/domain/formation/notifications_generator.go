@@ -3,8 +3,6 @@ package formation
 import (
 	"context"
 
-	"github.com/davecgh/go-spew/spew"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -118,7 +116,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeCon
 		if appTemplateWithLabels == nil {
 			log.C(ctx).Infof("Application with ID: %q has no application template. Will proceed without application template in the input for webhook with ID: %q", appID, webhook.ID)
 		}
-		spew.Dump("RUNTIME ", runtime)
+
 		details, err := ns.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 			operation,
 			formation.FormationTemplateID,

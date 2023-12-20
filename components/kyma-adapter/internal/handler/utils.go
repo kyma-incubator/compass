@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
-
 	"github.com/go-openapi/runtime/middleware/header"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -37,7 +35,7 @@ func decodeJSONBody(r *http.Request, dst interface{}) error {
 	r.Body = io.NopCloser(r.Body)
 
 	dec := json.NewDecoder(r.Body)
-	spew.Dump("BODY:", r.Body)
+
 	if err := dec.Decode(&dst); err != nil {
 		var syntaxError *json.SyntaxError
 		var unmarshalTypeError *json.UnmarshalTypeError

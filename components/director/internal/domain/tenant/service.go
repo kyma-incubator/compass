@@ -375,6 +375,16 @@ func (s *labeledService) UpsertSingle(ctx context.Context, tenantInput model.Bus
 }
 
 func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) (string, error)) (string, error) {
+	parents, err := s.ListsByExternalIDs(ctx, tenantInput.Parents)
+	if err != nil {
+		return "", errors.Wrap(err, "while listing tenants by external ids")
+	}
+	parentInternalIDs := make([]string, 0, len(parents))
+	for _, parent := range parents {
+		parentInternalIDs = append(parentInternalIDs, parent.ID)
+	}
+	tenantInput.Parents = parentInternalIDs
+
 	id := s.uidService.Generate()
 	tenant := *tenantInput.ToBusinessTenantMapping(id)
 	tenantList := []model.BusinessTenantMappingInput{tenantInput}
