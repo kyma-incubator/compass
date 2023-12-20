@@ -180,7 +180,7 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3544"
+      version: "PR-3551"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
