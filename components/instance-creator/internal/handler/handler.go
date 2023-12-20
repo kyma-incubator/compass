@@ -310,6 +310,7 @@ func (i *InstanceCreatorHandler) handleInstanceDeletion(ctx context.Context, req
 	// Get the service instance with labels using the formation-id label key
 	serviceInstancesIDs, err := i.SMClient.RetrieveMultipleResourcesIDsByLabels(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceInstances{}, map[string][]string{assignmentIDKey: {assignmentID}})
 	if err != nil {
+		// TODO:: Maybe add an if to check if the error is not subaccount is missing - if it's missing return READY
 		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, deleteErrorState, errors.Wrapf(err, "while retrieving service instances for assignmentID: %q", assignmentID))
 		return
 	}
