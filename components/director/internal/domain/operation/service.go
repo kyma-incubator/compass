@@ -94,6 +94,7 @@ func (s *service) MarkAsCompleted(ctx context.Context, id, errorMsg string) erro
 		return errors.Wrapf(err, "while getting opreration with id %q", id)
 	}
 
+	op.Error = json.RawMessage("{}")
 	if errorMsg != "" {
 		opError := NewOperationError(errorMsg)
 		rawMessage, err := opError.ToJSONRawMessage()
@@ -101,8 +102,6 @@ func (s *service) MarkAsCompleted(ctx context.Context, id, errorMsg string) erro
 			return errors.Wrap(err, "while marshaling operation error")
 		}
 		op.Error = rawMessage
-	} else {
-		op.Error = json.RawMessage("{}")
 	}
 
 	op.Status = model.OperationStatusCompleted
