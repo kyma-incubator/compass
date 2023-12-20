@@ -164,7 +164,7 @@ global:
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3553"
+      version: "PR-3555"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
