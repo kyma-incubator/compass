@@ -166,8 +166,7 @@ func TestService_Processing(t *testing.T) {
 
 	successfulDataProductProcessing := func() *automock.DataProductProcessor {
 		dataProductProcessor := &automock.DataProductProcessor{}
-		d := fixResourceHashesForDocument(fixORDDocument())
-		dataProductProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.DataProducts, d).Return(fixDataProducts(), nil).Once()
+		dataProductProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.DataProducts, fixResourceHashesForDocument(fixORDDocument())).Return(fixDataProducts(), nil).Once()
 		return dataProductProcessor
 	}
 
@@ -595,7 +594,7 @@ func TestService_Processing(t *testing.T) {
 		fetchReq := fixAPIsFetchRequests()[0:3]
 		fetchReq = append(fetchReq, fixEventsFetchRequests()...)
 		fetchReq = append(fetchReq, fixCapabilityFetchRequests()...)
-		tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, fixVendors(), fixProducts(), fixPackages(), fixBundles(), fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
+		tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, fixVendors(), fixProducts(), fixPackages(), fixBundles(), fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixDataProducts(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
 		return tombstonedResourcesDeleterFn
 	}
 
@@ -717,7 +716,6 @@ func TestService_Processing(t *testing.T) {
 			entityTypeSvcFn: successfulEntityTypeFetchForAppTemplateVersion,
 			entityTypeProcessorFn: func() *automock.EntityTypeProcessor {
 				entityTypeProcessor := &automock.EntityTypeProcessor{}
-				fmt.Println("ENTITY TYPE")
 				entityTypeProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, sanitizedStaticDoc.EntityTypes, fixPackages(), fixResourceHashesForDocument(fixORDStaticDocument())).Return(fixEntityTypes(), nil).Once()
 				return entityTypeProcessor
 			},
@@ -831,6 +829,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			specSvcFn:                        successfulSpecRefetch,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
 			packageSvcFn:                     successfulPackageList,
@@ -843,7 +843,7 @@ func TestService_Processing(t *testing.T) {
 				fetchReq := fixFailedAPIFetchRequests()[:1]
 				fetchReq = append(fetchReq, fixFailedEventsFetchRequests()...)
 				fetchReq = append(fetchReq, fixCapabilityFetchRequests()...)
-				tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, fixVendors(), fixProducts(), fixPackages(), fixBundles(), fixAPIsNoNewerLastUpdate(), fixEventsNoNewerLastUpdate(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
+				tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, fixVendors(), fixProducts(), fixPackages(), fixBundles(), fixAPIsNoNewerLastUpdate(), fixEventsNoNewerLastUpdate(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixDataProducts(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
 				return tombstonedResourcesDeleterFn
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -872,6 +872,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			specSvcFn:                        successfulSpecCreateAndUpdate,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
 			packageSvcFn:                     successfulPackageList,
@@ -920,6 +922,12 @@ func TestService_Processing(t *testing.T) {
 				integrationDependencyProcessor := &automock.IntegrationDependencyProcessor{}
 				integrationDependencyProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDocForProxy.IntegrationDependencies, mock.Anything).Return(fixIntegrationDependencies(), nil).Once()
 				return integrationDependencyProcessor
+			},
+			dataProductSvcFn: successfulDataProductFetchForApplication,
+			dataProductProcessorFn: func() *automock.DataProductProcessor {
+				dataProductsProcessor := &automock.DataProductProcessor{}
+				dataProductsProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDocForProxy.DataProducts, mock.Anything).Return(fixDataProducts(), nil).Once()
+				return dataProductsProcessor
 			},
 			specSvcFn:    successfulSpecCreateAndUpdateForProxy,
 			fetchReqFn:   successfulFetchRequestFetchAndUpdateForProxy,
@@ -971,6 +979,12 @@ func TestService_Processing(t *testing.T) {
 				integrationDependencyProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, fixPackages(), sanitizedStaticDoc.IntegrationDependencies, fixResourceHashesForDocument(fixORDStaticDocument())).Return(fixIntegrationDependencies(), nil).Once()
 				return integrationDependencyProcessor
 			},
+			dataProductSvcFn: successfulDataProductFetchForAppTemplateVersion,
+			dataProductProcessorFn: func() *automock.DataProductProcessor {
+				dataProductsProcessor := &automock.DataProductProcessor{}
+				dataProductsProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, fixPackages(), sanitizedStaticDoc.DataProducts, fixResourceHashesForDocument(fixORDStaticDocument())).Return(fixDataProducts(), nil).Once()
+				return dataProductsProcessor
+			},
 			capabilitySvcFn:       successfulCapabilityListForStaticDoc,
 			capabilityProcessorFn: successfulCapabilityProcessForStaticDoc,
 			specSvcFn:             successfulSpecCreateAndUpdateForStaticDoc,
@@ -989,7 +1003,7 @@ func TestService_Processing(t *testing.T) {
 				fetchReq := fixAPIsFetchRequests()[0:3]
 				fetchReq = append(fetchReq, fixEventsFetchRequests()...)
 				fetchReq = append(fetchReq, fixCapabilityFetchRequests()...)
-				tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, fixVendors(), fixProducts(), fixPackages(), fixBundles(), fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
+				tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, fixVendors(), fixProducts(), fixPackages(), fixBundles(), fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixDataProducts(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
 				return tombstonedResourcesDeleterFn
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionForCreation,
@@ -1100,6 +1114,7 @@ func TestService_Processing(t *testing.T) {
 				return capabilitySvc
 			},
 			integrationDependencySvcFn: successfulIntegrationDependencyFetchForAppTemplateVersion,
+			dataProductSvcFn:           successfulDataProductFetchForAppTemplateVersion,
 			packageSvcFn: func() *automock.PackageService {
 				packagesSvc := &automock.PackageService{}
 				packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixPackagesWithHash(), nil).Once()
@@ -1215,6 +1230,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			specSvcFn:                        successfulSpecRecreateAndUpdate,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
 			packageSvcFn:                     successfulPackageList,
@@ -1260,6 +1277,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			specSvcFn:                        successfulSpecCreateAndUpdate,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
 			packageSvcFn:                     successfulPackageList,
@@ -1299,6 +1318,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			specSvcFn:                        successfulSpecCreateAndUpdate,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
 			packageSvcFn:                     successfulPackageList,
@@ -1643,6 +1664,8 @@ func TestService_Processing(t *testing.T) {
 			entityTypeProcessorFn:            successfulEntityTypeProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			capabilitySvcFn:                  successfulCapabilityList,
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			specSvcFn:                        successfulSpecRecreateAndUpdate,
@@ -1696,6 +1719,7 @@ func TestService_Processing(t *testing.T) {
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
 			capabilitySvcFn:            successfulCapabilityList,
 			integrationDependencySvcFn: successfulIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			packageSvcFn: func() *automock.PackageService {
 				packagesSvc := &automock.PackageService{}
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackagesWithHash(), nil).Once()
@@ -1742,6 +1766,14 @@ func TestService_Processing(t *testing.T) {
 				integrationDependencyProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.IntegrationDependencies, fixResourceHashesForDocument(doc)).Return(fixIntegrationDependencies(), nil).Once()
 				return integrationDependencyProcessor
 			},
+			dataProductSvcFn: successfulDataProductFetchForApplication,
+			dataProductProcessorFn: func() *automock.DataProductProcessor {
+				dataProductProcessor := &automock.DataProductProcessor{}
+				doc := fixORDDocument()
+				doc.EventResources[0].Name = "" // invalid document
+				dataProductProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.DataProducts, fixResourceHashesForDocument(doc)).Return(fixDataProducts(), nil).Once()
+				return dataProductProcessor
+			},
 			capabilitySvcFn:       successfulCapabilityList,
 			capabilityProcessorFn: successfulCapabilityProcess,
 			specSvcFn:             successfulSpecWithOneEventCreateAndUpdate,
@@ -1756,7 +1788,7 @@ func TestService_Processing(t *testing.T) {
 				fetchReq := fixAPIsFetchRequests()[0:3]
 				fetchReq = append(fetchReq, fixOneEventFetchRequests()...)
 				fetchReq = append(fetchReq, fixCapabilityFetchRequests()...)
-				tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, fixVendors(), fixProducts(), fixPackages(), fixBundles(), fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
+				tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, fixVendors(), fixProducts(), fixPackages(), fixBundles(), fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixDataProducts(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
 				return tombstonedResourcesDeleterFn
 			},
 			globalRegistrySvcFn: successfulGlobalRegistrySvc,
@@ -1807,6 +1839,14 @@ func TestService_Processing(t *testing.T) {
 				integrationDependencyProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.IntegrationDependencies, fixResourceHashesForDocument(doc)).Return(fixIntegrationDependencies(), nil).Once()
 				return integrationDependencyProcessor
 			},
+			dataProductSvcFn: successfulDataProductFetchForApplication,
+			dataProductProcessorFn: func() *automock.DataProductProcessor {
+				dataProductProcessor := &automock.DataProductProcessor{}
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Name = "" // invalid document
+				dataProductProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.DataProducts, fixResourceHashesForDocument(doc)).Return(fixDataProducts(), nil).Once()
+				return dataProductProcessor
+			},
 			capabilitySvcFn:       successfulCapabilityList,
 			capabilityProcessorFn: successfulCapabilityProcess,
 			specSvcFn:             successfulSpecCreateAndUpdate,
@@ -1826,7 +1866,7 @@ func TestService_Processing(t *testing.T) {
 				fetchReq = append(fetchReq, fixEventsFetchRequests()...)
 				fetchReq = append(fetchReq, fixCapabilityFetchRequests()...)
 				var nilBundles []*model.Bundle
-				tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, fixVendors(), fixProducts(), fixPackages(), nilBundles, fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
+				tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, fixVendors(), fixProducts(), fixPackages(), nilBundles, fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixDataProducts(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
 				return tombstonedResourcesDeleterFn
 			},
 			globalRegistrySvcFn: successfulGlobalRegistrySvc,
@@ -1867,6 +1907,14 @@ func TestService_Processing(t *testing.T) {
 				doc.Vendors[0].OrdID = "" // invalid document
 				integrationDependencyProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.IntegrationDependencies, fixResourceHashesForDocument(doc)).Return(fixIntegrationDependencies(), nil).Once()
 				return integrationDependencyProcessor
+			},
+			dataProductSvcFn: successfulDataProductFetchForApplication,
+			dataProductProcessorFn: func() *automock.DataProductProcessor {
+				dataProductProcessor := &automock.DataProductProcessor{}
+				doc := fixORDDocument()
+				doc.Vendors[0].OrdID = "" // invalid document
+				dataProductProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.DataProducts, fixResourceHashesForDocument(doc)).Return(fixDataProducts(), nil).Once()
+				return dataProductProcessor
 			},
 			specSvcFn:          successfulSpecCreateAndUpdate,
 			fetchReqFn:         successfulFetchRequestFetchAndUpdate,
@@ -1919,6 +1967,14 @@ func TestService_Processing(t *testing.T) {
 				integrationDependencyProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.IntegrationDependencies, fixResourceHashesForDocument(doc)).Return(fixIntegrationDependencies(), nil).Once()
 				return integrationDependencyProcessor
 			},
+			dataProductSvcFn: successfulDataProductFetchForApplication,
+			dataProductProcessorFn: func() *automock.DataProductProcessor {
+				dataProductProcessor := &automock.DataProductProcessor{}
+				doc := fixORDDocument()
+				doc.Products[0].Title = "" // invalid document
+				dataProductProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.DataProducts, fixResourceHashesForDocument(doc)).Return(fixDataProducts(), nil).Once()
+				return dataProductProcessor
+			},
 			specSvcFn:          successfulSpecCreateAndUpdate,
 			fetchReqFn:         successfulFetchRequestFetchAndUpdate,
 			packageSvcFn:       successfulPackageList,
@@ -1959,6 +2015,7 @@ func TestService_Processing(t *testing.T) {
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
 			capabilitySvcFn:            successfulCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			fetchReqFn:                 successfulFetchRequestFetchAndUpdate,
 			packageSvcFn:               successfulPackageList,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
@@ -2001,6 +2058,7 @@ func TestService_Processing(t *testing.T) {
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
 			capabilitySvcFn:            successfulCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			packageSvcFn:               successfulEmptyPackageList,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
@@ -2035,6 +2093,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:                 successfulEventList,
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			capabilitySvcFn:            successfulCapabilityList,
 			packageSvcFn:               successfulEmptyPackageList,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
@@ -2073,6 +2132,7 @@ func TestService_Processing(t *testing.T) {
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
 			capabilitySvcFn:            successfulCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
 			labelSvcFn:                 successfulLabelGetByKey,
@@ -2110,6 +2170,7 @@ func TestService_Processing(t *testing.T) {
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
 			capabilitySvcFn:            successfulCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
 			labelSvcFn:                 successfulLabelGetByKey,
@@ -2149,6 +2210,7 @@ func TestService_Processing(t *testing.T) {
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
 			capabilitySvcFn:            successfulCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
 			labelSvcFn:                 successfulLabelGetByKey,
@@ -2187,6 +2249,7 @@ func TestService_Processing(t *testing.T) {
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
 			capabilitySvcFn:            successfulCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
 			labelSvcFn:                 successfulLabelGetByKey,
@@ -2222,6 +2285,7 @@ func TestService_Processing(t *testing.T) {
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
 			capabilitySvcFn:            successfulCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
 			labelSvcFn:                 successfulLabelGetByKey,
@@ -2260,6 +2324,7 @@ func TestService_Processing(t *testing.T) {
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
 			capabilitySvcFn:            successfulCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
 			labelSvcFn:                 successfulLabelGetByKey,
@@ -2304,6 +2369,7 @@ func TestService_Processing(t *testing.T) {
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
 			capabilitySvcFn:            successfulCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
 			labelSvcFn:                 successfulLabelGetByKey,
@@ -2350,6 +2416,7 @@ func TestService_Processing(t *testing.T) {
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
 			capabilitySvcFn:            successfulCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
 			labelSvcFn:                 successfulLabelGetByKey,
@@ -2398,6 +2465,7 @@ func TestService_Processing(t *testing.T) {
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
 			capabilitySvcFn:            successfulCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
 			labelSvcFn:                 successfulLabelGetByKey,
@@ -2443,6 +2511,7 @@ func TestService_Processing(t *testing.T) {
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
 			capabilitySvcFn:            successfulCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
 			labelSvcFn:                 successfulLabelGetByKey,
@@ -2499,6 +2568,14 @@ func TestService_Processing(t *testing.T) {
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
 				integrationDependencyProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.IntegrationDependencies, fixResourceHashesForDocument(doc)).Return(fixIntegrationDependencies(), nil).Once()
 				return integrationDependencyProcessor
+			},
+			dataProductSvcFn: successfulDataProductFetchForApplication,
+			dataProductProcessorFn: func() *automock.DataProductProcessor {
+				dataProductProcessor := &automock.DataProductProcessor{}
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
+				dataProductProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.DataProducts, fixResourceHashesForDocument(doc)).Return(fixDataProducts(), nil).Once()
+				return dataProductProcessor
 			},
 			specSvcFn:               successfulSpecCreateAndUpdate,
 			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
@@ -2557,6 +2634,7 @@ func TestService_Processing(t *testing.T) {
 			capabilitySvcFn:            successfulCapabilityList,
 			capabilityProcessorFn:      successfulCapabilityProcess,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			specSvcFn: func() *automock.SpecService {
 				return &automock.SpecService{}
 			},
@@ -2592,6 +2670,7 @@ func TestService_Processing(t *testing.T) {
 			entityTypeSvcFn:            successfulEntityTypeFetchForApplication,
 			capabilitySvcFn:            successfulCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
 			labelSvcFn:                 successfulLabelGetByKey,
@@ -2663,6 +2742,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			tombstoneProcessorFn:             successfulTombstoneProcessing,
 			tombstonedResourcesDeleterFn:     successfulTombstoneResDeleter,
 			globalRegistrySvcFn:              successfulGlobalRegistrySvc,
@@ -2699,6 +2780,7 @@ func TestService_Processing(t *testing.T) {
 			capabilitySvcFn:            successfulCapabilityList,
 			capabilityProcessorFn:      successfulCapabilityProcess,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
 			clientFn:                   successfulClientFetch,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
@@ -2743,6 +2825,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			fetchReqFn: func() *automock.FetchRequestService {
 				fetchReqSvc := &automock.FetchRequestService{}
 				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, &sync.Map{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
@@ -2867,7 +2951,7 @@ func TestService_Processing(t *testing.T) {
 			labelSvcFn:              successfulLabelGetByKey,
 			processFnName:           processApplicationFnName,
 			ExpectedErr:             testErr,
-		},
+		}, // NEW TEST HERE
 		{
 			Name: "Does not resync resources if entity type processing fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
@@ -2901,6 +2985,7 @@ func TestService_Processing(t *testing.T) {
 			},
 			capabilitySvcFn:            successfulCapabilityList,
 			integrationDependencySvcFn: successfulEmptyIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
 			clientFn:                   successfulClientFetch,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
@@ -2937,6 +3022,7 @@ func TestService_Processing(t *testing.T) {
 				integrationDependencyProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.IntegrationDependencies, fixResourceHashesForDocument(fixORDDocument())).Return(nil, testErr).Once()
 				return integrationDependencyProcessor
 			},
+			dataProductSvcFn:        successfulDataProductFetchForApplication,
 			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
 			clientFn:                successfulClientFetch,
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -2979,6 +3065,7 @@ func TestService_Processing(t *testing.T) {
 				return capabilityProcessor
 			},
 			integrationDependencySvcFn: successfulIntegrationDependencyFetchForApplication,
+			dataProductSvcFn:           successfulDataProductFetchForApplication,
 			globalRegistrySvcFn:        successfulGlobalRegistrySvc,
 			clientFn:                   successfulClientFetch,
 			appTemplateVersionSvcFn:    successfulAppTemplateVersionList,
@@ -3011,6 +3098,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			tombstoneProcessorFn: func() *automock.TombstoneProcessor {
 				tombstoneProcessor := &automock.TombstoneProcessor{}
 				tombstoneProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixORDDocument().Tombstones).Return(nil, testErr).Once()
@@ -3043,6 +3132,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			packageSvcFn:                     successfulPackageList,
 			packageProcessorFn:               successfulPackageProcess,
 			productProcessorFn:               successfulProductProcess,
@@ -3050,7 +3141,7 @@ func TestService_Processing(t *testing.T) {
 			tombstoneProcessorFn:             successfulTombstoneProcessing,
 			tombstonedResourcesDeleterFn: func() *automock.TombstonedResourcesDeleter {
 				tombstonedResourcesDeleterFn := &automock.TombstonedResourcesDeleter{}
-				tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, fixVendors(), fixProducts(), fixPackages(), fixBundles(), fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixTombstones(), mock.Anything).Return(nil, testErr).Once()
+				tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, fixVendors(), fixProducts(), fixPackages(), fixBundles(), fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixDataProducts(), fixTombstones(), mock.Anything).Return(nil, testErr).Once()
 				return tombstonedResourcesDeleterFn
 			},
 			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
@@ -3081,6 +3172,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			fetchReqFn:                       successfulFetchRequestFetch,
 			packageSvcFn:                     successfulPackageList,
 			packageProcessorFn:               successfulPackageProcess,
@@ -3117,6 +3210,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(nil, testErr).Once()
@@ -3158,6 +3253,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 
@@ -3205,6 +3302,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).Once()
@@ -3258,6 +3357,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			specSvcFn:                        successfulSpecCreateAndUpdate,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
 			packageSvcFn:                     successfulPackageList,
@@ -3277,7 +3378,7 @@ func TestService_Processing(t *testing.T) {
 				fetchReq = append(fetchReq, fixEventsFetchRequests()...)
 				fetchReq = append(fetchReq, fixCapabilityFetchRequests()...)
 				var nilVendors []*model.Vendor
-				tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, nilVendors, fixProducts(), fixPackages(), fixBundles(), fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
+				tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, nilVendors, fixProducts(), fixPackages(), fixBundles(), fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixDataProducts(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
 				return tombstonedResourcesDeleterFn
 			},
 			globalRegistrySvcFn: successfulGlobalRegistrySvc,
@@ -3312,6 +3413,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			specSvcFn:                        successfulSpecRecreateAndUpdate,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
 			packageSvcFn:                     successfulPackageList,
@@ -3331,7 +3434,7 @@ func TestService_Processing(t *testing.T) {
 				fetchReq = append(fetchReq, fixEventsFetchRequests()...)
 				fetchReq = append(fetchReq, fixCapabilityFetchRequests()...)
 				var nilVendors []*model.Vendor
-				tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, nilVendors, fixProducts(), fixPackages(), fixBundles(), fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
+				tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, nilVendors, fixProducts(), fixPackages(), fixBundles(), fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixDataProducts(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
 				return tombstonedResourcesDeleterFn
 			},
 			globalRegistrySvcFn: successfulGlobalRegistrySvc,

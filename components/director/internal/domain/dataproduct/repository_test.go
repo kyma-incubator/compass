@@ -2,15 +2,15 @@ package dataproduct_test
 
 import (
 	"database/sql/driver"
-	"fmt"
+	"regexp"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/dataproduct"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/dataproduct/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"regexp"
-	"testing"
 )
 
 func TestPgRepository_ListByResourceID(t *testing.T) {
@@ -227,7 +227,6 @@ func TestPgRepository_Update(t *testing.T) {
 	dataProductEntity := fixDataProductEntity(dataProductID, appID)
 	dataProductEntity.UpdatedAt = &fixedTimestamp
 	dataProductEntity.DeletedAt = &fixedTimestamp
-	fmt.Println(len(fixDataProductUpdateArgs(dataProductEntity)))
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Data Product",

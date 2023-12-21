@@ -343,7 +343,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		return err
 	}
 
-	resourceHashes, err := hashResources(documents)
+	resourceHashes, err := hashResources(documents) // fix static ord documents
 	if err != nil {
 		return err
 	}
