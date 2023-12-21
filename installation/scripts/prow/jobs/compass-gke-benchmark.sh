@@ -326,11 +326,23 @@ for POD in $PODS; do
   kubectl logs -n kyma-system "$POD" -c "$CONTAINER" > "$CONTAINER"-new
 
   if [ -f "$CONTAINER"-old ]; then
-    log::info "Stats of the main installation"
+    echo "================================="
+    
+    log::info "logs of the main installation"
+    cat "$CONTAINER"-old
+    echo "---------------------------------"
+    log::info "benchstat of the main installation"
     benchstat "$CONTAINER"-old
+    
+    echo "================================="
 
-    log::info "Stats of the new installation"
+    log::info "logs of the new installation"
+    cat "$CONTAINER"-new
+    echo "---------------------------------"
+    log::info "benchstat of the new installation"
     benchstat "$CONTAINER"-new
+    
+    echo "================================="
 
     STATS=$(benchstat "$CONTAINER"-old "$CONTAINER"-new)
     log::info "Performance comparison statistics"
