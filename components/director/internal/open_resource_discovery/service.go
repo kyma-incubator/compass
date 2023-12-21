@@ -454,12 +454,12 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		}
 		log.C(ctx).Infof("Finished processing integration dependencies for %s with id: %q", resource.Type, resource.ID)
 
-		log.C(ctx).Infof("Starting processing integration dependencies for %s with id: %q", resource.Type, resource.ID)
+		log.C(ctx).Infof("Starting processing data products for %s with id: %q", resource.Type, resource.ID)
 		dataProductsFromDB, err := s.dataProductProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.DataProducts, resourceHashes)
 		if err != nil {
 			return err
 		}
-		log.C(ctx).Infof("Finished processing integration dependencies for %s with id: %q", resource.Type, resource.ID)
+		log.C(ctx).Infof("Finished processing data products for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing tombstones for %s with id: %q", resource.Type, resource.ID)
 		tombstonesFromDB, err := s.tombstoneProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Tombstones)
@@ -1609,7 +1609,6 @@ func hashResources(docs Documents) (map[string]uint64, error) {
 				return nil, errors.Wrapf(err, "while hashing data product with ORD ID: %s", str.PtrStrToStr(normalizedDataProducts.OrdID))
 			}
 
-			spew.Dump(*dataProductInput, "real")
 			resourceHashes[str.PtrStrToStr(dataProductInput.OrdID)] = hash
 		}
 

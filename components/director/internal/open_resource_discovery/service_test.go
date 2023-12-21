@@ -164,6 +164,19 @@ func TestService_Processing(t *testing.T) {
 		return integrationDependencySvc
 	}
 
+	successfulDataProductProcessing := func() *automock.DataProductProcessor {
+		dataProductProcessor := &automock.DataProductProcessor{}
+		d := fixResourceHashesForDocument(fixORDDocument())
+		dataProductProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.DataProducts, d).Return(fixDataProducts(), nil).Once()
+		return dataProductProcessor
+	}
+
+	successfulDataProductFetchForApplication := func() *automock.DataProductService {
+		dataProductSvc := &automock.DataProductService{}
+		dataProductSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixDataProducts(), nil).Once()
+		return dataProductSvc
+	}
+
 	successfulDataProductFetchForAppTemplateVersion := func() *automock.DataProductService {
 		dataProductSvc := &automock.DataProductService{}
 		dataProductSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixDataProducts(), nil).Once()
@@ -591,7 +604,7 @@ func TestService_Processing(t *testing.T) {
 		fetchReq := fixAPIsFetchRequests()[0:3]
 		fetchReq = append(fetchReq, fixEventsFetchRequests()...)
 		fetchReq = append(fetchReq, fixCapabilityFetchRequests()...)
-		tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, fixVendors(), fixProducts(), fixPackages(), fixBundlesWithCredentialExchangeStrategies(), fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
+		tombstonedResourcesDeleterFn.On("Delete", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, fixVendors(), fixProducts(), fixPackages(), fixBundlesWithCredentialExchangeStrategies(), fixAPIs(), fixEvents(), fixEntityTypes(), fixCapabilities(), fixIntegrationDependencies(), fixDataProducts(), fixTombstones(), mock.Anything).Return(fetchReq, nil).Once()
 		return tombstonedResourcesDeleterFn
 	}
 
@@ -761,6 +774,8 @@ func TestService_Processing(t *testing.T) {
 			capabilityProcessorFn:            successfulCapabilityProcess,
 			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
 			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn:           successfulDataProductProcessing,
 			specSvcFn:                        successfulSpecRecreateAndUpdate,
 			fetchReqFn:                       successfulFetchRequestFetchAndUpdate,
 			packageSvcFn:                     successfulPackageList,

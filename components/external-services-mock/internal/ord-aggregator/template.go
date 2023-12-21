@@ -1218,6 +1218,82 @@ const ordDocument = `{
       ]
     }
   ],
+   "dataProducts": [
+      {
+      "ordId": "ns:dataProduct:DATA_PRODUCT_ID{{ .randomSuffix }}:v1",
+      "localId": "Customer",
+      "correlationIds": [
+        "sap.xref:foo:bar"
+      ],
+      "title": "DATA PRODUCT TITLE",
+      "shortDescription": "Short description of Data Product",
+      "description": "Long description for a public Data Product resource",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "visibility": "public",
+      "releaseStatus": "deprecated",
+      "version": "1.9.0",
+      "lastUpdate": "2020-12-08T15:47:04+00:00",
+      "deprecationDate": "2020-12-08T15:47:04+00:00",
+      "sunsetDate": "2022-01-08T15:47:04+00:00",
+      "successors": [
+        "sap.xref:dataProduct:Customer:v2"
+      ],
+      "type": "base",
+      "category": "business-object",
+      "outputPorts": [
+        {
+          "ordId": "sap.xref:apiResource:Customer:v1"
+        }
+      ],
+      "responsible": "sap:ach:CIC-DP-CO"
+    },
+    {
+      "ordId": "ns:dataProduct:DATA_PRODUCT_ID_2{{ .randomSuffix }}:v2",
+      "localId": "Customer",
+      "correlationIds": [
+        "sap.xref:foo:bar"
+      ],
+      "title": "DATA PRODUCT TITLE PRIVATE",
+      "shortDescription": "Short description of Data Product",
+      "description": "Long description for a private Data Product resource",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "visibility": "private",
+      "releaseStatus": "active",
+      "version": "2.1.0",
+      "lastUpdate": "2022-12-19T15:47:04+00:00",
+      "type": "base",
+      "category": "business-object",
+      "outputPorts": [
+        {
+          "ordId": "sap.xref:apiResource:Customer:v1"
+        }
+      ],
+      "responsible": "sap:ach:CIC-DP-CO"
+    },
+    {
+      "ordId": "ns:dataProduct:DATA_PRODUCT_ID_3{{ .randomSuffix }}:v3",
+      "localId": "Customer",
+      "correlationIds": [
+        "sap.xref:foo:bar"
+      ],
+      "title": "DATA PRODUCT TITLE INTERNAL",
+      "shortDescription": "Short description of Data Product",
+      "description": "Long description for an internal Data Product resource",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "visibility": "internal",
+      "releaseStatus": "active",
+      "version": "2.1.0",
+      "lastUpdate": "2022-12-19T15:47:04+00:00",
+      "type": "base",
+      "category": "business-object",
+      "outputPorts": [
+        {
+          "ordId": "sap.xref:apiResource:Customer:v1"
+        }
+      ],
+      "responsible": "sap:ach:CIC-DP-CO"
+    }
+  ],
    "tombstones":[
       {
          "ordId":"ns:apiResource:API_ID2{{ .randomSuffix }}:v1",

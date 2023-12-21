@@ -65,6 +65,7 @@ const (
 	capability2ID            = "testCapability2"
 	integrationDependency1ID = "testIntegrationDependency1"
 	integrationDependency2ID = "testIntegrationDependency2"
+	dataProductID            = "data-product-id"
 	tombstoneID              = "testTs"
 	localTenantID            = "localTenantID"
 	webhookID                = "webhookID"
@@ -1955,7 +1956,7 @@ func fixDataProducts() []*model.DataProduct {
 			SystemInstanceAware: &boolPtr,
 			Version:             fixVersionModel(versionValue, versionDeprecated, versionDeprecatedSince, versionForRemoval),
 			BaseEntity: &model.BaseEntity{
-				ID:    dataProductORDID,
+				ID:    dataProductID,
 				Ready: true,
 			},
 		},
