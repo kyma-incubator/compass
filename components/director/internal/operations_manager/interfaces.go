@@ -7,7 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-// OperationPriority used fro operation priority
+// OperationPriority used for operation priority
 type OperationPriority int
 
 const (
@@ -24,7 +24,7 @@ type OperationService interface {
 	Create(ctx context.Context, in *model.OperationInput) (string, error)
 	CreateMultiple(ctx context.Context, in []*model.OperationInput) error
 	DeleteMultiple(ctx context.Context, ids []string) error
-	MarkAsCompleted(ctx context.Context, id string) error
+	MarkAsCompleted(ctx context.Context, id, errorMsg string) error
 	MarkAsFailed(ctx context.Context, id, errorMsg string) error
 	ListAllByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error)
 	ListPriorityQueue(ctx context.Context, queueLimit int, opType model.OperationType) ([]*model.Operation, error)

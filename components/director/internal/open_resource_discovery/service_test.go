@@ -37,6 +37,7 @@ const (
 func TestService_Processing(t *testing.T) {
 	testErr := errors.New("Test error")
 	processingORDDocsErr := errors.New("processing ORD documents")
+	validatingORDDocsErr := errors.New("validating ORD documents")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	emptyORDMapping := application.ORDWebhookMapping{}
@@ -1754,6 +1755,7 @@ func TestService_Processing(t *testing.T) {
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
 			labelSvcFn:              successfulLabelGetByKey,
 			processFnName:           processApplicationFnName,
+			ExpectedErr:             validatingORDDocsErr,
 		},
 		{
 			Name: "Resync resources for invalid ORD documents when bundle name is empty",
@@ -1823,6 +1825,7 @@ func TestService_Processing(t *testing.T) {
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
 			labelSvcFn:              successfulLabelGetByKey,
 			processFnName:           processApplicationFnName,
+			ExpectedErr:             validatingORDDocsErr,
 		},
 		{
 			Name: "Resync resources for invalid ORD documents when vendor ordID is empty",
@@ -1873,6 +1876,7 @@ func TestService_Processing(t *testing.T) {
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
 			labelSvcFn:              successfulLabelGetByKey,
 			processFnName:           processApplicationFnName,
+			ExpectedErr:             validatingORDDocsErr,
 		},
 		{
 			Name: "Resync resources for invalid ORD documents when product title is empty",
@@ -1923,6 +1927,7 @@ func TestService_Processing(t *testing.T) {
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
 			labelSvcFn:              successfulLabelGetByKey,
 			processFnName:           processApplicationFnName,
+			ExpectedErr:             validatingORDDocsErr,
 		},
 		{
 			Name: "Resync resources for invalid ORD documents when package title is empty",
