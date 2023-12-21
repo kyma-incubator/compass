@@ -26,6 +26,10 @@ func NewConverter(version VersionConverter) *converter {
 
 // FromEntity converts the provided Entity repo-layer representation of a Data Product to the service-layer representation model.DataProduct.
 func (c *converter) FromEntity(entity *Entity) *model.DataProduct {
+	if entity == nil {
+		return nil
+	}
+
 	return &model.DataProduct{
 		ApplicationID:                repo.StringPtrFromNullableString(entity.ApplicationID),
 		ApplicationTemplateVersionID: repo.StringPtrFromNullableString(entity.ApplicationTemplateVersionID),
@@ -75,6 +79,10 @@ func (c *converter) FromEntity(entity *Entity) *model.DataProduct {
 
 // ToEntity converts the provided service-layer representation of a Data Product to the repository-layer one.
 func (c *converter) ToEntity(dataProductModel *model.DataProduct) *Entity {
+	if dataProductModel == nil {
+		return nil
+	}
+
 	visibility := dataProductModel.Visibility
 	if visibility == nil {
 		visibility = str.Ptr("public")

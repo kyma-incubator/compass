@@ -17,7 +17,7 @@ type DataProductService interface {
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.DataProduct, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.DataProduct, error)
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.DataProductInput, dataProductHash uint64) (string, error)
-	Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, in model.DataProductInput, dataProductHash uint64) error
+	Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, packageID *string, in model.DataProductInput, dataProductHash uint64) error
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
 }
 
@@ -110,9 +110,11 @@ func (id *DataProductProcessor) resyncDataProduct(ctx context.Context, resourceT
 		if err != nil {
 			return err
 		}
+
+		return nil
 	}
 
-	err := id.dataProductSvc.Update(ctx, resourceType, resourceID, dataProductsFromDB[i].ID, dataProduct, dataProductHash)
+	err := id.dataProductSvc.Update(ctx, resourceType, resourceID, dataProductsFromDB[i].ID, packageID, dataProduct, dataProductHash)
 	if err != nil {
 		return err
 	}

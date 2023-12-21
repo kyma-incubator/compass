@@ -106,13 +106,13 @@ func (_m *DataProductService) ListByApplicationTemplateVersionID(ctx context.Con
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, resourceType, resourceID, id, in, dataProductHash
-func (_m *DataProductService) Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, in model.DataProductInput, dataProductHash uint64) error {
-	ret := _m.Called(ctx, resourceType, resourceID, id, in, dataProductHash)
+// Update provides a mock function with given fields: ctx, resourceType, resourceID, id, packageID, in, dataProductHash
+func (_m *DataProductService) Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, packageID *string, in model.DataProductInput, dataProductHash uint64) error {
+	ret := _m.Called(ctx, resourceType, resourceID, id, packageID, in, dataProductHash)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.DataProductInput, uint64) error); ok {
-		r0 = rf(ctx, resourceType, resourceID, id, in, dataProductHash)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, *string, model.DataProductInput, uint64) error); ok {
+		r0 = rf(ctx, resourceType, resourceID, id, packageID, in, dataProductHash)
 	} else {
 		r0 = ret.Error(0)
 	}

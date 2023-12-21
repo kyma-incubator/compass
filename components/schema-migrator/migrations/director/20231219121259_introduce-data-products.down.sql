@@ -12,7 +12,7 @@ DROP VIEW IF EXISTS output_ports_data_products;
 DROP VIEW IF EXISTS input_ports_data_products;
 DROP VIEW IF EXISTS entity_types_data_products;
 DROP VIEW IF EXISTS changelog_entries_data_products;
-DROP VIEW IF EXISTS data_products_successors;
+DROP VIEW IF EXISTS data_product_successors;
 DROP VIEW IF EXISTS correlation_ids_data_products;
 
 DROP VIEW IF EXISTS tenants_data_products;

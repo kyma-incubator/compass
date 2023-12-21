@@ -571,7 +571,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 //   - Rewrite all relative URIs using the baseURL from the Described System Instance. If the Described System Instance baseURL is missing the provider baseURL (from the webhook) is used.
 //   - Package's partOfProducts, tags, countries, industry, lineOfBusiness, labels are inherited by the resources in the package.
 //   - Ensure to assign `defaultEntryPoint` if missing and there are available `entryPoints` to API's `PartOfConsumptionBundles`
-//   - If some resource(Package, API or Event) doesn't have provided `policyLevel` and `customPolicyLevel`, these are inherited from the document
+//   - If some resource(Package, API, Event or Data Product) doesn't have provided `policyLevel` and `customPolicyLevel`, these are inherited from the document
 func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error {
 	var err error
 
@@ -663,6 +663,20 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 
 		for _, integrationDependency := range doc.IntegrationDependencies {
 			if integrationDependency.Links, err = rewriteRelativeURIsInJSON(integrationDependency.Links, url, "url"); err != nil {
+				return err
+			}
+		}
+
+		for _, dataProduct := range doc.DataProducts {
+			if dataProduct.DataProductLinks, err = rewriteRelativeURIsInJSON(dataProduct.DataProductLinks, url, "url"); err != nil {
+				return err
+			}
+
+			if dataProduct.ChangeLogEntries, err = rewriteRelativeURIsInJSON(dataProduct.ChangeLogEntries, url, "url"); err != nil {
+				return err
+			}
+
+			if dataProduct.Links, err = rewriteRelativeURIsInJSON(dataProduct.Links, url, "url"); err != nil {
 				return err
 			}
 		}
@@ -784,6 +798,29 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 			}
 			if integrationDependency.Labels, err = mergeORDLabels(referredPkg.Labels, integrationDependency.Labels); err != nil {
 				return errors.Wrapf(err, "error while merging labels for integration dependency with ord id %q", *integrationDependency.OrdID)
+			}
+		}
+		for _, dataProduct := range doc.DataProducts {
+			if dataProduct.PolicyLevel == nil {
+				dataProduct.PolicyLevel = doc.PolicyLevel
+				dataProduct.CustomPolicyLevel = doc.CustomPolicyLevel
+			}
+
+			referredPkg, ok := packages[*dataProduct.OrdPackageID]
+			if !ok {
+				return errors.Errorf("data product with ord id %q has a reference to unknown package %q", *dataProduct.OrdID, *dataProduct.OrdPackageID)
+			}
+			if dataProduct.Tags, err = mergeJSONArraysOfStrings(referredPkg.Tags, dataProduct.Tags); err != nil {
+				return errors.Wrapf(err, "error while merging tags for data product with ord id %q", *dataProduct.OrdID)
+			}
+			if dataProduct.Industry, err = mergeJSONArraysOfStrings(referredPkg.Industry, dataProduct.Industry); err != nil {
+				return errors.Wrapf(err, "error while merging industry for data product with ord id %q", *dataProduct.OrdID)
+			}
+			if dataProduct.LineOfBusiness, err = mergeJSONArraysOfStrings(referredPkg.LineOfBusiness, dataProduct.LineOfBusiness); err != nil {
+				return errors.Wrapf(err, "error while merging lineOfBusiness for data product with ord id %q", *dataProduct.OrdID)
+			}
+			if dataProduct.Labels, err = mergeORDLabels(referredPkg.Labels, dataProduct.Labels); err != nil {
+				return errors.Wrapf(err, "error while merging labels for data product with ord id %q", *dataProduct.OrdID)
 			}
 		}
 	}

@@ -29,7 +29,7 @@ ALTER TABLE event_api_definitions
 CREATE TABLE data_products
 (
     id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    app_id UUID NOT NULL,
+    app_id UUID,
         CONSTRAINT data_products_application_id_fkey FOREIGN KEY (app_id) REFERENCES applications (id) ON DELETE CASCADE,
     app_template_version_id UUID,
         CONSTRAINT data_products_app_template_version_id_fk FOREIGN KEY (app_template_version_id) REFERENCES app_template_versions (id) ON DELETE CASCADE,
@@ -165,7 +165,7 @@ FROM data_products,
      jsonb_array_elements_text(data_products.correlation_ids) AS elements;
 
 -- successors
-CREATE VIEW data_products_successors AS
+CREATE VIEW data_product_successors AS
 SELECT id             AS data_product_id,
        elements.value AS value
 FROM data_products,

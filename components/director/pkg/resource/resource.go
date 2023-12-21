@@ -159,6 +159,7 @@ var tenantAccessTable = map[Type]string{
 	IntegrationDependency:      "integration_dependencies_tenants",
 	Aspect:                     "aspects_tenants",
 	AspectEventResource:        "aspect_event_resources_tenants",
+	DataProduct:                "data_products_tenants",
 	Webhook:                    "webhooks_tenants",
 	AppWebhook:                 "application_webhooks_tenants",
 	RuntimeWebhook:             "runtime_webhooks_tenants",

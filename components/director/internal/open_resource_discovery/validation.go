@@ -1564,6 +1564,20 @@ func normalizeIntegrationDependency(integrationDependency *model.IntegrationDepe
 	return normalizedIntegrationDependency, nil
 }
 
+func normalizeDataProduct(dataProduct *model.DataProductInput) (model.DataProductInput, error) {
+	bytes, err := json.Marshal(dataProduct)
+	if err != nil {
+		return model.DataProductInput{}, errors.Wrapf(err, "error while marshalling data product with ID %s", str.PtrStrToStr(dataProduct.OrdID))
+	}
+
+	var normalizedDataProduct model.DataProductInput
+	if err := json.Unmarshal(bytes, &normalizedDataProduct); err != nil {
+		return model.DataProductInput{}, errors.Wrapf(err, "error while unmarshalling data product with ID %s", str.PtrStrToStr(dataProduct.OrdID))
+	}
+
+	return normalizedDataProduct, nil
+}
+
 func normalizePackage(pkg *model.PackageInput) (model.PackageInput, error) {
 	bytes, err := json.Marshal(pkg)
 	if err != nil {

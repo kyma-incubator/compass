@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -384,6 +386,7 @@ func fixResourceHashesForDocument(doc *ord.Document) map[string]uint64 {
 	}
 	for _, resource := range doc.DataProducts {
 		hash, _ := ord.HashObject(resource)
+		spew.Dump(*resource, "HASHING")
 		result[*resource.OrdID] = hash
 	}
 	for _, resource := range doc.ConsumptionBundles {
@@ -500,6 +503,12 @@ func sanitizeResources(doc *ord.Document) {
 	doc.IntegrationDependencies[0].Labels = json.RawMessage(mergedLabels)
 	doc.IntegrationDependencies[1].Tags = json.RawMessage(`["testTag","integrationDependencyTestTag"]`)
 	doc.IntegrationDependencies[1].Labels = json.RawMessage(mergedLabels)
+
+	doc.DataProducts[0].PolicyLevel = str.Ptr(policyLevel)
+	doc.DataProducts[0].Tags = json.RawMessage(`["testTag", "dataProductTestTag"]`)
+	doc.DataProducts[0].Labels = json.RawMessage(mergedLabels)
+	doc.DataProducts[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
+	doc.DataProducts[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 }
 
 func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {

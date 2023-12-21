@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
+
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -1585,6 +1587,21 @@ func hashResources(docs Documents) (map[string]uint64, error) {
 			}
 
 			resourceHashes[str.PtrStrToStr(integrationDependencyInput.OrdID)] = hash
+		}
+
+		for _, dataProductInput := range doc.DataProducts {
+			normalizedDataProducts, err := normalizeDataProduct(dataProductInput)
+			if err != nil {
+				return nil, err
+			}
+
+			hash, err := HashObject(normalizedDataProducts)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while hashing data product with ORD ID: %s", str.PtrStrToStr(normalizedDataProducts.OrdID))
+			}
+
+			spew.Dump(*dataProductInput, "real")
+			resourceHashes[str.PtrStrToStr(dataProductInput.OrdID)] = hash
 		}
 
 		for _, packageInput := range doc.Packages {
