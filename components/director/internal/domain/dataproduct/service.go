@@ -79,14 +79,9 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 
 // Update updates an existing Data Product.
 func (s *service) Update(ctx context.Context, resourceType resource.Type, resourceID string, id string, packageID *string, in model.DataProductInput, dataProductHash uint64) error {
-	dataProduct, err := s.getDataProduct(ctx, id, resourceType)
-	if err != nil {
-		return errors.Wrapf(err, "while getting Data Product with ID %s for %s", id, resourceType)
-	}
+	dataProduct := in.ToDataProduct(id, resourceType, resourceID, packageID, dataProductHash)
 
-	dataProduct = in.ToDataProduct(id, resourceType, resourceID, packageID, dataProductHash)
-
-	err = s.updateDataProduct(ctx, dataProduct, resourceType)
+	err := s.updateDataProduct(ctx, dataProduct, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Data Product with ID %s for %s", id, resourceType)
 	}

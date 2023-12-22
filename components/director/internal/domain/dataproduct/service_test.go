@@ -245,7 +245,6 @@ func TestService_Create(t *testing.T) {
 func TestService_Update(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), tenantID, externalTenantID)
-	packageUUID := "ad43aa47-02fc-4e1e-b4ea-902aaef68421"
 
 	testCases := []struct {
 		Name              string
@@ -260,11 +259,10 @@ func TestService_Update(t *testing.T) {
 		{
 			Name:              "Success with resource type Application",
 			InputResourceType: resource.Application,
-			InputID:           dataProductID,
+			InputID:           appID,
 			DataProductInput:  fixDataProductInputModelWithPackageOrdID(packageID),
 			DataProductRepoFn: func() *automock.DataProductRepository {
 				dataProductRepo := &automock.DataProductRepository{}
-				dataProductRepo.On("GetByID", ctx, tenantID, dataProductID).Return(fixDataProductModel(dataProductID), nil).Once()
 				dataProductRepo.On("Update", ctx, tenantID, mock.Anything).Return(nil).Once()
 				return dataProductRepo
 			},
@@ -273,48 +271,22 @@ func TestService_Update(t *testing.T) {
 		{
 			Name:              "Success with resource type ApplicationTemplateVersion",
 			InputResourceType: resource.ApplicationTemplateVersion,
-			InputID:           dataProductID,
+			InputID:           appID,
 			DataProductInput:  fixDataProductInputModelWithPackageOrdID(packageID),
 			DataProductRepoFn: func() *automock.DataProductRepository {
 				dataProductRepo := &automock.DataProductRepository{}
-				dataProductRepo.On("GetByIDGlobal", ctx, dataProductID).Return(fixDataProductModel(dataProductID), nil).Once()
 				dataProductRepo.On("UpdateGlobal", ctx, mock.Anything).Return(nil).Once()
 				return dataProductRepo
 			},
 			ExpectedOutput: dataProductID,
 		},
 		{
-			Name:              "Fail while getting Data Product by id for Application",
-			InputResourceType: resource.Application,
-			InputID:           dataProductID,
-			DataProductInput:  fixDataProductInputModelWithPackageOrdID(packageID),
-			DataProductRepoFn: func() *automock.DataProductRepository {
-				dataProductRepo := &automock.DataProductRepository{}
-				dataProductRepo.On("GetByID", ctx, tenantID, dataProductID).Return(nil, testErr).Once()
-				return dataProductRepo
-			},
-			ExpectedError: testErr,
-		},
-		{
-			Name:              "Fail while getting Data Product by id for ApplicationTemplateVersion",
-			InputResourceType: resource.ApplicationTemplateVersion,
-			InputID:           dataProductID,
-			DataProductInput:  fixDataProductInputModelWithPackageOrdID(packageID),
-			DataProductRepoFn: func() *automock.DataProductRepository {
-				dataProductRepo := &automock.DataProductRepository{}
-				dataProductRepo.On("GetByIDGlobal", ctx, dataProductID).Return(nil, testErr).Once()
-				return dataProductRepo
-			},
-			ExpectedError: testErr,
-		},
-		{
 			Name:              "Fail while updating Data Product for Application",
 			InputResourceType: resource.Application,
-			InputID:           dataProductID,
+			InputID:           appID,
 			DataProductInput:  fixDataProductInputModelWithPackageOrdID(packageID),
 			DataProductRepoFn: func() *automock.DataProductRepository {
 				dataProductRepo := &automock.DataProductRepository{}
-				dataProductRepo.On("GetByID", ctx, tenantID, dataProductID).Return(fixDataProductModel(dataProductID), nil).Once()
 				dataProductRepo.On("Update", ctx, tenantID, mock.Anything).Return(testErr).Once()
 
 				return dataProductRepo
@@ -324,11 +296,10 @@ func TestService_Update(t *testing.T) {
 		{
 			Name:              "Fail while updating Data Product for ApplicationTemplateVersion",
 			InputResourceType: resource.ApplicationTemplateVersion,
-			InputID:           dataProductID,
+			InputID:           appID,
 			DataProductInput:  fixDataProductInputModelWithPackageOrdID(packageID),
 			DataProductRepoFn: func() *automock.DataProductRepository {
 				dataProductRepo := &automock.DataProductRepository{}
-				dataProductRepo.On("GetByIDGlobal", ctx, dataProductID).Return(fixDataProductModel(dataProductID), nil).Once()
 				dataProductRepo.On("UpdateGlobal", ctx, mock.Anything).Return(testErr).Once()
 
 				return dataProductRepo
@@ -341,7 +312,7 @@ func TestService_Update(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			dataProductRepo := testCase.DataProductRepoFn()
 			svc := dataproduct.NewService(dataProductRepo, nil)
-			testCase.InputPackageID = &packageUUID
+			testCase.InputPackageID = str.Ptr(packageID)
 			// WHEN
 			err := svc.Update(ctx, testCase.InputResourceType, testCase.InputID, dataProductID, testCase.InputPackageID, testCase.DataProductInput, 123)
 

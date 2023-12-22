@@ -2951,7 +2951,41 @@ func TestService_Processing(t *testing.T) {
 			labelSvcFn:              successfulLabelGetByKey,
 			processFnName:           processApplicationFnName,
 			ExpectedErr:             testErr,
-		}, // NEW TEST HERE
+		},
+		{
+			Name: "Does not resync resources when data products fetch from db fails",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Times(7)
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(7)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(6)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
+			appSvcFn:                   successfulAppGet,
+			tenantSvcFn:                successfulTenantSvc,
+			webhookSvcFn:               successfulWebhookList,
+			packageSvcFn:               successfulEmptyPackageList,
+			bundleSvcFn:                successfulEmptyBundleList,
+			apiSvcFn:                   successfulAPIList,
+			eventSvcFn:                 successfulEventList,
+			capabilitySvcFn:            successfulCapabilityList,
+			integrationDependencySvcFn: successfulIntegrationDependencyFetchForApplication,
+			dataProductSvcFn: func() *automock.DataProductService {
+				dataProductSvc := &automock.DataProductService{}
+				dataProductSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
+				return dataProductSvc
+			},
+			entityTypeSvcFn:         successfulEntityTypeFetchForApplication,
+			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
+			clientFn:                successfulClientFetch,
+			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
+			labelSvcFn:              successfulLabelGetByKey,
+			processFnName:           processApplicationFnName,
+			ExpectedErr:             testErr,
+		},
 		{
 			Name: "Does not resync resources if entity type processing fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
@@ -3072,6 +3106,44 @@ func TestService_Processing(t *testing.T) {
 			labelSvcFn:                 successfulLabelGetByKey,
 			processFnName:              processApplicationFnName,
 			ExpectedErr:                testErr,
+		},
+		{
+			Name: "Does not resync resources if data product processing fails",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(11)
+			},
+			appSvcFn:                         successfulAppGet,
+			tenantSvcFn:                      successfulTenantSvc,
+			webhookSvcFn:                     successfulTenantMappingOnlyCreation,
+			webhookConvFn:                    successfulWebhookConversion,
+			productProcessorFn:               successfulProductProcess,
+			vendorProcessorFn:                successfulVendorProcess,
+			packageSvcFn:                     successfulPackageList,
+			packageProcessorFn:               successfulPackageProcess,
+			bundleSvcFn:                      successfulBundleUpdateForApplication,
+			bundleRefSvcFn:                   successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:                         successfulAPIList,
+			apiProcessorFn:                   successfulAPIProcess,
+			eventSvcFn:                       successfulEventList,
+			eventProcessorFn:                 successfulEventProcess,
+			entityTypeSvcFn:                  successfulEntityTypeFetchForApplication,
+			entityTypeProcessorFn:            successfulEntityTypeProcess,
+			capabilitySvcFn:                  successfulCapabilityList,
+			capabilityProcessorFn:            successfulCapabilityProcess,
+			integrationDependencySvcFn:       successfulIntegrationDependencyFetchForApplication,
+			integrationDependencyProcessorFn: successfulIntegrationDependencyProcessing,
+			dataProductSvcFn:                 successfulDataProductFetchForApplication,
+			dataProductProcessorFn: func() *automock.DataProductProcessor {
+				dataProductProcessor := &automock.DataProductProcessor{}
+				dataProductProcessor.On("Process", txtest.CtxWithDBMatcher(), resource.Application, appID, fixPackages(), sanitizedDoc.DataProducts, fixResourceHashesForDocument(fixORDDocument())).Return(nil, testErr).Once()
+				return dataProductProcessor
+			},
+			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
+			clientFn:                successfulClientFetch,
+			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
+			labelSvcFn:              successfulLabelGetByKey,
+			processFnName:           processApplicationFnName,
+			ExpectedErr:             testErr,
 		},
 		{
 			Name: "Does not resync resources if tombstone processing fails",
