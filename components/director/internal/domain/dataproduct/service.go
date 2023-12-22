@@ -128,14 +128,6 @@ func (s *service) createDataProduct(ctx context.Context, resourceType resource.T
 	return s.repo.Create(ctx, tnt, dataProduct)
 }
 
-func (s *service) getDataProduct(ctx context.Context, id string, resourceType resource.Type) (*model.DataProduct, error) {
-	if resourceType.IsTenantIgnorable() {
-		return s.repo.GetByIDGlobal(ctx, id)
-	}
-
-	return s.Get(ctx, id)
-}
-
 func (s *service) updateDataProduct(ctx context.Context, dataProduct *model.DataProduct, resourceType resource.Type) error {
 	if resourceType.IsTenantIgnorable() {
 		return s.repo.UpdateGlobal(ctx, dataProduct)
