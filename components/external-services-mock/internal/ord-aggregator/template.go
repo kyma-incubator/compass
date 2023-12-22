@@ -49,7 +49,7 @@ const ordDocument = `{
    },
    "packages":[
       {
-         "ordId":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "ordId":"ns:package:PACKAGE_ID:v1",
          "vendor":"sap:vendor:SAP:",
          "title":"PACKAGE 1 TITLE",
          "shortDescription":"short desc",
@@ -102,7 +102,7 @@ const ordDocument = `{
          "policyLevel":"sap:core:v1",
          "customPolicyLevel":null,
          "partOfProducts":[
-            "sap:product:id{{ .randomSuffix }}:",
+            "sap:product:id:",
             "sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
@@ -119,13 +119,13 @@ const ordDocument = `{
    ],
    "entityTypes":[
       {
-         "ordId":"ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1",
+         "ordId":"ns:entityType:ENTITYTYPE_ID:v1",
          "localId":"BusinessPartner",
          "level":"aggregate",
          "title":"ENTITYTYPE 1 TITLE",
          "shortDescription":"short desc",
          "description":"lorem ipsum dolor set",
-         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "partOfPackage":"ns:package:PACKAGE_ID:v1",
          "visibility":"public",
          "version":"1.1.2",
          "releaseStatus":"active",
@@ -161,7 +161,7 @@ const ordDocument = `{
          "policyLevel":"sap:core:v1",
          "customPolicyLevel":null,
          "partOfProducts":[
-            "sap:product:id{{ .randomSuffix }}:",
+            "sap:product:id:",
             "sap:product:SAPCloudPlatform:"
          ]
 		 {{ .additionalProperties }}	 
@@ -171,7 +171,7 @@ const ordDocument = `{
       {
          "title":"BUNDLE TITLE",
          "description":"lorem ipsum dolor nsq sme",
-         "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
+         "ordId":"ns:consumptionBundle:BUNDLE_ID:v1",
          "shortDescription":"lorem ipsum",
          "links":[
             {
@@ -217,7 +217,7 @@ const ordDocument = `{
       },
       {
          "title":"BUNDLE TITLE 2",
-         "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2",
+         "ordId":"ns:consumptionBundle:BUNDLE_ID:v2",
          "credentialExchangeStrategies":[
             {
                "callbackUrl":"/credentials/relative",
@@ -263,7 +263,7 @@ const ordDocument = `{
    ],
    "products":[
       {
-         "ordId":"sap:product:id{{ .randomSuffix }}:",
+         "ordId":"sap:product:id:",
          "title":"PRODUCT TITLE",
          "description":"lorem ipsum dolor nsq sme",
          "shortDescription":"lorem ipsum",
@@ -290,14 +290,14 @@ const ordDocument = `{
    ],
    "apiResources":[
       {
-         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "partOfPackage":"ns:package:PACKAGE_ID:v1",
          "title":"API TITLE",
          "description":"lorem ipsum dolor sit amet",
          "entryPoints":[
             "https://exmaple.com/test/v1",
             "https://exmaple.com/test/v2"
          ],
-         "ordId":"ns:apiResource:API_ID{{ .randomSuffix }}:v2",
+         "ordId":"ns:apiResource:API_ID:v2",
          "shortDescription":"lorem ipsum",
          "systemInstanceAware":true,
          "apiProtocol":"odata-v2",
@@ -356,7 +356,7 @@ const ordDocument = `{
          "visibility":"public",
          "disabled":true,
          "partOfProducts":[
-            "sap:product:id{{ .randomSuffix }}:",
+            "sap:product:id:",
             "sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
@@ -418,12 +418,12 @@ const ordDocument = `{
          ],
          "partOfConsumptionBundles":[
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1",
                "defaultEntryPoint":"https://exmaple.com/test/v1"
             },
             {
                "defaultEntryPoint":"https://exmaple.com/test/v1",
-               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
             }
          ],
          "entityTypeMappings":[
@@ -447,18 +447,18 @@ const ordDocument = `{
                ]
             }
          ],
-         "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
+         "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID:v1",
          "version":"2.1.2"
 		 {{ .additionalProperties }}
       },
       {
-         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "partOfPackage":"ns:package:PACKAGE_ID:v1",
          "title":"Gateway Sample Service",
          "description":"lorem ipsum dolor sit amet",
          "entryPoints":[
             "http://localhost:8080/some-api/v1"
          ],
-         "ordId":"ns:apiResource:API_ID2{{ .randomSuffix }}:v1",
+         "ordId":"ns:apiResource:API_ID2:v1",
          "shortDescription":"lorem ipsum",
          "systemInstanceAware":true,
          "apiProtocol":"odata-v2",
@@ -519,7 +519,7 @@ const ordDocument = `{
          "visibility":"public",
          "disabled":null,
          "partOfProducts":[
-            "sap:product:id{{ .randomSuffix }}:",
+            "sap:product:id:",
             "sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
@@ -568,17 +568,17 @@ const ordDocument = `{
          ],
          "partOfConsumptionBundles":[
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1"
             },
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
             }
          ],
          "version":"1.1.0"
 		 {{ .additionalProperties }}
       },
       {
-         "ordId":"ns:apiResource:API_ID{{ .randomSuffix }}:v3",
+         "ordId":"ns:apiResource:API_ID:v3",
          "title":"API TITLE INTERNAL",
          "shortDescription":"Test",
          "description":"Test description internal",
@@ -590,7 +590,7 @@ const ordDocument = `{
          "visibility":"internal",
          "releaseStatus":"beta",
          "systemInstanceAware":true,
-         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "partOfPackage":"ns:package:PACKAGE_ID:v1",
          "apiProtocol":"rest",
          "apiResourceLinks":[
             {
@@ -604,7 +604,7 @@ const ordDocument = `{
          },
          "partOfConsumptionBundles":[
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1",
                "defaultEntryPoint":"https://exmaple.com/test/v1"
             }
          ],
@@ -679,7 +679,7 @@ const ordDocument = `{
 		 {{ .additionalProperties }}
       },
       {
-         "ordId":"ns:apiResource:API_ID{{ .randomSuffix }}:v4",
+         "ordId":"ns:apiResource:API_ID:v4",
          "title":"API TITLE PRIVATE",
          "shortDescription":"Test",
          "description":"Test description private",
@@ -691,7 +691,7 @@ const ordDocument = `{
          "visibility":"private",
          "releaseStatus":"beta",
          "systemInstanceAware":true,
-         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "partOfPackage":"ns:package:PACKAGE_ID:v1",
          "apiProtocol":"rest",
          "apiResourceLinks":[
             {
@@ -706,7 +706,7 @@ const ordDocument = `{
          "partOfConsumptionBundles":[
             {
                "defaultEntryPoint":"https://exmaple.com/test/v1",
-               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
             }
          ],
          "resourceDefinitions":[
@@ -742,10 +742,10 @@ const ordDocument = `{
    ],
    "eventResources":[
       {
-         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "partOfPackage":"ns:package:PACKAGE_ID:v1",
          "title":"EVENT TITLE",
          "description":"lorem ipsum dolor sit amet",
-         "ordId":"ns:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
+         "ordId":"ns:eventResource:EVENT_ID:v1",
          "shortDescription":"lorem ipsum",
          "systemInstanceAware":true,
          "changelogEntries":[
@@ -793,7 +793,7 @@ const ordDocument = `{
          "visibility":"public",
          "disabled":true,
          "partOfProducts":[
-            "sap:product:id{{ .randomSuffix }}:",
+            "sap:product:id:",
             "sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
@@ -844,21 +844,21 @@ const ordDocument = `{
          ],         
          "partOfConsumptionBundles":[
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1"
             },
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
             }
          ],
-         "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
+         "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID:v1",
          "version":"2.1.2"
 		 {{ .additionalProperties }}
       },
       {
-         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "partOfPackage":"ns:package:PACKAGE_ID:v1",
          "title":"EVENT TITLE 2",
          "description":"lorem ipsum dolor sit amet",
-         "ordId":"ns2:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
+         "ordId":"ns2:eventResource:EVENT_ID:v1",
          "shortDescription":"lorem ipsum",
          "systemInstanceAware":true,
          "changelogEntries":[
@@ -908,7 +908,7 @@ const ordDocument = `{
          "visibility":"public",
          "disabled":null,
          "partOfProducts":[
-            "sap:product:id{{ .randomSuffix }}:",
+            "sap:product:id:",
             "sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
@@ -941,23 +941,23 @@ const ordDocument = `{
          ],
          "partOfConsumptionBundles":[
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1"
             },
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
             }
          ],
          "version":"1.1.0"
 		 {{ .additionalProperties }}
       },
       {
-         "ordId":"ns3:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
+         "ordId":"ns3:eventResource:EVENT_ID:v1",
          "title":"EVENT TITLE INTERNAL",
          "shortDescription":"Test",
          "description":"Test description internal",
          "version":"0.1.0",
          "releaseStatus":"beta",
-         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "partOfPackage":"ns:package:PACKAGE_ID:v1",
          "visibility":"internal",
          "extensible":{
             "supported":"automatic",
@@ -965,7 +965,7 @@ const ordDocument = `{
          },
          "partOfConsumptionBundles":[
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1"
             }
          ],
          "entityTypeMappings":[
@@ -1021,13 +1021,13 @@ const ordDocument = `{
 		 {{ .additionalProperties }}
       },
       {
-         "ordId":"ns4:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
+         "ordId":"ns4:eventResource:EVENT_ID:v1",
          "title":"EVENT TITLE PRIVATE",
          "shortDescription":"Test",
          "description":"Test description private",
          "version":"0.1.0",
          "releaseStatus":"beta",
-         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "partOfPackage":"ns:package:PACKAGE_ID:v1",
          "visibility":"internal",
          "extensible":{
             "supported":"automatic",
@@ -1035,7 +1035,7 @@ const ordDocument = `{
          },
          "partOfConsumptionBundles":[
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
             }
          ],
          "resourceDefinitions":[
@@ -1058,7 +1058,7 @@ const ordDocument = `{
    ],
 	"capabilities":[
     {
-      "ordId": "sap.foo.bar:capability:{{ .randomSuffix }}:v1",
+      "ordId": "sap.foo.bar:capability::v1",
       "title": "CAPABILITY TITLE",
       "type": "sap.mdo:mdi-capability:v1",
       "shortDescription": "Short description of capability",
@@ -1067,7 +1067,7 @@ const ordDocument = `{
       "lastUpdate": "2023-01-26T15:47:04+00:00",
       "releaseStatus": "active",
       "visibility": "public",
-      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "partOfPackage": "ns:package:PACKAGE_ID:v1",
       "definitions": [
         {
           "type": "sap.mdo:mdi-capability-definition:v1",
@@ -1086,12 +1086,12 @@ const ordDocument = `{
   ],
 	"integrationDependencies": [
     {
-      "ordId": "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2",
+      "ordId": "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID:v2",
       "version": "2.2.3",
       "title": "INTEGRATION DEPENDENCY TITLE",
       "shortDescription": "Short description of an integration dependency",
       "description": "longer description of an integration dependency",
-      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "partOfPackage": "ns:package:PACKAGE_ID:v1",
       "correlationIds": [
 		 "sap.s4:communicationScenario:SAP_COM_123"
       ],
@@ -1106,7 +1106,7 @@ const ordDocument = `{
           "mandatory": true,
           "eventResources": [
             {
-              "ordId": "ns1:eventResource:ASPECT_EVENT_RESOURCE_ID{{ .randomSuffix }}:v1",
+              "ordId": "ns1:eventResource:ASPECT_EVENT_RESOURCE_ID:v1",
               "subset": [
                 {
                   "eventType": "sap.billing.sb.Subscription.Created.v1"
@@ -1122,7 +1122,7 @@ const ordDocument = `{
           ],
 		  "apiResources": [
             {
-              "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2",
+              "ordId": "ns:apiResource:API_ID:v2",
               "minVersion": "2.3.0"
             }
           ]
@@ -1130,12 +1130,12 @@ const ordDocument = `{
       ]
     },
 	{
-      "ordId": "ns2:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2",
+      "ordId": "ns2:integrationDependency:INTEGRATION_DEPENDENCY_ID:v2",
       "version": "2.2.3",
       "title": "INTEGRATION DEPENDENCY TITLE PRIVATE",
       "shortDescription": "Short description of a private integration dependency",
       "description": "longer description of a private integration dependency",
-      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "partOfPackage": "ns:package:PACKAGE_ID:v1",
       "correlationIds": [
 		 "sap.s4:communicationScenario:SAP_COM_123"
       ],
@@ -1150,7 +1150,7 @@ const ordDocument = `{
           "mandatory": true,
           "eventResources": [
             {
-              "ordId": "ns2:eventResource:ASPECT_EVENT_RESOURCE_ID{{ .randomSuffix }}:v1",
+              "ordId": "ns2:eventResource:ASPECT_EVENT_RESOURCE_ID:v1",
               "subset": [
                 {
                   "eventType": "sap.billing.sb.Subscription.Created.v1"
@@ -1166,7 +1166,7 @@ const ordDocument = `{
           ],
 		  "apiResources": [
             {
-              "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2",
+              "ordId": "ns:apiResource:API_ID:v2",
               "minVersion": "2.3.0"
             }
           ]
@@ -1174,12 +1174,12 @@ const ordDocument = `{
       ]
     },
 	{
-      "ordId": "ns3:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2",
+      "ordId": "ns3:integrationDependency:INTEGRATION_DEPENDENCY_ID:v2",
       "version": "2.2.3",
       "title": "INTEGRATION DEPENDENCY TITLE INTERNAL",
       "shortDescription": "Short description of an internal integration dependency",
       "description": "longer description of an internal integration dependency",
-      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "partOfPackage": "ns:package:PACKAGE_ID:v1",
       "correlationIds": [
 		 "sap.s4:communicationScenario:SAP_COM_123"
       ],
@@ -1194,7 +1194,7 @@ const ordDocument = `{
           "mandatory": true,
           "eventResources": [
             {
-              "ordId": "ns3:eventResource:ASPECT_EVENT_RESOURCE_ID{{ .randomSuffix }}:v1",
+              "ordId": "ns3:eventResource:ASPECT_EVENT_RESOURCE_ID:v1",
               "subset": [
                 {
                   "eventType": "sap.billing.sb.Subscription.Created.v1"
@@ -1210,7 +1210,7 @@ const ordDocument = `{
           ],
 		  "apiResources": [
             {
-              "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2",
+              "ordId": "ns:apiResource:API_ID:v2",
               "minVersion": "2.3.0"
             }
           ]
@@ -1220,7 +1220,7 @@ const ordDocument = `{
   ],
    "dataProducts": [
       {
-      "ordId": "ns:dataProduct:DATA_PRODUCT_ID{{ .randomSuffix }}:v1",
+      "ordId": "ns:dataProduct:DATA_PRODUCT_ID:v1",
       "localId": "Customer",
       "correlationIds": [
         "sap.xref:foo:bar"
@@ -1228,10 +1228,10 @@ const ordDocument = `{
       "title": "DATA PRODUCT TITLE",
       "shortDescription": "Short description of Data Product",
       "description": "Long description for a public Data Product resource",
-      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "partOfPackage": "ns:package:PACKAGE_ID:v1",
       "visibility": "public",
       "releaseStatus": "deprecated",
-      "version": "1.9.0",
+      "version": "1.9.2",
       "lastUpdate": "2020-12-08T15:47:04+00:00",
       "deprecationDate": "2020-12-08T15:47:04+00:00",
       "sunsetDate": "2022-01-08T15:47:04+00:00",
@@ -1248,7 +1248,7 @@ const ordDocument = `{
       "responsible": "sap:ach:CIC-DP-CO"
     },
     {
-      "ordId": "ns:dataProduct:DATA_PRODUCT_ID_2{{ .randomSuffix }}:v2",
+      "ordId": "ns:dataProduct:DATA_PRODUCT_ID_2:v2",
       "localId": "Customer",
       "correlationIds": [
         "sap.xref:foo:bar"
@@ -1256,7 +1256,7 @@ const ordDocument = `{
       "title": "DATA PRODUCT TITLE PRIVATE",
       "shortDescription": "Short description of Data Product",
       "description": "Long description for a private Data Product resource",
-      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "partOfPackage": "ns:package:PACKAGE_ID:v1",
       "visibility": "private",
       "releaseStatus": "active",
       "version": "2.1.0",
@@ -1271,7 +1271,7 @@ const ordDocument = `{
       "responsible": "sap:ach:CIC-DP-CO"
     },
     {
-      "ordId": "ns:dataProduct:DATA_PRODUCT_ID_3{{ .randomSuffix }}:v3",
+      "ordId": "ns:dataProduct:DATA_PRODUCT_ID_3:v3",
       "localId": "Customer",
       "correlationIds": [
         "sap.xref:foo:bar"
@@ -1279,7 +1279,7 @@ const ordDocument = `{
       "title": "DATA PRODUCT TITLE INTERNAL",
       "shortDescription": "Short description of Data Product",
       "description": "Long description for an internal Data Product resource",
-      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "partOfPackage": "ns:package:PACKAGE_ID:v1",
       "visibility": "internal",
       "releaseStatus": "active",
       "version": "2.1.0",
@@ -1296,14 +1296,14 @@ const ordDocument = `{
   ],
    "tombstones":[
       {
-         "ordId":"ns:apiResource:API_ID2{{ .randomSuffix }}:v1",
+         "ordId":"ns:apiResource:API_ID2:v1",
          "removalDate":"2020-12-02T14:12:59Z"
 		 {{ .additionalProperties }}
       }
    ],
    "vendors":[
       {
-         "ordId":"partner:vendor:SAP{{ .randomSuffix }}:",
+         "ordId":"partner:vendor:SAP:",
          "title":"SAP SE",
          "partners":[
             "microsoft:vendor:Microsoft:"

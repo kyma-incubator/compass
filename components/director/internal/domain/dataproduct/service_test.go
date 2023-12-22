@@ -6,7 +6,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/dataproduct"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/dataproduct/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationdependency"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
@@ -475,7 +474,7 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := integrationdependency.NewService(nil, uid.NewService())
+		svc := dataproduct.NewService(nil, uid.NewService())
 		// WHEN
 		err := svc.Delete(context.TODO(), "", "")
 		// THEN

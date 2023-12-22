@@ -19,7 +19,7 @@ type converter struct {
 	version VersionConverter
 }
 
-// NewConverter returns a new Converter that can later be used to make the conversions between the GraphQL, service, and repository layer representations of a Compass Data Product.
+// NewConverter returns a new Converter that can later be used to make the conversions between the service and repository layer representations of a Compass Data Product.
 func NewConverter(version VersionConverter) *converter {
 	return &converter{version: version}
 }

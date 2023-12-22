@@ -261,9 +261,6 @@ FROM data_products,
      jsonb_array_elements_text(expand.value) AS elements;
 
 
--- -- Drop and recreate tenants_packages view - add `runtime_restriction` column
--- DROP VIEW IF EXISTS tenants_packages;
-
 CREATE OR REPLACE VIEW tenants_packages
             (tenant_id, formation_id, id, ord_id, title, short_description, description, version, package_links, links,
              licence_type, tags, runtime_restriction, countries, labels, policy_level, app_id, custom_policy_level, vendor, part_of_products,
@@ -310,8 +307,6 @@ FROM packages p
                FROM apps_subaccounts) t_apps ON p.app_id = t_apps.id;
 
 
--- -- Drop and recreate tenants_apis view - add `responsible` and `usage` columns
--- DROP VIEW IF EXISTS tenants_apis;
 
 CREATE OR REPLACE VIEW tenants_apis
             (tenant_id, formation_id, id, app_id, name, description, group_name, default_auth, version_value,
@@ -394,9 +389,6 @@ FROM api_definitions apis
                FROM apps_subaccounts) t_apps ON apis.app_id = t_apps.id,
      jsonb_to_record(apis.extensible) actions(supported text, description text);
 
-
--- -- Drop and recreate tenants_events view - add `responsible` column
--- DROP VIEW IF EXISTS tenants_events;
 
 CREATE OR REPLACE VIEW tenants_events
             (tenant_id, formation_id, id, app_id, name, description, group_name, version_value, version_deprecated,

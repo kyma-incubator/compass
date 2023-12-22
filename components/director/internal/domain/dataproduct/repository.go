@@ -12,7 +12,7 @@ import (
 
 const (
 	dataProductTable           string = `public.data_products`
-	idColumn                          = "id"
+	idColumn                   string = "id"
 	appIDColumn                string = "app_id"
 	appTemplateVersionIDColumn string = "app_template_version_id"
 )

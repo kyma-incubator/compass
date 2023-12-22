@@ -258,7 +258,7 @@ func TestPgRepository_UpdateGlobal(t *testing.T) {
 	dataProductEntity := fixDataProductEntity(dataProductID, appID)
 
 	suite := testdb.RepoUpdateTestSuite{
-		Name: "Update Integration Dependency Global",
+		Name: "Update Data Product Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`UPDATE public.data_products SET ord_id = ?, local_tenant_id = ?, correlation_ids = ?, title = ?, short_description = ?, description = ?, package_id = ?, last_update = ?, visibility = ?, release_status = ?, disabled = ?, deprecation_date = ?, sunset_date = ?, successors = ?, changelog_entries = ?, type = ?, category = ?, entity_types = ?, input_ports = ?, output_ports = ?, responsible = ?, data_product_links = ?, links = ?, industry = ?, line_of_business = ?, tags = ?, labels = ?, documentation_labels = ?, policy_level = ?, custom_policy_level = ?, system_instance_aware = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, resource_hash = ? WHERE id = ?`),

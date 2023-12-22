@@ -4263,8 +4263,16 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		},
-		{
+		}, {
+			Name: "Missing `deprecationDate` field when `releaseStatus` field has value `deprecated` for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
+				doc.APIResources[0].DeprecationDate = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Invalid format of `deprecationDate` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -6564,6 +6572,15 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Missing `deprecationDate` field when `releaseStatus` field has value `deprecated` for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ReleaseStatus = str.Ptr("deprecated")
+				doc.EventResources[0].DeprecationDate = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Invalid format of `deprecationDate` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -7221,6 +7238,15 @@ func TestDocuments_ValidateEntityType(t *testing.T) {
 				doc.EntityTypes[0].ReleaseStatus = "deprecated"
 				doc.EntityTypes[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
 				doc.EntityTypes[0].Successors = json.RawMessage(fmt.Sprintf(`["%s"]`, entityType2ORDID))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `deprecationDate` field when `releaseStatus` field has value `deprecated` for Entity Type",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EntityTypes[0].ReleaseStatus = "deprecated"
+				doc.EntityTypes[0].DeprecationDate = nil
 
 				return []*ord.Document{doc}
 			},
@@ -9387,7 +9413,7 @@ func TestDocuments_ValidateDataProduct(t *testing.T) {
 				DataProducts:            dataProductsFromDB,
 				Packages:                pkgsFromDB,
 				Bundles:                 bndlsFromDB,
-			} // add only data products?
+			}
 
 			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 			if test.AfterTest != nil {

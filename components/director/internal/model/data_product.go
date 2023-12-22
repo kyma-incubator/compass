@@ -8,7 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
-// DataProduct represent structure for DataProduct
+// DataProduct represents the structure for DataProduct
 type DataProduct struct {
 	ApplicationID                *string
 	ApplicationTemplateVersionID *string
