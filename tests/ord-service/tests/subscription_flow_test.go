@@ -525,10 +525,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		var ftWithoutDiscoveryConsumers graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ftWithoutDiscoveryConsumers)
 		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
-			Name:                   formationTmplName,
+			Name:                   secondFormationTmplName,
 			ApplicationTypes:       []string{string(applicationType), "SAP provider-app-template"},
 			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
-			RuntimeTypeDisplayName: &formationTmplName,
+			RuntimeTypeDisplayName: &secondFormationTmplName,
 			RuntimeArtifactKind:    &artifactKind,
 		})
 
