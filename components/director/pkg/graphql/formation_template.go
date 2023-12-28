@@ -11,6 +11,7 @@ type FormationTemplate struct {
 	Webhooks               []*Webhook    `json:"webhooks"`
 	LeadingProductIDs      []string      `json:"leadingProductIDs"`
 	SupportsReset          bool          `json:"supportsReset"`
+	DiscoveryConsumers     []string      `json:"discoveryConsumers"`
 }
 
 // FormationTemplateExt  is an extended types used by external API
