@@ -66,6 +66,7 @@ func NewResolver(transact persistence.Transactioner, appRepo applicationRepo, ap
 	}
 }
 
+// FormationParticipantDataLoader is a dataloader for Source and Target entities of the formation assignment
 func (r *Resolver) FormationParticipantDataLoader(params []dataloader.ParamFormationParticipant) ([]graphql.FormationParticipant, []error) {
 	if len(params) == 0 {
 		return nil, []error{apperrors.NewInternalError("No Formation Assignments found")}
@@ -144,11 +145,13 @@ func (r *Resolver) FormationParticipantDataLoader(params []dataloader.ParamForma
 	return result, nil
 }
 
+// TargetEntity is a resolver for the Target of the formation assignment
 func (r *Resolver) TargetEntity(ctx context.Context, obj *graphql.FormationAssignment) (graphql.FormationParticipant, error) {
 	params := dataloader.ParamFormationParticipant{ID: obj.ID, ParticipantID: obj.Target, ParticipantType: string(obj.TargetType), Ctx: ctx}
 	return dataloader.ForTargetFormationParticipant(ctx).FormationParticipantDataloader.Load(params)
 }
 
+// SourceEntity is a resolver for the Source of the formation assignment
 func (r *Resolver) SourceEntity(ctx context.Context, obj *graphql.FormationAssignment) (graphql.FormationParticipant, error) {
 	params := dataloader.ParamFormationParticipant{ID: obj.ID, ParticipantID: obj.Source, ParticipantType: string(obj.SourceType), Ctx: ctx}
 	return dataloader.ForSourceFormationParticipant(ctx).FormationParticipantDataloader.Load(params)
