@@ -53,7 +53,7 @@ type runtimeContextConverter interface {
 	ToGraphQL(in *model.RuntimeContext) *graphql.RuntimeContext
 }
 
-// NewResolver is a constructor for fromation assignment resolver
+// NewResolver is a constructor for formation assignment resolver
 func NewResolver(transact persistence.Transactioner, appRepo applicationRepo, appConverter applicationConverter, runtimeRepo runtimeRepo, runtimeConverter runtimeConverter, runtimeContextRepo runtimeContextRepo, runtimeContextConverter runtimeContextConverter) *Resolver {
 	return &Resolver{
 		transact:                transact,
