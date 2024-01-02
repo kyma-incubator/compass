@@ -45,6 +45,13 @@ ALTER TABLE api_definitions
     DROP COLUMN responsible,
     DROP COLUMN usage;
 
+-- Remove api_protocol values 'delta-sharing' and 'sap-ina-api-v1'
+ALTER TABLE api_definitions
+    DROP CONSTRAINT api_protocol_check;
+
+ALTER TABLE api_definitions
+    ADD CONSTRAINT api_protocol_check CHECK (api_protocol IN ('odata-v2', 'odata-v4', 'soap-inbound', 'soap-outbound', 'rest', 'websocket', 'sap-rfc', 'sap-sql-api-v1', 'graphql'));
+
 -- Drop `responsible` column from Event
 ALTER TABLE event_api_definitions
     DROP COLUMN responsible;

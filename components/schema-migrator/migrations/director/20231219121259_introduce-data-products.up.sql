@@ -21,6 +21,13 @@ ALTER TABLE api_definitions
     ADD COLUMN responsible VARCHAR(256),
     ADD COLUMN usage VARCHAR(256);
 
+-- Add new api_protocol values 'delta-sharing' and 'sap-ina-api-v1'
+ALTER TABLE api_definitions
+    DROP CONSTRAINT api_protocol_check;
+
+ALTER TABLE api_definitions
+    ADD CONSTRAINT api_protocol_check CHECK (api_protocol IN ('odata-v2', 'odata-v4', 'soap-inbound', 'soap-outbound', 'rest', 'websocket', 'sap-rfc', 'sap-sql-api-v1', 'graphql', 'delta-sharing', 'sap-ina-api-v1'));
+
 -- Add `responsible` to Event
 ALTER TABLE event_api_definitions
     ADD COLUMN responsible VARCHAR(256);
@@ -30,7 +37,7 @@ CREATE TABLE data_products
 (
     id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     app_id UUID,
-        CONSTRAINT data_products_application_id_fkey FOREIGN KEY (app_id) REFERENCES applications (id) ON DELETE CASCADE,
+        CONSTRAINT data_products_application_id_fk FOREIGN KEY (app_id) REFERENCES applications (id) ON DELETE CASCADE,
     app_template_version_id UUID,
         CONSTRAINT data_products_app_template_version_id_fk FOREIGN KEY (app_template_version_id) REFERENCES app_template_versions (id) ON DELETE CASCADE,
         CONSTRAINT data_products_app_template_version_id_ord_id_unique UNIQUE (app_template_version_id, ord_id),
