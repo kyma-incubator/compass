@@ -171,7 +171,7 @@ func (c *converter) ToEntity(in *model.FormationTemplate) (*Entity, error) {
 	}
 	marshalledDiscoveryConsumers, err := json.Marshal(in.DiscoveryConsumers)
 	if err != nil {
-		return nil, errors.Wrap(err, "while marshalling leading product IDs")
+		return nil, errors.Wrap(err, "while marshalling discovery consumers")
 	}
 
 	runtimeArtifactKind := repo.NewNullableString(nil)

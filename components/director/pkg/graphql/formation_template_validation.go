@@ -10,10 +10,19 @@ import (
 
 // Validate missing godoc
 func (i FormationTemplateInput) Validate() error {
+	subtypes := make([]interface{}, 0, len(i.RuntimeTypes)+len(i.ApplicationTypes))
+	for _, subtype := range i.RuntimeTypes {
+		subtypes = append(subtypes, subtype)
+	}
+	for _, subtype := range i.ApplicationTypes {
+		subtypes = append(subtypes, subtype)
+	}
+
 	fieldRules := []*validation.FieldRules{
 		validation.Field(&i.Name, validation.Required, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.ApplicationTypes, validation.Required, inputvalidation.Each(validation.Required, validation.RuneLength(0, longStringLengthLimit))),
 		validation.Field(&i.RuntimeTypes, inputvalidation.Each(validation.Required, validation.RuneLength(0, longStringLengthLimit))),
+		validation.Field(&i.DiscoveryConsumers, validation.Each(validation.Required, validation.In(subtypes...))),
 		validation.Field(&i.Webhooks, validation.By(webhooksRuleFunc)),
 	}
 
