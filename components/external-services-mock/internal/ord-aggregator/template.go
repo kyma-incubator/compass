@@ -1233,6 +1233,7 @@ const ordDocument = `{
       "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
       "visibility": "public",
       "releaseStatus": "deprecated",
+      "disabled": false,
       "version": "1.9.2",
       "lastUpdate": "2020-12-08T15:47:04+00:00",
       "deprecationDate": "2020-12-08T15:47:04+00:00",
@@ -1242,12 +1243,64 @@ const ordDocument = `{
       ],
       "type": "base",
       "category": "business-object",
-      "outputPorts": [
+      "entityTypes": ["ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1"],
+      "inputPorts": [
         {
-          "ordId": "sap.xref:apiResource:Customer:v1"
+          "ordId": "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2"
         }
       ],
-      "responsible": "sap:ach:CIC-DP-CO"
+      "outputPorts": [
+        {
+          "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2"
+        }
+      ],
+      "responsible": "sap:ach:CIC-DP-CO",
+      "dataProductLinks": [
+		{
+  			"type": "support",
+  			"url": "https://support.sap.com/CIC_DP_RT/issue/"
+		}
+	  ],
+      "links": [
+		{
+		   "description":"loremipsumdolornem",
+		   "title":"LinkTitle1",
+		   "url":"https://example.com/2018/04/11/testing/"
+		},
+		{
+		   "description":"loremipsumdolornem",
+		   "title":"LinkTitle2",
+		   "url":"/testing/relative"
+		}
+      ],
+      "industry": [
+		"Automotive",
+		"Banking",
+		"Chemicals"
+	  ],
+      "lineOfBusiness": [
+		"Finance",
+		"Sales"
+	  ],
+      "tags": [
+		"testTag"
+	  ],
+      "labels": {
+		"label-key-1": [
+		   "label-val"
+		],
+		"pkg-label": [
+		   "label-val"
+		]
+	 },
+	 "documentationLabels": {
+		"Documentation label key": [
+		   "Markdown Documentation with links",
+		   "With multiple values"
+		]
+	 },
+     "policyLevel": "sap:core:v1",
+     "systemInstanceAware": true
     },
     {
       "ordId": "ns:dataProduct:DATA_PRODUCT_ID_2{{ .randomSuffix }}:v2",
@@ -1261,16 +1314,69 @@ const ordDocument = `{
       "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
       "visibility": "private",
       "releaseStatus": "active",
+      "disabled": false,
       "version": "2.1.0",
       "lastUpdate": "2022-12-19T15:47:04+00:00",
       "type": "base",
       "category": "business-object",
-      "outputPorts": [
+      "entityTypes": ["ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1"],
+      "inputPorts": [
         {
-          "ordId": "sap.xref:apiResource:Customer:v1"
+          "ordId": "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2"
         }
       ],
-      "responsible": "sap:ach:CIC-DP-CO"
+      "outputPorts": [
+        {
+          "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2"
+        }
+      ],
+      "responsible": "sap:ach:CIC-DP-CO",
+      "dataProductLinks": [
+		{
+  			"type": "support",
+  			"url": "https://support.sap.com/CIC_DP_RT/issue/"
+		}
+	  ],
+      "links": [
+		{
+		   "description": "loremipsumdolornem",
+		   "title": "LinkTitle1",
+		   "url": "https://example.com/2018/04/11/testing/"
+		},
+		{
+		   "description": "loremipsumdolornem",
+		   "title": "LinkTitle2",
+		   "url": "/testing/relative"
+		}
+      ],
+      "industry": [
+		"Automotive",
+		"Banking",
+		"Chemicals"
+	  ],
+      "lineOfBusiness": [
+		"Finance",
+		"Sales"
+	  ],
+      "tags": [
+		"testTag"
+	  ],
+      "labels": {
+		"label-key-1": [
+		   "label-val"
+		],
+		"pkg-label": [
+		   "label-val"
+		]
+	 },
+	 "documentationLabels": {
+		"Documentation label key": [
+		   "Markdown Documentation with links",
+		   "With multiple values"
+		]
+	 },
+     "policyLevel": "sap:core:v1",
+     "systemInstanceAware": true
     },
     {
       "ordId": "ns:dataProduct:DATA_PRODUCT_ID_3{{ .randomSuffix }}:v3",
@@ -1288,12 +1394,64 @@ const ordDocument = `{
       "lastUpdate": "2022-12-19T15:47:04+00:00",
       "type": "base",
       "category": "business-object",
-      "outputPorts": [
+      "entityTypes": ["ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1"],
+      "inputPorts": [
         {
-          "ordId": "sap.xref:apiResource:Customer:v1"
+          "ordId": "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2"
         }
       ],
-      "responsible": "sap:ach:CIC-DP-CO"
+      "outputPorts": [
+        {
+          "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2"
+        }
+      ],
+      "responsible": "sap:ach:CIC-DP-CO",
+      "dataProductLinks": [
+		{
+  			"type": "support",
+  			"url": "https://support.sap.com/CIC_DP_RT/issue/"
+		}
+	  ],
+      "links": [
+		{
+		   "description": "loremipsumdolornem",
+		   "title": "LinkTitle1",
+		   "url": "https://example.com/2018/04/11/testing/"
+		},
+		{
+		   "description": "loremipsumdolornem",
+		   "title": "LinkTitle2",
+		   "url": "/testing/relative"
+		}
+      ],
+      "industry": [
+		"Automotive",
+		"Banking",
+		"Chemicals"
+	  ],
+      "lineOfBusiness": [
+		"Finance",
+		"Sales"
+	  ],
+      "tags": [
+		"testTag"
+	  ],
+      "labels": {
+		"label-key-1": [
+		   "label-val"
+		],
+		"pkg-label": [
+		   "label-val"
+		]
+	 },
+	 "documentationLabels": {
+		"Documentation label key": [
+		   "Markdown Documentation with links",
+		   "With multiple values"
+		]
+	 },
+     "policyLevel": "sap:core:v1",
+     "systemInstanceAware": true
     }
   ],
    "tombstones":[
