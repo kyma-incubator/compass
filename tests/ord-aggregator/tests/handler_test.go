@@ -127,40 +127,40 @@ const (
 	expectedTombstoneOrdIDRegex                    = "ns:apiResource:API_ID2(.+):v1"
 	expectedVendorTitle                            = "SAP SE"
 
-	expectedNumberOfSystemInstances                       = 1
+	expectedNumberOfSystemInstances                       = 7
 	expectedNumberOfSystemInstancesInSubscription         = 1
-	expectedNumberOfPackages                              = 1
+	expectedNumberOfPackages                              = 7
 	expectedNumberOfPackagesInSubscription                = 1
-	expectedNumberOfEntityTypes                           = 1
+	expectedNumberOfEntityTypes                           = 7
 	expectedNumberOfEntityTypesInSubscription             = 1
-	expectedNumberOfBundles                               = 2
+	expectedNumberOfBundles                               = 14
 	expectedNumberOfBundlesInSubscription                 = 2
-	expectedNumberOfAPIs                                  = 3
+	expectedNumberOfAPIs                                  = 21
 	expectedNumberOfAPIsInSubscription                    = 3
-	expectedNumberOfEvents                                = 4
+	expectedNumberOfEvents                                = 28
 	expectedNumberOfEventsInSubscription                  = 4
-	expectedNumberOfCapabilities                          = 1
+	expectedNumberOfCapabilities                          = 7
 	expectedNumberOfCapabilitiesInSubscription            = 1
-	expectedNumberOfIntegrationDependencies               = 3
+	expectedNumberOfIntegrationDependencies               = 21
 	expectedNumberOfIntegrationDependenciesInSubscription = 3
-	expectedNumberOfAspects                               = 3
+	expectedNumberOfAspects                               = 21
 	expectedNumberOfAspectsInSubscription                 = 3
-	expectedNumberOfAspectsApiResources                   = 3
+	expectedNumberOfAspectsApiResources                   = 21
 	expectedNumberOfAspectsApiResourcesInSubscription     = 3
-	expectedNumberOfAspectsEventResources                 = 3
+	expectedNumberOfAspectsEventResources                 = 21
 	expectedNumberOfAspectsEventResourcesInSubscription   = 3
-	expectedNumberOfDataProducts                          = 3
+	expectedNumberOfDataProducts                          = 21
 	expectedNumberOfDataProductsInSubscription            = 3
-	expectedNumberOfTombstones                            = 1
+	expectedNumberOfTombstones                            = 7
 	expectedNumberOfTombstonesInSubscription              = 1
 
-	expectedNumberOfPublicAPIs                             = 1
-	expectedNumberOfPublicEvents                           = 2
-	expectedNumberOfPublicCapabilities                     = 1
-	expectedNumberOfPublicIntegrationDependencies          = 1
+	expectedNumberOfPublicAPIs                             = 7
+	expectedNumberOfPublicEvents                           = 14
+	expectedNumberOfPublicCapabilities                     = 7
+	expectedNumberOfPublicIntegrationDependencies          = 7
 	expectedNumberOfPublicIntegrationDependenciesForOneApp = 1
 	expectedNumberOfIntegrationDependenciesForOneApp       = 3
-	expectedNumberOfPublicDataProducts                     = 1
+	expectedNumberOfPublicDataProducts                     = 7
 	expectedNumberOfDataProductsForOneApp                  = 3
 	expectedNumberOfPublicDataProductsForOneApp            = 1
 
@@ -187,46 +187,46 @@ const (
 
 var (
 	// The expected number is increased with initial number of global vendors/products before test execution
-	expectedNumberOfProducts               = 1
+	expectedNumberOfProducts               = 7
 	expectedNumberOfProductsInSubscription = 1
-	expectedNumberOfVendors                = 1
+	expectedNumberOfVendors                = 7
 	expectedNumberOfVendorsInSubscription  = 1
 )
 
 func TestORDAggregator(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 
-	//basicORDConfigSecurity := &fixtures.ORDConfigSecurity{
-	//	Username: testConfig.BasicUsername,
-	//	Password: testConfig.BasicPassword,
-	//}
-	//
-	//oauthORDConfigSecurity := &fixtures.ORDConfigSecurity{
-	//	Username: testConfig.ClientID,
-	//	Password: testConfig.ClientSecret,
-	//	TokenURL: testConfig.ExternalServicesMockBaseURL + "/secured/oauth/token",
-	//}
-	//
-	//accessStrategyConfigSecurity := &fixtures.ORDConfigSecurity{
-	//	AccessStrategy: "sap:cmp-mtls:v1",
-	//}
+	basicORDConfigSecurity := &fixtures.ORDConfigSecurity{
+		Username: testConfig.BasicUsername,
+		Password: testConfig.BasicPassword,
+	}
 
-	var appInput directorSchema.ApplicationRegisterInput
+	oauthORDConfigSecurity := &fixtures.ORDConfigSecurity{
+		Username: testConfig.ClientID,
+		Password: testConfig.ClientSecret,
+		TokenURL: testConfig.ExternalServicesMockBaseURL + "/secured/oauth/token",
+	}
+
+	accessStrategyConfigSecurity := &fixtures.ORDConfigSecurity{
+		AccessStrategy: "sap:cmp-mtls:v1",
+	}
+
+	var appInput, secondAppInput, thirdAppInput, fourthAppInput, fifthAppInput, sixthAppInput, seventhAppInput directorSchema.ApplicationRegisterInput
 	t.Run("Verifying ORD Document to be valid", func(t *testing.T) {
 		// Unsecured config endpoint with full absolute URL in the webhook; unsecured document; doc baseURL from the webhook
 		appInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL, nil)
-		//// Unsecured config endpoint with automatic .well-known/open-resource-discovery; unsecured document; doc baseURL from the webhook
-		//secondAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSecondSystemInstanceName, expectedSecondSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredURL, nil)
-		//// Basic secured config endpoint; unsecured document; doc baseURL from the webhook
-		//thirdAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedThirdSystemInstanceName, expectedThirdSystemInstanceDescription, testConfig.ExternalServicesMockBasicURL, basicORDConfigSecurity)
-		//// Oauth secured config endpoint; unsecured document; doc baseURL from the webhook
-		//fourthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFourthSystemInstanceName, expectedFourthSystemInstanceDescription, testConfig.ExternalServicesMockOauthURL, oauthORDConfigSecurity)
-		//// Unsecured config endpoint with full absolute URL in the webhook; cert secured document; doc baseURL configured in the config response
-		//fifthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFifthSystemInstanceName, expectedFifthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/cert", nil)
-		//// Cert secured config endpoint with automatic .well-known/open-resource-discovery; cert secured document; doc baseURL from the webhook
-		//sixthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSixthSystemInstanceName, expectedSixthSystemInstanceDescription, testConfig.ExternalServicesMockOrdCertSecuredURL, accessStrategyConfigSecurity)
-		//// Unsecured config endpoint with automatic .well-known/open-resource-discovery; unsecured document; doc baseURL from the webhook; with additional content
-		//seventhAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSeventhSystemInstanceName, expectedSeventhSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredWithAdditionalContentURL, nil)
+		// Unsecured config endpoint with automatic .well-known/open-resource-discovery; unsecured document; doc baseURL from the webhook
+		secondAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSecondSystemInstanceName, expectedSecondSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredURL, nil)
+		// Basic secured config endpoint; unsecured document; doc baseURL from the webhook
+		thirdAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedThirdSystemInstanceName, expectedThirdSystemInstanceDescription, testConfig.ExternalServicesMockBasicURL, basicORDConfigSecurity)
+		// Oauth secured config endpoint; unsecured document; doc baseURL from the webhook
+		fourthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFourthSystemInstanceName, expectedFourthSystemInstanceDescription, testConfig.ExternalServicesMockOauthURL, oauthORDConfigSecurity)
+		// Unsecured config endpoint with full absolute URL in the webhook; cert secured document; doc baseURL configured in the config response
+		fifthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFifthSystemInstanceName, expectedFifthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/cert", nil)
+		// Cert secured config endpoint with automatic .well-known/open-resource-discovery; cert secured document; doc baseURL from the webhook
+		sixthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSixthSystemInstanceName, expectedSixthSystemInstanceDescription, testConfig.ExternalServicesMockOrdCertSecuredURL, accessStrategyConfigSecurity)
+		// Unsecured config endpoint with automatic .well-known/open-resource-discovery; unsecured document; doc baseURL from the webhook; with additional content
+		seventhAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSeventhSystemInstanceName, expectedSeventhSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredWithAdditionalContentURL, nil)
 
 		systemInstancesMap := make(map[string]string)
 		systemInstancesMap[expectedSystemInstanceName] = expectedSystemInstanceDescription
@@ -393,32 +393,32 @@ func TestORDAggregator(stdT *testing.T) {
 
 		// Register systems
 		app, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appInput)
-		//defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
 		require.NoError(t, err)
 
-		//secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, secondAppInput)
-		//defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &secondApp)
-		//require.NoError(t, err)
-		//
-		//thirdApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, thirdAppInput)
-		//defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &thirdApp)
-		//require.NoError(t, err)
-		//
-		//fourthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, fourthAppInput)
-		//defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &fourthApp)
-		//require.NoError(t, err)
-		//
-		//fifthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, fifthAppInput)
-		//defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &fifthApp)
-		//require.NoError(t, err)
-		//
-		//sixthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, sixthAppInput)
-		//defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &sixthApp)
-		//require.NoError(t, err)
-		//
-		//seventhApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, seventhAppInput)
-		//defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &seventhApp)
-		//require.NoError(t, err)
+		secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, secondAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &secondApp)
+		require.NoError(t, err)
+
+		thirdApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, thirdAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &thirdApp)
+		require.NoError(t, err)
+
+		fourthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, fourthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &fourthApp)
+		require.NoError(t, err)
+
+		fifthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, fifthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &fifthApp)
+		require.NoError(t, err)
+
+		sixthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, sixthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &sixthApp)
+		require.NoError(t, err)
+
+		seventhApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, seventhAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &seventhApp)
+		require.NoError(t, err)
 
 		defaultTestTimeout := 5 * time.Minute
 		defaultCheckInterval := defaultTestTimeout / 20
