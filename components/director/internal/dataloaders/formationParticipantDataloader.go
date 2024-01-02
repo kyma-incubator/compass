@@ -20,10 +20,10 @@ type LoadersFormationParticipant struct {
 
 // ParamFormationParticipant are parameters for the formation participant dataloader
 type ParamFormationParticipant struct {
-	ID   string
-	ParticipantID string
+	ID              string
+	ParticipantID   string
 	ParticipantType string
-	Ctx  context.Context
+	Ctx             context.Context
 }
 
 // HandlerFormationParticipant prepares the parameters for the dataloader
