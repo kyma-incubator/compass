@@ -19,6 +19,10 @@ type LabelService struct {
 func (_m *LabelService) GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error) {
 	ret := _m.Called(ctx, tenant, labelInput)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetLabel")
+	}
+
 	var r0 *model.Label
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.LabelInput) (*model.Label, error)); ok {

@@ -17,6 +17,9 @@ type RuntimePageExt struct {
 	Data []*RuntimeExt `json:"data"`
 }
 
+// IsFormationParticipant implements the FormationParticipant interface
+func (e *Runtime) IsFormationParticipant() {}
+
 // RuntimeExt missing godoc
 type RuntimeExt struct {
 	Runtime

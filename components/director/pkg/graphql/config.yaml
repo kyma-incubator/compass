@@ -183,6 +183,16 @@ models:
     fields:
       webhooks:
         resolver: true
+      formationConstraints:
+        resolver: true
+
+  FormationAssignment:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.FormationAssignment"
+    fields:
+      targetEntity:
+        resolver: true
+      sourceEntity:
+        resolver: true
 
   Tenant:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Tenant"
