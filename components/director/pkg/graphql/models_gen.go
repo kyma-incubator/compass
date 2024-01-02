@@ -622,6 +622,7 @@ type FormationTemplateInput struct {
 	Webhooks               []*WebhookInput `json:"webhooks"`
 	LeadingProductIDs      []string        `json:"leadingProductIDs"`
 	SupportsReset          *bool           `json:"supportsReset"`
+	DiscoveryConsumers     []string        `json:"discoveryConsumers"`
 }
 
 type FormationTemplatePage struct {

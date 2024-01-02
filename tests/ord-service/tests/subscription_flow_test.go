@@ -170,7 +170,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.True(t, ok)
 		require.NotEmpty(t, saasAppLbl)
 
-		// Register application
+		// Register application directly in the tenant and don't add it to any formations and validate that this system won't be visible for the SaaS app calling as part of the formation.
 		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), secondaryTenant)
 		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, &app)
 		require.NoError(stdT, err)
@@ -181,6 +181,12 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &subaccountApp)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, subaccountApp.ID)
+
+		// Register application directly in the tenant and add it to a formation that the caller is not discover consumer in and validate that this system won't be visible for the SaaS app calling as part of the formation.
+		appInAnotherFormation, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp2", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), secondaryTenant)
+		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, &appInAnotherFormation)
+		require.NoError(stdT, err)
+		require.NotEmpty(stdT, appInAnotherFormation.ID)
 
 		// Register consumer application
 		const localTenantID = "localTenantID"
@@ -200,11 +206,31 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		formationTmplName := "e2e-test-formation-template-name"
 		applicationType := util.ApplicationTypeC4C
+		artifactKind := graphql.ArtifactTypeSubscription
 
 		stdT.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
 		var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
-		ft = fixtures.CreateFormationTemplateWithoutInput(stdT, ctx, certSecuredGraphQLClient, formationTmplName, conf.SubscriptionProviderAppNameValue, []string{string(applicationType)}, graphql.ArtifactTypeSubscription)
+		ft = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+			Name:                   formationTmplName,
+			ApplicationTypes:       []string{string(applicationType)},
+			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
+			RuntimeTypeDisplayName: &formationTmplName,
+			RuntimeArtifactKind:    &artifactKind,
+			DiscoveryConsumers:     []string{string(applicationType), conf.SubscriptionProviderAppNameValue},
+		})
+
+		secondFormationTmplName := "e2e-test-formation-template-without-discovery-consumer"
+		stdT.Logf("Creating formation template with name %q, without discovery consumers configured", secondFormationTmplName)
+		var ftWithoutDiscoveryConsumers graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ftWithoutDiscoveryConsumers)
+		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+			Name:                   secondFormationTmplName,
+			ApplicationTypes:       []string{string(applicationType)},
+			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
+			RuntimeTypeDisplayName: &secondFormationTmplName,
+			RuntimeArtifactKind:    &artifactKind,
+		})
 
 		consumerFormationName := "consumer-test-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", consumerFormationName, formationTmplName)
@@ -222,6 +248,23 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
 		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
 		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
+
+		noDiscoveryConsumptionFormationName := "no-discovery-consumption-scenario"
+		stdT.Logf("Creating formation with name: %q from template with name: %q", noDiscoveryConsumptionFormationName, secondFormationTmplName)
+		defer fixtures.DeleteFormationWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, noDiscoveryConsumptionFormationName)
+		noDiscoveryConsumptionFormation := fixtures.CreateFormationFromTemplateWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, noDiscoveryConsumptionFormationName, &secondFormationTmplName)
+		require.NotEmpty(t, noDiscoveryConsumptionFormation.ID)
+		stdT.Logf("Successfully created formation: %s", noDiscoveryConsumptionFormationName)
+
+		stdT.Logf("Assign application to formation %s", noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
+		stdT.Logf("Successfully assigned application to formation %s", noDiscoveryConsumptionFormationName)
+
+		stdT.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", noDiscoveryConsumptionFormationName, secondaryTenant)
+		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, noDiscoveryConsumptionFormationName)
 
 		selfRegLabelValue, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 		require.True(stdT, ok)
@@ -427,7 +470,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.True(t, ok)
 		require.NotEmpty(t, selfRegDistinguishValue)
 
-		// Register application
+		// Register application directly in the tenant and don't add it to any formations and validate that this system won't be visible for the SaaS app calling as part of the formation.
 		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), secondaryTenant)
 		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, &app)
 		require.NoError(stdT, err)
@@ -438,6 +481,12 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &subaccountApp)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, subaccountApp.ID)
+
+		// Register application directly in the tenant and add it to a formation that the caller is not discover consumer in and validate that this system won't be visible for the SaaS app calling as part of the formation.
+		appInAnotherFormation, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp2", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), secondaryTenant)
+		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, &appInAnotherFormation)
+		require.NoError(stdT, err)
+		require.NotEmpty(stdT, appInAnotherFormation.ID)
 
 		// Register consumer application
 		const localTenantID = "localTenantID"
@@ -457,11 +506,31 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		formationTmplName := "e2e-test-formation-template-name"
 		applicationType := util.ApplicationTypeC4C
+		artifactKind := graphql.ArtifactTypeSubscription
 
 		stdT.Logf("Creating formation template for the provider application tempalаte type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
 		var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
-		ft = fixtures.CreateFormationTemplateWithoutInput(stdT, ctx, certSecuredGraphQLClient, formationTmplName, conf.SubscriptionProviderAppNameValue, []string{string(applicationType), "SAP provider-app-template"}, graphql.ArtifactTypeSubscription)
+		ft = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+			Name:                   formationTmplName,
+			ApplicationTypes:       []string{string(applicationType), "SAP provider-app-template"},
+			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
+			RuntimeTypeDisplayName: &formationTmplName,
+			RuntimeArtifactKind:    &artifactKind,
+			DiscoveryConsumers:     []string{string(applicationType), "SAP provider-app-template", conf.SubscriptionProviderAppNameValue},
+		})
+
+		secondFormationTmplName := "e2e-test-formation-template-without-discovery-consumer"
+		stdT.Logf("Creating formation template with name %q, without discovery consumers configured", secondFormationTmplName)
+		var ftWithoutDiscoveryConsumers graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ftWithoutDiscoveryConsumers)
+		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+			Name:                   secondFormationTmplName,
+			ApplicationTypes:       []string{string(applicationType), "SAP provider-app-template"},
+			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
+			RuntimeTypeDisplayName: &secondFormationTmplName,
+			RuntimeArtifactKind:    &artifactKind,
+		})
 
 		consumerFormationName := "consumer-test-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", consumerFormationName, formationTmplName)
@@ -474,6 +543,18 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		assignToFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
 		defer unassignFromFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
 		stdT.Logf("Successfully assigned application to formation %s", consumerFormationName)
+
+		noDiscoveryConsumptionFormationName := "no-discovery-consumption-scenario"
+		stdT.Logf("Creating formation with name: %q from template with name: %q", noDiscoveryConsumptionFormationName, secondFormationTmplName)
+		defer fixtures.DeleteFormationWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, noDiscoveryConsumptionFormationName)
+		noDiscoveryConsumptionFormation := fixtures.CreateFormationFromTemplateWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, noDiscoveryConsumptionFormationName, &secondFormationTmplName)
+		require.NotEmpty(t, noDiscoveryConsumptionFormation.ID)
+		stdT.Logf("Successfully created formation: %s", noDiscoveryConsumptionFormationName)
+
+		stdT.Logf("Assign application to formation %s", noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
+		stdT.Logf("Successfully assigned application to formation %s", noDiscoveryConsumptionFormationName)
 
 		httpClient := &http.Client{
 			Timeout: 10 * time.Second,
@@ -544,6 +625,11 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		assignToFormation(stdT, ctx, providerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
 		defer unassignFromFormation(stdT, ctx, providerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
 		stdT.Logf("Successfully assigned application to formation %s", consumerFormationName)
+
+		stdT.Logf("Assign provider application with id %q to formation %s", providerApp.ID, noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, providerApp.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, providerApp.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
+		stdT.Logf("Successfully assigned application to formation %s", noDiscoveryConsumptionFormationName)
 
 		// After successful subscription from above we call the director component with "double authentication(token + certificate)" in order to test claims validation is successful
 		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
@@ -642,6 +728,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Log("Successfully fetched system with bundles and destinations")
 
 		unassignFromFormation(stdT, ctx, providerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
+		unassignFromFormation(stdT, ctx, providerApp.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
@@ -685,7 +772,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.True(t, ok)
 		require.NotEmpty(t, saasAppLbl)
 
-		// Register application
+		// Register application directly in the tenant and don't add it to any formations and validate that this system won't be visible for the SaaS app calling as part of the formation.
 		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), secondaryTenant)
 		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, &app)
 		require.NoError(stdT, err)
@@ -696,6 +783,12 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &subaccountApp)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, subaccountApp.ID)
+
+		// Register application directly in the tenant and add it to a formation that the caller is not discover consumer in and validate that this system won't be visible for the SaaS app calling as part of the formation.
+		appInAnotherFormation, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp2", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), secondaryTenant)
+		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, &appInAnotherFormation)
+		require.NoError(stdT, err)
+		require.NotEmpty(stdT, appInAnotherFormation.ID)
 
 		// Register consumer application
 		const localTenantID = "localTenantID"
@@ -715,11 +808,31 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		formationTmplName := "e2e-test-formation-template-name"
 		applicationType := util.ApplicationTypeC4C
+		artifactKind := graphql.ArtifactTypeSubscription
 
 		stdT.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
 		var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
-		ft = fixtures.CreateFormationTemplateWithoutInput(stdT, ctx, certSecuredGraphQLClient, formationTmplName, conf.SubscriptionProviderAppNameValue, []string{string(applicationType)}, graphql.ArtifactTypeSubscription)
+		ft = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+			Name:                   formationTmplName,
+			ApplicationTypes:       []string{string(applicationType)},
+			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
+			RuntimeTypeDisplayName: &formationTmplName,
+			RuntimeArtifactKind:    &artifactKind,
+			DiscoveryConsumers:     []string{string(applicationType), conf.SubscriptionProviderAppNameValue},
+		})
+
+		secondFormationTmplName := "e2e-test-formation-template-without-discovery-consumer"
+		stdT.Logf("Creating formation template with name %q, without discovery consumers configured", secondFormationTmplName)
+		var ftWithoutDiscoveryConsumers graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ftWithoutDiscoveryConsumers)
+		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+			Name:                   secondFormationTmplName,
+			ApplicationTypes:       []string{string(applicationType)},
+			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
+			RuntimeTypeDisplayName: &secondFormationTmplName,
+			RuntimeArtifactKind:    &artifactKind,
+		})
 
 		consumerFormationName := "consumer-test-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", consumerFormationName, formationTmplName)
@@ -737,6 +850,23 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
 		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
 		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
+
+		noDiscoveryConsumptionFormationName := "no-discovery-consumption-scenario"
+		stdT.Logf("Creating formation with name: %q from template with name: %q", noDiscoveryConsumptionFormationName, secondFormationTmplName)
+		defer fixtures.DeleteFormationWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, noDiscoveryConsumptionFormationName)
+		noDiscoveryConsumptionFormation := fixtures.CreateFormationFromTemplateWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, noDiscoveryConsumptionFormationName, &secondFormationTmplName)
+		require.NotEmpty(t, noDiscoveryConsumptionFormation.ID)
+		stdT.Logf("Successfully created formation: %s", noDiscoveryConsumptionFormationName)
+
+		stdT.Logf("Assign application to formation %s", noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
+		stdT.Logf("Successfully assigned application to formation %s", noDiscoveryConsumptionFormationName)
+
+		stdT.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", noDiscoveryConsumptionFormationName, secondaryTenant)
+		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, noDiscoveryConsumptionFormationName)
 
 		selfRegLabelValue, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 		require.True(stdT, ok)
