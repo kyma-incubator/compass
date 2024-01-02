@@ -1,5 +1,6 @@
 package graphql
 
+// FormationAssignment is a formation assignment graphQL type
 type FormationAssignment struct {
 	ID            string                  `json:"id"`
 	Source        string                  `json:"source"`
