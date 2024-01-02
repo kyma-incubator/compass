@@ -669,7 +669,7 @@ func (IntSysSystemAuth) IsSystemAuth() {}
 type IntegrationDependencyInput struct {
 	Name          string         `json:"name"`
 	Description   *string        `json:"description"`
-	OrdID         *string        `json:"ordID"`
+	OrdID         string         `json:"ordID"`
 	PartOfPackage *string        `json:"partOfPackage"`
 	Visibility    *string        `json:"visibility"`
 	ReleaseStatus *string        `json:"releaseStatus"`

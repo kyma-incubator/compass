@@ -88,17 +88,26 @@ func (s *service) DeleteMultiple(ctx context.Context, ids []string) error {
 }
 
 // MarkAsCompleted marks an operation as completed
-func (s *service) MarkAsCompleted(ctx context.Context, id string) error {
+func (s *service) MarkAsCompleted(ctx context.Context, id, errorMsg string) error {
 	op, err := s.opRepo.Get(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "while getting opreration with id %q", id)
+	}
+
+	op.Error = json.RawMessage("{}")
+	if errorMsg != "" {
+		opError := NewOperationError(errorMsg)
+		rawMessage, err := opError.ToJSONRawMessage()
+		if err != nil {
+			return errors.Wrap(err, "while marshaling operation error")
+		}
+		op.Error = rawMessage
 	}
 
 	op.Status = model.OperationStatusCompleted
 	currentTime := time.Now()
 	op.UpdatedAt = &currentTime
 	op.Priority = int(operationsmanager.LowOperationPriority)
-	op.Error = json.RawMessage("{}")
 
 	if err := s.opRepo.Update(ctx, op); err != nil {
 		return errors.Wrapf(err, "while updating operation with id %q", id)
