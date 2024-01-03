@@ -23,7 +23,7 @@ ALTER TABLE api_definitions
 
 -- Add new api_protocol values 'delta-sharing' and 'sap-ina-api-v1'
 ALTER TABLE api_definitions
-    DROP CONSTRAINT api_protocol_check;
+DROP CONSTRAINT api_protocol_check;
 
 ALTER TABLE api_definitions
     ADD CONSTRAINT api_protocol_check CHECK (api_protocol IN ('odata-v2', 'odata-v4', 'soap-inbound', 'soap-outbound', 'rest', 'websocket', 'sap-rfc', 'sap-sql-api-v1', 'graphql', 'delta-sharing', 'sap-ina-api-v1'));
@@ -37,19 +37,19 @@ CREATE TABLE data_products
 (
     id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     app_id UUID,
-        CONSTRAINT data_products_application_id_fk FOREIGN KEY (app_id) REFERENCES applications (id) ON DELETE CASCADE,
+    CONSTRAINT data_products_application_id_fk FOREIGN KEY (app_id) REFERENCES applications (id) ON DELETE CASCADE,
     app_template_version_id UUID,
-        CONSTRAINT data_products_app_template_version_id_fk FOREIGN KEY (app_template_version_id) REFERENCES app_template_versions (id) ON DELETE CASCADE,
-        CONSTRAINT data_products_app_template_version_id_ord_id_unique UNIQUE (app_template_version_id, ord_id),
+    CONSTRAINT data_products_app_template_version_id_fk FOREIGN KEY (app_template_version_id) REFERENCES app_template_versions (id) ON DELETE CASCADE,
+    CONSTRAINT data_products_app_template_version_id_ord_id_unique UNIQUE (app_template_version_id, ord_id),
     ord_id VARCHAR(256) NOT NULL,
-        CONSTRAINT data_products_ord_id_unique UNIQUE (app_id, ord_id),
+    CONSTRAINT data_products_ord_id_unique UNIQUE (app_id, ord_id),
     local_tenant_id VARCHAR(256),
     correlation_ids JSONB,
     title VARCHAR(256) NOT NULL,
     short_description VARCHAR(256),
     description TEXT,
     package_id UUID,
-        CONSTRAINT data_products_package_id_fk FOREIGN KEY (package_id) REFERENCES packages (id) ON DELETE CASCADE,
+    CONSTRAINT data_products_package_id_fk FOREIGN KEY (package_id) REFERENCES packages (id) ON DELETE CASCADE,
     last_update VARCHAR(256),
     visibility TEXT NOT NULL,
     release_status release_status NOT NULL,
@@ -80,7 +80,7 @@ CREATE TABLE data_products
     version_deprecated_since VARCHAR(256),
     version_for_removal BOOLEAN,
     ready BOOLEAN DEFAULT TRUE,
-        CONSTRAINT data_products_id_ready_unique UNIQUE (id, ready),
+    CONSTRAINT data_products_id_ready_unique UNIQUE (id, ready),
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -93,9 +93,9 @@ CREATE INDEX IF NOT EXISTS data_products_app_id ON data_products(app_id);
 -- Create tenants_data_products view
 CREATE VIEW tenants_data_products
             (tenant_id, formation_id, id, app_id, ord_id, local_tenant_id, correlation_ids, title, short_description, description, package_id, last_update,
-                visibility, release_status, disabled, deprecation_date, sunset_date, successors, changelog_entries, type, category, entity_types, input_ports,
-                output_ports, responsible, data_product_links, links, industry, line_of_business, tags, labels, documentation_labels, policy_level, custom_policy_level,
-                system_instance_aware, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error)
+             visibility, release_status, disabled, deprecation_date, sunset_date, successors, changelog_entries, type, category, entity_types, input_ports,
+             output_ports, responsible, data_product_links, links, industry, line_of_business, tags, labels, documentation_labels, policy_level, custom_policy_level,
+             system_instance_aware, resource_hash, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error)
 AS
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.formation_id,
@@ -143,20 +143,20 @@ SELECT DISTINCT t_apps.tenant_id,
                 d.deleted_at,
                 d.error
 FROM data_products d
-     JOIN (SELECT a1.id,
-                  a1.tenant_id,
-                  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
-           FROM tenant_applications a1
-           UNION ALL
-           SELECT apps_subaccounts.id,
-                  apps_subaccounts.tenant_id,
-                  apps_subaccounts.formation_id
-           FROM apps_subaccounts
-           UNION ALL
-           SELECT apps_subaccounts.id,
-                  apps_subaccounts.tenant_id,
-                  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
-           FROM apps_subaccounts) t_apps ON d.app_id = t_apps.id;
+         JOIN (SELECT a1.id,
+                      a1.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT af.app_id,
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
+                       af.formation_id
+               FROM apps_formations_id af
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM apps_subaccounts) t_apps ON d.app_id = t_apps.id;
 
 -- Create data_products_tenants view
 CREATE VIEW data_products_tenants AS
