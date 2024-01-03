@@ -3,8 +3,6 @@ package integrationdependency
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -82,6 +80,7 @@ type PackageService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.PackageInput, pkgHash uint64) (string, error)
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Package, error)
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
+	Get(ctx context.Context, id string) (*model.Package, error)
 }
 
 // Resolver is an object responsible for resolver-layer Integration Dependency operations
@@ -128,29 +127,22 @@ func (r *Resolver) AddIntegrationDependencyToApplication(ctx context.Context, ap
 		return nil, err
 	}
 
-	versionValue := defaultVersionValue
-	if in.Version != nil {
-		// the input version value comes in this format: "1.0.0", but we need v1
-		versionValue = fmt.Sprintf("v%s", strings.Split(in.Version.Value, ".")[0])
-	}
-	// generate values which are mandatory by ORD spec if they are missing
-	in.OrdID = getOrdID(in.OrdID, appNamespace, in.Name, versionValue)
 	in.Visibility = getVisibility(in.Visibility)
 	in.ReleaseStatus = getReleaseStatus(in.ReleaseStatus)
 	in.Mandatory = getMandatory(in.Mandatory)
 
 	var packageID string
 	if in.PartOfPackage == nil {
-		pkgOrdID := fmt.Sprintf("%s:%s:%s", appNamespace, manuallyAddedIntegrationDependenciesPackageOrdID, versionValue)
+		pkgOrdID := fmt.Sprintf("%s:%s:%s", appNamespace, manuallyAddedIntegrationDependenciesPackageOrdID, defaultVersionValue)
 		log.C(ctx).Infof("Part of package field is missing. Creating a package with ordID %q for application with id %q", pkgOrdID, appID)
 
 		packageID, err = r.createPackage(ctx, appID, pkgOrdID)
 		if err != nil {
 			return nil, err
 		}
-		in.PartOfPackage = &pkgOrdID
+		in.PartOfPackage = &packageID
 	} else {
-		log.C(ctx).Infof("Part of package field is provided. Getting a package with ordID %q for application with id %q", *in.PartOfPackage, appID)
+		log.C(ctx).Infof("Part of package field is provided. Getting a package with id %q for application with id %q", *in.PartOfPackage, appID)
 		packageID, err = r.getPackageID(ctx, appID, in.PartOfPackage)
 		if err != nil {
 			return nil, err
@@ -305,15 +297,20 @@ func (r *Resolver) getApplicationNamespace(ctx context.Context, appID string) (s
 	if app.ApplicationTemplateID != nil {
 		appTemplate, err := r.appTemplateSvc.Get(ctx, *app.ApplicationTemplateID)
 		if err != nil {
-			return "", errors.Wrapf(err, "failed to retrieve application template for application with ID %q", appID)
+			return "", errors.Wrapf(err, "failed to retrieve application template for application with id %q", appID)
 		}
 		if appTemplate.ApplicationNamespace != nil {
 			return *appTemplate.ApplicationNamespace, nil
 		}
-		return "", errors.Errorf("application namespace is missing for both application template with ID %q and application with id %q", appTemplate.ID, appID)
+
+		log.C(ctx).Infof("Application namespace is missing for both application template with id %q and application with id %q", appTemplate.ID, appID)
+
+		return "", nil
 	}
 
-	return "", errors.Errorf("application namespace is missing for application %q", appID)
+	log.C(ctx).Infof("Application namespace is missing for application with id %q", appID)
+
+	return "", nil
 }
 
 func (r *Resolver) createPackage(ctx context.Context, appID, pkgOrdID string) (string, error) {
@@ -333,17 +330,17 @@ func (r *Resolver) createPackage(ctx context.Context, appID, pkgOrdID string) (s
 	return packageID, nil
 }
 
-func (r *Resolver) getPackageID(ctx context.Context, appID string, packageOrdID *string) (string, error) {
+func (r *Resolver) getPackageID(ctx context.Context, appID string, packageID *string) (string, error) {
 	packagesFromDB, err := r.packageSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while listing packages for application with id %q", appID)
 	}
 	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
-		return equalStrings(&packagesFromDB[i].OrdID, packageOrdID)
+		return equalStrings(&packagesFromDB[i].ID, packageID)
 	}); found {
 		return packagesFromDB[i].ID, nil
 	}
-	return "", errors.Errorf("package with ord ID: %q does not exist", *packageOrdID)
+	return "", errors.Errorf("package with ID: %q does not exist", *packageID)
 }
 
 func (r *Resolver) getAspectEventResourcesByAspectID(ctx context.Context, aspects []*model.Aspect) (map[string][]*model.AspectEventResource, error) {
@@ -370,14 +367,6 @@ func searchInSlice(length int, f func(i int) bool) (int, bool) {
 
 func equalStrings(first, second *string) bool {
 	return first != nil && second != nil && *first == *second
-}
-
-func getOrdID(inputOrdID *string, appNamespace, name, versionValue string) *string {
-	if inputOrdID == nil {
-		name = strings.ToUpper(strings.ReplaceAll(name, " ", ""))
-		inputOrdID = str.Ptr(fmt.Sprintf("%s:%s:%s:%s", appNamespace, integrationDependencyKeyWord, name, versionValue))
-	}
-	return inputOrdID
 }
 
 func getVisibility(inputVisibility *string) *string {

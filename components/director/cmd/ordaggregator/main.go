@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
@@ -482,13 +483,20 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	log.C(ctx).Infof("Taken operation for processing: %s", op.ID)
 	if errProcess := opProcessor.Process(ctx, op); errProcess != nil {
 		log.C(ctx).Infof("Error while processing operation with id %q. Err: %v", op.ID, errProcess)
+		if strings.Contains(errProcess.Error(), ord.ValidationErrorMsg) && !strings.Contains(errProcess.Error(), ord.ProcessingErrorMsg) { // if is only validation error
+			if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, errProcess.Error()); errMarkAsCompleted != nil {
+				log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
+				return op.ID, errMarkAsCompleted
+			}
+			return op.ID, nil
+		}
 		if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, errProcess.Error()); errMarkAsFailed != nil {
 			log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
 			return op.ID, errMarkAsFailed
 		}
 		return op.ID, errProcess
 	}
-	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID); errMarkAsCompleted != nil {
+	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, ""); errMarkAsCompleted != nil {
 		log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
 		return op.ID, errMarkAsCompleted
 	}

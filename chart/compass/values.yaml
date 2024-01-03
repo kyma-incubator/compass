@@ -156,59 +156,59 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3536"
+      version: "PR-3553"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3536"
+      version: "PR-3557"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3536"
+      version: "PR-3555"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3534"
+      version: "PR-3566"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3536"
+      version: "PR-3561"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3511"
+      version: "PR-3567"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3536"
+      version: "PR-3551"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3536"
+      version: "PR-3560"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3540"
+      version: "PR-3559"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
-      version: "PR-3536"
+      version: "PR-3553"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3536"
+      version: "PR-3558"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-114"
+      version: "PR-118"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3536"
+      version: "PR-3566"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
-      version: "PR-3536"
+      version: "PR-3553"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -1273,7 +1273,7 @@ global:
       proxyApplicationTemplateName: "SAP Proxy Template"
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
-      skipPattern: "(.*Requesting_filtering_of_Bundles_that_have_only_ODATA_APIs|.*Requesting_filtering_of_Bundles_that_do_not_have_only_ODATA_APIs)"
+      skipPattern: ""
     externalServicesMock:
       skipPattern: ""
       tenantMappingStatusAPI:
