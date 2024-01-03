@@ -76,6 +76,15 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 		},
 	}
 
+	dataProducts := []*model.DataProduct{
+		{
+			BaseEntity: &model.BaseEntity{
+				ID: "data-product-id",
+			},
+			OrdID: str.Ptr("tombstone-ord-id"),
+		},
+	}
+
 	bundles := []*model.Bundle{
 		{
 			BaseEntity: &model.BaseEntity{
@@ -135,6 +144,12 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 		return integrationDependencySvc
 	}
 
+	successfulDataProductDelete := func() *automock.DataProductService {
+		dataProductSvc := &automock.DataProductService{}
+		dataProductSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, "data-product-id").Return(nil).Once()
+		return dataProductSvc
+	}
+
 	successfulBundleDelete := func() *automock.BundleService {
 		bundleSvc := &automock.BundleService{}
 		bundleSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, "bundle-id").Return(nil).Once()
@@ -162,6 +177,7 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 		EntityTypeSvcFn              func() *automock.EntityTypeService
 		CapabilitySvcFn              func() *automock.CapabilityService
 		IntegrationDependencySvcFn   func() *automock.IntegrationDependencyService
+		DataProductSvcFn             func() *automock.DataProductService
 		VendorSvcFn                  func() *automock.VendorService
 		ProductSvcFn                 func() *automock.ProductService
 		BundleSvcFn                  func() *automock.BundleService
@@ -175,6 +191,7 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 		InputEntityTypes             []*model.EntityType
 		InputCapabilities            []*model.Capability
 		InputIntegrationDependencies []*model.IntegrationDependency
+		InputDataProducts            []*model.DataProduct
 		InputTombstones              []*model.Tombstone
 		InputFetchRequests           []*processor.OrdFetchRequest
 		ExpectedOutput               []*processor.OrdFetchRequest
@@ -191,6 +208,7 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 			EntityTypeSvcFn:              successfulEntityTypeDelete,
 			CapabilitySvcFn:              successfulCapabilityDelete,
 			IntegrationDependencySvcFn:   successfulIntegrationDependencyDelete,
+			DataProductSvcFn:             successfulDataProductDelete,
 			BundleSvcFn:                  successfulBundleDelete,
 			VendorSvcFn:                  successfulVendorDelete,
 			ProductSvcFn:                 successfulProductDelete,
@@ -201,6 +219,7 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 			InputEntityTypes:             entityTypes,
 			InputCapabilities:            capabilities,
 			InputIntegrationDependencies: integrationDependencies,
+			InputDataProducts:            dataProducts,
 			InputBundles:                 bundles,
 			InputVendors:                 vendors,
 			InputProducts:                productModels,
@@ -218,6 +237,7 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 			EntityTypeSvcFn:              successfulEntityTypeDelete,
 			CapabilitySvcFn:              successfulCapabilityDelete,
 			IntegrationDependencySvcFn:   successfulIntegrationDependencyDelete,
+			DataProductSvcFn:             successfulDataProductDelete,
 			BundleSvcFn:                  successfulBundleDelete,
 			VendorSvcFn:                  successfulVendorDelete,
 			ProductSvcFn:                 successfulProductDelete,
@@ -228,6 +248,7 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 			InputEntityTypes:             entityTypes,
 			InputCapabilities:            capabilities,
 			InputIntegrationDependencies: integrationDependencies,
+			InputDataProducts:            dataProducts,
 			InputBundles:                 bundles,
 			InputVendors:                 vendors,
 			InputProducts:                productModels,
@@ -377,6 +398,33 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 			ExpectedErr:                  testErr,
 		},
 		{
+			Name: "Fail while deleting data products",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatDoesntExpectCommit()
+			},
+			PackageSvcFn:               successfulPackageDelete,
+			APISvcFn:                   successfulAPIDelete,
+			EventSvcFn:                 successfulEventDelete,
+			EntityTypeSvcFn:            successfulEntityTypeDelete,
+			CapabilitySvcFn:            successfulCapabilityDelete,
+			IntegrationDependencySvcFn: successfulIntegrationDependencyDelete,
+			DataProductSvcFn: func() *automock.DataProductService {
+				dataProductSvc := &automock.DataProductService{}
+				dataProductSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, "data-product-id").Return(testErr).Once()
+				return dataProductSvc
+			},
+			InputTombstones:              tombstones,
+			InputPackages:                packages,
+			InputAPIs:                    apis,
+			InputEvents:                  events,
+			InputEntityTypes:             entityTypes,
+			InputCapabilities:            capabilities,
+			InputIntegrationDependencies: integrationDependencies,
+			InputDataProducts:            dataProducts,
+			InputResource:                resource.Application,
+			ExpectedErr:                  testErr,
+		},
+		{
 			Name: "Fail while deleting bundle",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatDoesntExpectCommit()
@@ -387,6 +435,7 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 			EntityTypeSvcFn:            successfulEntityTypeDelete,
 			CapabilitySvcFn:            successfulCapabilityDelete,
 			IntegrationDependencySvcFn: successfulIntegrationDependencyDelete,
+			DataProductSvcFn:           successfulDataProductDelete,
 			BundleSvcFn: func() *automock.BundleService {
 				bundleSvc := &automock.BundleService{}
 				bundleSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, "bundle-id").Return(testErr).Once()
@@ -399,6 +448,7 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 			InputEntityTypes:             entityTypes,
 			InputCapabilities:            capabilities,
 			InputIntegrationDependencies: integrationDependencies,
+			InputDataProducts:            dataProducts,
 			InputBundles:                 bundles,
 			InputResource:                resource.Application,
 			ExpectedErr:                  testErr,
@@ -414,6 +464,7 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 			EntityTypeSvcFn:            successfulEntityTypeDelete,
 			CapabilitySvcFn:            successfulCapabilityDelete,
 			IntegrationDependencySvcFn: successfulIntegrationDependencyDelete,
+			DataProductSvcFn:           successfulDataProductDelete,
 			BundleSvcFn:                successfulBundleDelete,
 			VendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
@@ -427,6 +478,7 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 			InputEntityTypes:             entityTypes,
 			InputCapabilities:            capabilities,
 			InputIntegrationDependencies: integrationDependencies,
+			InputDataProducts:            dataProducts,
 			InputBundles:                 bundles,
 			InputVendors:                 vendors,
 			InputResource:                resource.Application,
@@ -443,6 +495,7 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 			EntityTypeSvcFn:            successfulEntityTypeDelete,
 			CapabilitySvcFn:            successfulCapabilityDelete,
 			IntegrationDependencySvcFn: successfulIntegrationDependencyDelete,
+			DataProductSvcFn:           successfulDataProductDelete,
 			BundleSvcFn:                successfulBundleDelete,
 			VendorSvcFn:                successfulVendorDelete,
 			ProductSvcFn: func() *automock.ProductService {
@@ -457,6 +510,7 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 			InputEntityTypes:             entityTypes,
 			InputCapabilities:            capabilities,
 			InputIntegrationDependencies: integrationDependencies,
+			InputDataProducts:            dataProducts,
 			InputBundles:                 bundles,
 			InputVendors:                 vendors,
 			InputProducts:                productModels,
@@ -498,6 +552,11 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 				integrationDependencySvc = test.IntegrationDependencySvcFn()
 			}
 
+			dataProductSvc := &automock.DataProductService{}
+			if test.DataProductSvcFn != nil {
+				dataProductSvc = test.DataProductSvcFn()
+			}
+
 			vendorSvc := &automock.VendorService{}
 			if test.VendorSvcFn != nil {
 				vendorSvc = test.VendorSvcFn()
@@ -513,8 +572,8 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 				bundleSvc = test.BundleSvcFn()
 			}
 
-			tombstonedResourcesDeleter := processor.NewTombstonedResourcesDeleter(tx, packageSvc, apiSvc, eventSvc, entityTypeSvc, capabilitySvc, integrationDependencySvc, vendorSvc, productSvc, bundleSvc)
-			result, err := tombstonedResourcesDeleter.Delete(context.TODO(), test.InputResource, test.InputVendors, test.InputProducts, test.InputPackages, test.InputBundles, test.InputAPIs, test.InputEvents, test.InputEntityTypes, test.InputCapabilities, test.InputIntegrationDependencies, test.InputTombstones, test.InputFetchRequests)
+			tombstonedResourcesDeleter := processor.NewTombstonedResourcesDeleter(tx, packageSvc, apiSvc, eventSvc, entityTypeSvc, capabilitySvc, integrationDependencySvc, dataProductSvc, vendorSvc, productSvc, bundleSvc)
+			result, err := tombstonedResourcesDeleter.Delete(context.TODO(), test.InputResource, test.InputVendors, test.InputProducts, test.InputPackages, test.InputBundles, test.InputAPIs, test.InputEvents, test.InputEntityTypes, test.InputCapabilities, test.InputIntegrationDependencies, test.InputDataProducts, test.InputTombstones, test.InputFetchRequests)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), test.ExpectedErr.Error())
@@ -523,7 +582,7 @@ func TestTombstonedResourcesDeleter_Delete(t *testing.T) {
 				require.Equal(t, test.ExpectedOutput, result)
 			}
 
-			mock.AssertExpectationsForObjects(t, tx, packageSvc, apiSvc, eventSvc, entityTypeSvc, capabilitySvc, integrationDependencySvc, vendorSvc, productSvc, bundleSvc)
+			mock.AssertExpectationsForObjects(t, tx, packageSvc, apiSvc, eventSvc, entityTypeSvc, capabilitySvc, integrationDependencySvc, dataProductSvc, vendorSvc, productSvc, bundleSvc)
 		})
 	}
 }

@@ -380,7 +380,6 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			InputObject:     gqlIntDepInputWithoutPackage,
 			IntegrationDependencyServiceFn: func() *automock.IntegrationDependencyService {
 				svc := &automock.IntegrationDependencyService{}
-				//modelIntDepInput.OrdPackageID = str.Ptr(":package:manuallyAddedIntegrationDependencies:v1")
 				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID), modelIntDepInput, mock.Anything).Return(integrationDependencyID, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelIntDep, nil).Once()
 				return svc
@@ -495,7 +494,6 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			InputObject:     gqlIntDepInputWithoutPackage,
 			IntegrationDependencyServiceFn: func() *automock.IntegrationDependencyService {
 				svc := &automock.IntegrationDependencyService{}
-				//modelIntDepInput.OrdPackageID = str.Ptr(":package:manuallyAddedIntegrationDependencies:v1")
 				svc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID), modelIntDepInput, mock.Anything).Return(integrationDependencyID, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), integrationDependencyID).Return(modelIntDep, nil).Once()
 				return svc
@@ -514,7 +512,6 @@ func TestResolver_AddIntegrationDependencyToApplication(t *testing.T) {
 			},
 			ConverterFn: func() *automock.IntegrationDepConverter {
 				conv := &automock.IntegrationDepConverter{}
-				//gqlIntDepInputWithPackage.PartOfPackage = str.Ptr(":package:manuallyAddedIntegrationDependencies:v1")
 				conv.On("InputFromGraphQL", gqlIntDepInputWithPackage).Return(&modelIntDepInput, nil).Once()
 				conv.On("ToGraphQL", modelIntDep, modelAspects, map[string][]*model.AspectEventResource{aspectID: modelAspectEventResources}).Return(gqlIntDep, nil).Once()
 				return conv

@@ -19,10 +19,10 @@ const (
 
 var (
 	packageColumns = []string{"id", "app_id", "app_template_version_id", "ord_id", "vendor", "title", "short_description",
-		"description", "version", "package_links", "links", "licence_type", "tags", "countries", "labels", "policy_level",
+		"description", "version", "package_links", "links", "licence_type", "tags", "runtime_restriction", "countries", "labels", "policy_level",
 		"custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash", "documentation_labels", "support_info"}
 	updatableColumns = []string{"vendor", "title", "short_description", "description", "version", "package_links", "links",
-		"licence_type", "tags", "countries", "labels", "policy_level", "custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash", "documentation_labels", "support_info"}
+		"licence_type", "tags", "runtime_restriction", "countries", "labels", "policy_level", "custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash", "documentation_labels", "support_info"}
 )
 
 // EntityConverter missing godoc

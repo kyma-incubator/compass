@@ -437,6 +437,7 @@ type ComplexityRoot struct {
 
 	FormationTemplate struct {
 		ApplicationTypes       func(childComplexity int) int
+		DiscoveryConsumers     func(childComplexity int) int
 		FormationConstraints   func(childComplexity int) int
 		ID                     func(childComplexity int) int
 		LeadingProductIDs      func(childComplexity int) int
@@ -2827,6 +2828,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FormationTemplate.ApplicationTypes(childComplexity), true
+
+	case "FormationTemplate.discoveryConsumers":
+		if e.complexity.FormationTemplate.DiscoveryConsumers == nil {
+			break
+		}
+
+		return e.complexity.FormationTemplate.DiscoveryConsumers(childComplexity), true
 
 	case "FormationTemplate.formationConstraints":
 		if e.complexity.FormationTemplate.FormationConstraints == nil {
@@ -6318,6 +6326,7 @@ input FormationTemplateInput {
 	webhooks: [WebhookInput!]
 	leadingProductIDs: [String!]
 	supportsReset: Boolean
+	discoveryConsumers: [String!]
 }
 
 input IntegrationDependencyInput {
@@ -6933,6 +6942,7 @@ type FormationTemplate {
 	leadingProductIDs: [String!]
 	formationConstraints: [FormationConstraint!]
 	supportsReset: Boolean!
+	discoveryConsumers: [String!]
 }
 
 type FormationTemplatePage implements Pageable {
@@ -19832,6 +19842,37 @@ func (ec *executionContext) _FormationTemplate_supportsReset(ctx context.Context
 	res := resTmp.(bool)
 	fc.Result = res
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationTemplate_discoveryConsumers(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DiscoveryConsumers, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationTemplatePage_data(ctx context.Context, field graphql.CollectedField, obj *FormationTemplatePage) (ret graphql.Marshaler) {
@@ -35884,6 +35925,12 @@ func (ec *executionContext) unmarshalInputFormationTemplateInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
+		case "discoveryConsumers":
+			var err error
+			it.DiscoveryConsumers, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -38848,6 +38895,8 @@ func (ec *executionContext) _FormationTemplate(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "discoveryConsumers":
+			out.Values[i] = ec._FormationTemplate_discoveryConsumers(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
