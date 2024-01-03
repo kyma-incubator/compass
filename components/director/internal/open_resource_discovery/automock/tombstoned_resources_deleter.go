@@ -18,25 +18,25 @@ type TombstonedResourcesDeleter struct {
 	mock.Mock
 }
 
-// Delete provides a mock function with given fields: ctx, resourceType, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, tombstonesFromDB, fetchRequests
-func (_m *TombstonedResourcesDeleter) Delete(ctx context.Context, resourceType resource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, entityTypesFromDB []*model.EntityType, capabilitiesFromDB []*model.Capability, integrationDependenciesFromDB []*model.IntegrationDependency, tombstonesFromDB []*model.Tombstone, fetchRequests []*processor.OrdFetchRequest) ([]*processor.OrdFetchRequest, error) {
-	ret := _m.Called(ctx, resourceType, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, tombstonesFromDB, fetchRequests)
+// Delete provides a mock function with given fields: ctx, resourceType, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, dataProductsFromDB, tombstonesFromDB, fetchRequests
+func (_m *TombstonedResourcesDeleter) Delete(ctx context.Context, resourceType resource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, entityTypesFromDB []*model.EntityType, capabilitiesFromDB []*model.Capability, integrationDependenciesFromDB []*model.IntegrationDependency, dataProductsFromDB []*model.DataProduct, tombstonesFromDB []*model.Tombstone, fetchRequests []*processor.OrdFetchRequest) ([]*processor.OrdFetchRequest, error) {
+	ret := _m.Called(ctx, resourceType, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, dataProductsFromDB, tombstonesFromDB, fetchRequests)
 
 	var r0 []*processor.OrdFetchRequest
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, []*model.Vendor, []*model.Product, []*model.Package, []*model.Bundle, []*model.APIDefinition, []*model.EventDefinition, []*model.EntityType, []*model.Capability, []*model.IntegrationDependency, []*model.Tombstone, []*processor.OrdFetchRequest) ([]*processor.OrdFetchRequest, error)); ok {
-		return rf(ctx, resourceType, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, tombstonesFromDB, fetchRequests)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, []*model.Vendor, []*model.Product, []*model.Package, []*model.Bundle, []*model.APIDefinition, []*model.EventDefinition, []*model.EntityType, []*model.Capability, []*model.IntegrationDependency, []*model.DataProduct, []*model.Tombstone, []*processor.OrdFetchRequest) ([]*processor.OrdFetchRequest, error)); ok {
+		return rf(ctx, resourceType, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, dataProductsFromDB, tombstonesFromDB, fetchRequests)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, []*model.Vendor, []*model.Product, []*model.Package, []*model.Bundle, []*model.APIDefinition, []*model.EventDefinition, []*model.EntityType, []*model.Capability, []*model.IntegrationDependency, []*model.Tombstone, []*processor.OrdFetchRequest) []*processor.OrdFetchRequest); ok {
-		r0 = rf(ctx, resourceType, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, tombstonesFromDB, fetchRequests)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, []*model.Vendor, []*model.Product, []*model.Package, []*model.Bundle, []*model.APIDefinition, []*model.EventDefinition, []*model.EntityType, []*model.Capability, []*model.IntegrationDependency, []*model.DataProduct, []*model.Tombstone, []*processor.OrdFetchRequest) []*processor.OrdFetchRequest); ok {
+		r0 = rf(ctx, resourceType, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, dataProductsFromDB, tombstonesFromDB, fetchRequests)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*processor.OrdFetchRequest)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, []*model.Vendor, []*model.Product, []*model.Package, []*model.Bundle, []*model.APIDefinition, []*model.EventDefinition, []*model.EntityType, []*model.Capability, []*model.IntegrationDependency, []*model.Tombstone, []*processor.OrdFetchRequest) error); ok {
-		r1 = rf(ctx, resourceType, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, tombstonesFromDB, fetchRequests)
+	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, []*model.Vendor, []*model.Product, []*model.Package, []*model.Bundle, []*model.APIDefinition, []*model.EventDefinition, []*model.EntityType, []*model.Capability, []*model.IntegrationDependency, []*model.DataProduct, []*model.Tombstone, []*processor.OrdFetchRequest) error); ok {
+		r1 = rf(ctx, resourceType, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, dataProductsFromDB, tombstonesFromDB, fetchRequests)
 	} else {
 		r1 = ret.Error(1)
 	}

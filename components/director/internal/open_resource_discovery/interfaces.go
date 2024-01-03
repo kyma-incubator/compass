@@ -108,6 +108,21 @@ type IntegrationDependencyProcessor interface {
 	Process(ctx context.Context, resourceType resource.Type, resourceID string, packagesFromDB []*model.Package, integrationDependencies []*model.IntegrationDependencyInput, resourceHashes map[string]uint64) ([]*model.IntegrationDependency, error)
 }
 
+// DataProductProcessor is responsible for processing of data product entities.
+//
+//go:generate mockery --name=DataProductProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type DataProductProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, packagesFromDB []*model.Package, dataProducts []*model.DataProductInput, resourceHashes map[string]uint64) ([]*model.DataProduct, error)
+}
+
+// DataProductService is responsible for the service-layer DataProduct operations.
+//
+//go:generate mockery --name=DataProductService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type DataProductService interface {
+	ListByApplicationID(ctx context.Context, appID string) ([]*model.DataProduct, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.DataProduct, error)
+}
+
 // SpecService is responsible for the service-layer Specification operations.
 //
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -221,7 +236,7 @@ type CapabilityProcessor interface {
 //
 //go:generate mockery --name=TombstonedResourcesDeleter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TombstonedResourcesDeleter interface {
-	Delete(ctx context.Context, resourceType resource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, entityTypesFromDB []*model.EntityType, capabilitiesFromDB []*model.Capability, integrationDependenciesFromDB []*model.IntegrationDependency, tombstonesFromDB []*model.Tombstone, fetchRequests []*processor.OrdFetchRequest) ([]*processor.OrdFetchRequest, error)
+	Delete(ctx context.Context, resourceType resource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, entityTypesFromDB []*model.EntityType, capabilitiesFromDB []*model.Capability, integrationDependenciesFromDB []*model.IntegrationDependency, dataProductsFromDB []*model.DataProduct, tombstonesFromDB []*model.Tombstone, fetchRequests []*processor.OrdFetchRequest) ([]*processor.OrdFetchRequest, error)
 }
 
 // TenantService missing godoc
