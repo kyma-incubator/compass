@@ -78,7 +78,7 @@ func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchrono
 			}
 		}
 
-		tOnce.Logf("Successfully asserted formation asssignments asynchronously")
+		tOnce.Logf("Successfully asserted formation assignments asynchronously")
 		return true
-	}, a.timeout, a.tick)
+	}, a.timeout, a.tick, "Timed out after %s while trying to assert formation assignments.", a.timeout)
 }
