@@ -698,10 +698,11 @@ func TestService_MarkAsCompleted(t *testing.T) {
 		Name         string
 		RepositoryFn func() *automock.OperationRepository
 		Input        string
+		ErrorMsg     string
 		ExpectedErr  error
 	}{
 		{
-			Name: "Success",
+			Name: "Success when there is no error message",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
 				repo.On("Get", ctx, operationID).Return(opModel, nil).Once()
@@ -712,7 +713,23 @@ func TestService_MarkAsCompleted(t *testing.T) {
 				})
 				return repo
 			},
-			Input: operationID,
+			Input:    operationID,
+			ErrorMsg: "",
+		},
+		{
+			Name: "Success when there is an error message",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModel, nil).Once()
+				repo.On("Update", ctx, mock.AnythingOfType("*model.Operation")).Return(nil).Run(func(args mock.Arguments) {
+					arg := args.Get(1).(*model.Operation)
+					assert.Equal(t, model.OperationStatusCompleted, arg.Status)
+					assert.Equal(t, json.RawMessage(`{"error":"err"}`), arg.Error)
+				})
+				return repo
+			},
+			Input:    operationID,
+			ErrorMsg: "err",
 		},
 		{
 			Name: "Error - Getting operation",
@@ -722,6 +739,7 @@ func TestService_MarkAsCompleted(t *testing.T) {
 				return repo
 			},
 			Input:       operationID,
+			ErrorMsg:    "",
 			ExpectedErr: testErr,
 		},
 		{
@@ -733,6 +751,7 @@ func TestService_MarkAsCompleted(t *testing.T) {
 				return repo
 			},
 			Input:       operationID,
+			ErrorMsg:    "",
 			ExpectedErr: testErr,
 		},
 	}
@@ -745,7 +764,7 @@ func TestService_MarkAsCompleted(t *testing.T) {
 			svc := operation.NewService(repo, nil)
 
 			// WHEN
-			err := svc.MarkAsCompleted(ctx, testCase.Input)
+			err := svc.MarkAsCompleted(ctx, testCase.Input, testCase.ErrorMsg)
 
 			// THEN
 			if testCase.ExpectedErr != nil {

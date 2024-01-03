@@ -237,6 +237,56 @@ func TestFormationTemplateInput_ValidateRuntimeTypes(t *testing.T) {
 	}
 }
 
+func TestFormationTemplateInput_ValidateDiscoveryConsumers(t *testing.T) {
+	testCases := []struct {
+		Name          string
+		Value         []string
+		ExpectedValid bool
+	}{
+		{
+			Name:          "Success",
+			Value:         []string{"some-runtime-type", "some-application-type"},
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Non-existing type",
+			Value:         []string{"non-existing-type", "some-application-type"},
+			ExpectedValid: false,
+		},
+		{
+			Name:          "Empty slice",
+			Value:         []string{},
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Nil slice",
+			Value:         nil,
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Empty elements in slice",
+			Value:         []string{""},
+			ExpectedValid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			formationTemplateInput := fixValidFormationTemplateInput()
+			formationTemplateInput.DiscoveryConsumers = testCase.Value
+			// WHEN
+			err := formationTemplateInput.Validate()
+			// THEN
+			if testCase.ExpectedValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
 func TestFormationTemplateInput_Validate_Webhooks(t *testing.T) {
 	webhookInput := fixValidWebhookInput(inputvalidationtest.ValidURL)
 	webhookInputWithInvalidOutputTemplate := fixValidWebhookInput(inputvalidationtest.ValidURL)

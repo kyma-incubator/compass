@@ -767,13 +767,14 @@ input FormationTemplateInput {
 	webhooks: [WebhookInput!]
 	leadingProductIDs: [String!]
 	supportsReset: Boolean
+	discoveryConsumers: [String!]
 }
 
 input IntegrationDependencyInput {
 	name: String!
 	description: String
-	ordID: String
-	partOfPackage: String
+	ordID: String!
+	partOfPackage: ID
 	visibility: String
 	releaseStatus: String
 	mandatory: Boolean
@@ -1382,6 +1383,7 @@ type FormationTemplate {
 	leadingProductIDs: [String!]
 	formationConstraints: [FormationConstraint!]
 	supportsReset: Boolean!
+	discoveryConsumers: [String!]
 }
 
 type FormationTemplatePage implements Pageable {
