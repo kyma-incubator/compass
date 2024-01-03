@@ -731,6 +731,12 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 				{{- if $i}}, {{- end}} {{ marshal $e }}
 			{{- end }} ],
 		{{- end}}
+		{{- if .DiscoveryConsumers }} 
+		discoveryConsumers: [
+			{{- range $i, $e := .DiscoveryConsumers }}
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
+		{{- end}}
 		{{- if .Webhooks }}
 		webhooks: [
 			{{- range $i, $e := .Webhooks }}
