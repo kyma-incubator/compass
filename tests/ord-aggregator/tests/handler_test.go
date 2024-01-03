@@ -51,6 +51,8 @@ const (
 	capabilitiesField                  = "capabilities"
 	integrationDependenciesField       = "integrationDependencies"
 	publicIntegrationDependenciesField = "publicIntegrationDependencies"
+	dataProductsField                  = "dataProducts"
+	publicDataProductsField            = "publicDataProducts"
 	publicAPIsField                    = "publicAPIs"
 	publicEventsField                  = "publicEvents"
 
@@ -116,6 +118,12 @@ const (
 	secondAspectExpectedDescription                = "Aspect private desc"
 	thirdAspectExpectedTitle                       = "ASPECT TITLE INTERNAL"
 	thirdAspectExpectedDescription                 = "Aspect internal desc"
+	firstDataProductExpectedTitle                  = "DATA PRODUCT TITLE"
+	firstDataProductExpectedDescription            = "Long description for a public Data Product resource"
+	secondDataProductExpectedTitle                 = "DATA PRODUCT TITLE PRIVATE"
+	secondDataProductExpectedDescription           = "Long description for a private Data Product resource"
+	thirdDataProductExpectedTitle                  = "DATA PRODUCT TITLE INTERNAL"
+	thirdDataProductExpectedDescription            = "Long description for an internal Data Product resource"
 	expectedTombstoneOrdIDRegex                    = "ns:apiResource:API_ID2(.+):v1"
 	expectedVendorTitle                            = "SAP SE"
 
@@ -141,6 +149,8 @@ const (
 	expectedNumberOfAspectsApiResourcesInSubscription     = 3
 	expectedNumberOfAspectsEventResources                 = 21
 	expectedNumberOfAspectsEventResourcesInSubscription   = 3
+	expectedNumberOfDataProducts                          = 21
+	expectedNumberOfDataProductsInSubscription            = 3
 	expectedNumberOfTombstones                            = 7
 	expectedNumberOfTombstonesInSubscription              = 1
 
@@ -150,6 +160,9 @@ const (
 	expectedNumberOfPublicIntegrationDependencies          = 7
 	expectedNumberOfPublicIntegrationDependenciesForOneApp = 1
 	expectedNumberOfIntegrationDependenciesForOneApp       = 3
+	expectedNumberOfPublicDataProducts                     = 7
+	expectedNumberOfDataProductsForOneApp                  = 3
+	expectedNumberOfPublicDataProductsForOneApp            = 1
 
 	expectedNumberOfAPIsInFirstBundle    = 2
 	expectedNumberOfAPIsInSecondBundle   = 2
@@ -278,6 +291,14 @@ func TestORDAggregator(stdT *testing.T) {
 		aspectsMap[firstAspectExpectedTitle] = firstAspectExpectedDescription
 		aspectsMap[secondAspectExpectedTitle] = secondAspectExpectedDescription
 		aspectsMap[thirdAspectExpectedTitle] = thirdAspectExpectedDescription
+
+		dataProductsMap := make(map[string]string)
+		dataProductsMap[firstDataProductExpectedTitle] = firstDataProductExpectedDescription
+		dataProductsMap[secondDataProductExpectedTitle] = secondDataProductExpectedDescription
+		dataProductsMap[thirdDataProductExpectedTitle] = thirdDataProductExpectedDescription
+
+		publicDataProductsMap := make(map[string]string)
+		publicDataProductsMap[firstDataProductExpectedTitle] = firstDataProductExpectedDescription
 
 		apisAndEventsNumber := make(map[string]int)
 		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
@@ -633,6 +654,20 @@ func TestORDAggregator(stdT *testing.T) {
 			}
 			t.Log("Successfully verified expanding aspects event resources")
 
+			// Verify Data Products
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/dataProducts?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfDataProducts {
+				t.Log("Missing Data Products...will try again")
+				return false
+			}
+
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfDataProducts)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, dataProductsMap, expectedNumberOfDataProducts, descriptionField)
+			t.Log("Successfully verified data products")
+
+			// verify public data products via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicDataProductsMap, dataProductsField, expectedNumberOfPublicDataProducts)
+
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfTombstones {
@@ -710,6 +745,11 @@ func TestORDAggregator(stdT *testing.T) {
 		aspectsMap[firstAspectExpectedTitle] = firstAspectExpectedDescription
 		aspectsMap[secondAspectExpectedTitle] = secondAspectExpectedDescription
 		aspectsMap[thirdAspectExpectedTitle] = thirdAspectExpectedDescription
+
+		dataProductsMap := make(map[string]string)
+		dataProductsMap[firstDataProductExpectedTitle] = firstDataProductExpectedDescription
+		dataProductsMap[secondDataProductExpectedTitle] = secondDataProductExpectedDescription
+		dataProductsMap[thirdDataProductExpectedTitle] = thirdDataProductExpectedDescription
 
 		apisAndEventsNumber := make(map[string]int)
 		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
@@ -1091,6 +1131,17 @@ func TestORDAggregator(stdT *testing.T) {
 			}
 			t.Log("Successfully verified expanding aspects event resources")
 
+			// Verify Data Products
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/dataProducts?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfDataProductsInSubscription {
+				t.Log("Missing Data Products...will try again")
+				return false
+			}
+
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfDataProductsInSubscription)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, dataProductsMap, expectedNumberOfDataProductsInSubscription, descriptionField)
+			t.Log("Successfully verified data products")
+
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfTombstonesInSubscription {
@@ -1133,6 +1184,8 @@ func TestORDAggregator(stdT *testing.T) {
 		numberOfAspectsApiResources := 3
 		numberOfAspectsEventResources := 3
 		numberOfPublicIntegrationDependencies := 1
+		numberOfDataProducts := 3
+		numberOfPublicDataProducts := 1
 		numberOfTombstones := 1
 
 		ctx := context.Background()
@@ -1224,6 +1277,18 @@ func TestORDAggregator(stdT *testing.T) {
 		integrationDependenciesNumber := make(map[string]int)
 		integrationDependenciesNumber[integrationDependenciesField] = expectedNumberOfIntegrationDependenciesForOneApp
 		integrationDependenciesNumber[publicIntegrationDependenciesField] = expectedNumberOfPublicIntegrationDependenciesForOneApp
+
+		dataProductsMap := make(map[string]string)
+		dataProductsMap[firstDataProductExpectedTitle] = firstDataProductExpectedDescription
+		dataProductsMap[secondDataProductExpectedTitle] = secondDataProductExpectedDescription
+		dataProductsMap[thirdDataProductExpectedTitle] = thirdDataProductExpectedDescription
+
+		publicDataProductsMap := make(map[string]string)
+		publicDataProductsMap[firstDataProductExpectedTitle] = firstDataProductExpectedDescription
+
+		dataProductsNumber := make(map[string]int)
+		dataProductsNumber[dataProductsField] = expectedNumberOfDataProductsForOneApp
+		dataProductsNumber[publicDataProductsField] = expectedNumberOfPublicDataProductsForOneApp
 
 		entityTypesMap := make(map[string]string)
 		entityTypesMap[expectedEntityTypeTitle] = expectedEntityTypeDescription
@@ -1538,6 +1603,20 @@ func TestORDAggregator(stdT *testing.T) {
 				return false
 			}
 			t.Log("Successfully verified expanding aspects event resources")
+
+			// Verify Data Products
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/dataProducts?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfDataProducts {
+				t.Log("Missing Data Products...will try again")
+				return false
+			}
+
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfDataProducts)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, dataProductsMap, numberOfDataProducts, descriptionField)
+			t.Log("Successfully verified data products")
+
+			// verify public data products via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicDataProductsMap, dataProductsField, numberOfPublicDataProducts)
 
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
