@@ -59,6 +59,8 @@ type APIDefinition struct {
 	Direction                               *string
 	LastUpdate                              *string
 	DeprecationDate                         *string
+	Responsible                             *string
+	Usage                                   *string
 	*BaseEntity
 }
 
@@ -110,6 +112,8 @@ type APIDefinitionInput struct {
 	Direction                               *string                       `json:"direction"`
 	LastUpdate                              *string                       `json:"lastUpdate"`
 	DeprecationDate                         *string                       `json:"deprecationDate"`
+	Responsible                             *string                       `json:"responsible"`
+	Usage                                   *string                       `json:"usage"`
 	*VersionInput                           `hash:"ignore"`
 }
 
@@ -139,7 +143,7 @@ func (rd *APIResourceDefinition) Validate() error {
 			validation.When(rd.Type == APISpecTypeSQLAPIDefinitionV1, validation.In(SpecFormatApplicationJSON)),
 			validation.When(rd.Type == APISpecTypeGraphqlSDL, validation.In(SpecFormatPlainText))),
 		validation.Field(&rd.URL, validation.Required, is.RequestURI),
-		validation.Field(&rd.AccessStrategy, validation.Required),
+		validation.Field(&rd.AccessStrategy),
 	)
 }
 
@@ -226,6 +230,8 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, resourceType resource.Ty
 		Direction:           a.Direction,
 		LastUpdate:          a.LastUpdate,
 		DeprecationDate:     a.DeprecationDate,
+		Responsible:         a.Responsible,
+		Usage:               a.Usage,
 		ResourceHash:        hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,
