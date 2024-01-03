@@ -5,18 +5,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/avast/retry-go/v4"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/types"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/config"
+	"github.com/pkg/errors"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
-
-	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/types"
-	"github.com/kyma-incubator/compass/components/instance-creator/internal/config"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -366,7 +366,7 @@ func (c *client) executeSyncRequest(ctx context.Context, strURL, region string) 
 		return nil, errors.Wrapf(err, "while getting caller for region: %s", region)
 	}
 
-	resp, err := caller.Call(req)
+	resp, err := sendRequestWithRetry(ctx, caller, req)
 	if err != nil {
 		return nil, err
 	}
@@ -406,7 +406,7 @@ func (c *client) executeAsyncRequest(ctx context.Context, resp *http.Response, c
 		select {
 		case <-ticker.C:
 			log.C(ctx).Info("Getting asynchronous operation status for object")
-			opResp, err := caller.Call(opReq)
+			opResp, err := sendRequestWithRetry(ctx, caller, opReq)
 			if err != nil {
 				return "", err
 			}
@@ -488,4 +488,36 @@ func createLabelsQuery(labels map[string][]string) string {
 	labelsQuery += strings.Join(operators, " and ")
 
 	return labelsQuery
+}
+
+func sendRequestWithRetry(ctx context.Context, caller ExternalSvcCaller, req *http.Request) (*http.Response, error) {
+	var response *http.Response
+	err := retry.Do(func() error {
+		res, err := caller.Call(req)
+		if err != nil {
+			return errors.Wrap(err, "failed to execute HTTP request")
+		}
+
+		if err == nil && res.StatusCode < http.StatusInternalServerError {
+			response = res
+			return nil
+		}
+
+		defer closeResponseBody(ctx, res)
+		body, err := io.ReadAll(res.Body)
+
+		if err != nil {
+			return errors.Wrap(err, "failed to read response body")
+		}
+		return errors.Errorf("request failed with status code %d, error message: %v", res.StatusCode, string(body))
+	},
+		retry.Attempts(3),
+		retry.Delay(time.Second),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "connection reset by peer")
+		}))
+
+	return response, err
 }
