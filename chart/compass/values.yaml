@@ -168,7 +168,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3556"
+      version: "PR-3566"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -200,11 +200,11 @@ global:
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-115"
+      version: "PR-118"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3536"
+      version: "PR-3566"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/

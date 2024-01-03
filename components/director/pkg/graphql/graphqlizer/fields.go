@@ -188,6 +188,7 @@ func (fp *GqlFieldsProvider) ForFormationTemplate() string {
 		runtimeArtifactKind
         leadingProductIDs
         supportsReset
+		discoveryConsumers
         webhooks {%s}
 	`, fp.ForWebhooks())
 }
@@ -202,6 +203,8 @@ func (fp *GqlFieldsProvider) ForFormationTemplateWithConstraints() string {
 		runtimeTypeDisplayName	
 		runtimeArtifactKind
         leadingProductIDs
+        supportsReset
+		discoveryConsumers
         webhooks {%s}
 		formationConstraints {%s}
 	`, fp.ForWebhooks(), fp.ForFormationConstraint())
