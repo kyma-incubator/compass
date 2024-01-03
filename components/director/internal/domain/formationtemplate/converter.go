@@ -57,6 +57,7 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) (*model
 		Webhooks:               webhooks,
 		LeadingProductIDs:      in.LeadingProductIDs,
 		SupportsReset:          supportsReset,
+		DiscoveryConsumers:     in.DiscoveryConsumers,
 	}, nil
 }
 
@@ -89,6 +90,7 @@ func (c *converter) FromModelInputToModel(in *model.FormationTemplateInput, id, 
 		Webhooks:               webhooks,
 		LeadingProductIDs:      in.LeadingProductIDs,
 		SupportsReset:          in.SupportsReset,
+		DiscoveryConsumers:     in.DiscoveryConsumers,
 	}
 }
 
@@ -124,6 +126,7 @@ func (c *converter) ToGraphQL(in *model.FormationTemplate) (*graphql.FormationTe
 		Webhooks:               webhooks,
 		LeadingProductIDs:      in.LeadingProductIDs,
 		SupportsReset:          in.SupportsReset,
+		DiscoveryConsumers:     in.DiscoveryConsumers,
 	}, nil
 }
 
@@ -166,6 +169,10 @@ func (c *converter) ToEntity(in *model.FormationTemplate) (*Entity, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "while marshalling leading product IDs")
 	}
+	marshalledDiscoveryConsumers, err := json.Marshal(in.DiscoveryConsumers)
+	if err != nil {
+		return nil, errors.Wrap(err, "while marshalling discovery consumers")
+	}
 
 	runtimeArtifactKind := repo.NewNullableString(nil)
 	if in.RuntimeArtifactKind != nil {
@@ -183,6 +190,7 @@ func (c *converter) ToEntity(in *model.FormationTemplate) (*Entity, error) {
 		LeadingProductIDs:      repo.NewValidNullableString(string(marshalledLeadingProductIDs)),
 		TenantID:               repo.NewNullableString(in.TenantID),
 		SupportsReset:          in.SupportsReset,
+		DiscoveryConsumers:     repo.NewValidNullableString(string(marshalledDiscoveryConsumers)),
 	}, nil
 }
 
@@ -216,6 +224,15 @@ func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
 		}
 	}
 
+	var unmarshalledDiscoveryConsumers []string
+	discoveryConsumers := repo.JSONRawMessageFromNullableString(in.DiscoveryConsumers)
+	if discoveryConsumers != nil {
+		err = json.Unmarshal(discoveryConsumers, &unmarshalledDiscoveryConsumers)
+		if err != nil {
+			return nil, errors.Wrap(err, "while unmarshalling discovery consumers")
+		}
+	}
+
 	var runtimeArtifactKind *model.RuntimeArtifactKind
 	if kindPtr := repo.StringPtrFromNullableString(in.RuntimeArtifactKind); kindPtr != nil {
 		kind := model.RuntimeArtifactKind(*kindPtr)
@@ -232,5 +249,6 @@ func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
 		LeadingProductIDs:      unmarshalledLeadingProductIDs,
 		TenantID:               repo.StringPtrFromNullableString(in.TenantID),
 		SupportsReset:          in.SupportsReset,
+		DiscoveryConsumers:     unmarshalledDiscoveryConsumers,
 	}, nil
 }
