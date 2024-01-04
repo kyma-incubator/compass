@@ -131,10 +131,10 @@ type config struct {
 }
 
 type securityConfig struct {
-	JwksEndpoint        string        `envconfig:"APP_JWKS_ENDPOINT"`
-	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
-	AllowJWTSigningNone bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
-	AggregatorSyncScope string        `envconfig:"APP_ORD_AGGREGATOR_SYNC_SCOPE,default=ord_aggregator:sync"`
+	JwksEndpoint           string        `envconfig:"APP_JWKS_ENDPOINT"`
+	JWKSSyncPeriod         time.Duration `envconfig:"default=5m"`
+	AllowJWTSigningNone    bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
+	SystemFetcherSyncScope string        `envconfig:"APP_SYSTEM_FETCHER_SCOPE,default=system_fetcher:sync"`
 }
 
 type appTemplateConfig struct {
@@ -269,7 +269,7 @@ func initHandler(ctx context.Context, httpClient *http.Client, sf *systemfetcher
 		cfg.AggregatorRootAPI+healthzEndpoint, cfg.AggregatorRootAPI+readyzEndpoint))
 
 	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
-	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.AggregatorSyncScope)
+	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.SystemFetcherSyncScope)
 	apiRouter.HandleFunc(syncEndpoint, newSyncHandler(ctx, sf, transact, cfg)).Methods(http.MethodPost)
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
