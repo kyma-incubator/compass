@@ -40,6 +40,9 @@ import (
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	authmiddleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
@@ -95,6 +98,8 @@ type config struct {
 	ServerTimeout   time.Duration `envconfig:"default=110s"`
 	ShutdownTimeout time.Duration `envconfig:"default=10s"`
 
+	SecurityConfig securityConfig
+
 	ElectionConfig         cronjob.ElectionConfig
 	SystemsSyncJobInterval time.Duration `envconfig:"APP_SYSTEM_SYNC_JOB_INTERVAL,default=1d"`
 
@@ -123,6 +128,13 @@ type config struct {
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
+}
+
+type securityConfig struct {
+	JwksEndpoint        string        `envconfig:"APP_JWKS_ENDPOINT"`
+	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
+	AllowJWTSigningNone bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
+	AggregatorSyncScope string        `envconfig:"APP_ORD_AGGREGATOR_SYNC_SCOPE,default=ord_aggregator:sync"`
 }
 
 type appTemplateConfig struct {
@@ -174,7 +186,14 @@ func main() {
 	sf, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, certCache, keyCache)
 	exitOnError(err, "Failed to initialize System Fetcher")
 
-	handler := initHandler(ctx, cfg, transact)
+	jwtHTTPClient := &http.Client{
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	handler := initHandler(ctx, jwtHTTPClient, sf, cfg, transact)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
@@ -214,35 +233,44 @@ func exitOnError(err error, context string) {
 func startSyncSystemsJob(ctx context.Context, sf *systemfetcher.SystemFetcher, tenantEntityType tenantEntity.Type, transact persistence.Transactioner, cfg config) error {
 	jobName := fmt.Sprintf("SyncSystemsForType_%s", tenantEntityType)
 	resyncJob := cronjob.CronJob{
-		Name: jobName,
-		Fn: func(jobCtx context.Context) {
-			log.C(jobCtx).Infof("Start syncing systems for %q ...", tenantEntityType)
-			if err := sf.SyncSystems(ctx, tenantEntityType); err != nil {
-				log.C(jobCtx).Errorf("Cannot sync systems for %q. Err: %v", tenantEntityType, err)
-			}
-			log.C(jobCtx).Infof("Step 1 of 2 - sync systems for %q is finished.", tenantEntityType)
-
-			if err := sf.UpsertSystemsSyncTimestamps(ctx, transact); err != nil {
-				log.C(jobCtx).Errorf("Cannot upsert systems synchronization timestamps in database for %q. Err: %v", tenantEntityType, err)
-			}
-			log.C(jobCtx).Infof("Step 2 of 2 - upsert systems synchronization timestamps for %q is finished.", tenantEntityType)
-			log.C(jobCtx).Infof("Finished syncing systems for %q ...", tenantEntityType)
-		},
+		Name:           jobName,
+		Fn:             syncSystemsOfType(ctx, sf, tenantEntityType, transact, cfg),
 		SchedulePeriod: cfg.SystemsSyncJobInterval,
 	}
 	return cronjob.RunCronJob(ctx, cfg.ElectionConfig, resyncJob)
 }
 
-func initHandler(ctx context.Context, cfg config, transact persistence.Transactioner) http.Handler {
+func syncSystemsOfType(ctx context.Context, sf *systemfetcher.SystemFetcher, tenantEntityType tenantEntity.Type, transact persistence.Transactioner, cfg config) func(jobCtx context.Context) {
+	return func(jobCtx context.Context) {
+		log.C(jobCtx).Infof("Start syncing systems for %q ...", tenantEntityType)
+		if err := sf.SyncSystems(ctx, tenantEntityType); err != nil {
+			log.C(jobCtx).Errorf("Cannot sync systems for %q. Err: %v", tenantEntityType, err)
+		}
+		log.C(jobCtx).Infof("Step 1 of 2 - sync systems for %q is finished.", tenantEntityType)
+
+		if err := sf.UpsertSystemsSyncTimestamps(ctx, transact); err != nil {
+			log.C(jobCtx).Errorf("Cannot upsert systems synchronization timestamps in database for %q. Err: %v", tenantEntityType, err)
+		}
+		log.C(jobCtx).Infof("Step 2 of 2 - upsert systems synchronization timestamps for %q is finished.", tenantEntityType)
+		log.C(jobCtx).Infof("Finished syncing systems for %q", tenantEntityType)
+	}
+}
+
+func initHandler(ctx context.Context, httpClient *http.Client, sf *systemfetcher.SystemFetcher, cfg config, transact persistence.Transactioner) http.Handler {
 	const (
 		healthzEndpoint = "/healthz"
 		readyzEndpoint  = "/readyz"
+		syncEndpoint    = "/sync"
 	)
 	logger := log.C(ctx)
 
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
 		cfg.AggregatorRootAPI+healthzEndpoint, cfg.AggregatorRootAPI+readyzEndpoint))
+
+	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
+	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.AggregatorSyncScope)
+	apiRouter.HandleFunc(syncEndpoint, newSyncHandler(ctx, sf, transact, cfg)).Methods(http.MethodPost)
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
@@ -251,6 +279,32 @@ func initHandler(ctx context.Context, cfg config, transact persistence.Transacti
 	healthCheckRouter.HandleFunc(healthzEndpoint, newReadinessHandler())
 
 	return mainRouter
+}
+
+func newSyncHandler(ctx context.Context, sf *systemfetcher.SystemFetcher, transact persistence.Transactioner, cfg config) func(writer http.ResponseWriter, request *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		log.C(ctx).Infof("Start on demand syncing of systems")
+		syncSystemsOfType(ctx, sf, tenantEntity.Customer, transact, cfg)
+		if cfg.SystemFetcher.SyncGlobalAccounts {
+			syncSystemsOfType(ctx, sf, tenantEntity.Account, transact, cfg)
+		}
+		log.C(ctx).Infof("Finished on demand syncing of systems")
+		writer.WriteHeader(http.StatusOK)
+	}
+}
+
+func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg config, requiredScopes ...string) {
+	scopeValidator := claims.NewScopesValidator(requiredScopes)
+	middleware := authmiddleware.New(httpClient, cfg.SecurityConfig.JwksEndpoint, cfg.SecurityConfig.AllowJWTSigningNone, "", scopeValidator)
+	router.Use(middleware.Handler())
+
+	log.C(ctx).Infof("JWKS synchronization enabled. Sync period: %v", cfg.SecurityConfig.JWKSSyncPeriod)
+	periodicExecutor := executor.NewPeriodic(cfg.SecurityConfig.JWKSSyncPeriod, func(ctx context.Context) {
+		if err := middleware.SynchronizeJWKS(ctx); err != nil {
+			log.C(ctx).WithError(err).Errorf("An error has occurred while synchronizing JWKS: %v", err)
+		}
+	})
+	go periodicExecutor.Run(ctx)
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
