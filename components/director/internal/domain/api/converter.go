@@ -190,6 +190,8 @@ func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
 		Direction:                               repo.StringPtrFromNullableString(entity.Direction),
 		LastUpdate:                              repo.StringPtrFromNullableString(entity.LastUpdate),
 		DeprecationDate:                         repo.StringPtrFromNullableString(entity.DeprecationDate),
+		Responsible:                             repo.StringPtrFromNullableString(entity.Responsible),
+		Usage:                                   repo.StringPtrFromNullableString(entity.Usage),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -249,6 +251,8 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
 		Direction:                               repo.NewNullableString(apiModel.Direction),
 		LastUpdate:                              repo.NewNullableString(apiModel.LastUpdate),
 		DeprecationDate:                         repo.NewNullableString(apiModel.DeprecationDate),
+		Responsible:                             repo.NewNullableString(apiModel.Responsible),
+		Usage:                                   repo.NewNullableString(apiModel.Usage),
 		BaseEntity: &repo.BaseEntity{
 			ID:        apiModel.ID,
 			Ready:     apiModel.Ready,

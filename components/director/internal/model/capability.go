@@ -90,7 +90,7 @@ func (cd *CapabilityDefinition) Validate() error {
 		validation.Field(&cd.MediaType, validation.Required, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML, SpecFormatApplicationXML, SpecFormatPlainText, SpecFormatOctetStream),
 			validation.When(cd.Type == CapabilitySpecTypeMDICapabilityDefinitionV1, validation.In(SpecFormatApplicationJSON))),
 		validation.Field(&cd.URL, validation.Required, is.RequestURI),
-		validation.Field(&cd.AccessStrategy, validation.Required),
+		validation.Field(&cd.AccessStrategy),
 	)
 }
 

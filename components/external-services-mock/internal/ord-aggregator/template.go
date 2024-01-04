@@ -492,6 +492,7 @@ const ordDocument = `{
          ],
          "releaseStatus":"deprecated",
          "sunsetDate":"2020-12-08T15:47:04+0000",
+         "deprecationDate": "2020-12-08T15:47:04+00:00",
          "successors":[
             "ns:apiResource:API_ID:v2"
          ],
@@ -890,6 +891,7 @@ const ordDocument = `{
          ],
          "releaseStatus":"deprecated",
          "sunsetDate":"2020-12-08T15:47:04+0000",
+         "deprecationDate": "2020-12-08T15:47:04+00:00",
          "successors":[
             "ns2:eventResource:EVENT_ID:v1"
          ],
@@ -1216,6 +1218,240 @@ const ordDocument = `{
           ]
         }
       ]
+    }
+  ],
+   "dataProducts": [
+      {
+      "ordId": "ns:dataProduct:DATA_PRODUCT_ID{{ .randomSuffix }}:v1",
+      "localId": "Customer",
+      "correlationIds": [
+        "sap.xref:foo:bar"
+      ],
+      "title": "DATA PRODUCT TITLE",
+      "shortDescription": "Short description of Data Product",
+      "description": "Long description for a public Data Product resource",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "visibility": "public",
+      "releaseStatus": "deprecated",
+      "disabled": false,
+      "version": "1.9.2",
+      "lastUpdate": "2020-12-08T15:47:04+00:00",
+      "deprecationDate": "2020-12-08T15:47:04+00:00",
+      "sunsetDate": "2022-01-08T15:47:04+00:00",
+      "successors": [
+        "sap.xref:dataProduct:Customer:v2"
+      ],
+      "type": "base",
+      "category": "business-object",
+      "entityTypes": ["ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1"],
+      "inputPorts": [
+        {
+          "ordId": "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2"
+        }
+      ],
+      "outputPorts": [
+        {
+          "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2"
+        }
+      ],
+      "responsible": "sap:ach:CIC-DP-CO",
+      "dataProductLinks": [
+		{
+  			"type": "support",
+  			"url": "https://support.sap.com/CIC_DP_RT/issue/"
+		}
+	  ],
+      "links": [
+		{
+		   "description":"loremipsumdolornem",
+		   "title":"LinkTitle1",
+		   "url":"https://example.com/2018/04/11/testing/"
+		},
+		{
+		   "description":"loremipsumdolornem",
+		   "title":"LinkTitle2",
+		   "url":"/testing/relative"
+		}
+      ],
+      "industry": [
+		"Automotive",
+		"Banking",
+		"Chemicals"
+	  ],
+      "lineOfBusiness": [
+		"Finance",
+		"Sales"
+	  ],
+      "tags": [
+		"testTag"
+	  ],
+      "labels": {
+		"label-key-1": [
+		   "label-val"
+		],
+		"pkg-label": [
+		   "label-val"
+		]
+	 },
+	 "documentationLabels": {
+		"Documentation label key": [
+		   "Markdown Documentation with links",
+		   "With multiple values"
+		]
+	 },
+     "policyLevel": "sap:core:v1",
+     "systemInstanceAware": true
+    },
+    {
+      "ordId": "ns:dataProduct:DATA_PRODUCT_ID_2{{ .randomSuffix }}:v2",
+      "localId": "Customer",
+      "correlationIds": [
+        "sap.xref:foo:bar"
+      ],
+      "title": "DATA PRODUCT TITLE PRIVATE",
+      "shortDescription": "Short description of Data Product",
+      "description": "Long description for a private Data Product resource",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "visibility": "private",
+      "releaseStatus": "active",
+      "disabled": false,
+      "version": "2.1.0",
+      "lastUpdate": "2022-12-19T15:47:04+00:00",
+      "type": "base",
+      "category": "business-object",
+      "entityTypes": ["ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1"],
+      "inputPorts": [
+        {
+          "ordId": "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2"
+        }
+      ],
+      "outputPorts": [
+        {
+          "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2"
+        }
+      ],
+      "responsible": "sap:ach:CIC-DP-CO",
+      "dataProductLinks": [
+		{
+  			"type": "support",
+  			"url": "https://support.sap.com/CIC_DP_RT/issue/"
+		}
+	  ],
+      "links": [
+		{
+		   "description": "loremipsumdolornem",
+		   "title": "LinkTitle1",
+		   "url": "https://example.com/2018/04/11/testing/"
+		},
+		{
+		   "description": "loremipsumdolornem",
+		   "title": "LinkTitle2",
+		   "url": "/testing/relative"
+		}
+      ],
+      "industry": [
+		"Automotive",
+		"Banking",
+		"Chemicals"
+	  ],
+      "lineOfBusiness": [
+		"Finance",
+		"Sales"
+	  ],
+      "tags": [
+		"testTag"
+	  ],
+      "labels": {
+		"label-key-1": [
+		   "label-val"
+		],
+		"pkg-label": [
+		   "label-val"
+		]
+	 },
+	 "documentationLabels": {
+		"Documentation label key": [
+		   "Markdown Documentation with links",
+		   "With multiple values"
+		]
+	 },
+     "policyLevel": "sap:core:v1",
+     "systemInstanceAware": true
+    },
+    {
+      "ordId": "ns:dataProduct:DATA_PRODUCT_ID_3{{ .randomSuffix }}:v3",
+      "localId": "Customer",
+      "correlationIds": [
+        "sap.xref:foo:bar"
+      ],
+      "title": "DATA PRODUCT TITLE INTERNAL",
+      "shortDescription": "Short description of Data Product",
+      "description": "Long description for an internal Data Product resource",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "visibility": "internal",
+      "releaseStatus": "active",
+      "version": "2.1.0",
+      "lastUpdate": "2022-12-19T15:47:04+00:00",
+      "type": "base",
+      "category": "business-object",
+      "entityTypes": ["ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1"],
+      "inputPorts": [
+        {
+          "ordId": "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2"
+        }
+      ],
+      "outputPorts": [
+        {
+          "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2"
+        }
+      ],
+      "responsible": "sap:ach:CIC-DP-CO",
+      "dataProductLinks": [
+		{
+  			"type": "support",
+  			"url": "https://support.sap.com/CIC_DP_RT/issue/"
+		}
+	  ],
+      "links": [
+		{
+		   "description": "loremipsumdolornem",
+		   "title": "LinkTitle1",
+		   "url": "https://example.com/2018/04/11/testing/"
+		},
+		{
+		   "description": "loremipsumdolornem",
+		   "title": "LinkTitle2",
+		   "url": "/testing/relative"
+		}
+      ],
+      "industry": [
+		"Automotive",
+		"Banking",
+		"Chemicals"
+	  ],
+      "lineOfBusiness": [
+		"Finance",
+		"Sales"
+	  ],
+      "tags": [
+		"testTag"
+	  ],
+      "labels": {
+		"label-key-1": [
+		   "label-val"
+		],
+		"pkg-label": [
+		   "label-val"
+		]
+	 },
+	 "documentationLabels": {
+		"Documentation label key": [
+		   "Markdown Documentation with links",
+		   "With multiple values"
+		]
+	 },
+     "policyLevel": "sap:core:v1",
+     "systemInstanceAware": true
     }
   ],
    "tombstones":[
