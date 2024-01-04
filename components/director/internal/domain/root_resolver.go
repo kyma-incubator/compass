@@ -96,6 +96,7 @@ type RootResolver struct {
 	integrationDependency *integrationdependency.Resolver
 	doc                   *document.Resolver
 	formation             *formation.Resolver
+	formationAssignment   *formationassignment.Resolver
 	runtime               *runtime.Resolver
 	runtimeContext        *runtimectx.Resolver
 	healthCheck           *healthcheck.Resolver
@@ -299,6 +300,7 @@ func NewRootResolver(
 		integrationDependency: integrationdependency.NewResolver(transact, integrationDependencySvc, integrationDependencyConv, aspectSvc, aspectEventResourceSvc, appSvc, appTemplateSvc, packageSvc),
 		doc:                   document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
 		formation:             formation.NewResolver(transact, formationSvc, formationConv, formationAssignmentSvc, formationAssignmentConv, tenantOnDemandSvc),
+		formationAssignment:   formationassignment.NewResolver(transact, applicationRepo, appConverter, runtimeRepo, runtimeConverter, runtimeContextRepo, runtimeContextConverter),
 		runtime:               runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc, runtimeContextSvc, runtimeContextConverter, webhookSvc, webhookConverter, tenantOnDemandSvc, formationSvc),
 		runtimeContext:        runtimectx.NewResolver(transact, runtimeContextSvc, runtimeContextConverter),
 		healthCheck:           healthcheck.NewResolver(healthCheckSvc),
@@ -371,6 +373,11 @@ func (r *RootResolver) FormationAssignmentsDataLoader(ids []dataloader.ParamForm
 	return r.formation.FormationAssignmentsDataLoader(ids)
 }
 
+// FormationParticipantDataloader is a dataloader for formation participants
+func (r *RootResolver) FormationParticipantDataloader(ids []dataloader.ParamFormationParticipant) ([]graphql.FormationParticipant, []error) {
+	return r.formationAssignment.FormationParticipantDataLoader(ids)
+}
+
 // StatusDataLoader is the FormationStatus dataloader used in the graphql API router
 func (r *RootResolver) StatusDataLoader(ids []dataloader.ParamFormationStatus) ([]*graphql.FormationStatus, []error) {
 	return r.formation.StatusDataLoader(ids)
@@ -414,6 +421,11 @@ func (r *RootResolver) RuntimeContext() graphql.RuntimeContextResolver {
 // Formation missing godoc
 func (r *RootResolver) Formation() graphql.FormationResolver {
 	return &formationResolver{r}
+}
+
+// FormationAssignment is resolver for formation assignments
+func (r *RootResolver) FormationAssignment() graphql.FormationAssignmentResolver {
+	return &formationAssignmentResolver{r}
 }
 
 // APISpec missing godoc
@@ -1319,6 +1331,18 @@ func (r *formationResolver) FormationAssignments(ctx context.Context, obj *graph
 // Status missing godoc
 func (r *formationResolver) Status(ctx context.Context, obj *graphql.Formation) (*graphql.FormationStatus, error) {
 	return r.formation.Status(ctx, obj)
+}
+
+type formationAssignmentResolver struct {
+	*RootResolver
+}
+
+func (r *formationAssignmentResolver) SourceEntity(ctx context.Context, obj *graphql.FormationAssignment) (graphql.FormationParticipant, error) {
+	return r.formationAssignment.SourceEntity(ctx, obj)
+}
+
+func (r *formationAssignmentResolver) TargetEntity(ctx context.Context, obj *graphql.FormationAssignment) (graphql.FormationParticipant, error) {
+	return r.formationAssignment.TargetEntity(ctx, obj)
 }
 
 // BundleResolver missing godoc

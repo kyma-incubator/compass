@@ -12,6 +12,10 @@ type CredentialData interface {
 	IsCredentialData()
 }
 
+type FormationParticipant interface {
+	IsFormationParticipant()
+}
+
 type OneTimeToken interface {
 	IsOneTimeToken()
 }
@@ -533,18 +537,6 @@ type FetchRequestStatus struct {
 	Condition FetchRequestStatusCondition `json:"condition"`
 	Message   *string                     `json:"message"`
 	Timestamp Timestamp                   `json:"timestamp"`
-}
-
-type FormationAssignment struct {
-	ID            string                  `json:"id"`
-	Source        string                  `json:"source"`
-	SourceType    FormationAssignmentType `json:"sourceType"`
-	Target        string                  `json:"target"`
-	TargetType    FormationAssignmentType `json:"targetType"`
-	State         string                  `json:"state"`
-	Value         *string                 `json:"value"`
-	Configuration *string                 `json:"configuration"`
-	Error         *string                 `json:"error"`
 }
 
 type FormationAssignmentPage struct {
