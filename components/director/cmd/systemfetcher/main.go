@@ -101,7 +101,7 @@ type config struct {
 	SecurityConfig securityConfig
 
 	ElectionConfig         cronjob.ElectionConfig
-	SystemsSyncJobInterval time.Duration `envconfig:"APP_SYSTEM_SYNC_JOB_INTERVAL,default=1d"`
+	SystemsSyncJobInterval time.Duration `envconfig:"APP_SYSTEM_SYNC_JOB_INTERVAL,default=24h"`
 
 	APIConfig           systemfetcher.APIConfig
 	OAuth2Config        oauth.Config
