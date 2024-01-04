@@ -28,6 +28,9 @@ func (e *Application) GetType() resource.Type {
 // Sentinel missing godoc
 func (e *Application) Sentinel() {}
 
+// IsFormationParticipant implements the FormationParticipant interface
+func (e *Application) IsFormationParticipant() {}
+
 // ApplicationPageExt is an extended type used by external API
 type ApplicationPageExt struct {
 	ApplicationPage
