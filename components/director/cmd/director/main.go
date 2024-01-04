@@ -379,6 +379,7 @@ func main() {
 	gqlAPIRouter.Use(dataloader.HandlerFetchRequestDocument(rootResolver.FetchRequestDocumentDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerRuntimeContext(rootResolver.RuntimeContextsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerFormationAssignment(rootResolver.FormationAssignmentsDataLoader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerFormationParticipant(rootResolver.FormationParticipantDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerFormationStatus(rootResolver.StatusDataLoader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerFormationConstraint(rootResolver.FormationConstraintsDataLoader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	operationMiddleware := operation.NewMiddleware(cfg.AppURL + cfg.LastOperationPath)

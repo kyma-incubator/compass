@@ -48,7 +48,6 @@ func (a *FormationStatusAsserter) AssertExpectations(t *testing.T, ctx context.C
 
 func (a *FormationStatusAsserter) assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationID string, expectedFormationStatus gql.FormationStatus) {
 	// Get the formation with its status
-	t.Logf("Getting formation with ID: %q", formationID)
 	var gotFormation gql.FormationExt
 	getFormationReq := fixtures.FixGetFormationRequest(formationID)
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, a.certSecuredGraphQLClient, tenant, getFormationReq, &gotFormation)
@@ -72,4 +71,5 @@ func (a *FormationStatusAsserter) assertFormationStatus(t *testing.T, ctx contex
 			require.Truef(t, found, "Error %q with error code %d was not found", expectedError.Message, expectedError.ErrorCode)
 		}
 	}
+	t.Logf("Formation status was successfully asserted for ID: %q", formationID)
 }

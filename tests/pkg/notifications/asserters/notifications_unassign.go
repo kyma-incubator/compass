@@ -56,5 +56,5 @@ func (a *UnassignNotificationsAsserter) AssertExpectations(t *testing.T, ctx con
 			require.NoError(t, err)
 		}
 	}
-	require.Equal(t, a.expectedNotificationsCountForOp, notificationsFoundCount, "expected %s notifications for target object %s", a.expectedNotificationsCountForOp, a.targetObjectID)
+	require.Equal(t, a.expectedNotificationsCountForOp, notificationsFoundCount, "expected %d notifications for target object %s", a.expectedNotificationsCountForOp, a.targetObjectID)
 }

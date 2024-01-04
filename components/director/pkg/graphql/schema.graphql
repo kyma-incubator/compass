@@ -283,6 +283,8 @@ interface SystemAuth {
 
 union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData
 
+union FormationParticipant = Application | Runtime | RuntimeContext
+
 input APIDefinitionInput {
 	"""
 	**Validation:** ASCII printable characters, max=100
@@ -1321,8 +1323,10 @@ type FormationAssignment {
 	id: ID!
 	source: ID!
 	sourceType: FormationAssignmentType!
+	sourceEntity: FormationParticipant!
 	target: ID!
 	targetType: FormationAssignmentType!
+	targetEntity: FormationParticipant!
 	state: String!
 	value: String
 	configuration: String

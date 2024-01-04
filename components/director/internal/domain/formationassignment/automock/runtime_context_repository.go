@@ -19,6 +19,10 @@ type RuntimeContextRepository struct {
 func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, id string) (*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByID")
+	}
+
 	var r0 *model.RuntimeContext
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.RuntimeContext, error)); ok {
@@ -44,6 +48,10 @@ func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, 
 // ListByScenarios provides a mock function with given fields: ctx, tenant, scenarios
 func (_m *RuntimeContextRepository) ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant, scenarios)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByScenarios")
+	}
 
 	var r0 []*model.RuntimeContext
 	var r1 error
