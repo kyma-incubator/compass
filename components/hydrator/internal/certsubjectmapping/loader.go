@@ -171,7 +171,7 @@ func (cl *certSubjectMappingLoader) loadCertSubjectMappings(ctx context.Context,
 		mappings = append(mappings, convertGQLCertSubjectMappings(csmGQLPage.Data)...)
 
 		if csmGQLPage.PageInfo == nil {
-			return mappings, errors.Errorf("the certificate subject mappings page info be nil")
+			return mappings, errors.Errorf("the certificate subject mappings page info cannot be nil")
 		}
 		hasNextPage = csmGQLPage.PageInfo.HasNextPage
 		after = string(csmGQLPage.PageInfo.EndCursor)
