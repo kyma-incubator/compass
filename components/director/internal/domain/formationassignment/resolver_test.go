@@ -312,7 +312,7 @@ func TestResolver_TargetEntity(t *testing.T) {
 		assert.EqualError(t, err[0], apperrors.NewInternalError("No Formation Assignments found").Error())
 	})
 
-	t.Run("Returns error when Specification ID is empty", func(t *testing.T) {
+	t.Run("Returns error when Participant ID is empty", func(t *testing.T) {
 		params := dataloader.ParamFormationParticipant{ParticipantID: "", Ctx: context.TODO()}
 		keys := []dataloader.ParamFormationParticipant{params}
 
