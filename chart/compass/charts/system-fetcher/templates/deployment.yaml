@@ -192,6 +192,10 @@ spec:
               value: {{ .Values.global.systemFetcher.job.schedulePeriod | quote }}
             - name: APP_SYSTEM_FETCHER_JOB_IS_SCHEDULABLE
               value: {{ .Values.global.systemFetcher.job.isSchedulable | quote }}
+            - name: APP_ROOT_API
+              value: "{{ .Values.global.systemFetcher.prefix }}"
+            - name: APP_JWKS_ENDPOINT
+              value: "{{ .Values.global.systemFetcher.authentication.jwksEndpoint }}"
           command:
             - "/bin/sh"
           args:
