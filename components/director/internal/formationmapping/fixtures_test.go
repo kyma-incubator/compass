@@ -53,7 +53,12 @@ var (
 		ConsumerID:   "consumerID",
 		ConsumerType: consumer.BusinessIntegration,
 	}
-	ctxWithConsumer = consumer.SaveToContext(context.TODO(), cons)
+	instanceCreatorCons = consumer.Consumer{
+		ConsumerID:   "consumerID",
+		ConsumerType: consumer.InstanceCreator,
+	}
+	ctxWithConsumer                = consumer.SaveToContext(context.TODO(), cons)
+	ctxWithInstanceCreatorConsumer = consumer.SaveToContext(context.TODO(), instanceCreatorCons)
 )
 
 func fixTestHandler(t *testing.T) http.HandlerFunc {

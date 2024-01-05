@@ -527,8 +527,10 @@ func Test_UpdateFormationStatus(t *testing.T) {
 
 func executeFAStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, testConfig, formationID, formationAssignmentID string, expectedStatusCode int) {
 	reqBody := FormationAssignmentRequestBody{
-		State:         "READY",
-		Configuration: json.RawMessage(testConfig),
+		State: "READY",
+	}
+	if testConfig != "" {
+		reqBody.Configuration = json.RawMessage(testConfig)
 	}
 	marshalBody, err := json.Marshal(reqBody)
 	require.NoError(t, err)
