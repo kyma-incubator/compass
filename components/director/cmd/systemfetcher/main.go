@@ -233,27 +233,27 @@ func exitOnError(err error, context string) {
 func startSyncSystemsJob(ctx context.Context, sf *systemfetcher.SystemFetcher, tenantEntityType tenantEntity.Type, transact persistence.Transactioner, cfg config) error {
 	jobName := fmt.Sprintf("SyncSystemsForType_%s", tenantEntityType)
 	resyncJob := cronjob.CronJob{
-		Name:           jobName,
-		Fn:             syncSystemsOfType(ctx, sf, tenantEntityType, transact, cfg),
+		Name: jobName,
+		Fn: func(jobCtx context.Context) {
+			syncSystemsOfType(ctx, sf, tenantEntityType, transact, cfg)
+		},
 		SchedulePeriod: cfg.SystemsSyncJobInterval,
 	}
 	return cronjob.RunCronJob(ctx, cfg.ElectionConfig, resyncJob)
 }
 
-func syncSystemsOfType(ctx context.Context, sf *systemfetcher.SystemFetcher, tenantEntityType tenantEntity.Type, transact persistence.Transactioner, cfg config) func(jobCtx context.Context) {
-	return func(jobCtx context.Context) {
-		log.C(jobCtx).Infof("Start syncing systems for %q ...", tenantEntityType)
-		if err := sf.SyncSystems(ctx, tenantEntityType); err != nil {
-			log.C(jobCtx).Errorf("Cannot sync systems for %q. Err: %v", tenantEntityType, err)
-		}
-		log.C(jobCtx).Infof("Step 1 of 2 - sync systems for %q is finished.", tenantEntityType)
-
-		if err := sf.UpsertSystemsSyncTimestamps(ctx, transact); err != nil {
-			log.C(jobCtx).Errorf("Cannot upsert systems synchronization timestamps in database for %q. Err: %v", tenantEntityType, err)
-		}
-		log.C(jobCtx).Infof("Step 2 of 2 - upsert systems synchronization timestamps for %q is finished.", tenantEntityType)
-		log.C(jobCtx).Infof("Finished syncing systems for %q", tenantEntityType)
+func syncSystemsOfType(ctx context.Context, sf *systemfetcher.SystemFetcher, tenantEntityType tenantEntity.Type, transact persistence.Transactioner, cfg config) {
+	log.C(ctx).Infof("Start syncing systems for %q ...", tenantEntityType)
+	if err := sf.SyncSystems(ctx, tenantEntityType); err != nil {
+		log.C(ctx).Errorf("Cannot sync systems for %q. Err: %v", tenantEntityType, err)
 	}
+	log.C(ctx).Infof("Step 1 of 2 - sync systems for %q is finished.", tenantEntityType)
+
+	if err := sf.UpsertSystemsSyncTimestamps(ctx, transact); err != nil {
+		log.C(ctx).Errorf("Cannot upsert systems synchronization timestamps in database for %q. Err: %v", tenantEntityType, err)
+	}
+	log.C(ctx).Infof("Step 2 of 2 - upsert systems synchronization timestamps for %q is finished.", tenantEntityType)
+	log.C(ctx).Infof("Finished syncing systems for %q", tenantEntityType)
 }
 
 func initHandler(ctx context.Context, httpClient *http.Client, sf *systemfetcher.SystemFetcher, cfg config, transact persistence.Transactioner) http.Handler {

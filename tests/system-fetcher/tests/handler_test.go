@@ -19,16 +19,18 @@ package tests
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 	"time"
 
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/stretchr/testify/assert"
 
@@ -52,6 +54,7 @@ const (
 	systemFetcherJobName      = "system-fetcher-test"
 	systemFetcherJobNamespace = "compass-system"
 	systemFetcherCronJobName  = "compass-system-fetcher"
+	tenantHeader              = "Tenant"
 	mockSystemFormat          = `{
 		"systemNumber": "%d",
 		"displayName": "name%d",
@@ -137,14 +140,30 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, template2.ID)
 
-	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	systemFetcherClient := &http.Client{
+		Transport: httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(tr), util.AuthorizationHeader),
+		Timeout:   time.Duration(1) * time.Minute,
+	}
+
+	jsonBody := fmt.Sprintf(`{"tenant":"not used at the moment %s"}`, tenant.TestTenants.GetDefaultTenantID())
+	sfReq, err := http.NewRequest(http.MethodPost, cfg.SystemFetcherURL+"/sync", bytes.NewBuffer([]byte(jsonBody)))
 	require.NoError(t, err)
+	sfReq.Header.Add(tenantHeader, tenant.TestTenants.GetDefaultTenantID())
+	sfResp, err := systemFetcherClient.Do(sfReq)
+	defer func() {
+		if err := sfResp.Body.Close(); err != nil {
+			t.Logf("Could not close response body %s", err)
+		}
+	}()
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, sfResp.StatusCode)
 
-	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, systemFetcherJobName, systemFetcherJobNamespace)
-	defer k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
-	defer k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
-
-	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
+	// TODO wait for sync here
 
 	description1 := "name1"
 	description2 := "description"
@@ -1260,7 +1279,7 @@ func setMockSystems(t *testing.T, mockSystems []byte, tenant string) {
 	}()
 	require.NoError(t, err)
 	if response.StatusCode != http.StatusOK {
-		bodyBytes, err := ioutil.ReadAll(response.Body)
+		bodyBytes, err := io.ReadAll(response.Body)
 		require.NoError(t, err)
 		t.Fatalf("Failed to set mock systems: %s", string(bodyBytes))
 	}
@@ -1339,7 +1358,7 @@ func cleanupMockSystems(t *testing.T) {
 	require.NoError(t, err)
 
 	if response.StatusCode != http.StatusOK {
-		bodyBytes, err := ioutil.ReadAll(response.Body)
+		bodyBytes, err := io.ReadAll(response.Body)
 		require.NoError(t, err)
 		t.Fatalf("Failed to reset mock systems: %s", string(bodyBytes))
 		return
