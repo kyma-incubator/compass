@@ -235,14 +235,14 @@ func startSyncSystemsJob(ctx context.Context, sf *systemfetcher.SystemFetcher, t
 	resyncJob := cronjob.CronJob{
 		Name: jobName,
 		Fn: func(jobCtx context.Context) {
-			syncSystemsOfType(ctx, sf, tenantEntityType, transact, cfg)
+			syncSystemsOfType(ctx, sf, tenantEntityType, transact)
 		},
 		SchedulePeriod: cfg.SystemsSyncJobInterval,
 	}
 	return cronjob.RunCronJob(ctx, cfg.ElectionConfig, resyncJob)
 }
 
-func syncSystemsOfType(ctx context.Context, sf *systemfetcher.SystemFetcher, tenantEntityType tenantEntity.Type, transact persistence.Transactioner, cfg config) {
+func syncSystemsOfType(ctx context.Context, sf *systemfetcher.SystemFetcher, tenantEntityType tenantEntity.Type, transact persistence.Transactioner) {
 	log.C(ctx).Infof("Start syncing systems for %q ...", tenantEntityType)
 	if err := sf.SyncSystems(ctx, tenantEntityType); err != nil {
 		log.C(ctx).Errorf("Cannot sync systems for %q. Err: %v", tenantEntityType, err)
@@ -284,9 +284,9 @@ func initHandler(ctx context.Context, httpClient *http.Client, sf *systemfetcher
 func newSyncHandler(ctx context.Context, sf *systemfetcher.SystemFetcher, transact persistence.Transactioner, cfg config) func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		log.C(ctx).Infof("Start on demand syncing of systems")
-		syncSystemsOfType(ctx, sf, tenantEntity.Customer, transact, cfg)
+		syncSystemsOfType(ctx, sf, tenantEntity.Customer, transact)
 		if cfg.SystemFetcher.SyncGlobalAccounts {
-			syncSystemsOfType(ctx, sf, tenantEntity.Account, transact, cfg)
+			syncSystemsOfType(ctx, sf, tenantEntity.Account, transact)
 		}
 		log.C(ctx).Infof("Finished on demand syncing of systems")
 		writer.WriteHeader(http.StatusOK)
