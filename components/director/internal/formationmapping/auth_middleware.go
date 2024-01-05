@@ -13,10 +13,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
-	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
-
 	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
@@ -52,14 +50,14 @@ type FormationAssignmentService interface {
 //
 //go:generate mockery --name=FormationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentNotificationService interface {
-	GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequest, error)
+	GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)
 }
 
 // formationService is responsible for the service-layer Formation operations
 //
 //go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationService interface {
-	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+	UnassignFromScenarioLabel(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) error
 	Get(ctx context.Context, id string) (*model.Formation, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
 	ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset bool) (*model.Formation, error)
@@ -361,6 +359,14 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 				return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")
 			}
 
+			log.C(ctx).Infof("The caller with ID: %s and type: %s is allowed to update formation assignments in tenants of type %s", consumerID, consumerType, tnt.Type)
+			return true, http.StatusOK, nil
+		}
+
+		if consumerType == consumer.InstanceCreator {
+			if err := tx.Commit(); err != nil {
+				return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")
+			}
 			log.C(ctx).Infof("The caller with ID: %s and type: %s is allowed to update formation assignments in tenants of type %s", consumerID, consumerType, tnt.Type)
 			return true, http.StatusOK, nil
 		}

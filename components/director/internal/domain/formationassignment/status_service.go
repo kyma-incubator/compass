@@ -116,11 +116,13 @@ func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.C
 		return errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.NotificationStatusReturned, model.PreOperation)
 	}
 
-	if err = fau.repo.Delete(ctx, id, tenantID); err != nil {
-		if apperrors.IsUnauthorizedError(err) {
-			return apperrors.NewNotFoundError(resource.FormationAssignment, id)
+	if notificationStatusReport.State == string(model.ReadyAssignmentState) {
+		if err = fau.repo.Delete(ctx, id, tenantID); err != nil {
+			if apperrors.IsUnauthorizedError(err) {
+				return apperrors.NewNotFoundError(resource.FormationAssignment, id)
+			}
+			return errors.Wrapf(err, "while deleting formation assignment with ID: %q", id)
 		}
-		return errors.Wrapf(err, "while deleting formation assignment with ID: %q", id)
 	}
 
 	joinPointDetails.Location = formationconstraint.PostNotificationStatusReturned

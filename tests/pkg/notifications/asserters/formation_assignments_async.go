@@ -14,6 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	eventuallyTimeout = 8 * time.Second
+	eventuallyTick    = 50 * time.Millisecond
+)
+
 type FormationAssignmentsAsyncAsserter struct {
 	FormationAssignmentsAsserter
 	timeout time.Duration
@@ -28,8 +33,8 @@ func NewFormationAssignmentAsyncAsserter(expectations map[string]map[string]fixt
 			certSecuredGraphQLClient: certSecuredGraphQLClient,
 			tenantID:                 tenantID,
 		},
-		timeout: time.Second * 8,
-		tick:    time.Millisecond * 50,
+		timeout: eventuallyTimeout,
+		tick:    eventuallyTick,
 	}
 	return &f
 }
@@ -37,6 +42,14 @@ func NewFormationAssignmentAsyncAsserter(expectations map[string]map[string]fixt
 func (a *FormationAssignmentsAsyncAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
 	formationID := ctx.Value(context_keys.FormationIDKey).(string)
 	a.assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, a.certSecuredGraphQLClient, a.tenantID, formationID, a.expectedAssignmentsCount, a.expectations)
+}
+
+func (a *FormationAssignmentsAsyncAsserter) WithTimeout(timeout time.Duration) {
+	a.timeout = timeout
+}
+
+func (a *FormationAssignmentsAsyncAsserter) WithTick(tick time.Duration) {
+	a.tick = tick
 }
 
 func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, certSecuredGraphQLClient *graphql.Client, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
