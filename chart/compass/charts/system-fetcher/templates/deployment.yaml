@@ -158,6 +158,8 @@ spec:
               value: {{ .Values.global.systemFetcher.dbPool.maxIdleConnections | quote }}
             - name: APP_CONFIGURATION_FILE
               value: /config/config.yaml
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{ .Values.global.systemFetcher.port}}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_EXTERNAL_CLIENT_CERT_KEY
@@ -201,9 +203,27 @@ spec:
           args:
             - "-c"
             - "./systemfetcher; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+          ports:
+            - name: http
+              containerPort: {{ .Values.global.systemFetcher.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              port: {{.Values.global.systemFetcher.port }}
+              path: "{{ .Values.global.systemFetcher.prefix }}/healthz"
+            initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              port: {{.Values.global.systemFetcher.port }}
+              path: "{{ .Values.global.systemFetcher.prefix }}/readyz"
+            initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
         {{if eq $.Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
-          image: gcr.io/cloudsql-docker/gce-proxy:1.18.0-alpine
+          image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
           command:
             - /bin/sh
           args:
