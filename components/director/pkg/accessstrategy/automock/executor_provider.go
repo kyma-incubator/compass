@@ -17,6 +17,10 @@ func (_m *ExecutorProvider) Provide(accessStrategyType accessstrategy.Type) (acc
 	ret := _m.Called(accessStrategyType)
 
 	var r0 accessstrategy.Executor
+	var r1 error
+	if rf, ok := ret.Get(0).(func(accessstrategy.Type) (accessstrategy.Executor, error)); ok {
+		return rf(accessStrategyType)
+	}
 	if rf, ok := ret.Get(0).(func(accessstrategy.Type) accessstrategy.Executor); ok {
 		r0 = rf(accessStrategyType)
 	} else {
@@ -25,7 +29,6 @@ func (_m *ExecutorProvider) Provide(accessStrategyType accessstrategy.Type) (acc
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(accessstrategy.Type) error); ok {
 		r1 = rf(accessStrategyType)
 	} else {
@@ -35,13 +38,12 @@ func (_m *ExecutorProvider) Provide(accessStrategyType accessstrategy.Type) (acc
 	return r0, r1
 }
 
-type mockConstructorTestingTNewExecutorProvider interface {
+// NewExecutorProvider creates a new instance of ExecutorProvider. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewExecutorProvider(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewExecutorProvider creates a new instance of ExecutorProvider. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewExecutorProvider(t mockConstructorTestingTNewExecutorProvider) *ExecutorProvider {
+}) *ExecutorProvider {
 	mock := &ExecutorProvider{}
 	mock.Mock.Test(t)
 

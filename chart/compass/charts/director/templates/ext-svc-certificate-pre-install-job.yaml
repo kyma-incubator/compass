@@ -1,0 +1,131 @@
+{{ if eq .Values.global.extSvcCertConfiguration.preInstallJob.enabled true }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $.Chart.Name }}-{{ .Values.global.extSvcCertConfiguration.preInstallJob.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "director.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: "pre-install"
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $.Chart.Name }}-{{ .Values.global.extSvcCertConfiguration.preInstallJob.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+      {{- include "director.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: "pre-install"
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+rules:
+  - apiGroups: ["*"]
+    resources: ["secrets"]
+    verbs: ["get", "update", "patch"]
+    resourceNames: ["{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $.Chart.Name }}-{{ .Values.global.extSvcCertConfiguration.preInstallJob.name }}
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    helm.sh/hook: "pre-install"
+    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    {{- include "director.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $.Chart.Name }}-{{ .Values.global.extSvcCertConfiguration.preInstallJob.name }}
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ $.Chart.Name }}-{{ .Values.global.extSvcCertConfiguration.preInstallJob.name }}
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ $.Chart.Name }}-{{ .Values.global.extSvcCertConfiguration.preInstallJob.name }}-job"
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    helm.sh/hook: "pre-install"
+    "helm.sh/hook-weight": "4"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+      {{- include "director.labels" . | nindent 4 }}
+spec:
+  template:
+    metadata:
+      name: "{{ $.Chart.Name }}-{{ .Values.global.extSvcCertConfiguration.preInstallJob.name }}-job"
+      labels:
+        {{- include "director.labels" . | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ $.Chart.Name }}-{{ .Values.global.extSvcCertConfiguration.preInstallJob.name }}
+
+      containers:
+        - name: {{ .Values.global.extSvcCertConfiguration.preInstallJob.name }}
+          image: bitnami/kubectl:1.22.4
+          command:
+            - /bin/bash
+            - -c
+            - |
+{{ .Files.Get "files/certificate_rotation.sh" | printf "%s" | indent 14 }}
+          env:
+            - name: EXT_NOT_EXTERNAL
+              value: 'true'
+            - name: CERT_SVC_CSR_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.name }}
+                  key: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.csrEndpointKey }}
+            - name: CERT_SVC_API_PATH
+              value: {{ .Values.global.extSvcCertConfiguration.certSvcApiPath }}
+            - name: CERT_SUBJECT_PATTERN
+              value: {{ printf .Values.global.extSvcCertConfiguration.subjectPattern .Values.global.extSvcCertConfiguration.ouCertSubaccountID .Values.global.extSvcCertConfiguration.locality .Values.global.extSvcCertConfiguration.commonName }}
+            - name: EXPECTED_ISSUER_LOCALITY
+              value: {{ .Values.global.extSvcCertConfiguration.issuerLocality }}
+            - name: CERT_VALIDITY
+              value: {{ .Values.global.extSvcCertConfiguration.preInstallJob.certValidity | quote }}
+            - name: CLIENT_CERT_RETRY_ATTEMPTS
+              value: {{ .Values.global.extSvcCertConfiguration.preInstallJob.clientCertRetryAttempts | quote }}
+            - name: CLIENT_CERT_SECRET_NAME
+              value: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}
+            - name: CLIENT_CERT_CERT_KEY
+              value: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}
+            - name: CLIENT_CERT_KEY_KEY
+              value: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}
+            - name: CERT_SVC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.name }}
+                  key: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.clientIdKey }}
+            - name: CERT_SVC_OAUTH_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.name }}
+                  key: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.oauthUrlKey }}
+            - name: CERT_SVC_TOKEN_PATH
+              value: {{ .Values.global.extSvcCertConfiguration.tokenPath }}
+            - name: CERT_SVC_OAUTH_CLIENT_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+                  key: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}
+            - name: CERT_SVC_OAUTH_CLIENT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+                  key: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}
+            - name: SKIP_SSL_VALIDATION_FLAG
+              value: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.skipSSLValidationFlag }}
+{{ end }}

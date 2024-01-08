@@ -19,6 +19,10 @@ func (_m *TenantStorageService) GetTenantByExternalID(ctx context.Context, id st
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -27,7 +31,6 @@ func (_m *TenantStorageService) GetTenantByExternalID(ctx context.Context, id st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -42,6 +45,10 @@ func (_m *TenantStorageService) List(ctx context.Context) ([]*model.BusinessTena
 	ret := _m.Called(ctx)
 
 	var r0 []*model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []*model.BusinessTenantMapping); ok {
 		r0 = rf(ctx)
 	} else {
@@ -50,7 +57,6 @@ func (_m *TenantStorageService) List(ctx context.Context) ([]*model.BusinessTena
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -65,6 +71,10 @@ func (_m *TenantStorageService) ListsByExternalIDs(ctx context.Context, ids []st
 	ret := _m.Called(ctx, ids)
 
 	var r0 []*model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, ids)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, ids)
 	} else {
@@ -73,7 +83,6 @@ func (_m *TenantStorageService) ListsByExternalIDs(ctx context.Context, ids []st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
 		r1 = rf(ctx, ids)
 	} else {
@@ -83,13 +92,12 @@ func (_m *TenantStorageService) ListsByExternalIDs(ctx context.Context, ids []st
 	return r0, r1
 }
 
-type mockConstructorTestingTNewTenantStorageService interface {
+// NewTenantStorageService creates a new instance of TenantStorageService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTenantStorageService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTenantStorageService creates a new instance of TenantStorageService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantStorageService(t mockConstructorTestingTNewTenantStorageService) *TenantStorageService {
+}) *TenantStorageService {
 	mock := &TenantStorageService{}
 	mock.Mock.Test(t)
 

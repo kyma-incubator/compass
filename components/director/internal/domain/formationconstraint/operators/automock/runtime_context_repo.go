@@ -19,6 +19,10 @@ func (_m *RuntimeContextRepo) GetByID(ctx context.Context, tenant string, id str
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.RuntimeContext
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.RuntimeContext, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.RuntimeContext); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
@@ -27,7 +31,6 @@ func (_m *RuntimeContextRepo) GetByID(ctx context.Context, tenant string, id str
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -37,13 +40,12 @@ func (_m *RuntimeContextRepo) GetByID(ctx context.Context, tenant string, id str
 	return r0, r1
 }
 
-type mockConstructorTestingTNewRuntimeContextRepo interface {
+// NewRuntimeContextRepo creates a new instance of RuntimeContextRepo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeContextRepo(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeContextRepo creates a new instance of RuntimeContextRepo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeContextRepo(t mockConstructorTestingTNewRuntimeContextRepo) *RuntimeContextRepo {
+}) *RuntimeContextRepo {
 	mock := &RuntimeContextRepo{}
 	mock.Mock.Test(t)
 

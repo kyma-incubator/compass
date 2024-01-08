@@ -21,6 +21,10 @@ func (_m *TemplateRenderer) ApplicationRegisterInputFromTemplate(ctx context.Con
 	ret := _m.Called(ctx, sc)
 
 	var r0 *model.ApplicationRegisterInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, systemfetcher.System) (*model.ApplicationRegisterInput, error)); ok {
+		return rf(ctx, sc)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, systemfetcher.System) *model.ApplicationRegisterInput); ok {
 		r0 = rf(ctx, sc)
 	} else {
@@ -29,7 +33,6 @@ func (_m *TemplateRenderer) ApplicationRegisterInputFromTemplate(ctx context.Con
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, systemfetcher.System) error); ok {
 		r1 = rf(ctx, sc)
 	} else {
@@ -39,13 +42,12 @@ func (_m *TemplateRenderer) ApplicationRegisterInputFromTemplate(ctx context.Con
 	return r0, r1
 }
 
-type mockConstructorTestingTNewTemplateRenderer interface {
+// NewTemplateRenderer creates a new instance of TemplateRenderer. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTemplateRenderer(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTemplateRenderer creates a new instance of TemplateRenderer. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTemplateRenderer(t mockConstructorTestingTNewTemplateRenderer) *TemplateRenderer {
+}) *TemplateRenderer {
 	mock := &TemplateRenderer{}
 	mock.Mock.Test(t)
 

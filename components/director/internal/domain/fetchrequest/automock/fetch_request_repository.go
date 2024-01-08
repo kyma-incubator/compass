@@ -43,13 +43,12 @@ func (_m *FetchRequestRepository) UpdateGlobal(ctx context.Context, item *model.
 	return r0
 }
 
-type mockConstructorTestingTNewFetchRequestRepository interface {
+// NewFetchRequestRepository creates a new instance of FetchRequestRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFetchRequestRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFetchRequestRepository creates a new instance of FetchRequestRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFetchRequestRepository(t mockConstructorTestingTNewFetchRequestRepository) *FetchRequestRepository {
+}) *FetchRequestRepository {
 	mock := &FetchRequestRepository{}
 	mock.Mock.Test(t)
 

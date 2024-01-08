@@ -18,6 +18,10 @@ func (_m *EntityConverter) FromEntity(entity *tombstone.Entity) (*model.Tombston
 	ret := _m.Called(entity)
 
 	var r0 *model.Tombstone
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*tombstone.Entity) (*model.Tombstone, error)); ok {
+		return rf(entity)
+	}
 	if rf, ok := ret.Get(0).(func(*tombstone.Entity) *model.Tombstone); ok {
 		r0 = rf(entity)
 	} else {
@@ -26,7 +30,6 @@ func (_m *EntityConverter) FromEntity(entity *tombstone.Entity) (*model.Tombston
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*tombstone.Entity) error); ok {
 		r1 = rf(entity)
 	} else {
@@ -52,13 +55,12 @@ func (_m *EntityConverter) ToEntity(in *model.Tombstone) *tombstone.Entity {
 	return r0
 }
 
-type mockConstructorTestingTNewEntityConverter interface {
+// NewEntityConverter creates a new instance of EntityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEntityConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEntityConverter creates a new instance of EntityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEntityConverter(t mockConstructorTestingTNewEntityConverter) *EntityConverter {
+}) *EntityConverter {
 	mock := &EntityConverter{}
 	mock.Mock.Test(t)
 

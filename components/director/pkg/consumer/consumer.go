@@ -33,6 +33,8 @@ const (
 	ManagedApplicationConsumer ConsumerType = "Managed Application Consumer"
 	// LandscapeResourceOperator is a consumer type that is used by Landscape Resource operator
 	LandscapeResourceOperator ConsumerType = "Landscape Resource Operator"
+	// InstanceCreator is a consumer type that is used by Instance Creator operator
+	InstanceCreator ConsumerType = "Instance Creator"
 )
 
 // Consumer missing godoc
@@ -66,6 +68,8 @@ func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Co
 		return ManagedApplicationConsumer, nil
 	case model.LandscapeResourceOperatorConsumerReference:
 		return LandscapeResourceOperator, nil
+	case model.InstanceCreatorConsumerReference:
+		return InstanceCreator, nil
 	case model.SuperAdminReference:
 		return SuperAdmin, nil
 	}

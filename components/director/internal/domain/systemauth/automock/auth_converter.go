@@ -19,6 +19,10 @@ func (_m *AuthConverter) ModelFromGraphQLInput(in graphql.AuthInput) (*model.Aut
 	ret := _m.Called(in)
 
 	var r0 *model.Auth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(graphql.AuthInput) (*model.Auth, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(graphql.AuthInput) *model.Auth); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +31,6 @@ func (_m *AuthConverter) ModelFromGraphQLInput(in graphql.AuthInput) (*model.Aut
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(graphql.AuthInput) error); ok {
 		r1 = rf(in)
 	} else {
@@ -42,6 +45,10 @@ func (_m *AuthConverter) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 	ret := _m.Called(in)
 
 	var r0 *graphql.Auth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.Auth) (*graphql.Auth, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.Auth) *graphql.Auth); ok {
 		r0 = rf(in)
 	} else {
@@ -50,7 +57,6 @@ func (_m *AuthConverter) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.Auth) error); ok {
 		r1 = rf(in)
 	} else {
@@ -60,13 +66,12 @@ func (_m *AuthConverter) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 	return r0, r1
 }
 
-type mockConstructorTestingTNewAuthConverter interface {
+// NewAuthConverter creates a new instance of AuthConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAuthConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewAuthConverter creates a new instance of AuthConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAuthConverter(t mockConstructorTestingTNewAuthConverter) *AuthConverter {
+}) *AuthConverter {
 	mock := &AuthConverter{}
 	mock.Mock.Test(t)
 

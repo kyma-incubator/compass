@@ -470,6 +470,19 @@ func TestRepository_ListAllForObjectIDs(t *testing.T) {
 	}
 
 	suite.Run(t)
+
+	t.Run("returns empty slice given no object IDs", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+		repository := formationassignment.NewRepository(nil)
+
+		// WHEN
+		actual, err := repository.ListAllForObjectIDs(ctx, "", "", []string{})
+
+		// THEN
+		assert.NoError(t, err)
+		assert.Nil(t, actual)
+	})
 }
 
 func TestRepository_Update(t *testing.T) {

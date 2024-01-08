@@ -21,13 +21,16 @@ func (_m *SystemAuthService) Create(ctx context.Context, objectType model.System
 	ret := _m.Called(ctx, objectType, objectID, authInput)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType, string, *internalmodel.AuthInput) (string, error)); ok {
+		return rf(ctx, objectType, objectID, authInput)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType, string, *internalmodel.AuthInput) string); ok {
 		r0 = rf(ctx, objectType, objectID, authInput)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.SystemAuthReferenceObjectType, string, *internalmodel.AuthInput) error); ok {
 		r1 = rf(ctx, objectType, objectID, authInput)
 	} else {
@@ -42,6 +45,10 @@ func (_m *SystemAuthService) GetByToken(ctx context.Context, token string) (*mod
 	ret := _m.Called(ctx, token)
 
 	var r0 *model.SystemAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.SystemAuth, error)); ok {
+		return rf(ctx, token)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.SystemAuth); ok {
 		r0 = rf(ctx, token)
 	} else {
@@ -50,7 +57,6 @@ func (_m *SystemAuthService) GetByToken(ctx context.Context, token string) (*mod
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, token)
 	} else {
@@ -65,6 +71,10 @@ func (_m *SystemAuthService) GetGlobal(ctx context.Context, authID string) (*mod
 	ret := _m.Called(ctx, authID)
 
 	var r0 *model.SystemAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.SystemAuth, error)); ok {
+		return rf(ctx, authID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.SystemAuth); ok {
 		r0 = rf(ctx, authID)
 	} else {
@@ -73,7 +83,6 @@ func (_m *SystemAuthService) GetGlobal(ctx context.Context, authID string) (*mod
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, authID)
 	} else {
@@ -97,13 +106,12 @@ func (_m *SystemAuthService) Update(ctx context.Context, item *model.SystemAuth)
 	return r0
 }
 
-type mockConstructorTestingTNewSystemAuthService interface {
+// NewSystemAuthService creates a new instance of SystemAuthService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSystemAuthService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSystemAuthService creates a new instance of SystemAuthService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSystemAuthService(t mockConstructorTestingTNewSystemAuthService) *SystemAuthService {
+}) *SystemAuthService {
 	mock := &SystemAuthService{}
 	mock.Mock.Test(t)
 

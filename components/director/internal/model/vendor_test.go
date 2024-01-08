@@ -2,8 +2,9 @@ package model_test
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"

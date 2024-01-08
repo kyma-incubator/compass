@@ -46,57 +46,6 @@ function log() {
     printf "${color}${style}${exp}${NC}\n"
 }
 
-#
-# showFailedResources is function to print some logs and pods details
-# It accepts on argument:
-# $1 - namespace from which we want to get details
-# It will 
-# - display list of pods and PVCs, 
-# - describe pods with status != running
-# - display logs for not running pods
-# - describe PVCs with status != Bound
-#
-
-function showFailedResources {
-  local ns=$1
-  kubectl get pods,pvc -n $1 -o wide
-  
-  notRunningPods=($(kubectl get pods -n $1 -o=custom-columns=NAME:.metadata.name,STATUS:.status.phase  | grep -v Running | awk '{if(NR>1)print $1}'))
-  if [[ -n ${notRunningPods-} ]];
-  then
-    for i in "${notRunningPods[@]}"
-    do
-      echo "======================================================================================"
-      echo "kubectl describe pod $i"
-      echo "======================================================================================"
-      kubectl describe pod $i -n $1
-      containers=($(kubectl get pods -n $1 $i  -o jsonpath='{range .status.containerStatuses[*]}{.name}{"\t"}{.ready}{"\n"}' | grep "\ttrue" |  awk '{if(NR>1)print $1}'))
-      if [[ -n ${containers-} ]];
-      then
-      for j in "${containers[@]}"
-        do
-          echo "=========="
-          echo "kubectl logs $i -c $j"
-          echo "=========="
-          kubectl logs -n $1 --tail=100 $i -c $j
-        done
-      fi
-    done
-  fi
-
-  notBoundPvc=($(kubectl get pvc -n $1 -o=custom-columns=NAME:.metadata.name,STATUS:.status.phase  | grep -v Bound | awk '{if(NR>1)print $1}'))
-  if [[ -n ${notBoundPvc-} ]];
-  then
-    for i in "${notBoundPvc[@]}"
-    do
-      echo "======================================================================================"
-      echo "kubectl describe pvc $i"
-      echo "======================================================================================"
-      kubectl describe pvc $i -n $1
-    done
-  fi
-}
-
 # checkInputParameterValue is a function to check if input parameter is valid
 # There HAS to be provided argument:
 # $1 - value for input parameter

@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/onrik/logrus/filename"
 
@@ -44,8 +45,12 @@ var (
 	defaultEntry = logrus.NewEntry(logrus.StandardLogger())
 
 	supportedFormatters = map[string]logrus.Formatter{
-		jsonFormatterKey: &logrus.JSONFormatter{},
-		textFormatterKey: &logrus.TextFormatter{},
+		jsonFormatterKey: &logrus.JSONFormatter{
+			TimestampFormat: time.RFC3339Nano,
+		},
+		textFormatterKey: &logrus.TextFormatter{
+			TimestampFormat: time.RFC3339Nano,
+		},
 	}
 
 	supportedOutputs = map[string]io.Writer{
@@ -87,7 +92,9 @@ func Configure(ctx context.Context, config *Config) (context.Context, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	formatter := supportedFormatters[config.Format]
+
 	output := supportedOutputs[config.Output]
 
 	currentSettings = config

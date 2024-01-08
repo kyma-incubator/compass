@@ -42,6 +42,8 @@ func Test_HandlerFunc(t *testing.T) {
 
 	bodyFormatterBasic := `{"context":{"platform":%q,"operation":%q},"receiverTenant":{"ownerTenant":%q,"uclSystemTenantId":%q},"assignedTenant":{"uclSystemTenantId":%q,"configuration":%s}}`
 
+	bodyFormatterWithoutConfiguration := `{"context":{"platform":%q,"operation":%q},"receiverTenant":{"ownerTenant":%q,"uclSystemTenantId":%q},"assignedTenant":{"uclSystemTenantId":%q}}`
+
 	bodyWithConfigPendingState := "{\"state\":\"CONFIG_PENDING\"}\n"
 	bodyWithReadyState := "{\"state\":\"READY\"}\n"
 
@@ -122,8 +124,26 @@ func Test_HandlerFunc(t *testing.T) {
 		expectedResponseCode int
 	}{
 		{
-			name:                 "Success - assign with missing config",
+			name:                 "Success - assign with missing config(empty json)",
 			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, `{}`),
+			expectedBody:         bodyWithConfigPendingState,
+			expectedResponseCode: http.StatusOK,
+		},
+		{
+			name:                 "Success - assign with missing config(null)",
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, `null`),
+			expectedBody:         bodyWithConfigPendingState,
+			expectedResponseCode: http.StatusOK,
+		},
+		{
+			name:                 "Success - assign with missing config(empty string)",
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, `""`),
+			expectedBody:         bodyWithConfigPendingState,
+			expectedResponseCode: http.StatusOK,
+		},
+		{
+			name:                 "Success - assign with missing config(when configuration object is missing)",
+			requestBody:          fmt.Sprintf(bodyFormatterWithoutConfiguration, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID),
 			expectedBody:         bodyWithConfigPendingState,
 			expectedResponseCode: http.StatusOK,
 		},

@@ -8,7 +8,7 @@ import (
 
 	"k8s.io/client-go/util/jsonpath"
 
-	"github.com/imdario/mergo"
+	"dario.cat/mergo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
@@ -94,6 +94,8 @@ func (r *renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc 
 	if err != nil {
 		return nil, errors.Wrapf(err, "while preparing ApplicationRegisterInput model from Application Template with name %s", appTemplate.Name)
 	}
+
+	appRegisterInput.StatusCondition = &sc.StatusCondition
 
 	return &appRegisterInput, nil
 }

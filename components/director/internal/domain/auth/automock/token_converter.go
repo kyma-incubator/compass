@@ -19,13 +19,16 @@ func (_m *TokenConverter) ToGraphQLForApplication(_a0 model.OneTimeToken) (graph
 	ret := _m.Called(_a0)
 
 	var r0 graphql.OneTimeTokenForApplication
+	var r1 error
+	if rf, ok := ret.Get(0).(func(model.OneTimeToken) (graphql.OneTimeTokenForApplication, error)); ok {
+		return rf(_a0)
+	}
 	if rf, ok := ret.Get(0).(func(model.OneTimeToken) graphql.OneTimeTokenForApplication); ok {
 		r0 = rf(_a0)
 	} else {
 		r0 = ret.Get(0).(graphql.OneTimeTokenForApplication)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(model.OneTimeToken) error); ok {
 		r1 = rf(_a0)
 	} else {
@@ -35,13 +38,12 @@ func (_m *TokenConverter) ToGraphQLForApplication(_a0 model.OneTimeToken) (graph
 	return r0, r1
 }
 
-type mockConstructorTestingTNewTokenConverter interface {
+// NewTokenConverter creates a new instance of TokenConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTokenConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTokenConverter creates a new instance of TokenConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTokenConverter(t mockConstructorTestingTNewTokenConverter) *TokenConverter {
+}) *TokenConverter {
 	mock := &TokenConverter{}
 	mock.Mock.Test(t)
 

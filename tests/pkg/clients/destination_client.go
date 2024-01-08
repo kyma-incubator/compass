@@ -6,12 +6,14 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/pkg/errors"
@@ -21,11 +23,13 @@ import (
 )
 
 type DestinationServiceAPIConfig struct {
-	EndpointTenantDestinations            string        `envconfig:"APP_ENDPOINT_TENANT_DESTINATIONS,default=/destination-configuration/v1/subaccountDestinations"`
-	EndpointTenantDestinationCertificates string        `envconfig:"APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES,default=/destination-configuration/v1/subaccountCertificates"`
-	Timeout                               time.Duration `envconfig:"APP_DESTINATIONS_TIMEOUT,default=30s"`
-	SkipSSLVerify                         bool          `envconfig:"APP_DESTINATIONS_SKIP_SSL_VERIFY,default=false"`
-	OAuthTokenPath                        string        `envconfig:"APP_DESTINATION_OAUTH_TOKEN_PATH,default=/oauth/token"`
+	EndpointDestinationsFindAPI                          string        `envconfig:"APP_ENDPOINT_DESTINATIONS_FIND_API,default=/destination-configuration/local/v1/destinations"`
+	EndpointTenantSubaccountLevelDestinations            string        `envconfig:"APP_ENDPOINT_TENANT_DESTINATIONS,default=/destination-configuration/v1/subaccountDestinations"`
+	EndpointTenantSubaccountLevelDestinationCertificates string        `envconfig:"APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES,default=/destination-configuration/v1/subaccountCertificates"`
+	EndpointTenantInstanceLevelDestinationCertificates   string        `envconfig:"APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES,default=/destination-configuration/v1/instanceCertificates"`
+	Timeout                                              time.Duration `envconfig:"APP_DESTINATIONS_TIMEOUT,default=30s"`
+	SkipSSLVerify                                        bool          `envconfig:"APP_DESTINATIONS_SKIP_SSL_VERIFY,default=false"`
+	OAuthTokenPath                                       string        `envconfig:"APP_DESTINATION_OAUTH_TOKEN_PATH,default=/oauth/token"`
 }
 
 type Destination struct {
@@ -98,7 +102,7 @@ func (c *DestinationClient) CreateDestination(t *testing.T, destination Destinat
 	destinationBytes, err := json.Marshal(destination)
 	require.NoError(t, err)
 
-	url := c.apiURL + c.apiConfig.EndpointTenantDestinations
+	url := c.apiURL + c.apiConfig.EndpointTenantSubaccountLevelDestinations
 	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(destinationBytes))
 	require.NoError(t, err)
 
@@ -109,7 +113,7 @@ func (c *DestinationClient) CreateDestination(t *testing.T, destination Destinat
 }
 
 func (c *DestinationClient) DeleteDestination(t *testing.T, destinationName string) {
-	url := c.apiURL + c.apiConfig.EndpointTenantDestinations + "/" + url.QueryEscape(destinationName)
+	url := c.apiURL + c.apiConfig.EndpointTenantSubaccountLevelDestinations + "/" + url.QueryEscape(destinationName)
 	request, err := http.NewRequest(http.MethodDelete, url, nil)
 	require.NoError(t, err)
 
@@ -118,12 +122,25 @@ func (c *DestinationClient) DeleteDestination(t *testing.T, destinationName stri
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-func (c *DestinationClient) GetDestinationByName(t *testing.T, destinationName string, expectedStatusCode int) json.RawMessage {
-	url := c.apiURL + c.apiConfig.EndpointTenantDestinations + "/" + url.QueryEscape(destinationName)
+func (c *DestinationClient) FindDestinationByName(t *testing.T, serviceURL, destinationName, authToken, userTokenHeader string, expectedStatusCode int) json.RawMessage {
+	url := serviceURL + c.apiConfig.EndpointDestinationsFindAPI + "/" + url.QueryEscape(destinationName)
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
+	request.Header.Set(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", authToken))
 
-	resp, err := c.httpClient.Do(request)
+	if userTokenHeader != "" {
+		request.Header.Set(util.UserTokenHeader, userTokenHeader)
+	}
+
+	httpClient := &http.Client{}
+	httpClient.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: c.apiConfig.SkipSSLVerify,
+		},
+	}
+	httpClient.Timeout = c.apiConfig.Timeout
+
+	resp, err := httpClient.Do(request)
 	require.NoError(t, err)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -131,19 +148,34 @@ func (c *DestinationClient) GetDestinationByName(t *testing.T, destinationName s
 		}
 	}()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
 	require.Equal(t, expectedStatusCode, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %s", resp.StatusCode, expectedStatusCode, string(body)))
 	return body
 }
 
-func (c *DestinationClient) GetDestinationCertificateByName(t *testing.T, certificateName string, expectedStatusCode int) json.RawMessage {
-	url := c.apiURL + c.apiConfig.EndpointTenantDestinationCertificates + "/" + url.QueryEscape(certificateName)
+func (c *DestinationClient) GetDestinationCertificateByName(t *testing.T, serviceURL, certificateName, instanceID, token string, expectedStatusCode int) json.RawMessage {
+	subpath := ""
+	if instanceID != "" {
+		subpath = c.apiConfig.EndpointTenantInstanceLevelDestinationCertificates
+	} else {
+		subpath = c.apiConfig.EndpointTenantSubaccountLevelDestinationCertificates
+	}
+	url := serviceURL + subpath + "/" + url.QueryEscape(certificateName)
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
+	request.Header.Set(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
 
-	resp, err := c.httpClient.Do(request)
+	httpClient := &http.Client{}
+	httpClient.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: c.apiConfig.SkipSSLVerify,
+		},
+	}
+	httpClient.Timeout = c.apiConfig.Timeout
+
+	resp, err := httpClient.Do(request)
 	require.NoError(t, err)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -151,7 +183,7 @@ func (c *DestinationClient) GetDestinationCertificateByName(t *testing.T, certif
 		}
 	}()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
 	require.Equal(t, expectedStatusCode, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, expectedStatusCode, string(body)))

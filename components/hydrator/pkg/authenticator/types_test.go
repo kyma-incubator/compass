@@ -19,99 +19,158 @@ package authenticator_test
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
+	"github.com/stretchr/testify/require"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 )
 
 func TestValidateAttribute(t *testing.T) {
-	t.Run("When key is valid", func(t *testing.T) {
-		attribute := authenticator.Attribute{
-			Key:   "test-key",
-			Value: "test-value",
-		}
+	testCases := []struct {
+		name      string
+		attribute authenticator.Attribute
+		errorMsg  string
+	}{
+		{
+			name: "Success when attribute key is valid",
+			attribute: authenticator.Attribute{
+				Key:   "test-key",
+				Value: "test-value",
+			},
+		},
+		{
+			name: "Error when attribute key is empty",
+			attribute: authenticator.Attribute{
+				Key: "",
+			},
+			errorMsg: "attribute key cannot be empty",
+		},
+	}
 
-		// when
-		err := attribute.Validate()
-
-		// then
-		assert.NoError(t, err)
-	})
-
-	t.Run("When key is empty", func(t *testing.T) {
-		attribute := authenticator.Attribute{
-			Key:   "",
-			Value: "",
-		}
-
-		// when
-		err := attribute.Validate()
-
-		// then
-		assert.Error(t, err)
-	})
+	for _, ts := range testCases {
+		t.Run(ts.name, func(t *testing.T) {
+			err := ts.attribute.Validate()
+			if ts.errorMsg != "" {
+				require.Error(t, err)
+				require.Equal(t, err.Error(), ts.errorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
 }
 
 func TestValidateAttributes(t *testing.T) {
-	t.Run("When all attributes are valid", func(t *testing.T) {
-		attributes := authenticator.Attributes{
-			UniqueAttribute: authenticator.Attribute{
-				Key:   "test-unique-key",
-				Value: "test-value",
-			},
-			TenantAttribute: authenticator.Attribute{
-				Key: "test-tenant-key",
-			},
-			IdentityAttribute: authenticator.Attribute{
-				Key: "test-identity-key",
-			},
-		}
+	testUniqueKey := "test-unique-key"
+	testUniqueValue := "test-unique-value"
+	testIdentityKey := "test-identity-key"
 
-		// when
-		err := attributes.Validate()
-
-		// then
-		assert.NoError(t, err)
-	})
-
-	t.Run("When an attribute is invalid", func(t *testing.T) {
-		attributes := authenticator.Attributes{
-			UniqueAttribute: authenticator.Attribute{
-				Key:   "test-unique-key",
-				Value: "test-value",
+	testCases := []struct {
+		name       string
+		attributes authenticator.Attributes
+		errorMsg   string
+	}{
+		{
+			name: "Success when all attributes are valid",
+			attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key:   testUniqueKey,
+					Value: testUniqueValue,
+				},
+				IdentityAttribute: authenticator.Attribute{
+					Key: testIdentityKey,
+				},
 			},
-			TenantAttribute: authenticator.Attribute{
-				Key: "",
+		},
+		{
+			name: "Error when an attribute is invalid",
+			attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key:   testUniqueKey,
+					Value: testUniqueValue,
+				},
+				IdentityAttribute: authenticator.Attribute{},
 			},
-			IdentityAttribute: authenticator.Attribute{
-				Key: "test-identity-key",
+			errorMsg: "attribute key cannot be empty",
+		},
+		{
+			name: "Error when a tenant attribute is invalid",
+			attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key:   testUniqueKey,
+					Value: testUniqueValue,
+				},
+				IdentityAttribute: authenticator.Attribute{
+					Key: testIdentityKey,
+				},
+				TenantsAttribute: []authenticator.TenantAttribute{{}},
 			},
-		}
-
-		// when
-		err := attributes.Validate()
-
-		// then
-		assert.Error(t, err)
-	})
-
-	t.Run("When the unique attribute value is missing", func(t *testing.T) {
-		attributes := authenticator.Attributes{
-			UniqueAttribute: authenticator.Attribute{
-				Key: "test-unique-key",
+			errorMsg: "tenant attribute key cannot be empty",
+		},
+		{
+			name: "Error when the unique attribute value is missing",
+			attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key: testUniqueKey,
+				},
+				IdentityAttribute: authenticator.Attribute{
+					Key: testIdentityKey,
+				},
 			},
-			TenantAttribute: authenticator.Attribute{
-				Key: "test-tenant-key",
-			},
-			IdentityAttribute: authenticator.Attribute{
-				Key: "test-identity-key",
-			},
-		}
+			errorMsg: "unique attribute value cannot be empty",
+		},
+	}
 
-		// when
-		err := attributes.Validate()
+	for _, ts := range testCases {
+		t.Run(ts.name, func(t *testing.T) {
+			err := ts.attributes.Validate()
+			if ts.errorMsg != "" {
+				require.Error(t, err)
+				require.Equal(t, err.Error(), ts.errorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
 
-		// then
-		assert.Error(t, err)
-	})
+func TestValidateTenantAttribute(t *testing.T) {
+	tenantAttributeKey := "testTenantAttributeKey"
+	tenantAttributeKey2 := "testTenantAttributeKey2"
+
+	testCases := []struct {
+		name             string
+		tenantAttributes []authenticator.TenantAttribute
+		errorMsg         string
+	}{
+		{
+			name:             "Success with one tenant attribute",
+			tenantAttributes: []authenticator.TenantAttribute{{Key: tenantAttributeKey}},
+		},
+		{
+			name:             "Success with multiple tenant attributes",
+			tenantAttributes: []authenticator.TenantAttribute{{Key: tenantAttributeKey, Priority: 1}, {Key: tenantAttributeKey2, Priority: 2}},
+		},
+		{
+			name:             "Error when key property is missing from the tenant attributes",
+			tenantAttributes: []authenticator.TenantAttribute{{}},
+			errorMsg:         "tenant attribute key cannot be empty",
+		},
+		{
+			name:             "Error when tenant attribute priorities are incorrect",
+			tenantAttributes: []authenticator.TenantAttribute{{Key: tenantAttributeKey, Priority: 1}, {Key: tenantAttributeKey2, Priority: 1}},
+			errorMsg:         "tenant attribute priorities should be provided and should have unique values for each of them",
+		},
+	}
+
+	for _, ts := range testCases {
+		t.Run(ts.name, func(t *testing.T) {
+			err := authenticator.Validate(ts.tenantAttributes)
+			if ts.errorMsg != "" {
+				require.Error(t, err)
+				require.Equal(t, err.Error(), ts.errorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
 }

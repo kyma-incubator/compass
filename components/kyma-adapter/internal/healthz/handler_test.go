@@ -1,9 +1,11 @@
-package healthz
+package healthz_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/healthz"
 
 	"github.com/stretchr/testify/require"
 )
@@ -14,7 +16,7 @@ func TestNewHTTPHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(NewHTTPHandler())
+		handler := http.HandlerFunc(healthz.NewHTTPHandler())
 
 		handler.ServeHTTP(rr, req)
 

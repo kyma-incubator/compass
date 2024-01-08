@@ -20,13 +20,16 @@ func (_m *Service) GetToken(ctx context.Context, clientId string, consumerType s
 	ret := _m.Called(ctx, clientId, consumerType)
 
 	var r0 string
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (string, apperrors.AppError)); ok {
+		return rf(ctx, clientId, consumerType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
 		r0 = rf(ctx, clientId, consumerType)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 apperrors.AppError
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) apperrors.AppError); ok {
 		r1 = rf(ctx, clientId, consumerType)
 	} else {
@@ -36,4 +39,18 @@ func (_m *Service) GetToken(ctx context.Context, clientId string, consumerType s
 	}
 
 	return r0, r1
+}
+
+// NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewService(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *Service {
+	mock := &Service{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
 }

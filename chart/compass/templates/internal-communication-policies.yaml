@@ -77,8 +77,8 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: RequestAuthentication
 metadata:
-  name: kyma-internal-authn
-  namespace: kyma-system
+  name: ory-internal-authn
+  namespace: ory
 spec:
   selector:
     matchLabels:
@@ -94,8 +94,8 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: kyma-internal-authz
-  namespace: kyma-system
+  name: ory-internal-authz
+  namespace: ory
 spec:
   selector:
     matchLabels:
@@ -113,3 +113,10 @@ spec:
     - from: # or anything other only if the request is authenticated via RequestAuthentication
         - source:
             requestPrincipals: ['*']
+    - to:
+        # Allow access to health endpoint of Hydra, used by avs-bridge
+        - operation:
+            methods:
+            - GET
+            paths:
+            - /health*

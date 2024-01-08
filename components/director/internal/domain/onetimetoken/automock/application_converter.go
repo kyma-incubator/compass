@@ -30,13 +30,12 @@ func (_m *ApplicationConverter) ToGraphQL(in *model.Application) *graphql.Applic
 	return r0
 }
 
-type mockConstructorTestingTNewApplicationConverter interface {
+// NewApplicationConverter creates a new instance of ApplicationConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplicationConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplicationConverter creates a new instance of ApplicationConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationConverter(t mockConstructorTestingTNewApplicationConverter) *ApplicationConverter {
+}) *ApplicationConverter {
 	mock := &ApplicationConverter{}
 	mock.Mock.Test(t)
 

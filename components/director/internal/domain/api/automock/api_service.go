@@ -21,13 +21,16 @@ func (_m *APIService) CreateInApplication(ctx context.Context, appID string, in 
 	ret := _m.Called(ctx, appID, in, spec)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.APIDefinitionInput, *model.SpecInput) (string, error)); ok {
+		return rf(ctx, appID, in, spec)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.APIDefinitionInput, *model.SpecInput) string); ok {
 		r0 = rf(ctx, appID, in, spec)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.APIDefinitionInput, *model.SpecInput) error); ok {
 		r1 = rf(ctx, appID, in, spec)
 	} else {
@@ -42,13 +45,16 @@ func (_m *APIService) CreateInBundle(ctx context.Context, resourceType resource.
 	ret := _m.Called(ctx, resourceType, resourceID, bundleID, in, spec)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.APIDefinitionInput, *model.SpecInput) (string, error)); ok {
+		return rf(ctx, resourceType, resourceID, bundleID, in, spec)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.APIDefinitionInput, *model.SpecInput) string); ok {
 		r0 = rf(ctx, resourceType, resourceID, bundleID, in, spec)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, string, model.APIDefinitionInput, *model.SpecInput) error); ok {
 		r1 = rf(ctx, resourceType, resourceID, bundleID, in, spec)
 	} else {
@@ -77,6 +83,10 @@ func (_m *APIService) Get(ctx context.Context, id string) (*model.APIDefinition,
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.APIDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.APIDefinition, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.APIDefinition); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -85,7 +95,6 @@ func (_m *APIService) Get(ctx context.Context, id string) (*model.APIDefinition,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -100,6 +109,10 @@ func (_m *APIService) ListByApplicationID(ctx context.Context, appID string) ([]
 	ret := _m.Called(ctx, appID)
 
 	var r0 []*model.APIDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.APIDefinition, error)); ok {
+		return rf(ctx, appID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.APIDefinition); ok {
 		r0 = rf(ctx, appID)
 	} else {
@@ -108,7 +121,6 @@ func (_m *APIService) ListByApplicationID(ctx context.Context, appID string) ([]
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appID)
 	} else {
@@ -123,6 +135,10 @@ func (_m *APIService) ListByApplicationIDPage(ctx context.Context, appID string,
 	ret := _m.Called(ctx, appID, pageSize, cursor)
 
 	var r0 *model.APIDefinitionPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) (*model.APIDefinitionPage, error)); ok {
+		return rf(ctx, appID, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.APIDefinitionPage); ok {
 		r0 = rf(ctx, appID, pageSize, cursor)
 	} else {
@@ -131,7 +147,6 @@ func (_m *APIService) ListByApplicationIDPage(ctx context.Context, appID string,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
 		r1 = rf(ctx, appID, pageSize, cursor)
 	} else {
@@ -146,6 +161,10 @@ func (_m *APIService) ListFetchRequests(ctx context.Context, specIDs []string) (
 	ret := _m.Called(ctx, specIDs)
 
 	var r0 []*model.FetchRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]*model.FetchRequest, error)); ok {
+		return rf(ctx, specIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.FetchRequest); ok {
 		r0 = rf(ctx, specIDs)
 	} else {
@@ -154,7 +173,6 @@ func (_m *APIService) ListFetchRequests(ctx context.Context, specIDs []string) (
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
 		r1 = rf(ctx, specIDs)
 	} else {
@@ -192,13 +210,12 @@ func (_m *APIService) UpdateForApplication(ctx context.Context, id string, in mo
 	return r0
 }
 
-type mockConstructorTestingTNewAPIService interface {
+// NewAPIService creates a new instance of APIService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAPIService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewAPIService creates a new instance of APIService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAPIService(t mockConstructorTestingTNewAPIService) *APIService {
+}) *APIService {
 	mock := &APIService{}
 	mock.Mock.Test(t)
 

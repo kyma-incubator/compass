@@ -64,6 +64,8 @@ func (c *converter) ToGraphQL(in *model.ApplicationTemplate) (*graphql.Applicati
 		ApplicationInput:     gqlAppInput,
 		Placeholders:         c.placeholdersToGraphql(in.Placeholders),
 		AccessLevel:          graphql.ApplicationTemplateAccessLevel(in.AccessLevel),
+		CreatedAt:            graphql.Timestamp(in.CreatedAt),
+		UpdatedAt:            graphql.Timestamp(in.UpdatedAt),
 	}, nil
 }
 
@@ -217,6 +219,8 @@ func (c *converter) ToEntity(in *model.ApplicationTemplate) (*Entity, error) {
 		ApplicationInputJSON: in.ApplicationInputJSON,
 		PlaceholdersJSON:     placeholders,
 		AccessLevel:          string(in.AccessLevel),
+		CreatedAt:            in.CreatedAt,
+		UpdatedAt:            in.UpdatedAt,
 	}, nil
 }
 
@@ -239,6 +243,8 @@ func (c *converter) FromEntity(entity *Entity) (*model.ApplicationTemplate, erro
 		ApplicationInputJSON: entity.ApplicationInputJSON,
 		Placeholders:         placeholders,
 		AccessLevel:          model.ApplicationTemplateAccessLevel(entity.AccessLevel),
+		CreatedAt:            entity.CreatedAt,
+		UpdatedAt:            entity.UpdatedAt,
 	}, nil
 }
 

@@ -28,13 +28,12 @@ func (_m *GqlConverter) ToGraphQL(in model.AutomaticScenarioAssignment, targetTe
 	return r0
 }
 
-type mockConstructorTestingTNewGqlConverter interface {
+// NewGqlConverter creates a new instance of GqlConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewGqlConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewGqlConverter creates a new instance of GqlConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewGqlConverter(t mockConstructorTestingTNewGqlConverter) *GqlConverter {
+}) *GqlConverter {
 	mock := &GqlConverter{}
 	mock.Mock.Test(t)
 

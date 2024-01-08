@@ -19,7 +19,15 @@ type LabelService struct {
 func (_m *LabelService) GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error) {
 	ret := _m.Called(ctx, tenant, labelInput)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetLabel")
+	}
+
 	var r0 *model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.LabelInput) (*model.Label, error)); ok {
+		return rf(ctx, tenant, labelInput)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.LabelInput) *model.Label); ok {
 		r0 = rf(ctx, tenant, labelInput)
 	} else {
@@ -28,7 +36,6 @@ func (_m *LabelService) GetLabel(ctx context.Context, tenant string, labelInput 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, *model.LabelInput) error); ok {
 		r1 = rf(ctx, tenant, labelInput)
 	} else {
@@ -38,13 +45,12 @@ func (_m *LabelService) GetLabel(ctx context.Context, tenant string, labelInput 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewLabelService interface {
+// NewLabelService creates a new instance of LabelService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewLabelService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewLabelService creates a new instance of LabelService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewLabelService(t mockConstructorTestingTNewLabelService) *LabelService {
+}) *LabelService {
 	mock := &LabelService{}
 	mock.Mock.Test(t)
 

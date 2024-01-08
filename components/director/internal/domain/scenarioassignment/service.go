@@ -11,6 +11,7 @@ import (
 )
 
 // Repository missing godoc
+//
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Repository interface {
 	ListForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) ([]*model.AutomaticScenarioAssignment, error)
@@ -19,6 +20,7 @@ type Repository interface {
 }
 
 // ScenariosDefService missing godoc
+//
 //go:generate mockery --name=ScenariosDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ScenariosDefService interface {
 	GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error)

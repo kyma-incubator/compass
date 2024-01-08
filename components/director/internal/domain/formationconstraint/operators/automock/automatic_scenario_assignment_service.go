@@ -19,6 +19,10 @@ func (_m *AutomaticScenarioAssignmentService) ListForTargetTenant(ctx context.Co
 	ret := _m.Called(ctx, targetTenantInternalID)
 
 	var r0 []*model.AutomaticScenarioAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.AutomaticScenarioAssignment, error)); ok {
+		return rf(ctx, targetTenantInternalID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.AutomaticScenarioAssignment); ok {
 		r0 = rf(ctx, targetTenantInternalID)
 	} else {
@@ -27,7 +31,6 @@ func (_m *AutomaticScenarioAssignmentService) ListForTargetTenant(ctx context.Co
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, targetTenantInternalID)
 	} else {
@@ -37,13 +40,12 @@ func (_m *AutomaticScenarioAssignmentService) ListForTargetTenant(ctx context.Co
 	return r0, r1
 }
 
-type mockConstructorTestingTNewAutomaticScenarioAssignmentService interface {
+// NewAutomaticScenarioAssignmentService creates a new instance of AutomaticScenarioAssignmentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAutomaticScenarioAssignmentService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewAutomaticScenarioAssignmentService creates a new instance of AutomaticScenarioAssignmentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAutomaticScenarioAssignmentService(t mockConstructorTestingTNewAutomaticScenarioAssignmentService) *AutomaticScenarioAssignmentService {
+}) *AutomaticScenarioAssignmentService {
 	mock := &AutomaticScenarioAssignmentService{}
 	mock.Mock.Test(t)
 

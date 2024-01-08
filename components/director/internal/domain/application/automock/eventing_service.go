@@ -21,6 +21,10 @@ func (_m *EventingService) CleanupAfterUnregisteringApplication(ctx context.Cont
 	ret := _m.Called(ctx, appID)
 
 	var r0 *model.ApplicationEventingConfiguration
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.ApplicationEventingConfiguration, error)); ok {
+		return rf(ctx, appID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.ApplicationEventingConfiguration); ok {
 		r0 = rf(ctx, appID)
 	} else {
@@ -29,7 +33,6 @@ func (_m *EventingService) CleanupAfterUnregisteringApplication(ctx context.Cont
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
 		r1 = rf(ctx, appID)
 	} else {
@@ -44,6 +47,10 @@ func (_m *EventingService) GetForApplication(ctx context.Context, app model.Appl
 	ret := _m.Called(ctx, app)
 
 	var r0 *model.ApplicationEventingConfiguration
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.Application) (*model.ApplicationEventingConfiguration, error)); ok {
+		return rf(ctx, app)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.Application) *model.ApplicationEventingConfiguration); ok {
 		r0 = rf(ctx, app)
 	} else {
@@ -52,7 +59,6 @@ func (_m *EventingService) GetForApplication(ctx context.Context, app model.Appl
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.Application) error); ok {
 		r1 = rf(ctx, app)
 	} else {
@@ -62,13 +68,12 @@ func (_m *EventingService) GetForApplication(ctx context.Context, app model.Appl
 	return r0, r1
 }
 
-type mockConstructorTestingTNewEventingService interface {
+// NewEventingService creates a new instance of EventingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEventingService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEventingService creates a new instance of EventingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEventingService(t mockConstructorTestingTNewEventingService) *EventingService {
+}) *EventingService {
 	mock := &EventingService{}
 	mock.Mock.Test(t)
 

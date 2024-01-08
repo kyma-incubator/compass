@@ -1,7 +1,9 @@
 package graphql
 
 import (
+	"encoding/json"
 	"net/url"
+	"unsafe"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -17,11 +19,10 @@ var emptyApplicationLifecycleWebhookRequestObject = &webhook.ApplicationLifecycl
 }
 
 var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChangeInput{
-	Assignment: &webhook.FormationAssignment{
-		Value: "\"\"",
-	},
-	ReverseAssignment: &webhook.FormationAssignment{
-		Value: "\"\"",
+	Assignment:        &webhook.FormationAssignment{},
+	ReverseAssignment: &webhook.FormationAssignment{},
+	Formation: &model.Formation{
+		Error: json.RawMessage{},
 	},
 	ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 		ApplicationTemplate: &model.ApplicationTemplate{},
@@ -29,6 +30,9 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 		Tenant: &webhook.TenantWithLabels{
 			BusinessTenantMapping: &model.BusinessTenantMapping{},
 			Labels:                map[string]string{},
+		},
+		TrustDetails: &webhook.TrustDetails{
+			Subjects: []string{},
 		},
 	},
 	Application: &webhook.ApplicationWithLabels{
@@ -48,6 +52,9 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 			BusinessTenantMapping: &model.BusinessTenantMapping{},
 			Labels:                map[string]string{},
 		},
+		TrustDetails: &webhook.TrustDetails{
+			Subjects: []string{},
+		},
 	},
 	RuntimeContext: &webhook.RuntimeContextWithLabels{
 		RuntimeContext: &model.RuntimeContext{},
@@ -61,11 +68,10 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 }
 
 var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
-	Assignment: &webhook.FormationAssignment{
-		Value: "\"\"",
-	},
-	ReverseAssignment: &webhook.FormationAssignment{
-		Value: "\"\"",
+	Assignment:        &webhook.FormationAssignment{},
+	ReverseAssignment: &webhook.FormationAssignment{},
+	Formation: &model.Formation{
+		Error: json.RawMessage{},
 	},
 	SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 		ApplicationTemplate: &model.ApplicationTemplate{},
@@ -73,6 +79,9 @@ var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
 		Tenant: &webhook.TenantWithLabels{
 			BusinessTenantMapping: &model.BusinessTenantMapping{},
 			Labels:                map[string]string{},
+		},
+		TrustDetails: &webhook.TrustDetails{
+			Subjects: []string{},
 		},
 	},
 	SourceApplication: &webhook.ApplicationWithLabels{
@@ -91,6 +100,9 @@ var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
 		Tenant: &webhook.TenantWithLabels{
 			BusinessTenantMapping: &model.BusinessTenantMapping{},
 			Labels:                map[string]string{},
+		},
+		TrustDetails: &webhook.TrustDetails{
+			Subjects: []string{},
 		},
 	},
 	TargetApplication: &webhook.ApplicationWithLabels{
@@ -122,7 +134,7 @@ var webhookTemplateInputByType = map[WebhookType]webhook.TemplateInput{
 // Validate missing godoc
 func (i WebhookInput) Validate() error {
 	if err := validation.ValidateStruct(&i,
-		validation.Field(&i.Type, validation.Required, validation.In(WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeFormationLifecycle)),
+		validation.Field(&i.Type, validation.Required, validation.In(WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeOpenResourceDiscoveryStatic, WebhookTypeFormationLifecycle)),
 		validation.Field(&i.URL, is.URL, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.CorrelationIDKey, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.Mode, validation.In(WebhookModeSync, WebhookModeAsync, WebhookModeAsyncCallback), validation.When(i.Type == WebhookTypeConfigurationChanged || i.Type == WebhookTypeApplicationTenantMapping || i.Type == WebhookTypeFormationLifecycle, validation.In(WebhookModeSync, WebhookModeAsyncCallback)).Else(validation.NotIn(WebhookModeAsyncCallback))),
@@ -198,6 +210,12 @@ func (i WebhookInput) Validate() error {
 	}
 
 	return nil
+}
+
+// GetAddress returns the memory address of the Webhook in the form of an uninterpreted type(integer number)
+// Currently, it's used in some formation constraints input templates, so we could propagate the memory address to the formation constraints operators and later on to modify/update it.
+func (w *Webhook) GetAddress() uintptr {
+	return uintptr(unsafe.Pointer(w))
 }
 
 func isOutTemplateMandatory(webhookType WebhookType) bool {

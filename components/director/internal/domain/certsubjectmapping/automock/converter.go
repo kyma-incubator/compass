@@ -62,13 +62,12 @@ func (_m *Converter) ToGraphQL(in *model.CertSubjectMapping) *graphql.Certificat
 	return r0
 }
 
-type mockConstructorTestingTNewConverter interface {
+// NewConverter creates a new instance of Converter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewConverter creates a new instance of Converter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewConverter(t mockConstructorTestingTNewConverter) *Converter {
+}) *Converter {
 	mock := &Converter{}
 	mock.Mock.Test(t)
 

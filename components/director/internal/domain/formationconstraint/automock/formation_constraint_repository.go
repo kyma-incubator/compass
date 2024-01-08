@@ -50,6 +50,10 @@ func (_m *FormationConstraintRepository) Get(ctx context.Context, id string) (*m
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.FormationConstraint
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.FormationConstraint, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.FormationConstraint); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -58,7 +62,6 @@ func (_m *FormationConstraintRepository) Get(ctx context.Context, id string) (*m
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -73,6 +76,10 @@ func (_m *FormationConstraintRepository) ListAll(ctx context.Context) ([]*model.
 	ret := _m.Called(ctx)
 
 	var r0 []*model.FormationConstraint
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.FormationConstraint, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []*model.FormationConstraint); ok {
 		r0 = rf(ctx)
 	} else {
@@ -81,7 +88,6 @@ func (_m *FormationConstraintRepository) ListAll(ctx context.Context) ([]*model.
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -96,6 +102,10 @@ func (_m *FormationConstraintRepository) ListByIDs(ctx context.Context, formatio
 	ret := _m.Called(ctx, formationConstraintIDs)
 
 	var r0 []*model.FormationConstraint
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]*model.FormationConstraint, error)); ok {
+		return rf(ctx, formationConstraintIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.FormationConstraint); ok {
 		r0 = rf(ctx, formationConstraintIDs)
 	} else {
@@ -104,7 +114,6 @@ func (_m *FormationConstraintRepository) ListByIDs(ctx context.Context, formatio
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
 		r1 = rf(ctx, formationConstraintIDs)
 	} else {
@@ -119,6 +128,10 @@ func (_m *FormationConstraintRepository) ListByIDsAndGlobal(ctx context.Context,
 	ret := _m.Called(ctx, formationConstraintIDs)
 
 	var r0 []*model.FormationConstraint
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]*model.FormationConstraint, error)); ok {
+		return rf(ctx, formationConstraintIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.FormationConstraint); ok {
 		r0 = rf(ctx, formationConstraintIDs)
 	} else {
@@ -127,7 +140,6 @@ func (_m *FormationConstraintRepository) ListByIDsAndGlobal(ctx context.Context,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
 		r1 = rf(ctx, formationConstraintIDs)
 	} else {
@@ -142,6 +154,10 @@ func (_m *FormationConstraintRepository) ListMatchingFormationConstraints(ctx co
 	ret := _m.Called(ctx, formationConstraintIDs, location, details)
 
 	var r0 []*model.FormationConstraint
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string, pkgformationconstraint.JoinPointLocation, pkgformationconstraint.MatchingDetails) ([]*model.FormationConstraint, error)); ok {
+		return rf(ctx, formationConstraintIDs, location, details)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string, pkgformationconstraint.JoinPointLocation, pkgformationconstraint.MatchingDetails) []*model.FormationConstraint); ok {
 		r0 = rf(ctx, formationConstraintIDs, location, details)
 	} else {
@@ -150,7 +166,6 @@ func (_m *FormationConstraintRepository) ListMatchingFormationConstraints(ctx co
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string, pkgformationconstraint.JoinPointLocation, pkgformationconstraint.MatchingDetails) error); ok {
 		r1 = rf(ctx, formationConstraintIDs, location, details)
 	} else {
@@ -174,13 +189,12 @@ func (_m *FormationConstraintRepository) Update(ctx context.Context, _a1 *model.
 	return r0
 }
 
-type mockConstructorTestingTNewFormationConstraintRepository interface {
+// NewFormationConstraintRepository creates a new instance of FormationConstraintRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationConstraintRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationConstraintRepository creates a new instance of FormationConstraintRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationConstraintRepository(t mockConstructorTestingTNewFormationConstraintRepository) *FormationConstraintRepository {
+}) *FormationConstraintRepository {
 	mock := &FormationConstraintRepository{}
 	mock.Mock.Test(t)
 

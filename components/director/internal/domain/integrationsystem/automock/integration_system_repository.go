@@ -48,13 +48,16 @@ func (_m *IntegrationSystemRepository) Exists(ctx context.Context, id string) (b
 	ret := _m.Called(ctx, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
 		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -69,6 +72,10 @@ func (_m *IntegrationSystemRepository) Get(ctx context.Context, id string) (*mod
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.IntegrationSystem
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.IntegrationSystem, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.IntegrationSystem); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -77,7 +84,6 @@ func (_m *IntegrationSystemRepository) Get(ctx context.Context, id string) (*mod
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -92,13 +98,16 @@ func (_m *IntegrationSystemRepository) List(ctx context.Context, pageSize int, c
 	ret := _m.Called(ctx, pageSize, cursor)
 
 	var r0 model.IntegrationSystemPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, string) (model.IntegrationSystemPage, error)); ok {
+		return rf(ctx, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, int, string) model.IntegrationSystemPage); ok {
 		r0 = rf(ctx, pageSize, cursor)
 	} else {
 		r0 = ret.Get(0).(model.IntegrationSystemPage)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
 		r1 = rf(ctx, pageSize, cursor)
 	} else {
@@ -122,13 +131,12 @@ func (_m *IntegrationSystemRepository) Update(ctx context.Context, _a1 model.Int
 	return r0
 }
 
-type mockConstructorTestingTNewIntegrationSystemRepository interface {
+// NewIntegrationSystemRepository creates a new instance of IntegrationSystemRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewIntegrationSystemRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewIntegrationSystemRepository creates a new instance of IntegrationSystemRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewIntegrationSystemRepository(t mockConstructorTestingTNewIntegrationSystemRepository) *IntegrationSystemRepository {
+}) *IntegrationSystemRepository {
 	mock := &IntegrationSystemRepository{}
 	mock.Mock.Test(t)
 

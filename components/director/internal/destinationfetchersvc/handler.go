@@ -22,9 +22,12 @@ type handler struct {
 	config             HandlerConfig
 }
 
-//go:generate mockery --name=DestinationManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 // DestinationManager missing godoc
+//
+//go:generate mockery --name=DestinationManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DestinationManager interface {
+	IsTenantSubscribed(ctx context.Context, tenantID string) (bool, error)
+	GetSubscribedTenantIDs(ctx context.Context) ([]string, error)
 	SyncTenantDestinations(ctx context.Context, tenantID string) error
 	FetchDestinationsSensitiveData(ctx context.Context, tenantID string, destinationNames []string) ([]byte, error)
 }
@@ -44,6 +47,18 @@ func (h *handler) SyncTenantDestinations(writer http.ResponseWriter, request *ht
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to load tenant ID from request")
 		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	isTenantSubscribed, err := h.destinationManager.IsTenantSubscribed(ctx, tenantID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to validate tenant %q subscription", tenantID)
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !isTenantSubscribed {
+		log.C(ctx).Infof("Tenant %q is not subscribed", tenantID)
+		http.Error(writer, fmt.Sprintf("Tenant %q is not subscribed", tenantID), http.StatusInternalServerError)
 		return
 	}
 
@@ -69,6 +84,18 @@ func (h *handler) FetchDestinationsSensitiveData(writer http.ResponseWriter, req
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to fetch sensitive data for destinations")
 		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	isTenantSubscribed, err := h.destinationManager.IsTenantSubscribed(ctx, tenantID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to validate tenant %q subscription", tenantID)
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !isTenantSubscribed {
+		log.C(ctx).Infof("Tenant %q is not subscribed", tenantID)
+		http.Error(writer, fmt.Sprintf("Tenant %q is not subscribed", tenantID), http.StatusInternalServerError)
 		return
 	}
 

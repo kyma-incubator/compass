@@ -18,13 +18,16 @@ func (_m *Authenticator) Authenticate(_a0 context.Context) (string, error) {
 	ret := _m.Called(_a0)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (string, error)); ok {
+		return rf(_a0)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
 		r0 = rf(_a0)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(_a0)
 	} else {
@@ -39,20 +42,23 @@ func (_m *Authenticator) AuthenticateCertificate(_a0 context.Context) (string, s
 	ret := _m.Called(_a0)
 
 	var r0 string
+	var r1 string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context) (string, string, error)); ok {
+		return rf(_a0)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
 		r0 = rf(_a0)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 string
 	if rf, ok := ret.Get(1).(func(context.Context) string); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Get(1).(string)
 	}
 
-	var r2 error
 	if rf, ok := ret.Get(2).(func(context.Context) error); ok {
 		r2 = rf(_a0)
 	} else {
@@ -67,13 +73,16 @@ func (_m *Authenticator) AuthenticateToken(_a0 context.Context) (string, error) 
 	ret := _m.Called(_a0)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (string, error)); ok {
+		return rf(_a0)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
 		r0 = rf(_a0)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(_a0)
 	} else {
@@ -81,4 +90,18 @@ func (_m *Authenticator) AuthenticateToken(_a0 context.Context) (string, error) 
 	}
 
 	return r0, r1
+}
+
+// NewAuthenticator creates a new instance of Authenticator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAuthenticator(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *Authenticator {
+	mock := &Authenticator{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
 }

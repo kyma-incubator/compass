@@ -21,6 +21,10 @@ func (_m *WebhookService) EnrichWebhooksWithTenantMappingWebhooks(in []*graphql.
 	ret := _m.Called(in)
 
 	var r0 []*graphql.WebhookInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]*graphql.WebhookInput) ([]*graphql.WebhookInput, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func([]*graphql.WebhookInput) []*graphql.WebhookInput); ok {
 		r0 = rf(in)
 	} else {
@@ -29,7 +33,6 @@ func (_m *WebhookService) EnrichWebhooksWithTenantMappingWebhooks(in []*graphql.
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func([]*graphql.WebhookInput) error); ok {
 		r1 = rf(in)
 	} else {
@@ -44,6 +47,10 @@ func (_m *WebhookService) ListForApplicationTemplate(ctx context.Context, applic
 	ret := _m.Called(ctx, applicationTemplateID)
 
 	var r0 []*model.Webhook
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Webhook, error)); ok {
+		return rf(ctx, applicationTemplateID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Webhook); ok {
 		r0 = rf(ctx, applicationTemplateID)
 	} else {
@@ -52,7 +59,6 @@ func (_m *WebhookService) ListForApplicationTemplate(ctx context.Context, applic
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, applicationTemplateID)
 	} else {
@@ -62,13 +68,12 @@ func (_m *WebhookService) ListForApplicationTemplate(ctx context.Context, applic
 	return r0, r1
 }
 
-type mockConstructorTestingTNewWebhookService interface {
+// NewWebhookService creates a new instance of WebhookService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewWebhookService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewWebhookService creates a new instance of WebhookService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewWebhookService(t mockConstructorTestingTNewWebhookService) *WebhookService {
+}) *WebhookService {
 	mock := &WebhookService{}
 	mock.Mock.Test(t)
 

@@ -54,6 +54,7 @@ type BusinessTenantMappingInput struct {
 	Type           string `json:"type"`
 	Provider       string
 	LicenseType    *string `json:"licenseType"`
+	CustomerID     *string `json:"customerID"`
 }
 
 // MovedSubaccountMappingInput missing godoc

@@ -67,7 +67,7 @@ spec:
             value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
           - name: EXT_SVC_CLIENT_CERT_SECRET_NAME
             value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
-        image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-operations-controller:{{ .Values.global.images.operations_controller.version }}
+        image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.operations_controller.dir }}compass-operations-controller:{{ .Values.global.images.operations_controller.version }}
         name: {{ .Chart.Name }}
         ports:
           - name: metrics

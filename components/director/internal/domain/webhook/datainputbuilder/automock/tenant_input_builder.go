@@ -22,6 +22,10 @@ func (_m *TenantInputBuilder) GetTenantForApplicationTemplate(ctx context.Contex
 	ret := _m.Called(ctx, tenant, labels)
 
 	var r0 *webhook.TenantWithLabels
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]string) (*webhook.TenantWithLabels, error)); ok {
+		return rf(ctx, tenant, labels)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]string) *webhook.TenantWithLabels); ok {
 		r0 = rf(ctx, tenant, labels)
 	} else {
@@ -30,7 +34,6 @@ func (_m *TenantInputBuilder) GetTenantForApplicationTemplate(ctx context.Contex
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, map[string]string) error); ok {
 		r1 = rf(ctx, tenant, labels)
 	} else {
@@ -45,6 +48,10 @@ func (_m *TenantInputBuilder) GetTenantForObject(ctx context.Context, objectID s
 	ret := _m.Called(ctx, objectID, resourceType)
 
 	var r0 *webhook.TenantWithLabels
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, resource.Type) (*webhook.TenantWithLabels, error)); ok {
+		return rf(ctx, objectID, resourceType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, resource.Type) *webhook.TenantWithLabels); ok {
 		r0 = rf(ctx, objectID, resourceType)
 	} else {
@@ -53,7 +60,6 @@ func (_m *TenantInputBuilder) GetTenantForObject(ctx context.Context, objectID s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, resource.Type) error); ok {
 		r1 = rf(ctx, objectID, resourceType)
 	} else {
@@ -68,6 +74,10 @@ func (_m *TenantInputBuilder) GetTenantsForApplicationTemplates(ctx context.Cont
 	ret := _m.Called(ctx, tenant, labels, objectIDs)
 
 	var r0 map[string]*webhook.TenantWithLabels
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]map[string]string, []string) (map[string]*webhook.TenantWithLabels, error)); ok {
+		return rf(ctx, tenant, labels, objectIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]map[string]string, []string) map[string]*webhook.TenantWithLabels); ok {
 		r0 = rf(ctx, tenant, labels, objectIDs)
 	} else {
@@ -76,7 +86,6 @@ func (_m *TenantInputBuilder) GetTenantsForApplicationTemplates(ctx context.Cont
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, map[string]map[string]string, []string) error); ok {
 		r1 = rf(ctx, tenant, labels, objectIDs)
 	} else {
@@ -91,6 +100,10 @@ func (_m *TenantInputBuilder) GetTenantsForObjects(ctx context.Context, tenant s
 	ret := _m.Called(ctx, tenant, objectIDs, resourceType)
 
 	var r0 map[string]*webhook.TenantWithLabels
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, resource.Type) (map[string]*webhook.TenantWithLabels, error)); ok {
+		return rf(ctx, tenant, objectIDs, resourceType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, resource.Type) map[string]*webhook.TenantWithLabels); ok {
 		r0 = rf(ctx, tenant, objectIDs, resourceType)
 	} else {
@@ -99,7 +112,6 @@ func (_m *TenantInputBuilder) GetTenantsForObjects(ctx context.Context, tenant s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, resource.Type) error); ok {
 		r1 = rf(ctx, tenant, objectIDs, resourceType)
 	} else {
@@ -109,13 +121,12 @@ func (_m *TenantInputBuilder) GetTenantsForObjects(ctx context.Context, tenant s
 	return r0, r1
 }
 
-type mockConstructorTestingTNewTenantInputBuilder interface {
+// NewTenantInputBuilder creates a new instance of TenantInputBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTenantInputBuilder(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTenantInputBuilder creates a new instance of TenantInputBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantInputBuilder(t mockConstructorTestingTNewTenantInputBuilder) *TenantInputBuilder {
+}) *TenantInputBuilder {
 	mock := &TenantInputBuilder{}
 	mock.Mock.Test(t)
 

@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"net/http"
 	"os"
 
@@ -27,8 +28,6 @@ import (
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	"github.com/pkg/errors"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/utils"
 
@@ -121,7 +120,7 @@ func main() {
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(httpbroker.NewHTTPTransport(cfg.HttpClient)), "Authorization")),
 	}
 
-	certCache, err := certloader.StartCertLoader(ctx, certloader.Config{
+	certCache, err := credloader.StartCertLoader(ctx, credloader.CertConfig{
 		ExternalClientCertSecret:  cfg.ExternalClient.CertSecret,
 		ExternalClientCertCertKey: cfg.ExternalClient.CertKey,
 		ExternalClientCertKeyKey:  cfg.ExternalClient.KeyKey,

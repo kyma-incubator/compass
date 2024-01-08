@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -58,6 +60,9 @@ func NewClient(httpClient *http.Client, mtlsClient, extSvcMtlsClient *http.Clien
 func (c *client) Do(ctx context.Context, request WebhookRequest) (*webhook.Response, error) {
 	var err error
 	webhook := request.GetWebhook()
+	if webhook == nil {
+		return nil, errors.Errorf("the webhook entity cannot be nil")
+	}
 
 	if webhook.OutputTemplate == nil {
 		return nil, errors.Errorf("missing output template")
@@ -103,7 +108,7 @@ func (c *client) Do(ctx context.Context, request WebhookRequest) (*webhook.Respo
 
 	req.Header = headers
 
-	resp, err := c.executeRequestWithCorrectClient(ctx, req, webhook)
+	resp, err := c.executeRequestWithCorrectClient(ctx, req, *webhook)
 	if err != nil {
 		return nil, errors.Wrap(err, "while initially executing webhook")
 	}
@@ -144,6 +149,9 @@ func (c *client) Do(ctx context.Context, request WebhookRequest) (*webhook.Respo
 func (c *client) Poll(ctx context.Context, request *PollRequest) (*webhook.ResponseStatus, error) {
 	var err error
 	webhook := request.Webhook
+	if webhook == nil {
+		return nil, errors.Errorf("the webhook entity cannot be nil")
+	}
 
 	if webhook.StatusTemplate == nil {
 		return nil, errors.Errorf("missing status template")
@@ -166,7 +174,7 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*webhook.Respo
 
 	req.Header = headers
 
-	resp, err := c.executeRequestWithCorrectClient(ctx, req, webhook)
+	resp, err := c.executeRequestWithCorrectClient(ctx, req, *webhook)
 	if err != nil {
 		return nil, errors.Wrap(err, "while executing webhook for poll")
 	}
@@ -243,11 +251,16 @@ func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 				value = fmt.Sprintf("%v", v)
 			default:
 				marshal, err := json.Marshal(v)
-				marshal = bytes.ReplaceAll(marshal, []byte("\""), []byte("\\\""))
 				if err != nil {
 					return nil, err
 				}
-				value = string(marshal)
+				// The escaping is needed because the JSON response is used in go templates
+				// where the result is put into another string, and it should be in stringify JSON format
+				value = strconv.Quote(string(marshal))
+				// The returned result from strconv.Quote function above is double-quoted string
+				// that's why we remove the first and last quote from it.
+				value = strings.TrimPrefix(value, `"`)
+				value = strings.TrimSuffix(value, `"`)
 			}
 			body[k] = value
 		}

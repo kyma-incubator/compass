@@ -19,13 +19,16 @@ func (_m *Repository) GetForScenarioName(ctx context.Context, tenantID string, s
 	ret := _m.Called(ctx, tenantID, scenarioName)
 
 	var r0 model.AutomaticScenarioAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (model.AutomaticScenarioAssignment, error)); ok {
+		return rf(ctx, tenantID, scenarioName)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) model.AutomaticScenarioAssignment); ok {
 		r0 = rf(ctx, tenantID, scenarioName)
 	} else {
 		r0 = ret.Get(0).(model.AutomaticScenarioAssignment)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenantID, scenarioName)
 	} else {
@@ -40,6 +43,10 @@ func (_m *Repository) List(ctx context.Context, tenant string, pageSize int, cur
 	ret := _m.Called(ctx, tenant, pageSize, cursor)
 
 	var r0 *model.AutomaticScenarioAssignmentPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) (*model.AutomaticScenarioAssignmentPage, error)); ok {
+		return rf(ctx, tenant, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.AutomaticScenarioAssignmentPage); ok {
 		r0 = rf(ctx, tenant, pageSize, cursor)
 	} else {
@@ -48,7 +55,6 @@ func (_m *Repository) List(ctx context.Context, tenant string, pageSize int, cur
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
 		r1 = rf(ctx, tenant, pageSize, cursor)
 	} else {
@@ -63,6 +69,10 @@ func (_m *Repository) ListForTargetTenant(ctx context.Context, tenantID string, 
 	ret := _m.Called(ctx, tenantID, targetTenantID)
 
 	var r0 []*model.AutomaticScenarioAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]*model.AutomaticScenarioAssignment, error)); ok {
+		return rf(ctx, tenantID, targetTenantID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.AutomaticScenarioAssignment); ok {
 		r0 = rf(ctx, tenantID, targetTenantID)
 	} else {
@@ -71,7 +81,6 @@ func (_m *Repository) ListForTargetTenant(ctx context.Context, tenantID string, 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenantID, targetTenantID)
 	} else {
@@ -81,13 +90,12 @@ func (_m *Repository) ListForTargetTenant(ctx context.Context, tenantID string, 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewRepository interface {
+// NewRepository creates a new instance of Repository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRepository creates a new instance of Repository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRepository(t mockConstructorTestingTNewRepository) *Repository {
+}) *Repository {
 	mock := &Repository{}
 	mock.Mock.Test(t)
 

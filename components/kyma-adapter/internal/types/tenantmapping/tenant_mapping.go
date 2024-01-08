@@ -1,7 +1,10 @@
 package tenantmapping
 
 import (
+	"encoding/json"
 	"fmt"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
@@ -53,8 +56,8 @@ type ReceiverTenant struct {
 
 // AssignedTenant is a structure used to JSON decode the assignedTenant in the Body
 type AssignedTenant struct {
-	UclSystemTenantID string        `json:"uclSystemTenantId"`
-	Configuration     Configuration `json:"configuration"`
+	UclSystemTenantID string          `json:"uclSystemTenantId"`
+	Configuration     json.RawMessage `json:"configuration"`
 }
 
 // Body is a structure used to JSON decode the request body sent to the adapter handler
@@ -74,9 +77,14 @@ func (b Body) Validate() error {
 		return apperrors.NewInvalidDataError("Receiver tenant owner tenant must be provided.")
 	}
 
-	if b.GetApplicationConfiguration() != (Configuration{}) {
-		oauthCredentials := b.GetOauthCredentials()
-		basicCredentials := b.GetBasicCredentials()
+	applicationConfiguration, err := b.GetApplicationConfiguration()
+	if err != nil {
+		return apperrors.NewInvalidDataError("failed to get application configuration %s", err)
+	}
+
+	if applicationConfiguration != (Configuration{}) {
+		oauthCredentials := applicationConfiguration.GetOauthCredentials()
+		basicCredentials := applicationConfiguration.GetBasicCredentials()
 
 		if oauthCredentials != (Oauth2ClientCredentials{}) &&
 			(oauthCredentials.ClientID == "" || oauthCredentials.ClientSecret == "" || oauthCredentials.TokenServiceURL == "") {
@@ -92,14 +100,14 @@ func (b Body) Validate() error {
 	return nil
 }
 
-// GetOauthCredentials returns the Body oauth credentials
-func (b Body) GetOauthCredentials() Oauth2ClientCredentials {
-	return b.AssignedTenant.Configuration.Credentials.OutboundCommunication.Oauth2ClientCredentials
+// GetOauthCredentials returns the Configuration oauth credentials
+func (c Configuration) GetOauthCredentials() Oauth2ClientCredentials {
+	return c.Credentials.OutboundCommunication.Oauth2ClientCredentials
 }
 
-// GetBasicCredentials returns the Body basic credentials
-func (b Body) GetBasicCredentials() BasicAuthentication {
-	return b.AssignedTenant.Configuration.Credentials.OutboundCommunication.BasicAuthentication
+// GetBasicCredentials returns the Configuration basic credentials
+func (c Configuration) GetBasicCredentials() BasicAuthentication {
+	return c.Credentials.OutboundCommunication.BasicAuthentication
 }
 
 // GetRuntimeID returns the Body runtime ID
@@ -112,7 +120,16 @@ func (b Body) GetApplicationID() string {
 	return b.AssignedTenant.UclSystemTenantID
 }
 
-// GetApplicationConfiguration returns the Body application configuration
-func (b Body) GetApplicationConfiguration() Configuration {
-	return b.AssignedTenant.Configuration
+// GetApplicationConfiguration returns the Body application configuration as Configuration struct
+func (b Body) GetApplicationConfiguration() (Configuration, error) {
+	if b.AssignedTenant.Configuration == nil || string(b.AssignedTenant.Configuration) == "" || string(b.AssignedTenant.Configuration) == "{}" || string(b.AssignedTenant.Configuration) == "\"\"" || string(b.AssignedTenant.Configuration) == "null" {
+		return Configuration{}, nil
+	}
+
+	var applicationConfiguration Configuration
+	if err := json.Unmarshal(b.AssignedTenant.Configuration, &applicationConfiguration); err != nil {
+		return Configuration{}, errors.Wrapf(err, "while unmarshalling application configuration for application with ID: %q", b.AssignedTenant.Configuration)
+	}
+
+	return applicationConfiguration, nil
 }

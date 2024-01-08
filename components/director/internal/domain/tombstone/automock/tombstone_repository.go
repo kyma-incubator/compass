@@ -63,13 +63,16 @@ func (_m *TombstoneRepository) Exists(ctx context.Context, tenant string, id str
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -84,6 +87,10 @@ func (_m *TombstoneRepository) GetByID(ctx context.Context, tenant string, id st
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.Tombstone
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Tombstone, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Tombstone); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
@@ -92,7 +99,6 @@ func (_m *TombstoneRepository) GetByID(ctx context.Context, tenant string, id st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -107,6 +113,10 @@ func (_m *TombstoneRepository) GetByIDGlobal(ctx context.Context, id string) (*m
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Tombstone
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Tombstone, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Tombstone); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -115,7 +125,6 @@ func (_m *TombstoneRepository) GetByIDGlobal(ctx context.Context, id string) (*m
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -130,6 +139,10 @@ func (_m *TombstoneRepository) ListByResourceID(ctx context.Context, tenantID st
 	ret := _m.Called(ctx, tenantID, resourceID, resourceType)
 
 	var r0 []*model.Tombstone
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, resource.Type) ([]*model.Tombstone, error)); ok {
+		return rf(ctx, tenantID, resourceID, resourceType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, resource.Type) []*model.Tombstone); ok {
 		r0 = rf(ctx, tenantID, resourceID, resourceType)
 	} else {
@@ -138,7 +151,6 @@ func (_m *TombstoneRepository) ListByResourceID(ctx context.Context, tenantID st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, resource.Type) error); ok {
 		r1 = rf(ctx, tenantID, resourceID, resourceType)
 	} else {
@@ -176,13 +188,12 @@ func (_m *TombstoneRepository) UpdateGlobal(ctx context.Context, _a1 *model.Tomb
 	return r0
 }
 
-type mockConstructorTestingTNewTombstoneRepository interface {
+// NewTombstoneRepository creates a new instance of TombstoneRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTombstoneRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTombstoneRepository creates a new instance of TombstoneRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTombstoneRepository(t mockConstructorTestingTNewTombstoneRepository) *TombstoneRepository {
+}) *TombstoneRepository {
 	mock := &TombstoneRepository{}
 	mock.Mock.Test(t)
 

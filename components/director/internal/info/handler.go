@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 
@@ -36,7 +36,7 @@ type responseData struct {
 
 // NewInfoHandler returns handler which gives information about the CMP client certificate.
 // The issuer and the subject are dynamically loaded from the certificate itself (reading the cert from the cert cache every time the endpoint is hit) rather than using hardcoded env values.
-func NewInfoHandler(ctx context.Context, c Config, certCache certloader.Cache) func(writer http.ResponseWriter, request *http.Request) {
+func NewInfoHandler(ctx context.Context, c Config, certCache credloader.CertCache) func(writer http.ResponseWriter, request *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		responseData, err := prepareResponseData(c, certCache)
 		if err != nil {
@@ -53,7 +53,7 @@ func NewInfoHandler(ctx context.Context, c Config, certCache certloader.Cache) f
 	}
 }
 
-func prepareResponseData(c Config, certCache certloader.Cache) (responseData, error) {
+func prepareResponseData(c Config, certCache credloader.CertCache) (responseData, error) {
 	clientCert := certCache.Get()[c.ExternalClientCertSecretName]
 	if clientCert == nil || len(clientCert.Certificate) == 0 {
 		return responseData{}, errors.New("did not find client certificate in the cache")

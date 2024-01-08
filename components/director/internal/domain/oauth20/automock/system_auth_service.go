@@ -21,13 +21,16 @@ func (_m *SystemAuthService) CreateWithCustomID(ctx context.Context, id string, 
 	ret := _m.Called(ctx, id, objectType, objectID, authInput)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.SystemAuthReferenceObjectType, string, *internalmodel.AuthInput) (string, error)); ok {
+		return rf(ctx, id, objectType, objectID, authInput)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.SystemAuthReferenceObjectType, string, *internalmodel.AuthInput) string); ok {
 		r0 = rf(ctx, id, objectType, objectID, authInput)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.SystemAuthReferenceObjectType, string, *internalmodel.AuthInput) error); ok {
 		r1 = rf(ctx, id, objectType, objectID, authInput)
 	} else {
@@ -42,6 +45,10 @@ func (_m *SystemAuthService) GetByIDForObject(ctx context.Context, objectType mo
 	ret := _m.Called(ctx, objectType, authID)
 
 	var r0 *model.SystemAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType, string) (*model.SystemAuth, error)); ok {
+		return rf(ctx, objectType, authID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType, string) *model.SystemAuth); ok {
 		r0 = rf(ctx, objectType, authID)
 	} else {
@@ -50,7 +57,6 @@ func (_m *SystemAuthService) GetByIDForObject(ctx context.Context, objectType mo
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.SystemAuthReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, objectType, authID)
 	} else {
@@ -60,13 +66,12 @@ func (_m *SystemAuthService) GetByIDForObject(ctx context.Context, objectType mo
 	return r0, r1
 }
 
-type mockConstructorTestingTNewSystemAuthService interface {
+// NewSystemAuthService creates a new instance of SystemAuthService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSystemAuthService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSystemAuthService creates a new instance of SystemAuthService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSystemAuthService(t mockConstructorTestingTNewSystemAuthService) *SystemAuthService {
+}) *SystemAuthService {
 	mock := &SystemAuthService{}
 	mock.Mock.Test(t)
 

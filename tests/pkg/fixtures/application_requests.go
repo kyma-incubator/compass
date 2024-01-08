@@ -38,6 +38,12 @@ func FixSampleApplicationRegisterInputWithBaseURL(placeholder, baseURL string) g
 	return sampleInput
 }
 
+func FixSampleApplicationRegisterInputWithApplicationNamespace(placeholder, appNamespace string) graphql.ApplicationRegisterInput {
+	sampleInput := FixSampleApplicationRegisterInput(placeholder)
+	sampleInput.ApplicationNamespace = ptr.String(appNamespace)
+	return sampleInput
+}
+
 func FixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
 		Name:         placeholder,
@@ -351,6 +357,16 @@ func FixGetApplicationsRequestWithPagination() *gcli.Request {
 					}
 				}`,
 			testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForApplication())))
+}
+
+func FixGetApplicationsRequestWithPaginationMinimal() *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: applications {
+						%s
+					}
+				}`,
+			testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForApplicationMinimal())))
 }
 
 func FixApplicationsFilteredPageableRequest(labelFilterInGQL string, first int, after string) *gcli.Request {

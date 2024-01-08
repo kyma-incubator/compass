@@ -37,13 +37,12 @@ func (_m *Status) Error() error {
 	return r0
 }
 
-type mockConstructorTestingTNewStatus interface {
+// NewStatus creates a new instance of Status. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewStatus(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewStatus creates a new instance of Status. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewStatus(t mockConstructorTestingTNewStatus) *Status {
+}) *Status {
 	mock := &Status{}
 	mock.Mock.Test(t)
 

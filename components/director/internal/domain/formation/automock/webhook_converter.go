@@ -19,6 +19,10 @@ func (_m *WebhookConverter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, erro
 	ret := _m.Called(in)
 
 	var r0 *graphql.Webhook
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.Webhook) (*graphql.Webhook, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.Webhook) *graphql.Webhook); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +31,6 @@ func (_m *WebhookConverter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, erro
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.Webhook) error); ok {
 		r1 = rf(in)
 	} else {
@@ -42,6 +45,10 @@ func (_m *WebhookConverter) ToModel(in *graphql.Webhook) (*model.Webhook, error)
 	ret := _m.Called(in)
 
 	var r0 *model.Webhook
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*graphql.Webhook) (*model.Webhook, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*graphql.Webhook) *model.Webhook); ok {
 		r0 = rf(in)
 	} else {
@@ -50,7 +57,6 @@ func (_m *WebhookConverter) ToModel(in *graphql.Webhook) (*model.Webhook, error)
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*graphql.Webhook) error); ok {
 		r1 = rf(in)
 	} else {
@@ -60,13 +66,12 @@ func (_m *WebhookConverter) ToModel(in *graphql.Webhook) (*model.Webhook, error)
 	return r0, r1
 }
 
-type mockConstructorTestingTNewWebhookConverter interface {
+// NewWebhookConverter creates a new instance of WebhookConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewWebhookConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewWebhookConverter creates a new instance of WebhookConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewWebhookConverter(t mockConstructorTestingTNewWebhookConverter) *WebhookConverter {
+}) *WebhookConverter {
 	mock := &WebhookConverter{}
 	mock.Mock.Test(t)
 

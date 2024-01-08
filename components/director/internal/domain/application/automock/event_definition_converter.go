@@ -19,6 +19,10 @@ func (_m *EventDefinitionConverter) ToGraphQL(in *model.EventDefinition, spec *m
 	ret := _m.Called(in, spec, bundleRef)
 
 	var r0 *graphql.EventDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.EventDefinition, *model.Spec, *model.BundleReference) (*graphql.EventDefinition, error)); ok {
+		return rf(in, spec, bundleRef)
+	}
 	if rf, ok := ret.Get(0).(func(*model.EventDefinition, *model.Spec, *model.BundleReference) *graphql.EventDefinition); ok {
 		r0 = rf(in, spec, bundleRef)
 	} else {
@@ -27,7 +31,6 @@ func (_m *EventDefinitionConverter) ToGraphQL(in *model.EventDefinition, spec *m
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.EventDefinition, *model.Spec, *model.BundleReference) error); ok {
 		r1 = rf(in, spec, bundleRef)
 	} else {
@@ -37,13 +40,12 @@ func (_m *EventDefinitionConverter) ToGraphQL(in *model.EventDefinition, spec *m
 	return r0, r1
 }
 
-type mockConstructorTestingTNewEventDefinitionConverter interface {
+// NewEventDefinitionConverter creates a new instance of EventDefinitionConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEventDefinitionConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEventDefinitionConverter creates a new instance of EventDefinitionConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEventDefinitionConverter(t mockConstructorTestingTNewEventDefinitionConverter) *EventDefinitionConverter {
+}) *EventDefinitionConverter {
 	mock := &EventDefinitionConverter{}
 	mock.Mock.Test(t)
 

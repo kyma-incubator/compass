@@ -11,6 +11,7 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 
@@ -292,4 +293,18 @@ func Cleanup(t *testing.T, configmapCleaner *k8s.ConfigmapCleaner, certification
 	hash := GetCertificateHash(t, certificationResult.ClientCertificate)
 	err := configmapCleaner.CleanRevocationList(ctx, hash)
 	assert.NoError(t, err)
+}
+
+func SortSubject(subject string) string {
+	cn := fmt.Sprintf("CN=%s", cert.GetCommonName(subject))
+	o := fmt.Sprintf("O=%s", cert.GetOrganization(subject))
+	l := fmt.Sprintf("L=%s", cert.GetLocality(subject))
+	c := fmt.Sprintf("C=%s", cert.GetCountry(subject))
+	ous := cert.GetAllOrganizationalUnits(subject)
+	sort.Strings(ous)
+	for i, ou := range ous {
+		ous[i] = fmt.Sprintf("OU=%s", ou)
+	}
+
+	return strings.Join([]string{cn, strings.Join(ous, ", "), o, l, c}, ", ")
 }

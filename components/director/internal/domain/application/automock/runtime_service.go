@@ -21,6 +21,10 @@ func (_m *RuntimeService) GetLabel(ctx context.Context, runtimeID string, key st
 	ret := _m.Called(ctx, runtimeID, key)
 
 	var r0 *model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Label, error)); ok {
+		return rf(ctx, runtimeID, key)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Label); ok {
 		r0 = rf(ctx, runtimeID, key)
 	} else {
@@ -29,7 +33,6 @@ func (_m *RuntimeService) GetLabel(ctx context.Context, runtimeID string, key st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, runtimeID, key)
 	} else {
@@ -44,6 +47,10 @@ func (_m *RuntimeService) List(ctx context.Context, filter []*labelfilter.LabelF
 	ret := _m.Called(ctx, filter, pageSize, cursor)
 
 	var r0 *model.RuntimePage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) (*model.RuntimePage, error)); ok {
+		return rf(ctx, filter, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) *model.RuntimePage); ok {
 		r0 = rf(ctx, filter, pageSize, cursor)
 	} else {
@@ -52,7 +59,6 @@ func (_m *RuntimeService) List(ctx context.Context, filter []*labelfilter.LabelF
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, filter, pageSize, cursor)
 	} else {
@@ -62,13 +68,12 @@ func (_m *RuntimeService) List(ctx context.Context, filter []*labelfilter.LabelF
 	return r0, r1
 }
 
-type mockConstructorTestingTNewRuntimeService interface {
+// NewRuntimeService creates a new instance of RuntimeService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeService creates a new instance of RuntimeService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeService(t mockConstructorTestingTNewRuntimeService) *RuntimeService {
+}) *RuntimeService {
 	mock := &RuntimeService{}
 	mock.Mock.Test(t)
 

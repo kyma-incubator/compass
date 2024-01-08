@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for Default Tenant Mapping Handler
+name: default-tenant-mapping-handler
+version: 0.1.0

@@ -119,13 +119,6 @@ func (c *ExternalClient) getBody(reqData RequestData) (io.Reader, error) {
 		return nil, err
 	}
 
-	// temporary code that needs to be removed after T13B 2022 has reached Live
-	for idx, value := range reqData.ScenarioGroups {
-		if value == "ALL_COMMUNICATION_SCENARIOS" {
-			reqData.ScenarioGroups[idx] = "UNRESTRICTED"
-		}
-	}
-
 	if err := bodyTemplate.Execute(body, reqData); err != nil {
 		return nil, err
 	}

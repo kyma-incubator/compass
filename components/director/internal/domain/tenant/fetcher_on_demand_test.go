@@ -1,6 +1,7 @@
 package tenant_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -86,7 +87,7 @@ func TestFetchOnDemand(t *testing.T) {
 			svc := tenant.NewFetchOnDemandService(httpClient, config)
 
 			// WHEN
-			err := svc.FetchOnDemand(tenantID, testCase.ParentTenantID)
+			err := svc.FetchOnDemand(context.TODO(), tenantID, testCase.ParentTenantID)
 
 			// THEN
 			if len(testCase.ExpectedErrorMsg) > 0 {

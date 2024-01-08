@@ -39,6 +39,16 @@ func GetApplicationPage(t require.TestingT, ctx context.Context, gqlClient *gcli
 	return apps
 }
 
+func GetApplicationPageMinimal(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string) graphql.ApplicationPage {
+	getAppReq := FixGetApplicationsRequestWithPaginationMinimal()
+	apps := graphql.ApplicationPage{}
+
+	// THEN
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, getAppReq, &apps)
+	require.NoError(t, err)
+	return apps
+}
+
 func GetApplicationPageExt(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string) graphql.ApplicationPageExt {
 	getAppReq := FixGetApplicationsRequestWithPagination()
 	apps := graphql.ApplicationPageExt{}
@@ -79,6 +89,11 @@ func RegisterApplication(t require.TestingT, ctx context.Context, gqlClient *gcl
 
 func RegisterApplicationWithBaseURL(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, baseURL, tenant string) (graphql.ApplicationExt, error) {
 	in := FixSampleApplicationRegisterInputWithBaseURL("first", baseURL)
+	return RegisterApplicationFromInput(t, ctx, gqlClient, tenant, in)
+}
+
+func RegisterApplicationWithApplicationNamespace(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, appName, appNamespace, tenant string) (graphql.ApplicationExt, error) {
+	in := FixSampleApplicationRegisterInputWithApplicationNamespace(appName, appNamespace)
 	return RegisterApplicationFromInput(t, ctx, gqlClient, tenant, in)
 }
 
@@ -176,8 +191,28 @@ func CleanupApplication(t require.TestingT, ctx context.Context, gqlClient *gcli
 		}
 		return nil
 	}
-	err := retry.Do(deleteApplicationFunc, retry.Attempts(retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
+	err := retry.Do(deleteApplicationFunc,
+		retry.Attempts(retryAttempts),
+		retry.Delay(retryDelayMilliseconds*time.Millisecond),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "connection reset by peer")
+		}))
 	require.NoError(t, err)
+}
+
+func UnregisterApplicationExpectError(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, app *graphql.ApplicationExt, expectedErrorParts []string) {
+	if app == nil || app.Application.BaseEntity == nil || app.ID == "" {
+		return
+	}
+	deleteRequest := FixUnregisterApplicationRequest(app.ID)
+
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &app)
+	require.Error(t, err)
+	for _, expectedErrorPart := range expectedErrorParts {
+		require.Contains(t, err.Error(), expectedErrorPart)
+	}
 }
 
 func DeleteApplicationLabel(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id, labelKey string) {
@@ -254,6 +289,23 @@ func GenerateOneTimeTokenForApplication(t require.TestingT, ctx context.Context,
 	req := FixRequestOneTimeTokenForApplication(id)
 	oneTimeToken := graphql.OneTimeTokenForApplicationExt{}
 
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &oneTimeToken)
+	require.NoError(t, err)
+
+	require.NotEmpty(t, oneTimeToken.ConnectorURL)
+	require.NotEmpty(t, oneTimeToken.Token)
+	require.NotEmpty(t, oneTimeToken.Raw)
+	require.NotEmpty(t, oneTimeToken.RawEncoded)
+	require.NotEmpty(t, oneTimeToken.LegacyConnectorURL)
+	return oneTimeToken
+}
+
+func GenerateOneTimeTokenForApplicationWithCustomHeaders(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string, headers map[string]string) graphql.OneTimeTokenForApplicationExt {
+	req := FixRequestOneTimeTokenForApplication(id)
+	oneTimeToken := graphql.OneTimeTokenForApplicationExt{}
+	for key, value := range headers {
+		req.Header.Add(key, value)
+	}
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &oneTimeToken)
 	require.NoError(t, err)
 

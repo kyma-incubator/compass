@@ -18,13 +18,16 @@ func (_m *SubscriptionService) SubscribeTenantToRuntime(ctx context.Context, pro
 	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string) (bool, error)); ok {
+		return rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string) bool); ok {
 		r0 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string, string) error); ok {
 		r1 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID)
 	} else {
@@ -39,13 +42,16 @@ func (_m *SubscriptionService) UnsubscribeTenantFromRuntime(ctx context.Context,
 	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string) (bool, error)); ok {
+		return rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string) bool); ok {
 		r0 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string) error); ok {
 		r1 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID)
 	} else {
@@ -55,13 +61,12 @@ func (_m *SubscriptionService) UnsubscribeTenantFromRuntime(ctx context.Context,
 	return r0, r1
 }
 
-type mockConstructorTestingTNewSubscriptionService interface {
+// NewSubscriptionService creates a new instance of SubscriptionService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSubscriptionService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSubscriptionService creates a new instance of SubscriptionService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSubscriptionService(t mockConstructorTestingTNewSubscriptionService) *SubscriptionService {
+}) *SubscriptionService {
 	mock := &SubscriptionService{}
 	mock.Mock.Test(t)
 

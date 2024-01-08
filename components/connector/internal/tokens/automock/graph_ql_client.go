@@ -27,3 +27,17 @@ func (_m *GraphQLClient) Run(ctx context.Context, req *graphql.Request, resp int
 
 	return r0
 }
+
+// NewGraphQLClient creates a new instance of GraphQLClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewGraphQLClient(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *GraphQLClient {
+	mock := &GraphQLClient{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
+}

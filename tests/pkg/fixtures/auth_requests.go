@@ -106,7 +106,7 @@ func FixCertificateOAuthCredentialWithCustomClientID(clientID string) *graphql.C
 
 func FixDeprecatedVersion() *graphql.VersionInput {
 	return &graphql.VersionInput{
-		Value:           "v1",
+		Value:           "1.0.0",
 		Deprecated:      ptr.Bool(true),
 		ForRemoval:      ptr.Bool(false),
 		DeprecatedSince: ptr.String("v5"),
@@ -115,7 +115,7 @@ func FixDeprecatedVersion() *graphql.VersionInput {
 
 func FixDecommissionedVersion() *graphql.VersionInput {
 	return &graphql.VersionInput{
-		Value:      "v1",
+		Value:      "1.0.0",
 		Deprecated: ptr.Bool(true),
 		ForRemoval: ptr.Bool(true),
 	}
@@ -123,7 +123,7 @@ func FixDecommissionedVersion() *graphql.VersionInput {
 
 func FixActiveVersion() *graphql.VersionInput {
 	return &graphql.VersionInput{
-		Value:      "v2",
+		Value:      "2.0.0",
 		Deprecated: ptr.Bool(false),
 		ForRemoval: ptr.Bool(false),
 	}

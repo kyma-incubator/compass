@@ -61,13 +61,16 @@ func (_m *CertMappingRepository) Exists(ctx context.Context, id string) (bool, e
 	ret := _m.Called(ctx, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
 		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -82,6 +85,10 @@ func (_m *CertMappingRepository) Get(ctx context.Context, id string) (*model.Cer
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.CertSubjectMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.CertSubjectMapping, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.CertSubjectMapping); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -90,7 +97,6 @@ func (_m *CertMappingRepository) Get(ctx context.Context, id string) (*model.Cer
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -105,6 +111,10 @@ func (_m *CertMappingRepository) List(ctx context.Context, pageSize int, cursor 
 	ret := _m.Called(ctx, pageSize, cursor)
 
 	var r0 *model.CertSubjectMappingPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, string) (*model.CertSubjectMappingPage, error)); ok {
+		return rf(ctx, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, int, string) *model.CertSubjectMappingPage); ok {
 		r0 = rf(ctx, pageSize, cursor)
 	} else {
@@ -113,7 +123,6 @@ func (_m *CertMappingRepository) List(ctx context.Context, pageSize int, cursor 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
 		r1 = rf(ctx, pageSize, cursor)
 	} else {
@@ -137,13 +146,12 @@ func (_m *CertMappingRepository) Update(ctx context.Context, _a1 *model.CertSubj
 	return r0
 }
 
-type mockConstructorTestingTNewCertMappingRepository interface {
+// NewCertMappingRepository creates a new instance of CertMappingRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewCertMappingRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewCertMappingRepository creates a new instance of CertMappingRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewCertMappingRepository(t mockConstructorTestingTNewCertMappingRepository) *CertMappingRepository {
+}) *CertMappingRepository {
 	mock := &CertMappingRepository{}
 	mock.Mock.Test(t)
 

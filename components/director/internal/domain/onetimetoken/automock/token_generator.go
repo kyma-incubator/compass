@@ -14,13 +14,16 @@ func (_m *TokenGenerator) NewToken() (string, error) {
 	ret := _m.Called()
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (string, error)); ok {
+		return rf()
+	}
 	if rf, ok := ret.Get(0).(func() string); ok {
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func() error); ok {
 		r1 = rf()
 	} else {
@@ -30,13 +33,12 @@ func (_m *TokenGenerator) NewToken() (string, error) {
 	return r0, r1
 }
 
-type mockConstructorTestingTNewTokenGenerator interface {
+// NewTokenGenerator creates a new instance of TokenGenerator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTokenGenerator(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTokenGenerator creates a new instance of TokenGenerator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTokenGenerator(t mockConstructorTestingTNewTokenGenerator) *TokenGenerator {
+}) *TokenGenerator {
 	mock := &TokenGenerator{}
 	mock.Mock.Test(t)
 

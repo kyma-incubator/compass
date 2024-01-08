@@ -19,6 +19,10 @@ func (_m *BundleInstanceAuthConverter) MultipleToGraphQL(in []*model.BundleInsta
 	ret := _m.Called(in)
 
 	var r0 []*graphql.BundleInstanceAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]*model.BundleInstanceAuth) ([]*graphql.BundleInstanceAuth, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func([]*model.BundleInstanceAuth) []*graphql.BundleInstanceAuth); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +31,6 @@ func (_m *BundleInstanceAuthConverter) MultipleToGraphQL(in []*model.BundleInsta
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func([]*model.BundleInstanceAuth) error); ok {
 		r1 = rf(in)
 	} else {
@@ -42,6 +45,10 @@ func (_m *BundleInstanceAuthConverter) ToGraphQL(in *model.BundleInstanceAuth) (
 	ret := _m.Called(in)
 
 	var r0 *graphql.BundleInstanceAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.BundleInstanceAuth) (*graphql.BundleInstanceAuth, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.BundleInstanceAuth) *graphql.BundleInstanceAuth); ok {
 		r0 = rf(in)
 	} else {
@@ -50,7 +57,6 @@ func (_m *BundleInstanceAuthConverter) ToGraphQL(in *model.BundleInstanceAuth) (
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.BundleInstanceAuth) error); ok {
 		r1 = rf(in)
 	} else {
@@ -60,13 +66,12 @@ func (_m *BundleInstanceAuthConverter) ToGraphQL(in *model.BundleInstanceAuth) (
 	return r0, r1
 }
 
-type mockConstructorTestingTNewBundleInstanceAuthConverter interface {
+// NewBundleInstanceAuthConverter creates a new instance of BundleInstanceAuthConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewBundleInstanceAuthConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewBundleInstanceAuthConverter creates a new instance of BundleInstanceAuthConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBundleInstanceAuthConverter(t mockConstructorTestingTNewBundleInstanceAuthConverter) *BundleInstanceAuthConverter {
+}) *BundleInstanceAuthConverter {
 	mock := &BundleInstanceAuthConverter{}
 	mock.Mock.Test(t)
 

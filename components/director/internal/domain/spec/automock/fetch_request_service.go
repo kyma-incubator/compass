@@ -30,13 +30,12 @@ func (_m *FetchRequestService) HandleSpec(ctx context.Context, fr *model.FetchRe
 	return r0
 }
 
-type mockConstructorTestingTNewFetchRequestService interface {
+// NewFetchRequestService creates a new instance of FetchRequestService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFetchRequestService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFetchRequestService creates a new instance of FetchRequestService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFetchRequestService(t mockConstructorTestingTNewFetchRequestService) *FetchRequestService {
+}) *FetchRequestService {
 	mock := &FetchRequestService{}
 	mock.Mock.Test(t)
 

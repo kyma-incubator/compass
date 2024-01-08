@@ -12,9 +12,9 @@ type Credentials interface {
 }
 
 // NewCredentials creates new Credentials
-func NewCredentials(body tenantmapping.Body) Credentials {
-	basicCreds := body.GetBasicCredentials()
-	oauthCreds := body.GetOauthCredentials()
+func NewCredentials(configuration tenantmapping.Configuration) Credentials {
+	basicCreds := configuration.GetBasicCredentials()
+	oauthCreds := configuration.GetOauthCredentials()
 
 	var creds Credentials
 	if basicCreds.Username != "" {

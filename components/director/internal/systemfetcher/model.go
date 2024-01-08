@@ -65,14 +65,21 @@ func matchProps(data []byte, tm TemplateMapping) bool {
 		return false
 	}
 
-	templateMappingLabelValue, ok := lbl.Value.(string)
+	templateMappingLabelValues, ok := lbl.Value.([]interface{})
 	if !ok {
 		return false
 	}
 
-	if systemSourceKeyValue := gjson.GetBytes(data, SystemSourceKey).String(); systemSourceKeyValue != templateMappingLabelValue {
-		return false
+	for _, labelValue := range templateMappingLabelValues {
+		labelStr, ok := labelValue.(string)
+		if !ok {
+			continue
+		}
+
+		if systemSourceKeyValue := gjson.GetBytes(data, SystemSourceKey).String(); systemSourceKeyValue == labelStr {
+			return true
+		}
 	}
 
-	return true
+	return false
 }

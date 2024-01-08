@@ -6,6 +6,11 @@ import (
 )
 
 func FixFormationNotificationWebhookInput(webhookType graphql.WebhookType, mode graphql.WebhookMode, urlTemplate, inputTemplate, outputTemplate string) *graphql.WebhookInput {
+	var inputTmpl *string
+	if inputTemplate != "" {
+		inputTmpl = &inputTemplate
+	}
+
 	return &graphql.WebhookInput{
 		Type: webhookType,
 		Auth: &graphql.AuthInput{
@@ -13,7 +18,7 @@ func FixFormationNotificationWebhookInput(webhookType graphql.WebhookType, mode 
 		},
 		Mode:           &mode,
 		URLTemplate:    &urlTemplate,
-		InputTemplate:  &inputTemplate,
+		InputTemplate:  inputTmpl,
 		OutputTemplate: &outputTemplate,
 	}
 }

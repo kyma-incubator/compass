@@ -19,6 +19,10 @@ func (_m *SystemAuthService) ListForObject(ctx context.Context, objectType model
 	ret := _m.Called(ctx, objectType, objectID)
 
 	var r0 []model.SystemAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType, string) ([]model.SystemAuth, error)); ok {
+		return rf(ctx, objectType, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType, string) []model.SystemAuth); ok {
 		r0 = rf(ctx, objectType, objectID)
 	} else {
@@ -27,7 +31,6 @@ func (_m *SystemAuthService) ListForObject(ctx context.Context, objectType model
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.SystemAuthReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, objectType, objectID)
 	} else {
@@ -37,13 +40,12 @@ func (_m *SystemAuthService) ListForObject(ctx context.Context, objectType model
 	return r0, r1
 }
 
-type mockConstructorTestingTNewSystemAuthService interface {
+// NewSystemAuthService creates a new instance of SystemAuthService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSystemAuthService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSystemAuthService creates a new instance of SystemAuthService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSystemAuthService(t mockConstructorTestingTNewSystemAuthService) *SystemAuthService {
+}) *SystemAuthService {
 	mock := &SystemAuthService{}
 	mock.Mock.Test(t)
 

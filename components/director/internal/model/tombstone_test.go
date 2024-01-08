@@ -16,6 +16,7 @@ func TestTombstoneInput_ToTombstone(t *testing.T) {
 	appID := "bar"
 	appTemplateVersionID := "nar"
 	removalDate := "Sample"
+	description := "desc"
 
 	testCases := []struct {
 		Name         string
@@ -29,12 +30,14 @@ func TestTombstoneInput_ToTombstone(t *testing.T) {
 			Input: &model.TombstoneInput{
 				OrdID:       ordID,
 				RemovalDate: removalDate,
+				Description: &description,
 			},
 			Expected: &model.Tombstone{
 				ID:            id,
 				OrdID:         ordID,
 				ApplicationID: &appID,
 				RemovalDate:   removalDate,
+				Description:   &description,
 			},
 			ResourceType: resource.Application,
 			ResourceID:   appID,
@@ -44,12 +47,14 @@ func TestTombstoneInput_ToTombstone(t *testing.T) {
 			Input: &model.TombstoneInput{
 				OrdID:       ordID,
 				RemovalDate: removalDate,
+				Description: &description,
 			},
 			Expected: &model.Tombstone{
 				ID:                           id,
 				OrdID:                        ordID,
 				ApplicationTemplateVersionID: &appTemplateVersionID,
 				RemovalDate:                  removalDate,
+				Description:                  &description,
 			},
 			ResourceType: resource.ApplicationTemplateVersion,
 			ResourceID:   appTemplateVersionID,

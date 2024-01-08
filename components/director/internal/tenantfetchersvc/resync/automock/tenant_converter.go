@@ -44,13 +44,12 @@ func (_m *TenantConverter) ToGraphQLInput(_a0 model.BusinessTenantMappingInput) 
 	return r0
 }
 
-type mockConstructorTestingTNewTenantConverter interface {
+// NewTenantConverter creates a new instance of TenantConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTenantConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTenantConverter creates a new instance of TenantConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantConverter(t mockConstructorTestingTNewTenantConverter) *TenantConverter {
+}) *TenantConverter {
 	mock := &TenantConverter{}
 	mock.Mock.Test(t)
 

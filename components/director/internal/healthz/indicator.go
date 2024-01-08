@@ -10,6 +10,7 @@ import (
 )
 
 // Indicator missing godoc
+//
 //go:generate mockery --name=Indicator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Indicator interface {
 	Name() string
@@ -19,6 +20,7 @@ type Indicator interface {
 }
 
 // Status missing godoc
+//
 //go:generate mockery --name=Status --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Status interface {
 	Error() error

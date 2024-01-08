@@ -2,7 +2,7 @@
 Part of this file is copied from https://github.com/vektah/gqlparser/blob/master/formatter/formatter.go.
 Below you can find its licence.
 
-Copyright (c) 2018 Adam Scarr
+# Copyright (c) 2018 Adam Scarr
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

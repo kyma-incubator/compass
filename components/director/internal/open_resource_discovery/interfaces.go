@@ -2,7 +2,9 @@ package ord
 
 import (
 	"context"
-	"net/http"
+	"sync"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -15,6 +17,7 @@ import (
 //
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
+	GetByIDAndWebhookTypeGlobal(ctx context.Context, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error)
 	ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error)
 	ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error)
 	ListForApplicationGlobal(ctx context.Context, applicationID string) ([]*model.Webhook, error)
@@ -29,6 +32,7 @@ type WebhookService interface {
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
+	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
 }
@@ -56,7 +60,7 @@ type BundleReferenceService interface {
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, bundleID, packageID *string, in model.APIDefinitionInput, spec []*model.SpecInput, targetURLsPerBundle map[string]string, apiHash uint64, defaultBundleID string) (string, error)
-	UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundle map[string]string, defaultTargetURLPerBundleToBeCreated map[string]string, bundleIDsToBeDeleted []string, apiHash uint64, defaultBundleID string) error
+	UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, packageID *string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundle map[string]string, defaultTargetURLPerBundleToBeCreated map[string]string, bundleIDsToBeDeleted []string, apiHash uint64, defaultBundleID string) error
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.APIDefinition, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.APIDefinition, error)
@@ -67,10 +71,56 @@ type APIService interface {
 //go:generate mockery --name=EventService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string, eventHash uint64, defaultBundleID string) (string, error)
-	UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error
+	UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, packageID *string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.EventDefinition, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.EventDefinition, error)
+}
+
+// EntityTypeService is responsible for the service-layer Entity Type operations.
+//
+//go:generate mockery --name=EntityTypeService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type EntityTypeService interface {
+	ListByApplicationID(ctx context.Context, appID string) ([]*model.EntityType, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.EntityType, error)
+}
+
+// CapabilityService is responsible for the service-layer Capability operations.
+//
+//go:generate mockery --name=CapabilityService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type CapabilityService interface {
+	ListByApplicationID(ctx context.Context, appID string) ([]*model.Capability, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Capability, error)
+}
+
+// IntegrationDependencyService is responsible for the service-layer IntegrationDependency operations.
+//
+//go:generate mockery --name=IntegrationDependencyService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type IntegrationDependencyService interface {
+	ListByApplicationID(ctx context.Context, appID string) ([]*model.IntegrationDependency, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.IntegrationDependency, error)
+}
+
+// IntegrationDependencyProcessor is responsible for processing of integration dependency entities.
+//
+//go:generate mockery --name=IntegrationDependencyProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type IntegrationDependencyProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, packagesFromDB []*model.Package, integrationDependencies []*model.IntegrationDependencyInput, resourceHashes map[string]uint64) ([]*model.IntegrationDependency, error)
+}
+
+// DataProductProcessor is responsible for processing of data product entities.
+//
+//go:generate mockery --name=DataProductProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type DataProductProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, packagesFromDB []*model.Package, dataProducts []*model.DataProductInput, resourceHashes map[string]uint64) ([]*model.DataProduct, error)
+}
+
+// DataProductService is responsible for the service-layer DataProduct operations.
+//
+//go:generate mockery --name=DataProductService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type DataProductService interface {
+	ListByApplicationID(ctx context.Context, appID string) ([]*model.DataProduct, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.DataProduct, error)
 }
 
 // SpecService is responsible for the service-layer Specification operations.
@@ -93,7 +143,7 @@ type SpecService interface {
 //
 //go:generate mockery --name=FetchRequestService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestService interface {
-	FetchSpec(ctx context.Context, fr *model.FetchRequest, headers http.Header) (*string, *model.FetchRequestStatus)
+	FetchSpec(ctx context.Context, fr *model.FetchRequest, headers *sync.Map) (*string, *model.FetchRequestStatus)
 	Update(ctx context.Context, fr *model.FetchRequest) error
 	UpdateGlobal(ctx context.Context, fr *model.FetchRequest) error
 }
@@ -102,22 +152,8 @@ type FetchRequestService interface {
 //
 //go:generate mockery --name=PackageService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type PackageService interface {
-	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.PackageInput, pkgHash uint64) (string, error)
-	Update(ctx context.Context, resourceType resource.Type, id string, in model.PackageInput, pkgHash uint64) error
-	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Package, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Package, error)
-}
-
-// ProductService is responsible for the service-layer Product operations.
-//
-//go:generate mockery --name=ProductService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type ProductService interface {
-	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.ProductInput) (string, error)
-	Update(ctx context.Context, resourceType resource.Type, id string, in model.ProductInput) error
-	Delete(ctx context.Context, resourceType resource.Type, id string) error
-	ListByApplicationID(ctx context.Context, appID string) ([]*model.Product, error)
-	ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Product, error)
 }
 
 // GlobalProductService is responsible for the service-layer operations for Global Product (with NULL app_id) without tenant isolation.
@@ -130,17 +166,6 @@ type GlobalProductService interface {
 	ListGlobal(ctx context.Context) ([]*model.Product, error)
 }
 
-// VendorService is responsible for the service-layer Vendor operations.
-//
-//go:generate mockery --name=VendorService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type VendorService interface {
-	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.VendorInput) (string, error)
-	Update(ctx context.Context, resourceType resource.Type, id string, in model.VendorInput) error
-	Delete(ctx context.Context, resourceType resource.Type, id string) error
-	ListByApplicationID(ctx context.Context, appID string) ([]*model.Vendor, error)
-	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Vendor, error)
-}
-
 // GlobalVendorService is responsible for the service-layer operations for Global Vendors (with NULL app_id) without tenant isolation.
 //
 //go:generate mockery --name=GlobalVendorService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -151,14 +176,67 @@ type GlobalVendorService interface {
 	ListGlobal(ctx context.Context) ([]*model.Vendor, error)
 }
 
-// TombstoneService is responsible for the service-layer Tombstone operations.
+// TombstoneProcessor is responsible for processing of tombstone entities.
 //
-//go:generate mockery --name=TombstoneService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type TombstoneService interface {
-	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.TombstoneInput) (string, error)
-	Update(ctx context.Context, resourceType resource.Type, id string, in model.TombstoneInput) error
-	ListByApplicationID(ctx context.Context, appID string) ([]*model.Tombstone, error)
-	ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Tombstone, error)
+//go:generate mockery --name=TombstoneProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TombstoneProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error)
+}
+
+// VendorProcessor is responsible for processing of vendor entities.
+//
+//go:generate mockery --name=VendorProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type VendorProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, vendors []*model.VendorInput) ([]*model.Vendor, error)
+}
+
+// ProductProcessor is responsible for processing of product entities.
+//
+//go:generate mockery --name=ProductProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ProductProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, products []*model.ProductInput) ([]*model.Product, error)
+}
+
+// PackageProcessor is responsible for processing of package entities.
+//
+//go:generate mockery --name=PackageProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type PackageProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, packages []*model.PackageInput, resourceHashes map[string]uint64) ([]*model.Package, error)
+}
+
+// EntityTypeProcessor is responsible for processing of entity type entities.
+//
+//go:generate mockery --name=EntityTypeProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type EntityTypeProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, entityTypes []*model.EntityTypeInput, packagesFromDB []*model.Package, resourceHashes map[string]uint64) ([]*model.EntityType, error)
+}
+
+// EventProcessor is responsible for processing of event entities.
+//
+//go:generate mockery --name=EventProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type EventProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, events []*model.EventDefinitionInput, resourceHashes map[string]uint64) ([]*model.EventDefinition, []*processor.OrdFetchRequest, error)
+}
+
+// APIProcessor is responsible for processing of api entities.
+//
+//go:generate mockery --name=APIProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type APIProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apis []*model.APIDefinitionInput, resourceHashes map[string]uint64) ([]*model.APIDefinition, []*processor.OrdFetchRequest, error)
+}
+
+// CapabilityProcessor is responsible for processing of capability entities.
+//
+//go:generate mockery --name=CapabilityProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type CapabilityProcessor interface {
+	Process(ctx context.Context, resourceType resource.Type, resourceID string, packagesFromDB []*model.Package, capabilities []*model.CapabilityInput, resourceHashes map[string]uint64) ([]*model.Capability, []*processor.OrdFetchRequest, error)
+}
+
+// TombstonedResourcesDeleter is responsible for deleting all tombstoned resources.
+//
+//go:generate mockery --name=TombstonedResourcesDeleter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TombstonedResourcesDeleter interface {
+	Delete(ctx context.Context, resourceType resource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, entityTypesFromDB []*model.EntityType, capabilitiesFromDB []*model.Capability, integrationDependenciesFromDB []*model.IntegrationDependency, dataProductsFromDB []*model.DataProduct, tombstonesFromDB []*model.Tombstone, fetchRequests []*processor.OrdFetchRequest) ([]*processor.OrdFetchRequest, error)
 }
 
 // TenantService missing godoc

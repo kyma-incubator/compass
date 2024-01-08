@@ -26,6 +26,8 @@ func TestRepository_Create(t *testing.T) {
 	apiFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.APISpecFetchRequestReference)
 	eventFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.EventSpecFetchRequestReference)
 	eventFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.EventSpecFetchRequestReference)
+	capabilityFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.CapabilitySpecFetchRequestReference)
+	capabilityFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.CapabilitySpecFetchRequestReference)
 	docFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.DocumentFetchRequestReference)
 	docFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.DocumentFetchRequestReference)
 
@@ -89,6 +91,36 @@ func TestRepository_Create(t *testing.T) {
 		TenantID:            tenantID,
 	}
 
+	capabilityFRSuite := testdb.RepoCreateTestSuite{
+		Name: "Create Capability FR",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta("SELECT 1 FROM capability_specifications_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Args:     []driver.Value{tenantID, refID, true},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+			{
+				Query:       regexp.QuoteMeta("INSERT INTO public.fetch_requests ( id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"),
+				Args:        []driver.Value{givenID(), sql.NullString{}, "foo.bar", capabilityFREntity.Auth, capabilityFREntity.Mode, capabilityFREntity.Filter, capabilityFREntity.StatusCondition, capabilityFREntity.StatusMessage, capabilityFREntity.StatusTimestamp, refID},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		ModelEntity:         capabilityFRModel,
+		DBEntity:            capabilityFREntity,
+		NilModelEntity:      nilFrModel,
+		TenantID:            tenantID,
+	}
+
 	docFRSuite := testdb.RepoCreateTestSuite{
 		Name: "Create Doc FR",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
@@ -121,6 +153,7 @@ func TestRepository_Create(t *testing.T) {
 
 	apiFRSuite.Run(t)
 	eventFRSuite.Run(t)
+	capabilityFRSuite.Run(t)
 	docFRSuite.Run(t)
 }
 
@@ -129,6 +162,9 @@ func TestRepository_CreateGlobal(t *testing.T) {
 	var nilFrModel *model.FetchRequest
 	apiFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.APISpecFetchRequestReference)
 	apiFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.APISpecFetchRequestReference)
+
+	capabilityFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.CapabilitySpecFetchRequestReference)
+	capabilityFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.CapabilitySpecFetchRequestReference)
 
 	apiFRSuite := testdb.RepoCreateTestSuite{
 		Name: "Create API FR",
@@ -150,7 +186,28 @@ func TestRepository_CreateGlobal(t *testing.T) {
 		MethodName:          "CreateGlobal",
 	}
 
+	capabilityFRSuite := testdb.RepoCreateTestSuite{
+		Name: "Create Capability FR Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:       regexp.QuoteMeta("INSERT INTO public.fetch_requests ( id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"),
+				Args:        []driver.Value{givenID(), sql.NullString{}, "foo.bar", capabilityFREntity.Auth, capabilityFREntity.Mode, capabilityFREntity.Filter, capabilityFREntity.StatusCondition, capabilityFREntity.StatusMessage, capabilityFREntity.StatusTimestamp, refID},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		ModelEntity:         capabilityFRModel,
+		DBEntity:            capabilityFREntity,
+		NilModelEntity:      nilFrModel,
+		IsGlobal:            true,
+		MethodName:          "CreateGlobal",
+	}
+
 	apiFRSuite.Run(t)
+	capabilityFRSuite.Run(t)
 }
 
 func TestRepository_Update(t *testing.T) {
@@ -160,6 +217,8 @@ func TestRepository_Update(t *testing.T) {
 	apiFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.APISpecFetchRequestReference)
 	eventFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.EventSpecFetchRequestReference)
 	eventFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.EventSpecFetchRequestReference)
+	capabilityFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.CapabilitySpecFetchRequestReference)
+	capabilityFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.CapabilitySpecFetchRequestReference)
 	docFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.DocumentFetchRequestReference)
 	docFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.DocumentFetchRequestReference)
 
@@ -207,6 +266,28 @@ func TestRepository_Update(t *testing.T) {
 
 	eventFRSuite.Run(t)
 
+	capabilityFRSuite := testdb.RepoUpdateTestSuite{
+		Name: "Update Capability Fetch Request",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`UPDATE public.fetch_requests SET status_condition = ?, status_message = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM capability_specifications_fetch_requests_tenants WHERE tenant_id = ? AND owner = true))`),
+				Args:          []driver.Value{capabilityFREntity.StatusCondition, capabilityFREntity.StatusMessage, capabilityFREntity.StatusTimestamp, givenID(), tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		ModelEntity:         capabilityFRModel,
+		DBEntity:            capabilityFREntity,
+		NilModelEntity:      nilFrModel,
+		TenantID:            tenantID,
+	}
+
+	capabilityFRSuite.Run(t)
+
 	docFRSuite := testdb.RepoUpdateTestSuite{
 		Name: "Update Document Fetch Request",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
@@ -235,6 +316,8 @@ func TestRepository_UpdateGlobal(t *testing.T) {
 	var nilFrModel *model.FetchRequest
 	apiFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.APISpecFetchRequestReference)
 	apiFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.APISpecFetchRequestReference)
+	capabilityFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.CapabilitySpecFetchRequestReference)
+	capabilityFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.CapabilitySpecFetchRequestReference)
 
 	apiFRSuite := testdb.RepoUpdateTestSuite{
 		Name: "Update API Fetch Request",
@@ -257,7 +340,29 @@ func TestRepository_UpdateGlobal(t *testing.T) {
 		UpdateMethodName:    "UpdateGlobal",
 	}
 
+	capabilityFRSuite := testdb.RepoUpdateTestSuite{
+		Name: "Update Capability Fetch Request",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`UPDATE public.fetch_requests SET status_condition = ?, status_message = ?, status_timestamp = ? WHERE id = ?`),
+				Args:          []driver.Value{capabilityFREntity.StatusCondition, capabilityFREntity.StatusMessage, capabilityFREntity.StatusTimestamp, givenID()},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		ModelEntity:         capabilityFRModel,
+		DBEntity:            capabilityFREntity,
+		NilModelEntity:      nilFrModel,
+		IsGlobal:            true,
+		UpdateMethodName:    "UpdateGlobal",
+	}
+
 	apiFRSuite.Run(t)
+	capabilityFRSuite.Run(t)
 }
 
 func TestRepository_GetByReferenceObjectID(t *testing.T) {
@@ -266,6 +371,8 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 	apiFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.APISpecFetchRequestReference)
 	eventFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.EventSpecFetchRequestReference)
 	eventFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.EventSpecFetchRequestReference)
+	capabilityFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.CapabilitySpecFetchRequestReference)
+	capabilityFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.CapabilitySpecFetchRequestReference)
 	docFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.DocumentFetchRequestReference)
 	docFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.DocumentFetchRequestReference)
 
@@ -331,6 +438,37 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 		MethodName:              "GetByReferenceObjectID",
 	}
 
+	capabilityFRSuite := testdb.RepoGetTestSuite{
+		Name: "Get Fetch Request by Capability ReferenceObjectID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE spec_id = $1 AND (id IN (SELECT id FROM capability_specifications_fetch_requests_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{refID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixColumns()).
+							AddRow(givenID(), capabilityFREntity.DocumentID, "foo.bar", capabilityFREntity.Auth, capabilityFREntity.Mode, capabilityFREntity.Filter, capabilityFREntity.StatusCondition, capabilityFREntity.StatusMessage, capabilityFREntity.StatusTimestamp, capabilityFREntity.SpecID),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixColumns()),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:     fetchrequest.NewRepository,
+		ExpectedModelEntity:     capabilityFRModel,
+		ExpectedDBEntity:        capabilityFREntity,
+		MethodArgs:              []interface{}{tenantID, model.CapabilitySpecFetchRequestReference, refID},
+		AdditionalConverterArgs: []interface{}{model.CapabilitySpecFetchRequestReference},
+		MethodName:              "GetByReferenceObjectID",
+	}
+
 	docFRSuite := testdb.RepoGetTestSuite{
 		Name: "Get Fetch Request by Document ReferenceObjectID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
@@ -364,6 +502,7 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 
 	apiFRSuite.Run(t)
 	eventFRSuite.Run(t)
+	capabilityFRSuite.Run(t)
 	docFRSuite.Run(t)
 
 	// Additional tests
@@ -416,6 +555,23 @@ func TestRepository_Delete(t *testing.T) {
 		MethodArgs:          []interface{}{tenantID, givenID(), model.EventSpecFetchRequestReference},
 	}
 
+	capabilityFRSuite := testdb.RepoDeleteTestSuite{
+		Name: "Capability Fetch Request Delete",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE id = $1 AND (id IN (SELECT id FROM capability_specifications_fetch_requests_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{givenID(), tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		MethodArgs:          []interface{}{tenantID, givenID(), model.CapabilitySpecFetchRequestReference},
+	}
+
 	docFRSuite := testdb.RepoDeleteTestSuite{
 		Name: "Documents Fetch Request Delete",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
@@ -435,6 +591,7 @@ func TestRepository_Delete(t *testing.T) {
 
 	apiFRSuite.Run(t)
 	eventFRSuite.Run(t)
+	capabilityFRSuite.Run(t)
 	docFRSuite.Run(t)
 }
 
@@ -477,6 +634,25 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 		IsDeleteMany:        true,
 	}
 
+	capabilityFRSuite := testdb.RepoDeleteTestSuite{
+		Name: "Capability Fetch Request Delete",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE spec_id = $1 AND (id IN (SELECT id FROM capability_specifications_fetch_requests_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{refID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		MethodArgs:          []interface{}{tenantID, model.CapabilitySpecFetchRequestReference, refID},
+		MethodName:          "DeleteByReferenceObjectID",
+		IsDeleteMany:        true,
+	}
+
 	docFRSuite := testdb.RepoDeleteTestSuite{
 		Name: "Documents Fetch Request Delete",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
@@ -498,6 +674,7 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 
 	apiFRSuite.Run(t)
 	eventFRSuite.Run(t)
+	capabilityFRSuite.Run(t)
 	docFRSuite.Run(t)
 }
 
@@ -542,6 +719,26 @@ func TestRepository_DeleteByReferenceObjectIDGlobal(t *testing.T) {
 		IsGlobal:            true,
 	}
 
+	capabilityFRSuite := testdb.RepoDeleteTestSuite{
+		Name: "Capability Fetch Request Delete",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE spec_id = $1`),
+				Args:          []driver.Value{refID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		MethodArgs:          []interface{}{model.CapabilitySpecFetchRequestReference, refID},
+		MethodName:          "DeleteByReferenceObjectIDGlobal",
+		IsDeleteMany:        true,
+		IsGlobal:            true,
+	}
+
 	docFRSuite := testdb.RepoDeleteTestSuite{
 		Name: "Documents Fetch Request Delete",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
@@ -564,6 +761,7 @@ func TestRepository_DeleteByReferenceObjectIDGlobal(t *testing.T) {
 
 	apiFRSuite.Run(t)
 	eventFRSuite.Run(t)
+	capabilityFRSuite.Run(t)
 	docFRSuite.Run(t)
 }
 
@@ -644,6 +842,41 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 		DisableEmptySliceTest:   true,
 	}
 
+	firstCapabilityFRModel := fixFullFetchRequestModelWithRefID(firstFrID, timestamp, model.CapabilitySpecFetchRequestReference, firstRefID)
+	firstCapabilityFREntity := fixFullFetchRequestEntityWithRefID(t, firstFrID, timestamp, model.CapabilitySpecFetchRequestReference, firstRefID)
+	secondCapabilityFRModel := fixFullFetchRequestModelWithRefID(secondFrID, timestamp, model.CapabilitySpecFetchRequestReference, secondRefID)
+	secondCapabilityFREntity := fixFullFetchRequestEntityWithRefID(t, secondFrID, timestamp, model.CapabilitySpecFetchRequestReference, secondRefID)
+
+	capabilityFRSuite := testdb.RepoListTestSuite{
+		Name: "List Capability Fetch Requests by Object IDs",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE spec_id IN ($1, $2) AND (id IN (SELECT id FROM capability_specifications_fetch_requests_tenants WHERE tenant_id = $3))`),
+				Args:     []driver.Value{firstRefID, secondRefID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).
+						AddRow(firstFrID, firstCapabilityFREntity.DocumentID, "foo.bar", firstCapabilityFREntity.Auth, firstCapabilityFREntity.Mode, firstCapabilityFREntity.Filter, firstCapabilityFREntity.StatusCondition, firstCapabilityFREntity.StatusMessage, firstCapabilityFREntity.StatusTimestamp, firstCapabilityFREntity.SpecID).
+						AddRow(secondFrID, secondCapabilityFREntity.DocumentID, "foo.bar", secondCapabilityFREntity.Auth, secondCapabilityFREntity.Mode, secondCapabilityFREntity.Filter, secondCapabilityFREntity.StatusCondition, secondCapabilityFREntity.StatusMessage, secondCapabilityFREntity.StatusTimestamp, secondCapabilityFREntity.SpecID),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		AdditionalConverterArgs: []interface{}{model.CapabilitySpecFetchRequestReference},
+		RepoConstructorFunc:     fetchrequest.NewRepository,
+		ExpectedModelEntities:   []interface{}{firstCapabilityFRModel, secondCapabilityFRModel},
+		ExpectedDBEntities:      []interface{}{firstCapabilityFREntity, secondCapabilityFREntity},
+		MethodArgs:              []interface{}{tenantID, model.CapabilitySpecFetchRequestReference, []string{firstRefID, secondRefID}},
+		MethodName:              "ListByReferenceObjectIDs",
+		DisableEmptySliceTest:   true,
+	}
+
 	firstDocFRModel := fixFullFetchRequestModelWithRefID(firstFrID, timestamp, model.DocumentFetchRequestReference, firstRefID)
 	firstDocFREntity := fixFullFetchRequestEntityWithRefID(t, firstFrID, timestamp, model.DocumentFetchRequestReference, firstRefID)
 	secondDocFRModel := fixFullFetchRequestModelWithRefID(secondFrID, timestamp, model.DocumentFetchRequestReference, secondRefID)
@@ -681,6 +914,7 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 
 	apiFRSuite.Run(t)
 	eventFRSuite.Run(t)
+	capabilityFRSuite.Run(t)
 	docFRSuite.Run(t)
 }
 
@@ -761,6 +995,41 @@ func TestRepository_ListByReferenceObjectIDsGlobal(t *testing.T) {
 		DisableEmptySliceTest:   true,
 	}
 
+	firstCapabilityFRModel := fixFullFetchRequestModelWithRefID(firstFrID, timestamp, model.CapabilitySpecFetchRequestReference, firstRefID)
+	firstCapabilityFREntity := fixFullFetchRequestEntityWithRefID(t, firstFrID, timestamp, model.CapabilitySpecFetchRequestReference, firstRefID)
+	secondCapabilityFRModel := fixFullFetchRequestModelWithRefID(secondFrID, timestamp, model.CapabilitySpecFetchRequestReference, secondRefID)
+	secondCapabilityFREntity := fixFullFetchRequestEntityWithRefID(t, secondFrID, timestamp, model.CapabilitySpecFetchRequestReference, secondRefID)
+
+	capabilityFRSuite := testdb.RepoListTestSuite{
+		Name: "List Capability Fetch Requests by Object IDs Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE spec_id IN ($1, $2)`),
+				Args:     []driver.Value{firstRefID, secondRefID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).
+						AddRow(firstFrID, firstCapabilityFREntity.DocumentID, "foo.bar", firstCapabilityFREntity.Auth, firstCapabilityFREntity.Mode, firstCapabilityFREntity.Filter, firstCapabilityFREntity.StatusCondition, firstCapabilityFREntity.StatusMessage, firstCapabilityFREntity.StatusTimestamp, firstCapabilityFREntity.SpecID).
+						AddRow(secondFrID, secondCapabilityFREntity.DocumentID, "foo.bar", secondCapabilityFREntity.Auth, secondCapabilityFREntity.Mode, secondCapabilityFREntity.Filter, secondCapabilityFREntity.StatusCondition, secondCapabilityFREntity.StatusMessage, secondCapabilityFREntity.StatusTimestamp, secondCapabilityFREntity.SpecID),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		AdditionalConverterArgs: []interface{}{model.CapabilitySpecFetchRequestReference},
+		RepoConstructorFunc:     fetchrequest.NewRepository,
+		ExpectedModelEntities:   []interface{}{firstCapabilityFRModel, secondCapabilityFRModel},
+		ExpectedDBEntities:      []interface{}{firstCapabilityFREntity, secondEventFREntity},
+		MethodArgs:              []interface{}{model.CapabilitySpecFetchRequestReference, []string{firstRefID, secondRefID}},
+		MethodName:              "ListByReferenceObjectIDsGlobal",
+		DisableEmptySliceTest:   true,
+	}
+
 	firstDocFRModel := fixFullFetchRequestModelWithRefID(firstFrID, timestamp, model.DocumentFetchRequestReference, firstRefID)
 	firstDocFREntity := fixFullFetchRequestEntityWithRefID(t, firstFrID, timestamp, model.DocumentFetchRequestReference, firstRefID)
 	secondDocFRModel := fixFullFetchRequestModelWithRefID(secondFrID, timestamp, model.DocumentFetchRequestReference, secondRefID)
@@ -798,6 +1067,7 @@ func TestRepository_ListByReferenceObjectIDsGlobal(t *testing.T) {
 
 	apiFRSuite.Run(t)
 	eventFRSuite.Run(t)
+	capabilityFRSuite.Run(t)
 	docFRSuite.Run(t)
 }
 

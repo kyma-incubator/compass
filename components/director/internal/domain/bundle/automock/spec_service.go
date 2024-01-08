@@ -21,6 +21,10 @@ func (_m *SpecService) GetByReferenceObjectID(ctx context.Context, resourceType 
 	ret := _m.Called(ctx, resourceType, objectType, objectID)
 
 	var r0 *model.Spec
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, model.SpecReferenceObjectType, string) (*model.Spec, error)); ok {
+		return rf(ctx, resourceType, objectType, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, model.SpecReferenceObjectType, string) *model.Spec); ok {
 		r0 = rf(ctx, resourceType, objectType, objectID)
 	} else {
@@ -29,7 +33,6 @@ func (_m *SpecService) GetByReferenceObjectID(ctx context.Context, resourceType 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, model.SpecReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, resourceType, objectType, objectID)
 	} else {
@@ -44,6 +47,10 @@ func (_m *SpecService) ListByReferenceObjectIDs(ctx context.Context, objectType 
 	ret := _m.Called(ctx, objectType, objectIDs)
 
 	var r0 []*model.Spec
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.SpecReferenceObjectType, []string) ([]*model.Spec, error)); ok {
+		return rf(ctx, objectType, objectIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.SpecReferenceObjectType, []string) []*model.Spec); ok {
 		r0 = rf(ctx, objectType, objectIDs)
 	} else {
@@ -52,7 +59,6 @@ func (_m *SpecService) ListByReferenceObjectIDs(ctx context.Context, objectType 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.SpecReferenceObjectType, []string) error); ok {
 		r1 = rf(ctx, objectType, objectIDs)
 	} else {
@@ -62,13 +68,12 @@ func (_m *SpecService) ListByReferenceObjectIDs(ctx context.Context, objectType 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewSpecService interface {
+// NewSpecService creates a new instance of SpecService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSpecService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSpecService creates a new instance of SpecService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSpecService(t mockConstructorTestingTNewSpecService) *SpecService {
+}) *SpecService {
 	mock := &SpecService{}
 	mock.Mock.Test(t)
 

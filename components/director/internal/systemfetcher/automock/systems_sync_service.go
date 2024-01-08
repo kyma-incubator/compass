@@ -19,6 +19,10 @@ func (_m *SystemsSyncService) List(ctx context.Context) ([]*model.SystemSynchron
 	ret := _m.Called(ctx)
 
 	var r0 []*model.SystemSynchronizationTimestamp
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.SystemSynchronizationTimestamp, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []*model.SystemSynchronizationTimestamp); ok {
 		r0 = rf(ctx)
 	} else {
@@ -27,7 +31,6 @@ func (_m *SystemsSyncService) List(ctx context.Context) ([]*model.SystemSynchron
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -51,13 +54,12 @@ func (_m *SystemsSyncService) Upsert(ctx context.Context, in *model.SystemSynchr
 	return r0
 }
 
-type mockConstructorTestingTNewSystemsSyncService interface {
+// NewSystemsSyncService creates a new instance of SystemsSyncService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSystemsSyncService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSystemsSyncService creates a new instance of SystemsSyncService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSystemsSyncService(t mockConstructorTestingTNewSystemsSyncService) *SystemsSyncService {
+}) *SystemsSyncService {
 	mock := &SystemsSyncService{}
 	mock.Mock.Test(t)
 

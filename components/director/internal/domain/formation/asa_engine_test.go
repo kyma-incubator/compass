@@ -1200,7 +1200,7 @@ func TestService_IsFormationComingFromASA(t *testing.T) {
 			Name:                 "Error when getting scenarios fails",
 			ObjectID:             "",
 			ObjectType:           "test",
-			ExpectedErrorMessage: "unexpected formation object type \"test\"",
+			ExpectedErrorMessage: "",
 			ExpectedResult:       false,
 		},
 	}

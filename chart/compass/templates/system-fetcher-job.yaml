@@ -1,5 +1,5 @@
 {{if .Values.global.systemFetcher.enabled }}
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: "{{ $.Chart.Name }}-{{ .Values.global.systemFetcher.name }}"
@@ -46,6 +46,8 @@ spec:
                   value: "{{ .Values.global.systemFetcher.enableSystemDeletion }}"
                 - name: APP_OPERATIONAL_MODE
                   value: {{ .Values.global.systemFetcher.operationalMode }}
+                - name: APP_SYNC_GLOBAL_ACCOUNTS
+                  value: "{{ .Values.global.systemFetcher.syncGlobalAccountTenants }}"
                 - name: APP_SYSTEM_INFORMATION_PARALLELLISM
                   value: "{{ .Values.global.systemFetcher.fetchParallellism }}"
                 - name: APP_SYSTEM_INFORMATION_QUEUE_SIZE
@@ -92,6 +94,8 @@ spec:
                   value: {{ .Values.global.systemFetcher.oauth.tokenRequestTimeout | quote }}
                 - name: APP_OAUTH_SKIP_SSL_VALIDATION
                   value: "{{ .Values.global.systemFetcher.oauth.skipSSLValidation }}"
+                - name: APP_JWT_EXPIRE_AFTER
+                  value: "{{ .Values.global.systemFetcher.jwt.expireAfter }}"
                 - name: APP_DB_USER
                   valueFrom:
                     secretKeyRef:
@@ -146,6 +150,12 @@ spec:
                   value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
                 - name: APP_EXT_SVC_CLIENT_CERT_SECRET_NAME
                   value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
+                - name: APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_NAME
+                  value: "{{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.name }}"
+                - name: APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET
+                  value: "{{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.name }}"
+                - name: APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_DATA_KEY
+                  value: "{{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.dataKey }}"
                 - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
                   value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
                 - name: APP_ORD_WEBHOOK_MAPPINGS
@@ -203,6 +213,24 @@ metadata:
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/instance: {{ $.Release.Name }}
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["secrets"]
+    resourceNames: ["{{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.name }}"]
+    verbs: ["watch"]
+---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -222,4 +250,25 @@ subjects:
 roleRef:
   kind: Role
   name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $.Chart.Name }}-system-fetcher
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.name }}
   apiGroup: rbac.authorization.k8s.io

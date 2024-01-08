@@ -19,6 +19,10 @@ func (_m *ApplicationRepository) GetGlobalByID(ctx context.Context, id string) (
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Application
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Application, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Application); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -27,7 +31,6 @@ func (_m *ApplicationRepository) GetGlobalByID(ctx context.Context, id string) (
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -37,13 +40,12 @@ func (_m *ApplicationRepository) GetGlobalByID(ctx context.Context, id string) (
 	return r0, r1
 }
 
-type mockConstructorTestingTNewApplicationRepository interface {
+// NewApplicationRepository creates a new instance of ApplicationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplicationRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplicationRepository creates a new instance of ApplicationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationRepository(t mockConstructorTestingTNewApplicationRepository) *ApplicationRepository {
+}) *ApplicationRepository {
 	mock := &ApplicationRepository{}
 	mock.Mock.Test(t)
 

@@ -35,6 +35,7 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Tenant)
 
 	authDetails := oathkeeper.AuthDetails{AuthID: providerTenantID, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
+	scopes := []string{"runtime:read", "runtime:write", "tenant:read"}
 
 	reqData := oathkeeper.ReqData{
 		Body: oathkeeper.ReqBody{
@@ -62,6 +63,7 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	}
 
 	testSubaccount := &graphql.Tenant{
+		ID:         consumerTenantID,
 		InternalID: internalSubaccount,
 		Type:       "subaccount",
 		Labels:     labels,
@@ -74,14 +76,19 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 		Labels:     labels,
 	}
 
+	testEmptyTenant := &graphql.Tenant{}
+
+	testTenantWithOnlyExternalID := &graphql.Tenant{ID: consumerTenantID}
+
 	testCases := []struct {
-		Name               string
-		DirectorClient     func() *automock.DirectorClient
-		ReqDataInput       oathkeeper.ReqData
-		AuthDetailsInput   oathkeeper.AuthDetails
-		ExpectedInternalID string
-		ExpectedExternalID string
-		ExpectedErr        error
+		Name             string
+		DirectorClient   func() *automock.DirectorClient
+		ScopesGetterFn   func() *automock.ScopesGetter
+		ReqDataInput     oathkeeper.ReqData
+		AuthDetailsInput oathkeeper.AuthDetails
+		ExpectedScopes   string
+		ExpectedTenant   *graphql.Tenant
+		ExpectedErr      error
 	}{
 		{
 			Name: "Success when cannot find internal tenant",
@@ -90,22 +97,32 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(nil, notFoundErr).Once()
 				return client
 			},
-			ReqDataInput:       reqData,
-			AuthDetailsInput:   authDetails,
-			ExpectedInternalID: "",
-			ExpectedExternalID: consumerTenantID,
-			ExpectedErr:        nil,
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
+			},
+			ReqDataInput:     reqData,
+			AuthDetailsInput: authDetails,
+			ExpectedTenant:   testTenantWithOnlyExternalID,
+			ExpectedScopes:   strings.Join(scopes, " "),
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Success on global calls without tenant",
 			DirectorClient: func() *automock.DirectorClient {
 				return &automock.DirectorClient{}
 			},
-			ReqDataInput:       noTenantReqData,
-			AuthDetailsInput:   authDetails,
-			ExpectedInternalID: "",
-			ExpectedExternalID: "",
-			ExpectedErr:        nil,
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
+			},
+			ReqDataInput:     noTenantReqData,
+			AuthDetailsInput: authDetails,
+			ExpectedScopes:   strings.Join(scopes, " "),
+			ExpectedTenant:   testEmptyTenant,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Error when the error from getting the internal tenant is different from not found",
@@ -114,11 +131,15 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				tenantRepo.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(nil, testError).Once()
 				return tenantRepo
 			},
-			ReqDataInput:       reqData,
-			AuthDetailsInput:   authDetails,
-			ExpectedInternalID: "",
-			ExpectedExternalID: consumerTenantID,
-			ExpectedErr:        testError,
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
+			},
+			ReqDataInput:     reqData,
+			AuthDetailsInput: authDetails,
+			ExpectedTenant:   testTenantWithOnlyExternalID,
+			ExpectedErr:      testError,
 		},
 		{
 			Name: "Success when internal tenant exists",
@@ -127,11 +148,16 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testSubaccount, nil).Once()
 				return client
 			},
-			ReqDataInput:       reqData,
-			AuthDetailsInput:   authDetails,
-			ExpectedInternalID: internalSubaccount,
-			ExpectedExternalID: consumerTenantID,
-			ExpectedErr:        nil,
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
+			},
+			ReqDataInput:     reqData,
+			AuthDetailsInput: authDetails,
+			ExpectedScopes:   strings.Join(scopes, " "),
+			ExpectedTenant:   testSubaccount,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Returns empty region when tenant is subaccount and tenant region label is missing",
@@ -140,11 +166,16 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testSubaccount, nil).Once()
 				return client
 			},
-			ReqDataInput:       reqData,
-			AuthDetailsInput:   authDetails,
-			ExpectedInternalID: internalSubaccount,
-			ExpectedExternalID: consumerTenantID,
-			ExpectedErr:        nil,
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
+			},
+			ReqDataInput:     reqData,
+			AuthDetailsInput: authDetails,
+			ExpectedScopes:   strings.Join(scopes, " "),
+			ExpectedTenant:   testSubaccount,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Error when consumer don't have access",
@@ -152,6 +183,11 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				client := &automock.DirectorClient{}
 				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testAccount, nil).Once()
 				return client
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
 			},
 			ReqDataInput:     reqData,
 			AuthDetailsInput: authDetails,
@@ -161,6 +197,11 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 			Name: "Error when consumer don't have global access",
 			DirectorClient: func() *automock.DirectorClient {
 				return &automock.DirectorClient{}
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
 			},
 			ReqDataInput: oathkeeper.ReqData{
 				Body: oathkeeper.ReqBody{
@@ -173,12 +214,34 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 			AuthDetailsInput: authDetails,
 			ExpectedErr:      apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s does not have global access", authDetails.AuthID)),
 		},
+		{
+			Name: "Error while getting scopes",
+			DirectorClient: func() *automock.DirectorClient {
+				return &automock.DirectorClient{}
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return([]string{}, testError)
+				return scopesGetter
+			},
+			ReqDataInput: oathkeeper.ReqData{
+				Body: oathkeeper.ReqBody{
+					Extra: map[string]interface{}{
+						cert.ConsumerTypeExtraField: model.IntegrationSystemReference,
+						cert.AccessLevelsExtraField: []interface{}{tenantEntity.Subaccount},
+					},
+				},
+			},
+			AuthDetailsInput: authDetails,
+			ExpectedErr:      apperrors.NewInternalError("failed to extract scopes for consumer with type integration system"),
+		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			client := testCase.DirectorClient()
-			provider := tenantmapping.NewAccessLevelContextProvider(client)
+			scopesGetter := testCase.ScopesGetterFn()
+			provider := tenantmapping.NewAccessLevelContextProvider(client, scopesGetter)
 			// WHEN
 			objectCtx, err := provider.GetObjectContext(emptyCtx, testCase.ReqDataInput, testCase.AuthDetailsInput)
 
@@ -187,10 +250,9 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, consumer.IntegrationSystem, objectCtx.ConsumerType)
 				require.Equal(t, providerTenantID, objectCtx.ConsumerID)
-				require.Equal(t, testCase.ExpectedInternalID, objectCtx.TenantContext.TenantID)
-				require.Equal(t, testCase.ExpectedExternalID, objectCtx.TenantContext.ExternalTenantID)
-				require.Equal(t, "", objectCtx.Scopes)
-				if objectCtx.TenantID != "" {
+				require.Equal(t, testCase.ExpectedTenant, objectCtx.Tenant)
+				require.Equal(t, testCase.ExpectedScopes, objectCtx.Scopes)
+				if objectCtx.Tenant.InternalID != "" {
 					require.Equal(t, region, objectCtx.Region)
 				}
 			} else {
@@ -198,13 +260,13 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				require.Contains(t, strings.ToLower(err.Error()), strings.ToLower(testCase.ExpectedErr.Error()))
 				require.Empty(t, objectCtx)
 			}
-			mock.AssertExpectationsForObjects(t, client)
+			mock.AssertExpectationsForObjects(t, client, scopesGetter)
 		})
 	}
 }
 
 func TestAccessLevelContextProvider_Match(t *testing.T) {
-	provider := tenantmapping.NewAccessLevelContextProvider(nil)
+	provider := tenantmapping.NewAccessLevelContextProvider(nil, nil)
 	clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
 	tenantHeader := "123"
 	accessLevels := []interface{}{"account"}

@@ -19,13 +19,16 @@ func (_m *StatusUpdateRepository) IsConnected(ctx context.Context, id string, ob
 	ret := _m.Called(ctx, id, object)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, statusupdate.WithStatusObject) (bool, error)); ok {
+		return rf(ctx, id, object)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, statusupdate.WithStatusObject) bool); ok {
 		r0 = rf(ctx, id, object)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, statusupdate.WithStatusObject) error); ok {
 		r1 = rf(ctx, id, object)
 	} else {
@@ -49,13 +52,12 @@ func (_m *StatusUpdateRepository) UpdateStatus(ctx context.Context, id string, o
 	return r0
 }
 
-type mockConstructorTestingTNewStatusUpdateRepository interface {
+// NewStatusUpdateRepository creates a new instance of StatusUpdateRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewStatusUpdateRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewStatusUpdateRepository creates a new instance of StatusUpdateRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewStatusUpdateRepository(t mockConstructorTestingTNewStatusUpdateRepository) *StatusUpdateRepository {
+}) *StatusUpdateRepository {
 	mock := &StatusUpdateRepository{}
 	mock.Mock.Test(t)
 

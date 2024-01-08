@@ -20,19 +20,19 @@ var (
 	cfg = healthz.ReadyConfig{
 		SchemaMigrationVersion: "XXXXXXXXXXXXXX",
 	}
+	emptyCtx = context.Background()
 )
 
 func TestNewReadinessHandler(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		ctx := context.TODO()
 		tx := &persistautomock.PersistenceTx{}
 		tx.On("Commit").Once().Return(nil)
 
-		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+		ctxWithTransaction := persistence.SaveToContext(emptyCtx, tx)
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
-		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(false)
-		transactioner.On("PingContext", ctx).Once().Return(nil)
+		transactioner.On("RollbackUnlessCommitted", emptyCtx, tx).Once().Return(false)
+		transactioner.On("PingContext", emptyCtx).Once().Return(nil)
 		defer transactioner.AssertExpectations(t)
 
 		repository := &automock.Repository{}
@@ -46,15 +46,14 @@ func TestNewReadinessHandler(t *testing.T) {
 	})
 
 	t.Run("success when cached result", func(t *testing.T) {
-		ctx := context.TODO()
 		tx := &persistautomock.PersistenceTx{}
 		tx.On("Commit").Once().Return(nil)
 
-		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+		ctxWithTransaction := persistence.SaveToContext(emptyCtx, tx)
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
-		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(false)
-		transactioner.On("PingContext", ctx).Twice().Return(nil)
+		transactioner.On("RollbackUnlessCommitted", emptyCtx, tx).Once().Return(false)
+		transactioner.On("PingContext", emptyCtx).Twice().Return(nil)
 		defer transactioner.AssertExpectations(t)
 
 		repository := &automock.Repository{}
@@ -69,15 +68,14 @@ func TestNewReadinessHandler(t *testing.T) {
 	})
 
 	t.Run("fail when ping fails", func(t *testing.T) {
-		ctx := context.TODO()
 		tx := &persistautomock.PersistenceTx{}
 		tx.On("Commit").Once().Return(nil)
 
-		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+		ctxWithTransaction := persistence.SaveToContext(emptyCtx, tx)
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
-		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(true)
-		transactioner.On("PingContext", ctx).Once().Return(errors.New("Ping failure"))
+		transactioner.On("RollbackUnlessCommitted", emptyCtx, tx).Once().Return(true)
+		transactioner.On("PingContext", emptyCtx).Once().Return(errors.New("Ping failure"))
 		defer transactioner.AssertExpectations(t)
 
 		repository := &automock.Repository{}
@@ -91,14 +89,13 @@ func TestNewReadinessHandler(t *testing.T) {
 	})
 
 	t.Run("fail when schema compatibility check fails", func(t *testing.T) {
-		ctx := context.TODO()
 		tx := &persistautomock.PersistenceTx{}
 		tx.On("Commit").Once().Return(nil)
 
-		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+		ctxWithTransaction := persistence.SaveToContext(emptyCtx, tx)
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
-		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(true)
+		transactioner.On("RollbackUnlessCommitted", emptyCtx, tx).Once().Return(true)
 
 		repository := &automock.Repository{}
 		repository.On("GetVersion", ctxWithTransaction).Once().Return("YYYYYYYYYYYYY", false, nil)
@@ -111,14 +108,13 @@ func TestNewReadinessHandler(t *testing.T) {
 	})
 
 	t.Run("fail when schema dirty flag is set", func(t *testing.T) {
-		ctx := context.TODO()
 		tx := &persistautomock.PersistenceTx{}
 		tx.On("Commit").Once().Return(nil)
 
-		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+		ctxWithTransaction := persistence.SaveToContext(emptyCtx, tx)
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
-		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(true)
+		transactioner.On("RollbackUnlessCommitted", emptyCtx, tx).Once().Return(true)
 
 		repository := &automock.Repository{}
 		repository.On("GetVersion", ctxWithTransaction).Once().Return("XXXXXXXXXXXXXX", true, nil)
@@ -131,14 +127,13 @@ func TestNewReadinessHandler(t *testing.T) {
 	})
 
 	t.Run("fail when error is received while getting schema version from database", func(t *testing.T) {
-		ctx := context.TODO()
 		tx := &persistautomock.PersistenceTx{}
 		tx.On("Commit").Once().Return(nil)
 
-		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+		ctxWithTransaction := persistence.SaveToContext(emptyCtx, tx)
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
-		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(true)
+		transactioner.On("RollbackUnlessCommitted", emptyCtx, tx).Once().Return(true)
 
 		repository := &automock.Repository{}
 		repository.On("GetVersion", ctxWithTransaction).Once().Return("", false, errors.New("db error"))
@@ -151,12 +146,11 @@ func TestNewReadinessHandler(t *testing.T) {
 	})
 
 	t.Run("fail while opening transaction", func(t *testing.T) {
-		ctx := context.TODO()
 		tx := &persistautomock.PersistenceTx{}
 
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(nil, errors.New("error while opening transaction"))
-		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(true)
+		transactioner.On("RollbackUnlessCommitted", emptyCtx, tx).Once().Return(true)
 
 		repository := &automock.Repository{}
 
@@ -167,13 +161,12 @@ func TestNewReadinessHandler(t *testing.T) {
 	})
 
 	t.Run("fail while committing", func(t *testing.T) {
-		ctx := context.TODO()
 		tx := &persistautomock.PersistenceTx{}
 		tx.On("Commit").Once().Return(errors.New("commit error"))
 
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(nil, errors.New("error while opening transaction"))
-		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(true)
+		transactioner.On("RollbackUnlessCommitted", emptyCtx, tx).Once().Return(true)
 
 		repository := &automock.Repository{}
 

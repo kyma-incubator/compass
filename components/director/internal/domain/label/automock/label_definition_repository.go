@@ -34,13 +34,16 @@ func (_m *LabelDefinitionRepository) Exists(ctx context.Context, tenant string, 
 	ret := _m.Called(ctx, tenant, key)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, tenant, key)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, tenant, key)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, key)
 	} else {
@@ -55,6 +58,10 @@ func (_m *LabelDefinitionRepository) GetByKey(ctx context.Context, tenant string
 	ret := _m.Called(ctx, tenant, key)
 
 	var r0 *model.LabelDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.LabelDefinition, error)); ok {
+		return rf(ctx, tenant, key)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.LabelDefinition); ok {
 		r0 = rf(ctx, tenant, key)
 	} else {
@@ -63,7 +70,6 @@ func (_m *LabelDefinitionRepository) GetByKey(ctx context.Context, tenant string
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, key)
 	} else {
@@ -73,13 +79,12 @@ func (_m *LabelDefinitionRepository) GetByKey(ctx context.Context, tenant string
 	return r0, r1
 }
 
-type mockConstructorTestingTNewLabelDefinitionRepository interface {
+// NewLabelDefinitionRepository creates a new instance of LabelDefinitionRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewLabelDefinitionRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewLabelDefinitionRepository creates a new instance of LabelDefinitionRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewLabelDefinitionRepository(t mockConstructorTestingTNewLabelDefinitionRepository) *LabelDefinitionRepository {
+}) *LabelDefinitionRepository {
 	mock := &LabelDefinitionRepository{}
 	mock.Mock.Test(t)
 

@@ -9,8 +9,9 @@ import (
 	httpbroker "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 )
 
-//CertificateCache is an interface which provides a certificate which is
-//dynamically reloaded when its Get method is called
+// CertificateCache is an interface which provides a certificate which is
+// dynamically reloaded when its Get method is called
+//
 //go:generate mockery --name=CertificateCache --output=automock --outpkg=automock --case=underscore --disable-version-string
 type CertificateCache interface {
 	Get() map[string]*tls.Certificate

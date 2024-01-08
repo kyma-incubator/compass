@@ -92,6 +92,10 @@ func (_m *EventAPIRepository) GetByApplicationID(ctx context.Context, tenantID s
 	ret := _m.Called(ctx, tenantID, id, appID)
 
 	var r0 *model.EventDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.EventDefinition, error)); ok {
+		return rf(ctx, tenantID, id, appID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.EventDefinition); ok {
 		r0 = rf(ctx, tenantID, id, appID)
 	} else {
@@ -100,7 +104,6 @@ func (_m *EventAPIRepository) GetByApplicationID(ctx context.Context, tenantID s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenantID, id, appID)
 	} else {
@@ -115,6 +118,10 @@ func (_m *EventAPIRepository) GetByID(ctx context.Context, tenantID string, id s
 	ret := _m.Called(ctx, tenantID, id)
 
 	var r0 *model.EventDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.EventDefinition, error)); ok {
+		return rf(ctx, tenantID, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.EventDefinition); ok {
 		r0 = rf(ctx, tenantID, id)
 	} else {
@@ -123,7 +130,6 @@ func (_m *EventAPIRepository) GetByID(ctx context.Context, tenantID string, id s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenantID, id)
 	} else {
@@ -138,6 +144,10 @@ func (_m *EventAPIRepository) GetByIDGlobal(ctx context.Context, id string) (*mo
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.EventDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.EventDefinition, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.EventDefinition); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -146,7 +156,6 @@ func (_m *EventAPIRepository) GetByIDGlobal(ctx context.Context, id string) (*mo
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -161,6 +170,10 @@ func (_m *EventAPIRepository) GetForBundle(ctx context.Context, tenant string, i
 	ret := _m.Called(ctx, tenant, id, bundleID)
 
 	var r0 *model.EventDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.EventDefinition, error)); ok {
+		return rf(ctx, tenant, id, bundleID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.EventDefinition); ok {
 		r0 = rf(ctx, tenant, id, bundleID)
 	} else {
@@ -169,7 +182,6 @@ func (_m *EventAPIRepository) GetForBundle(ctx context.Context, tenant string, i
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenant, id, bundleID)
 	} else {
@@ -184,6 +196,10 @@ func (_m *EventAPIRepository) ListByApplicationIDPage(ctx context.Context, tenan
 	ret := _m.Called(ctx, tenantID, appID, pageSize, cursor)
 
 	var r0 *model.EventDefinitionPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) (*model.EventDefinitionPage, error)); ok {
+		return rf(ctx, tenantID, appID, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.EventDefinitionPage); ok {
 		r0 = rf(ctx, tenantID, appID, pageSize, cursor)
 	} else {
@@ -192,7 +208,6 @@ func (_m *EventAPIRepository) ListByApplicationIDPage(ctx context.Context, tenan
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
 		r1 = rf(ctx, tenantID, appID, pageSize, cursor)
 	} else {
@@ -207,6 +222,10 @@ func (_m *EventAPIRepository) ListByBundleIDs(ctx context.Context, tenantID stri
 	ret := _m.Called(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor)
 
 	var r0 []*model.EventDefinitionPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []*model.BundleReference, map[string]int, int, string) ([]*model.EventDefinitionPage, error)); ok {
+		return rf(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []*model.BundleReference, map[string]int, int, string) []*model.EventDefinitionPage); ok {
 		r0 = rf(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor)
 	} else {
@@ -215,7 +234,6 @@ func (_m *EventAPIRepository) ListByBundleIDs(ctx context.Context, tenantID stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, []*model.BundleReference, map[string]int, int, string) error); ok {
 		r1 = rf(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, pageSize, cursor)
 	} else {
@@ -230,6 +248,10 @@ func (_m *EventAPIRepository) ListByResourceID(ctx context.Context, tenantID str
 	ret := _m.Called(ctx, tenantID, resourceID, resourceType)
 
 	var r0 []*model.EventDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, resource.Type) ([]*model.EventDefinition, error)); ok {
+		return rf(ctx, tenantID, resourceID, resourceType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, resource.Type) []*model.EventDefinition); ok {
 		r0 = rf(ctx, tenantID, resourceID, resourceType)
 	} else {
@@ -238,7 +260,6 @@ func (_m *EventAPIRepository) ListByResourceID(ctx context.Context, tenantID str
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, resource.Type) error); ok {
 		r1 = rf(ctx, tenantID, resourceID, resourceType)
 	} else {
@@ -276,13 +297,12 @@ func (_m *EventAPIRepository) UpdateGlobal(ctx context.Context, item *model.Even
 	return r0
 }
 
-type mockConstructorTestingTNewEventAPIRepository interface {
+// NewEventAPIRepository creates a new instance of EventAPIRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEventAPIRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEventAPIRepository creates a new instance of EventAPIRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEventAPIRepository(t mockConstructorTestingTNewEventAPIRepository) *EventAPIRepository {
+}) *EventAPIRepository {
 	mock := &EventAPIRepository{}
 	mock.Mock.Test(t)
 

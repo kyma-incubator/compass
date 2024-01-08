@@ -19,6 +19,10 @@ func (_m *ApplicationService) ListAll(ctx context.Context) ([]*model.Application
 	ret := _m.Called(ctx)
 
 	var r0 []*model.Application
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.Application, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []*model.Application); ok {
 		r0 = rf(ctx)
 	} else {
@@ -27,7 +31,6 @@ func (_m *ApplicationService) ListAll(ctx context.Context) ([]*model.Application
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -37,13 +40,12 @@ func (_m *ApplicationService) ListAll(ctx context.Context) ([]*model.Application
 	return r0, r1
 }
 
-type mockConstructorTestingTNewApplicationService interface {
+// NewApplicationService creates a new instance of ApplicationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplicationService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplicationService creates a new instance of ApplicationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationService(t mockConstructorTestingTNewApplicationService) *ApplicationService {
+}) *ApplicationService {
 	mock := &ApplicationService{}
 	mock.Mock.Test(t)
 

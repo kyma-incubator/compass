@@ -19,27 +19,35 @@ const (
 	OperationStatusFailed OperationStatus = "FAILED"
 )
 
+// OperationType defines supported operation types
+type OperationType string
+
+const (
+	// OperationTypeOrdAggregation specifies open resource discovery operation type
+	OperationTypeOrdAggregation OperationType = "ORD_AGGREGATION"
+)
+
 // Operation represents an Operation
 type Operation struct {
-	ID         string
-	OpType     string
-	Status     OperationStatus
-	Data       json.RawMessage
-	Error      json.RawMessage
-	Priority   int
-	CreatedAt  *time.Time
-	FinishedAt *time.Time
+	ID        string
+	OpType    OperationType
+	Status    OperationStatus
+	Data      json.RawMessage
+	Error     json.RawMessage
+	Priority  int
+	CreatedAt *time.Time
+	UpdatedAt *time.Time
 }
 
 // OperationInput represents an OperationInput
 type OperationInput struct {
-	OpType     string
-	Status     OperationStatus
-	Data       json.RawMessage
-	Error      json.RawMessage
-	Priority   int
-	CreatedAt  *time.Time
-	FinishedAt *time.Time
+	OpType    OperationType
+	Status    OperationStatus
+	Data      json.RawMessage
+	Error     json.RawMessage
+	Priority  int
+	CreatedAt *time.Time
+	UpdatedAt *time.Time
 }
 
 // ToOperation converts OperationInput to Operation
@@ -49,13 +57,13 @@ func (i *OperationInput) ToOperation(id string) *Operation {
 	}
 
 	return &Operation{
-		ID:         id,
-		OpType:     i.OpType,
-		Status:     i.Status,
-		Data:       i.Data,
-		Error:      i.Error,
-		Priority:   i.Priority,
-		CreatedAt:  i.CreatedAt,
-		FinishedAt: i.FinishedAt,
+		ID:        id,
+		OpType:    i.OpType,
+		Status:    i.Status,
+		Data:      i.Data,
+		Error:     i.Error,
+		Priority:  i.Priority,
+		CreatedAt: i.CreatedAt,
+		UpdatedAt: i.UpdatedAt,
 	}
 }

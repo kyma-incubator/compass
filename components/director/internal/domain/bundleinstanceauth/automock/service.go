@@ -19,13 +19,16 @@ func (_m *Service) Create(ctx context.Context, bundleID string, in model.BundleI
 	ret := _m.Called(ctx, bundleID, in, defaultAuth, requestInputSchema)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleInstanceAuthRequestInput, *model.Auth, *string) (string, error)); ok {
+		return rf(ctx, bundleID, in, defaultAuth, requestInputSchema)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleInstanceAuthRequestInput, *model.Auth, *string) string); ok {
 		r0 = rf(ctx, bundleID, in, defaultAuth, requestInputSchema)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.BundleInstanceAuthRequestInput, *model.Auth, *string) error); ok {
 		r1 = rf(ctx, bundleID, in, defaultAuth, requestInputSchema)
 	} else {
@@ -40,13 +43,16 @@ func (_m *Service) CreateBundleInstanceAuth(ctx context.Context, bundleID string
 	ret := _m.Called(ctx, bundleID, in, requestInputSchema)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleInstanceAuthCreateInput, *string) (string, error)); ok {
+		return rf(ctx, bundleID, in, requestInputSchema)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleInstanceAuthCreateInput, *string) string); ok {
 		r0 = rf(ctx, bundleID, in, requestInputSchema)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.BundleInstanceAuthCreateInput, *string) error); ok {
 		r1 = rf(ctx, bundleID, in, requestInputSchema)
 	} else {
@@ -75,6 +81,10 @@ func (_m *Service) Get(ctx context.Context, id string) (*model.BundleInstanceAut
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.BundleInstanceAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BundleInstanceAuth, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BundleInstanceAuth); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -83,7 +93,6 @@ func (_m *Service) Get(ctx context.Context, id string) (*model.BundleInstanceAut
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -98,13 +107,16 @@ func (_m *Service) RequestDeletion(ctx context.Context, instanceAuth *model.Bund
 	ret := _m.Called(ctx, instanceAuth, defaultBundleInstanceAuth)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.BundleInstanceAuth, *model.Auth) (bool, error)); ok {
+		return rf(ctx, instanceAuth, defaultBundleInstanceAuth)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *model.BundleInstanceAuth, *model.Auth) bool); ok {
 		r0 = rf(ctx, instanceAuth, defaultBundleInstanceAuth)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *model.BundleInstanceAuth, *model.Auth) error); ok {
 		r1 = rf(ctx, instanceAuth, defaultBundleInstanceAuth)
 	} else {
@@ -142,13 +154,12 @@ func (_m *Service) Update(ctx context.Context, instanceAuth *model.BundleInstanc
 	return r0
 }
 
-type mockConstructorTestingTNewService interface {
+// NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewService(t mockConstructorTestingTNewService) *Service {
+}) *Service {
 	mock := &Service{}
 	mock.Mock.Test(t)
 

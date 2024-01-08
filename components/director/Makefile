@@ -1,6 +1,6 @@
 APP_NAME = compass-director
 APP_PATH = components/director
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
+BUILDPACK = europe-docker.pkg.dev/kyma-project/prod/test-infra/buildpack-golang:v20230323-a1ac96db
 NAMESPACE="compass-system"
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export GO111MODULE = on
@@ -40,15 +40,13 @@ deploy-on-k3d: build-for-k3d
 	kubectl patch -n $(NAMESPACE) deployment/compass-ns-adapter -p '{"spec":{"template":{"spec":{"containers":[{"name":"ns-adapter","imagePullPolicy":"Always"}]}}}}'
 	kubectl set image -n $(NAMESPACE) deployment/compass-ns-adapter ns-adapter=k3d-kyma-registry:5001/compass-director:latest
 	kubectl rollout restart -n $(NAMESPACE) deployment/compass-ns-adapter
-	kubectl patch -n $(NAMESPACE) deployment/compass-operations-manager -p '{"spec":{"template":{"spec":{"containers":[{"name":"operations-manager","imagePullPolicy":"Always"}]}}}}'
-	kubectl set image -n $(NAMESPACE) deployment/compass-operations-manager operations-manager=k3d-kyma-registry:5001/compass-director:latest
-	kubectl rollout restart -n $(NAMESPACE) deployment/compass-operations-manager
 	kubectl patch -n $(NAMESPACE) deployment/compass-destination-fetcher -p '{"spec":{"template":{"spec":{"containers":[{"name":"destination-fetcher","imagePullPolicy":"Always"}]}}}}'
 	kubectl set image -n $(NAMESPACE) deployment/compass-destination-fetcher destination-fetcher=k3d-kyma-registry:5001/compass-director:latest
 	kubectl rollout restart -n $(NAMESPACE) deployment/compass-destination-fetcher
 	kubectl patch -n $(NAMESPACE) deployment/compass-ord-aggregator -p '{"spec":{"template":{"spec":{"containers":[{"name":"ord-aggregator","imagePullPolicy":"Always"}]}}}}'
 	kubectl set image -n $(NAMESPACE) deployment/compass-ord-aggregator ord-aggregator=k3d-kyma-registry:5001/compass-director:latest
 	kubectl rollout restart -n $(NAMESPACE) deployment/compass-ord-aggregator
+	kubectl patch -n $(NAMESPACE) deployment/compass-tenant-fetcher -p '{"spec":{"template":{"spec":{"containers":[{"name":"tenant-fetcher","imagePullPolicy":"Always"}]}}}}'
 	kubectl set image -n $(NAMESPACE) deployment/compass-tenant-fetcher tenant-fetcher=k3d-kyma-registry:5001/compass-director:latest
 	kubectl rollout restart -n $(NAMESPACE) deployment/compass-tenant-fetcher
 	kubectl patch -n $(NAMESPACE) cronjob/compass-system-fetcher -p '{"spec":{"jobTemplate":{"spec":{"template":{"spec":{"containers":[{"name":"system-fetcher","imagePullPolicy":"Always"}]}}}}}}'

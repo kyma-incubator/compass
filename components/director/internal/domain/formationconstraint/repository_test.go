@@ -17,11 +17,11 @@ func TestRepository_Get(t *testing.T) {
 		MethodName: "Get",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, constraint_type, target_operation, operator, resource_type, resource_subtype, input_template, constraint_scope FROM public.formation_constraints WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, description, constraint_type, target_operation, operator, resource_type, resource_subtype, input_template, constraint_scope, priority, created_at FROM public.formation_constraints WHERE id = $1`),
 				Args:     []driver.Value{testID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.Description, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope, entity.Priority, entity.CreatedAt)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -47,10 +47,10 @@ func TestRepository_ListAll(t *testing.T) {
 		MethodName: "ListAll",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, constraint_type, target_operation, operator, resource_type, resource_subtype, input_template, constraint_scope FROM public.formation_constraints`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, description, constraint_type, target_operation, operator, resource_type, resource_subtype, input_template, constraint_scope, priority, created_at FROM public.formation_constraints`),
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.Description, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope, entity.Priority, entity.CreatedAt)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -77,11 +77,11 @@ func TestRepository_ListByIDs(t *testing.T) {
 		MethodName: "ListByIDs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, constraint_type, target_operation, operator, resource_type, resource_subtype, input_template, constraint_scope FROM public.formation_constraints WHERE id IN ($1)`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, description, constraint_type, target_operation, operator, resource_type, resource_subtype, input_template, constraint_scope, priority, created_at FROM public.formation_constraints WHERE id IN ($1)`),
 				IsSelect: true,
 				Args:     []driver.Value{testID},
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.Description, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope, entity.Priority, entity.CreatedAt)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -108,11 +108,11 @@ func TestRepository_ListMatchingFormationConstraints(t *testing.T) {
 		MethodName: "ListMatchingFormationConstraints",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, constraint_type, target_operation, operator, resource_type, resource_subtype, input_template, constraint_scope FROM public.formation_constraints WHERE (target_operation = $1 AND constraint_type = $2 AND resource_type = $3 AND (resource_subtype = $4 OR resource_subtype = $5) AND (constraint_scope = $6 OR id IN ($7)))`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, description, constraint_type, target_operation, operator, resource_type, resource_subtype, input_template, constraint_scope, priority, created_at FROM public.formation_constraints WHERE (target_operation = $1 AND constraint_type = $2 AND resource_type = $3 AND (resource_subtype = $4 OR resource_subtype = $5) AND (constraint_scope = $6 OR id IN ($7)))`),
 				IsSelect: true,
 				Args:     []driver.Value{location.OperationName, location.ConstraintType, details.ResourceType, details.ResourceSubtype, resourceSubtypeANY, "GLOBAL", testID},
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.Description, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope, entity.Priority, entity.CreatedAt)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -139,11 +139,11 @@ func TestRepository_ListByIDsAndGlobal(t *testing.T) {
 		MethodName: "ListByIDsAndGlobal",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, constraint_type, target_operation, operator, resource_type, resource_subtype, input_template, constraint_scope FROM public.formation_constraints WHERE (constraint_scope = $1 OR id IN ($2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, description, constraint_type, target_operation, operator, resource_type, resource_subtype, input_template, constraint_scope, priority, created_at FROM public.formation_constraints WHERE (constraint_scope = $1 OR id IN ($2))`),
 				IsSelect: true,
 				Args:     []driver.Value{"GLOBAL", testID},
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.Description, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope, entity.Priority, entity.CreatedAt)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -171,7 +171,7 @@ func TestRepository_Create(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:       `^INSERT INTO public.formation_constraints \(.+\) VALUES \(.+\)$`,
-				Args:        []driver.Value{entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope},
+				Args:        []driver.Value{entity.ID, entity.Name, entity.Description, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope, entity.Priority, entity.CreatedAt},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},
@@ -212,13 +212,13 @@ func TestRepository_Delete(t *testing.T) {
 }
 
 func TestRepository_Update(t *testing.T) {
-	updateStmt := regexp.QuoteMeta(`UPDATE public.formation_constraints SET input_template = ? WHERE id = ?`)
+	updateStmt := regexp.QuoteMeta(`UPDATE public.formation_constraints SET input_template = ?, priority = ?, description = ? WHERE id = ?`)
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Formation Constraint By ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         updateStmt,
-				Args:          []driver.Value{entity.InputTemplate, entity.ID},
+				Args:          []driver.Value{entity.InputTemplate, entity.Priority, entity.Description, entity.ID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},

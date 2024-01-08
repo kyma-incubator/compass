@@ -33,6 +33,10 @@ func (_m *Converter) MultipleToGraphQL(in []*model.Formation) ([]*graphql.Format
 	ret := _m.Called(in)
 
 	var r0 []*graphql.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]*model.Formation) ([]*graphql.Formation, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func([]*model.Formation) []*graphql.Formation); ok {
 		r0 = rf(in)
 	} else {
@@ -41,7 +45,6 @@ func (_m *Converter) MultipleToGraphQL(in []*model.Formation) ([]*graphql.Format
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func([]*model.Formation) error); ok {
 		r1 = rf(in)
 	} else {
@@ -56,6 +59,10 @@ func (_m *Converter) ToGraphQL(i *model.Formation) (*graphql.Formation, error) {
 	ret := _m.Called(i)
 
 	var r0 *graphql.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.Formation) (*graphql.Formation, error)); ok {
+		return rf(i)
+	}
 	if rf, ok := ret.Get(0).(func(*model.Formation) *graphql.Formation); ok {
 		r0 = rf(i)
 	} else {
@@ -64,7 +71,6 @@ func (_m *Converter) ToGraphQL(i *model.Formation) (*graphql.Formation, error) {
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.Formation) error); ok {
 		r1 = rf(i)
 	} else {
@@ -74,13 +80,12 @@ func (_m *Converter) ToGraphQL(i *model.Formation) (*graphql.Formation, error) {
 	return r0, r1
 }
 
-type mockConstructorTestingTNewConverter interface {
+// NewConverter creates a new instance of Converter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewConverter creates a new instance of Converter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewConverter(t mockConstructorTestingTNewConverter) *Converter {
+}) *Converter {
 	mock := &Converter{}
 	mock.Mock.Test(t)
 

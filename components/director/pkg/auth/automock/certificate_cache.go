@@ -29,13 +29,12 @@ func (_m *CertificateCache) Get() map[string]*tls.Certificate {
 	return r0
 }
 
-type mockConstructorTestingTNewCertificateCache interface {
+// NewCertificateCache creates a new instance of CertificateCache. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewCertificateCache(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewCertificateCache creates a new instance of CertificateCache. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewCertificateCache(t mockConstructorTestingTNewCertificateCache) *CertificateCache {
+}) *CertificateCache {
 	mock := &CertificateCache{}
 	mock.Mock.Test(t)
 

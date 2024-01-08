@@ -221,7 +221,7 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 		return false, errors.Errorf("entity %s does not have access table", resource.Runtime)
 	}
 
-	if err := repo.UpsertTenantAccessRecursively(ctx, m2mTable, &repo.TenantAccess{
+	if err := repo.CreateTenantAccessRecursively(ctx, m2mTable, &repo.TenantAccess{
 		TenantID:   consumerInternalTenant,
 		ResourceID: runtime.ID,
 		Owner:      false,
@@ -314,30 +314,30 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, 
 }
 
 // SubscribeTenantToApplication fetches model.ApplicationTemplate by region and provider and registers an Application from that template
-func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, providerSubaccountID, consumerTenantID, region, subscribedAppName, subscriptionID string, subscriptionPayload string) (bool, error) {
+func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, providerSubaccountID, consumerTenantID, region, subscribedAppName, subscriptionID string, subscriptionPayload string) (bool, string, string, error) {
 	log.C(ctx).Infof("Subscribe request is triggerred between consumer with tenant: %q and subaccount: %q and provider with subaccount: %q and application name: %q", consumerTenantID, subscribedSubaccountID, providerSubaccountID, subscribedAppName)
 	filters := s.buildLabelFilters(providerID, region)
 	log.C(ctx).Infof("Getting provider application template in tenant %q for labels %q: %q and %q: %q", providerSubaccountID, tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID)
 	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return false, nil
+			return false, "", "", nil
 		}
 
-		return false, errors.Wrapf(err, "while getting application template with filter labels %q and %q", providerID, region)
+		return false, "", "", errors.Wrapf(err, "while getting application template with filter labels %q and %q", providerID, region)
 	}
 
 	consumerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, subscribedSubaccountID)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during application subscription: %v", subscribedSubaccountID, err)
-		return false, errors.Wrapf(err, "while getting tenant with external ID: %q", subscribedSubaccountID)
+		return false, "", "", errors.Wrapf(err, "while getting tenant with external ID: %q", subscribedSubaccountID)
 	}
 
 	ctx = tenant.SaveToContext(ctx, consumerInternalTenant, subscribedSubaccountID)
 
 	applications, err := s.appSvc.ListAll(ctx)
 	if err != nil {
-		return false, errors.Wrapf(err, "while listing applications")
+		return false, "", "", errors.Wrapf(err, "while listing applications")
 	}
 
 	for _, app := range applications {
@@ -345,16 +345,16 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 			// Already subscribed
 			log.C(ctx).Infof("Consumer %q is already subscribed. Adding the new value %q to the %q label", consumerTenantID, subscriptionID, SubscriptionsLabelKey)
 			if err := s.manageSubscriptionsLabelOnSubscribe(ctx, consumerInternalTenant, model.ApplicationLabelableObject, app.ID, subscriptionID); err != nil {
-				return false, err
+				return false, "", "", err
 			}
-			return true, nil
+			return true, "", "", nil
 		}
 	}
 
 	subdomainLabel, err := s.labelSvc.GetByKey(ctx, consumerInternalTenant, model.TenantLabelableObject, consumerInternalTenant, SubdomainLabelKey)
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
-			return false, errors.Wrapf(err, "while getting label %q for %q with id %q", SubdomainLabelKey, model.TenantLabelableObject, consumerInternalTenant)
+			return false, "", "", errors.Wrapf(err, "while getting label %q for %q with id %q", SubdomainLabelKey, model.TenantLabelableObject, consumerInternalTenant)
 		}
 	}
 
@@ -365,11 +365,12 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 		}
 	}
 
-	if err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomainValue, region, subscriptionID, subscriptionPayload); err != nil {
-		return false, err
+	appID, err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomainValue, region, subscriptionID, subscriptionPayload)
+	if err != nil {
+		return false, "", "", err
 	}
 
-	return true, nil
+	return true, appID, appTemplate.ID, nil
 }
 
 // UnsubscribeTenantFromApplication fetches model.ApplicationTemplate by region and provider, lists all applications for
@@ -439,33 +440,33 @@ func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, reg
 	return "", errors.Errorf("could not determine flow")
 }
 
-func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomain, region, subscriptionID string, subscriptionPayload string) error {
+func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomain, region, subscriptionID string, subscriptionPayload string) (string, error) {
 	log.C(ctx).Debugf("Preparing Values for Application Template with name %q", appTemplate.Name)
 	values, err := s.preparePlaceholderValues(appTemplate, subdomain, region, subscriptionPayload)
 	if err != nil {
-		return errors.Wrapf(err, "while preparing the values for Application template %q", appTemplate.Name)
+		return "", errors.Wrapf(err, "while preparing the values for Application template %q", appTemplate.Name)
 	}
 
 	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
 	appCreateInputJSON, err := s.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, values)
 	if err != nil {
-		return errors.Wrapf(err, "while preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
+		return "", errors.Wrapf(err, "while preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
 	}
 
 	log.C(ctx).Debugf("Converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
 	appCreateInputGQL, err := s.appConv.CreateRegisterInputJSONToGQL(appCreateInputJSON)
 	if err != nil {
-		return errors.Wrapf(err, "while converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
+		return "", errors.Wrapf(err, "while converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
 	}
 
 	log.C(ctx).Infof("Validating GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
 	if err := inputvalidation.Validate(appCreateInputGQL); err != nil {
-		return errors.Wrapf(err, "while validating application input from Application Template with name %q", appTemplate.Name)
+		return "", errors.Wrapf(err, "while validating application input from Application Template with name %q", appTemplate.Name)
 	}
 
 	appCreateInputModel, err := s.appConv.CreateInputFromGraphQL(ctx, appCreateInputGQL)
 	if err != nil {
-		return errors.Wrap(err, "while converting ApplicationFromTemplate input")
+		return "", errors.Wrap(err, "while converting ApplicationFromTemplate input")
 	}
 
 	if appCreateInputModel.Labels == nil {
@@ -481,11 +482,11 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 	log.C(ctx).Infof("Creating an Application with name %q from Application Template with name %q", subscribedAppName, appTemplate.Name)
 	appID, err := s.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID)
 	if err != nil {
-		return errors.Wrapf(err, "while creating an Application with name %s from Application Template with name %s", subscribedAppName, appTemplate.Name)
+		return "", errors.Wrapf(err, "while creating an Application with name %s from Application Template with name %s", subscribedAppName, appTemplate.Name)
 	}
 
 	log.C(ctx).Infof("Successfully created an Application with id %q and name %q from Application Template with name %q", appID, subscribedAppName, appTemplate.Name)
-	return nil
+	return appID, nil
 }
 
 func (s *service) preparePlaceholderValues(appTemplate *model.ApplicationTemplate, subdomain, region string, subscriptionPayload string) ([]*model.ApplicationTemplateValueInput, error) {

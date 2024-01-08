@@ -1,9 +1,10 @@
 package adapter
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -45,12 +46,18 @@ type Auth struct {
 	URL           string     `envconfig:"optional"`
 	OAuthStyle    OAuthStyle `envconfig:"optional,default=AuthDetect"`
 	SkipSSLVerify bool       `envconfig:"default=false,SKIP_SSL_VERIFY"`
-	certloader.Config
+	Config        credloader.CertConfig
 }
 
 // swagger:response externalToken
 type ExternalToken struct {
 	Token string
+}
+
+// ScenarioGroup represents scenario group
+type ScenarioGroup struct {
+	Key         string `json:"key"`
+	Description string `json:"description"`
 }
 
 // Request Data represents information about an Application for which token is going to be created.
@@ -62,9 +69,11 @@ type RequestData struct {
 	// in: body
 	Tenant string
 	// in: body
+	TenantType tenant.Type
+	// in: body
 	ClientUser string
 	// in: body
-	ScenarioGroups []string
+	ScenarioGroups []ScenarioGroup
 }
 
 type ResponseData struct {

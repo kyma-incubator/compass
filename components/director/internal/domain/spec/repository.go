@@ -16,12 +16,15 @@ const (
 	specificationsTable = `public.specifications`
 	apiDefIDColumn      = "api_def_id"
 	eventAPIDefIDColumn = "event_def_id"
+	capabilityIDColumn  = "capability_def_id"
 	pageSize            = 1
 	cursor              = ""
 )
 
 var (
-	specificationsColumns = []string{"id", apiDefIDColumn, eventAPIDefIDColumn, "spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type", "custom_type"}
+	specificationsColumns = []string{"id", apiDefIDColumn, eventAPIDefIDColumn, capabilityIDColumn, "spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type", "capability_spec_format", "capability_spec_type", "custom_type"}
+	updatableColumns      = []string{"spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type", "capability_spec_format", "capability_spec_type"}
+	idColumns             = []string{"id"}
 	orderByColumns        = repo.OrderByParams{repo.NewAscOrderBy("created_at"), repo.NewAscOrderBy("id")}
 )
 
@@ -65,13 +68,13 @@ func NewRepository(conv Converter) *repository {
 			},
 		}),
 		listerGlobal: repo.NewListerGlobal(resource.Specification, specificationsTable, specificationsColumns),
-		idLister: repo.NewListerWithOrderBy(specificationsTable, []string{"id"}, repo.OrderByParams{
+		idLister: repo.NewListerWithOrderBy(specificationsTable, idColumns, repo.OrderByParams{
 			{
 				Field: "created_at",
 				Dir:   repo.AscOrderBy,
 			},
 		}),
-		idListerGlobal: repo.NewListerGlobalWithOrderBy(resource.Specification, specificationsTable, []string{"id"}, repo.OrderByParams{
+		idListerGlobal: repo.NewListerGlobalWithOrderBy(resource.Specification, specificationsTable, idColumns, repo.OrderByParams{
 			{
 				Field: "created_at",
 				Dir:   repo.AscOrderBy,
@@ -80,8 +83,8 @@ func NewRepository(conv Converter) *repository {
 		unionLister:   repo.NewUnionLister(specificationsTable, specificationsColumns),
 		deleter:       repo.NewDeleter(specificationsTable),
 		deleterGlobal: repo.NewDeleterGlobal(resource.Specification, specificationsTable),
-		updater:       repo.NewUpdater(specificationsTable, []string{"spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type"}, []string{"id"}),
-		updaterGlobal: repo.NewUpdaterGlobal(resource.Specification, specificationsTable, []string{"spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type"}, []string{"id"}),
+		updater:       repo.NewUpdater(specificationsTable, updatableColumns, idColumns),
+		updaterGlobal: repo.NewUpdaterGlobal(resource.Specification, specificationsTable, updatableColumns, idColumns),
 		existQuerier:  repo.NewExistQuerier(specificationsTable),
 		conv:          conv,
 	}
@@ -319,6 +322,8 @@ func (r *repository) referenceObjectFieldName(objectType model.SpecReferenceObje
 		return apiDefIDColumn, nil
 	case model.EventSpecReference:
 		return eventAPIDefIDColumn, nil
+	case model.CapabilitySpecReference:
+		return capabilityIDColumn, nil
 	}
 
 	return "", apperrors.NewInternalError("Invalid type of the Specification reference object")

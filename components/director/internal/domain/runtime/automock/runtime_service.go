@@ -63,6 +63,10 @@ func (_m *RuntimeService) Get(ctx context.Context, id string) (*model.Runtime, e
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Runtime, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Runtime); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -71,7 +75,6 @@ func (_m *RuntimeService) Get(ctx context.Context, id string) (*model.Runtime, e
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -86,6 +89,10 @@ func (_m *RuntimeService) GetByFilters(ctx context.Context, filters []*labelfilt
 	ret := _m.Called(ctx, filters)
 
 	var r0 *model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) (*model.Runtime, error)); ok {
+		return rf(ctx, filters)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) *model.Runtime); ok {
 		r0 = rf(ctx, filters)
 	} else {
@@ -94,7 +101,6 @@ func (_m *RuntimeService) GetByFilters(ctx context.Context, filters []*labelfilt
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, filters)
 	} else {
@@ -109,6 +115,10 @@ func (_m *RuntimeService) GetByTokenIssuer(ctx context.Context, issuer string) (
 	ret := _m.Called(ctx, issuer)
 
 	var r0 *model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Runtime, error)); ok {
+		return rf(ctx, issuer)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Runtime); ok {
 		r0 = rf(ctx, issuer)
 	} else {
@@ -117,7 +127,6 @@ func (_m *RuntimeService) GetByTokenIssuer(ctx context.Context, issuer string) (
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, issuer)
 	} else {
@@ -132,6 +141,10 @@ func (_m *RuntimeService) GetLabel(ctx context.Context, runtimeID string, key st
 	ret := _m.Called(ctx, runtimeID, key)
 
 	var r0 *model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Label, error)); ok {
+		return rf(ctx, runtimeID, key)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Label); ok {
 		r0 = rf(ctx, runtimeID, key)
 	} else {
@@ -140,7 +153,6 @@ func (_m *RuntimeService) GetLabel(ctx context.Context, runtimeID string, key st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, runtimeID, key)
 	} else {
@@ -155,6 +167,10 @@ func (_m *RuntimeService) List(ctx context.Context, filter []*labelfilter.LabelF
 	ret := _m.Called(ctx, filter, pageSize, cursor)
 
 	var r0 *model.RuntimePage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) (*model.RuntimePage, error)); ok {
+		return rf(ctx, filter, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) *model.RuntimePage); ok {
 		r0 = rf(ctx, filter, pageSize, cursor)
 	} else {
@@ -163,7 +179,6 @@ func (_m *RuntimeService) List(ctx context.Context, filter []*labelfilter.LabelF
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, filter, pageSize, cursor)
 	} else {
@@ -178,6 +193,10 @@ func (_m *RuntimeService) ListLabels(ctx context.Context, runtimeID string) (map
 	ret := _m.Called(ctx, runtimeID)
 
 	var r0 map[string]*model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (map[string]*model.Label, error)); ok {
+		return rf(ctx, runtimeID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) map[string]*model.Label); ok {
 		r0 = rf(ctx, runtimeID)
 	} else {
@@ -186,7 +205,6 @@ func (_m *RuntimeService) ListLabels(ctx context.Context, runtimeID string) (map
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, runtimeID)
 	} else {
@@ -215,6 +233,10 @@ func (_m *RuntimeService) UnsafeExtractModifiableLabels(labels map[string]interf
 	ret := _m.Called(labels)
 
 	var r0 map[string]interface{}
+	var r1 error
+	if rf, ok := ret.Get(0).(func(map[string]interface{}) (map[string]interface{}, error)); ok {
+		return rf(labels)
+	}
 	if rf, ok := ret.Get(0).(func(map[string]interface{}) map[string]interface{}); ok {
 		r0 = rf(labels)
 	} else {
@@ -223,7 +245,6 @@ func (_m *RuntimeService) UnsafeExtractModifiableLabels(labels map[string]interf
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(map[string]interface{}) error); ok {
 		r1 = rf(labels)
 	} else {
@@ -247,13 +268,12 @@ func (_m *RuntimeService) Update(ctx context.Context, id string, in model.Runtim
 	return r0
 }
 
-type mockConstructorTestingTNewRuntimeService interface {
+// NewRuntimeService creates a new instance of RuntimeService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeService creates a new instance of RuntimeService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeService(t mockConstructorTestingTNewRuntimeService) *RuntimeService {
+}) *RuntimeService {
 	mock := &RuntimeService{}
 	mock.Mock.Test(t)
 

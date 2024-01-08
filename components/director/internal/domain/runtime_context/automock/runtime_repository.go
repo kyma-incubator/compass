@@ -18,13 +18,16 @@ func (_m *RuntimeRepository) OwnerExists(ctx context.Context, tenant string, id 
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -34,13 +37,12 @@ func (_m *RuntimeRepository) OwnerExists(ctx context.Context, tenant string, id 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewRuntimeRepository interface {
+// NewRuntimeRepository creates a new instance of RuntimeRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeRepository creates a new instance of RuntimeRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeRepository(t mockConstructorTestingTNewRuntimeRepository) *RuntimeRepository {
+}) *RuntimeRepository {
 	mock := &RuntimeRepository{}
 	mock.Mock.Test(t)
 

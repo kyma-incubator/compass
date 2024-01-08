@@ -210,18 +210,22 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 
 // Update updates an EventDefinition. This function is used in the graphQL flow.
 func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error {
-	return s.UpdateInManyBundles(ctx, resourceType, id, in, specIn, nil, nil, nil, 0, "")
+	return s.UpdateInManyBundles(ctx, resourceType, id, nil, in, specIn, nil, nil, nil, 0, "")
 }
 
 // UpdateInManyBundles updates EventDefinition/s. This function is used both in the ORD scenario and is re-used in Update but with "null" ORD specific arguments.
-func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error {
+func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, packageID *string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error {
 	eventDef, err := s.getEventDef(ctx, id, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while getting EventDefinition with ID %s", id)
 	}
 
+	if packageID == nil {
+		packageID = eventDef.PackageID
+	}
+
 	resourceID := getParentResourceID(eventDef)
-	eventDef = in.ToEventDefinition(id, resourceType, resourceID, eventDef.PackageID, eventHash)
+	eventDef = in.ToEventDefinition(id, resourceType, resourceID, packageID, eventHash)
 
 	if err = s.updateEventDef(ctx, eventDef, resourceType); err != nil {
 		return errors.Wrapf(err, "while updating EventDefinition with ID %s", id)

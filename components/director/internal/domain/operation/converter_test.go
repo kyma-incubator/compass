@@ -13,7 +13,7 @@ import (
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
 		// GIVEN
-		opModel := fixOperationModel(ordOpType, model.OperationStatusScheduled)
+		opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
 		require.NotNil(t, opModel)
 
 		conv := operation.NewConverter()
@@ -22,32 +22,32 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		entity := conv.ToEntity(opModel)
 
 		// THEN
-		expectedOperation := fixEntityOperation(operationID, ordOpType, model.OperationStatusScheduled)
+		expectedOperation := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
 
 		assert.Equal(t, expectedOperation, entity)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		// GIVEN
 		opModel := &model.Operation{
-			ID:         operationID,
-			OpType:     ordOpType,
-			Status:     model.OperationStatusScheduled,
-			Data:       nil,
-			Error:      nil,
-			Priority:   1,
-			CreatedAt:  nil,
-			FinishedAt: nil,
+			ID:        operationID,
+			OpType:    testOpType,
+			Status:    model.OperationStatusScheduled,
+			Data:      nil,
+			Error:     nil,
+			Priority:  1,
+			CreatedAt: nil,
+			UpdatedAt: nil,
 		}
 
 		expectedEntity := &operation.Entity{
-			ID:         operationID,
-			Type:       ordOpType,
-			Status:     string(model.OperationStatusScheduled),
-			Data:       sql.NullString{},
-			Error:      sql.NullString{},
-			Priority:   1,
-			CreatedAt:  nil,
-			FinishedAt: nil,
+			ID:        operationID,
+			Type:      string(testOpType),
+			Status:    string(model.OperationStatusScheduled),
+			Data:      sql.NullString{},
+			Error:     sql.NullString{},
+			Priority:  1,
+			CreatedAt: nil,
+			UpdatedAt: nil,
 		}
 		conv := operation.NewConverter()
 
@@ -62,38 +62,38 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
 		// GIVEN
-		entity := fixEntityOperation(operationID, ordOpType, model.OperationStatusScheduled)
+		entity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
 		conv := operation.NewConverter()
 
 		// WHEN
 		opModel := conv.FromEntity(entity)
 
 		// THEN
-		expectedOperation := fixOperationModel(ordOpType, model.OperationStatusScheduled)
+		expectedOperation := fixOperationModel(testOpType, model.OperationStatusScheduled)
 		assert.Equal(t, expectedOperation, opModel)
 	})
 
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		// GIVEN
 		entity := &operation.Entity{
-			ID:         operationID,
-			Type:       ordOpType,
-			Status:     string(model.OperationStatusScheduled),
-			Data:       sql.NullString{},
-			Error:      sql.NullString{},
-			Priority:   1,
-			CreatedAt:  nil,
-			FinishedAt: nil,
+			ID:        operationID,
+			Type:      string(testOpType),
+			Status:    string(model.OperationStatusScheduled),
+			Data:      sql.NullString{},
+			Error:     sql.NullString{},
+			Priority:  1,
+			CreatedAt: nil,
+			UpdatedAt: nil,
 		}
 		expectedModel := &model.Operation{
-			ID:         operationID,
-			OpType:     ordOpType,
-			Status:     model.OperationStatusScheduled,
-			Data:       nil,
-			Error:      nil,
-			Priority:   1,
-			CreatedAt:  nil,
-			FinishedAt: nil,
+			ID:        operationID,
+			OpType:    testOpType,
+			Status:    model.OperationStatusScheduled,
+			Data:      nil,
+			Error:     nil,
+			Priority:  1,
+			CreatedAt: nil,
+			UpdatedAt: nil,
 		}
 		conv := operation.NewConverter()
 

@@ -22,9 +22,15 @@ UPDATE_EXPECTED_SCHEMA_VERSION_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/u
 SCHEMA_MIGRATOR_COMPONENT_PATH=${ROOT_PATH}/components/schema-migrator
 RESET_VALUES_YAML=true
 
+K3D_NAME="kyma"
 K3D_MEMORY=8192MB
 K3D_TIMEOUT=10m0s
-APISERVER_VERSION=1.22.16
+APISERVER_VERSION=1.25.6
+
+# These variables are used only during local installation to override the utils to use the k3d cluster
+KUBECTL="kubectl_k3d_kyma"
+HELM="helm_k3d_kyma"
+KYMA="kyma_k3d_kyma"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -42,6 +48,10 @@ do
         ;;
         --skip-db-install)
             SKIP_DB_INSTALL=true
+            shift # past argument
+        ;;
+        --skip-ory-install)
+            SKIP_ORY_INSTALL=true
             shift # past argument
         ;;
         --dump-db)
@@ -110,8 +120,8 @@ function set_oidc_config() {
 
 # NOTE: Only one trap per script is supported.
 function cleanup_trap() {
-  if [[ -f k3d-ca.crt ]]; then
-    rm -f k3d-ca.crt
+  if [[ -f "$K3D_CA" ]]; then
+    rm -f "$K3D_CA"
   fi
   if [[ -f ${COMPASS_CERT_PATH} ]]; then
     rm -f "${COMPASS_CERT_PATH}"
@@ -128,34 +138,32 @@ function cleanup_trap() {
 
 trap cleanup_trap RETURN EXIT INT TERM
 
+K3D_CA=k3d-ca.crt
 function mount_k3d_ca_to_oathkeeper() {
   echo "Mounting k3d CA cert into oathkeeper's container..."
 
-  docker exec k3d-kyma-server-0 cat /var/lib/rancher/k3s/server/tls/server-ca.crt > k3d-ca.crt
-  kubectl create configmap -n kyma-system k3d-ca --from-file k3d-ca.crt --dry-run=client -o yaml | kubectl apply -f -
+  docker exec k3d-kyma-server-0 cat /var/lib/rancher/k3s/server/tls/server-ca.crt > "$K3D_CA"
+  "$KUBECTL" create configmap -n ory k3d-ca --from-file "$K3D_CA" --dry-run=client -o yaml | "$KUBECTL" apply -f -
 
-  OATHKEEPER_DEPLOYMENT_NAME=$(kubectl get deployment -n kyma-system | grep oathkeeper | awk '{print $1}')
-  OATHKEEPER_CONTAINER_NAME=$(kubectl get deployment -n kyma-system "$OATHKEEPER_DEPLOYMENT_NAME" -o=jsonpath='{.spec.template.spec.containers[*].name}' | tr -s '[[:space:]]' '\n' | grep -v 'maester')
+  OATHKEEPER_DEPLOYMENT_NAME=$("$KUBECTL" get deployment -n ory | grep oathkeeper | awk '{print $1}')
+  OATHKEEPER_CONTAINER_NAME=$("$KUBECTL" get deployment -n ory "$OATHKEEPER_DEPLOYMENT_NAME" -o=jsonpath='{.spec.template.spec.containers[*].name}' | tr -s '[[:space:]]' '\n' | grep -v 'maester')
 
-  kubectl -n kyma-system patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
- -p '{"spec":{"template":{"spec":{"volumes":[{"configMap":{"defaultMode": 420,"name": "k3d-ca"},"name": "k3d-ca-volume"}]}}}}'
-
-  kubectl -n kyma-system patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
- -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/k3d-ca.crt'","name": "k3d-ca-volume","subPath": "k3d-ca.crt"}]}]}}}}'
+  "$KUBECTL" -n ory patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
+   -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/k3d-ca.crt'","name": "k3d-ca-volume","subPath": "k3d-ca.crt"}]}],"volumes":[{"configMap":{"defaultMode": 420,"name": "k3d-ca"},"name": "k3d-ca-volume"}]}}}}'
 }
 
 # Currently there is a problem fetching JWKS keys, used to validate JWT token send to hydra. The function bellow patches the RequestAuthentication istio resource
 # with the needed keys, by first getting them using kubectl
 function patchJWKS() {
   echo "Patching Request Authentication resources..."
-  JWKS="'$(kubectl get --raw '/openid/v1/jwks')'"
-  until [[ $(kubectl get requestauthentication kyma-internal-authn -n kyma-system 2>/dev/null) &&
-          $(kubectl get requestauthentication compass-internal-authn -n compass-system 2>/dev/null) ]]; do
+  JWKS="'$("$KUBECTL" get --raw '/openid/v1/jwks')'"
+  until [[ $("$KUBECTL" get requestauthentication ory-internal-authn -n ory 2>/dev/null) &&
+          $("$KUBECTL" get requestauthentication compass-internal-authn -n compass-system 2>/dev/null) ]]; do
     echo "Waiting for Request Authentication resources to be created"
     sleep 8
   done
-  kubectl get requestauthentication kyma-internal-authn -n kyma-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
-  kubectl get requestauthentication compass-internal-authn -n compass-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
+  "$KUBECTL" get requestauthentication ory-internal-authn -n ory -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | "$KUBECTL" apply -f -
+  "$KUBECTL" get requestauthentication compass-internal-authn -n compass-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | "$KUBECTL" apply -f -
   echo "Request Authentication resources were successfully patched"
 }
 
@@ -237,8 +245,8 @@ fi
 if [[ ! ${SKIP_K3D_START} ]]; then
   echo "Provisioning k3d cluster..."
   kyma provision k3d \
+  --name "$K3D_NAME" \
   --k3s-arg '--kube-apiserver-arg=anonymous-auth=true@server:*' \
-  --k3s-arg '--kube-apiserver-arg=feature-gates=ServiceAccountIssuerDiscovery=true@server:*' \
   --k3d-arg='--servers-memory '"${K3D_MEMORY}" \
   --k3d-arg='--agents-memory '"${K3D_MEMORY}" \
   --k3d-arg='--volume '"${DATA_DIR}:/tmp/dbdata" \
@@ -248,38 +256,37 @@ if [[ ! ${SKIP_K3D_START} ]]; then
   $SUDO sh -c "echo \"\n127.0.0.1 k3d-kyma-registry\" >> /etc/hosts"
 fi
 
-usek3d
-
 echo "Label k3d node for benchmark execution..."
-NODE=$(kubectl get nodes | grep agent | tail -n 1 | cut -d ' ' -f 1)
-kubectl label --overwrite node "$NODE" benchmark=true || true
+NODE=$("$KUBECTL" get nodes | grep agent | tail -n 1 | cut -d ' ' -f 1)
+"$KUBECTL" label --overwrite node "$NODE" benchmark=true || true
 
 if [[ ! ${SKIP_KYMA_START} ]]; then
-  LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh
-  kubectl set image -n kyma-system cronjob/oathkeeper-jwks-rotator keys-generator=oryd/oathkeeper:v0.38.23
-  kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
-  until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath={.status.lastScheduleTime}) ]]; do
-      echo "Waiting for cronjob oathkeeper-jwks-rotator to be scheduled"
-      sleep 3
-  done
-  kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
+  KYMA="$KYMA" KUBECTL="$KUBECTL" LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh
+fi
+
+if [[ ! ${SKIP_DB_INSTALL} ]]; then
+  DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
+  KUBECTL="$KUBECTL" HELM="$HELM" bash "${ROOT_PATH}"/installation/scripts/install-db.sh --overrides-file "${DB_OVERRIDES}" --timeout 30m0s
+  STATUS=$("$HELM" status localdb -n compass-system -o json | jq .info.status)
+  echo "DB installation status ${STATUS}"
+fi
+
+if [[ ! ${SKIP_ORY_INSTALL} ]]; then
+  echo "Installing ORY Stack..."
+  KUBECTL="$KUBECTL" HELM="$HELM" bash "${ROOT_PATH}"/installation/scripts/install-ory.sh
+fi
+
+if [[ ! "$("$HELM" status ory-stack -n ory)" ]]; then
+  echo -e "${RED}Ory Helm release does not exist, please omit the '--skip-ory-install' to install it.${NC}"
+  exit 1
 fi
 
 mount_k3d_ca_to_oathkeeper
 
-if [[ ! ${SKIP_DB_INSTALL} ]]; then
-  DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
-  bash "${ROOT_PATH}"/installation/scripts/install-db.sh --overrides-file "${DB_OVERRIDES}" --timeout 30m0s
-  STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
-  echo "DB installation status ${STATUS}"
-fi
-
 patchJWKS&
 
 COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
-bash "${ROOT_PATH}"/installation/scripts/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --timeout 30m0s --sql-helm-backend
-STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
-echo "Compass installation status ${STATUS}"
+KUBECTL="$KUBECTL" HELM="$HELM" bash "${ROOT_PATH}"/installation/scripts/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --timeout 30m0s --sql-helm-backend
 
 prometheusMTLSPatch
 

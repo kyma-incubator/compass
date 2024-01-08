@@ -34,6 +34,10 @@ func (_m *DestinationRepository) GetDestinationByNameAndTenant(ctx context.Conte
 	ret := _m.Called(ctx, destinationName, tenantID)
 
 	var r0 *model.Destination
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Destination, error)); ok {
+		return rf(ctx, destinationName, tenantID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Destination); ok {
 		r0 = rf(ctx, destinationName, tenantID)
 	} else {
@@ -42,7 +46,6 @@ func (_m *DestinationRepository) GetDestinationByNameAndTenant(ctx context.Conte
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, destinationName, tenantID)
 	} else {
@@ -52,22 +55,25 @@ func (_m *DestinationRepository) GetDestinationByNameAndTenant(ctx context.Conte
 	return r0, r1
 }
 
-// ListByTenantIDAndAssignmentID provides a mock function with given fields: ctx, tenantID, formationAssignmentID
-func (_m *DestinationRepository) ListByTenantIDAndAssignmentID(ctx context.Context, tenantID string, formationAssignmentID string) ([]*model.Destination, error) {
-	ret := _m.Called(ctx, tenantID, formationAssignmentID)
+// ListByAssignmentID provides a mock function with given fields: ctx, formationAssignmentID
+func (_m *DestinationRepository) ListByAssignmentID(ctx context.Context, formationAssignmentID string) ([]*model.Destination, error) {
+	ret := _m.Called(ctx, formationAssignmentID)
 
 	var r0 []*model.Destination
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.Destination); ok {
-		r0 = rf(ctx, tenantID, formationAssignmentID)
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Destination, error)); ok {
+		return rf(ctx, formationAssignmentID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Destination); ok {
+		r0 = rf(ctx, formationAssignmentID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.Destination)
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenantID, formationAssignmentID)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, formationAssignmentID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -89,13 +95,12 @@ func (_m *DestinationRepository) UpsertWithEmbeddedTenant(ctx context.Context, _
 	return r0
 }
 
-type mockConstructorTestingTNewDestinationRepository interface {
+// NewDestinationRepository creates a new instance of DestinationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDestinationRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDestinationRepository creates a new instance of DestinationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDestinationRepository(t mockConstructorTestingTNewDestinationRepository) *DestinationRepository {
+}) *DestinationRepository {
 	mock := &DestinationRepository{}
 	mock.Mock.Test(t)
 

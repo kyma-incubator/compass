@@ -53,9 +53,14 @@ type APIDefinition struct {
 	Version                                 *Version
 	Extensible                              json.RawMessage
 	ResourceHash                            *string
-	Hierarchy                               json.RawMessage
 	SupportedUseCases                       json.RawMessage
 	DocumentationLabels                     json.RawMessage
+	CorrelationIDs                          json.RawMessage
+	Direction                               *string
+	LastUpdate                              *string
+	DeprecationDate                         *string
+	Responsible                             *string
+	Usage                                   *string
 	*BaseEntity
 }
 
@@ -73,7 +78,7 @@ type APIDefinitionInput struct {
 	TargetURLs                              json.RawMessage               `json:"entryPoints"`
 	Group                                   *string                       `json:",omitempty"` //  group allows you to find the same API but in different version
 	OrdID                                   *string                       `json:"ordId"`
-	LocalTenantID                           *string                       `json:"localTenantId"`
+	LocalTenantID                           *string                       `json:"localId"`
 	ShortDescription                        *string                       `json:"shortDescription"`
 	SystemInstanceAware                     *bool                         `json:"systemInstanceAware"`
 	PolicyLevel                             *string                       `json:"policyLevel"`
@@ -100,11 +105,16 @@ type APIDefinitionInput struct {
 	ResourceDefinitions                     []*APIResourceDefinition      `json:"resourceDefinitions"`
 	PartOfConsumptionBundles                []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 	DefaultConsumptionBundle                *string                       `json:"defaultConsumptionBundle"`
-	Hierarchy                               json.RawMessage               `json:"hierarchy"`
-	SupportedUseCases                       json.RawMessage               `json:"supported_use_cases"`
+	SupportedUseCases                       json.RawMessage               `json:"supportedUseCases"`
+	EntityTypeMappings                      []*EntityTypeMappingInput     `json:"entityTypeMappings"`
 	DocumentationLabels                     json.RawMessage               `json:"documentationLabels"`
-
-	*VersionInput `hash:"ignore"`
+	CorrelationIDs                          json.RawMessage               `json:"correlationIds,omitempty"`
+	Direction                               *string                       `json:"direction"`
+	LastUpdate                              *string                       `json:"lastUpdate"`
+	DeprecationDate                         *string                       `json:"deprecationDate"`
+	Responsible                             *string                       `json:"responsible"`
+	Usage                                   *string                       `json:"usage"`
+	*VersionInput                           `hash:"ignore"`
 }
 
 // APIResourceDefinition missing godoc
@@ -121,7 +131,7 @@ func (rd *APIResourceDefinition) Validate() error {
 	const CustomTypeRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	return validation.ValidateStruct(rd,
 		validation.Field(&rd.Type, validation.Required, validation.In(APISpecTypeOpenAPIV2, APISpecTypeOpenAPIV3, APISpecTypeRaml, APISpecTypeEDMX,
-			APISpecTypeCsdl, APISpecTypeWsdlV1, APISpecTypeWsdlV2, APISpecTypeRfcMetadata, APISpecTypeCustom, APISpecTypeSQLAPIDefinitionV1), validation.When(rd.CustomType != "", validation.In(APISpecTypeCustom))),
+			APISpecTypeCsdl, APISpecTypeWsdlV1, APISpecTypeWsdlV2, APISpecTypeRfcMetadata, APISpecTypeCustom, APISpecTypeSQLAPIDefinitionV1, APISpecTypeGraphqlSDL), validation.When(rd.CustomType != "", validation.In(APISpecTypeCustom))),
 		validation.Field(&rd.CustomType, validation.When(rd.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex)))),
 		validation.Field(&rd.MediaType, validation.Required, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML, SpecFormatApplicationXML, SpecFormatPlainText, SpecFormatOctetStream),
 			validation.When(rd.Type == APISpecTypeOpenAPIV2 || rd.Type == APISpecTypeOpenAPIV3, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML)),
@@ -130,9 +140,10 @@ func (rd *APIResourceDefinition) Validate() error {
 			validation.When(rd.Type == APISpecTypeCsdl, validation.In(SpecFormatApplicationJSON)),
 			validation.When(rd.Type == APISpecTypeWsdlV1 || rd.Type == APISpecTypeWsdlV2, validation.In(SpecFormatApplicationXML)),
 			validation.When(rd.Type == APISpecTypeRfcMetadata, validation.In(SpecFormatApplicationXML)),
-			validation.When(rd.Type == APISpecTypeSQLAPIDefinitionV1, validation.In(SpecFormatApplicationJSON))),
+			validation.When(rd.Type == APISpecTypeSQLAPIDefinitionV1, validation.In(SpecFormatApplicationJSON)),
+			validation.When(rd.Type == APISpecTypeGraphqlSDL, validation.In(SpecFormatPlainText))),
 		validation.Field(&rd.URL, validation.Required, is.RequestURI),
-		validation.Field(&rd.AccessStrategy, validation.Required),
+		validation.Field(&rd.AccessStrategy),
 	)
 }
 
@@ -213,9 +224,14 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, resourceType resource.Ty
 		Industry:            a.Industry,
 		Extensible:          a.Extensible,
 		Version:             a.VersionInput.ToVersion(),
-		Hierarchy:           a.Hierarchy,
 		SupportedUseCases:   a.SupportedUseCases,
 		DocumentationLabels: a.DocumentationLabels,
+		CorrelationIDs:      a.CorrelationIDs,
+		Direction:           a.Direction,
+		LastUpdate:          a.LastUpdate,
+		DeprecationDate:     a.DeprecationDate,
+		Responsible:         a.Responsible,
+		Usage:               a.Usage,
 		ResourceHash:        hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,

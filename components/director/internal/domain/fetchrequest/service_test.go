@@ -7,13 +7,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	accessstrategyautomock "github.com/kyma-incubator/compass/components/director/pkg/accessstrategy/automock"
@@ -301,7 +302,7 @@ func TestService_HandleSpec(t *testing.T) {
 			Name: "Success with access strategy",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				executor := &accessstrategyautomock.Executor{}
-				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL, localTenantID, http.Header{}).Return(&http.Response{
+				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL, localTenantID, &sync.Map{}).Return(&http.Response{
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
 				}, nil).Once()
@@ -336,7 +337,7 @@ func TestService_HandleSpec(t *testing.T) {
 			Name: "Fails when access strategy execution fail",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				executor := &accessstrategyautomock.Executor{}
-				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL, localTenantID, http.Header{}).Return(nil, testErr).Once()
+				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL, localTenantID, &sync.Map{}).Return(nil, testErr).Once()
 
 				executorProvider := &accessstrategyautomock.ExecutorProvider{}
 				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
@@ -475,7 +476,7 @@ func TestService_HandleSpec(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			certCache := certloader.NewCertificateCache()
+			certCache := credloader.NewCertificateCache()
 			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName)
 			if testCase.ExecutorProviderFunc != nil {
 				executorProviderMock = testCase.ExecutorProviderFunc()
@@ -512,7 +513,7 @@ func TestService_HandleSpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
 	frRepo := &automock.FetchRequestRepository{}
 	frRepo.On("Update", ctx, tenantID, mock.Anything).Return(errors.New("error")).Once()
 
-	certCache := certloader.NewCertificateCache()
+	certCache := credloader.NewCertificateCache()
 	svc := fetchrequest.NewService(frRepo, NewTestClient(func(req *http.Request) *http.Response {
 		return &http.Response{
 			StatusCode: http.StatusOK,
@@ -542,7 +543,7 @@ func TestService_HandleSpec_SucceedsAfterRetryMechanismIsLeveraged(t *testing.T)
 	frRepo := &automock.FetchRequestRepository{}
 	frRepo.On("Update", ctx, tenantID, mock.Anything).Return(nil).Once()
 
-	certCache := certloader.NewCertificateCache()
+	certCache := credloader.NewCertificateCache()
 	retryConfig := &retry.Config{
 		Attempts: 3,
 		Delay:    100 * time.Millisecond,
@@ -589,7 +590,7 @@ func TestService_HandleSpec_FailsAfterRetryMechanismIsExhausted(t *testing.T) {
 	frRepo := &automock.FetchRequestRepository{}
 	frRepo.On("Update", ctx, tenantID, mock.Anything).Return(nil).Once()
 
-	certCache := certloader.NewCertificateCache()
+	certCache := credloader.NewCertificateCache()
 	retryConfig := &retry.Config{
 		Attempts: 3,
 		Delay:    100 * time.Millisecond,

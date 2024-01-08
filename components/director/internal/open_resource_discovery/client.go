@@ -8,6 +8,9 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
+
+	"github.com/avast/retry-go/v4"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -30,6 +33,8 @@ import (
 // ClientConfig contains configuration for the ORD aggregator client
 type ClientConfig struct {
 	maxParallelDocumentsPerApplication int
+	retryDelay                         time.Duration
+	retryAttempts                      uint
 }
 
 // Resource represents a resource that is being aggregated. This would be an Application or Application Template
@@ -42,9 +47,11 @@ type Resource struct {
 }
 
 // NewClientConfig creates new ClientConfig from the supplied parameters
-func NewClientConfig(maxParallelDocumentsPerApplication int) ClientConfig {
+func NewClientConfig(maxParallelDocumentsPerApplication int, retryDelay time.Duration, retryAttempts uint) ClientConfig {
 	return ClientConfig{
 		maxParallelDocumentsPerApplication: maxParallelDocumentsPerApplication,
+		retryDelay:                         retryDelay,
+		retryAttempts:                      retryAttempts,
 	}
 }
 
@@ -55,15 +62,16 @@ type Client interface {
 	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, appBaseURL directorwh.OpenResourceDiscoveryWebhookRequestObject) (Documents, string, error)
 }
 
-type client struct {
+// ORDDocumentsClient defines ORD documents client
+type ORDDocumentsClient struct {
 	config ClientConfig
 	*http.Client
 	accessStrategyExecutorProvider accessstrategy.ExecutorProvider
 }
 
 // NewClient creates new ORD Client via a provided http.Client
-func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *client {
-	return &client{
+func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *ORDDocumentsClient {
+	return &ORDDocumentsClient{
 		config:                         config,
 		Client:                         httpClient,
 		accessStrategyExecutorProvider: accessStrategyExecutorProvider,
@@ -71,7 +79,7 @@ func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecu
 }
 
 // FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
-func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (Documents, string, error) {
+func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (Documents, string, error) {
 	var tenantValue string
 
 	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference && resource.Type != directorresource.ApplicationTemplate; needsTenantHeader {
@@ -83,8 +91,23 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 		tenantValue = tntFromCtx.ExternalID
 	}
 
-	config, err := c.fetchConfig(ctx, resource, webhook, tenantValue, requestObject)
+	log.C(ctx).Infof("Fetching ORD well-known config with retry")
+	var config *WellKnownConfig
+	err := retry.Do(
+		func() error {
+			var err error
+			config, err = c.fetchConfig(ctx, resource, webhook, tenantValue, requestObject)
+			return err
+		},
+		retry.Attempts(c.config.retryAttempts),
+		retry.Delay(c.config.retryDelay),
+		retry.OnRetry(func(n uint, err error) {
+			log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
+		}),
+	)
+
 	if err != nil {
+		log.C(ctx).Error(errors.Wrap(err, "error fetching ORD well-known config").Error())
 		return nil, "", err
 	}
 
@@ -116,7 +139,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 
 			documentURL, err := buildDocumentURL(docDetails.URL, webhookBaseURL, str.PtrStrToStr(webhook.ProxyURL), ordWebhookMapping)
 			if err != nil {
-				log.C(ctx).Warn(errors.Wrap(err, "error building document URL").Error())
+				log.C(ctx).Error(errors.Wrap(err, "error building document URL").Error())
 				addError(&fetchDocErrors, err, &errMutex)
 				return
 			}
@@ -125,9 +148,21 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 				log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
 			}
 
-			doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, requestObject)
+			var doc *Document
+			err = retry.Do(
+				func() error {
+					var innerErr error
+					doc, innerErr = c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, requestObject)
+					return innerErr
+				},
+				retry.Attempts(c.config.retryAttempts),
+				retry.Delay(c.config.retryDelay),
+				retry.OnRetry(func(n uint, err error) {
+					log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
+				}),
+			)
 			if err != nil {
-				log.C(ctx).Warn(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
+				log.C(ctx).Error(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
 				addError(&fetchDocErrors, err, &errMutex)
 				return
 			}
@@ -158,7 +193,7 @@ func convertErrorsToStrings(errors []error) (result []string) {
 	return result
 }
 
-func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (*Document, error) {
+func (c *ORDDocumentsClient) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (*Document, error) {
 	log.C(ctx).Infof("Fetching ORD Document %q with Access Strategy %q", documentURL, accessStrategy)
 	executor, err := c.accessStrategyExecutorProvider.Provide(accessStrategy)
 	if err != nil {
@@ -206,7 +241,7 @@ func addError(fetchDocErrors *[]error, err error, mutex *sync.Mutex) {
 	*fetchDocErrors = append(*fetchDocErrors, err)
 }
 
-func (c *client) fetchConfig(ctx context.Context, resource Resource, webhook *model.Webhook, tenantValue string, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (*WellKnownConfig, error) {
+func (c *ORDDocumentsClient) fetchConfig(ctx context.Context, resource Resource, webhook *model.Webhook, tenantValue string, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (*WellKnownConfig, error) {
 	var resp *http.Response
 	var err error
 
@@ -252,7 +287,7 @@ func (c *client) fetchConfig(ctx context.Context, resource Resource, webhook *mo
 
 	config := WellKnownConfig{}
 	if err := json.Unmarshal(bodyBytes, &config); err != nil {
-		return nil, errors.Wrap(err, "error unmarshaling json body")
+		return nil, errors.Wrap(err, "error unmarshaling wellknown json body")
 	}
 
 	return &config, nil

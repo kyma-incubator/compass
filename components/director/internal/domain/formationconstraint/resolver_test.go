@@ -607,25 +607,69 @@ func TestResolver_UpdateFormationConstraint(t *testing.T) {
 		ExpectedError                error
 	}{
 		{
-			Name:  "Success",
+			Name:  "Success when all updatable fields are provided",
 			Input: formationConstraintUpdateInput,
 			TxFn:  txGen.ThatSucceeds,
 			FormationConstraintService: func() *automock.FormationConstraintService {
 				svc := &automock.FormationConstraintService{}
-				svc.On("Update", txtest.CtxWithDBMatcher(), testID, formationConstraintModelInput).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), testID, formationConstraintModelInputUpdatedAllFields).Return(nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModel, nil).Once()
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModelUpdated, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModelUpdatedAllFields, nil).Once()
 
 				return svc
 			},
 			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
 				converter := &automock.FormationConstraintConverter{}
-				converter.On("FromInputGraphQL", &formationConstraintInputUpdated).Return(formationConstraintModelInput)
-				converter.On("ToGraphQL", formationConstraintModelUpdated).Return(gqlFormationConstraintUpdated)
+				converter.On("FromInputGraphQL", &formationConstraintInputUpdatedAllFields).Return(formationConstraintModelInputUpdatedAllFields)
+				converter.On("ToGraphQL", formationConstraintModelUpdatedAllFields).Return(gqlFormationConstraintUpdated)
 
 				return converter
 			},
 			ExpectedOutput: gqlFormationConstraintUpdated,
+			ExpectedError:  nil,
+		},
+		{
+			Name:  "Success when only input template and description are updated",
+			Input: formationConstraintUpdateInputWithTemplateAndDescription,
+			TxFn:  txGen.ThatSucceeds,
+			FormationConstraintService: func() *automock.FormationConstraintService {
+				svc := &automock.FormationConstraintService{}
+				svc.On("Update", txtest.CtxWithDBMatcher(), testID, formationConstraintModelInputUpdatedTemplateAndDescription).Return(nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModel, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModelUpdatedTemplateAndDescription, nil).Once()
+
+				return svc
+			},
+			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
+				converter := &automock.FormationConstraintConverter{}
+				converter.On("FromInputGraphQL", &formationConstraintInputUpdatedTemplateAndDescription).Return(formationConstraintModelInputUpdatedTemplateAndDescription)
+				converter.On("ToGraphQL", formationConstraintModelUpdatedTemplateAndDescription).Return(gqlFormationConstraintUpdatedTemplateAndDescription)
+
+				return converter
+			},
+			ExpectedOutput: gqlFormationConstraintUpdatedTemplateAndDescription,
+			ExpectedError:  nil,
+		},
+		{
+			Name:  "Success when only input template and priority are updated",
+			Input: formationConstraintUpdateInputWithTemplateAndPriority,
+			TxFn:  txGen.ThatSucceeds,
+			FormationConstraintService: func() *automock.FormationConstraintService {
+				svc := &automock.FormationConstraintService{}
+				svc.On("Update", txtest.CtxWithDBMatcher(), testID, formationConstraintModelInputUpdatedTemplateAndPriority).Return(nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModel, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModelUpdatedTemplateAndPriority, nil).Once()
+
+				return svc
+			},
+			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
+				converter := &automock.FormationConstraintConverter{}
+				converter.On("FromInputGraphQL", &formationConstraintInputUpdatedTemplateAndPriority).Return(formationConstraintModelInputUpdatedTemplateAndPriority)
+				converter.On("ToGraphQL", formationConstraintModelUpdatedTemplateAndPriority).Return(gqlFormationConstraintUpdatedTemplateAndPriority)
+
+				return converter
+			},
+			ExpectedOutput: gqlFormationConstraintUpdatedTemplateAndPriority,
 			ExpectedError:  nil,
 		},
 		{
@@ -654,7 +698,7 @@ func TestResolver_UpdateFormationConstraint(t *testing.T) {
 			},
 			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
 				converter := &automock.FormationConstraintConverter{}
-				converter.On("FromInputGraphQL", &formationConstraintInputUpdated).Return(formationConstraintModelInput, nil)
+				converter.On("FromInputGraphQL", &formationConstraintInputUpdatedAllFields).Return(formationConstraintModelInput, nil)
 
 				return converter
 			},
@@ -675,7 +719,7 @@ func TestResolver_UpdateFormationConstraint(t *testing.T) {
 			},
 			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
 				converter := &automock.FormationConstraintConverter{}
-				converter.On("FromInputGraphQL", &formationConstraintInputUpdated).Return(formationConstraintModelInput)
+				converter.On("FromInputGraphQL", &formationConstraintInputUpdatedAllFields).Return(formationConstraintModelInput)
 
 				return converter
 			},
@@ -689,13 +733,13 @@ func TestResolver_UpdateFormationConstraint(t *testing.T) {
 				svc := &automock.FormationConstraintService{}
 				svc.On("Update", txtest.CtxWithDBMatcher(), testID, formationConstraintModelInput).Return(nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModel, nil).Once()
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModelUpdated, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModelUpdatedAllFields, nil).Once()
 
 				return svc
 			},
 			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
 				converter := &automock.FormationConstraintConverter{}
-				converter.On("FromInputGraphQL", &formationConstraintInputUpdated).Return(formationConstraintModelInput)
+				converter.On("FromInputGraphQL", &formationConstraintInputUpdatedAllFields).Return(formationConstraintModelInput)
 
 				return converter
 			},

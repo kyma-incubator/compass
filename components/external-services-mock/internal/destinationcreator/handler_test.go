@@ -4,31 +4,45 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
+
+	"github.com/form3tech-oss/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationcreator"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
+	destcreatorpkg "github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	testSecretKey                                              = []byte("testSecretKey")
+	noAuthDestIdentifierWithSubaccountID                       = fmt.Sprintf(destinationcreator.UniqueEntityNameIdentifier, noAuthDestName, testSubaccountID, "")
+	samlAssertionDestIdentifierWithSubaccountIDAndInstanceID   = fmt.Sprintf(destinationcreator.UniqueEntityNameIdentifier, samlAssertionDestName, testSubaccountID, testServiceInstanceID)
+	destinationCertIdentifierWithSubaccountID                  = fmt.Sprintf(destinationcreator.UniqueEntityNameIdentifier, testDestinationCertWithExtension, testSubaccountID, "")
+	destinationCertIdentifierWithSubaccountIDAndInstanceID     = fmt.Sprintf(destinationcreator.UniqueEntityNameIdentifier, testDestinationCertWithExtension, testSubaccountID, testServiceInstanceID)
+	samlDestinationCertIdentifierWithSubaccountIDAndInstanceID = fmt.Sprintf(destinationcreator.UniqueEntityNameIdentifier, testDestKeyStoreLocation, testSubaccountID, testServiceInstanceID)
 )
 
 func TestHandler_CreateDestinations(t *testing.T) {
 	destinationCreatorPath := fmt.Sprintf("/regions/%s/subaccounts/%s/destinations", testRegion, testSubaccountID)
+	basicDestIdentifierWithSubaccountID := fmt.Sprintf(destinationcreator.UniqueEntityNameIdentifier, basicAuthDestName, testSubaccountID, "")
+	samlAssertionDestIdentifierWithSubaccountID := fmt.Sprintf(destinationcreator.UniqueEntityNameIdentifier, samlAssertionDestName, testSubaccountID, "")
 
 	testCases := []struct {
-		Name                                      string
-		RequestBody                               string
-		ExpectedResponseCode                      int
-		ExpectedDestinationCreatorSvcDestinations map[string]json.RawMessage
-		ExpectedDestinationSvcDestinations        map[string]json.RawMessage
-		Region                                    string
-		SubaccountID                              string
-		ExistingDestination                       map[string]json.RawMessage
-		MissingContentTypeHeader                  bool
-		MissingClientUserHeader                   bool
+		Name                               string
+		RequestBody                        string
+		ExpectedResponseCode               int
+		ExpectedDestinationSvcDestinations map[string]destcreatorpkg.Destination
+		Region                             string
+		SubaccountID                       string
+		ExistingDestination                map[string]destcreatorpkg.Destination
+		MissingContentTypeHeader           bool
+		MissingClientUserHeader            bool
 	}{
 		// Common unit tests
 		{
@@ -68,13 +82,12 @@ func TestHandler_CreateDestinations(t *testing.T) {
 		},
 		// No Authentication Destinations unit tests
 		{
-			Name:                 "Success when creating no auth destinations",
-			RequestBody:          destinationCreatorNoAuthDestReqBody,
-			ExpectedResponseCode: http.StatusCreated,
-			Region:               testRegion,
-			SubaccountID:         testSubaccountID,
-			ExpectedDestinationCreatorSvcDestinations: fixDestinationMappings(noAuthDestName, json.RawMessage(destinationCreatorNoAuthDestReqBody)),
-			ExpectedDestinationSvcDestinations:        fixDestinationMappings(noAuthDestName, json.RawMessage(destinationServiceNoAuthDestReqBody)),
+			Name:                               "Success when creating no auth destinations",
+			RequestBody:                        destinationCreatorNoAuthDestReqBody,
+			ExpectedResponseCode:               http.StatusCreated,
+			Region:                             testRegion,
+			SubaccountID:                       testSubaccountID,
+			ExpectedDestinationSvcDestinations: fixDestinationMappings(noAuthDestIdentifierWithSubaccountID, fixNoAuthDestination(noAuthDestName)),
 		},
 		{
 			Name:                 "Error when creating no auth destinations and the unmarshalling of the req body fails",
@@ -96,17 +109,16 @@ func TestHandler_CreateDestinations(t *testing.T) {
 			ExpectedResponseCode: http.StatusConflict,
 			Region:               testRegion,
 			SubaccountID:         testSubaccountID,
-			ExistingDestination:  fixDestinationMappings(noAuthDestName, json.RawMessage(destinationCreatorNoAuthDestReqBody)),
+			ExistingDestination:  fixDestinationMappings(noAuthDestIdentifierWithSubaccountID, fixNoAuthDestination(noAuthDestName)),
 		},
-		// Basic Destinations unit tests
+		//Basic Destinations unit tests
 		{
-			Name:                 "Success when creating basic destinations",
-			RequestBody:          destinationCreatorBasicAuthDestReqBody,
-			ExpectedResponseCode: http.StatusCreated,
-			Region:               testRegion,
-			SubaccountID:         testSubaccountID,
-			ExpectedDestinationCreatorSvcDestinations: fixDestinationMappings(basicAuthDestName, json.RawMessage(destinationCreatorBasicAuthDestReqBody)),
-			ExpectedDestinationSvcDestinations:        fixDestinationMappings(basicAuthDestName, json.RawMessage(destinationServiceBasicAuthReqBody)),
+			Name:                               "Success when creating basic destinations",
+			RequestBody:                        destinationCreatorBasicAuthDestReqBody,
+			ExpectedResponseCode:               http.StatusCreated,
+			Region:                             testRegion,
+			SubaccountID:                       testSubaccountID,
+			ExpectedDestinationSvcDestinations: fixDestinationMappings(basicDestIdentifierWithSubaccountID, fixBasicDestination(basicAuthDestName)),
 		},
 		{
 			Name:                 "Error when creating basic auth destinations and the unmarshalling of the req body fails",
@@ -128,17 +140,16 @@ func TestHandler_CreateDestinations(t *testing.T) {
 			ExpectedResponseCode: http.StatusConflict,
 			Region:               testRegion,
 			SubaccountID:         testSubaccountID,
-			ExistingDestination:  fixDestinationMappings(basicAuthDestName, json.RawMessage(destinationCreatorBasicAuthDestReqBody)),
+			ExistingDestination:  fixDestinationMappings(basicDestIdentifierWithSubaccountID, fixBasicDestination(basicAuthDestName)),
 		},
 		// SAML Assertion Destinations unit tests
 		{
-			Name:                 "Success when creating SAML Assertion destinations",
-			RequestBody:          destinationCreatorSAMLAssertionDestReqBody,
-			ExpectedResponseCode: http.StatusCreated,
-			Region:               testRegion,
-			SubaccountID:         testSubaccountID,
-			ExpectedDestinationCreatorSvcDestinations: fixDestinationMappings(samlAssertionDestName, json.RawMessage(destinationCreatorSAMLAssertionDestReqBody)),
-			ExpectedDestinationSvcDestinations:        fixDestinationMappings(samlAssertionDestName, json.RawMessage(destinationServiceSAMLAssertionReqBody)),
+			Name:                               "Success when creating SAML Assertion destinations",
+			RequestBody:                        destinationCreatorSAMLAssertionDestReqBody,
+			ExpectedResponseCode:               http.StatusCreated,
+			Region:                             testRegion,
+			SubaccountID:                       testSubaccountID,
+			ExpectedDestinationSvcDestinations: fixDestinationMappings(samlAssertionDestIdentifierWithSubaccountID, fixSAMLAssertionDestination(samlAssertionDestName)),
 		},
 		{
 			Name:                 "Error when creating SAML Assertion destinations and the unmarshalling of the req body fails",
@@ -160,7 +171,7 @@ func TestHandler_CreateDestinations(t *testing.T) {
 			ExpectedResponseCode: http.StatusConflict,
 			Region:               testRegion,
 			SubaccountID:         testSubaccountID,
-			ExistingDestination:  fixDestinationMappings(samlAssertionDestName, json.RawMessage(destinationCreatorSAMLAssertionDestReqBody)),
+			ExistingDestination:  fixDestinationMappings(samlAssertionDestIdentifierWithSubaccountID, fixSAMLAssertionDestination(samlAssertionDestName)),
 		},
 	}
 
@@ -180,20 +191,20 @@ func TestHandler_CreateDestinations(t *testing.T) {
 
 			urlVars := make(map[string]string)
 			if testCase.Region != "" {
-				urlVars[regionParam] = testCase.Region
+				urlVars[regionParamValue] = testCase.Region
 				req = mux.SetURLVars(req, urlVars)
 			}
 
 			if testCase.SubaccountID != "" {
-				urlVars[subaccountIDParam] = testCase.SubaccountID
+				urlVars[subaccountIDParamValue] = testCase.SubaccountID
 				req = mux.SetURLVars(req, urlVars)
 			}
 
 			config := &destinationcreator.Config{
 				CorrelationIDsKey: correlationIDsKey,
 				DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
-					RegionParam:       regionParam,
-					SubaccountIDParam: subaccountIDParam,
+					RegionParam:       regionParamValue,
+					SubaccountIDParam: subaccountIDParamValue,
 				},
 			}
 
@@ -201,22 +212,18 @@ func TestHandler_CreateDestinations(t *testing.T) {
 			r := httptest.NewRecorder()
 
 			if testCase.ExistingDestination != nil {
-				h.DestinationCreatorSvcDestinations = testCase.ExistingDestination
+				h.DestinationSvcDestinations = testCase.ExistingDestination
 			}
 
 			// WHEN
 			h.CreateDestinations(r, req)
 			resp := r.Result()
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			// THEN
 			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
-
-			if testCase.ExpectedDestinationCreatorSvcDestinations != nil {
-				require.Equal(t, testCase.ExpectedDestinationCreatorSvcDestinations, h.DestinationCreatorSvcDestinations)
-			}
 
 			if testCase.ExpectedDestinationSvcDestinations != nil {
 				require.Equal(t, testCase.ExpectedDestinationSvcDestinations, h.DestinationSvcDestinations)
@@ -226,39 +233,36 @@ func TestHandler_CreateDestinations(t *testing.T) {
 }
 
 func TestHandler_DeleteDestinations(t *testing.T) {
-	destinationCreatorDeletionPath := fmt.Sprintf("/regions/%s/subaccounts/%s/destinations/%s", testRegion, testSubaccountID, testDestName)
+	destinationCreatorDeletionPath := fmt.Sprintf("/regions/%s/subaccounts/%s/destinations/%s", testRegion, testSubaccountID, noAuthDestName)
 
 	testCases := []struct {
-		Name                                      string
-		ExpectedResponseCode                      int
-		ExpectedDestinationCreatorSvcDestinations map[string]json.RawMessage
-		ExpectedDestinationSvcDestinations        map[string]json.RawMessage
-		Region                                    string
-		SubaccountID                              string
-		DestName                                  string
-		ExistingDestination                       map[string]json.RawMessage
-		MissingContentTypeHeader                  bool
-		MissingClientUserHeader                   bool
+		Name                               string
+		ExpectedResponseCode               int
+		ExpectedDestinationSvcDestinations map[string]destcreatorpkg.Destination
+		RegionParam                        string
+		SubaccountIDParam                  string
+		DestNameParam                      string
+		ExistingDestination                map[string]destcreatorpkg.Destination
+		MissingContentTypeHeader           bool
+		MissingClientUserHeader            bool
 	}{
 		{
-			Name:                 "Success when deleting destinations",
-			ExpectedResponseCode: http.StatusNoContent,
-			ExpectedDestinationCreatorSvcDestinations: make(map[string]json.RawMessage),
-			ExpectedDestinationSvcDestinations:        make(map[string]json.RawMessage),
-			Region:                                    testRegion,
-			SubaccountID:                              testSubaccountID,
-			DestName:                                  testDestName,
-			ExistingDestination:                       fixDestinationMappings(testDestName, json.RawMessage(destinationCreatorNoAuthDestReqBody)),
+			Name:                               "Success when deleting destinations",
+			ExpectedResponseCode:               http.StatusNoContent,
+			ExpectedDestinationSvcDestinations: make(map[string]destcreatorpkg.Destination),
+			RegionParam:                        testRegion,
+			SubaccountIDParam:                  testSubaccountID,
+			DestNameParam:                      noAuthDestName,
+			ExistingDestination:                fixDestinationMappings(noAuthDestIdentifierWithSubaccountID, fixNoAuthDestination(noAuthDestName)),
 		},
 		{
-			Name:                 "Success when there are no destinations to be deleted",
-			ExpectedResponseCode: http.StatusNoContent,
-			ExpectedDestinationCreatorSvcDestinations: make(map[string]json.RawMessage),
-			ExpectedDestinationSvcDestinations:        make(map[string]json.RawMessage),
-			Region:                                    testRegion,
-			SubaccountID:                              testSubaccountID,
-			DestName:                                  testDestName,
-			ExistingDestination:                       make(map[string]json.RawMessage),
+			Name:                               "Success when there are no destinations to be deleted",
+			ExpectedResponseCode:               http.StatusNoContent,
+			ExpectedDestinationSvcDestinations: make(map[string]destcreatorpkg.Destination),
+			RegionParam:                        testRegion,
+			SubaccountIDParam:                  testSubaccountID,
+			DestNameParam:                      noAuthDestName,
+			ExistingDestination:                make(map[string]destcreatorpkg.Destination),
 		},
 		{
 			Name:                     "Error when content type header is invalid",
@@ -291,27 +295,27 @@ func TestHandler_DeleteDestinations(t *testing.T) {
 			}
 
 			urlVars := make(map[string]string)
-			if testCase.Region != "" {
-				urlVars[regionParam] = testCase.Region
+			if testCase.RegionParam != "" {
+				urlVars[regionParamValue] = testCase.RegionParam
 				req = mux.SetURLVars(req, urlVars)
 			}
 
-			if testCase.SubaccountID != "" {
-				urlVars[subaccountIDParam] = testCase.SubaccountID
+			if testCase.SubaccountIDParam != "" {
+				urlVars[subaccountIDParamValue] = testCase.SubaccountIDParam
 				req = mux.SetURLVars(req, urlVars)
 			}
 
-			if testCase.DestName != "" {
-				urlVars[destNameParam] = testCase.DestName
+			if testCase.DestNameParam != "" {
+				urlVars[destNameParamKey] = testCase.DestNameParam
 				req = mux.SetURLVars(req, urlVars)
 			}
 
 			config := &destinationcreator.Config{
 				CorrelationIDsKey: correlationIDsKey,
 				DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
-					RegionParam:          regionParam,
-					SubaccountIDParam:    subaccountIDParam,
-					DestinationNameParam: destNameParam,
+					RegionParam:          regionParamValue,
+					SubaccountIDParam:    subaccountIDParamValue,
+					DestinationNameParam: destNameParamKey,
 				},
 			}
 
@@ -319,7 +323,6 @@ func TestHandler_DeleteDestinations(t *testing.T) {
 			r := httptest.NewRecorder()
 
 			if testCase.ExistingDestination != nil {
-				h.DestinationCreatorSvcDestinations = testCase.ExistingDestination
 				h.DestinationSvcDestinations = testCase.ExistingDestination
 			}
 
@@ -327,15 +330,11 @@ func TestHandler_DeleteDestinations(t *testing.T) {
 			h.DeleteDestinations(r, req)
 			resp := r.Result()
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			// THEN
 			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
-
-			if testCase.ExpectedDestinationCreatorSvcDestinations != nil {
-				require.Equal(t, testCase.ExpectedDestinationCreatorSvcDestinations, h.DestinationCreatorSvcDestinations)
-			}
 
 			if testCase.ExpectedDestinationSvcDestinations != nil {
 				require.Equal(t, testCase.ExpectedDestinationSvcDestinations, h.DestinationSvcDestinations)
@@ -348,25 +347,23 @@ func TestHandler_CreateCertificate(t *testing.T) {
 	destinationCreatorCertificatePath := fmt.Sprintf("/regions/%s/subaccounts/%s/certificates", testRegion, testSubaccountID)
 
 	testCases := []struct {
-		Name                                      string
-		RequestBody                               string
-		ExpectedResponseCode                      int
-		ExpectedDestinationCreatorSvcCertificates map[string]json.RawMessage
-		ExpectedDestinationSvcCertificates        map[string]json.RawMessage
-		Region                                    string
-		SubaccountID                              string
-		ExistingCertificate                       map[string]json.RawMessage
-		MissingContentTypeHeader                  bool
-		MissingClientUserHeader                   bool
+		Name                               string
+		RequestBody                        string
+		ExpectedResponseCode               int
+		ExpectedDestinationSvcCertificates map[string]json.RawMessage
+		Region                             string
+		SubaccountID                       string
+		ExistingCertificate                map[string]json.RawMessage
+		MissingContentTypeHeader           bool
+		MissingClientUserHeader            bool
 	}{
 		{
-			Name:                 "Success when creating certificate",
-			RequestBody:          destinationCreatorCertReqBody,
-			ExpectedResponseCode: http.StatusCreated,
-			ExpectedDestinationCreatorSvcCertificates: fixCertMappings(testCertName, json.RawMessage(destinationCreatorCertResponseBody)),
-			ExpectedDestinationSvcCertificates:        fixCertMappings(testCertFileName, json.RawMessage(destinationServiceCertResponseBody)),
-			Region:                                    testRegion,
-			SubaccountID:                              testSubaccountID,
+			Name:                               "Success when creating certificate",
+			RequestBody:                        destinationCreatorCertReqBody,
+			ExpectedResponseCode:               http.StatusCreated,
+			ExpectedDestinationSvcCertificates: fixCertMappings(destinationCertIdentifierWithSubaccountID, json.RawMessage(destinationServiceCertResponseBody)),
+			Region:                             testRegion,
+			SubaccountID:                       testSubaccountID,
 		},
 		{
 			Name:                     "Error when content type header is invalid",
@@ -401,7 +398,7 @@ func TestHandler_CreateCertificate(t *testing.T) {
 			RequestBody:          destinationCreatorCertReqBody,
 			Region:               testRegion,
 			SubaccountID:         testSubaccountID,
-			ExistingCertificate:  fixCertMappings(testCertName, json.RawMessage(destinationCreatorCertResponseBody)),
+			ExistingCertificate:  fixCertMappings(destinationCertIdentifierWithSubaccountID, json.RawMessage(destinationServiceCertResponseBody)),
 			ExpectedResponseCode: http.StatusConflict,
 		},
 	}
@@ -422,20 +419,20 @@ func TestHandler_CreateCertificate(t *testing.T) {
 
 			urlVars := make(map[string]string)
 			if testCase.Region != "" {
-				urlVars[regionParam] = testCase.Region
+				urlVars[regionParamValue] = testCase.Region
 				req = mux.SetURLVars(req, urlVars)
 			}
 
 			if testCase.SubaccountID != "" {
-				urlVars[subaccountIDParam] = testCase.SubaccountID
+				urlVars[subaccountIDParamValue] = testCase.SubaccountID
 				req = mux.SetURLVars(req, urlVars)
 			}
 
 			config := &destinationcreator.Config{
 				CorrelationIDsKey: correlationIDsKey,
-				DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
-					RegionParam:       regionParam,
-					SubaccountIDParam: subaccountIDParam,
+				CertificateAPIConfig: &destinationcreator.CertificateAPIConfig{
+					RegionParam:       regionParamValue,
+					SubaccountIDParam: subaccountIDParamValue,
 				},
 			}
 
@@ -443,25 +440,19 @@ func TestHandler_CreateCertificate(t *testing.T) {
 			r := httptest.NewRecorder()
 
 			if testCase.ExistingCertificate != nil {
-				h.DestinationCreatorSvcCertificates = testCase.ExistingCertificate
-				testCase.ExpectedDestinationCreatorSvcCertificates = testCase.ExistingCertificate
+				h.DestinationSvcCertificates = testCase.ExistingCertificate
+				testCase.ExpectedDestinationSvcCertificates = testCase.ExistingCertificate
 			}
 
 			// WHEN
 			h.CreateCertificate(r, req)
 			resp := r.Result()
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			// THEN
 			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
-
-			if testCase.ExpectedDestinationCreatorSvcCertificates != nil {
-				require.Equal(t, testCase.ExpectedDestinationCreatorSvcCertificates, h.DestinationCreatorSvcCertificates)
-			} else {
-				require.Equal(t, make(map[string]json.RawMessage), h.DestinationCreatorSvcCertificates)
-			}
 
 			if testCase.ExpectedDestinationSvcCertificates != nil {
 				require.Equal(t, testCase.ExpectedDestinationSvcCertificates, h.DestinationSvcCertificates)
@@ -473,41 +464,36 @@ func TestHandler_CreateCertificate(t *testing.T) {
 }
 
 func TestHandler_DeleteCertificate(t *testing.T) {
-	destinationCreatorCertificateDeletionPath := fmt.Sprintf("/regions/%s/subaccounts/%s/certificates/%s", testRegion, testSubaccountID, testCertName)
+	destinationCreatorCertificateDeletionPath := fmt.Sprintf("/regions/%s/subaccounts/%s/certificates/%s", testRegion, testSubaccountID, testDestinationCertName)
 
 	testCases := []struct {
-		Name                                      string
-		ExpectedResponseCode                      int
-		ExpectedDestinationCreatorSvcCertificates map[string]json.RawMessage
-		ExpectedDestinationSvcCertificates        map[string]json.RawMessage
-		Region                                    string
-		SubaccountID                              string
-		CertName                                  string
-		ExistingCertificateDestinationCreator     map[string]json.RawMessage
-		ExistingCertificateDestinationSvc         map[string]json.RawMessage
-		MissingContentTypeHeader                  bool
-		MissingClientUserHeader                   bool
+		Name                               string
+		ExpectedResponseCode               int
+		ExpectedDestinationSvcCertificates map[string]json.RawMessage
+		RegionParam                        string
+		SubaccountIDParam                  string
+		CertNameParam                      string
+		ExistingCertificateDestinationSvc  map[string]json.RawMessage
+		MissingContentTypeHeader           bool
+		MissingClientUserHeader            bool
 	}{
 		{
-			Name:                 "Success when deleting certificates",
-			ExpectedResponseCode: http.StatusNoContent,
-			ExpectedDestinationCreatorSvcCertificates: make(map[string]json.RawMessage),
-			ExpectedDestinationSvcCertificates:        make(map[string]json.RawMessage),
-			Region:                                    testRegion,
-			SubaccountID:                              testSubaccountID,
-			CertName:                                  testCertName,
-			ExistingCertificateDestinationCreator:     fixCertMappings(testCertName, json.RawMessage(destinationCreatorCertResponseBody)),
-			ExistingCertificateDestinationSvc:         fixCertMappings(testCertFileName, json.RawMessage(destinationServiceCertResponseBody)),
+			Name:                               "Success when deleting certificates",
+			ExpectedResponseCode:               http.StatusNoContent,
+			ExpectedDestinationSvcCertificates: make(map[string]json.RawMessage),
+			RegionParam:                        testRegion,
+			SubaccountIDParam:                  testSubaccountID,
+			CertNameParam:                      testDestinationCertName,
+			ExistingCertificateDestinationSvc:  fixCertMappings(destinationCertIdentifierWithSubaccountID, json.RawMessage(destinationServiceCertResponseBody)),
 		},
 		{
-			Name:                 "Success when there are no certificates to be deleted",
-			ExpectedResponseCode: http.StatusNoContent,
-			ExpectedDestinationCreatorSvcCertificates: make(map[string]json.RawMessage),
-			ExpectedDestinationSvcCertificates:        make(map[string]json.RawMessage),
-			Region:                                    testRegion,
-			SubaccountID:                              testSubaccountID,
-			CertName:                                  testCertName,
-			ExistingCertificateDestinationCreator:     make(map[string]json.RawMessage),
+			Name:                               "Success when there are no certificates to be deleted",
+			ExpectedResponseCode:               http.StatusNoContent,
+			ExpectedDestinationSvcCertificates: make(map[string]json.RawMessage),
+			RegionParam:                        testRegion,
+			SubaccountIDParam:                  testSubaccountID,
+			CertNameParam:                      testDestinationCertName,
+			ExistingCertificateDestinationSvc:  make(map[string]json.RawMessage),
 		},
 		{
 			Name:                     "Error when content type header is invalid",
@@ -540,39 +526,32 @@ func TestHandler_DeleteCertificate(t *testing.T) {
 			}
 
 			urlVars := make(map[string]string)
-			if testCase.Region != "" {
-				urlVars[regionParam] = testCase.Region
+			if testCase.RegionParam != "" {
+				urlVars[regionParamValue] = testCase.RegionParam
 				req = mux.SetURLVars(req, urlVars)
 			}
 
-			if testCase.SubaccountID != "" {
-				urlVars[subaccountIDParam] = testCase.SubaccountID
+			if testCase.SubaccountIDParam != "" {
+				urlVars[subaccountIDParamValue] = testCase.SubaccountIDParam
 				req = mux.SetURLVars(req, urlVars)
 			}
 
-			if testCase.CertName != "" {
-				urlVars[certNameParam] = testCase.CertName
+			if testCase.CertNameParam != "" {
+				urlVars[certNameParamKey] = testCase.CertNameParam
 				req = mux.SetURLVars(req, urlVars)
 			}
 
 			config := &destinationcreator.Config{
 				CorrelationIDsKey: correlationIDsKey,
-				DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
-					RegionParam:          regionParam,
-					SubaccountIDParam:    subaccountIDParam,
-					DestinationNameParam: destNameParam,
-				},
 				CertificateAPIConfig: &destinationcreator.CertificateAPIConfig{
-					CertificateNameParam: certNameParam,
+					RegionParam:          regionParamValue,
+					SubaccountIDParam:    subaccountIDParamValue,
+					CertificateNameParam: certNameParamKey,
 				},
 			}
 
 			h := destinationcreator.NewHandler(config)
 			r := httptest.NewRecorder()
-
-			if testCase.ExistingCertificateDestinationCreator != nil {
-				h.DestinationCreatorSvcCertificates = testCase.ExistingCertificateDestinationCreator
-			}
 
 			if testCase.ExistingCertificateDestinationSvc != nil {
 				h.DestinationSvcCertificates = testCase.ExistingCertificateDestinationSvc
@@ -582,15 +561,11 @@ func TestHandler_DeleteCertificate(t *testing.T) {
 			h.DeleteCertificate(r, req)
 			resp := r.Result()
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			// THEN
 			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
-
-			if testCase.ExpectedDestinationCreatorSvcCertificates != nil {
-				require.Equal(t, testCase.ExpectedDestinationCreatorSvcCertificates, h.DestinationCreatorSvcCertificates)
-			}
 
 			if testCase.ExpectedDestinationSvcCertificates != nil {
 				require.Equal(t, testCase.ExpectedDestinationSvcCertificates, h.DestinationSvcCertificates)
@@ -599,50 +574,73 @@ func TestHandler_DeleteCertificate(t *testing.T) {
 	}
 }
 
-func TestHandler_GetDestinationByNameFromDestinationSvc(t *testing.T) {
-	destinationSvcPath := fmt.Sprintf("/destination-configuration/v1/subaccountDestinations/%s", testDestName)
+func TestHandler_FindDestinationByNameFromDestinationSvc(t *testing.T) {
+	destinationSvcPath := fmt.Sprintf("/destination-configuration/v1/destinations/%s", noAuthDestName)
+	tokenWithSubaccountIDAndInstanceID := generateJWT(t, testSubaccountID, testServiceInstanceID)
+	tokenOnlyWithServiceInstanceID := generateJWT(t, "", testServiceInstanceID)
 
 	testCases := []struct {
-		Name                       string
-		ExpectedResponseCode       int
-		DestName                   string
-		ExistingDestination        map[string]json.RawMessage
-		ExpectedDestination        json.RawMessage
-		MissingAuthorizationHeader bool
-		MissingAuthorizationToken  bool
+		Name                      string
+		AuthorizationToken        string
+		ExpectedResponseCode      int
+		DestNameParam             string
+		ExistingDestination       map[string]destcreatorpkg.Destination
+		ExistingCertificate       map[string]json.RawMessage
+		ExpectedResponse          json.RawMessage
+		MissingAuthorizationToken bool
+		MissingUserToken          bool
 	}{
 		{
 			Name:                 "Success when getting destination by name from Destination Service",
+			AuthorizationToken:   tokenWithSubaccountIDAndInstanceID,
 			ExpectedResponseCode: http.StatusOK,
-			DestName:             noAuthDestName,
-			ExistingDestination:  fixDestinationMappings(noAuthDestName, json.RawMessage(destinationCreatorNoAuthDestReqBody)),
-			ExpectedDestination:  json.RawMessage(destinationCreatorNoAuthDestReqBody),
+			DestNameParam:        samlAssertionDestName,
+			ExistingDestination:  fixDestinationMappings(samlAssertionDestIdentifierWithSubaccountIDAndInstanceID, fixSAMLAssertionDestination(samlAssertionDestName)),
+			ExistingCertificate:  fixCertMappings(samlDestinationCertIdentifierWithSubaccountIDAndInstanceID, json.RawMessage(destinationServiceSAMLDestCertResponseBody)),
+			ExpectedResponse:     json.RawMessage(destinationServiceFindAPIResponseBodyForSAMLAssertionDest),
 		},
 		{
-			Name:                       "Error when missing authorization token",
-			ExpectedResponseCode:       http.StatusBadRequest,
-			MissingAuthorizationHeader: true,
+			Name:                 "Error when missing authorization token",
+			ExpectedResponseCode: http.StatusUnauthorized,
 		},
 		{
-			Name:                       "Error when authorization token value is empty",
-			ExpectedResponseCode:       http.StatusBadRequest,
-			MissingAuthorizationHeader: true,
-			MissingAuthorizationToken:  true,
+			Name:                      "Error when authorization token value is empty",
+			AuthorizationToken:        "",
+			ExpectedResponseCode:      http.StatusUnauthorized,
+			MissingAuthorizationToken: true,
 		},
 		{
 			Name:                 "Error when path param is missing",
+			AuthorizationToken:   tokenWithSubaccountIDAndInstanceID,
 			ExpectedResponseCode: http.StatusBadRequest,
 		},
 		{
 			Name:                 "Not Found when destination doesn't exist",
+			AuthorizationToken:   tokenWithSubaccountIDAndInstanceID,
 			ExpectedResponseCode: http.StatusNotFound,
-			DestName:             noAuthDestName,
+			DestNameParam:        "invalid",
 		},
 		{
-			Name:                 "Error when marshalling",
+			Name:                 "Error when subaccount ID is missing from the authorization token",
+			AuthorizationToken:   tokenOnlyWithServiceInstanceID,
 			ExpectedResponseCode: http.StatusInternalServerError,
-			DestName:             noAuthDestName,
-			ExistingDestination:  map[string]json.RawMessage{noAuthDestName: json.RawMessage("invalid-json")},
+			DestNameParam:        samlAssertionDestName,
+		},
+		{
+			Name:                 "Error when user token header is missing",
+			AuthorizationToken:   tokenWithSubaccountIDAndInstanceID,
+			ExpectedResponseCode: http.StatusInternalServerError,
+			DestNameParam:        samlAssertionDestName,
+			ExistingDestination:  fixDestinationMappings(samlAssertionDestIdentifierWithSubaccountIDAndInstanceID, fixSAMLAssertionDestination(samlAssertionDestName)),
+			ExistingCertificate:  fixCertMappings(samlDestinationCertIdentifierWithSubaccountIDAndInstanceID, json.RawMessage(destinationServiceSAMLDestCertResponseBody)),
+			MissingUserToken:     true,
+		},
+		{
+			Name:                 "Error when certificate is missing",
+			AuthorizationToken:   tokenWithSubaccountIDAndInstanceID,
+			ExpectedResponseCode: http.StatusInternalServerError,
+			DestNameParam:        samlAssertionDestName,
+			ExistingDestination:  fixDestinationMappings(samlAssertionDestIdentifierWithSubaccountIDAndInstanceID, fixSAMLAssertionDestination(samlAssertionDestName)),
 		},
 	}
 
@@ -652,17 +650,21 @@ func TestHandler_GetDestinationByNameFromDestinationSvc(t *testing.T) {
 			req, err := http.NewRequest(http.MethodGet, url+destinationSvcPath, bytes.NewBuffer([]byte{}))
 			require.NoError(t, err)
 
-			if !testCase.MissingAuthorizationHeader {
-				req.Header.Add(httphelpers.AuthorizationHeaderKey, "Bearer token")
+			if testCase.AuthorizationToken != "" {
+				req.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", testCase.AuthorizationToken))
 			}
 
 			if testCase.MissingAuthorizationToken {
 				req.Header.Add(httphelpers.AuthorizationHeaderKey, "Bearer ")
 			}
 
+			if !testCase.MissingUserToken {
+				req.Header.Add(httphelpers.UserTokenHeaderKey, "test")
+			}
+
 			urlVars := make(map[string]string)
-			if testCase.DestName != "" {
-				urlVars[nameParam] = testCase.DestName
+			if testCase.DestNameParam != "" {
+				urlVars[nameParamKey] = testCase.DestNameParam
 				req = mux.SetURLVars(req, urlVars)
 			}
 
@@ -673,67 +675,82 @@ func TestHandler_GetDestinationByNameFromDestinationSvc(t *testing.T) {
 				h.DestinationSvcDestinations = testCase.ExistingDestination
 			}
 
+			if testCase.ExistingCertificate != nil {
+				h.DestinationSvcCertificates = testCase.ExistingCertificate
+			}
+
 			// WHEN
-			h.GetDestinationByNameFromDestinationSvc(r, req)
+			h.FindDestinationByNameFromDestinationSvc(r, req)
 			resp := r.Result()
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			// THEN
 			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
 
-			if testCase.ExpectedDestination != nil {
-				require.Equal(t, testCase.ExpectedDestination, json.RawMessage(body))
+			if testCase.ExpectedResponse != nil {
+				require.Equal(t, testCase.ExpectedResponse, json.RawMessage(body))
 			}
 		})
 	}
 }
 
 func TestHandler_GetDestinationCertificateByNameFromDestinationSvc(t *testing.T) {
-	destinationSvcCertificatePath := fmt.Sprintf("/destination-configuration/v1/subaccountCertificates%s", testCertName)
+	destinationSvcCertificatePath := fmt.Sprintf("/destination-configuration/v1/subaccountCertificates%s", testDestinationCertName)
+	tokenWithSubaccountIDAndInstanceID := generateJWT(t, testSubaccountID, testServiceInstanceID)
+	tokenOnlyWithServiceInstanceID := generateJWT(t, "", testServiceInstanceID)
 
 	testCases := []struct {
-		Name                       string
-		ExpectedResponseCode       int
-		CertName                   string
-		ExistingCertificate        map[string]json.RawMessage
-		ExpectedCertificate        json.RawMessage
-		MissingAuthorizationHeader bool
-		MissingAuthorizationToken  bool
+		Name                      string
+		AuthorizationToken        string
+		ExpectedResponseCode      int
+		CertNameParam             string
+		ExistingCertificate       map[string]json.RawMessage
+		ExpectedCertificate       json.RawMessage
+		MissingAuthorizationToken bool
 	}{
 		{
 			Name:                 "Success when getting certificate by name from Destination Service",
+			AuthorizationToken:   tokenWithSubaccountIDAndInstanceID,
 			ExpectedResponseCode: http.StatusOK,
-			CertName:             testCertName,
-			ExistingCertificate:  fixCertMappings(testCertName, json.RawMessage(destinationCreatorCertResponseBody)),
-			ExpectedCertificate:  json.RawMessage(destinationCreatorCertResponseBody),
+			CertNameParam:        testDestinationCertWithExtension,
+			ExistingCertificate:  fixCertMappings(destinationCertIdentifierWithSubaccountIDAndInstanceID, json.RawMessage(destinationServiceCertResponseBody)),
+			ExpectedCertificate:  json.RawMessage(destinationServiceCertResponseBody),
 		},
 		{
-			Name:                       "Error when missing authorization token",
-			ExpectedResponseCode:       http.StatusBadRequest,
-			MissingAuthorizationHeader: true,
+			Name:                 "Error when missing authorization token",
+			ExpectedResponseCode: http.StatusUnauthorized,
 		},
 		{
-			Name:                       "Error authorization token value is empty",
-			ExpectedResponseCode:       http.StatusBadRequest,
-			MissingAuthorizationHeader: true,
-			MissingAuthorizationToken:  true,
+			Name:                      "Error when authorization token value is empty",
+			AuthorizationToken:        "",
+			ExpectedResponseCode:      http.StatusUnauthorized,
+			MissingAuthorizationToken: true,
 		},
 		{
 			Name:                 "Error when path param is missing",
+			AuthorizationToken:   tokenWithSubaccountIDAndInstanceID,
 			ExpectedResponseCode: http.StatusBadRequest,
 		},
 		{
 			Name:                 "Not Found when certificate doesn't exist",
+			AuthorizationToken:   tokenWithSubaccountIDAndInstanceID,
 			ExpectedResponseCode: http.StatusNotFound,
-			CertName:             testCertName,
+			CertNameParam:        testDestinationCertName,
+		},
+		{
+			Name:                 "Error when subaccount ID is missing from the authorization token",
+			AuthorizationToken:   tokenOnlyWithServiceInstanceID,
+			ExpectedResponseCode: http.StatusInternalServerError,
+			CertNameParam:        testDestinationCertName,
 		},
 		{
 			Name:                 "Error when marshalling",
+			AuthorizationToken:   tokenWithSubaccountIDAndInstanceID,
 			ExpectedResponseCode: http.StatusInternalServerError,
-			CertName:             testCertName,
-			ExistingCertificate:  map[string]json.RawMessage{testCertName: json.RawMessage("invalid-json")},
+			CertNameParam:        testDestinationCertWithExtension,
+			ExistingCertificate:  map[string]json.RawMessage{destinationCertIdentifierWithSubaccountIDAndInstanceID: json.RawMessage("invalid-json")},
 		},
 	}
 
@@ -743,8 +760,8 @@ func TestHandler_GetDestinationCertificateByNameFromDestinationSvc(t *testing.T)
 			req, err := http.NewRequest(http.MethodGet, url+destinationSvcCertificatePath, bytes.NewBuffer([]byte{}))
 			require.NoError(t, err)
 
-			if !testCase.MissingAuthorizationHeader {
-				req.Header.Add(httphelpers.AuthorizationHeaderKey, "Bearer token")
+			if testCase.AuthorizationToken != "" {
+				req.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", testCase.AuthorizationToken))
 			}
 
 			if testCase.MissingAuthorizationToken {
@@ -752,8 +769,8 @@ func TestHandler_GetDestinationCertificateByNameFromDestinationSvc(t *testing.T)
 			}
 
 			urlVars := make(map[string]string)
-			if testCase.CertName != "" {
-				urlVars[nameParam] = testCase.CertName
+			if testCase.CertNameParam != "" {
+				urlVars[nameParamKey] = testCase.CertNameParam
 				req = mux.SetURLVars(req, urlVars)
 			}
 
@@ -768,7 +785,7 @@ func TestHandler_GetDestinationCertificateByNameFromDestinationSvc(t *testing.T)
 			h.GetDestinationCertificateByNameFromDestinationSvc(r, req)
 			resp := r.Result()
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			// THEN
@@ -779,4 +796,16 @@ func TestHandler_GetDestinationCertificateByNameFromDestinationSvc(t *testing.T)
 			}
 		})
 	}
+}
+
+func generateJWT(t *testing.T, subaccountID, serviceInstanceID string) string {
+	token := jwt.New(jwt.SigningMethodHS256)
+	claims := token.Claims.(jwt.MapClaims)
+	claims["ext_attr"] = json.RawMessage(fmt.Sprintf(`{"subaccountid":"%s", "serviceinstanceid":"%s"}`, subaccountID, serviceInstanceID))
+	claims["exp"] = time.Now().Add(time.Minute * 1).Unix()
+
+	tokenString, err := token.SignedString(testSecretKey)
+	require.NoError(t, err)
+
+	return tokenString
 }

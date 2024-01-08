@@ -2,13 +2,16 @@ package director
 
 import (
 	"context"
+	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	authConv "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/retry"
+	"github.com/avast/retry-go/v4"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/machinebox/graphql"
 )
@@ -18,6 +21,7 @@ type Client interface {
 	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetTenantByInternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetTenantByLowestOwnerForResource(ctx context.Context, resourceID, resourceType string) (string, error)
+	GetRootTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetSystemAuthByID(ctx context.Context, authID string) (*model.SystemAuth, error)
 	GetSystemAuthByToken(ctx context.Context, token string) (*model.SystemAuth, error)
 	UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAuth) (UpdateAuthResult, error)
@@ -104,6 +108,18 @@ func (c *client) GetTenantByLowestOwnerForResource(ctx context.Context, resource
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
 		return "", err
+	}
+
+	return response.Result, nil
+}
+
+func (c *client) GetRootTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error) {
+	query := GetRootTenantByExternalIDQuery(tenantID)
+	var response TenantResponse
+
+	err := c.execute(ctx, c.gqlClient, query, &response)
+	if err != nil {
+		return nil, err
 	}
 
 	return response.Result, nil
@@ -204,7 +220,17 @@ func (c *client) execute(ctx context.Context, client *graphql.Client, query stri
 	newCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	return retry.GQLRun(client.Run, newCtx, req, res)
+	return retry.Do(func() error {
+		return client.Run(newCtx, req, res)
+	}, retry.Attempts(2),
+		retry.DelayType(retry.FixedDelay),
+		retry.Delay(100*time.Millisecond),
+		retry.OnRetry(func(n uint, err error) {
+			log.C(ctx).Warnf("OnRetry: attempts: %d, error: %v", n, err)
+		}), retry.LastErrorOnly(true), retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "connection reset by peer")
+		}))
 }
 
 func graphQLToModel(in *schema.AppSystemAuth) (*model.SystemAuth, error) {

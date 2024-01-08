@@ -4,18 +4,21 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"testing"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy/automock"
@@ -186,7 +189,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				require.NoError(t, err)
 
 				executor := &automock.Executor{}
-				executor.On("Execute", context.TODO(), mock.Anything, proxyURL+ordDocURI, "", http.Header{}).Return(&http.Response{
+				executor.On("Execute", context.TODO(), mock.Anything, proxyURL+ordDocURI, "", &sync.Map{}).Return(&http.Response{
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBuffer(data)),
 				}, nil).Once()
@@ -208,7 +211,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				require.NoError(t, err)
 
 				executor := &automock.Executor{}
-				executor.On("Execute", context.TODO(), mock.Anything, baseURL+ord.WellKnownEndpoint, "", http.Header{}).Return(&http.Response{
+				executor.On("Execute", context.TODO(), mock.Anything, baseURL+ord.WellKnownEndpoint, "", &sync.Map{}).Return(&http.Response{
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBuffer(data)),
 				}, nil).Once()
@@ -229,7 +232,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			Name: "Well-known config fetch with access strategy fails when access strategy provider returns error",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				executorProvider := &automock.ExecutorProvider{}
-				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(nil, testErr).Once()
+				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(nil, testErr).Times(5)
 				return executorProvider
 			},
 			AccessStrategy: testAccessStrategy,
@@ -240,10 +243,10 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			Name: "Well-known config fetch with access strategy fails when access strategy executor returns error",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				executor := &automock.Executor{}
-				executor.On("Execute", context.TODO(), mock.Anything, baseURL+ord.WellKnownEndpoint, "", http.Header{}).Return(nil, testErr).Once()
+				executor.On("Execute", context.TODO(), mock.Anything, baseURL+ord.WellKnownEndpoint, "", &sync.Map{}).Return(nil, testErr).Times(5)
 
 				executorProvider := &automock.ExecutorProvider{}
-				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
+				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Times(5)
 				return executorProvider
 			},
 			AccessStrategy: testAccessStrategy,
@@ -315,7 +318,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 					Body:       io.NopCloser(bytes.NewBuffer(data)),
 				}
 			},
-			ExpectedErr: errors.New("error unmarshaling json body"),
+			ExpectedErr: errors.New("error unmarshaling wellknown json body"),
 		},
 		{
 			Name: "Document with unsupported access strategy is skipped",
@@ -396,17 +399,17 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			}
 			requestObject := webhook.OpenResourceDiscoveryWebhookRequestObject{
 				TenantID: tenantID,
-				Headers:  http.Header{},
+				Headers:  &sync.Map{},
 			}
 			testHTTPClient := NewTestClient(test.RoundTripFunc)
 
-			certCache := certloader.NewCertificateCache()
+			certCache := credloader.NewCertificateCache()
 			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName)
 			if test.ExecutorProviderFunc != nil {
 				executorProviderMock = test.ExecutorProviderFunc()
 			}
 
-			clientCfg := ord.NewClientConfig(5)
+			clientCfg := ord.NewClientConfig(5, time.Millisecond, 5)
 			client := ord.NewClient(clientCfg, testHTTPClient, executorProviderMock)
 
 			testApp := fixApplicationPage().Data[0]

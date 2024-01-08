@@ -22,6 +22,10 @@ func (_m *K8SClient) Create(ctx context.Context, operation *v1alpha1.Operation) 
 	ret := _m.Called(ctx, operation)
 
 	var r0 *v1alpha1.Operation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.Operation) (*v1alpha1.Operation, error)); ok {
+		return rf(ctx, operation)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.Operation) *v1alpha1.Operation); ok {
 		r0 = rf(ctx, operation)
 	} else {
@@ -30,7 +34,6 @@ func (_m *K8SClient) Create(ctx context.Context, operation *v1alpha1.Operation) 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *v1alpha1.Operation) error); ok {
 		r1 = rf(ctx, operation)
 	} else {
@@ -45,6 +48,10 @@ func (_m *K8SClient) Get(ctx context.Context, name string, options v1.GetOptions
 	ret := _m.Called(ctx, name, options)
 
 	var r0 *v1alpha1.Operation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, v1.GetOptions) (*v1alpha1.Operation, error)); ok {
+		return rf(ctx, name, options)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, v1.GetOptions) *v1alpha1.Operation); ok {
 		r0 = rf(ctx, name, options)
 	} else {
@@ -53,7 +60,6 @@ func (_m *K8SClient) Get(ctx context.Context, name string, options v1.GetOptions
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, v1.GetOptions) error); ok {
 		r1 = rf(ctx, name, options)
 	} else {
@@ -68,6 +74,10 @@ func (_m *K8SClient) Update(ctx context.Context, operation *v1alpha1.Operation) 
 	ret := _m.Called(ctx, operation)
 
 	var r0 *v1alpha1.Operation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.Operation) (*v1alpha1.Operation, error)); ok {
+		return rf(ctx, operation)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.Operation) *v1alpha1.Operation); ok {
 		r0 = rf(ctx, operation)
 	} else {
@@ -76,7 +86,6 @@ func (_m *K8SClient) Update(ctx context.Context, operation *v1alpha1.Operation) 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *v1alpha1.Operation) error); ok {
 		r1 = rf(ctx, operation)
 	} else {
@@ -86,13 +95,12 @@ func (_m *K8SClient) Update(ctx context.Context, operation *v1alpha1.Operation) 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewK8SClient interface {
+// NewK8SClient creates a new instance of K8SClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewK8SClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewK8SClient creates a new instance of K8SClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewK8SClient(t mockConstructorTestingTNewK8SClient) *K8SClient {
+}) *K8SClient {
 	mock := &K8SClient{}
 	mock.Mock.Test(t)
 

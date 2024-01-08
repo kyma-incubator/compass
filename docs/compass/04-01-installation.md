@@ -8,7 +8,7 @@ You can install Compass both on a cluster and on your local machine in the follo
 
 ### Required versions
 
-- Kubernetes 1.21
+- Kubernetes 1.25a
 - For more information about the required CLI tools versions, see: [Compass Prerequisites](https://github.com/kyma-incubator/compass#prerequisites) 
 
 ### Managed PostgreSQL Database
@@ -46,21 +46,10 @@ Therefore, `serviceAccountTokenJWKS` and `serviceAccountTokenIssuer` need to be 
 
 > **NOTE:** During the installation of Compass, the installed Kyma version (as a basis to Compass) must match to the one in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file in the specific Compass commit.
 
-If custom domains and certificates are needed, see the [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/2.3.0/docs/03-tutorials/sec-01-tls-certificates-security.md) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
+If custom domains and certificates are needed, see the [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/2.9.3/docs/03-tutorials/00-security/sec-01-tls-certificates-security.md) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
 
 Save the following .yaml code with installation overrides into a file (for example: additionalKymaOverrides.yaml)
 ```yaml
-ory:
-  global:
-    domainName: ${DOMAIN} # Optional, only needed if you use custom domains below.
-  oathkeeper:
-    oathkeeper:
-      config:
-        authenticators:
-          jwt:
-            config:
-              jwks_urls:
-                -  ${IDP_JWKS_URL}
 istio:
    components:
       ingressGateways:
@@ -88,7 +77,105 @@ And then start the Kyma installation by using the following command:
 kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c <minimal file from ../../installation/resources/kyma/kyma-components-minimal.yaml> -f <overrides file from ../../installation/resources/kyma/kyma-overrides-minimal.yaml> -f <file from above step - e.g. additionalKymaOverrides.yaml> --ci
 ```
 
-> **NOTE:** After the Kyma installation completes successfully, you will have to trigger manually the `oathkeeper-jwks-rotator` cronjob once.
+#### Install Ory
+
+Compass has a dependency on [Ory Hydra](https://github.com/ory/hydra) and [Ory Oathkeeper](https://github.com/ory/oathkeeper); they need to be successfully deployed before the Compass installation.
+
+The Ory Hydra requires persistence storage; the database can be in-cluster or on Google Cloud Platform - depending on the case different additional overrides are required.
+
+##### In-cluster database
+
+In-cluster persistence is achieved with the usage of [Compass' localdb Helm chart](https://github.com/kyma-incubator/compass/tree/main/chart/localdb). 
+Firstly, `localdb` needs to be installed by running:
+
+```bash
+<script from ../../installation/scripts/install-db.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --timeout <e.g: 30m0s>
+```
+
+The necessary users and databases for Hydra are handled inside the Helm chart of `localdb`.
+
+Secondly, save the following YAML code with installation overrides into a file (for example: additionalOryOverrides.yaml).
+```yaml
+global:
+  domainName: ${DOMAIN} # Optional, only needed if you use custom domains during Kyma installation.
+oathkeeper:
+  oathkeeper:
+    config:
+      authenticators:
+        jwt:
+          config:
+            jwks_urls:
+              - ${IDP_JWKS_URL}
+```
+
+Initiate the Ory installation with the following command:
+```bash
+<script from ../../installation/scripts/install-ory.sh> --overrides-file <file from above step - e.g. additionalOryOverrides.yaml>
+```
+
+The script applies the necessary overrides for Ory Hydra to connect to the database (situated under `../../chart/ory/values.yaml`); the Oathkeeper Secret is created by a pre-install Helm hook.
+
+##### Google Cloud Platform database
+
+The Ory Hydra component can authenticate to Google Cloud Platform by using [gcloud-sqlproxy](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy). 
+Firstly, install the `gcloud-sqlproxy` mentioned above - another useful source is [the Ory Hydra documentation (With Google Cloud SQL
+)](https://k8s.ory.sh/helm/hydra.html). An example YAML could look like this:
+```yaml
+serviceAccount:
+  create: true
+  name: "ory-gcloud-sqlproxy"
+  # use workload identity service account to authenticate to Google Cloud Platform; more details https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity
+  # Remove the annotation if you are using the Google Cloud Platform service account JSON
+  annotations:
+    iam.gke.io/gcp-service-account: ${GCP_SA}
+cloudsql:
+  instances:
+  - instance: ${GCP_INSTANCE_NAME}
+    port: ${GCP_PORT}
+    project: ${GCP_PROJECT}
+    region: ${GCP_REGION}
+extraFlags:
+  # Uncomment if your database is situated in a private network inside GCP
+  # - private-ip
+```
+> **NOTE:** The overrides above use workload identity to authenticate to Google Cloud Platform (recommended by Google); another possibility is to use the Google Cloud Platform's service account JSON as explained at [gcloud-sqlproxy's installation](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy#installing-the-chart).
+
+Afterwards, save the following YAML code with installation overrides into a file (for example: additionalOryOverrides.yaml).
+```yaml
+global:
+  domainName: ${DOMAIN} # Optional, only needed if you use custom domains during Kyma installation.
+  ory:
+    hydra:
+      persistence:
+        # Indicates that cloud persistence shall be used; needed for the correct execution of `install-ory.sh`
+        gcloud:
+          enabled: true
+
+oathkeeper:
+  oathkeeper:
+    config:
+      authenticators:
+        jwt:
+          config:
+            jwks_urls:
+              - ${IDP_JWKS_URL}
+
+hydra:
+  hydra:
+    # install-ory.sh handles the creation of this if in-cluster database is used
+    config:
+      dsn: ${DSN} # Connection string for the database; more details https://www.ory.sh/docs/self-hosted/deployment#postgresql
+      # Secrets needed for the operation of Ory Hydra; more details https://www.ory.sh/docs/hydra/reference/configuration
+      # It should be noted that the change of these values should follow https://www.ory.sh/docs/hydra/self-hosted/secrets-key-rotation
+      secrets:
+        system: "${RANDOM_VALUE}"
+        cookie: "${RANDOM_VALUE}"
+```
+
+Initiate the Ory installation with the following command:
+```bash
+<script from ../../installation/scripts/install-ory.sh> --overrides-file <file from above step - for example additionalOryOverrides.yaml>
+```
 
 #### Install Compass
 
@@ -121,7 +208,7 @@ global:
 #      tlsKey: ${TLS_KEY}
 ```
 
-Start the Database installation by using the following command:
+Start the Database installation by using the following command, can be skipped if it was installed during [Ory installation with local persistence](#in-cluster-database):
 
 ```bash
 <script from ../../installation/scripts/install-db.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
@@ -303,23 +390,12 @@ To install the Compass and Runtime components on a single cluster, perform the f
 
 > **NOTE:** During the installation of Kyma, the installed version must match to the one in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file in the specific Compass commit.
 
-You must have a Kyma installation with an enabled Runtime Agent. For more information, see [Enable Kyma with Runtime Agent](https://github.com/kyma-project/kyma/blob/2.3.0/docs/04-operation-guides/operations/ra-01-enable-kyma-with-runtime-agent.md). Therefore, you must add the compass-runtime-agent module in the compass-system namespace to the list of [minimal kyma components file](../../installation/resources/kyma/kyma-components-minimal.yaml).
+You must have a Kyma installation with enabled Runtime Agent. For more information, see [Enable Kyma with Runtime Agent](https://github.com/kyma-project/kyma/blob/2.9.3/docs/04-operation-guides/operations/ra-01-enable-kyma-with-runtime-agent.md). Therefore, you must add the compass-runtime-agent module in the compass-system namespace to the list of [minimal kyma components file](../../installation/resources/kyma/kyma-components-minimal.yaml).
 
-If custom domains and certificates are needed, see the [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/2.3.0/docs/03-tutorials/sec-01-tls-certificates-security.md) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
+If custom domains and certificates are needed, see the [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/2.9.3/docs/03-tutorials/00-security/sec-01-tls-certificates-security.md) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
 
 Save the following .yaml code with installation overrides to a file (for example: additionalKymaOverrides.yaml)
 ```yaml
-ory:
-  global:
-    domainName: ${DOMAIN} # Optional, only needed if you use custom domains below.
-  oathkeeper:
-    oathkeeper:
-      config:
-        authenticators:
-          jwt:
-            config:
-              jwks_urls:
-                -  ${IDP_JWKS_URL}
 istio:
    components:
       ingressGateways:
@@ -348,7 +424,11 @@ And then, start the Kyma installation by using the following command:
 kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c <minimal file from ../../installation/resources/kyma/kyma-components-minimal.yaml> -f <overrides file from ../../installation/resources/kyma/kyma-overrides-minimal.yaml> -f <file from above step - e.g. additionalKymaOverrides.yaml> --ci
 ```
 
-> **NOTE:** After the Kyma installation completes successfully, you will have to trigger manually the `oathkeeper-jwks-rotator` cronjob once.
+#### Install Ory
+
+Compass has a dependency on [Ory Hydra](https://github.com/ory/hydra) and [Ory Oathkeeper](https://github.com/ory/oathkeeper); they need to be successfully deployed before the Compass installation.
+
+For installation steps please have a look at [the following chapter](#install-ory).
 
 #### Install Compass
 
@@ -379,7 +459,7 @@ global:
 #      tlsCrt: ${TLS_CERT}
 #      tlsKey: ${TLS_KEY}
 ```
-Start Database installation:
+Start the Database installation, can be skipped if it was installed during [Ory installation with local persistence](#in-cluster-database):
 ```bash
 <script from ../../installation/scripts/install-db.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
 ```

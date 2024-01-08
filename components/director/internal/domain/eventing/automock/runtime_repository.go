@@ -22,6 +22,10 @@ func (_m *RuntimeRepository) GetByFiltersAndID(ctx context.Context, tenant strin
 	ret := _m.Called(ctx, tenant, id, filter)
 
 	var r0 *model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []*labelfilter.LabelFilter) (*model.Runtime, error)); ok {
+		return rf(ctx, tenant, id, filter)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, []*labelfilter.LabelFilter) *model.Runtime); ok {
 		r0 = rf(ctx, tenant, id, filter)
 	} else {
@@ -30,7 +34,6 @@ func (_m *RuntimeRepository) GetByFiltersAndID(ctx context.Context, tenant strin
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, tenant, id, filter)
 	} else {
@@ -45,6 +48,10 @@ func (_m *RuntimeRepository) GetOldestForFilters(ctx context.Context, tenant str
 	ret := _m.Called(ctx, tenant, filter)
 
 	var r0 *model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) (*model.Runtime, error)); ok {
+		return rf(ctx, tenant, filter)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) *model.Runtime); ok {
 		r0 = rf(ctx, tenant, filter)
 	} else {
@@ -53,7 +60,6 @@ func (_m *RuntimeRepository) GetOldestForFilters(ctx context.Context, tenant str
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, tenant, filter)
 	} else {
@@ -68,6 +74,10 @@ func (_m *RuntimeRepository) List(ctx context.Context, tenant string, filter []*
 	ret := _m.Called(ctx, tenant, filter, pageSize, cursor)
 
 	var r0 *model.RuntimePage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) (*model.RuntimePage, error)); ok {
+		return rf(ctx, tenant, filter, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) *model.RuntimePage); ok {
 		r0 = rf(ctx, tenant, filter, pageSize, cursor)
 	} else {
@@ -76,7 +86,6 @@ func (_m *RuntimeRepository) List(ctx context.Context, tenant string, filter []*
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, tenant, filter, pageSize, cursor)
 	} else {
@@ -86,13 +95,12 @@ func (_m *RuntimeRepository) List(ctx context.Context, tenant string, filter []*
 	return r0, r1
 }
 
-type mockConstructorTestingTNewRuntimeRepository interface {
+// NewRuntimeRepository creates a new instance of RuntimeRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeRepository creates a new instance of RuntimeRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeRepository(t mockConstructorTestingTNewRuntimeRepository) *RuntimeRepository {
+}) *RuntimeRepository {
 	mock := &RuntimeRepository{}
 	mock.Mock.Test(t)
 

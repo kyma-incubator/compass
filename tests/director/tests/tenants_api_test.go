@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -70,5 +72,237 @@ func TestQueryTenantsPageSearch(t *testing.T) {
 
 	//THEN
 	assert.Len(t, actualTenantPage.Data, 3)
-	saveExample(t, getTenantsRequest.Query(), "query tenants")
+	example.SaveExample(t, getTenantsRequest.Query(), "query tenants")
+}
+
+func TestQueryRootTenant(t *testing.T) {
+	ctx := context.TODO()
+
+	testProvider := "e2e-test-provider"
+	testLicenseType := "LICENSETYPE"
+
+	customerExternalTenant := "customer-external-tenant"
+	customerName := "customer-name"
+	customerSubdomain := "customer-subdomain"
+
+	accountExternalTenant := "account-external-tenant"
+	accountName := "account-name"
+	accountSubdomain := "account-subdomain"
+
+	subaccountNames := []string{"subaccount-name", "subaccount-name-2"}
+	subaccountExternalTenants := []string{"subaccount-external-tenant", "subaccount-external-tenant-2"}
+	subaccountRegion := "test"
+	subaccountSubdomain := "sub1"
+
+	region := "local"
+
+	tenants := []graphql.BusinessTenantMappingInput{
+		{
+			Name:           customerName,
+			ExternalTenant: customerExternalTenant,
+			Parent:         nil,
+			Subdomain:      &customerSubdomain,
+			Region:         &region,
+			Type:           string(tenant.Customer),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           accountName,
+			ExternalTenant: accountExternalTenant,
+			Parent:         &customerExternalTenant,
+			Subdomain:      &accountSubdomain,
+			Region:         &region,
+			Type:           string(tenant.Account),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           subaccountNames[0],
+			ExternalTenant: subaccountExternalTenants[0],
+			Parent:         &accountExternalTenant,
+			Subdomain:      &subaccountSubdomain,
+			Region:         &subaccountRegion,
+			Type:           string(tenant.Subaccount),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           subaccountNames[1],
+			ExternalTenant: subaccountExternalTenants[1],
+			Parent:         &accountExternalTenant,
+			Subdomain:      &subaccountSubdomain,
+			Region:         &subaccountRegion,
+			Type:           string(tenant.Subaccount),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+	}
+	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
+	assert.NoError(t, err)
+	defer func() { // cleanup tenants
+		err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenants)
+		assert.NoError(t, err)
+		log.D().Info("Successfully cleanup tenants")
+	}()
+
+	// assert the top parent for subaccount 1
+	var actualRootTenantForSubaccount1 graphql.Tenant
+	getRootTenant := fixtures.FixRootTenantRequest(subaccountExternalTenants[0])
+	t.Logf("Query root tenant for external tenant: %q", subaccountExternalTenants[0])
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantForSubaccount1)
+	require.NoError(t, err)
+	require.Equal(t, customerExternalTenant, actualRootTenantForSubaccount1.ID)
+	require.Equal(t, customerName, *actualRootTenantForSubaccount1.Name)
+	require.Equal(t, string(tenant.Customer), actualRootTenantForSubaccount1.Type)
+	example.SaveExample(t, getRootTenant.Query(), "get root tenant")
+
+	// assert the top parent for subaccount 2
+	var actualRootTenantForSubaccount2 graphql.Tenant
+	getRootTenant = fixtures.FixRootTenantRequest(subaccountExternalTenants[1])
+	t.Logf("Query root tenant for external tenant: %q", subaccountExternalTenants[1])
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantForSubaccount2)
+	require.NoError(t, err)
+
+	require.Equal(t, customerExternalTenant, actualRootTenantForSubaccount2.ID)
+	require.Equal(t, customerName, *actualRootTenantForSubaccount2.Name)
+	require.Equal(t, string(tenant.Customer), actualRootTenantForSubaccount2.Type)
+
+	// assert the top parent for account
+	var actualRootTenantForAccount graphql.Tenant
+	getRootTenant = fixtures.FixRootTenantRequest(accountExternalTenant)
+	t.Logf("Query root tenant for external tenant: %q", accountExternalTenant)
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantForAccount)
+	require.NoError(t, err)
+	require.Equal(t, customerExternalTenant, actualRootTenantForAccount.ID)
+	require.Equal(t, customerName, *actualRootTenantForAccount.Name)
+	require.Equal(t, string(tenant.Customer), actualRootTenantForAccount.Type)
+
+	// assert the top parent for customer
+	var actualRootTenantForCustomer graphql.Tenant
+	getRootTenant = fixtures.FixRootTenantRequest(customerExternalTenant)
+	t.Logf("Query root tenant for external tenant: %q", customerExternalTenant)
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantForCustomer)
+	require.NoError(t, err)
+	require.Equal(t, customerExternalTenant, actualRootTenantForCustomer.ID)
+	require.Equal(t, customerName, *actualRootTenantForCustomer.Name)
+	require.Equal(t, string(tenant.Customer), actualRootTenantForCustomer.Type)
+}
+
+func TestWriteTenants(t *testing.T) {
+	testProvider := "e2e-test-provider"
+	testLicenseType := "LICENSETYPE"
+
+	// customerExternalTenantGUID to have leading zeros, so we can check if they are not accidentally trimmed
+	customerExternalTenantGUID := "0022b8c3-bfda-47b4-8d1b-4c717b9940a3"
+	customerExternalTenant := "0000customerID"
+	customerTrimmedExternalTenant := "customerID"
+	customerName := "customer-name"
+	customerSubdomain := "customer-subdomain"
+
+	accountExternalTenant := "account-external-tenant-1"
+	accountName := "account-name"
+	accountSubdomain := "account-subdomain"
+
+	orgExternalTenant := "org-external-tenant-1"
+	orgName := "org-name"
+	orgSubdomain := "org-subdomain"
+
+	region := "local"
+
+	tenants := []graphql.BusinessTenantMappingInput{
+		{
+			Name:           customerName,
+			ExternalTenant: customerExternalTenant,
+			Parent:         nil,
+			Subdomain:      &customerSubdomain,
+			Region:         &region,
+			Type:           string(tenant.Customer),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           customerName,
+			ExternalTenant: customerExternalTenantGUID,
+			Parent:         nil,
+			Subdomain:      &customerSubdomain,
+			Region:         &region,
+			Type:           string(tenant.Customer),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           accountName,
+			ExternalTenant: accountExternalTenant,
+			Parent:         &customerExternalTenant,
+			Subdomain:      &accountSubdomain,
+			Region:         &region,
+			Type:           string(tenant.Account),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           orgName,
+			ExternalTenant: orgExternalTenant,
+			Parent:         &customerExternalTenant,
+			Subdomain:      &orgSubdomain,
+			Region:         &region,
+			Type:           string(tenant.Organization),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+	}
+	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
+	assert.NoError(t, err)
+	defer func() { // cleanup tenants
+		err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenants)
+		assert.NoError(t, err)
+		log.D().Info("Successfully cleanup tenants")
+	}()
+
+	var actualCustomer1Tenant graphql.Tenant
+	getTenant := fixtures.FixTenantRequest(customerTrimmedExternalTenant)
+	t.Logf("Query tenant for external tenant: %q", customerTrimmedExternalTenant)
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenant, &actualCustomer1Tenant)
+	require.NoError(t, err)
+	require.Equal(t, customerTrimmedExternalTenant, actualCustomer1Tenant.ID)
+	require.Equal(t, customerName, *actualCustomer1Tenant.Name)
+	require.Equal(t, string(tenant.Customer), actualCustomer1Tenant.Type)
+
+	var actualCustomer2Tenant graphql.Tenant
+	getTenant = fixtures.FixTenantRequest(customerExternalTenantGUID)
+	t.Logf("Query tenant for external tenant: %q", customerExternalTenantGUID)
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenant, &actualCustomer2Tenant)
+	require.NoError(t, err)
+	require.Equal(t, customerExternalTenantGUID, actualCustomer2Tenant.ID)
+	require.Equal(t, customerName, *actualCustomer2Tenant.Name)
+	require.Equal(t, string(tenant.Customer), actualCustomer2Tenant.Type)
+
+	var actualAccountTenant graphql.Tenant
+	getTenant = fixtures.FixTenantRequest(accountExternalTenant)
+	t.Logf("Query tenant for external tenant: %q", accountExternalTenant)
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenant, &actualAccountTenant)
+	require.NoError(t, err)
+	require.Equal(t, accountExternalTenant, actualAccountTenant.ID)
+	require.Equal(t, accountName, *actualAccountTenant.Name)
+	require.Equal(t, string(tenant.Account), actualAccountTenant.Type)
+	require.Equal(t, actualCustomer1Tenant.InternalID, actualAccountTenant.ParentID)
+
+	var actualOrgenant graphql.Tenant
+	getTenant = fixtures.FixTenantRequest(orgExternalTenant)
+	t.Logf("Query tenant for external tenant: %q", orgExternalTenant)
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenant, &actualOrgenant)
+	require.NoError(t, err)
+	require.Equal(t, orgExternalTenant, actualOrgenant.ID)
+	require.Equal(t, orgName, *actualOrgenant.Name)
+	require.Equal(t, string(tenant.Organization), actualOrgenant.Type)
+	require.Equal(t, actualCustomer1Tenant.InternalID, actualOrgenant.ParentID)
 }

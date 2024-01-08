@@ -19,13 +19,16 @@ func (_m *CertSubjectMappingService) Create(ctx context.Context, in *model.CertS
 	ret := _m.Called(ctx, in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.CertSubjectMapping) (string, error)); ok {
+		return rf(ctx, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *model.CertSubjectMapping) string); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *model.CertSubjectMapping) error); ok {
 		r1 = rf(ctx, in)
 	} else {
@@ -54,13 +57,16 @@ func (_m *CertSubjectMappingService) Exists(ctx context.Context, id string) (boo
 	ret := _m.Called(ctx, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
 		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -75,6 +81,10 @@ func (_m *CertSubjectMappingService) Get(ctx context.Context, id string) (*model
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.CertSubjectMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.CertSubjectMapping, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.CertSubjectMapping); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -83,7 +93,6 @@ func (_m *CertSubjectMappingService) Get(ctx context.Context, id string) (*model
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -98,6 +107,10 @@ func (_m *CertSubjectMappingService) List(ctx context.Context, pageSize int, cur
 	ret := _m.Called(ctx, pageSize, cursor)
 
 	var r0 *model.CertSubjectMappingPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, string) (*model.CertSubjectMappingPage, error)); ok {
+		return rf(ctx, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, int, string) *model.CertSubjectMappingPage); ok {
 		r0 = rf(ctx, pageSize, cursor)
 	} else {
@@ -106,7 +119,6 @@ func (_m *CertSubjectMappingService) List(ctx context.Context, pageSize int, cur
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
 		r1 = rf(ctx, pageSize, cursor)
 	} else {
@@ -130,13 +142,12 @@ func (_m *CertSubjectMappingService) Update(ctx context.Context, in *model.CertS
 	return r0
 }
 
-type mockConstructorTestingTNewCertSubjectMappingService interface {
+// NewCertSubjectMappingService creates a new instance of CertSubjectMappingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewCertSubjectMappingService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewCertSubjectMappingService creates a new instance of CertSubjectMappingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewCertSubjectMappingService(t mockConstructorTestingTNewCertSubjectMappingService) *CertSubjectMappingService {
+}) *CertSubjectMappingService {
 	mock := &CertSubjectMappingService{}
 	mock.Mock.Test(t)
 

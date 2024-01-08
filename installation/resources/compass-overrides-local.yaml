@@ -30,6 +30,8 @@ global:
     secrets:
       externalCertSvcSecret:
         manage: true
+      publicPrivateKeysSecret:
+        manage: true
   extSvcCertConfiguration:
     secrets:
       extSvcCertSvcSecret:
@@ -45,6 +47,8 @@ global:
     saasAppNamesSecret:
       manage: true
     regionInstancesCredentials:
+      manage: true
+    regionSMInstancesCredentials:
       manage: true
   http:
     client:
@@ -72,6 +76,9 @@ global:
           authenticator:
             enabled: true
         nsadapter:
+          authenticator:
+            enabled: true
+        user-name-authenticator:
           authenticator:
             enabled: true
   ordService:
@@ -152,6 +159,7 @@ global:
           tenantEventsField: "events"
           totalPagesField: "totalPages"
           totalResultsField: "totalResults"
+          labelsField: "labels"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: "2s"
@@ -197,6 +205,7 @@ global:
           tenantEventsField: "events"
           totalPagesField: "totalPages"
           totalResultsField: "totalResults"
+          labelsField: "labels"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: "2s"
@@ -222,12 +231,19 @@ global:
         tokenEndpointPath: "url"
         tokenURLPath: "/cert/token"
   tests:
+    userNameAuthenticators:
+      account:
+        manage: true
+      subaccount:
+        manage: true
     basicCredentials:
       manage: true
     http:
       client:
         skipSSLValidation: true
     subscription:
+      destinationOauthSecret:
+        manage: true
       oauthSecret:
         manage: true
   destinationFetcher:

@@ -21,6 +21,10 @@ func (_m *FormationService) AssignFormation(ctx context.Context, tnt string, obj
 	ret := _m.Called(ctx, tnt, objectID, objectType, formation)
 
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)); ok {
+		return rf(ctx, tnt, objectID, objectType, formation)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) *model.Formation); ok {
 		r0 = rf(ctx, tnt, objectID, objectType, formation)
 	} else {
@@ -29,7 +33,6 @@ func (_m *FormationService) AssignFormation(ctx context.Context, tnt string, obj
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) error); ok {
 		r1 = rf(ctx, tnt, objectID, objectType, formation)
 	} else {
@@ -44,6 +47,10 @@ func (_m *FormationService) GetFormationsForObject(ctx context.Context, tnt stri
 	ret := _m.Called(ctx, tnt, objType, objID)
 
 	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string) ([]string, error)); ok {
+		return rf(ctx, tnt, objType, objID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string) []string); ok {
 		r0 = rf(ctx, tnt, objType, objID)
 	} else {
@@ -52,7 +59,6 @@ func (_m *FormationService) GetFormationsForObject(ctx context.Context, tnt stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.LabelableObject, string) error); ok {
 		r1 = rf(ctx, tnt, objType, objID)
 	} else {
@@ -67,6 +73,10 @@ func (_m *FormationService) GetScenariosFromMatchingASAs(ctx context.Context, ob
 	ret := _m.Called(ctx, objectID, objType)
 
 	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, graphql.FormationObjectType) ([]string, error)); ok {
+		return rf(ctx, objectID, objType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, graphql.FormationObjectType) []string); ok {
 		r0 = rf(ctx, objectID, objType)
 	} else {
@@ -75,7 +85,6 @@ func (_m *FormationService) GetScenariosFromMatchingASAs(ctx context.Context, ob
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, graphql.FormationObjectType) error); ok {
 		r1 = rf(ctx, objectID, objType)
 	} else {
@@ -90,6 +99,10 @@ func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, o
 	ret := _m.Called(ctx, tnt, objectID, objectType, formation)
 
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)); ok {
+		return rf(ctx, tnt, objectID, objectType, formation)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) *model.Formation); ok {
 		r0 = rf(ctx, tnt, objectID, objectType, formation)
 	} else {
@@ -98,7 +111,6 @@ func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, o
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) error); ok {
 		r1 = rf(ctx, tnt, objectID, objectType, formation)
 	} else {
@@ -108,13 +120,12 @@ func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, o
 	return r0, r1
 }
 
-type mockConstructorTestingTNewFormationService interface {
+// NewFormationService creates a new instance of FormationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationService creates a new instance of FormationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationService(t mockConstructorTestingTNewFormationService) *FormationService {
+}) *FormationService {
 	mock := &FormationService{}
 	mock.Mock.Test(t)
 

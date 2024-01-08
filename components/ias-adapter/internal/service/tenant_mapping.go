@@ -10,12 +10,14 @@ import (
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 )
 
+//go:generate mockery --name=TenantMappingsStorage --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantMappingsStorage interface {
 	UpsertTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error
 	ListTenantMappings(ctx context.Context, formationID string) (map[string]types.TenantMapping, error)
 	DeleteTenantMapping(ctx context.Context, formationID, applicationID string) error
 }
 
+//go:generate mockery --name=IASService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IASService interface {
 	GetApplication(ctx context.Context, iasHost, clientID, appTenantID string) (types.Application, error)
 	UpdateApplicationConsumedAPIs(ctx context.Context, data ias.UpdateData) error
@@ -51,18 +53,19 @@ func (s TenantMappingsService) handleAssign(ctx context.Context,
 	formationID := tenantMapping.FormationID
 	uclAppID := tenantMapping.AssignedTenants[0].UCLApplicationID
 
-	if _, ok := tenantMappingsFromDB[uclAppID]; ok {
+	_, tenantMappingAlreadyInDB := tenantMappingsFromDB[uclAppID]
+	if tenantMappingAlreadyInDB && len(tenantMapping.AssignedTenants[0].Configuration.ConsumedAPIs) == 0 {
 		// Safeguard for empty consumedAPIs
 		logger.FromContext(ctx).Warn().Msgf(
-			"Received additional tenant mapping for app '%s' in formation '%s'. Skipping processing",
+			"Received additional tenant mapping for app '%s' in formation '%s'. Skipping upsert.",
 			uclAppID, formationID)
-		return nil
+	} else {
+		if err := s.upsertTenantMappingInDB(ctx, tenantMapping); err != nil {
+			return err
+		}
+		tenantMappingsFromDB[uclAppID] = tenantMapping
 	}
 
-	if err := s.upsertTenantMappingInDB(ctx, tenantMapping); err != nil {
-		return err
-	}
-	tenantMappingsFromDB[uclAppID] = tenantMapping
 	if len(tenantMappingsFromDB) == 2 {
 		if err := s.updateIASAppsConsumedAPIs(ctx, types.OperationAssign, tenantMappingsFromDB); err != nil {
 			return errors.Newf("failed to update applications consumed APIs in formation '%s': %w", formationID, err)
@@ -94,25 +97,38 @@ func (s TenantMappingsService) updateIASAppsConsumedAPIs(ctx context.Context,
 	log.Info().Msgf("Updating consumed APIs for applications in formation '%s' triggered by %s operation",
 		tenantMappings[0].FormationID, triggerOperation)
 
-	iasApps, err := s.getIASApps(ctx, tenantMappings)
+	iasApps, err := s.getIASApps(ctx, triggerOperation, tenantMappings)
 	if err != nil {
 		return errors.Newf("Failed to get IAS applications during %s operation: %w", triggerOperation, err)
 	}
 
-	for idx, tenantMapping := range tenantMappings {
+	// could only be in the Unassign case
+	if len(iasApps) < tenantMappingsCount {
+		log.Warn().Msgf("Not all IAS applications are still present, skipping consumed APIs update")
+		return nil
+	}
+
+	for idx, consumerApp := range iasApps {
+		tenantMapping := tenantMappings[idx]
 		uclAppID := tenantMapping.AssignedTenants[0].UCLApplicationID
-		log.Info().Msgf("Updating consumed APIs for application with UCL ID '%s' in formation '%s'",
-			uclAppID, tenantMapping.FormationID)
+		providerAppID := iasApps[abs(idx-1)].ID
+
+		log.Info().Msgf(
+			"Updating application '%s' consumed APIs with provider app id '%s' for UCL app '%s' in formation '%s'",
+			consumerApp.ID, providerAppID, uclAppID, tenantMapping.FormationID)
+
 		updateData := ias.UpdateData{
 			Operation:             triggerOperation,
 			TenantMapping:         tenantMapping,
-			ConsumerApplication:   iasApps[idx],
-			ProviderApplicationID: iasApps[abs(idx-1)].ID,
+			ConsumerApplication:   consumerApp,
+			ProviderApplicationID: providerAppID,
 		}
+
 		if err := s.IASService.UpdateApplicationConsumedAPIs(ctx, updateData); err != nil {
-			return errors.Newf("error ocurred during IAS consumed APIs update", err)
+			return errors.Newf("error occurred during IAS consumed APIs update", err)
 		}
 	}
+
 	return nil
 }
 
@@ -143,21 +159,30 @@ func (s TenantMappingsService) getIASApplication(
 	ctx context.Context, tenantMapping types.TenantMapping) (types.Application, error) {
 	iasHost := tenantMapping.ReceiverTenant.ApplicationURL
 	tenantMappingUCLApplicationID := tenantMapping.AssignedTenants[0].UCLApplicationID
-	iasApplication, err := s.IASService.GetApplication(ctx, iasHost,
-		tenantMapping.AssignedTenants[0].Parameters.ClientID, tenantMapping.AssignedTenants[0].LocalTenantID)
+	clientID := tenantMapping.AssignedTenants[0].Parameters.ClientID
+	localTenantID := tenantMapping.AssignedTenants[0].LocalTenantID
+
+	iasApplication, err := s.IASService.GetApplication(ctx, iasHost, clientID, localTenantID)
 	if err != nil {
-		return iasApplication, errors.Newf("failed to get IAS application with UCL ID '%s': %w",
-			tenantMappingUCLApplicationID, err)
+		return iasApplication, errors.Newf(
+			"failed to get IAS application with clientID '%s' and tenantID '%s' for UCL App ID '%s': %w",
+			clientID, localTenantID, tenantMappingUCLApplicationID, err)
 	}
 	return iasApplication, nil
 }
 
-func (s TenantMappingsService) getIASApps(
-	ctx context.Context, tenantMappings []types.TenantMapping) ([]types.Application, error) {
+func (s TenantMappingsService) getIASApps(ctx context.Context, triggerOperation types.Operation,
+	tenantMappings []types.TenantMapping) ([]types.Application, error) {
+
 	iasApps := make([]types.Application, 0, len(tenantMappings))
 	for _, tenantMapping := range tenantMappings {
 		iasApp, err := s.getIASApplication(ctx, tenantMapping)
 		if err != nil {
+			// allow missing IAS applications for unassign
+			if errors.Is(err, errors.IASApplicationNotFound) && triggerOperation == types.OperationUnassign {
+				logger.FromContext(ctx).Warn().Msgf("Application missing during unassign: %s", err.Error())
+				continue
+			}
 			return nil, err
 		}
 		iasApps = append(iasApps, iasApp)

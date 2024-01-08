@@ -266,12 +266,17 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 		clientUser = correlation.CorrelationIDFromContext(ctx)
 	}
 
-	scenarioGroups := scenariogroups.LoadFromContext(ctx)
+	rawScenarioGroups := scenariogroups.LoadFromContext(ctx)
+	scenarioGroups, err := UnmarshalScenarioGroups(rawScenarioGroups)
+	if err != nil {
+		return nil, err
+	}
 
 	graphqlApp := s.appConverter.ToGraphQL(&app)
 	data := pairing.RequestData{
 		Application:    *graphqlApp,
 		Tenant:         extTenant,
+		TenantType:     tnt.Type,
 		ClientUser:     clientUser,
 		ScenarioGroups: scenarioGroups,
 	}
@@ -419,4 +424,18 @@ func (s *service) IsTokenValid(systemAuth *pkgmodel.SystemAuth) (bool, error) {
 	}
 
 	return true, nil
+}
+
+// UnmarshalScenarioGroups parses rawScenarioGroups into a slice of pairing.ScenarioGroup
+func UnmarshalScenarioGroups(rawScenarioGroups []string) ([]pairing.ScenarioGroup, error) {
+	scenarioGroups := make([]pairing.ScenarioGroup, 0)
+	for _, gr := range rawScenarioGroups {
+		var scenarioGroup pairing.ScenarioGroup
+		err := json.Unmarshal([]byte(gr), &scenarioGroup)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error while unmarshalling a scenario group")
+		}
+		scenarioGroups = append(scenarioGroups, scenarioGroup)
+	}
+	return scenarioGroups, nil
 }

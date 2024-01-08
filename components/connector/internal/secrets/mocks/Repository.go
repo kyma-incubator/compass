@@ -22,6 +22,10 @@ func (_m *Repository) Get(ctx context.Context, name types.NamespacedName) (map[s
 	ret := _m.Called(ctx, name)
 
 	var r0 map[string][]byte
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(context.Context, types.NamespacedName) (map[string][]byte, apperrors.AppError)); ok {
+		return rf(ctx, name)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, types.NamespacedName) map[string][]byte); ok {
 		r0 = rf(ctx, name)
 	} else {
@@ -30,7 +34,6 @@ func (_m *Repository) Get(ctx context.Context, name types.NamespacedName) (map[s
 		}
 	}
 
-	var r1 apperrors.AppError
 	if rf, ok := ret.Get(1).(func(context.Context, types.NamespacedName) apperrors.AppError); ok {
 		r1 = rf(ctx, name)
 	} else {
@@ -40,4 +43,18 @@ func (_m *Repository) Get(ctx context.Context, name types.NamespacedName) (map[s
 	}
 
 	return r0, r1
+}
+
+// NewRepository creates a new instance of Repository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRepository(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *Repository {
+	mock := &Repository{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
 }

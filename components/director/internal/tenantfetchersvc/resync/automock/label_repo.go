@@ -19,6 +19,10 @@ func (_m *LabelRepo) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 	ret := _m.Called(ctx, tenantID, runtimesIDs)
 
 	var r0 []model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]model.Label, error)); ok {
+		return rf(ctx, tenantID, runtimesIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []model.Label); ok {
 		r0 = rf(ctx, tenantID, runtimesIDs)
 	} else {
@@ -27,7 +31,6 @@ func (_m *LabelRepo) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
 		r1 = rf(ctx, tenantID, runtimesIDs)
 	} else {
@@ -37,13 +40,12 @@ func (_m *LabelRepo) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewLabelRepo interface {
+// NewLabelRepo creates a new instance of LabelRepo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewLabelRepo(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewLabelRepo creates a new instance of LabelRepo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewLabelRepo(t mockConstructorTestingTNewLabelRepo) *LabelRepo {
+}) *LabelRepo {
 	mock := &LabelRepo{}
 	mock.Mock.Test(t)
 

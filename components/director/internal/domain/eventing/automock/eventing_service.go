@@ -22,6 +22,10 @@ func (_m *EventingService) SetForApplication(ctx context.Context, runtimeID uuid
 	ret := _m.Called(ctx, runtimeID, app)
 
 	var r0 *model.ApplicationEventingConfiguration
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, model.Application) (*model.ApplicationEventingConfiguration, error)); ok {
+		return rf(ctx, runtimeID, app)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, model.Application) *model.ApplicationEventingConfiguration); ok {
 		r0 = rf(ctx, runtimeID, app)
 	} else {
@@ -30,7 +34,6 @@ func (_m *EventingService) SetForApplication(ctx context.Context, runtimeID uuid
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, model.Application) error); ok {
 		r1 = rf(ctx, runtimeID, app)
 	} else {
@@ -45,6 +48,10 @@ func (_m *EventingService) UnsetForApplication(ctx context.Context, app model.Ap
 	ret := _m.Called(ctx, app)
 
 	var r0 *model.ApplicationEventingConfiguration
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.Application) (*model.ApplicationEventingConfiguration, error)); ok {
+		return rf(ctx, app)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.Application) *model.ApplicationEventingConfiguration); ok {
 		r0 = rf(ctx, app)
 	} else {
@@ -53,7 +60,6 @@ func (_m *EventingService) UnsetForApplication(ctx context.Context, app model.Ap
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.Application) error); ok {
 		r1 = rf(ctx, app)
 	} else {
@@ -63,13 +69,12 @@ func (_m *EventingService) UnsetForApplication(ctx context.Context, app model.Ap
 	return r0, r1
 }
 
-type mockConstructorTestingTNewEventingService interface {
+// NewEventingService creates a new instance of EventingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEventingService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEventingService creates a new instance of EventingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEventingService(t mockConstructorTestingTNewEventingService) *EventingService {
+}) *EventingService {
 	mock := &EventingService{}
 	mock.Mock.Test(t)
 

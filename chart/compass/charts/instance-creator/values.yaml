@@ -1,0 +1,23 @@
+deployment:
+  minReplicas: 1
+  maxReplicas: 2
+  autoscaling:
+    targetCPU:
+      type: Utilization
+      averageUtilization: 80
+    targetMemory:
+      type: Utilization
+      averageUtilization: 75
+  image:
+    pullPolicy: IfNotPresent
+  resources: {}
+  resourcesIstioProxy:
+    requests: {}
+    limits: {}
+  args:
+    containerPort: 8080
+  securityContext: # Set on container level
+    runAsUser: 2000
+    allowPrivilegeEscalation: false
+  strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+  nodeSelector: {}

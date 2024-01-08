@@ -81,6 +81,7 @@ linters:
     # - bodyclose
     # - cyclop
     # - dupl
+    # - depguard
     # - errname
     # - errorlint
     # - exhaustive
@@ -97,7 +98,6 @@ linters:
     # - gofmt
     # - gofumpt
     # - goheader
-    # - goimports
     # - golint
     # - gomnd
     # - gomoddirectives
@@ -127,7 +127,6 @@ linters:
     - unused
     - varcheck
     - asciicheck
-    - depguard
     - dogsled
     - durationcheck
     - exportloopref
@@ -155,6 +154,7 @@ linters:
     - stylecheck
     - unparam
     - whitespace
+    - goimports
   # enable-all: true
   fast: false # Run only fast linters from enabled linters set (first run won't be fast)
 

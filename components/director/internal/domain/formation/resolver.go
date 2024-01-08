@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -53,7 +51,8 @@ type formationAssignmentService interface {
 	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
 	ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error
 	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
-	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error)
+	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignmentInput, error)
+	PersistAssignments(ctx context.Context, tnt string, assignments []*model.FormationAssignmentInput) ([]*model.FormationAssignment, error)
 	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
 	GetAssignmentsForFormation(ctx context.Context, tenantID, formationID string) ([]*model.FormationAssignment, error)
 	Update(ctx context.Context, id string, fa *model.FormationAssignment) error
@@ -73,7 +72,7 @@ type FormationAssignmentConverter interface {
 //
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
-	FetchOnDemand(tenant, parentTenant string) error
+	FetchOnDemand(ctx context.Context, tenant, parentTenant string) error
 }
 
 // Resolver is the formation resolver
@@ -247,7 +246,7 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 	}
 
 	if objectType == graphql.FormationObjectTypeTenant {
-		if err := r.fetcher.FetchOnDemand(objectID, tnt); err != nil {
+		if err := r.fetcher.FetchOnDemand(ctx, objectID, tnt); err != nil {
 			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", objectID)
 		}
 	}
@@ -277,13 +276,6 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
-	}
-
-	if objectType != graphql.FormationObjectTypeTenant {
-		err = r.deleteSelfReferencedFormationAssignment(ctx, tnt, formation.Name, objectID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while deleting self referenced formation assignment for formation with name %q and object ID %q", formation.Name, objectID)
-		}
 	}
 
 	tx, err := r.transact.Begin()
@@ -449,7 +441,7 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 		}
 
 		for _, fa := range formationAssignments {
-			if isInErrorState(fa.State) {
+			if fa.IsInErrorState() {
 				condition = graphql.FormationStatusConditionError
 
 				if fa.Error == nil {
@@ -467,7 +459,7 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 					Message:      assignmentError.Error.Message,
 					ErrorCode:    int(assignmentError.Error.ErrorCode),
 				})
-			} else if condition != graphql.FormationStatusConditionError && isInProgressState(fa.State) {
+			} else if condition != graphql.FormationStatusConditionError && fa.IsInProgressState() {
 				condition = graphql.FormationStatusConditionInProgress
 			}
 		}
@@ -506,40 +498,4 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 	}
 
 	return r.conv.ToGraphQL(updatedFormation)
-}
-
-func (r *Resolver) deleteSelfReferencedFormationAssignment(ctx context.Context, tnt, formationName, objectID string) error {
-	selfFATx, err := r.transact.Begin()
-	if err != nil {
-		return err
-	}
-	selfFATransactionCtx := persistence.SaveToContext(ctx, selfFATx)
-	defer r.transact.RollbackUnlessCommitted(selfFATransactionCtx, selfFATx)
-
-	formationFromDB, err := r.service.GetFormationByName(selfFATransactionCtx, formationName, tnt)
-	if err != nil {
-		log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formationName, err)
-		return errors.Wrapf(err, "An error occurred while getting formation by name: %q", formationName)
-	}
-
-	fa, err := r.formationAssignmentSvc.GetReverseBySourceAndTarget(selfFATransactionCtx, formationFromDB.ID, objectID, objectID)
-	if err == nil {
-		_ = r.formationAssignmentSvc.Delete(selfFATransactionCtx, fa.ID)
-	}
-
-	err = selfFATx.Commit()
-	if err != nil {
-		return errors.Wrapf(err, "while committing transaction")
-	}
-	return nil
-}
-
-func isInErrorState(state string) bool {
-	return state == string(model.CreateErrorAssignmentState) || state == string(model.DeleteErrorAssignmentState)
-}
-
-func isInProgressState(state string) bool {
-	return state == string(model.InitialAssignmentState) ||
-		state == string(model.DeletingAssignmentState) ||
-		state == string(model.ConfigPendingAssignmentState)
 }

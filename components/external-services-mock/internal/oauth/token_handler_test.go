@@ -14,6 +14,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 
 	"github.com/tidwall/gjson"
@@ -447,7 +449,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 			"x-zid":      "",
 		}
 		staticClaimsMapping := map[string]oauth2.ClaimsGetterFunc{
-			"tenantFetcherClaims": func() map[string]interface{} {
+			claims.TenantFetcherClaimKey: func() map[string]interface{} {
 				return expectedClaims
 			},
 		}
@@ -462,7 +464,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		req.Header.Set(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationURLEncoded)
 
 		q := req.URL.Query()
-		q.Add(oauth2.ClaimsKey, "tenantFetcherClaims")
+		q.Add(claims.ClaimsKey, claims.TenantFetcherClaimKey)
 		req.URL.RawQuery = q.Encode()
 
 		key, err := rsa.GenerateKey(rand.Reader, 2048)

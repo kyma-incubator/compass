@@ -105,13 +105,16 @@ func (_m *APIRepository) Exists(ctx context.Context, tenant string, id string) (
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -126,6 +129,10 @@ func (_m *APIRepository) GetByApplicationID(ctx context.Context, tenantID string
 	ret := _m.Called(ctx, tenantID, id, appID)
 
 	var r0 *model.APIDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.APIDefinition, error)); ok {
+		return rf(ctx, tenantID, id, appID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.APIDefinition); ok {
 		r0 = rf(ctx, tenantID, id, appID)
 	} else {
@@ -134,7 +141,6 @@ func (_m *APIRepository) GetByApplicationID(ctx context.Context, tenantID string
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenantID, id, appID)
 	} else {
@@ -149,6 +155,10 @@ func (_m *APIRepository) GetByID(ctx context.Context, tenantID string, id string
 	ret := _m.Called(ctx, tenantID, id)
 
 	var r0 *model.APIDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.APIDefinition, error)); ok {
+		return rf(ctx, tenantID, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.APIDefinition); ok {
 		r0 = rf(ctx, tenantID, id)
 	} else {
@@ -157,7 +167,6 @@ func (_m *APIRepository) GetByID(ctx context.Context, tenantID string, id string
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenantID, id)
 	} else {
@@ -172,6 +181,10 @@ func (_m *APIRepository) GetByIDGlobal(ctx context.Context, id string) (*model.A
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.APIDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.APIDefinition, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.APIDefinition); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -180,7 +193,6 @@ func (_m *APIRepository) GetByIDGlobal(ctx context.Context, id string) (*model.A
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -195,6 +207,10 @@ func (_m *APIRepository) GetForBundle(ctx context.Context, tenant string, id str
 	ret := _m.Called(ctx, tenant, id, bundleID)
 
 	var r0 *model.APIDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.APIDefinition, error)); ok {
+		return rf(ctx, tenant, id, bundleID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.APIDefinition); ok {
 		r0 = rf(ctx, tenant, id, bundleID)
 	} else {
@@ -203,7 +219,6 @@ func (_m *APIRepository) GetForBundle(ctx context.Context, tenant string, id str
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenant, id, bundleID)
 	} else {
@@ -218,6 +233,10 @@ func (_m *APIRepository) ListByApplicationIDPage(ctx context.Context, tenantID s
 	ret := _m.Called(ctx, tenantID, appID, pageSize, cursor)
 
 	var r0 *model.APIDefinitionPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) (*model.APIDefinitionPage, error)); ok {
+		return rf(ctx, tenantID, appID, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.APIDefinitionPage); ok {
 		r0 = rf(ctx, tenantID, appID, pageSize, cursor)
 	} else {
@@ -226,7 +245,6 @@ func (_m *APIRepository) ListByApplicationIDPage(ctx context.Context, tenantID s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
 		r1 = rf(ctx, tenantID, appID, pageSize, cursor)
 	} else {
@@ -241,6 +259,10 @@ func (_m *APIRepository) ListByBundleIDs(ctx context.Context, tenantID string, b
 	ret := _m.Called(ctx, tenantID, bundleIDs, bundleRefs, counts, pageSize, cursor)
 
 	var r0 []*model.APIDefinitionPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []*model.BundleReference, map[string]int, int, string) ([]*model.APIDefinitionPage, error)); ok {
+		return rf(ctx, tenantID, bundleIDs, bundleRefs, counts, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []*model.BundleReference, map[string]int, int, string) []*model.APIDefinitionPage); ok {
 		r0 = rf(ctx, tenantID, bundleIDs, bundleRefs, counts, pageSize, cursor)
 	} else {
@@ -249,7 +271,6 @@ func (_m *APIRepository) ListByBundleIDs(ctx context.Context, tenantID string, b
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, []*model.BundleReference, map[string]int, int, string) error); ok {
 		r1 = rf(ctx, tenantID, bundleIDs, bundleRefs, counts, pageSize, cursor)
 	} else {
@@ -264,6 +285,10 @@ func (_m *APIRepository) ListByResourceID(ctx context.Context, tenantID string, 
 	ret := _m.Called(ctx, tenantID, resourceType, resourceID)
 
 	var r0 []*model.APIDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, resource.Type, string) ([]*model.APIDefinition, error)); ok {
+		return rf(ctx, tenantID, resourceType, resourceID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, resource.Type, string) []*model.APIDefinition); ok {
 		r0 = rf(ctx, tenantID, resourceType, resourceID)
 	} else {
@@ -272,7 +297,6 @@ func (_m *APIRepository) ListByResourceID(ctx context.Context, tenantID string, 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, resource.Type, string) error); ok {
 		r1 = rf(ctx, tenantID, resourceType, resourceID)
 	} else {
@@ -310,13 +334,12 @@ func (_m *APIRepository) UpdateGlobal(ctx context.Context, item *model.APIDefini
 	return r0
 }
 
-type mockConstructorTestingTNewAPIRepository interface {
+// NewAPIRepository creates a new instance of APIRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAPIRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewAPIRepository creates a new instance of APIRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAPIRepository(t mockConstructorTestingTNewAPIRepository) *APIRepository {
+}) *APIRepository {
 	mock := &APIRepository{}
 	mock.Mock.Test(t)
 

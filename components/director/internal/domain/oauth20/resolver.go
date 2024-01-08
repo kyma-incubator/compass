@@ -20,6 +20,7 @@ import (
 )
 
 // SystemAuthService missing godoc
+//
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthService interface {
 	CreateWithCustomID(ctx context.Context, id string, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
@@ -27,30 +28,35 @@ type SystemAuthService interface {
 }
 
 // ApplicationService missing godoc
+//
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
 // RuntimeService missing godoc
+//
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
 // IntegrationSystemService missing godoc
+//
 //go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationSystemService interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
 // SystemAuthConverter missing godoc
+//
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthConverter interface {
 	ToGraphQL(model *pkgmodel.SystemAuth) (graphql.SystemAuth, error)
 }
 
 // Service missing godoc
+//
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Service interface {
 	CreateClientCredentials(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error)
