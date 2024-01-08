@@ -169,7 +169,9 @@ export APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT=$(echo -E ${ENV_VARS} | jq -r '.[
 export APP_TEMPLATE_PLACEHOLDER_TO_SYSTEM_KEY_MAPPINGS=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_TEMPLATE_PLACEHOLDER_TO_SYSTEM_KEY_MAPPINGS") | .value' )
 export APP_ORD_WEBHOOK_MAPPINGS=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_ORD_WEBHOOK_MAPPINGS") | .value' )
 
-export APP_JWKS_ENDPOINT=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_JWKS_ENDPOINT") | .value' )
+export APP_JWKS_ENDPOINT="file://hack/default-jwks.json"
+export APP_ROOT_API="/system-fetcher"
+
 export APP_ELECTION_LEASE_LOCK_NAME=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_ELECTION_LEASE_LOCK_NAME") | .value' )
 export APP_ELECTION_LEASE_LOCK_NAMESPACE=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_ELECTION_LEASE_LOCK_NAMESPACE") | .value' )
 
