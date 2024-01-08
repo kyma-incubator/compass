@@ -157,6 +157,56 @@ func main() {
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Error while configuring logger")
 
+	handler := initHandler(ctx, cfg)
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
+
+	go func() {
+		<-ctx.Done()
+		// Interrupt signal received - shut down the servers
+		shutdownMainSrv()
+	}()
+
+	if cfg.SystemFetcher.OperationalMode == discoverSystemsOpMode {
+		go func() {
+			if err := startSyncSystemsJob(ctx, cfg, tenantEntity.Customer); err != nil {
+				log.C(ctx).WithError(err).Error("Failed to start sync systems for customers cronjob. Stopping app...")
+			}
+			cancel()
+		}()
+		if cfg.SystemFetcher.SyncGlobalAccounts {
+			go func() {
+				if err := startSyncSystemsJob(ctx, cfg, tenantEntity.Account); err != nil {
+					log.C(ctx).WithError(err).Error("Failed to start sync systems for global accounts cronjob. Stopping app...")
+				}
+				cancel()
+			}()
+		}
+	} else {
+		log.C(ctx).Infof("The operatioal mode is set to %q, skipping systems discovery.", cfg.SystemFetcher.OperationalMode)
+	}
+	runMainSrv()
+}
+
+func exitOnError(err error, context string) {
+	if err != nil {
+		wrappedError := errors.Wrap(err, context)
+		log.D().Fatal(wrappedError)
+	}
+}
+
+func startSyncSystemsJob(ctx context.Context, cfg config, tenantEntityType tenantEntity.Type) error {
+	jobName := fmt.Sprintf("SyncSystemsForType_%s", tenantEntityType)
+	resyncJob := cronjob.CronJob{
+		Name: jobName,
+		Fn: func(jobCtx context.Context) {
+			syncSystemsOfType(ctx, cfg, tenantEntityType)
+		},
+		SchedulePeriod: cfg.SystemsSyncJobInterval,
+	}
+	return cronjob.RunCronJob(ctx, cfg.ElectionConfig, resyncJob)
+}
+
+func syncSystemsOfType(ctx context.Context, cfg config, tenantEntityType tenantEntity.Type) {
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
@@ -186,63 +236,6 @@ func main() {
 	sf, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, certCache, keyCache)
 	exitOnError(err, "Failed to initialize System Fetcher")
 
-	jwtHTTPClient := &http.Client{
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-
-	handler := initHandler(ctx, jwtHTTPClient, sf, cfg, transact)
-	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
-
-	go func() {
-		<-ctx.Done()
-		// Interrupt signal received - shut down the servers
-		shutdownMainSrv()
-	}()
-
-	if cfg.SystemFetcher.OperationalMode == discoverSystemsOpMode {
-		go func() {
-			if err := startSyncSystemsJob(ctx, sf, tenantEntity.Customer, transact, cfg); err != nil {
-				log.C(ctx).WithError(err).Error("Failed to start sync systems for customers cronjob. Stopping app...")
-			}
-			cancel()
-		}()
-		if cfg.SystemFetcher.SyncGlobalAccounts {
-			go func() {
-				if err := startSyncSystemsJob(ctx, sf, tenantEntity.Account, transact, cfg); err != nil {
-					log.C(ctx).WithError(err).Error("Failed to start sync systems for global accounts cronjob. Stopping app...")
-				}
-				cancel()
-			}()
-		}
-	} else {
-		log.C(ctx).Infof("The operatioal mode is set to %q, skipping systems discovery.", cfg.SystemFetcher.OperationalMode)
-	}
-	runMainSrv()
-}
-
-func exitOnError(err error, context string) {
-	if err != nil {
-		wrappedError := errors.Wrap(err, context)
-		log.D().Fatal(wrappedError)
-	}
-}
-
-func startSyncSystemsJob(ctx context.Context, sf *systemfetcher.SystemFetcher, tenantEntityType tenantEntity.Type, transact persistence.Transactioner, cfg config) error {
-	jobName := fmt.Sprintf("SyncSystemsForType_%s", tenantEntityType)
-	resyncJob := cronjob.CronJob{
-		Name: jobName,
-		Fn: func(jobCtx context.Context) {
-			syncSystemsOfType(ctx, sf, tenantEntityType, transact)
-		},
-		SchedulePeriod: cfg.SystemsSyncJobInterval,
-	}
-	return cronjob.RunCronJob(ctx, cfg.ElectionConfig, resyncJob)
-}
-
-func syncSystemsOfType(ctx context.Context, sf *systemfetcher.SystemFetcher, tenantEntityType tenantEntity.Type, transact persistence.Transactioner) {
 	log.C(ctx).Infof("Start syncing systems for %q ...", tenantEntityType)
 	if err := sf.SyncSystems(ctx, tenantEntityType); err != nil {
 		log.C(ctx).Errorf("Cannot sync systems for %q. Err: %v", tenantEntityType, err)
@@ -256,7 +249,7 @@ func syncSystemsOfType(ctx context.Context, sf *systemfetcher.SystemFetcher, ten
 	log.C(ctx).Infof("Finished syncing systems for %q", tenantEntityType)
 }
 
-func initHandler(ctx context.Context, httpClient *http.Client, sf *systemfetcher.SystemFetcher, cfg config, transact persistence.Transactioner) http.Handler {
+func initHandler(ctx context.Context, cfg config) http.Handler {
 	const (
 		healthzEndpoint = "/healthz"
 		readyzEndpoint  = "/readyz"
@@ -269,8 +262,16 @@ func initHandler(ctx context.Context, httpClient *http.Client, sf *systemfetcher
 		cfg.AggregatorRootAPI+healthzEndpoint, cfg.AggregatorRootAPI+readyzEndpoint))
 
 	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
+
+	httpClient := &http.Client{
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
 	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.SystemFetcherSyncScope)
-	apiRouter.HandleFunc(syncEndpoint, newSyncHandler(ctx, sf, transact, cfg)).Methods(http.MethodPost)
+	apiRouter.HandleFunc(syncEndpoint, newSyncHandler(ctx, cfg)).Methods(http.MethodPost)
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
@@ -281,12 +282,12 @@ func initHandler(ctx context.Context, httpClient *http.Client, sf *systemfetcher
 	return mainRouter
 }
 
-func newSyncHandler(ctx context.Context, sf *systemfetcher.SystemFetcher, transact persistence.Transactioner, cfg config) func(writer http.ResponseWriter, request *http.Request) {
+func newSyncHandler(ctx context.Context, cfg config) func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		log.C(ctx).Infof("Start on demand syncing of systems")
-		syncSystemsOfType(ctx, sf, tenantEntity.Customer, transact)
+		syncSystemsOfType(ctx, cfg, tenantEntity.Customer)
 		if cfg.SystemFetcher.SyncGlobalAccounts {
-			syncSystemsOfType(ctx, sf, tenantEntity.Account, transact)
+			syncSystemsOfType(ctx, cfg, tenantEntity.Account)
 		}
 		log.C(ctx).Infof("Finished on demand syncing of systems")
 		writer.WriteHeader(http.StatusOK)
