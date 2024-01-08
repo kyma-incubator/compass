@@ -7649,12 +7649,12 @@ type Mutation {
 	"""
 	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
 	"""
-	If Application does not exist or the label key is not found, it returns an error.
+	If a label with given key already exist, it will be replaced with provided value.
 
 	**Examples**
 	- [set tenant label](examples/set-tenant-label/set-tenant-label.graphql)
 	"""
-	setTenantLabel(tenantID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
+	setTenantLabel(tenantID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setTenantLabel")
 	"""
 	If Application does not exist or the label key is not found, it returns an error.
 
@@ -25489,7 +25489,7 @@ func (ec *executionContext) _Mutation_setTenantLabel(ctx context.Context, field 
 			return ec.resolvers.Mutation().SetTenantLabel(rctx, args["tenantID"].(string), args["key"].(string), args["value"].(interface{}))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.setApplicationLabel")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.setTenantLabel")
 			if err != nil {
 				return nil, err
 			}

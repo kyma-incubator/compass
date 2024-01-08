@@ -2054,9 +2054,9 @@ type Mutation {
 	"""
 	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
 	"""
-	If Application does not exist or the label key is not found, it returns an error.
+	If a label with given key already exist, it will be replaced with provided value.
 	"""
-	setTenantLabel(tenantID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
+	setTenantLabel(tenantID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setTenantLabel")
 	"""
 	If Application does not exist or the label key is not found, it returns an error.
 	
