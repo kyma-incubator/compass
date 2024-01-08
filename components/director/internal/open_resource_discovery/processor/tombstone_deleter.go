@@ -29,13 +29,14 @@ type TombstonedResourcesDeleter struct {
 	entityTypeSvc            EntityTypeService
 	capabilitySvc            CapabilityService
 	integrationDependencySvc IntegrationDependencyService
+	dataProductSvc           DataProductService
 	vendorSvc                VendorService
 	productSvc               ProductService
 	bundleSvc                BundleService
 }
 
 // NewTombstonedResourcesDeleter creates new instance of TombstonedResourcesDeleter
-func NewTombstonedResourcesDeleter(transact persistence.Transactioner, packageSvc PackageService, apiSvc APIService, eventSvc EventService, entityTypeSvc EntityTypeService, capabilitySvc CapabilityService, integrationDependencySvc IntegrationDependencyService, vendorSvc VendorService, productSvc ProductService, bundleSvc BundleService) *TombstonedResourcesDeleter {
+func NewTombstonedResourcesDeleter(transact persistence.Transactioner, packageSvc PackageService, apiSvc APIService, eventSvc EventService, entityTypeSvc EntityTypeService, capabilitySvc CapabilityService, integrationDependencySvc IntegrationDependencyService, dataProductSvc DataProductService, vendorSvc VendorService, productSvc ProductService, bundleSvc BundleService) *TombstonedResourcesDeleter {
 	return &TombstonedResourcesDeleter{
 		transact:                 transact,
 		packageSvc:               packageSvc,
@@ -44,6 +45,7 @@ func NewTombstonedResourcesDeleter(transact persistence.Transactioner, packageSv
 		entityTypeSvc:            entityTypeSvc,
 		capabilitySvc:            capabilitySvc,
 		integrationDependencySvc: integrationDependencySvc,
+		dataProductSvc:           dataProductSvc,
 		vendorSvc:                vendorSvc,
 		productSvc:               productSvc,
 		bundleSvc:                bundleSvc,
@@ -51,7 +53,7 @@ func NewTombstonedResourcesDeleter(transact persistence.Transactioner, packageSv
 }
 
 // Delete deletes all tombstoned resources.
-func (td *TombstonedResourcesDeleter) Delete(ctx context.Context, resourceType resource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, entityTypesFromDB []*model.EntityType, capabilitiesFromDB []*model.Capability, integrationDependenciesFromDB []*model.IntegrationDependency, tombstonesFromDB []*model.Tombstone, fetchRequests []*OrdFetchRequest) ([]*OrdFetchRequest, error) {
+func (td *TombstonedResourcesDeleter) Delete(ctx context.Context, resourceType resource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, entityTypesFromDB []*model.EntityType, capabilitiesFromDB []*model.Capability, integrationDependenciesFromDB []*model.IntegrationDependency, dataProductsFromDB []*model.DataProduct, tombstonesFromDB []*model.Tombstone, fetchRequests []*OrdFetchRequest) ([]*OrdFetchRequest, error) {
 	tx, err := td.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -101,6 +103,13 @@ func (td *TombstonedResourcesDeleter) Delete(ctx context.Context, resourceType r
 			return equalStrings(integrationDependenciesFromDB[i].OrdID, &ts.OrdID)
 		}); found {
 			if err := td.integrationDependencySvc.Delete(ctx, resourceType, integrationDependenciesFromDB[i].ID); err != nil {
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+			}
+		}
+		if i, found := searchInSlice(len(dataProductsFromDB), func(i int) bool {
+			return equalStrings(dataProductsFromDB[i].OrdID, &ts.OrdID)
+		}); found {
+			if err := td.dataProductSvc.Delete(ctx, resourceType, dataProductsFromDB[i].ID); err != nil {
 				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}

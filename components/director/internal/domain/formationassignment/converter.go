@@ -50,13 +50,15 @@ func (c *converter) ToGraphQL(in *model.FormationAssignment) (*graphql.Formation
 		value = configurationStrValue
 	}
 
+	state := in.GetNotificationState()
+
 	return &graphql.FormationAssignment{
 		ID:            in.ID,
 		Source:        in.Source,
 		SourceType:    graphql.FormationAssignmentType(in.SourceType),
 		Target:        in.Target,
 		TargetType:    graphql.FormationAssignmentType(in.TargetType),
-		State:         in.State,
+		State:         state,
 		Value:         value,
 		Configuration: configurationStrValue,
 		Error:         errorStrValue,

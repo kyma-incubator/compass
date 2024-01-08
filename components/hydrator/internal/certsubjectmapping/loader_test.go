@@ -53,6 +53,11 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 		TotalCount: 1,
 	}
 
+	certSubjcetMappingPageWithoutPageInfo := &graphql.CertificateSubjectMappingPage{
+		Data: []*graphql.CertificateSubjectMapping{certSubjectMapping},
+		TotalCount: 1,
+	}
+
 	certSubjcetMappingWithNextPage := &graphql.CertificateSubjectMappingPage{
 		Data: []*graphql.CertificateSubjectMapping{certSubjectMapping, certSubjectMapping},
 		PageInfo: &graphql.PageInfo{
@@ -92,6 +97,30 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			},
 			eventualTickInterval:            30 * time.Millisecond,
 			expectedCertSubjectMappingCount: 4,
+		},
+		{
+			name:                  "Error when the list of certificate subject mappings returns neither result nor error and the second one succeeds",
+			certSubjectMappingCfg: cfg,
+			directorClientFn: func() *automock.DirectorClient {
+				directorClient := &automock.DirectorClient{}
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(nil, nil).Once()
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil)
+				return directorClient
+			},
+			eventualTickInterval:            100 * time.Millisecond,
+			expectedCertSubjectMappingCount: 2,
+		},
+		{
+			name:                  "Error when the list of certificate subject mappings response doesn't have page info and the second request succeeds",
+			certSubjectMappingCfg: cfg,
+			directorClientFn: func() *automock.DirectorClient {
+				directorClient := &automock.DirectorClient{}
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutPageInfo, nil).Once()
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil)
+				return directorClient
+			},
+			eventualTickInterval:            100 * time.Millisecond,
+			expectedCertSubjectMappingCount: 2,
 		},
 		{
 			name:                  "Error when the first list of certificate subject mappings fails and the second one succeeds",
@@ -141,7 +170,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 func ctxWithCorrelationIDMatcher() interface{} {
 	return mock.MatchedBy(func(ctx context.Context) bool {
 		requestID, ok := log.C(ctx).Data[log.FieldRequestID]
-		return ok == true && requestID == certsubjectmapping.CertSubjectMappingLoaderCorrelationID
+		return ok == true && (requestID == certsubjectmapping.CertSubjectMappingLoaderCorrelationID || requestID == certsubjectmapping.CertSubjectMappingInitialLoaderCorrelationID)
 	})
 }
 

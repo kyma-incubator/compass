@@ -113,3 +113,10 @@ spec:
     - from: # or anything other only if the request is authenticated via RequestAuthentication
         - source:
             requestPrincipals: ['*']
+    - to:
+        # Allow access to health endpoint of Hydra, used by avs-bridge
+        - operation:
+            methods:
+            - GET
+            paths:
+            - /health*

@@ -13,6 +13,7 @@ type Entity struct {
 	LeadingProductIDs      sql.NullString `db:"leading_product_ids"`
 	TenantID               sql.NullString `db:"tenant_id"`
 	SupportsReset          bool           `db:"supports_reset"`
+	DiscoveryConsumers     sql.NullString `db:"discovery_consumers"`
 }
 
 // EntityCollection is a collection of formation template entities.

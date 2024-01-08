@@ -80,6 +80,8 @@ const (
 	IntegrationDependency Type = "integrationDependency"
 	// Aspect type represents the Aspect inside Integration Dependency resource
 	Aspect Type = "aspect"
+	// DataProduct type represents the Data Product resource.
+	DataProduct Type = "dataProduct"
 	// AspectEventResource type represents the Aspect Event Resource inside Aspect resource
 	AspectEventResource Type = "aspectEventResource"
 	// AutomaticScenarioAssigment type represents ASA resource.
@@ -158,6 +160,7 @@ var tenantAccessTable = map[Type]string{
 	IntegrationDependency:      "integration_dependencies_tenants",
 	Aspect:                     "aspects_tenants",
 	AspectEventResource:        "aspect_event_resources_tenants",
+	DataProduct:                "data_products_tenants",
 	Webhook:                    "webhooks_tenants",
 	AppWebhook:                 "application_webhooks_tenants",
 	RuntimeWebhook:             "runtime_webhooks_tenants",

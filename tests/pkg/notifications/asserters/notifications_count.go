@@ -2,6 +2,7 @@ package asserters
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -27,20 +28,21 @@ func NewNotificationsCountAsserter(expectedNotificationsCount int, op string, ta
 	}
 }
 
-func (a *NotificationsCountAsserter) AssertExpectations(t *testing.T, _ context.Context) {
-	body := getNotificationsFromExternalSvcMock(t, a.client, a.externalServicesMockMtlsSecuredURL)
+func (nca *NotificationsCountAsserter) AssertExpectations(t *testing.T, _ context.Context) {
+	body := getNotificationsFromExternalSvcMock(t, nca.client, nca.externalServicesMockMtlsSecuredURL)
 
-	notificationsForTarget := gjson.GetBytes(body, a.targetObjectID)
+	notificationsForTarget := gjson.GetBytes(body, nca.targetObjectID)
 	notificationsAboutSource := notificationsForTarget.Array()
-	assertAtLeastNNotificationsOfTypeReceived(t, notificationsAboutSource, a.op, a.expectedNotificationsCount)
+	nca.assertAtLeastNNotificationsOfTypeReceived(t, notificationsAboutSource)
+	t.Logf("Successfully asserted assignment notification count for: %s", nca.targetObjectID)
 }
 
-func assertAtLeastNNotificationsOfTypeReceived(t *testing.T, notifications []gjson.Result, op string, minCount int) {
+func (nca *NotificationsCountAsserter) assertAtLeastNNotificationsOfTypeReceived(t *testing.T, notifications []gjson.Result) {
 	notificationsForOperationCount := 0
 	for _, notification := range notifications {
-		if notification.Get("Operation").String() == op {
+		if notification.Get("Operation").String() == nca.op {
 			notificationsForOperationCount++
 		}
 	}
-	require.LessOrEqual(t, minCount, notificationsForOperationCount)
+	require.LessOrEqual(t, nca.expectedNotificationsCount, notificationsForOperationCount, fmt.Sprintf("Mismatched assignment notification count for tenant: %s", nca.targetObjectID))
 }

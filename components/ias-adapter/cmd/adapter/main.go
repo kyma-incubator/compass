@@ -11,7 +11,7 @@ func main() {
 
 	cfg, err := config.New()
 	if err != nil {
-		log.Fatal().Msgf("Failed to init app config: %s", err)
+		log.Fatal().Msgf("Failed to initialize config: %s", err)
 	}
 	log.Info().Msgf("Initialized config: %+v", cfg)
 

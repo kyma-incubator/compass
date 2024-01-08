@@ -23,7 +23,7 @@ func NewContainsScenarioGroupsInput() OperatorInput {
 	return &formationconstraint.ContainsScenarioGroupsInput{}
 }
 
-// ContainsScenarioGroups is a constraint operator. It checks if the resource from the OperatorInput is already part of formation of the type that the operator is associated with
+// ContainsScenarioGroups is a constraint operator. It checks if the resource from the OperatorInput contains any of the scenario groups.
 func (e *ConstraintEngine) ContainsScenarioGroups(ctx context.Context, input OperatorInput) (bool, error) {
 	log.C(ctx).Infof("Executing operator: %s", ContainsScenarioGroupsOperator)
 

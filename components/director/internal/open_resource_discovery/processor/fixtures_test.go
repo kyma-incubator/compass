@@ -340,6 +340,28 @@ func fixIntegrationDependencyInputModel(integrationDependencyORDID string) *mode
 	}
 }
 
+func fixDataProductModel(dataProductID, dataProductORDID string) *model.DataProduct {
+	return &model.DataProduct{
+		BaseEntity: &model.BaseEntity{
+			ID:    dataProductID,
+			Ready: true,
+		},
+		OrdID:                        str.Ptr(dataProductORDID),
+		ApplicationID:                &appID,
+		ApplicationTemplateVersionID: &appTemplateVersionID,
+		PackageID:                    str.Ptr(packageID1),
+	}
+}
+
+func fixDataProductInputModel(dataProductORDID string) *model.DataProductInput {
+	return &model.DataProductInput{
+		OrdID:        str.Ptr(dataProductORDID),
+		OrdPackageID: str.Ptr(packageORDID1),
+		Title:        "Data Product title",
+		Visibility:   str.Ptr("public"),
+	}
+}
+
 func fixPackages() []*model.Package {
 	return []*model.Package{
 		{

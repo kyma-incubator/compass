@@ -31,6 +31,7 @@ graphql:
     formationTemplates: [ "formation_template:read" ]
     formationTemplatesByName: [ "formation_template:read" ]
     formation: ["formation:read"]
+    formationByName: ["formation:read"]
     formations: ["formation:read"]
     formationConstraint: ["formation_constraint:read"]
     formationConstraints: ["formation_constraint:read"]

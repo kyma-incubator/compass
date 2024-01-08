@@ -59,6 +59,12 @@ func (b *FAExpectationsBuilder) WithParticipant(newParticipantID string) *FAExpe
 	return b
 }
 
+func (b *FAExpectationsBuilder) WithCustomParticipants(newParticipantIDs []string) *FAExpectationsBuilder {
+	for _, participant := range newParticipantIDs {
+		b.expectations[participant] = make(map[string]fixtures.AssignmentState)
+	}
+	return b
+}
 func (b *FAExpectationsBuilder) WithNotifications(notifications []*NotificationData) *FAExpectationsBuilder {
 	for _, notification := range notifications {
 		b.expectations[notification.SourceID][notification.TargetID] = notification.getAssignmentState()

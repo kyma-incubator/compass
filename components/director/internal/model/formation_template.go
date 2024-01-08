@@ -28,6 +28,7 @@ type FormationTemplate struct {
 	Webhooks               []*Webhook           `json:"webhooks"`
 	LeadingProductIDs      []string             `json:"leadingProductIDs"`
 	SupportsReset          bool                 `json:"supportsReset"`
+	DiscoveryConsumers     []string             `json:"discoveryConsumers"`
 }
 
 // FormationTemplateInput missing godoc
@@ -40,6 +41,7 @@ type FormationTemplateInput struct {
 	Webhooks               []*WebhookInput      `json:"webhooks"`
 	LeadingProductIDs      []string             `json:"leadingProductIDs"`
 	SupportsReset          bool                 `json:"supportsReset"`
+	DiscoveryConsumers     []string             `json:"discoveryConsumers"`
 }
 
 // FormationTemplatePage missing godoc
