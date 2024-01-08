@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	// ApplicationTemplates contains available Applicaiton Templates, should only be used for the unmarshaling of system data
+	// ApplicationTemplates contains available Application Templates, should only be used for the unmarshaling of system data
 	// It represents a model.ApplicationTemplate with its labels in the form of map[string]*model.Label
 	ApplicationTemplates []TemplateMapping
 	// ApplicationTemplateLabelFilter represent a label for the Application Templates which has a value that
