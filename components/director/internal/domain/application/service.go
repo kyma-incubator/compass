@@ -707,6 +707,27 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// UnassignAndDelete unnassigns the application from all the scenarios it is part of and deletes the application.
+// NOTE! When unassigning the application the method does not wait for asynchronous response. The purpose of this method
+// is for the unassign notifications about the resource being deleted to be sent.
+func (s *service) UnassignAndDelete(ctx context.Context, id string) error {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	if err := s.unassignApplicationFromFormations(ctx, appTenant, id); err != nil {
+		return err
+	}
+
+	err = s.appRepo.Delete(ctx, appTenant, id)
+	if err != nil {
+		return errors.Wrapf(err, "while deleting Application with id %s", id)
+	}
+
+	return nil
+}
+
 // Unpair Checks if the given application is in a scenario with a runtime. Fails if it is.
 // When the operation mode is sync, it sets the status condition to model.ApplicationStatusConditionInitial and does a db update, otherwise it only makes an "empty" db update.
 func (s *service) Unpair(ctx context.Context, id string) error {
@@ -1080,6 +1101,24 @@ func (s *service) ensureApplicationNotPartOfAnyScenario(ctx context.Context, ten
 		msg := fmt.Sprintf("System %s is part of the following formations : %s", application.Name, strings.Join(scenarios, ", "))
 		return apperrors.NewInvalidOperationError(msg)
 	}
+
+	return nil
+}
+
+// unassignApplicationFromFormations unassigns the application from all the formations it is part of
+// // NOTE! When unassigning the application the method does not wait for asynchronous response. The purpose of this method
+// // is for the unassign notifications about the resource being deleted to be sent.
+func (s *service) unassignApplicationFromFormations(ctx context.Context, tenant, appID string) error {
+	scenarios, err := s.getScenarioNamesForApplication(ctx, appID)
+	if err != nil {
+		return err
+	}
+
+	 if err = s.unassignFormations(ctx, tenant, appID, scenarios, func(s string) bool {
+		return true
+	}); err != nil{
+		 //todo
+	 }
 
 	return nil
 }

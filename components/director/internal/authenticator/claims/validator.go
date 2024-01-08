@@ -30,6 +30,8 @@ import (
 type RuntimeService interface {
 	GetLabel(context.Context, string, string) (*model.Label, error)
 	GetByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) (*model.Runtime, error)
+	Delete(ctx context.Context, id string) error
+	ListByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 // RuntimeCtxService is used to interact with runtime contexts.
@@ -51,6 +53,7 @@ type ApplicationTemplateService interface {
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	ListAll(ctx context.Context) ([]*model.Application, error)
+	UnassignAndDelete(ctx context.Context, id string) error
 }
 
 // IntegrationSystemService is used to check if integration system with a given ID exists.

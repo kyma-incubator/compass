@@ -102,7 +102,7 @@ func (m *userContextProvider) getScopesForUserGroups(ctx context.Context, reqDat
 	if len(userGroups) == 0 {
 		return ""
 	}
-	log.C(ctx).Debugf("Found user groups: %s", strings.Join(userGroups, " "))
+	log.C(ctx).Infof("Found user groups: %s", strings.Join(userGroups, " "))
 
 	staticGroups := m.staticGroupRepo.Get(ctx, userGroups)
 	if len(staticGroups) == 0 {
@@ -110,7 +110,7 @@ func (m *userContextProvider) getScopesForUserGroups(ctx context.Context, reqDat
 	}
 
 	scopes := staticGroups.GetGroupScopes()
-	log.C(ctx).Debugf("Found scopes: %s", scopes)
+	log.C(ctx).Infof("Found scopes: %s", scopes)
 
 	return scopes
 }

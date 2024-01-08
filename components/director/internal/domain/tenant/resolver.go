@@ -2,6 +2,8 @@ package tenant
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
@@ -53,22 +55,36 @@ type BusinessTenantMappingConverter interface {
 	TenantAccessFromEntity(in *repo.TenantAccess) *model.TenantAccess
 }
 
+type ApplicationService interface {
+	ListAll(ctx context.Context) ([]*model.Application, error)
+	UnassignAndDelete(ctx context.Context, id string) error
+}
+
+type RuntimeService interface {
+	Delete(ctx context.Context, id string) error
+	ListByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+}
+
 // Resolver is the resolver responsible for tenant-related GraphQL requests.
 type Resolver struct {
 	transact persistence.Transactioner
 
-	srv     BusinessTenantMappingService
-	conv    BusinessTenantMappingConverter
-	fetcher Fetcher
+	srv                BusinessTenantMappingService
+	conv               BusinessTenantMappingConverter
+	applicationService ApplicationService
+	runtimeService     RuntimeService
+	fetcher            Fetcher
 }
 
 // NewResolver returns the GraphQL resolver for tenants.
-func NewResolver(transact persistence.Transactioner, srv BusinessTenantMappingService, conv BusinessTenantMappingConverter, fetcher Fetcher) *Resolver {
+func NewResolver(transact persistence.Transactioner, srv BusinessTenantMappingService, conv BusinessTenantMappingConverter, applicationService ApplicationService, runtimeService RuntimeService, fetcher Fetcher) *Resolver {
 	return &Resolver{
-		transact: transact,
-		srv:      srv,
-		conv:     conv,
-		fetcher:  fetcher,
+		transact:           transact,
+		srv:                srv,
+		conv:               conv,
+		applicationService: applicationService,
+		runtimeService:     runtimeService,
+		fetcher:            fetcher,
 	}
 }
 
@@ -309,6 +325,39 @@ func (r *Resolver) Delete(ctx context.Context, externalTenantIDs []string) (int,
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	for _, externalTenantID := range externalTenantIDs {
+		tnt, err := r.srv.GetTenantByExternalID(ctx, externalTenantID)
+		if err != nil {
+			//todo
+		}
+
+		if tnt.Type == tenantpkg.Subaccount {
+			ctxWithTenantForDeletion := SaveToContext(ctx, tnt.ID, tnt.ExternalTenant)
+
+			appsForTenant, err := r.applicationService.ListAll(ctxWithTenantForDeletion)
+			if err != nil {
+				//todo
+			}
+			for _, application := range appsForTenant {
+				if err = r.applicationService.UnassignAndDelete(ctx, application.ID); err != nil {
+					//todo
+				}
+			}
+
+			runtimesForTenant, err := r.runtimeService.ListByFilters(ctxWithTenantForDeletion, nil)
+			if err != nil {
+				//todo
+			}
+			for _, runtime := range runtimesForTenant {
+				if err = r.runtimeService.Delete(ctx, runtime.ID); err != nil {
+					//todo
+				}
+			}
+		}
+	}
+
+	// todo cleanup leftover ASAs
 
 	if err := r.srv.DeleteMany(ctx, externalTenantIDs); err != nil {
 		return -1, errors.Wrap(err, "while deleting tenants")
