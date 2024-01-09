@@ -3,10 +3,11 @@ package httputil
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/tm-adapter/internal/api/types"
-	"net/http"
 )
 
 const (

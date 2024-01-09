@@ -1,10 +1,11 @@
 package external_caller
 
 import (
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/tm-adapter/internal/config"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 // ExternalSvcCaller is used to call external services with given authentication

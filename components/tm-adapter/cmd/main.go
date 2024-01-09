@@ -2,9 +2,15 @@ package main
 
 import (
 	"context"
+	"net/http"
+	"os"
+	"sync"
+
 	"github.com/gorilla/mux"
 	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
+	httputildirector "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/kyma-incubator/compass/components/tm-adapter/internal/api/handlers"
@@ -13,9 +19,6 @@ import (
 	"github.com/kyma-incubator/compass/components/tm-adapter/internal/external_caller"
 	"github.com/kyma-incubator/compass/components/tm-adapter/internal/server"
 	"github.com/pkg/errors"
-	"net/http"
-	"os"
-	"sync"
 )
 
 func main() {
@@ -55,8 +58,12 @@ func initAPIHandlers(ctx context.Context, cfg *config.Config) http.Handler {
 	securedHTTPClient := authpkg.PrepareHTTPClientWithSSLValidation(cfg.HTTPClient.Timeout, cfg.HTTPClient.SkipSSLValidation)
 	caller := external_caller.NewCaller(securedHTTPClient, cfg.OAuthProvider)
 
+	certCache, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	exitOnError(err, "failed to initialize certificate loader")
+	mtlsHTTPClient := httputildirector.PrepareMTLSClientWithSSLValidation(cfg.HTTPClient.Timeout, certCache, cfg.HTTPClient.SkipSSLValidation, cfg.ExternalClientCertSecretName)
+
 	logger.Infof("Registering tenant mapping endpoints...")
-	tmHandler := handlers.NewHandler(cfg, caller)
+	tmHandler := handlers.NewHandler(cfg, caller, mtlsHTTPClient)
 	tmRouter.Handle(cfg.Server.TenantMappingAPIEndpoint, tmHandler).Methods(http.MethodPatch)
 
 	logger.Info("Registering liveness endpoint...")

@@ -1,20 +1,25 @@
 package config
 
 import (
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/tm-adapter/internal/server"
 	"github.com/vrischmann/envconfig"
-	"time"
 )
 
 const envPrefix = "APP"
 
 type Config struct {
-	Server        *server.Config
-	Log           *log.Config
-	OAuthProvider OAuthConfig
-	HTTPClient    HTTPClient
-	ServiceManagerURL string `envconfig:"APP_SM_SVC_URL"`
+	Server                       *server.Config
+	Log                          *log.Config
+	OAuthProvider                OAuthConfig
+	HTTPClient                   HTTPClient
+	ServiceManagerURL            string `envconfig:"APP_SM_SVC_URL"`
+	CertLoaderConfig             credloader.CertConfig
+	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 type OAuthConfig struct {
