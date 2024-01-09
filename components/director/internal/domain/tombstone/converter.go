@@ -27,6 +27,7 @@ func (c *converter) ToEntity(in *model.Tombstone) *Entity {
 		ApplicationID:                repo.NewNullableString(in.ApplicationID),
 		ApplicationTemplateVersionID: repo.NewNullableString(in.ApplicationTemplateVersionID),
 		RemovalDate:                  in.RemovalDate,
+		Description:                  repo.NewNullableString(in.Description),
 	}
 
 	return output
@@ -44,6 +45,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Tombstone, error) {
 		ApplicationID:                repo.StringPtrFromNullableString(entity.ApplicationID),
 		ApplicationTemplateVersionID: repo.StringPtrFromNullableString(entity.ApplicationTemplateVersionID),
 		RemovalDate:                  entity.RemovalDate,
+		Description:                  repo.StringPtrFromNullableString(entity.Description),
 	}
 
 	return output, nil

@@ -246,6 +246,7 @@ enum WebhookType {
 	REGISTER_APPLICATION
 	UNREGISTER_APPLICATION
 	OPEN_RESOURCE_DISCOVERY
+	OPEN_RESOURCE_DISCOVERY_STATIC
 	FORMATION_LIFECYCLE
 }
 
@@ -281,6 +282,8 @@ interface SystemAuth {
 }
 
 union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData
+
+union FormationParticipant = Application | Runtime | RuntimeContext
 
 input APIDefinitionInput {
 	"""
@@ -461,6 +464,27 @@ input ApplicationUpdateInput {
 	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
 }
 
+input AspectAPIDefinitionInput {
+	ordId: String!
+}
+
+input AspectEventDefinitionInput {
+	ordId: String!
+	subset: [AspectEventDefinitionSubsetInput]
+}
+
+input AspectEventDefinitionSubsetInput {
+	eventType: String
+}
+
+input AspectInput {
+	name: String!
+	description: String
+	mandatory: Boolean
+	apiResources: [AspectAPIDefinitionInput!]
+	eventResources: [AspectEventDefinitionInput!]
+}
+
 input AuthInput {
 	credential: CredentialDataInput
 	accessStrategy: String
@@ -583,6 +607,7 @@ input BusinessTenantMappingInput {
 	type: String!
 	provider: String!
 	licenseType: String
+	customerId: String
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -708,6 +733,7 @@ input FetchRequestInput {
 
 input FormationConstraintInput {
 	name: String!
+	description: String
 	constraintType: ConstraintType!
 	targetOperation: TargetOperation!
 	operator: String!
@@ -715,10 +741,13 @@ input FormationConstraintInput {
 	resourceSubtype: String!
 	inputTemplate: String!
 	constraintScope: ConstraintScope!
+	priority: Int
 }
 
 input FormationConstraintUpdateInput {
 	inputTemplate: String!
+	priority: Int
+	description: String
 }
 
 input FormationInput {
@@ -740,6 +769,19 @@ input FormationTemplateInput {
 	webhooks: [WebhookInput!]
 	leadingProductIDs: [String!]
 	supportsReset: Boolean
+	discoveryConsumers: [String!]
+}
+
+input IntegrationDependencyInput {
+	name: String!
+	description: String
+	ordID: String!
+	partOfPackage: ID
+	visibility: String
+	releaseStatus: String
+	mandatory: Boolean
+	aspects: [AspectInput!]
+	version: VersionInput
 }
 
 input IntegrationSystemInput {
@@ -979,6 +1021,7 @@ type Application {
 	bundle(id: ID!): Bundle
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
+	integrationDependencies(first: Int = 200, after: PageCursor): IntegrationDependencyPage
 	auths: [AppSystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
 	applicationNamespace: String
@@ -1014,12 +1057,44 @@ type ApplicationTemplate {
 	labels(key: String): Labels
 	accessLevel: ApplicationTemplateAccessLevel!
 	applicationNamespace: String
+	createdAt: Timestamp!
+	updatedAt: Timestamp!
 }
 
 type ApplicationTemplatePage implements Pageable {
 	data: [ApplicationTemplate!]!
 	pageInfo: PageInfo!
 	totalCount: Int!
+}
+
+type Aspect {
+	id: ID!
+	name: String!
+	description: String
+	mandatory: Boolean
+	apiResources: [AspectAPIDefinition!]
+	eventResources: [AspectEventDefinition!]
+	created_at: Timestamp
+	updated_at: Timestamp
+	deleted_at: Timestamp
+	error: String
+}
+
+type AspectAPIDefinition {
+	ordID: String!
+}
+
+type AspectEventDefinition {
+	ordID: String!
+	subset: [AspectEventDefinitionSubset!]
+	created_at: Timestamp
+	updated_at: Timestamp
+	deleted_at: Timestamp
+	error: String
+}
+
+type AspectEventDefinitionSubset {
+	eventType: String
 }
 
 type Auth {
@@ -1248,8 +1323,10 @@ type FormationAssignment {
 	id: ID!
 	source: ID!
 	sourceType: FormationAssignmentType!
+	sourceEntity: FormationParticipant!
 	target: ID!
 	targetType: FormationAssignmentType!
+	targetEntity: FormationParticipant!
 	state: String!
 	value: String
 	configuration: String
@@ -1265,6 +1342,7 @@ type FormationAssignmentPage implements Pageable {
 type FormationConstraint {
 	id: ID!
 	name: String!
+	description: String!
 	constraintType: String!
 	targetOperation: String!
 	operator: String!
@@ -1272,6 +1350,8 @@ type FormationConstraint {
 	resourceSubtype: String!
 	inputTemplate: String!
 	constraintScope: String!
+	priority: Int!
+	createdAt: Timestamp!
 }
 
 type FormationError {
@@ -1307,6 +1387,7 @@ type FormationTemplate {
 	leadingProductIDs: [String!]
 	formationConstraints: [FormationConstraint!]
 	supportsReset: Boolean!
+	discoveryConsumers: [String!]
 }
 
 type FormationTemplatePage implements Pageable {
@@ -1335,6 +1416,29 @@ type IntSysSystemAuth implements SystemAuth {
 	type: SystemAuthReferenceType
 	tenantId: String
 	referenceObjectId: ID
+}
+
+type IntegrationDependency {
+	id: ID!
+	name: String!
+	description: String
+	ordID: String
+	partOfPackage: String
+	visibility: String
+	releaseStatus: String
+	mandatory: Boolean
+	aspects: [Aspect!]
+	version: Version
+	created_at: Timestamp
+	updated_at: Timestamp
+	deleted_at: Timestamp
+	error: String
+}
+
+type IntegrationDependencyPage implements Pageable {
+	data: [IntegrationDependency!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
 type IntegrationSystem {
@@ -1622,6 +1726,7 @@ type Query {
 	tenantByExternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenants")
 	tenantByInternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenantByInternalID")
 	tenantByLowestOwnerForResource(id: ID!, resource: String!): String! @hasScopes(path: "graphql.query.tenantByLowestOwnerForResource")
+	rootTenant(externalTenant: String!): Tenant! @hasScopes(path: "graphql.query.rootTenant")
 	"""
 	**Examples**
 	- [query automatic scenario assignment for scenario](examples/query-automatic-scenario-assignment-for-scenario/query-automatic-scenario-assignment-for-scenario.graphql)
@@ -1673,6 +1778,11 @@ type Query {
 	formationTemplates(first: Int = 200, after: PageCursor): FormationTemplatePage! @hasScopes(path: "graphql.query.formationTemplates")
 	"""
 	**Examples**
+	- [query formation templates by name](examples/query-formation-templates-by-name/query-formation-templates-by-name.graphql)
+	"""
+	formationTemplatesByName(name: String!, first: Int = 200, after: PageCursor): FormationTemplatePage! @hasScopes(path: "graphql.query.formationTemplates")
+	"""
+	**Examples**
 	- [query certificate subject mapping](examples/query-certificate-subject-mapping/query-certificate-subject-mapping.graphql)
 	"""
 	certificateSubjectMapping(id: ID!): CertificateSubjectMapping! @hasScopes(path: "graphql.query.certificateSubjectMapping")
@@ -1721,7 +1831,7 @@ type Mutation {
 	**Examples**
 	- [update application template](examples/update-application-template/update-application-template.graphql)
 	"""
-	updateApplicationTemplate(id: ID!, in: ApplicationTemplateUpdateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
+	updateApplicationTemplate(id: ID!, override: Boolean, in: ApplicationTemplateUpdateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
 	"""
 	**Examples**
 	- [delete application template](examples/delete-application-template/delete-application-template.graphql)
@@ -1818,6 +1928,16 @@ type Mutation {
 	- [refetch api spec](examples/refetch-api-spec/refetch-api-spec.graphql)
 	"""
 	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
+	"""
+	**Examples**
+	- [add integration dependency to application](examples/add-integration-dependency-to-application/add-integration-dependency-to-application.graphql)
+	"""
+	addIntegrationDependencyToApplication(appID: ID!, in: IntegrationDependencyInput! @validate): IntegrationDependency! @hasScopes(path: "graphql.mutation.addIntegrationDependencyToApplication")
+	"""
+	**Examples**
+	- [delete integration dependency](examples/delete-integration-dependency/delete-integration-dependency.graphql)
+	"""
+	deleteIntegrationDependency(id: ID!): IntegrationDependency! @hasScopes(path: "graphql.mutation.deleteIntegrationDependency")
 	requestOneTimeTokenForRuntime(id: ID!, systemAuthID: ID): OneTimeTokenForRuntime! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")
 	requestOneTimeTokenForApplication(id: ID!, systemAuthID: ID): OneTimeTokenForApplication! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForApplication")
 	requestClientCredentialsForRuntime(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForRuntime")

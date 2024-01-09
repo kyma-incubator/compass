@@ -20,6 +20,10 @@ func (_m *LabelDefRepository) GetByKey(ctx context.Context, tenant string, key s
 	ret := _m.Called(ctx, tenant, key)
 
 	var r0 *model.LabelDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.LabelDefinition, error)); ok {
+		return rf(ctx, tenant, key)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.LabelDefinition); ok {
 		r0 = rf(ctx, tenant, key)
 	} else {
@@ -28,7 +32,6 @@ func (_m *LabelDefRepository) GetByKey(ctx context.Context, tenant string, key s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, key)
 	} else {
@@ -52,13 +55,12 @@ func (_m *LabelDefRepository) UpdateWithVersion(ctx context.Context, def model.L
 	return r0
 }
 
-type mockConstructorTestingTNewLabelDefRepository interface {
+// NewLabelDefRepository creates a new instance of LabelDefRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewLabelDefRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewLabelDefRepository creates a new instance of LabelDefRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewLabelDefRepository(t mockConstructorTestingTNewLabelDefRepository) *LabelDefRepository {
+}) *LabelDefRepository {
 	mock := &LabelDefRepository{}
 	mock.Mock.Test(t)
 

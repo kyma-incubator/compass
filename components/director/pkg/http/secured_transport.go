@@ -25,6 +25,7 @@ import (
 )
 
 // AuthorizationProvider missing godoc
+//
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . AuthorizationProvider
 type AuthorizationProvider interface {
 	Name() string

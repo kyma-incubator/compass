@@ -59,6 +59,8 @@ const (
 	WebhookTypeDeleteApplication WebhookType = "UNREGISTER_APPLICATION"
 	// WebhookTypeOpenResourceDiscovery represents a webhook that is called to aggregate ORD information of a system.
 	WebhookTypeOpenResourceDiscovery WebhookType = "OPEN_RESOURCE_DISCOVERY"
+	// WebhookTypeOpenResourceDiscoveryStatic represents a webhook that is called to aggregate static ORD information.
+	WebhookTypeOpenResourceDiscoveryStatic WebhookType = "OPEN_RESOURCE_DISCOVERY_STATIC"
 	// WebhookTypeFormationLifecycle represents a webhook that is called when lifecycle event (creation/deletion) of formation occurs
 	WebhookTypeFormationLifecycle WebhookType = "FORMATION_LIFECYCLE"
 )

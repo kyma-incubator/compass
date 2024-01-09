@@ -18,6 +18,10 @@ type EntityConverter struct {
 func (_m *EntityConverter) FromEntity(entity *formationassignment.Entity) *model.FormationAssignment {
 	ret := _m.Called(entity)
 
+	if len(ret) == 0 {
+		panic("no return value specified for FromEntity")
+	}
+
 	var r0 *model.FormationAssignment
 	if rf, ok := ret.Get(0).(func(*formationassignment.Entity) *model.FormationAssignment); ok {
 		r0 = rf(entity)
@@ -34,6 +38,10 @@ func (_m *EntityConverter) FromEntity(entity *formationassignment.Entity) *model
 func (_m *EntityConverter) ToEntity(in *model.FormationAssignment) *formationassignment.Entity {
 	ret := _m.Called(in)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ToEntity")
+	}
+
 	var r0 *formationassignment.Entity
 	if rf, ok := ret.Get(0).(func(*model.FormationAssignment) *formationassignment.Entity); ok {
 		r0 = rf(in)
@@ -46,13 +54,12 @@ func (_m *EntityConverter) ToEntity(in *model.FormationAssignment) *formationass
 	return r0
 }
 
-type mockConstructorTestingTNewEntityConverter interface {
+// NewEntityConverter creates a new instance of EntityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEntityConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEntityConverter creates a new instance of EntityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEntityConverter(t mockConstructorTestingTNewEntityConverter) *EntityConverter {
+}) *EntityConverter {
 	mock := &EntityConverter{}
 	mock.Mock.Test(t)
 

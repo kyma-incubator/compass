@@ -49,13 +49,16 @@ func (_m *RuntimeRepository) Exists(ctx context.Context, tenant string, id strin
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -70,6 +73,10 @@ func (_m *RuntimeRepository) GetByFilters(ctx context.Context, tenant string, fi
 	ret := _m.Called(ctx, tenant, filter)
 
 	var r0 *model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) (*model.Runtime, error)); ok {
+		return rf(ctx, tenant, filter)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) *model.Runtime); ok {
 		r0 = rf(ctx, tenant, filter)
 	} else {
@@ -78,7 +85,6 @@ func (_m *RuntimeRepository) GetByFilters(ctx context.Context, tenant string, fi
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, tenant, filter)
 	} else {
@@ -93,6 +99,10 @@ func (_m *RuntimeRepository) GetByFiltersGlobal(ctx context.Context, filter []*l
 	ret := _m.Called(ctx, filter)
 
 	var r0 *model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) (*model.Runtime, error)); ok {
+		return rf(ctx, filter)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) *model.Runtime); ok {
 		r0 = rf(ctx, filter)
 	} else {
@@ -101,7 +111,6 @@ func (_m *RuntimeRepository) GetByFiltersGlobal(ctx context.Context, filter []*l
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, filter)
 	} else {
@@ -116,6 +125,10 @@ func (_m *RuntimeRepository) GetByID(ctx context.Context, tenant string, id stri
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Runtime, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Runtime); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
@@ -124,7 +137,6 @@ func (_m *RuntimeRepository) GetByID(ctx context.Context, tenant string, id stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -139,6 +151,10 @@ func (_m *RuntimeRepository) List(ctx context.Context, tenant string, filter []*
 	ret := _m.Called(ctx, tenant, filter, pageSize, cursor)
 
 	var r0 *model.RuntimePage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) (*model.RuntimePage, error)); ok {
+		return rf(ctx, tenant, filter, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) *model.RuntimePage); ok {
 		r0 = rf(ctx, tenant, filter, pageSize, cursor)
 	} else {
@@ -147,7 +163,6 @@ func (_m *RuntimeRepository) List(ctx context.Context, tenant string, filter []*
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, tenant, filter, pageSize, cursor)
 	} else {
@@ -162,6 +177,10 @@ func (_m *RuntimeRepository) ListAll(_a0 context.Context, _a1 string, _a2 []*lab
 	ret := _m.Called(_a0, _a1, _a2)
 
 	var r0 []*model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Runtime, error)); ok {
+		return rf(_a0, _a1, _a2)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) []*model.Runtime); ok {
 		r0 = rf(_a0, _a1, _a2)
 	} else {
@@ -170,7 +189,6 @@ func (_m *RuntimeRepository) ListAll(_a0 context.Context, _a1 string, _a2 []*lab
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(_a0, _a1, _a2)
 	} else {
@@ -185,6 +203,10 @@ func (_m *RuntimeRepository) ListByFiltersGlobal(_a0 context.Context, _a1 []*lab
 	ret := _m.Called(_a0, _a1)
 
 	var r0 []*model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)); ok {
+		return rf(_a0, _a1)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) []*model.Runtime); ok {
 		r0 = rf(_a0, _a1)
 	} else {
@@ -193,7 +215,6 @@ func (_m *RuntimeRepository) ListByFiltersGlobal(_a0 context.Context, _a1 []*lab
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
@@ -217,13 +238,12 @@ func (_m *RuntimeRepository) Update(ctx context.Context, tenant string, item *mo
 	return r0
 }
 
-type mockConstructorTestingTNewRuntimeRepository interface {
+// NewRuntimeRepository creates a new instance of RuntimeRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeRepository creates a new instance of RuntimeRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeRepository(t mockConstructorTestingTNewRuntimeRepository) *RuntimeRepository {
+}) *RuntimeRepository {
 	mock := &RuntimeRepository{}
 	mock.Mock.Test(t)
 

@@ -17,6 +17,7 @@ import (
 )
 
 // RuntimeContextRepository missing godoc
+//
 //go:generate mockery --name=RuntimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeContextRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -31,18 +32,21 @@ type RuntimeContextRepository interface {
 }
 
 // LabelRepository missing godoc
+//
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
 // RuntimeRepository is responsible for the repo-layer Runtime operations.
+//
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeRepository interface {
 	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
 }
 
 // LabelUpsertService missing godoc
+//
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
@@ -63,6 +67,7 @@ type tenantService interface {
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string

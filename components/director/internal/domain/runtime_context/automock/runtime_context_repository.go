@@ -49,13 +49,16 @@ func (_m *RuntimeContextRepository) Exists(ctx context.Context, tenant string, i
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -70,6 +73,10 @@ func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, 
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.RuntimeContext
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.RuntimeContext, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.RuntimeContext); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
@@ -78,7 +85,6 @@ func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -93,6 +99,10 @@ func (_m *RuntimeContextRepository) GetForRuntime(ctx context.Context, tenant st
 	ret := _m.Called(ctx, tenant, id, runtimeID)
 
 	var r0 *model.RuntimeContext
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.RuntimeContext, error)); ok {
+		return rf(ctx, tenant, id, runtimeID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.RuntimeContext); ok {
 		r0 = rf(ctx, tenant, id, runtimeID)
 	} else {
@@ -101,7 +111,6 @@ func (_m *RuntimeContextRepository) GetForRuntime(ctx context.Context, tenant st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenant, id, runtimeID)
 	} else {
@@ -116,6 +125,10 @@ func (_m *RuntimeContextRepository) List(ctx context.Context, runtimeID string, 
 	ret := _m.Called(ctx, runtimeID, tenant, filter, pageSize, cursor)
 
 	var r0 *model.RuntimeContextPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []*labelfilter.LabelFilter, int, string) (*model.RuntimeContextPage, error)); ok {
+		return rf(ctx, runtimeID, tenant, filter, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, []*labelfilter.LabelFilter, int, string) *model.RuntimeContextPage); ok {
 		r0 = rf(ctx, runtimeID, tenant, filter, pageSize, cursor)
 	} else {
@@ -124,7 +137,6 @@ func (_m *RuntimeContextRepository) List(ctx context.Context, runtimeID string, 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, runtimeID, tenant, filter, pageSize, cursor)
 	} else {
@@ -139,6 +151,10 @@ func (_m *RuntimeContextRepository) ListAllForRuntime(ctx context.Context, tenan
 	ret := _m.Called(ctx, tenant, runtimeID)
 
 	var r0 []*model.RuntimeContext
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]*model.RuntimeContext, error)); ok {
+		return rf(ctx, tenant, runtimeID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.RuntimeContext); ok {
 		r0 = rf(ctx, tenant, runtimeID)
 	} else {
@@ -147,7 +163,6 @@ func (_m *RuntimeContextRepository) ListAllForRuntime(ctx context.Context, tenan
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, runtimeID)
 	} else {
@@ -162,6 +177,10 @@ func (_m *RuntimeContextRepository) ListByRuntimeIDs(ctx context.Context, tenant
 	ret := _m.Called(ctx, tenantID, runtimeIDs, pageSize, cursor)
 
 	var r0 []*model.RuntimeContextPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int, string) ([]*model.RuntimeContextPage, error)); ok {
+		return rf(ctx, tenantID, runtimeIDs, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int, string) []*model.RuntimeContextPage); ok {
 		r0 = rf(ctx, tenantID, runtimeIDs, pageSize, cursor)
 	} else {
@@ -170,7 +189,6 @@ func (_m *RuntimeContextRepository) ListByRuntimeIDs(ctx context.Context, tenant
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, int, string) error); ok {
 		r1 = rf(ctx, tenantID, runtimeIDs, pageSize, cursor)
 	} else {
@@ -194,13 +212,12 @@ func (_m *RuntimeContextRepository) Update(ctx context.Context, tenant string, i
 	return r0
 }
 
-type mockConstructorTestingTNewRuntimeContextRepository interface {
+// NewRuntimeContextRepository creates a new instance of RuntimeContextRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeContextRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeContextRepository creates a new instance of RuntimeContextRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeContextRepository(t mockConstructorTestingTNewRuntimeContextRepository) *RuntimeContextRepository {
+}) *RuntimeContextRepository {
 	mock := &RuntimeContextRepository{}
 	mock.Mock.Test(t)
 

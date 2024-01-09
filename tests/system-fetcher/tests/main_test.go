@@ -5,11 +5,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
@@ -17,12 +16,13 @@ import (
 
 type Config struct {
 	ExternalSvcMockURL             string `envconfig:"EXTERNAL_SERVICES_MOCK_BASE_URL"`
+	SystemFetcherURL               string `envconfig:"SYSTEM_FETCHER_URL"`
 	SystemFetcherPageSize          int    `envconfig:"SYSTEM_FETCHER_PAGE_SIZE"`
 	SystemFetcherContainerName     string `envconfig:"SYSTEM_FETCHER_CONTAINER_NAME"`
 	DirectorExternalCertSecuredURL string
 	GatewayOauth                   string `envconfig:"APP_GATEWAY_OAUTH"`
 	SkipSSLValidation              bool   `envconfig:"default=false"`
-	CertLoaderConfig               certloader.Config
+	CertLoaderConfig               credloader.CertConfig
 
 	SelfRegDistinguishLabelKey   string
 	SelfRegDistinguishLabelValue string
@@ -47,12 +47,12 @@ func TestMain(m *testing.M) {
 	tenant.TestTenants.Init()
 
 	ctx := context.Background()
-	cc, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	cc, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	if err := util.WaitForCache(cc); err != nil {
+	if err = credloader.WaitForCertCache(cc); err != nil {
 		log.D().Fatal(err)
 	}
 

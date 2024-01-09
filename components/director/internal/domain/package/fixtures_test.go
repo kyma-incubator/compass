@@ -24,6 +24,7 @@ const (
 var (
 	appID                = "appID"
 	appTemplateVersionID = "appTemplateVersionID"
+	runtimeRestriction   = "sap.datasphere"
 )
 
 func fixEntityPackageForApp() *ordpackage.Entity {
@@ -60,9 +61,10 @@ func fixEntityPackageWithTitle(title string) *ordpackage.Entity {
 		LicenseType:         sql.NullString{String: "test", Valid: true},
 		SupportInfo:         sql.NullString{String: "support-info", Valid: true},
 		Tags:                repo.NewValidNullableString("[]"),
+		RuntimeRestriction:  sql.NullString{String: runtimeRestriction, Valid: true},
 		Countries:           repo.NewValidNullableString("[]"),
 		Labels:              repo.NewValidNullableString("{}"),
-		PolicyLevel:         "test",
+		PolicyLevel:         sql.NullString{String: "test", Valid: true},
 		CustomPolicyLevel:   sql.NullString{},
 		PartOfProducts:      repo.NewValidNullableString("[\"test\"]"),
 		LineOfBusiness:      repo.NewValidNullableString("[]"),
@@ -99,6 +101,7 @@ func fixPackageModelWithTitle(title string) *model.Package {
 	vendorID := "vendorID"
 	licenceType := "test"
 	supportInfo := "support-info"
+	policyLevel := "test"
 	return &model.Package{
 		ID:                  packageID,
 		OrdID:               ordID,
@@ -112,9 +115,10 @@ func fixPackageModelWithTitle(title string) *model.Package {
 		LicenseType:         &licenceType,
 		SupportInfo:         &supportInfo,
 		Tags:                json.RawMessage("[]"),
+		RuntimeRestriction:  &runtimeRestriction,
 		Countries:           json.RawMessage("[]"),
 		Labels:              json.RawMessage("{}"),
-		PolicyLevel:         "test",
+		PolicyLevel:         &policyLevel,
 		CustomPolicyLevel:   nil,
 		PartOfProducts:      json.RawMessage("[\"test\"]"),
 		LineOfBusiness:      json.RawMessage("[]"),
@@ -128,6 +132,7 @@ func fixPackageModelInput() *model.PackageInput {
 	vendorID := "vendorID"
 	licenceType := "test"
 	supportInfo := "support-info"
+	policyLevel := "test"
 	return &model.PackageInput{
 		OrdID:               ordID,
 		Vendor:              &vendorID,
@@ -140,9 +145,10 @@ func fixPackageModelInput() *model.PackageInput {
 		LicenseType:         &licenceType,
 		SupportInfo:         &supportInfo,
 		Tags:                json.RawMessage("[]"),
+		RuntimeRestriction:  &runtimeRestriction,
 		Countries:           json.RawMessage("[]"),
 		Labels:              json.RawMessage("{}"),
-		PolicyLevel:         "test",
+		PolicyLevel:         &policyLevel,
 		CustomPolicyLevel:   nil,
 		PartOfProducts:      json.RawMessage("[\"test\"]"),
 		LineOfBusiness:      json.RawMessage("[]"),
@@ -153,7 +159,7 @@ func fixPackageModelInput() *model.PackageInput {
 
 func fixPackageColumns() []string {
 	return []string{"id", "app_id", "app_template_version_id", "ord_id", "vendor", "title", "short_description",
-		"description", "version", "package_links", "links", "licence_type", "tags", "countries", "labels", "policy_level",
+		"description", "version", "package_links", "links", "licence_type", "tags", "runtime_restriction", "countries", "labels", "policy_level",
 		"custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash", "documentation_labels", "support_info"}
 }
 
@@ -167,18 +173,18 @@ func fixPackageRowForAppTemplateVersion() []driver.Value {
 
 func fixPackageRowWithTitleForApp(title string) []driver.Value {
 	return []driver.Value{packageID, appID, repo.NewValidNullableString(""), ordID, "vendorID", title, "short desc", "desc", "v1.0.5",
-		repo.NewValidNullableString("{}"), repo.NewValidNullableString("[]"), "test", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}"),
+		repo.NewValidNullableString("{}"), repo.NewValidNullableString("[]"), "test", repo.NewValidNullableString("[]"), repo.NewValidNullableString(runtimeRestriction), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}"),
 		"test", nil, repo.NewValidNullableString("[\"test\"]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), "support-info"}
 }
 
 func fixPackageRowWithTitleForAppTemplateVersion(title string) []driver.Value {
 	return []driver.Value{packageID, repo.NewValidNullableString(""), appTemplateVersionID, ordID, "vendorID", title, "short desc", "desc", "v1.0.5",
-		repo.NewValidNullableString("{}"), repo.NewValidNullableString("[]"), "test", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}"),
+		repo.NewValidNullableString("{}"), repo.NewValidNullableString("[]"), "test", repo.NewValidNullableString("[]"), repo.NewValidNullableString(runtimeRestriction), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}"),
 		"test", nil, repo.NewValidNullableString("[\"test\"]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), "support-info"}
 }
 
 func fixPackageUpdateArgs() []driver.Value {
 	return []driver.Value{"vendorID", "title", "short desc", "desc", "v1.0.5", repo.NewValidNullableString("{}"), repo.NewValidNullableString("[]"),
-		"test", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}"), "test", nil, repo.NewValidNullableString("[\"test\"]"),
+		"test", repo.NewValidNullableString("[]"), repo.NewValidNullableString(runtimeRestriction), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}"), "test", nil, repo.NewValidNullableString("[\"test\"]"),
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), "support-info"}
 }

@@ -21,10 +21,11 @@ type Entity struct {
 	Links                        sql.NullString `db:"links"`
 	LicenseType                  sql.NullString `db:"licence_type"`
 	SupportInfo                  sql.NullString `db:"support_info"`
+	RuntimeRestriction           sql.NullString `db:"runtime_restriction"`
 	Tags                         sql.NullString `db:"tags"`
 	Countries                    sql.NullString `db:"countries"`
 	Labels                       sql.NullString `db:"labels"`
-	PolicyLevel                  string         `db:"policy_level"`
+	PolicyLevel                  sql.NullString `db:"policy_level"`
 	CustomPolicyLevel            sql.NullString `db:"custom_policy_level"`
 	PartOfProducts               sql.NullString `db:"part_of_products"`
 	LineOfBusiness               sql.NullString `db:"line_of_business"`

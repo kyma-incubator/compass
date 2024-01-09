@@ -18,6 +18,10 @@ func (_m *HTTPDoer) Do(req *http.Request) (*http.Response, error) {
 	ret := _m.Called(req)
 
 	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*http.Request) (*http.Response, error)); ok {
+		return rf(req)
+	}
 	if rf, ok := ret.Get(0).(func(*http.Request) *http.Response); ok {
 		r0 = rf(req)
 	} else {
@@ -26,7 +30,6 @@ func (_m *HTTPDoer) Do(req *http.Request) (*http.Response, error) {
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*http.Request) error); ok {
 		r1 = rf(req)
 	} else {
@@ -36,13 +39,12 @@ func (_m *HTTPDoer) Do(req *http.Request) (*http.Response, error) {
 	return r0, r1
 }
 
-type mockConstructorTestingTNewHTTPDoer interface {
+// NewHTTPDoer creates a new instance of HTTPDoer. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewHTTPDoer(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewHTTPDoer creates a new instance of HTTPDoer. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewHTTPDoer(t mockConstructorTestingTNewHTTPDoer) *HTTPDoer {
+}) *HTTPDoer {
 	mock := &HTTPDoer{}
 	mock.Mock.Test(t)
 

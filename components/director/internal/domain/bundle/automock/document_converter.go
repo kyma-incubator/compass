@@ -19,6 +19,10 @@ func (_m *DocumentConverter) MultipleInputFromGraphQL(in []*graphql.DocumentInpu
 	ret := _m.Called(in)
 
 	var r0 []*model.DocumentInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]*graphql.DocumentInput) ([]*model.DocumentInput, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func([]*graphql.DocumentInput) []*model.DocumentInput); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +31,6 @@ func (_m *DocumentConverter) MultipleInputFromGraphQL(in []*graphql.DocumentInpu
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func([]*graphql.DocumentInput) error); ok {
 		r1 = rf(in)
 	} else {
@@ -69,13 +72,12 @@ func (_m *DocumentConverter) ToGraphQL(in *model.Document) *graphql.Document {
 	return r0
 }
 
-type mockConstructorTestingTNewDocumentConverter interface {
+// NewDocumentConverter creates a new instance of DocumentConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDocumentConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDocumentConverter creates a new instance of DocumentConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDocumentConverter(t mockConstructorTestingTNewDocumentConverter) *DocumentConverter {
+}) *DocumentConverter {
 	mock := &DocumentConverter{}
 	mock.Mock.Test(t)
 

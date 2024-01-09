@@ -100,21 +100,27 @@ func InitFromEnv(envPrefix string) ([]Config, error) {
 	for _, a := range authenticators {
 		if a.CheckSuffix {
 			acceptSuffix := make([]string, 0, len(a.TrustedIssuers))
+			suffixes := make(map[string]bool)
 			for _, issuer := range a.TrustedIssuers {
-				// The issuer scope prefixes format is "<value>." while the client ID format is "<ID><value>" so the "." should be trimmed
-				acceptSuffix = append(acceptSuffix, strings.TrimSuffix(issuer.ScopePrefix, "."))
+				for _, sp := range issuer.ScopePrefixes {
+					if _, exists := suffixes[sp]; !exists {
+						suffixes[sp] = true
+						// The issuer scope prefixes format is "<value>." while the client ID format is "<ID><value>" so the "." should be trimmed
+						acceptSuffix = append(acceptSuffix, strings.TrimSuffix(sp, "."))
+					}
+				}
 			}
 			a.ClientIDSuffixes = acceptSuffix
 		}
 	}
 
 	result := make([]Config, 0, len(authenticators))
-	for _, config := range authenticators {
-		if err := config.Attributes.Validate(); err != nil {
-			return nil, errors.Errorf("insufficient configuration provided for authenticator %q: %s", config.Name, err.Error())
+	for _, auth := range authenticators {
+		if err := auth.Attributes.Validate(); err != nil {
+			return nil, errors.Errorf("insufficient configuration provided for authenticator %q: %s", auth.Name, err.Error())
 		}
 
-		result = append(result, *config)
+		result = append(result, *auth)
 	}
 
 	return result, nil

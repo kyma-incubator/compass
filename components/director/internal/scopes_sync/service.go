@@ -11,8 +11,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/ory/hydra-client-go/models"
 	"github.com/pkg/errors"
+
+	hydraClient "github.com/ory/hydra-client-go/v2"
 )
 
 // SyncService missing godoc
@@ -21,15 +22,17 @@ type SyncService interface {
 }
 
 // SystemAuthRepo missing godoc
+//
 //go:generate mockery --name=SystemAuthRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthRepo interface {
 	ListGlobalWithConditions(ctx context.Context, conditions repo.Conditions) ([]model.SystemAuth, error)
 }
 
 // OAuthService missing godoc
+//
 //go:generate mockery --name=OAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OAuthService interface {
-	ListClients() ([]*models.OAuth2Client, error)
+	ListClients() ([]hydraClient.OAuth2Client, error)
 	UpdateClient(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error
 	GetClientDetails(objType model.SystemAuthReferenceObjectType) (*oauth20.ClientDetails, error)
 }
@@ -116,8 +119,8 @@ func (s *service) listHydraClients() (map[string]*oauth20.ClientDetails, error) 
 
 	clientsMap := make(map[string]*oauth20.ClientDetails)
 	for _, c := range clients {
-		clientsMap[c.ClientID] = &oauth20.ClientDetails{
-			Scopes:     strings.Split(c.Scope, " "),
+		clientsMap[*c.ClientId] = &oauth20.ClientDetails{
+			Scopes:     strings.Split(*c.Scope, " "),
 			GrantTypes: c.GrantTypes,
 		}
 	}

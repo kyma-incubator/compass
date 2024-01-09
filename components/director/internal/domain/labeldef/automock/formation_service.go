@@ -20,6 +20,10 @@ func (_m *FormationService) CreateFormation(ctx context.Context, tnt string, for
 	ret := _m.Called(ctx, tnt, formation, templateName)
 
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation, string) (*model.Formation, error)); ok {
+		return rf(ctx, tnt, formation, templateName)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation, string) *model.Formation); ok {
 		r0 = rf(ctx, tnt, formation, templateName)
 	} else {
@@ -28,7 +32,6 @@ func (_m *FormationService) CreateFormation(ctx context.Context, tnt string, for
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.Formation, string) error); ok {
 		r1 = rf(ctx, tnt, formation, templateName)
 	} else {
@@ -43,6 +46,10 @@ func (_m *FormationService) DeleteFormation(ctx context.Context, tnt string, for
 	ret := _m.Called(ctx, tnt, formation)
 
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation) (*model.Formation, error)); ok {
+		return rf(ctx, tnt, formation)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation) *model.Formation); ok {
 		r0 = rf(ctx, tnt, formation)
 	} else {
@@ -51,7 +58,6 @@ func (_m *FormationService) DeleteFormation(ctx context.Context, tnt string, for
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.Formation) error); ok {
 		r1 = rf(ctx, tnt, formation)
 	} else {
@@ -61,13 +67,12 @@ func (_m *FormationService) DeleteFormation(ctx context.Context, tnt string, for
 	return r0, r1
 }
 
-type mockConstructorTestingTNewFormationService interface {
+// NewFormationService creates a new instance of FormationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationService creates a new instance of FormationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationService(t mockConstructorTestingTNewFormationService) *FormationService {
+}) *FormationService {
 	mock := &FormationService{}
 	mock.Mock.Test(t)
 

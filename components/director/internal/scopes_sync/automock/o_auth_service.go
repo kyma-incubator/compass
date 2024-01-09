@@ -5,10 +5,11 @@ package automock
 import (
 	context "context"
 
-	model "github.com/kyma-incubator/compass/components/director/pkg/model"
+	client "github.com/ory/hydra-client-go/v2"
+
 	mock "github.com/stretchr/testify/mock"
 
-	models "github.com/ory/hydra-client-go/models"
+	model "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	oauth20 "github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 )
@@ -23,6 +24,10 @@ func (_m *OAuthService) GetClientDetails(objType model.SystemAuthReferenceObject
 	ret := _m.Called(objType)
 
 	var r0 *oauth20.ClientDetails
+	var r1 error
+	if rf, ok := ret.Get(0).(func(model.SystemAuthReferenceObjectType) (*oauth20.ClientDetails, error)); ok {
+		return rf(objType)
+	}
 	if rf, ok := ret.Get(0).(func(model.SystemAuthReferenceObjectType) *oauth20.ClientDetails); ok {
 		r0 = rf(objType)
 	} else {
@@ -31,7 +36,6 @@ func (_m *OAuthService) GetClientDetails(objType model.SystemAuthReferenceObject
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(model.SystemAuthReferenceObjectType) error); ok {
 		r1 = rf(objType)
 	} else {
@@ -42,19 +46,22 @@ func (_m *OAuthService) GetClientDetails(objType model.SystemAuthReferenceObject
 }
 
 // ListClients provides a mock function with given fields:
-func (_m *OAuthService) ListClients() ([]*models.OAuth2Client, error) {
+func (_m *OAuthService) ListClients() ([]client.OAuth2Client, error) {
 	ret := _m.Called()
 
-	var r0 []*models.OAuth2Client
-	if rf, ok := ret.Get(0).(func() []*models.OAuth2Client); ok {
+	var r0 []client.OAuth2Client
+	var r1 error
+	if rf, ok := ret.Get(0).(func() ([]client.OAuth2Client, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() []client.OAuth2Client); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*models.OAuth2Client)
+			r0 = ret.Get(0).([]client.OAuth2Client)
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func() error); ok {
 		r1 = rf()
 	} else {
@@ -78,13 +85,12 @@ func (_m *OAuthService) UpdateClient(ctx context.Context, clientID string, objec
 	return r0
 }
 
-type mockConstructorTestingTNewOAuthService interface {
+// NewOAuthService creates a new instance of OAuthService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewOAuthService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewOAuthService creates a new instance of OAuthService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewOAuthService(t mockConstructorTestingTNewOAuthService) *OAuthService {
+}) *OAuthService {
 	mock := &OAuthService{}
 	mock.Mock.Test(t)
 

@@ -19,6 +19,10 @@ func (_m *Converter) FromEntity(in *fetchrequest.Entity, objectType model.FetchR
 	ret := _m.Called(in, objectType)
 
 	var r0 *model.FetchRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*fetchrequest.Entity, model.FetchRequestReferenceObjectType) (*model.FetchRequest, error)); ok {
+		return rf(in, objectType)
+	}
 	if rf, ok := ret.Get(0).(func(*fetchrequest.Entity, model.FetchRequestReferenceObjectType) *model.FetchRequest); ok {
 		r0 = rf(in, objectType)
 	} else {
@@ -27,7 +31,6 @@ func (_m *Converter) FromEntity(in *fetchrequest.Entity, objectType model.FetchR
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*fetchrequest.Entity, model.FetchRequestReferenceObjectType) error); ok {
 		r1 = rf(in, objectType)
 	} else {
@@ -42,6 +45,10 @@ func (_m *Converter) ToEntity(in *model.FetchRequest) (*fetchrequest.Entity, err
 	ret := _m.Called(in)
 
 	var r0 *fetchrequest.Entity
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.FetchRequest) (*fetchrequest.Entity, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.FetchRequest) *fetchrequest.Entity); ok {
 		r0 = rf(in)
 	} else {
@@ -50,7 +57,6 @@ func (_m *Converter) ToEntity(in *model.FetchRequest) (*fetchrequest.Entity, err
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.FetchRequest) error); ok {
 		r1 = rf(in)
 	} else {
@@ -60,13 +66,12 @@ func (_m *Converter) ToEntity(in *model.FetchRequest) (*fetchrequest.Entity, err
 	return r0, r1
 }
 
-type mockConstructorTestingTNewConverter interface {
+// NewConverter creates a new instance of Converter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewConverter creates a new instance of Converter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewConverter(t mockConstructorTestingTNewConverter) *Converter {
+}) *Converter {
 	mock := &Converter{}
 	mock.Mock.Test(t)
 

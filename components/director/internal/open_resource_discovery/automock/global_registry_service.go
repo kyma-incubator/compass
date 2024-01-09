@@ -18,6 +18,10 @@ func (_m *GlobalRegistryService) ListGlobalResources(ctx context.Context) (map[s
 	ret := _m.Called(ctx)
 
 	var r0 map[string]bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (map[string]bool, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) map[string]bool); ok {
 		r0 = rf(ctx)
 	} else {
@@ -26,7 +30,6 @@ func (_m *GlobalRegistryService) ListGlobalResources(ctx context.Context) (map[s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -41,6 +44,10 @@ func (_m *GlobalRegistryService) SyncGlobalResources(ctx context.Context) (map[s
 	ret := _m.Called(ctx)
 
 	var r0 map[string]bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (map[string]bool, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) map[string]bool); ok {
 		r0 = rf(ctx)
 	} else {
@@ -49,7 +56,6 @@ func (_m *GlobalRegistryService) SyncGlobalResources(ctx context.Context) (map[s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -59,13 +65,12 @@ func (_m *GlobalRegistryService) SyncGlobalResources(ctx context.Context) (map[s
 	return r0, r1
 }
 
-type mockConstructorTestingTNewGlobalRegistryService interface {
+// NewGlobalRegistryService creates a new instance of GlobalRegistryService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewGlobalRegistryService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewGlobalRegistryService creates a new instance of GlobalRegistryService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewGlobalRegistryService(t mockConstructorTestingTNewGlobalRegistryService) *GlobalRegistryService {
+}) *GlobalRegistryService {
 	mock := &GlobalRegistryService{}
 	mock.Mock.Test(t)
 

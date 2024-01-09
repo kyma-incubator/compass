@@ -20,13 +20,16 @@ func (_m *ModelConverter) FromGraphQL(input graphql.LabelDefinitionInput, tenant
 	ret := _m.Called(input, tenant)
 
 	var r0 model.LabelDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(graphql.LabelDefinitionInput, string) (model.LabelDefinition, error)); ok {
+		return rf(input, tenant)
+	}
 	if rf, ok := ret.Get(0).(func(graphql.LabelDefinitionInput, string) model.LabelDefinition); ok {
 		r0 = rf(input, tenant)
 	} else {
 		r0 = ret.Get(0).(model.LabelDefinition)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(graphql.LabelDefinitionInput, string) error); ok {
 		r1 = rf(input, tenant)
 	} else {
@@ -41,13 +44,16 @@ func (_m *ModelConverter) ToGraphQL(definition model.LabelDefinition) (graphql.L
 	ret := _m.Called(definition)
 
 	var r0 graphql.LabelDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(model.LabelDefinition) (graphql.LabelDefinition, error)); ok {
+		return rf(definition)
+	}
 	if rf, ok := ret.Get(0).(func(model.LabelDefinition) graphql.LabelDefinition); ok {
 		r0 = rf(definition)
 	} else {
 		r0 = ret.Get(0).(graphql.LabelDefinition)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(model.LabelDefinition) error); ok {
 		r1 = rf(definition)
 	} else {
@@ -57,13 +63,12 @@ func (_m *ModelConverter) ToGraphQL(definition model.LabelDefinition) (graphql.L
 	return r0, r1
 }
 
-type mockConstructorTestingTNewModelConverter interface {
+// NewModelConverter creates a new instance of ModelConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewModelConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewModelConverter creates a new instance of ModelConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewModelConverter(t mockConstructorTestingTNewModelConverter) *ModelConverter {
+}) *ModelConverter {
 	mock := &ModelConverter{}
 	mock.Mock.Test(t)
 

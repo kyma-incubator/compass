@@ -14,8 +14,9 @@ var (
 )
 
 var (
-	EntityNotFound      = New("entity not found")
-	EntityAlreadyExists = New("entity already exists")
-	Internal            = New("internal error")
-	InvalidAccessToken  = New("invalid access token")
+	EntityNotFound         = New("entity not found")
+	EntityAlreadyExists    = New("entity already exists")
+	Internal               = New("internal error")
+	InvalidAccessToken     = New("invalid access token")
+	IASApplicationNotFound = errors.New("application in IAS not found")
 )

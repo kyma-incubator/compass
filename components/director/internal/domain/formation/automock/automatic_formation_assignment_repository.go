@@ -62,6 +62,10 @@ func (_m *AutomaticFormationAssignmentRepository) ListAll(ctx context.Context, t
 	ret := _m.Called(ctx, tenantID)
 
 	var r0 []*model.AutomaticScenarioAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.AutomaticScenarioAssignment, error)); ok {
+		return rf(ctx, tenantID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.AutomaticScenarioAssignment); ok {
 		r0 = rf(ctx, tenantID)
 	} else {
@@ -70,7 +74,6 @@ func (_m *AutomaticFormationAssignmentRepository) ListAll(ctx context.Context, t
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, tenantID)
 	} else {
@@ -80,13 +83,12 @@ func (_m *AutomaticFormationAssignmentRepository) ListAll(ctx context.Context, t
 	return r0, r1
 }
 
-type mockConstructorTestingTNewAutomaticFormationAssignmentRepository interface {
+// NewAutomaticFormationAssignmentRepository creates a new instance of AutomaticFormationAssignmentRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAutomaticFormationAssignmentRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewAutomaticFormationAssignmentRepository creates a new instance of AutomaticFormationAssignmentRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAutomaticFormationAssignmentRepository(t mockConstructorTestingTNewAutomaticFormationAssignmentRepository) *AutomaticFormationAssignmentRepository {
+}) *AutomaticFormationAssignmentRepository {
 	mock := &AutomaticFormationAssignmentRepository{}
 	mock.Mock.Test(t)
 

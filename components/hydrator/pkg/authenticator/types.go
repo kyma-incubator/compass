@@ -37,10 +37,10 @@ type Config struct {
 
 // TrustedIssuer missing godoc
 type TrustedIssuer struct {
-	Protocol    string `json:"protocol"`
-	DomainURL   string `json:"domain_url"`
-	ScopePrefix string `json:"scope_prefix"`
-	Region      string `json:"region"`
+	Protocol      string   `json:"protocol"`
+	DomainURL     string   `json:"domain_url"`
+	ScopePrefixes []string `json:"scope_prefixes"`
+	Region        string   `json:"region"`
 }
 
 // Coordinates missing godoc
@@ -51,18 +51,22 @@ type Coordinates struct {
 
 // Attributes holds all attribute properties and values related to an authenticator
 type Attributes struct {
-	UniqueAttribute   Attribute `json:"uniqueAttribute"`
-	IdentityAttribute Attribute `json:"identity"`
-	TenantAttribute   Attribute `json:"tenant"`
-	ClientID          Attribute `json:"clientid"`
+	UniqueAttribute   Attribute         `json:"uniqueAttribute"`
+	IdentityAttribute Attribute         `json:"identity"`
+	TenantsAttribute  []TenantAttribute `json:"tenants"`
+	ClientID          Attribute         `json:"clientid"`
 }
 
 // Validate validates all attributes
 func (a *Attributes) Validate() error {
-	for _, attr := range []Attribute{a.UniqueAttribute, a.IdentityAttribute, a.TenantAttribute} {
+	for _, attr := range []Attribute{a.UniqueAttribute, a.IdentityAttribute} {
 		if err := attr.Validate(); err != nil {
 			return err
 		}
+	}
+
+	if err := Validate(a.TenantsAttribute); err != nil {
+		return err
 	}
 
 	if a.UniqueAttribute.Value == "" {
@@ -82,6 +86,29 @@ type Attribute struct {
 func (a *Attribute) Validate() error {
 	if a.Key == "" {
 		return errors.New("attribute key cannot be empty")
+	}
+
+	return nil
+}
+
+// TenantAttribute represents a single tenant attribute associated with an authenticator
+type TenantAttribute struct {
+	Key      string `json:"key"`
+	Priority int    `json:"priority"`
+}
+
+// Validate validates the tenant attributes
+func Validate(tenantAttributes []TenantAttribute) error {
+	tenantAttributePriorities := make(map[int]bool, len(tenantAttributes))
+	for _, ta := range tenantAttributes {
+		if ta.Key == "" {
+			return errors.New("tenant attribute key cannot be empty")
+		}
+		tenantAttributePriorities[ta.Priority] = true
+	}
+
+	if tenantAttributesLength := len(tenantAttributes); tenantAttributesLength > 1 && tenantAttributesLength != len(tenantAttributePriorities) {
+		return errors.New("tenant attribute priorities should be provided and should have unique values for each of them")
 	}
 
 	return nil

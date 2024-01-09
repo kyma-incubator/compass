@@ -35,6 +35,7 @@ type BusinessTenantMappingService interface {
 	CreateTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
 	DeleteTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
 	GetTenantAccessForResource(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) (*model.TenantAccess, error)
+	GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 }
 
 // BusinessTenantMappingConverter is used to convert the internally used tenant representation model.BusinessTenantMapping
@@ -127,7 +128,7 @@ func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tena
 	ctx = persistence.SaveToContext(ctx, tx)
 	tenant, err := r.srv.GetTenantByExternalID(ctx, externalID)
 	if err != nil && apperrors.IsNotFoundError(err) {
-		tx, err = r.fetchTenant(tx, externalID)
+		tx, err = r.fetchTenant(ctx, tx, externalID)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, apperrors.NewNotFoundError(resource.Tenant, externalID)
@@ -189,6 +190,29 @@ func (r *Resolver) TenantByLowestOwnerForResource(ctx context.Context, resourceS
 	}
 
 	return tenantID, nil
+}
+
+// RootTenant fetches the top parent external ID for a given tenant
+func (r *Resolver) RootTenant(ctx context.Context, externalTenant string) (*graphql.Tenant, error) {
+	log.C(ctx).Infof("Getting the top parent ID for a external tenant: %q", externalTenant)
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	result, err := r.srv.GetParentRecursivelyByExternalTenant(ctx, externalTenant)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while fetching the top parent ID for a external tenant %q", externalTenant)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return r.conv.ToGraphQL(result), nil
 }
 
 // Labels transactionally retrieves all existing labels of the given tenant if it exists.
@@ -323,12 +347,12 @@ func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTen
 	return r.conv.ToGraphQL(tenant), nil
 }
 
-func (r *Resolver) fetchTenant(tx persistence.PersistenceTx, externalID string) (persistence.PersistenceTx, error) {
+func (r *Resolver) fetchTenant(ctx context.Context, tx persistence.PersistenceTx, externalID string) (persistence.PersistenceTx, error) {
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 
-	if err := r.fetcher.FetchOnDemand(externalID, ""); err != nil {
+	if err := r.fetcher.FetchOnDemand(ctx, externalID, ""); err != nil {
 		return nil, errors.Wrapf(err, "while trying to create if not exists tenant %s", externalID)
 	}
 	tr, err := r.transact.Begin()

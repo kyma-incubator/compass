@@ -28,6 +28,10 @@ func (_m *NotificationsService) GenerateFormationAssignmentNotifications(ctx con
 	ret := _m.Called(ctx, tenant, objectID, _a3, operation, objectType)
 
 	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequest, error)); ok {
+		return rf(ctx, tenant, objectID, _a3, operation, objectType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, graphql.FormationObjectType) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, objectID, _a3, operation, objectType)
 	} else {
@@ -36,7 +40,6 @@ func (_m *NotificationsService) GenerateFormationAssignmentNotifications(ctx con
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, *model.Formation, model.FormationOperation, graphql.FormationObjectType) error); ok {
 		r1 = rf(ctx, tenant, objectID, _a3, operation, objectType)
 	} else {
@@ -51,6 +54,10 @@ func (_m *NotificationsService) GenerateFormationNotifications(ctx context.Conte
 	ret := _m.Called(ctx, formationTemplateWebhooks, tenantID, _a3, formationTemplateName, formationTemplateID, formationOperation)
 
 	var r0 []*webhookclient.FormationNotificationRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.Webhook, string, *model.Formation, string, string, model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error)); ok {
+		return rf(ctx, formationTemplateWebhooks, tenantID, _a3, formationTemplateName, formationTemplateID, formationOperation)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []*model.Webhook, string, *model.Formation, string, string, model.FormationOperation) []*webhookclient.FormationNotificationRequest); ok {
 		r0 = rf(ctx, formationTemplateWebhooks, tenantID, _a3, formationTemplateName, formationTemplateID, formationOperation)
 	} else {
@@ -59,7 +66,6 @@ func (_m *NotificationsService) GenerateFormationNotifications(ctx context.Conte
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*model.Webhook, string, *model.Formation, string, string, model.FormationOperation) error); ok {
 		r1 = rf(ctx, formationTemplateWebhooks, tenantID, _a3, formationTemplateName, formationTemplateID, formationOperation)
 	} else {
@@ -74,6 +80,10 @@ func (_m *NotificationsService) PrepareDetailsForNotificationStatusReturned(ctx 
 	ret := _m.Called(ctx, _a1, operation)
 
 	var r0 *formationconstraint.NotificationStatusReturnedOperationDetails
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Formation, model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)); ok {
+		return rf(ctx, _a1, operation)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *model.Formation, model.FormationOperation) *formationconstraint.NotificationStatusReturnedOperationDetails); ok {
 		r0 = rf(ctx, _a1, operation)
 	} else {
@@ -82,7 +92,6 @@ func (_m *NotificationsService) PrepareDetailsForNotificationStatusReturned(ctx 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *model.Formation, model.FormationOperation) error); ok {
 		r1 = rf(ctx, _a1, operation)
 	} else {
@@ -97,6 +106,10 @@ func (_m *NotificationsService) SendNotification(ctx context.Context, webhookNot
 	ret := _m.Called(ctx, webhookNotificationReq)
 
 	var r0 *webhook.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, webhookclient.WebhookExtRequest) (*webhook.Response, error)); ok {
+		return rf(ctx, webhookNotificationReq)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, webhookclient.WebhookExtRequest) *webhook.Response); ok {
 		r0 = rf(ctx, webhookNotificationReq)
 	} else {
@@ -105,7 +118,6 @@ func (_m *NotificationsService) SendNotification(ctx context.Context, webhookNot
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, webhookclient.WebhookExtRequest) error); ok {
 		r1 = rf(ctx, webhookNotificationReq)
 	} else {
@@ -115,13 +127,12 @@ func (_m *NotificationsService) SendNotification(ctx context.Context, webhookNot
 	return r0, r1
 }
 
-type mockConstructorTestingTNewNotificationsService interface {
+// NewNotificationsService creates a new instance of NotificationsService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewNotificationsService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewNotificationsService creates a new instance of NotificationsService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewNotificationsService(t mockConstructorTestingTNewNotificationsService) *NotificationsService {
+}) *NotificationsService {
 	mock := &NotificationsService{}
 	mock.Mock.Test(t)
 

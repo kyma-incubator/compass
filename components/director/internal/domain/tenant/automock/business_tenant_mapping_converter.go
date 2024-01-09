@@ -83,6 +83,10 @@ func (_m *BusinessTenantMappingConverter) TenantAccessInputFromGraphQL(in graphq
 	ret := _m.Called(in)
 
 	var r0 *model.TenantAccess
+	var r1 error
+	if rf, ok := ret.Get(0).(func(graphql.TenantAccessInput) (*model.TenantAccess, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(graphql.TenantAccessInput) *model.TenantAccess); ok {
 		r0 = rf(in)
 	} else {
@@ -91,7 +95,6 @@ func (_m *BusinessTenantMappingConverter) TenantAccessInputFromGraphQL(in graphq
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(graphql.TenantAccessInput) error); ok {
 		r1 = rf(in)
 	} else {
@@ -122,6 +125,10 @@ func (_m *BusinessTenantMappingConverter) TenantAccessToGraphQL(in *model.Tenant
 	ret := _m.Called(in)
 
 	var r0 *graphql.TenantAccess
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.TenantAccess) (*graphql.TenantAccess, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.TenantAccess) *graphql.TenantAccess); ok {
 		r0 = rf(in)
 	} else {
@@ -130,7 +137,6 @@ func (_m *BusinessTenantMappingConverter) TenantAccessToGraphQL(in *model.Tenant
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.TenantAccess) error); ok {
 		r1 = rf(in)
 	} else {
@@ -156,13 +162,12 @@ func (_m *BusinessTenantMappingConverter) ToGraphQL(in *model.BusinessTenantMapp
 	return r0
 }
 
-type mockConstructorTestingTNewBusinessTenantMappingConverter interface {
+// NewBusinessTenantMappingConverter creates a new instance of BusinessTenantMappingConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewBusinessTenantMappingConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewBusinessTenantMappingConverter creates a new instance of BusinessTenantMappingConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBusinessTenantMappingConverter(t mockConstructorTestingTNewBusinessTenantMappingConverter) *BusinessTenantMappingConverter {
+}) *BusinessTenantMappingConverter {
 	mock := &BusinessTenantMappingConverter{}
 	mock.Mock.Test(t)
 

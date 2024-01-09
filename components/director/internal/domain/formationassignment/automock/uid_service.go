@@ -13,6 +13,10 @@ type UIDService struct {
 func (_m *UIDService) Generate() string {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for Generate")
+	}
+
 	var r0 string
 	if rf, ok := ret.Get(0).(func() string); ok {
 		r0 = rf()
@@ -23,13 +27,12 @@ func (_m *UIDService) Generate() string {
 	return r0
 }
 
-type mockConstructorTestingTNewUIDService interface {
+// NewUIDService creates a new instance of UIDService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewUIDService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewUIDService creates a new instance of UIDService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewUIDService(t mockConstructorTestingTNewUIDService) *UIDService {
+}) *UIDService {
 	mock := &UIDService{}
 	mock.Mock.Test(t)
 

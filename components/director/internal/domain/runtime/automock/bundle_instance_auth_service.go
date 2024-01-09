@@ -19,6 +19,10 @@ func (_m *BundleInstanceAuthService) ListByRuntimeID(ctx context.Context, runtim
 	ret := _m.Called(ctx, runtimeID)
 
 	var r0 []*model.BundleInstanceAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.BundleInstanceAuth, error)); ok {
+		return rf(ctx, runtimeID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.BundleInstanceAuth); ok {
 		r0 = rf(ctx, runtimeID)
 	} else {
@@ -27,7 +31,6 @@ func (_m *BundleInstanceAuthService) ListByRuntimeID(ctx context.Context, runtim
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, runtimeID)
 	} else {
@@ -51,13 +54,12 @@ func (_m *BundleInstanceAuthService) Update(ctx context.Context, instanceAuth *m
 	return r0
 }
 
-type mockConstructorTestingTNewBundleInstanceAuthService interface {
+// NewBundleInstanceAuthService creates a new instance of BundleInstanceAuthService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewBundleInstanceAuthService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewBundleInstanceAuthService creates a new instance of BundleInstanceAuthService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBundleInstanceAuthService(t mockConstructorTestingTNewBundleInstanceAuthService) *BundleInstanceAuthService {
+}) *BundleInstanceAuthService {
 	mock := &BundleInstanceAuthService{}
 	mock.Mock.Test(t)
 

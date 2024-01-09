@@ -25,6 +25,7 @@ type Destination struct {
 	URL                   string  `json:"url"`
 	Authentication        string  `json:"authentication"`
 	SubaccountID          string  `json:"subaccount_id"`
+	InstanceID            *string `json:"instanceId"`
 	FormationAssignmentID *string `json:"formationAssignmentID"`
 }
 

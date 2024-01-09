@@ -4,9 +4,11 @@ package automock
 
 import (
 	context "context"
-	sync "sync"
 
+	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
+
+	sync "sync"
 
 	systemfetcher "github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 )
@@ -17,11 +19,15 @@ type SystemsAPIClient struct {
 }
 
 // FetchSystemsForTenant provides a mock function with given fields: ctx, tenant, mutex
-func (_m *SystemsAPIClient) FetchSystemsForTenant(ctx context.Context, tenant string, mutex *sync.Mutex) ([]systemfetcher.System, error) {
+func (_m *SystemsAPIClient) FetchSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, mutex *sync.Mutex) ([]systemfetcher.System, error) {
 	ret := _m.Called(ctx, tenant, mutex)
 
 	var r0 []systemfetcher.System
-	if rf, ok := ret.Get(0).(func(context.Context, string, *sync.Mutex) []systemfetcher.System); ok {
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.BusinessTenantMapping, *sync.Mutex) ([]systemfetcher.System, error)); ok {
+		return rf(ctx, tenant, mutex)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *model.BusinessTenantMapping, *sync.Mutex) []systemfetcher.System); ok {
 		r0 = rf(ctx, tenant, mutex)
 	} else {
 		if ret.Get(0) != nil {
@@ -29,8 +35,7 @@ func (_m *SystemsAPIClient) FetchSystemsForTenant(ctx context.Context, tenant st
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *sync.Mutex) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *model.BusinessTenantMapping, *sync.Mutex) error); ok {
 		r1 = rf(ctx, tenant, mutex)
 	} else {
 		r1 = ret.Error(1)

@@ -375,6 +375,24 @@ func NewEmptyParentIDErrorWithMessage(message string) error {
 	}
 }
 
+// NewNoScheduledOperationsError missing godoc
+func NewNoScheduledOperationsError() error {
+	return Error{
+		errorCode: NoScheduledOperations,
+		Message:   NoScheduledOperationsMsg,
+		arguments: map[string]string{},
+	}
+}
+
+// NewOperationInProgressError missing godoc
+func NewOperationInProgressError(operationID string) error {
+	return Error{
+		errorCode: OperationInProgress,
+		Message:   fmt.Sprintf(OperationInProgressMsg, operationID),
+		arguments: map[string]string{},
+	}
+}
+
 // IsValueNotFoundInConfiguration missing godoc
 func IsValueNotFoundInConfiguration(err error) bool {
 	if customErr, ok := err.(Error); ok {
@@ -410,6 +428,11 @@ func IsConcurrentUpdate(err error) bool {
 // IsNewInvalidOperationError missing godoc
 func IsNewInvalidOperationError(err error) bool {
 	return ErrorCode(err) == InvalidOperation
+}
+
+// IsUnauthorizedError missing godoc
+func IsUnauthorizedError(err error) bool {
+	return ErrorCode(err) == Unauthorized
 }
 
 // IsNotFoundError missing godoc
@@ -463,6 +486,16 @@ func IsCannotUnassignObjectComingFromASAError(err error) bool {
 // IsEmptyParentIDError checks if the error code is EmptyParentID
 func IsEmptyParentIDError(err error) bool {
 	return ErrorCode(err) == EmptyParentID
+}
+
+// IsNoScheduledOperationsError checks if the error code is NoScheduledOperations
+func IsNoScheduledOperationsError(err error) bool {
+	return ErrorCode(err) == NoScheduledOperations
+}
+
+// IsOperationInProgressError checks if the error code is OperationInProgress
+func IsOperationInProgressError(err error) bool {
+	return ErrorCode(err) == OperationInProgress
 }
 
 func sortMapKey(m map[string]string) []string {

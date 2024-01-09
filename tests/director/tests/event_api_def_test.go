@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
@@ -33,7 +35,7 @@ func TestEventDefinitionInApplication(t *testing.T) {
 
 	assert.Equal(t, 1, eventDefPage.TotalCount)
 	assert.Equal(t, event.ID, eventDefPage.Data[0].ID)
-	saveExample(t, queryEventForApplication.Query(), "query event definition for application")
+	example.SaveExample(t, queryEventForApplication.Query(), "query event definition for application")
 }
 
 func TestAddEventDefinitionToApplication(t *testing.T) {
@@ -56,7 +58,7 @@ func TestAddEventDefinitionToApplication(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, eventDef.ID)
-	saveExample(t, eventAddRequest.Query(), "add event definition to application")
+	example.SaveExample(t, eventAddRequest.Query(), "add event definition to application")
 }
 
 func TestUpdateEventDefinitionToApplication(t *testing.T) {
@@ -84,5 +86,5 @@ func TestUpdateEventDefinitionToApplication(t *testing.T) {
 
 	assert.Equal(t, newName, updatedEvent.Name)
 	assert.NotEqual(t, addedEvent.Name, updatedEvent.Name)
-	saveExample(t, eventUpdateRequest.Query(), "update event definition to application")
+	example.SaveExample(t, eventUpdateRequest.Query(), "update event definition to application")
 }

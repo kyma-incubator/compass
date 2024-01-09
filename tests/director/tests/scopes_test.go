@@ -22,7 +22,7 @@ func TestScopesAuthorization(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixRuntimeInput("runtime-test")
+	input := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-test")
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)

@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -51,7 +53,7 @@ func TestAddAPIToBundle(t *testing.T) {
 	assert.Equal(t, input.TargetURL, *appWithBaseURL.BaseURL)
 
 	assertions.AssertAPI(t, []*graphql.APIDefinitionInput{&input}, []*graphql.APIDefinitionExt{&actualApi})
-	saveExample(t, req.Query(), "add api definition to bundle")
+	example.SaveExample(t, req.Query(), "add api definition to bundle")
 }
 
 func TestAddAPIToBundleForApplicationWithAlreadySetBaseURL(t *testing.T) {
@@ -86,7 +88,7 @@ func TestAddAPIToBundleForApplicationWithAlreadySetBaseURL(t *testing.T) {
 	assert.NotEqual(t, input.TargetURL, *appWithBaseURL.BaseURL)
 
 	assertions.AssertAPI(t, []*graphql.APIDefinitionInput{&input}, []*graphql.APIDefinitionExt{&actualApi})
-	saveExample(t, req.Query(), "add api definition to bundle")
+	example.SaveExample(t, req.Query(), "add api definition to bundle")
 }
 
 func TestManageAPIInBundle(t *testing.T) {
@@ -118,7 +120,7 @@ func TestManageAPIInBundle(t *testing.T) {
 
 	assert.Equal(t, updatedAPI.ID, api.ID)
 	assert.Equal(t, updatedAPI.Name, "new-name")
-	saveExample(t, req.Query(), "update api definition")
+	example.SaveExample(t, req.Query(), "update api definition")
 
 	var deletedAPI graphql.APIDefinitionExt
 	req = fixtures.FixDeleteAPIRequest(api.ID)
@@ -126,7 +128,7 @@ func TestManageAPIInBundle(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, api.ID, deletedAPI.ID)
-	saveExample(t, req.Query(), "delete api definition")
+	example.SaveExample(t, req.Query(), "delete api definition")
 }
 
 func TestAddEventDefinitionToBundle(t *testing.T) {
@@ -154,7 +156,7 @@ func TestAddEventDefinitionToBundle(t *testing.T) {
 	require.NoError(t, err)
 
 	assertions.AssertEventsAPI(t, []*graphql.EventDefinitionInput{&input}, []*graphql.EventAPIDefinitionExt{&actualEvent})
-	saveExample(t, req.Query(), "add event definition to bundle")
+	example.SaveExample(t, req.Query(), "add event definition to bundle")
 }
 
 func TestManageEventDefinitionInBundle(t *testing.T) {
@@ -186,7 +188,7 @@ func TestManageEventDefinitionInBundle(t *testing.T) {
 
 	assert.Equal(t, updatedEvent.ID, event.ID)
 	assert.Equal(t, updatedEvent.Name, "new-name")
-	saveExample(t, req.Query(), "update event definition")
+	example.SaveExample(t, req.Query(), "update event definition")
 
 	var deletedEvent graphql.EventAPIDefinitionExt
 	req = fixtures.FixDeleteEventAPIRequest(event.ID)
@@ -194,7 +196,7 @@ func TestManageEventDefinitionInBundle(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, event.ID, deletedEvent.ID)
-	saveExample(t, req.Query(), "delete event definition")
+	example.SaveExample(t, req.Query(), "delete event definition")
 }
 
 func TestAddDocumentToBundle(t *testing.T) {
@@ -222,7 +224,7 @@ func TestAddDocumentToBundle(t *testing.T) {
 	require.NoError(t, err)
 
 	assertions.AssertDocuments(t, []*graphql.DocumentInput{&input}, []*graphql.DocumentExt{&actualDocument})
-	saveExample(t, req.Query(), "add document to bundle")
+	example.SaveExample(t, req.Query(), "add document to bundle")
 }
 
 func TestManageDocumentInBundle(t *testing.T) {
@@ -248,7 +250,7 @@ func TestManageDocumentInBundle(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, document.ID, deletedDocument.ID)
-	saveExample(t, req.Query(), "delete document")
+	example.SaveExample(t, req.Query(), "delete document")
 }
 
 func TestAPIDefinitionInBundle(t *testing.T) {
@@ -275,7 +277,7 @@ func TestAPIDefinitionInBundle(t *testing.T) {
 
 	actualApi := app.Bundle.APIDefinition
 	assert.Equal(t, api.ID, actualApi.ID)
-	saveExample(t, queryApiForBndl.Query(), "query api definition")
+	example.SaveExample(t, queryApiForBndl.Query(), "query api definition")
 
 }
 
@@ -303,7 +305,7 @@ func TestEventDefinitionInBundle(t *testing.T) {
 
 	actualEvent := app.Bundle.EventDefinition
 	assert.Equal(t, event.ID, actualEvent.ID)
-	saveExample(t, queryEventForBndl.Query(), "query event definition")
+	example.SaveExample(t, queryEventForBndl.Query(), "query event definition")
 
 }
 
@@ -331,7 +333,7 @@ func TestDocumentInBundle(t *testing.T) {
 
 	actualDoc := app.Bundle.Document
 	assert.Equal(t, doc.ID, actualDoc.ID)
-	saveExample(t, queryDocForBndl.Query(), "query document")
+	example.SaveExample(t, queryDocForBndl.Query(), "query document")
 }
 
 func TestAPIDefinitionsInBundle(t *testing.T) {
@@ -363,7 +365,7 @@ func TestAPIDefinitionsInBundle(t *testing.T) {
 	apis := app.Bundle.APIDefinitions
 	require.Equal(t, 2, apis.TotalCount)
 	assertions.AssertAPI(t, []*graphql.APIDefinitionInput{&inputA, &inputB}, apis.Data)
-	saveExample(t, queryApisForBndl.Query(), "query api definitions")
+	example.SaveExample(t, queryApisForBndl.Query(), "query api definitions")
 }
 
 func TestEventDefinitionsInBundle(t *testing.T) {
@@ -396,7 +398,7 @@ func TestEventDefinitionsInBundle(t *testing.T) {
 	events := app.Bundle.EventDefinitions
 	require.Equal(t, 2, events.TotalCount)
 	assertions.AssertEventsAPI(t, []*graphql.EventDefinitionInput{&inputA, &inputB}, events.Data)
-	saveExample(t, queryEventsForBndl.Query(), "query event definitions")
+	example.SaveExample(t, queryEventsForBndl.Query(), "query event definitions")
 }
 
 func TestDocumentsInBundle(t *testing.T) {
@@ -429,7 +431,7 @@ func TestDocumentsInBundle(t *testing.T) {
 	docs := app.Bundle.Documents
 	require.Equal(t, 2, docs.TotalCount)
 	assertions.AssertDocuments(t, []*graphql.DocumentInput{&inputA, &inputB}, docs.Data)
-	saveExample(t, queryDocsForBndl.Query(), "query documents")
+	example.SaveExample(t, queryDocsForBndl.Query(), "query documents")
 }
 
 func TestAddBundle(t *testing.T) {
@@ -459,7 +461,7 @@ func TestAddBundle(t *testing.T) {
 	assertions.AssertBundle(t, &bndlInput, &output)
 	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, output.ID)
 
-	saveExample(t, addBndlRequest.Query(), "add bundle")
+	example.SaveExample(t, addBndlRequest.Query(), "add bundle")
 
 	bundleRequest := fixtures.FixBundleRequest(application.ID, output.ID)
 	bndlFromAPI := graphql.ApplicationExt{}
@@ -477,7 +479,7 @@ func TestAddBundle(t *testing.T) {
 	assert.NotNil(t, appWithBaseURL.BaseURL)
 	assert.Equal(t, expectedTargetUrl, str.PtrStrToStr(appWithBaseURL.BaseURL))
 
-	saveExample(t, bundleRequest.Query(), "query bundle")
+	example.SaveExample(t, bundleRequest.Query(), "query bundle")
 }
 
 func TestAddBundleForApplicationWithAlreadySetBaseURL(t *testing.T) {
@@ -549,7 +551,7 @@ func TestQueryBundles(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 2, len(bndlsFromAPI.Bundles.Data))
 
-	saveExample(t, bundlesRequest.Query(), "query bundles")
+	example.SaveExample(t, bundlesRequest.Query(), "query bundles")
 }
 
 func TestUpdateBundle(t *testing.T) {
@@ -579,7 +581,7 @@ func TestUpdateBundle(t *testing.T) {
 	require.NotEmpty(t, output.ID)
 
 	require.NotEmpty(t, output.Name)
-	saveExample(t, updateBndlReq.Query(), "update bundle")
+	example.SaveExample(t, updateBndlReq.Query(), "update bundle")
 }
 
 func TestDeleteBundle(t *testing.T) {
@@ -604,5 +606,5 @@ func TestDeleteBundle(t *testing.T) {
 	require.NotEmpty(t, output.ID)
 
 	require.NotEmpty(t, output.Name)
-	saveExample(t, pkdDeleteReq.Query(), "delete bundle")
+	example.SaveExample(t, pkdDeleteReq.Query(), "delete bundle")
 }

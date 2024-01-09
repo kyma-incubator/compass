@@ -19,6 +19,10 @@ type ConstraintEngine struct {
 func (_m *ConstraintEngine) EnforceConstraints(ctx context.Context, location formationconstraint.JoinPointLocation, details formationconstraint.JoinPointDetails, formationTemplateID string) error {
 	ret := _m.Called(ctx, location, details, formationTemplateID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for EnforceConstraints")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, formationconstraint.JoinPointLocation, formationconstraint.JoinPointDetails, string) error); ok {
 		r0 = rf(ctx, location, details, formationTemplateID)
@@ -29,13 +33,12 @@ func (_m *ConstraintEngine) EnforceConstraints(ctx context.Context, location for
 	return r0
 }
 
-type mockConstructorTestingTNewConstraintEngine interface {
+// NewConstraintEngine creates a new instance of ConstraintEngine. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewConstraintEngine(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewConstraintEngine creates a new instance of ConstraintEngine. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewConstraintEngine(t mockConstructorTestingTNewConstraintEngine) *ConstraintEngine {
+}) *ConstraintEngine {
 	mock := &ConstraintEngine{}
 	mock.Mock.Test(t)
 

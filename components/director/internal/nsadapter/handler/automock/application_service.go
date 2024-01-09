@@ -22,13 +22,16 @@ func (_m *ApplicationService) CreateFromTemplate(ctx context.Context, in model.A
 	ret := _m.Called(ctx, in, appTemplateID)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput, *string) (string, error)); ok {
+		return rf(ctx, in, appTemplateID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput, *string) string); ok {
 		r0 = rf(ctx, in, appTemplateID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationRegisterInput, *string) error); ok {
 		r1 = rf(ctx, in, appTemplateID)
 	} else {
@@ -43,6 +46,10 @@ func (_m *ApplicationService) GetLabel(ctx context.Context, applicationID string
 	ret := _m.Called(ctx, applicationID, key)
 
 	var r0 *model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Label, error)); ok {
+		return rf(ctx, applicationID, key)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Label); ok {
 		r0 = rf(ctx, applicationID, key)
 	} else {
@@ -51,7 +58,6 @@ func (_m *ApplicationService) GetLabel(ctx context.Context, applicationID string
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, applicationID, key)
 	} else {
@@ -66,6 +72,10 @@ func (_m *ApplicationService) GetSccSystem(ctx context.Context, sccSubaccount st
 	ret := _m.Called(ctx, sccSubaccount, locationID, virtualHost)
 
 	var r0 *model.Application
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.Application, error)); ok {
+		return rf(ctx, sccSubaccount, locationID, virtualHost)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.Application); ok {
 		r0 = rf(ctx, sccSubaccount, locationID, virtualHost)
 	} else {
@@ -74,7 +84,6 @@ func (_m *ApplicationService) GetSccSystem(ctx context.Context, sccSubaccount st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, sccSubaccount, locationID, virtualHost)
 	} else {
@@ -89,6 +98,10 @@ func (_m *ApplicationService) ListBySCC(ctx context.Context, filter *labelfilter
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*model.ApplicationWithLabel
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error)); ok {
+		return rf(ctx, filter)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *labelfilter.LabelFilter) []*model.ApplicationWithLabel); ok {
 		r0 = rf(ctx, filter)
 	} else {
@@ -97,7 +110,6 @@ func (_m *ApplicationService) ListBySCC(ctx context.Context, filter *labelfilter
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, filter)
 	} else {
@@ -112,6 +124,10 @@ func (_m *ApplicationService) ListSCCs(ctx context.Context) ([]*model.SccMetadat
 	ret := _m.Called(ctx)
 
 	var r0 []*model.SccMetadata
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.SccMetadata, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []*model.SccMetadata); ok {
 		r0 = rf(ctx)
 	} else {
@@ -120,7 +136,6 @@ func (_m *ApplicationService) ListSCCs(ctx context.Context) ([]*model.SccMetadat
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -172,13 +187,12 @@ func (_m *ApplicationService) Upsert(ctx context.Context, in model.ApplicationRe
 	return r0
 }
 
-type mockConstructorTestingTNewApplicationService interface {
+// NewApplicationService creates a new instance of ApplicationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplicationService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplicationService creates a new instance of ApplicationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationService(t mockConstructorTestingTNewApplicationService) *ApplicationService {
+}) *ApplicationService {
 	mock := &ApplicationService{}
 	mock.Mock.Test(t)
 

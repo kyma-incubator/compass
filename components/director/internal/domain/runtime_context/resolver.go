@@ -14,6 +14,7 @@ import (
 )
 
 // RuntimeContextService missing godoc
+//
 //go:generate mockery --name=RuntimeContextService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeContextService interface {
 	Create(ctx context.Context, in model.RuntimeContextInput) (string, error)
@@ -24,6 +25,7 @@ type RuntimeContextService interface {
 }
 
 // RuntimeContextConverter missing godoc
+//
 //go:generate mockery --name=RuntimeContextConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeContextConverter interface {
 	ToGraphQL(in *model.RuntimeContext) *graphql.RuntimeContext

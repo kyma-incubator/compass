@@ -23,19 +23,26 @@ const (
 	designTimeDestName               = "test-design-time-dest-name"
 	basicDestName                    = "test-basic-dest-name"
 	samlAssertionDestName            = "test-saml-assertion-dest-name"
+	samlAssertionDestURL             = "test-saml-assertion-dest-url"
 	clientCertAuthDestName           = "test-client-cert-auth-dest-name"
+	oauth2ClientCredsDestName        = "test-oauth2-client-creds-dest-name"
 	destinationDescription           = "test-dest-description"
 	destinationTypeHTTP              = string(destinationcreatorpkg.TypeHTTP)
 	destinationProxyTypeInternet     = string(destinationcreatorpkg.ProxyTypeInternet)
-	destinationURL                   = "http://dest-test-url"
+	destinationURL                   = "https://dest-test-url"
 	invalidDestAuthType              = "invalidDestAuthTypeValue"
 	destinationInternalSubaccountID  = "destination-internal-subaccount-id"
 	destinationExternalSubaccountID  = "destination-external-subaccount-id"
 	destinationExternalSubaccountID2 = "destination-external-subaccount-id-2"
 	destinationTenantName            = "testDestinationTenantName"
+	destinationInstanceID            = "destination-instance"
 	basicDestURL                     = "basic-url"
 	basicDestUser                    = "basic-user"
 	basicDestPassword                = "basic-pwd"
+	oauth2ClientCredsURL             = "oauth2-url"
+	oauth2ClientCredsTokenURL        = "oauth2-token-url"
+	oauth2ClientCredsClientID        = "oauth2-client-id"
+	oauth2ClientCredsClientSecret    = "oauth2-client-secret"
 
 	// Destination Certificate constants
 	certificateName            = "testCertificateName"
@@ -70,8 +77,10 @@ var (
 	emptyCtx = context.Background()
 	testErr  = errors.New("Test Error")
 
-	appTemplateID = "testAppTemplateID"
-	appBaseURL    = "http://app-test-base-url"
+	appTemplateID   = "testAppTemplateID"
+	appBaseURL      = "http://app-test-base-url"
+	appEmptyBaseURL = ""
+	testURLPath     = "/test/path"
 
 	TestEmptyErrorValueRawJSON = json.RawMessage(`\"\"`)
 	TestConfigValueRawJSON     = json.RawMessage(`{"configKey":"configValue"}`)
@@ -125,6 +134,14 @@ var (
 		BaseURL:               &appBaseURL,
 		ApplicationTemplateID: &appTemplateID,
 	}
+	testAppWithEmptyBaseURL = &model.Application{
+		BaseEntity: &model.BaseEntity{
+			ID: appID,
+		},
+		Name:                  appName,
+		BaseURL:               &appEmptyBaseURL,
+		ApplicationTemplateID: &appTemplateID,
+	}
 	testAppWithoutTmplID = &model.Application{
 		BaseEntity: &model.BaseEntity{
 			ID: appID,
@@ -143,14 +160,14 @@ func fixDestinationConfig() *destinationcreator.Config {
 		CorrelationIDsKey: "testCorrelationIDsKey",
 		DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
 			BaseURL:              "testDestinationBaseURL/",
-			Path:                 "testDestinationPath",
+			SubaccountLevelPath:  "testDestinationPath",
 			RegionParam:          "testDestinationRegionParam",
 			SubaccountIDParam:    "testDestinationSubaccountIDParam",
 			DestinationNameParam: "testDestinationNameParam",
 		},
 		CertificateAPIConfig: &destinationcreator.CertificateAPIConfig{
 			BaseURL:              "testCertificateBaseURL/",
-			Path:                 "testCertificatePath",
+			SubaccountLevelPath:  "testCertificatePath",
 			RegionParam:          "testCertificateRegionParam",
 			SubaccountIDParam:    "testCertificateSubaccountIDParam",
 			CertificateNameParam: "testCertificateNameParam",
@@ -158,6 +175,14 @@ func fixDestinationConfig() *destinationcreator.Config {
 			CommonNameKey:        certificateCommonNameKey,
 			CertificateChainKey:  certificateChainKey,
 		},
+	}
+}
+
+func fixDestinationInfo(authType, destType, url string) *destinationcreatorpkg.DestinationInfo {
+	return &destinationcreatorpkg.DestinationInfo{
+		AuthenticationType: destinationcreatorpkg.AuthType(authType),
+		Type:               destinationcreatorpkg.Type(destType),
+		URL:                url,
 	}
 }
 
@@ -181,6 +206,12 @@ func fixSAMLAssertionDestinationsDetails() []operators.Destination {
 
 func fixClientCertAuthDestinationDetails() operators.Destination {
 	return fixDestinationDetails(clientCertAuthDestName, string(destinationcreatorpkg.AuthTypeClientCertificate), destinationExternalSubaccountID)
+}
+
+func fixOAuth2ClientCredsDestinationDetails() operators.Destination {
+	dest := fixDestinationDetails(oauth2ClientCredsDestName, string(destinationcreatorpkg.AuthTypeOAuth2ClientCredentials), destinationExternalSubaccountID)
+	dest.TokenServiceURLType = string(destinationcreatorpkg.DedicatedTokenServiceURLType)
+	return dest
 }
 
 func fixDestinationsDetailsWithoutSubaccountID() []operators.Destination {
@@ -219,6 +250,15 @@ func fixBasicAuthCreds(url, username, password string) operators.BasicAuthentica
 func fixSAMLAssertionAuthCreds(url string) *operators.SAMLAssertionAuthentication {
 	return &operators.SAMLAssertionAuthentication{
 		URL: url,
+	}
+}
+
+func fixOAuth2ClientCreds(url, tokenServiceURL, clientID, clientSecret string) *operators.OAuth2ClientCredentialsAuthentication {
+	return &operators.OAuth2ClientCredentialsAuthentication{
+		URL:             url,
+		TokenServiceURL: tokenServiceURL,
+		ClientID:        clientID,
+		ClientSecret:    clientSecret,
 	}
 }
 

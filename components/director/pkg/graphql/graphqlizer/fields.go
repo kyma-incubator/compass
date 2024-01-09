@@ -109,12 +109,35 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		error
 		status {condition timestamp}
 		webhooks {%s}
+		integrationDependencies {%s}
 		healthCheckURL
 		bundles {%s}
 		auths {%s}
 		eventingConfiguration { defaultURL }
-	`, fp.ForWebhooks(), fp.Page(fp.ForBundle()), fp.ForSystemAuth()),
+	`, fp.ForWebhooks(), fp.Page(fp.ForIntegrationDependency()), fp.Page(fp.ForBundle()), fp.ForSystemAuth()),
 		ctx, []string{"Application.bundle", "Application.apiDefinition", "Application.eventDefinition"})
+}
+
+// ForApplicationMinimal missing godoc
+func (fp *GqlFieldsProvider) ForApplicationMinimal(ctx ...FieldCtx) string {
+	return `
+		id
+		name
+		providerName
+		description
+		baseUrl
+		systemNumber
+		systemStatus
+		integrationSystemID
+		applicationTemplateID
+		labels
+		deletedAt
+		updatedAt
+		error
+		status {condition timestamp}
+		healthCheckURL
+		eventingConfiguration { defaultURL }
+	`
 }
 
 // ForApplicationTemplate missing godoc
@@ -128,6 +151,8 @@ func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
 		webhooks {%s}
 		labels
 		accessLevel
+		createdAt
+		updatedAt
 	`, fp.ForPlaceholders(), fp.ForWebhooks())
 }
 
@@ -163,6 +188,7 @@ func (fp *GqlFieldsProvider) ForFormationTemplate() string {
 		runtimeArtifactKind
         leadingProductIDs
         supportsReset
+		discoveryConsumers
         webhooks {%s}
 	`, fp.ForWebhooks())
 }
@@ -177,6 +203,8 @@ func (fp *GqlFieldsProvider) ForFormationTemplateWithConstraints() string {
 		runtimeTypeDisplayName	
 		runtimeArtifactKind
         leadingProductIDs
+        supportsReset
+		discoveryConsumers
         webhooks {%s}
 		formationConstraints {%s}
 	`, fp.ForWebhooks(), fp.ForFormationConstraint())
@@ -221,6 +249,7 @@ func (fp *GqlFieldsProvider) ForFormationConstraint() string {
 	return `
 			id
 			name
+            description
 			constraintType
 			targetOperation
 			operator
@@ -228,6 +257,8 @@ func (fp *GqlFieldsProvider) ForFormationConstraint() string {
 			resourceSubtype
 			inputTemplate
 			constraintScope
+            priority
+            createdAt
 	`
 }
 
@@ -749,5 +780,36 @@ func (fp *GqlFieldsProvider) ForTenantAccess() string {
 		resourceID
         resourceType
 		owner
+	`
+}
+
+// ForIntegrationDependency returns integration dependency fields
+func (fp *GqlFieldsProvider) ForIntegrationDependency() string {
+	return fmt.Sprintf(`
+		id
+		name
+		description
+		ordID
+		partOfPackage
+		visibility
+		releaseStatus
+		mandatory
+		version {value}
+		aspects {%s}
+		`, fp.ForAspects())
+}
+
+// ForAspects returns aspects fields
+func (fp *GqlFieldsProvider) ForAspects() string {
+	return `
+		id
+		name
+		description
+		mandatory
+		apiResources {ordID}
+		eventResources {
+			ordID
+			subset {eventType}
+		}
 	`
 }

@@ -19,13 +19,16 @@ func (_m *ApplicationTemplateConverter) ApplicationFromTemplateInputFromGraphQL(
 	ret := _m.Called(appTemplate, in)
 
 	var r0 model.ApplicationFromTemplateInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.ApplicationTemplate, graphql.ApplicationFromTemplateInput) (model.ApplicationFromTemplateInput, error)); ok {
+		return rf(appTemplate, in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.ApplicationTemplate, graphql.ApplicationFromTemplateInput) model.ApplicationFromTemplateInput); ok {
 		r0 = rf(appTemplate, in)
 	} else {
 		r0 = ret.Get(0).(model.ApplicationFromTemplateInput)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.ApplicationTemplate, graphql.ApplicationFromTemplateInput) error); ok {
 		r1 = rf(appTemplate, in)
 	} else {
@@ -35,13 +38,12 @@ func (_m *ApplicationTemplateConverter) ApplicationFromTemplateInputFromGraphQL(
 	return r0, r1
 }
 
-type mockConstructorTestingTNewApplicationTemplateConverter interface {
+// NewApplicationTemplateConverter creates a new instance of ApplicationTemplateConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplicationTemplateConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplicationTemplateConverter creates a new instance of ApplicationTemplateConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationTemplateConverter(t mockConstructorTestingTNewApplicationTemplateConverter) *ApplicationTemplateConverter {
+}) *ApplicationTemplateConverter {
 	mock := &ApplicationTemplateConverter{}
 	mock.Mock.Test(t)
 

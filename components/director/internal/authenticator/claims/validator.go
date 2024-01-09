@@ -25,6 +25,7 @@ import (
 )
 
 // RuntimeService is used to interact with runtimes.
+//
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	GetLabel(context.Context, string, string) (*model.Label, error)
@@ -32,24 +33,28 @@ type RuntimeService interface {
 }
 
 // RuntimeCtxService is used to interact with runtime contexts.
+//
 //go:generate mockery --name=RuntimeCtxService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeCtxService interface {
 	ListByFilter(ctx context.Context, runtimeID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error)
 }
 
 // ApplicationTemplateService is used to interact with application templates.
+//
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
 	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
 }
 
 // ApplicationService is responsible for the service-layer Application operations.
+//
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	ListAll(ctx context.Context) ([]*model.Application, error)
 }
 
 // IntegrationSystemService is used to check if integration system with a given ID exists.
+//
 //go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationSystemService interface {
 	Exists(context.Context, string) (bool, error)
@@ -98,7 +103,7 @@ func (v *validator) Validate(ctx context.Context, claims idtokenclaims.Claims) e
 
 	log.C(ctx).Infof("Consumer-Provider call by %s on behalf of REDACTED_%x. Proceeding with double authentication crosscheck...", claims.Tenant[tenantmapping.ProviderTenantKey], sha256.Sum256([]byte(claims.Tenant[tenantmapping.ConsumerTenantKey])))
 	switch claims.ConsumerType {
-	case consumer.Runtime, consumer.ExternalCertificate, consumer.SuperAdmin: // SuperAdmin consumer is needed only for testing purposes
+	case consumer.Runtime, consumer.ExternalCertificate:
 		errRuntimeConsumer := v.validateRuntimeConsumer(ctx, claims)
 		if errRuntimeConsumer == nil {
 			return nil
@@ -108,8 +113,6 @@ func (v *validator) Validate(ctx context.Context, claims idtokenclaims.Claims) e
 			return nil
 		}
 		return apperrors.NewUnauthorizedError(fmt.Sprintf("subscription record not found neither for application: %q nor for runtime: %q", errAppProvider.Error(), errRuntimeConsumer.Error()))
-	case consumer.IntegrationSystem:
-		return v.validateIntegrationSystemConsumer(ctx, claims)
 	default:
 		return apperrors.NewUnauthorizedError(fmt.Sprintf("consumer with type %s is not supported", claims.ConsumerType))
 	}
@@ -242,20 +245,4 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims idto
 	}
 
 	return tx.Commit()
-}
-
-func (v *validator) validateIntegrationSystemConsumer(ctx context.Context, claims idtokenclaims.Claims) error {
-	if claims.Tenant[tenantmapping.ProviderExternalTenantKey] == claims.ConsumerID {
-		return nil // consumer ID is a subaccount tenant
-	}
-
-	exists, err := v.intSystemSvc.Exists(ctx, claims.ConsumerID)
-	if err != nil {
-		return errors.Wrapf(err, "while checking if integration system with ID %s exists", claims.ConsumerID)
-	}
-	if !exists {
-		return apperrors.NewUnauthorizedError(fmt.Sprintf("integration system with ID %s does not exist", claims.ConsumerID))
-	}
-
-	return nil
 }

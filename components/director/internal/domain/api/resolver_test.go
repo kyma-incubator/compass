@@ -2099,3 +2099,137 @@ func TestResolver_UpdateAPIDefinitionForApplication(t *testing.T) {
 		})
 	}
 }
+
+func TestResolver_Spec(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("test error")
+
+	apiID := "apiID"
+	specID := "specID"
+
+	dataBytes := "data"
+	modelSpec := &model.Spec{
+		ID:   specID,
+		Data: &dataBytes,
+	}
+
+	clob := graphql.CLOB(dataBytes)
+	gqlAPISpec := &graphql.APISpec{
+		Data: &clob,
+	}
+
+	apiDef := &graphql.APIDefinition{
+		BaseEntity: &graphql.BaseEntity{
+			ID: apiID,
+		},
+	}
+
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	testCases := []struct {
+		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn       func() *automock.SpecService
+		ConvFn          func() *automock.SpecConverter
+		ExpectedAPISpec *graphql.APISpec
+		ExpectedErr     error
+	}{
+		{
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, apiID).Return(modelSpec, nil).Once()
+				return svc
+			},
+			ConvFn: func() *automock.SpecConverter {
+				conv := &automock.SpecConverter{}
+				conv.On("ToGraphQLAPISpec", modelSpec).Return(gqlAPISpec, nil).Once()
+				return conv
+			},
+			ExpectedAPISpec: gqlAPISpec,
+			ExpectedErr:     nil,
+		},
+		{
+			Name:            "Error when starting transaction",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			ServiceFn:       emptySpecService,
+			ConvFn:          emptySpecConverter,
+			ExpectedErr:     testErr,
+		},
+		{
+			Name:            "Error when getting Spec by APIDefinition ID",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, apiID).Return(nil, testErr).Once()
+				return svc
+			},
+			ConvFn:      emptySpecConverter,
+			ExpectedErr: testErr,
+		},
+		{
+			Name:            "Error when converting Spec model to graphQL",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, apiID).Return(modelSpec, nil).Once()
+				return svc
+			},
+			ConvFn: func() *automock.SpecConverter {
+				conv := &automock.SpecConverter{}
+				conv.On("ToGraphQLAPISpec", modelSpec).Return(nil, testErr).Once()
+				return conv
+			},
+			ExpectedErr: testErr,
+		},
+		{
+			Name:            "Error when committing transaction",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, apiID).Return(modelSpec, nil).Once()
+				return svc
+			},
+			ConvFn: func() *automock.SpecConverter {
+				conv := &automock.SpecConverter{}
+				conv.On("ToGraphQLAPISpec", modelSpec).Return(gqlAPISpec, nil).Once()
+				return conv
+			},
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			svc := testCase.ServiceFn()
+			conv := testCase.ConvFn()
+			persist, transact := testCase.TransactionerFn()
+			resolver := api.NewResolver(transact, nil, nil, nil, nil, nil, nil, svc, conv, nil)
+
+			// WHEN
+			result, err := resolver.Spec(context.TODO(), apiDef)
+
+			// then
+			assert.Equal(t, testCase.ExpectedAPISpec, result)
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				require.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, persist, transact, svc, conv)
+		})
+	}
+
+	t.Run("Error when APIDefinition object is nil", func(t *testing.T) {
+		resolver := api.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		result, err := resolver.Spec(context.TODO(), nil)
+
+		require.Nil(t, result)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "API cannot be empty")
+	})
+}

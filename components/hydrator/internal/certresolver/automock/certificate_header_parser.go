@@ -45,13 +45,12 @@ func (_m *CertificateHeaderParser) GetIssuer() string {
 	return r0
 }
 
-type mockConstructorTestingTNewCertificateHeaderParser interface {
+// NewCertificateHeaderParser creates a new instance of CertificateHeaderParser. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewCertificateHeaderParser(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewCertificateHeaderParser creates a new instance of CertificateHeaderParser. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewCertificateHeaderParser(t mockConstructorTestingTNewCertificateHeaderParser) *CertificateHeaderParser {
+}) *CertificateHeaderParser {
 	mock := &CertificateHeaderParser{}
 	mock.Mock.Test(t)
 

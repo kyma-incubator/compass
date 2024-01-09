@@ -2,6 +2,7 @@ package retry
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -35,5 +36,10 @@ func defaultOptions() []retry.Option {
 		retry.Attempts(2),
 		retry.DelayType(retry.FixedDelay),
 		retry.Delay(100 * time.Millisecond),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "connection reset by peer")
+		}),
 	}
 }

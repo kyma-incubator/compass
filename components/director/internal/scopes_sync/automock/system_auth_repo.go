@@ -21,6 +21,10 @@ func (_m *SystemAuthRepo) ListGlobalWithConditions(ctx context.Context, conditio
 	ret := _m.Called(ctx, conditions)
 
 	var r0 []model.SystemAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, repo.Conditions) ([]model.SystemAuth, error)); ok {
+		return rf(ctx, conditions)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, repo.Conditions) []model.SystemAuth); ok {
 		r0 = rf(ctx, conditions)
 	} else {
@@ -29,7 +33,6 @@ func (_m *SystemAuthRepo) ListGlobalWithConditions(ctx context.Context, conditio
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, repo.Conditions) error); ok {
 		r1 = rf(ctx, conditions)
 	} else {
@@ -39,13 +42,12 @@ func (_m *SystemAuthRepo) ListGlobalWithConditions(ctx context.Context, conditio
 	return r0, r1
 }
 
-type mockConstructorTestingTNewSystemAuthRepo interface {
+// NewSystemAuthRepo creates a new instance of SystemAuthRepo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSystemAuthRepo(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSystemAuthRepo creates a new instance of SystemAuthRepo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSystemAuthRepo(t mockConstructorTestingTNewSystemAuthRepo) *SystemAuthRepo {
+}) *SystemAuthRepo {
 	mock := &SystemAuthRepo{}
 	mock.Mock.Test(t)
 

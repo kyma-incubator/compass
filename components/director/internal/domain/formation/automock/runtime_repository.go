@@ -22,6 +22,10 @@ func (_m *RuntimeRepository) GetByFiltersAndIDUsingUnion(ctx context.Context, te
 	ret := _m.Called(ctx, tenant, id, filter)
 
 	var r0 *model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []*labelfilter.LabelFilter) (*model.Runtime, error)); ok {
+		return rf(ctx, tenant, id, filter)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, []*labelfilter.LabelFilter) *model.Runtime); ok {
 		r0 = rf(ctx, tenant, id, filter)
 	} else {
@@ -30,7 +34,6 @@ func (_m *RuntimeRepository) GetByFiltersAndIDUsingUnion(ctx context.Context, te
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, tenant, id, filter)
 	} else {
@@ -45,6 +48,10 @@ func (_m *RuntimeRepository) GetByID(ctx context.Context, tenant string, id stri
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Runtime, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Runtime); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
@@ -53,7 +60,6 @@ func (_m *RuntimeRepository) GetByID(ctx context.Context, tenant string, id stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -68,6 +74,10 @@ func (_m *RuntimeRepository) ListAll(ctx context.Context, tenant string, filter 
 	ret := _m.Called(ctx, tenant, filter)
 
 	var r0 []*model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Runtime, error)); ok {
+		return rf(ctx, tenant, filter)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) []*model.Runtime); ok {
 		r0 = rf(ctx, tenant, filter)
 	} else {
@@ -76,7 +86,6 @@ func (_m *RuntimeRepository) ListAll(ctx context.Context, tenant string, filter 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, tenant, filter)
 	} else {
@@ -91,6 +100,10 @@ func (_m *RuntimeRepository) ListAllWithUnionSetCombination(ctx context.Context,
 	ret := _m.Called(ctx, tenant, filter)
 
 	var r0 []*model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Runtime, error)); ok {
+		return rf(ctx, tenant, filter)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) []*model.Runtime); ok {
 		r0 = rf(ctx, tenant, filter)
 	} else {
@@ -99,7 +112,6 @@ func (_m *RuntimeRepository) ListAllWithUnionSetCombination(ctx context.Context,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, tenant, filter)
 	} else {
@@ -114,6 +126,10 @@ func (_m *RuntimeRepository) ListByIDs(ctx context.Context, tenant string, ids [
 	ret := _m.Called(ctx, tenant, ids)
 
 	var r0 []*model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.Runtime, error)); ok {
+		return rf(ctx, tenant, ids)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.Runtime); ok {
 		r0 = rf(ctx, tenant, ids)
 	} else {
@@ -122,7 +138,6 @@ func (_m *RuntimeRepository) ListByIDs(ctx context.Context, tenant string, ids [
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
 		r1 = rf(ctx, tenant, ids)
 	} else {
@@ -137,6 +152,10 @@ func (_m *RuntimeRepository) ListByScenarios(ctx context.Context, tenant string,
 	ret := _m.Called(ctx, tenant, scenarios)
 
 	var r0 []*model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.Runtime, error)); ok {
+		return rf(ctx, tenant, scenarios)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.Runtime); ok {
 		r0 = rf(ctx, tenant, scenarios)
 	} else {
@@ -145,7 +164,6 @@ func (_m *RuntimeRepository) ListByScenarios(ctx context.Context, tenant string,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
 		r1 = rf(ctx, tenant, scenarios)
 	} else {
@@ -160,6 +178,10 @@ func (_m *RuntimeRepository) ListByScenariosAndIDs(ctx context.Context, tenant s
 	ret := _m.Called(ctx, tenant, scenarios, ids)
 
 	var r0 []*model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []string) ([]*model.Runtime, error)); ok {
+		return rf(ctx, tenant, scenarios, ids)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []string) []*model.Runtime); ok {
 		r0 = rf(ctx, tenant, scenarios, ids)
 	} else {
@@ -168,7 +190,6 @@ func (_m *RuntimeRepository) ListByScenariosAndIDs(ctx context.Context, tenant s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, []string) error); ok {
 		r1 = rf(ctx, tenant, scenarios, ids)
 	} else {
@@ -183,6 +204,10 @@ func (_m *RuntimeRepository) ListOwnedRuntimes(ctx context.Context, tenant strin
 	ret := _m.Called(ctx, tenant, filter)
 
 	var r0 []*model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Runtime, error)); ok {
+		return rf(ctx, tenant, filter)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) []*model.Runtime); ok {
 		r0 = rf(ctx, tenant, filter)
 	} else {
@@ -191,7 +216,6 @@ func (_m *RuntimeRepository) ListOwnedRuntimes(ctx context.Context, tenant strin
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, tenant, filter)
 	} else {
@@ -206,13 +230,16 @@ func (_m *RuntimeRepository) OwnerExistsByFiltersAndID(ctx context.Context, tena
 	ret := _m.Called(ctx, tenant, id, filter)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []*labelfilter.LabelFilter) (bool, error)); ok {
+		return rf(ctx, tenant, id, filter)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, []*labelfilter.LabelFilter) bool); ok {
 		r0 = rf(ctx, tenant, id, filter)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, tenant, id, filter)
 	} else {
@@ -222,13 +249,12 @@ func (_m *RuntimeRepository) OwnerExistsByFiltersAndID(ctx context.Context, tena
 	return r0, r1
 }
 
-type mockConstructorTestingTNewRuntimeRepository interface {
+// NewRuntimeRepository creates a new instance of RuntimeRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeRepository creates a new instance of RuntimeRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeRepository(t mockConstructorTestingTNewRuntimeRepository) *RuntimeRepository {
+}) *RuntimeRepository {
 	mock := &RuntimeRepository{}
 	mock.Mock.Test(t)
 

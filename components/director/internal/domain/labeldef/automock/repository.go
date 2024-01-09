@@ -34,13 +34,16 @@ func (_m *Repository) Exists(ctx context.Context, tenant string, key string) (bo
 	ret := _m.Called(ctx, tenant, key)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, tenant, key)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, tenant, key)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, key)
 	} else {
@@ -55,6 +58,10 @@ func (_m *Repository) GetByKey(ctx context.Context, tenant string, key string) (
 	ret := _m.Called(ctx, tenant, key)
 
 	var r0 *model.LabelDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.LabelDefinition, error)); ok {
+		return rf(ctx, tenant, key)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.LabelDefinition); ok {
 		r0 = rf(ctx, tenant, key)
 	} else {
@@ -63,7 +70,6 @@ func (_m *Repository) GetByKey(ctx context.Context, tenant string, key string) (
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, key)
 	} else {
@@ -78,6 +84,10 @@ func (_m *Repository) List(ctx context.Context, tenant string) ([]model.LabelDef
 	ret := _m.Called(ctx, tenant)
 
 	var r0 []model.LabelDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]model.LabelDefinition, error)); ok {
+		return rf(ctx, tenant)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []model.LabelDefinition); ok {
 		r0 = rf(ctx, tenant)
 	} else {
@@ -86,7 +96,6 @@ func (_m *Repository) List(ctx context.Context, tenant string) ([]model.LabelDef
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, tenant)
 	} else {
@@ -124,13 +133,12 @@ func (_m *Repository) Upsert(ctx context.Context, def model.LabelDefinition) err
 	return r0
 }
 
-type mockConstructorTestingTNewRepository interface {
+// NewRepository creates a new instance of Repository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRepository creates a new instance of Repository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRepository(t mockConstructorTestingTNewRepository) *Repository {
+}) *Repository {
 	mock := &Repository{}
 	mock.Mock.Test(t)
 

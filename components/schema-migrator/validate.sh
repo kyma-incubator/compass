@@ -13,13 +13,21 @@ NC='\033[0m' # No Color
 set -e
 
 COMPONENT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+CHARTS_PATH=$(dirname $(dirname $COMPONENT_PATH))/chart/compass
+CHART_FILE=$CHARTS_PATH/"values.yaml"
 
 DATA_DIR="${COMPONENT_PATH}/seeds"
 
 IMG_NAME="compass-schema-migrator"
+CONTAINER_REGISTRY_KEY="containerRegistry"
 NETWORK="migration-test-network"
 POSTGRES_CONTAINER="test-postgres"
 POSTGRES_VERSION="12"
+
+CONTAINER_REGISTRY=$(grep $CONTAINER_REGISTRY_KEY $CHART_FILE -A 1 -m 1 | tail -n 1 | tr -d ' ' | cut -d':' -f 2)
+IMAGE_VERSION=$(grep $IMG_NAME $CHART_FILE -B 1 | head -n 1 | cut -d'"' -f2)
+DIR=$(grep $IMG_NAME $CHART_FILE -B 2 | head -n 1 | cut -d':' -f2 | tr -d ' ')
+IMAGE_PULL_LOCATION=$CONTAINER_REGISTRY/$DIR$IMG_NAME:$IMAGE_VERSION
 
 PROJECT="sap-cp-cmp"
 ENV="dev"
@@ -38,6 +46,11 @@ do
     case ${key} in
         --dump-db)
             DUMP_DB=true
+            shift # past argument
+        ;;
+        --build-image)
+            IMAGE_PULL_LOCATION=$IMG_NAME
+            BUILD_IMAGE=true
             shift # past argument
         ;;
         --*)
@@ -67,13 +80,18 @@ trap cleanup EXIT
 echo -e "${GREEN}Create network${NC}"
 docker network create --driver bridge ${NETWORK}
 
-ARCH="amd64"
+if [[ ${BUILD_IMAGE} ]]; then
+  echo -e "${GREEN}Building schema migrator image from Dockerfile${NC}"
+  ARCH="amd64"
 
-if [[ $(uname -m) == 'arm64' ]]; then
-    ARCH="arm64"
+  if [[ $(uname -m) == 'arm64' ]]; then
+      ARCH="arm64"
+  fi
+  docker build -t ${IMAGE_PULL_LOCATION} ./
+else
+  echo -e "${GREEN}Pulling schema migrator image from ${IMAGE_PULL_LOCATION}${NC}"
+  docker pull "${IMAGE_PULL_LOCATION}"
 fi
-
-docker build -t ${IMG_NAME} ./
 
 echo -e "${GREEN}Start Postgres in detached mode${NC}"
 docker run -d --name ${POSTGRES_CONTAINER} \
@@ -133,7 +151,7 @@ if [[ ${DUMP_DB} ]]; then
 fi
 
 function migrationUP() {
-    echo -e "${GREEN}Run UP migrations ${NC}"
+    echo -e "${GREEN}Run UP migrations using ${IMAGE_PULL_LOCATION}${NC}"
 
     migration_path=$1
     db_name=$2
@@ -147,14 +165,14 @@ function migrationUP() {
             -e MIGRATION_PATH=${migration_path} \
             -e DIRECTION="up" \
             -e DRY_RUN="true" \
-        ${IMG_NAME}
+        "${IMAGE_PULL_LOCATION}"
 
     echo -e "${GREEN}Show schema_migrations table after UP migrations${NC}"
     docker exec ${POSTGRES_CONTAINER} psql --username usr "${db_name}" --command "select * from schema_migrations"
 }
 
 function migrationDOWN() {
-    echo -e "${GREEN}Run DOWN migrations ${NC}"
+    echo -e "${GREEN}Run DOWN migrations using ${IMAGE_PULL_LOCATION}${NC}"
 
     migration_path=$1
     db_name=$2
@@ -168,7 +186,7 @@ function migrationDOWN() {
             -e MIGRATION_PATH=${migration_path} \
             -e DIRECTION="down" \
             -e DRY_RUN="true" \
-        ${IMG_NAME}
+        "${IMAGE_PULL_LOCATION}"
 
     echo -e "${GREEN}Show schema_migrations table after DOWN migrations${NC}"
     docker exec ${POSTGRES_CONTAINER} psql --username usr "${db_name}" --command "select * from schema_migrations"

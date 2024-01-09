@@ -60,6 +60,9 @@ func NewClient(httpClient *http.Client, mtlsClient, extSvcMtlsClient *http.Clien
 func (c *client) Do(ctx context.Context, request WebhookRequest) (*webhook.Response, error) {
 	var err error
 	webhook := request.GetWebhook()
+	if webhook == nil {
+		return nil, errors.Errorf("the webhook entity cannot be nil")
+	}
 
 	if webhook.OutputTemplate == nil {
 		return nil, errors.Errorf("missing output template")
@@ -105,7 +108,7 @@ func (c *client) Do(ctx context.Context, request WebhookRequest) (*webhook.Respo
 
 	req.Header = headers
 
-	resp, err := c.executeRequestWithCorrectClient(ctx, req, webhook)
+	resp, err := c.executeRequestWithCorrectClient(ctx, req, *webhook)
 	if err != nil {
 		return nil, errors.Wrap(err, "while initially executing webhook")
 	}
@@ -146,6 +149,9 @@ func (c *client) Do(ctx context.Context, request WebhookRequest) (*webhook.Respo
 func (c *client) Poll(ctx context.Context, request *PollRequest) (*webhook.ResponseStatus, error) {
 	var err error
 	webhook := request.Webhook
+	if webhook == nil {
+		return nil, errors.Errorf("the webhook entity cannot be nil")
+	}
 
 	if webhook.StatusTemplate == nil {
 		return nil, errors.Errorf("missing status template")
@@ -168,7 +174,7 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*webhook.Respo
 
 	req.Header = headers
 
-	resp, err := c.executeRequestWithCorrectClient(ctx, req, webhook)
+	resp, err := c.executeRequestWithCorrectClient(ctx, req, *webhook)
 	if err != nil {
 		return nil, errors.Wrap(err, "while executing webhook for poll")
 	}

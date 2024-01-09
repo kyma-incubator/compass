@@ -165,6 +165,8 @@ spec:
               value: {{ .Values.database.dbPool.maxOpenConnections | quote }}
             - name: APP_DB_MAX_IDLE_CONNECTIONS
               value: {{ .Values.database.dbPool.maxIdleConnections | quote }}
+            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
             - name: APP_METRICS_PUSH_ENDPOINT
               value: {{ $.Values.global.metrics.pushEndpoint }}

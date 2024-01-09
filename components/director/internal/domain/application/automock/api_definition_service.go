@@ -19,6 +19,10 @@ func (_m *APIDefinitionService) GetForApplication(ctx context.Context, id string
 	ret := _m.Called(ctx, id, appID)
 
 	var r0 *model.APIDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.APIDefinition, error)); ok {
+		return rf(ctx, id, appID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.APIDefinition); ok {
 		r0 = rf(ctx, id, appID)
 	} else {
@@ -27,7 +31,6 @@ func (_m *APIDefinitionService) GetForApplication(ctx context.Context, id string
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, id, appID)
 	} else {
@@ -37,13 +40,12 @@ func (_m *APIDefinitionService) GetForApplication(ctx context.Context, id string
 	return r0, r1
 }
 
-type mockConstructorTestingTNewAPIDefinitionService interface {
+// NewAPIDefinitionService creates a new instance of APIDefinitionService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAPIDefinitionService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewAPIDefinitionService creates a new instance of APIDefinitionService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAPIDefinitionService(t mockConstructorTestingTNewAPIDefinitionService) *APIDefinitionService {
+}) *APIDefinitionService {
 	mock := &APIDefinitionService{}
 	mock.Mock.Test(t)
 

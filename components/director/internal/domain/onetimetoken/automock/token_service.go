@@ -21,6 +21,10 @@ func (_m *TokenService) GenerateOneTimeToken(ctx context.Context, runtimeID stri
 	ret := _m.Called(ctx, runtimeID, tokenType)
 
 	var r0 *internalmodel.OneTimeToken
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.SystemAuthReferenceObjectType) (*internalmodel.OneTimeToken, error)); ok {
+		return rf(ctx, runtimeID, tokenType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.SystemAuthReferenceObjectType) *internalmodel.OneTimeToken); ok {
 		r0 = rf(ctx, runtimeID, tokenType)
 	} else {
@@ -29,7 +33,6 @@ func (_m *TokenService) GenerateOneTimeToken(ctx context.Context, runtimeID stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.SystemAuthReferenceObjectType) error); ok {
 		r1 = rf(ctx, runtimeID, tokenType)
 	} else {
@@ -44,6 +47,10 @@ func (_m *TokenService) RegenerateOneTimeToken(ctx context.Context, sysAuthID st
 	ret := _m.Called(ctx, sysAuthID)
 
 	var r0 *internalmodel.OneTimeToken
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*internalmodel.OneTimeToken, error)); ok {
+		return rf(ctx, sysAuthID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *internalmodel.OneTimeToken); ok {
 		r0 = rf(ctx, sysAuthID)
 	} else {
@@ -52,7 +59,6 @@ func (_m *TokenService) RegenerateOneTimeToken(ctx context.Context, sysAuthID st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, sysAuthID)
 	} else {
@@ -62,13 +68,12 @@ func (_m *TokenService) RegenerateOneTimeToken(ctx context.Context, sysAuthID st
 	return r0, r1
 }
 
-type mockConstructorTestingTNewTokenService interface {
+// NewTokenService creates a new instance of TokenService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTokenService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTokenService creates a new instance of TokenService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTokenService(t mockConstructorTestingTNewTokenService) *TokenService {
+}) *TokenService {
 	mock := &TokenService{}
 	mock.Mock.Test(t)
 

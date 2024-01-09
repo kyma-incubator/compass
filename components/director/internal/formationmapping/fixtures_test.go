@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
@@ -42,6 +44,21 @@ var (
 	testFormationID         = "testFormationID"
 	testFormationName       = "testFormationName"
 	testFormationTemplateID = "testFormationTemplateID"
+
+	// UCL Subaccount IDs
+	matchingTestUCLSubaccountID = "testSubaccID"
+	nonMatchingUCLSubaccountID  = "anotherTestSubaccID"
+
+	cons = consumer.Consumer{
+		ConsumerID:   "consumerID",
+		ConsumerType: consumer.BusinessIntegration,
+	}
+	instanceCreatorCons = consumer.Consumer{
+		ConsumerID:   "consumerID",
+		ConsumerType: consumer.InstanceCreator,
+	}
+	ctxWithConsumer                = consumer.SaveToContext(context.TODO(), cons)
+	ctxWithInstanceCreatorConsumer = consumer.SaveToContext(context.TODO(), instanceCreatorCons)
 )
 
 func fixTestHandler(t *testing.T) http.HandlerFunc {
@@ -56,6 +73,7 @@ func fixRequestWithContext(t *testing.T, ctx context.Context, httpMethod string)
 	reqWithContext, err := http.NewRequest(httpMethod, "/", nil)
 	require.NoError(t, err)
 	reqWithContext = reqWithContext.WithContext(ctx)
+	reqWithContext.Header.Set(fm.ClientIDFromCertificateHeader, matchingTestUCLSubaccountID)
 	return reqWithContext
 }
 
@@ -133,7 +151,7 @@ func fixResourceGroupBusinessTenantMapping() *model.BusinessTenantMapping {
 
 func fixEmptyNotificationRequest() *webhookclient.FormationAssignmentNotificationRequest {
 	return &webhookclient.FormationAssignmentNotificationRequest{
-		Webhook:       graphql.Webhook{},
+		Webhook:       &graphql.Webhook{},
 		Object:        nil,
 		CorrelationID: "",
 	}
@@ -249,4 +267,12 @@ func ThatFailsOnBeginInGoRoutine() (*persistenceautomock.PersistenceTx, *persist
 	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
 
 	return persistTx, transact
+}
+
+func fixNotificationStatusReportWithStateAndConfig(configuration json.RawMessage, state string) *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(configuration, state, "")
+}
+
+func fixNotificationStatusReportWithStateAndError(state, errorMessage string) *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(nil, state, errorMessage)
 }

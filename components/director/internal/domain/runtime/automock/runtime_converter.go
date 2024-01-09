@@ -35,13 +35,16 @@ func (_m *RuntimeConverter) RegisterInputFromGraphQL(in graphql.RuntimeRegisterI
 	ret := _m.Called(in)
 
 	var r0 model.RuntimeRegisterInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(graphql.RuntimeRegisterInput) (model.RuntimeRegisterInput, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(graphql.RuntimeRegisterInput) model.RuntimeRegisterInput); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(model.RuntimeRegisterInput)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(graphql.RuntimeRegisterInput) error); ok {
 		r1 = rf(in)
 	} else {
@@ -81,13 +84,12 @@ func (_m *RuntimeConverter) UpdateInputFromGraphQL(in graphql.RuntimeUpdateInput
 	return r0
 }
 
-type mockConstructorTestingTNewRuntimeConverter interface {
+// NewRuntimeConverter creates a new instance of RuntimeConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeConverter creates a new instance of RuntimeConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeConverter(t mockConstructorTestingTNewRuntimeConverter) *RuntimeConverter {
+}) *RuntimeConverter {
 	mock := &RuntimeConverter{}
 	mock.Mock.Test(t)
 

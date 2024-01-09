@@ -14,8 +14,8 @@ import (
 const tombstoneTable string = `public.tombstones`
 
 var (
-	tombstoneColumns = []string{"ord_id", "app_id", "app_template_version_id", "removal_date", "id"}
-	updatableColumns = []string{"removal_date"}
+	tombstoneColumns = []string{"ord_id", "app_id", "app_template_version_id", "removal_date", "id", "description"}
+	updatableColumns = []string{"removal_date", "description"}
 )
 
 // EntityConverter missing godoc

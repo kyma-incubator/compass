@@ -33,6 +33,8 @@ global:
     secrets:
       externalCertSvcSecret:
         manage: true
+      publicPrivateKeysSecret:
+        manage: true
   extSvcCertConfiguration:
     secrets:
       extSvcCertSvcSecret:
@@ -44,6 +46,8 @@ global:
     saasAppNamesSecret:
       manage: true
     regionInstancesCredentials:
+      manage: true
+    regionSMInstancesCredentials:
       manage: true
     tenantDependenciesConfig:
       manage: true
@@ -95,6 +99,8 @@ global:
     systemsAPIFilterCriteria: "no"
   tests:
     subscription:
+      destinationOauthSecret:
+        manage: true
       oauthSecret:
         manage: true
     basicCredentials:

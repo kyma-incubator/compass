@@ -45,6 +45,7 @@ var (
 			ApplicationTemplate: fixApplicationTemplateModel(),
 			Labels:              fixLabelsMapForApplicationTemplateWithLabels(),
 			Tenant:              testAppTemplateTenantWithLabels,
+			TrustDetails:        testTrustDetails,
 		},
 	}
 
@@ -64,6 +65,7 @@ var (
 				BusinessTenantMapping: testRuntimeOwner,
 				Labels:                convertLabels(testTenantLabels),
 			},
+			TrustDetails: testTrustDetails,
 		},
 	}
 
@@ -253,4 +255,8 @@ func unusedLabelBuilder() *automock.LabelInputBuilder {
 
 func unusedTenantBuilder() *automock.TenantInputBuilder {
 	return &automock.TenantInputBuilder{}
+}
+
+func unusedCertSubjectBuilder() *automock.CertSubjectInputBuilder {
+	return &automock.CertSubjectInputBuilder{}
 }

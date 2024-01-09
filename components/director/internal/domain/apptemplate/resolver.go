@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
@@ -52,7 +53,7 @@ type ApplicationTemplateService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	ListByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error)
 	ListByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationTemplate, error)
-	Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error
+	Update(ctx context.Context, id string, override bool, in model.ApplicationTemplateUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 	ListLabels(ctx context.Context, appTemplateID string) (map[string]*model.Label, error)
@@ -128,10 +129,11 @@ type Resolver struct {
 	uidService              UIDService
 	appTemplateProductLabel string
 	certSubjectMappingSvc   CertSubjectMappingService
+	ordClient               *apiclient.ORDClient
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string, ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig) *Resolver {
 	return &Resolver{
 		transact:                transact,
 		appSvc:                  appSvc,
@@ -144,6 +146,7 @@ func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, 
 		uidService:              uidService,
 		appTemplateProductLabel: appTemplateProductLabel,
 		certSubjectMappingSvc:   certSubjectMappingSvc,
+		ordClient:               apiclient.NewORDClient(ordAggregatorClientConfig),
 	}
 }
 
@@ -159,14 +162,10 @@ func (r *Resolver) ApplicationTemplate(ctx context.Context, id string) (*graphql
 
 	appTemplate, err := r.appTemplateSvc.Get(ctx, id)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, tx.Commit()
-		}
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -225,6 +224,7 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, filter []*graphql.L
 
 // CreateApplicationTemplate missing godoc
 func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
+	log.C(ctx).Infof("Validating graphql input for Application Template with name %s", in.Name)
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
@@ -233,6 +233,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
+	log.C(ctx).Info("Enriching webhooks with tenant mapping webhooks")
 	webhooks, err := r.webhookSvc.EnrichWebhooksWithTenantMappingWebhooks(in.Webhooks)
 	if err != nil {
 		return nil, err
@@ -253,6 +254,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 
 	selfRegID := r.uidService.Generate()
 	convertedIn.ID = &selfRegID
+	log.C(ctx).Infof("Generated ID %s for Application Template with name %s", selfRegID, in.Name)
 
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
@@ -270,6 +272,8 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 			validate := func() error {
 				return validateAppTemplateForSelfReg(in.ApplicationInput)
 			}
+
+			log.C(ctx).Info("Executing self registration flow for Application Template")
 			labels, err = r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
 			if err != nil {
 				return nil, err
@@ -277,6 +281,12 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		}
 
 		labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
+	} else {
+		selfRegLabel := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
+		if _, distinguishLabelExists := labels[selfRegLabel]; distinguishLabelExists {
+			log.C(ctx).Errorf("Label %s is forbidden in a non-cert flow.", selfRegLabel)
+			return nil, errors.Errorf("label %s is forbidden when creating Application Template in a non-cert flow.", selfRegLabel)
+		}
 	}
 
 	tx, err := r.transact.Begin()
@@ -325,6 +335,16 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	gqlAppTemplate, err := r.appTemplateConverter.ToGraphQL(appTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting Application Template with id %s to GraphQL", id)
+	}
+
+	for _, wh := range convertedIn.Webhooks {
+		if wh.Type == model.WebhookTypeOpenResourceDiscoveryStatic {
+			log.C(ctx).Infof("Executing aggregation API call for Application Template with ID %s", id)
+			if err := r.ordClient.Aggregate(ctx, "", id); err != nil {
+				log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppTemplateID %q", id)
+			}
+			break
+		}
 	}
 
 	return gqlAppTemplate, nil
@@ -454,11 +474,20 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	}
 
 	gqlApp := r.appConverter.ToGraphQL(app)
+
+	if err := r.ordClient.Aggregate(ctx, app.ID, appTemplate.ID); err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppID %q and AppTemplateID %q", app.ID, id)
+	}
+
+	if err := r.ordClient.Aggregate(ctx, app.ID, ""); err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppID %q", app.ID)
+	}
+
 	return gqlApp, nil
 }
 
 // UpdateApplicationTemplate missing godoc
-func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateUpdateInput) (*graphql.ApplicationTemplate, error) {
+func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, override *bool, in graphql.ApplicationTemplateUpdateInput) (*graphql.ApplicationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -509,8 +538,13 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		}
 	}
 
+	shouldOverride := false
+	if override != nil {
+		shouldOverride = *override
+	}
+
 	log.C(ctx).Infof("Updating an Application Template with id %q", id)
-	err = r.appTemplateSvc.Update(ctx, id, convertedIn)
+	err = r.appTemplateSvc.Update(ctx, id, shouldOverride, convertedIn)
 	if err != nil {
 		return nil, err
 	}

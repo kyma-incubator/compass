@@ -1,6 +1,6 @@
 APP_NAME = system-fetcher-tests
 APP_PATH = tests/system-fetcher
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
+BUILDPACK = europe-docker.pkg.dev/kyma-project/prod/test-infra/buildpack-golang:v20230323-a1ac96db
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 INSTALLATION_SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/installation/scripts
 export GO111MODULE = on
@@ -15,7 +15,8 @@ e2e-test:
 	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh system-fetcher
 
 e2e-test-clean:
-	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
+	kubectl config use-context k3d-kyma
+	kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
 
 sandbox-test:
 	@../sandbox.sh system-fetcher
@@ -29,5 +30,6 @@ sandbox-deploy-test:
 	rm ./system-fetcher.test
 
 sandbox-test-clean:
+	kubectl config use-context k3d-kyma
 	@kubectl delete testdefinitions.testing.kyma-project.io -n kyma-system compass-e2e-system-fetcher-local || true
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true

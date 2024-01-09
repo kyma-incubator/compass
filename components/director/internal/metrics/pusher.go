@@ -90,7 +90,7 @@ func (p AggregationFailurePusher) ReportAggregationFailureORD(ctx context.Contex
 	currentResourceType := log.C(ctx).Data["resource_type"]
 	currentCorrelationID := log.C(ctx).Data["x-request-id"]
 
-	p.aggregationFailuresCounter.WithLabelValues(err, currentResourceType.(string), currentResourceID.(string), currentCorrelationID.(string)).Inc()
+	p.aggregationFailuresCounter.WithLabelValues(err, currentResourceID.(string), currentResourceType.(string), currentCorrelationID.(string)).Inc()
 
 	p.push(ctx)
 }

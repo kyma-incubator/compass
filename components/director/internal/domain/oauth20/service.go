@@ -3,17 +3,17 @@ package oauth20
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	"github.com/ory/hydra-client-go/models"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/ory/hydra-client-go/client/admin"
 	"github.com/pkg/errors"
+
+	hydraClient "github.com/ory/hydra-client-go/v2"
 )
 
 const (
@@ -22,25 +22,28 @@ const (
 )
 
 // ClientDetailsConfigProvider missing godoc
+//
 //go:generate mockery --name=ClientDetailsConfigProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ClientDetailsConfigProvider interface {
 	GetRequiredScopes(path string) ([]string, error)
 	GetRequiredGrantTypes(path string) ([]string, error)
 }
 
-// UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type UIDService interface {
-	Generate() string
-}
-
 // OryHydraService missing godoc
+//
 //go:generate mockery --name=OryHydraService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OryHydraService interface {
-	ListOAuth2Clients(params *admin.ListOAuth2ClientsParams, opts ...admin.ClientOption) (*admin.ListOAuth2ClientsOK, error)
-	CreateOAuth2Client(params *admin.CreateOAuth2ClientParams, opts ...admin.ClientOption) (*admin.CreateOAuth2ClientCreated, error)
-	UpdateOAuth2Client(params *admin.UpdateOAuth2ClientParams, opts ...admin.ClientOption) (*admin.UpdateOAuth2ClientOK, error)
-	DeleteOAuth2Client(params *admin.DeleteOAuth2ClientParams, opts ...admin.ClientOption) (*admin.DeleteOAuth2ClientNoContent, error)
+	ListOAuth2Clients(ctx context.Context) hydraClient.OAuth2ApiListOAuth2ClientsRequest
+	ListOAuth2ClientsExecute(r hydraClient.OAuth2ApiListOAuth2ClientsRequest) ([]hydraClient.OAuth2Client, *http.Response, error)
+
+	DeleteOAuth2Client(ctx context.Context, id string) hydraClient.OAuth2ApiDeleteOAuth2ClientRequest
+	DeleteOAuth2ClientExecute(r hydraClient.OAuth2ApiDeleteOAuth2ClientRequest) (*http.Response, error)
+
+	CreateOAuth2Client(ctx context.Context) hydraClient.OAuth2ApiCreateOAuth2ClientRequest
+	CreateOAuth2ClientExecute(r hydraClient.OAuth2ApiCreateOAuth2ClientRequest) (*hydraClient.OAuth2Client, *http.Response, error)
+
+	SetOAuth2Client(ctx context.Context, id string) hydraClient.OAuth2ApiSetOAuth2ClientRequest
+	SetOAuth2ClientExecute(r hydraClient.OAuth2ApiSetOAuth2ClientRequest) (*hydraClient.OAuth2Client, *http.Response, error)
 }
 
 // ClientDetails missing godoc
@@ -52,17 +55,15 @@ type ClientDetails struct {
 type service struct {
 	publicAccessTokenEndpoint string
 	scopeCfgProvider          ClientDetailsConfigProvider
-	uidService                UIDService
-	hydraCLi                  OryHydraService
+	hydraService              OryHydraService
 }
 
 // NewService missing godoc
-func NewService(scopeCfgProvider ClientDetailsConfigProvider, uidService UIDService, publicAccessTokenEndpoint string, hydraCLi OryHydraService) *service {
+func NewService(scopeCfgProvider ClientDetailsConfigProvider, publicAccessTokenEndpoint string, hydraService OryHydraService) *service {
 	return &service{
 		scopeCfgProvider:          scopeCfgProvider,
 		publicAccessTokenEndpoint: publicAccessTokenEndpoint,
-		uidService:                uidService,
-		hydraCLi:                  hydraCLi,
+		hydraService:              hydraService,
 	}
 }
 
@@ -74,15 +75,15 @@ func (s *service) CreateClientCredentials(ctx context.Context, objectType pkgmod
 	}
 	log.C(ctx).Debugf("Fetched client credential scopes: %s for %s", details.Scopes, objectType)
 
-	clientID := s.uidService.Generate()
-	clientSecret, err := s.registerClient(ctx, clientID, details)
+	// Previously we had to create our own client id, this is now handled by Ory Hydra v2
+	createdClient, err := s.registerClient(ctx, details)
 	if err != nil {
 		return nil, errors.Wrap(err, "while registering client credentials in Hydra")
 	}
 
 	credentialData := &model.OAuthCredentialDataInput{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
+		ClientID:     *createdClient.ClientId,
+		ClientSecret: *createdClient.ClientSecret,
 		URL:          s.publicAccessTokenEndpoint,
 	}
 
@@ -108,7 +109,9 @@ func (s *service) UpdateClient(ctx context.Context, clientID string, objectType 
 func (s *service) DeleteClientCredentials(ctx context.Context, clientID string) error {
 	log.C(ctx).Debugf("Unregistering client_id %s and client_secret in Hydra", clientID)
 
-	_, err := s.hydraCLi.DeleteOAuth2Client(admin.NewDeleteOAuth2ClientParams().WithID(clientID))
+	request := s.hydraService.DeleteOAuth2Client(ctx, clientID)
+	_, err := s.hydraService.DeleteOAuth2ClientExecute(request)
+
 	if err != nil {
 		return err
 	}
@@ -135,12 +138,15 @@ func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []p
 }
 
 // ListClients missing godoc
-func (s *service) ListClients() ([]*models.OAuth2Client, error) {
-	listClientsOK, err := s.hydraCLi.ListOAuth2Clients(admin.NewListOAuth2ClientsParams())
+func (s *service) ListClients() ([]hydraClient.OAuth2Client, error) {
+	request := s.hydraService.ListOAuth2Clients(context.Background())
+	clients, _, err := s.hydraService.ListOAuth2ClientsExecute(request)
+
 	if err != nil {
 		return nil, err
 	}
-	return listClientsOK.Payload, nil
+
+	return clients, nil
 }
 
 // GetClientDetails missing godoc
@@ -161,28 +167,37 @@ func (s *service) GetClientDetails(objType pkgmodel.SystemAuthReferenceObjectTyp
 	}, nil
 }
 
-func (s *service) registerClient(ctx context.Context, clientID string, details *ClientDetails) (string, error) {
-	log.C(ctx).Debugf("Registering client_id %s and client_secret in Hydra with scopes: %s and grant_types %s", clientID, details.Scopes, details.GrantTypes)
+func (s *service) registerClient(ctx context.Context, details *ClientDetails) (hydraClient.OAuth2Client, error) {
+	log.C(ctx).Debugf("Registering client_id and client_secret in Hydra with scopes: %s and grant_types %s", details.Scopes, details.GrantTypes)
 
-	created, err := s.hydraCLi.CreateOAuth2Client(admin.NewCreateOAuth2ClientParams().WithBody(&models.OAuth2Client{
-		ClientID:   clientID,
+	scopes := strings.Join(details.Scopes, " ")
+	clientToCreate := hydraClient.OAuth2Client{
 		GrantTypes: details.GrantTypes,
-		Scope:      strings.Join(details.Scopes, " "),
-	}))
+		Scope:      &scopes,
+	}
+
+	request := s.hydraService.CreateOAuth2Client(ctx).OAuth2Client(clientToCreate)
+	createdClient, _, err := s.hydraService.CreateOAuth2ClientExecute(request)
 
 	if err != nil {
-		return "", err
+		return hydraClient.OAuth2Client{}, err
 	}
-	log.C(ctx).Debugf("client_id %s and client_secret successfully registered in Hydra", clientID)
-	return created.Payload.ClientSecret, nil
+	log.C(ctx).Debugf("client_id %s and client_secret successfully registered in Hydra", *createdClient.ClientId)
+	return *createdClient, nil
 }
 
 func (s *service) updateClient(ctx context.Context, clientID string, details *ClientDetails) error {
-	_, err := s.hydraCLi.UpdateOAuth2Client(admin.NewUpdateOAuth2ClientParams().WithID(clientID).WithBody(&models.OAuth2Client{
-		ClientID:   clientID,
+	scopes := strings.Join(details.Scopes, " ")
+
+	clientToUpgrade := hydraClient.OAuth2Client{
+		ClientId:   &clientID,
 		GrantTypes: details.GrantTypes,
-		Scope:      strings.Join(details.Scopes, " "),
-	}))
+		Scope:      &scopes,
+	}
+
+	request := s.hydraService.SetOAuth2Client(ctx, clientID).OAuth2Client(clientToUpgrade)
+	_, _, err := s.hydraService.SetOAuth2ClientExecute(request)
+
 	if err != nil {
 		return err
 	}

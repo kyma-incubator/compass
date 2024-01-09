@@ -18,6 +18,10 @@ func (_m *EntityConverter) FromEntity(in *webhook.Entity) (*model.Webhook, error
 	ret := _m.Called(in)
 
 	var r0 *model.Webhook
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*webhook.Entity) (*model.Webhook, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*webhook.Entity) *model.Webhook); ok {
 		r0 = rf(in)
 	} else {
@@ -26,7 +30,6 @@ func (_m *EntityConverter) FromEntity(in *webhook.Entity) (*model.Webhook, error
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*webhook.Entity) error); ok {
 		r1 = rf(in)
 	} else {
@@ -41,6 +44,10 @@ func (_m *EntityConverter) ToEntity(in *model.Webhook) (*webhook.Entity, error) 
 	ret := _m.Called(in)
 
 	var r0 *webhook.Entity
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.Webhook) (*webhook.Entity, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.Webhook) *webhook.Entity); ok {
 		r0 = rf(in)
 	} else {
@@ -49,7 +56,6 @@ func (_m *EntityConverter) ToEntity(in *model.Webhook) (*webhook.Entity, error) 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.Webhook) error); ok {
 		r1 = rf(in)
 	} else {
@@ -59,13 +65,12 @@ func (_m *EntityConverter) ToEntity(in *model.Webhook) (*webhook.Entity, error) 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewEntityConverter interface {
+// NewEntityConverter creates a new instance of EntityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEntityConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEntityConverter creates a new instance of EntityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEntityConverter(t mockConstructorTestingTNewEntityConverter) *EntityConverter {
+}) *EntityConverter {
 	mock := &EntityConverter{}
 	mock.Mock.Test(t)
 

@@ -92,13 +92,16 @@ func (tc *TestContext) RunOperationWithCustomTenant(ctx context.Context, cli *gc
 }
 
 func withRetryOnTemporaryConnectionProblems(risky func() error) error {
-	return retry.Do(risky, retry.Attempts(7), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
-		logrus.WithField("component", "TestContext").Warnf("OnRetry: attempts: %d, error: %v", n, err)
-
-	}), retry.LastErrorOnly(true), retry.RetryIf(func(err error) bool {
-		return strings.Contains(err.Error(), "connection refused") ||
-			strings.Contains(err.Error(), "connection reset by peer")
-	}))
+	return retry.Do(risky,
+		retry.Attempts(7),
+		retry.Delay(time.Second),
+		retry.OnRetry(func(n uint, err error) {
+			logrus.WithField("component", "TestContext").Warnf("OnRetry: attempts: %d, error: %v", n, err)
+		}),
+		retry.LastErrorOnly(true), retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "connection reset by peer")
+		}))
 }
 
 // resultMapperFor returns generic object that can be passed to Run method for storing response.

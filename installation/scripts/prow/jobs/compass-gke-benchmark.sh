@@ -127,7 +127,9 @@ function createCluster() {
   gcp::provision_k8s_cluster \
         -c "$COMMON_NAME" \
         -p "$CLOUDSDK_CORE_PROJECT" \
-        -v "1.23.17" \
+        -v "1.25.10" \
+        -i "cos_containerd" \
+        -C "stable" \
         -j "$JOB_NAME" \
         -J "$PROW_JOB_ID" \
         -z "$CLOUDSDK_COMPUTE_ZONE" \
@@ -145,9 +147,9 @@ function createCluster() {
   export TLS_KEY="${utils_generate_self_signed_cert_return_tls_key:?}"
 
   export DNS_DOMAIN_TRAILING=${DNS_DOMAIN%.}
-  envsubst < "${TEST_INFRA_SOURCES_DIR}/prow/scripts/resources/compass-gke-overrides.tpl.yaml" > "$PWD/compass_common_overrides.yaml"
+  envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/compass-gke-overrides.tpl.yaml" > "$PWD/compass_common_overrides.yaml"
   CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/compass-overrides-gke-benchmark.yaml" > "$PWD/compass_benchmark_overrides.yaml"
-  CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${TEST_INFRA_SOURCES_DIR}/prow/scripts/resources/compass-gke-kyma-overrides.tpl.yaml" > "$PWD/kyma_overrides.yaml"
+  CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/compass-gke-kyma-overrides.tpl.yaml" > "$PWD/kyma_overrides.yaml"
   CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/ory-overrides-gke-benchmark.tpl.yaml" > ~/ory_benchmark_overrides.yaml
 }
 
@@ -160,7 +162,7 @@ function installHelm() {
 }
 
 function installKymaCLI() {
-  KYMA_CLI_VERSION="2.3.0"
+  KYMA_CLI_VERSION="2.9.3"
   log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
 
   PREV_WD=$(pwd)
@@ -174,47 +176,23 @@ function installKymaCLI() {
 
 function installKyma() {
   KYMA_VERSION=$(<"${COMPASS_SOURCES_DIR}/installation/resources/KYMA_VERSION")
-
-  # TODO: Remove after adoption of Kyma 2.4.3 and change kyma deploy command source to --source="${KYMA_VERSION}"
-  KYMA_WORKSPACE=${HOME}/.kyma/sources/${KYMA_VERSION}
-  if [[ -d "$KYMA_WORKSPACE" ]]
-  then
-      echo "Kyma ${KYMA_VERSION} already exists locally."
-  else
-      echo "Pulling Kyma ${KYMA_VERSION}"
-      git clone --single-branch --branch "${KYMA_VERSION}" https://github.com/kyma-project/kyma.git "$KYMA_WORKSPACE"
-  fi
-
-  rm -rf "$KYMA_WORKSPACE"/installation/resources/crds/service-catalog || true
-  rm -f "$KYMA_WORKSPACE"/installation/resources/crds/service-catalog-addons/clusteraddonsconfigurations.addons.crd.yaml || true
-  rm -f "$KYMA_WORKSPACE"/installation/resources/crds/service-catalog-addons/addonsconfigurations.addons.crd.yaml || true
-
   MINIMAL_KYMA="${COMPASS_SOURCES_DIR}/installation/resources/kyma/kyma-components-minimal.yaml"
-  kyma deploy --ci --source=local --workspace "$KYMA_WORKSPACE" --verbose -c "${MINIMAL_KYMA}" --values-file "$PWD/kyma_overrides.yaml"
+
+  kyma deploy --ci --source="${KYMA_VERSION}" --verbose -c "${MINIMAL_KYMA}" --values-file "$PWD/kyma_overrides.yaml"
 }
 
 function installOry() {
   ORY_SCRIPT_PATH="${COMPASS_SCRIPTS_DIR}"/install-ory.sh
 
-  if [[ -f "$ORY_SCRIPT_PATH" ]]; then
-    log::info "Installing Ory Helm chart..."
-    bash "${ORY_SCRIPT_PATH}" --overrides-file ~/ory_benchmark_overrides.yaml
-  # This else statement only exists as currently the main branch does not have the ory charts and still uses Ory created by Kyma
-  else
-    log::warn "Ory installation script is missing"
-    # If the installation is missing Kyma has installed Ory for us, we should schedule the cronjob
-    # as this is done by 'install-ory.sh'
-    kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
-    until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath="{.status.lastScheduleTime}") ]]; do
-      echo "Waiting for cronjob oathkeeper-jwks-rotator to be scheduled"
-      sleep 3
-    done
-    kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
-    
-    # Copy the Hydra Secret created by the Kyma deployment to avoid benchmark tests crashing with 401 due to HMAC key changes
-    kubectl create ns ory || true
-    kubectl get secret ory-hydra-credentials -n kyma-system -o yaml | sed 's/namespace: .*/namespace: ory/' | kubectl apply -f -
-  fi
+  log::info "Installing Ory Helm chart..."
+  bash "${ORY_SCRIPT_PATH}" --overrides-file ~/ory_benchmark_overrides.yaml
+}
+
+function installDatabase() {
+    mkdir "$COMPASS_SOURCES_DIR/installation/data"
+    bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --timeout 30m0s
+    STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
+    echo "DB installation status ${STATUS}"
 }
 
 function installCompassOld() {
@@ -223,25 +201,13 @@ function installCompassOld() {
   echo "Checkout $LATEST_VERSION"
   git checkout "${LATEST_VERSION}"
 
+  installOry
+
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
 
-  echo 'Installing Kyma'
-  installKyma
-
-  echo "Installing Ory"
-  installOry
-
-  echo 'Installing DB'
-  mkdir "$COMPASS_SOURCES_DIR/installation/data"
-  bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
-  STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
-  echo "DB installation status ${STATUS}"
-
   echo 'Installing Compass'
-  bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
-  STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
-  echo "Compass installation status ${STATUS}"
+  bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s --sql-helm-backend
 }
 
 function installCompassNew() {
@@ -261,24 +227,13 @@ function installCompassNew() {
   echo "Checkout $NEW_VERSION_COMMIT_ID"
   git checkout "${NEW_VERSION_COMMIT_ID}"
 
-  COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
-  COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
-
-  echo 'Installing Kyma'
-  installKyma
-
-  echo "Installing Ory"
   installOry
 
-  echo 'Installing DB'
-  bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
-  STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
-  echo "DB installation status ${STATUS}"
-
+  COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
+  COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
+  
   echo 'Installing Compass'
-  bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
-  STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
-  echo "Compass installation status ${STATUS}"
+  bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s --sql-helm-backend
 
   if [ -n "$(kubectl get service -n kyma-system apiserver-proxy-ssl --ignore-not-found)" ]; then
     log::info "Create DNS Record for Apiserver proxy IP"
@@ -301,7 +256,7 @@ if [[ "${BUILD_TYPE}" == "pr" ]]; then
     log::info "Execute Job Guard"
     export JOB_NAME_PATTERN="(pull-.*)"
     export JOBGUARD_TIMEOUT="60m"
-    "${TEST_INFRA_SOURCES_DIR}/development/jobguard/scripts/run.sh"
+    "${COMPASS_SCRIPTS_DIR}/kyma-scripts/jobguard/scripts/run.sh"
 fi
 
 log::info "Create new cluster"
@@ -322,6 +277,12 @@ installHelm
 
 log::info "Install Kyma CLI"
 installKymaCLI
+
+log::info "Installing Kyma"
+installKyma
+
+log::info "Installing database"
+installDatabase
 
 NEW_VERSION_COMMIT_ID=$(cd "$COMPASS_SOURCES_DIR" && git rev-parse --short HEAD)
 log::info "Install Compass version from main"
@@ -365,18 +326,32 @@ for POD in $PODS; do
   kubectl logs -n kyma-system "$POD" -c "$CONTAINER" > "$CONTAINER"-new
 
   if [ -f "$CONTAINER"-old ]; then
-    log::info "Stats of the main installation"
+    echo "================================="
+    
+    log::info "logs of the main installation"
+    cat "$CONTAINER"-old
+    echo "---------------------------------"
+    log::info "benchstat of the main installation"
     benchstat "$CONTAINER"-old
+    
+    echo "================================="
 
-    log::info "Stats of the new installation"
+    log::info "logs of the new installation"
+    cat "$CONTAINER"-new
+    echo "---------------------------------"
+    log::info "benchstat of the new installation"
     benchstat "$CONTAINER"-new
+    
+    echo "================================="
 
     STATS=$(benchstat "$CONTAINER"-old "$CONTAINER"-new)
     log::info "Performance comparison statistics"
     echo "$STATS"
 
-    DELTA=$(echo -n "$STATS" | tail +2 | { grep -v '~' || true; } | awk '{print $(NF-2)}')
-    if [[ $DELTA == +* ]]; then # If delta is positive
+    # Delta - difference between performance - a positive value denotes performance degradation
+    # '|| true' is needed as grep returns exit code 1 when it cannot find a line and breaks the pipeline
+    DELTA=$(echo -n "$STATS" | tail +2 | { grep -v '~' || true; } | awk '{print $(NF-2)}' | grep '^+' || true)
+    if [[ -n "$DELTA" ]]; then # grep will only catch positive values that indicate degradation
       log::error "There is significant performance degradation in the new release!"
       CHECK_FAILED=true
       FAILED_TESTS="$CONTAINER\\n$FAILED_TESTS"

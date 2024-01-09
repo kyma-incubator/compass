@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -14,6 +13,10 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
@@ -50,7 +53,6 @@ const (
 	grantTypeFieldName   = "grant_type"
 	passwordGrantType    = "password"
 	credentialsGrantType = "client_credentials"
-	claimsKey            = "claims_key"
 
 	clientIDKey     = "client_id"
 	clientSecretKey = "client_secret"
@@ -89,7 +91,7 @@ func FetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL str
 	require.NoError(t, err)
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(fmt.Sprintf("response status code is %d", resp.StatusCode))
+		return nil, errors.Errorf("response status code is %d", resp.StatusCode)
 	}
 	return &hydraToken, nil
 }
@@ -124,7 +126,7 @@ func FetchHydraAccessTokenBench(b *testing.B, encodedCredentials string, tokenUR
 	require.NoError(b, err)
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(fmt.Sprintf("response status code is %d", resp.StatusCode))
+		return nil, errors.Errorf("response status code is %d", resp.StatusCode)
 	}
 	return &hydraToken, nil
 }
@@ -161,7 +163,7 @@ func GetClientCredentialsToken(t *testing.T, ctx context.Context, tokenURL, clie
 	data.Add(grantTypeFieldName, credentialsGrantType)
 	data.Add(clientIDKey, clientID)
 	data.Add(clientSecretKey, clientSecret)
-	data.Add(claimsKey, staticMappingClaimsKey)
+	data.Add(claims.ClaimsKey, staticMappingClaimsKey)
 
 	token := GetToken(t, ctx, tokenURL, clientID, clientSecret, data)
 	log.C(ctx).Info("Successfully issued client_credentials token")
@@ -175,7 +177,7 @@ func GetClientCredentialsTokenWithClient(t *testing.T, ctx context.Context, clie
 	data.Add(grantTypeFieldName, credentialsGrantType)
 	data.Add(clientIDKey, clientID)
 	data.Add(clientSecretKey, clientSecret)
-	data.Add(claimsKey, staticMappingClaimsKey)
+	data.Add(claims.ClaimsKey, staticMappingClaimsKey)
 
 	oauthConfig := OauthConfig{
 		TokenURL:     tokenURL,
@@ -195,7 +197,7 @@ func GetUserToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientS
 	data := url.Values{}
 	data.Add(grantTypeFieldName, passwordGrantType)
 	data.Add(clientIDKey, clientID)
-	data.Add(claimsKey, staticMappingClaimsKey)
+	data.Add(claims.ClaimsKey, staticMappingClaimsKey)
 	data.Add(userNameKey, username)
 	data.Add(passwordKey, password)
 
@@ -267,6 +269,20 @@ func FlattenTokenClaims(stdT *testing.T, consumerToken string) string {
 	}
 
 	return claims
+}
+
+func ChangeSubdomain(tokenURL, newSubdomain, oauthTokenPath string) (string, error) {
+	baseTokenURL, err := url.Parse(tokenURL)
+	if err != nil {
+		return "", errors.Errorf("failed to parse auth url '%s': %v", tokenURL, err)
+	}
+	parts := strings.Split(baseTokenURL.Hostname(), ".")
+	if len(parts) < 2 {
+		return "", errors.Errorf("auth url '%s' should have a subdomain", tokenURL)
+	}
+	originalSubdomain := parts[0]
+
+	return strings.Replace(tokenURL, originalSubdomain, newSubdomain, 1) + oauthTokenPath, nil
 }
 
 func getTokenPayload(t *testing.T, token string) string {

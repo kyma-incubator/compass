@@ -22,13 +22,16 @@ func (_m *SpecService) CreateByReferenceObjectID(ctx context.Context, in model.S
 	ret := _m.Called(ctx, in, resourceType, objectType, objectID)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.SpecInput, resource.Type, model.SpecReferenceObjectType, string) (string, error)); ok {
+		return rf(ctx, in, resourceType, objectType, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.SpecInput, resource.Type, model.SpecReferenceObjectType, string) string); ok {
 		r0 = rf(ctx, in, resourceType, objectType, objectID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.SpecInput, resource.Type, model.SpecReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, in, resourceType, objectType, objectID)
 	} else {
@@ -43,6 +46,10 @@ func (_m *SpecService) GetByReferenceObjectID(ctx context.Context, resourceType 
 	ret := _m.Called(ctx, resourceType, objectType, objectID)
 
 	var r0 *model.Spec
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, model.SpecReferenceObjectType, string) (*model.Spec, error)); ok {
+		return rf(ctx, resourceType, objectType, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, model.SpecReferenceObjectType, string) *model.Spec); ok {
 		r0 = rf(ctx, resourceType, objectType, objectID)
 	} else {
@@ -51,7 +58,6 @@ func (_m *SpecService) GetByReferenceObjectID(ctx context.Context, resourceType 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, model.SpecReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, resourceType, objectType, objectID)
 	} else {
@@ -66,6 +72,10 @@ func (_m *SpecService) ListFetchRequestsByReferenceObjectIDs(ctx context.Context
 	ret := _m.Called(ctx, tenant, objectIDs, objectType)
 
 	var r0 []*model.FetchRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, model.SpecReferenceObjectType) ([]*model.FetchRequest, error)); ok {
+		return rf(ctx, tenant, objectIDs, objectType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, model.SpecReferenceObjectType) []*model.FetchRequest); ok {
 		r0 = rf(ctx, tenant, objectIDs, objectType)
 	} else {
@@ -74,7 +84,6 @@ func (_m *SpecService) ListFetchRequestsByReferenceObjectIDs(ctx context.Context
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, model.SpecReferenceObjectType) error); ok {
 		r1 = rf(ctx, tenant, objectIDs, objectType)
 	} else {
@@ -89,6 +98,10 @@ func (_m *SpecService) RefetchSpec(ctx context.Context, id string, objectType mo
 	ret := _m.Called(ctx, id, objectType)
 
 	var r0 *model.Spec
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.SpecReferenceObjectType) (*model.Spec, error)); ok {
+		return rf(ctx, id, objectType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.SpecReferenceObjectType) *model.Spec); ok {
 		r0 = rf(ctx, id, objectType)
 	} else {
@@ -97,7 +110,6 @@ func (_m *SpecService) RefetchSpec(ctx context.Context, id string, objectType mo
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.SpecReferenceObjectType) error); ok {
 		r1 = rf(ctx, id, objectType)
 	} else {
@@ -121,13 +133,12 @@ func (_m *SpecService) UpdateByReferenceObjectID(ctx context.Context, id string,
 	return r0
 }
 
-type mockConstructorTestingTNewSpecService interface {
+// NewSpecService creates a new instance of SpecService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSpecService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSpecService creates a new instance of SpecService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSpecService(t mockConstructorTestingTNewSpecService) *SpecService {
+}) *SpecService {
 	mock := &SpecService{}
 	mock.Mock.Test(t)
 

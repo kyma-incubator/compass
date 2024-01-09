@@ -49,13 +49,16 @@ func (_m *ApplicationTemplateRepository) Exists(ctx context.Context, id string) 
 	ret := _m.Called(ctx, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
 		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -70,6 +73,10 @@ func (_m *ApplicationTemplateRepository) Get(ctx context.Context, id string) (*m
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.ApplicationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.ApplicationTemplate, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.ApplicationTemplate); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -78,7 +85,6 @@ func (_m *ApplicationTemplateRepository) Get(ctx context.Context, id string) (*m
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -93,6 +99,10 @@ func (_m *ApplicationTemplateRepository) GetByFilters(ctx context.Context, filte
 	ret := _m.Called(ctx, filter)
 
 	var r0 *model.ApplicationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)); ok {
+		return rf(ctx, filter)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) *model.ApplicationTemplate); ok {
 		r0 = rf(ctx, filter)
 	} else {
@@ -101,7 +111,6 @@ func (_m *ApplicationTemplateRepository) GetByFilters(ctx context.Context, filte
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, filter)
 	} else {
@@ -116,13 +125,16 @@ func (_m *ApplicationTemplateRepository) List(ctx context.Context, filter []*lab
 	ret := _m.Called(ctx, filter, pageSize, cursor)
 
 	var r0 model.ApplicationTemplatePage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) (model.ApplicationTemplatePage, error)); ok {
+		return rf(ctx, filter, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) model.ApplicationTemplatePage); ok {
 		r0 = rf(ctx, filter, pageSize, cursor)
 	} else {
 		r0 = ret.Get(0).(model.ApplicationTemplatePage)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, filter, pageSize, cursor)
 	} else {
@@ -137,6 +149,10 @@ func (_m *ApplicationTemplateRepository) ListByFilters(ctx context.Context, filt
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*model.ApplicationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) ([]*model.ApplicationTemplate, error)); ok {
+		return rf(ctx, filter)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) []*model.ApplicationTemplate); ok {
 		r0 = rf(ctx, filter)
 	} else {
@@ -145,7 +161,6 @@ func (_m *ApplicationTemplateRepository) ListByFilters(ctx context.Context, filt
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, filter)
 	} else {
@@ -160,6 +175,10 @@ func (_m *ApplicationTemplateRepository) ListByName(ctx context.Context, id stri
 	ret := _m.Called(ctx, id)
 
 	var r0 []*model.ApplicationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.ApplicationTemplate, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.ApplicationTemplate); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -168,7 +187,6 @@ func (_m *ApplicationTemplateRepository) ListByName(ctx context.Context, id stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -192,13 +210,12 @@ func (_m *ApplicationTemplateRepository) Update(ctx context.Context, _a1 model.A
 	return r0
 }
 
-type mockConstructorTestingTNewApplicationTemplateRepository interface {
+// NewApplicationTemplateRepository creates a new instance of ApplicationTemplateRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplicationTemplateRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplicationTemplateRepository creates a new instance of ApplicationTemplateRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationTemplateRepository(t mockConstructorTestingTNewApplicationTemplateRepository) *ApplicationTemplateRepository {
+}) *ApplicationTemplateRepository {
 	mock := &ApplicationTemplateRepository{}
 	mock.Mock.Test(t)
 

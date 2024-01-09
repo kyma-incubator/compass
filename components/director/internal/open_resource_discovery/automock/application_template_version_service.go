@@ -19,13 +19,16 @@ func (_m *ApplicationTemplateVersionService) Create(ctx context.Context, appTemp
 	ret := _m.Called(ctx, appTemplateID, item)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.ApplicationTemplateVersionInput) (string, error)); ok {
+		return rf(ctx, appTemplateID, item)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.ApplicationTemplateVersionInput) string); ok {
 		r0 = rf(ctx, appTemplateID, item)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, *model.ApplicationTemplateVersionInput) error); ok {
 		r1 = rf(ctx, appTemplateID, item)
 	} else {
@@ -40,6 +43,10 @@ func (_m *ApplicationTemplateVersionService) GetByAppTemplateIDAndVersion(ctx co
 	ret := _m.Called(ctx, id, version)
 
 	var r0 *model.ApplicationTemplateVersion
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.ApplicationTemplateVersion, error)); ok {
+		return rf(ctx, id, version)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.ApplicationTemplateVersion); ok {
 		r0 = rf(ctx, id, version)
 	} else {
@@ -48,7 +55,6 @@ func (_m *ApplicationTemplateVersionService) GetByAppTemplateIDAndVersion(ctx co
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, id, version)
 	} else {
@@ -63,6 +69,10 @@ func (_m *ApplicationTemplateVersionService) ListByAppTemplateID(ctx context.Con
 	ret := _m.Called(ctx, appTemplateID)
 
 	var r0 []*model.ApplicationTemplateVersion
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.ApplicationTemplateVersion, error)); ok {
+		return rf(ctx, appTemplateID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.ApplicationTemplateVersion); ok {
 		r0 = rf(ctx, appTemplateID)
 	} else {
@@ -71,7 +81,6 @@ func (_m *ApplicationTemplateVersionService) ListByAppTemplateID(ctx context.Con
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appTemplateID)
 	} else {
@@ -95,13 +104,12 @@ func (_m *ApplicationTemplateVersionService) Update(ctx context.Context, id stri
 	return r0
 }
 
-type mockConstructorTestingTNewApplicationTemplateVersionService interface {
+// NewApplicationTemplateVersionService creates a new instance of ApplicationTemplateVersionService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplicationTemplateVersionService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplicationTemplateVersionService creates a new instance of ApplicationTemplateVersionService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationTemplateVersionService(t mockConstructorTestingTNewApplicationTemplateVersionService) *ApplicationTemplateVersionService {
+}) *ApplicationTemplateVersionService {
 	mock := &ApplicationTemplateVersionService{}
 	mock.Mock.Test(t)
 

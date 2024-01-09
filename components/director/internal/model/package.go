@@ -25,9 +25,10 @@ type Package struct {
 	LicenseType                  *string
 	SupportInfo                  *string
 	Tags                         json.RawMessage
+	RuntimeRestriction           *string
 	Countries                    json.RawMessage
 	Labels                       json.RawMessage
-	PolicyLevel                  string
+	PolicyLevel                  *string
 	CustomPolicyLevel            *string
 	PartOfProducts               json.RawMessage
 	LineOfBusiness               json.RawMessage
@@ -49,9 +50,10 @@ type PackageInput struct {
 	LicenseType         *string         `json:"licenseType"`
 	SupportInfo         *string         `json:"supportInfo"`
 	Tags                json.RawMessage `json:"tags"`
+	RuntimeRestriction  *string         `json:"runtimeRestriction"`
 	Countries           json.RawMessage `json:"countries"`
 	Labels              json.RawMessage `json:"labels"`
-	PolicyLevel         string          `json:"policyLevel"`
+	PolicyLevel         *string         `json:"policyLevel"`
 	CustomPolicyLevel   *string         `json:"customPolicyLevel"`
 	PartOfProducts      json.RawMessage `json:"partOfProducts"`
 	LineOfBusiness      json.RawMessage `json:"lineOfBusiness"`
@@ -83,6 +85,7 @@ func (i *PackageInput) ToPackage(id string, resourceType resource.Type, resource
 		LicenseType:         i.LicenseType,
 		SupportInfo:         i.SupportInfo,
 		Tags:                i.Tags,
+		RuntimeRestriction:  i.RuntimeRestriction,
 		Countries:           i.Countries,
 		Labels:              i.Labels,
 		PolicyLevel:         i.PolicyLevel,
@@ -120,6 +123,7 @@ func (p *Package) SetFromUpdateInput(update PackageInput, pkgHash uint64) {
 	p.LicenseType = update.LicenseType
 	p.SupportInfo = update.SupportInfo
 	p.Tags = update.Tags
+	p.RuntimeRestriction = update.RuntimeRestriction
 	p.Countries = update.Countries
 	p.Labels = update.Labels
 	p.PolicyLevel = update.PolicyLevel

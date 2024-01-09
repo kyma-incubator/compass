@@ -15,22 +15,23 @@ type TenantRepo struct {
 	mock.Mock
 }
 
-// ListBySubscribedRuntimes provides a mock function with given fields: ctx
-func (_m *TenantRepo) ListBySubscribedRuntimes(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
-	ret := _m.Called(ctx)
+// ExistsSubscribed provides a mock function with given fields: ctx, id, selfDistinguishLabel
+func (_m *TenantRepo) ExistsSubscribed(ctx context.Context, id string, selfDistinguishLabel string) (bool, error) {
+	ret := _m.Called(ctx, id, selfDistinguishLabel)
 
-	var r0 []*model.BusinessTenantMapping
-	if rf, ok := ret.Get(0).(func(context.Context) []*model.BusinessTenantMapping); ok {
-		r0 = rf(ctx)
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, id, selfDistinguishLabel)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
+		r0 = rf(ctx, id, selfDistinguishLabel)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.BusinessTenantMapping)
-		}
+		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, id, selfDistinguishLabel)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -38,13 +39,38 @@ func (_m *TenantRepo) ListBySubscribedRuntimes(ctx context.Context) ([]*model.Bu
 	return r0, r1
 }
 
-type mockConstructorTestingTNewTenantRepo interface {
-	mock.TestingT
-	Cleanup(func())
+// ListBySubscribedRuntimesAndApplicationTemplates provides a mock function with given fields: ctx, selfRegDistinguishLabel
+func (_m *TenantRepo) ListBySubscribedRuntimesAndApplicationTemplates(ctx context.Context, selfRegDistinguishLabel string) ([]*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, selfRegDistinguishLabel)
+
+	var r0 []*model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, selfRegDistinguishLabel)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.BusinessTenantMapping); ok {
+		r0 = rf(ctx, selfRegDistinguishLabel)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BusinessTenantMapping)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, selfRegDistinguishLabel)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // NewTenantRepo creates a new instance of TenantRepo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantRepo(t mockConstructorTestingTNewTenantRepo) *TenantRepo {
+// The first argument is typically a *testing.T value.
+func NewTenantRepo(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *TenantRepo {
 	mock := &TenantRepo{}
 	mock.Mock.Test(t)
 

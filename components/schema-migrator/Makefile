@@ -1,6 +1,6 @@
 APP_NAME = compass-schema-migrator
 APP_PATH = components/schema-migrator
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.17.0
+BUILDPACK = europe-docker.pkg.dev/kyma-project/prod/test-infra/buildpack-golang:v20230323-a1ac96db
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export SKIP_DEPLOY_MESSAGE = "Building k3d image and redeployment of Schema Migrator is not allowed"
 export SKIP_TEST_MESSAGE = "Test goal for Schema Migrator is empty"

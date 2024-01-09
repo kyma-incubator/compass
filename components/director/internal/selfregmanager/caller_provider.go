@@ -3,10 +3,10 @@ package selfregmanager
 import (
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
 	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/securehttp"
 	"github.com/pkg/errors"
 )
 

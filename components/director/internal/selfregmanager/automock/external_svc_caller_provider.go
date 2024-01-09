@@ -19,6 +19,10 @@ func (_m *ExternalSvcCallerProvider) GetCaller(_a0 config.SelfRegConfig, _a1 str
 	ret := _m.Called(_a0, _a1)
 
 	var r0 selfregmanager.ExternalSvcCaller
+	var r1 error
+	if rf, ok := ret.Get(0).(func(config.SelfRegConfig, string) (selfregmanager.ExternalSvcCaller, error)); ok {
+		return rf(_a0, _a1)
+	}
 	if rf, ok := ret.Get(0).(func(config.SelfRegConfig, string) selfregmanager.ExternalSvcCaller); ok {
 		r0 = rf(_a0, _a1)
 	} else {
@@ -27,7 +31,6 @@ func (_m *ExternalSvcCallerProvider) GetCaller(_a0 config.SelfRegConfig, _a1 str
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(config.SelfRegConfig, string) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
@@ -37,13 +40,12 @@ func (_m *ExternalSvcCallerProvider) GetCaller(_a0 config.SelfRegConfig, _a1 str
 	return r0, r1
 }
 
-type mockConstructorTestingTNewExternalSvcCallerProvider interface {
+// NewExternalSvcCallerProvider creates a new instance of ExternalSvcCallerProvider. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewExternalSvcCallerProvider(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewExternalSvcCallerProvider creates a new instance of ExternalSvcCallerProvider. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewExternalSvcCallerProvider(t mockConstructorTestingTNewExternalSvcCallerProvider) *ExternalSvcCallerProvider {
+}) *ExternalSvcCallerProvider {
 	mock := &ExternalSvcCallerProvider{}
 	mock.Mock.Test(t)
 

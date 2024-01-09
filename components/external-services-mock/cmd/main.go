@@ -11,6 +11,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/header"
+	panicrecovery "github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationcreator"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/formationnotification"
@@ -31,6 +38,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/cert"
 
+	modelJwt "github.com/kyma-incubator/compass/components/external-services-mock/internal/jwt"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/oauth"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/webhook"
@@ -61,14 +69,18 @@ type config struct {
 	JWKSPath    string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
-	NotificationConfig       formationnotification.Configuration
-	DestinationCreatorConfig *destinationcreator.Config
-	DestinationServiceConfig DestinationServiceConfig
-	ORDServers               ORDServers
-	SelfRegConfig            selfreg.Config
-	DefaultTenant            string `envconfig:"APP_DEFAULT_TENANT"`
-	TrustedTenant            string `envconfig:"APP_TRUSTED_TENANT"`
-	OnDemandTenant           string `envconfig:"APP_ON_DEMAND_TENANT"`
+	ProviderDestinationConfig formationnotification.ProviderDestinationConfig
+	NotificationConfig        formationnotification.Configuration
+	DestinationCreatorConfig  *destinationcreator.Config
+	DestinationServiceConfig  DestinationServiceConfig
+	ORDServers                ORDServers
+	SelfRegConfig             selfreg.Config
+	DefaultTenant             string `envconfig:"APP_DEFAULT_TENANT"`
+	DefaultCustomerTenant     string `envconfig:"APP_DEFAULT_CUSTOMER_TENANT"`
+	TrustedTenant             string `envconfig:"APP_TRUSTED_TENANT"`
+	OnDemandTenant            string `envconfig:"APP_ON_DEMAND_TENANT"`
+
+	KeyLoaderConfig credloader.KeysConfig
 
 	TenantConfig         subscription.Config
 	TenantProviderConfig subscription.ProviderConfig
@@ -81,9 +93,14 @@ type config struct {
 
 // DestinationServiceConfig configuration for destination service endpoints.
 type DestinationServiceConfig struct {
-	TenantDestinationsEndpoint           string `envconfig:"APP_DESTINATION_TENANT_ENDPOINT,default=/destination-configuration/v1/subaccountDestinations"`
-	TenantDestinationCertificateEndpoint string `envconfig:"APP_DESTINATION_CERTIFICATE_TENANT_ENDPOINT,default=/destination-configuration/v1/subaccountCertificates"`
-	SensitiveDataEndpoint                string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
+	TenantDestinationsSubaccountLevelEndpoint           string `envconfig:"APP_DESTINATION_TENANT_SUBACCOUNT_LEVEL_ENDPOINT,default=/destination-configuration/v1/subaccountDestinations"`
+	TenantDestinationCertificateSubaccountLevelEndpoint string `envconfig:"APP_DESTINATION_CERTIFICATE_TENANT_SUBACCOUNT_LEVEL_ENDPOINT,default=/destination-configuration/v1/subaccountCertificates"`
+	TenantDestinationCertificateInstanceLevelEndpoint   string `envconfig:"APP_DESTINATION_CERTIFICATE_TENANT_INSTANCE_LEVEL_ENDPOINT,default=/destination-configuration/v1/instanceCertificates"`
+	TenantDestinationFindAPIEndpoint                    string `envconfig:"APP_DESTINATION_SERVICE_FIND_API_ENDPOINT,default=/destination-configuration/local/v1/destinations"`
+	SensitiveDataEndpoint                               string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
+	SubaccountIDClaimKey                                string `envconfig:"APP_DESTINATION_SUBACCOUNT_CLAIM_KEY"`
+	ServiceInstanceClaimKey                             string `envconfig:"APP_DESTINATION_SERVICE_INSTANCE_CLAIM_KEY"`
+	TestDestinationInstanceID                           string `envconfig:"APP_TEST_DESTINATION_INSTANCE_ID"`
 }
 
 // ORDServers is a configuration for ORD e2e tests. Those tests are more complex and require a dedicated server per application involved.
@@ -138,12 +155,24 @@ func main() {
 	err := envconfig.InitWithOptions(&cfg, envconfig.Options{Prefix: "APP", AllOptional: true})
 	exitOnError(err, "while loading configuration")
 
+	keyCache, err := credloader.StartKeyLoader(ctx, cfg.KeyLoaderConfig)
+	exitOnError(err, "failed to initialize key loader")
+
+	err = credloader.WaitForKeyCache(keyCache)
+	exitOnError(err, "failed to wait key loader")
+
 	extSvcMockURL := fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port)
 	staticClaimsMapping := map[string]oauth.ClaimsGetterFunc{
-		"tenantFetcherClaims":                claimsFunc("test", "tenant-fetcher", "client_id", cfg.TenantConfig.TestConsumerSubaccountID, "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
-		"subscriptionClaims":                 claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.SubscriptionProviderID, cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", "test-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.TenantConfig.ConsumerClaimsTenantIDKey: cfg.TenantConfig.TestConsumerSubaccountID, cfg.TenantConfig.ConsumerClaimsSubdomainKey: "consumerSubdomain"}),
-		"nsAdapterClaims":                    claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", "", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
-		"tenantFetcherClaimsTenantHierarchy": claimsFunc("test", "tenant-fetcher", "client_id", cfg.TenantConfig.TestConsumerSubaccountIDTenantHierarchy, "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
+		claims.TenantFetcherClaimKey:                   claimsFunc("test", "tenant-fetcher", "client_id", cfg.TenantConfig.TestConsumerSubaccountID, "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
+		claims.SubscriptionClaimKey:                    claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.SubscriptionProviderID, cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", "user-name@test.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.TenantConfig.ConsumerClaimsTenantIDKey: cfg.TenantConfig.TestConsumerSubaccountID, cfg.TenantConfig.ConsumerClaimsSubdomainKey: "consumerSubdomain"}),
+		claims.NotificationServiceAdapterClaimKey:      claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", "", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
+		claims.TenantFetcherTenantHierarchyClaimKey:    claimsFunc("test", "tenant-fetcher", "client_id", cfg.TenantConfig.TestConsumerSubaccountIDTenantHierarchy, "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
+		claims.DestinationProviderClaimKey:             claimsFunc("dest-provider-key-test", "destination-flow", "client_id", cfg.TenantConfig.TestProviderSubaccountID, "destination-provider-flow-identity", "destination-user-name@test.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.DestinationServiceConfig.SubaccountIDClaimKey: cfg.TenantConfig.TestProviderSubaccountID}),
+		claims.DestinationProviderWithInstanceClaimKey: claimsFunc("dest-provider-with-instance-key-test", "destination-flow", "client_id", cfg.TenantConfig.TestProviderSubaccountID, "destination-provider-with-instance-flow-identity", "destination-user-name@test.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.DestinationServiceConfig.SubaccountIDClaimKey: cfg.TenantConfig.TestProviderSubaccountID, cfg.DestinationServiceConfig.ServiceInstanceClaimKey: cfg.DestinationServiceConfig.TestDestinationInstanceID}),
+		claims.DestinationConsumerClaimKey:             claimsFunc("dest-consumer-key-test", "destination-flow", "client_id", cfg.TenantConfig.TestConsumerSubaccountID, "destination-consumer-flow-identity", "destination-user-name@test.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.DestinationServiceConfig.SubaccountIDClaimKey: cfg.TenantConfig.TestConsumerSubaccountID}),
+		claims.DestinationConsumerWithInstanceClaimKey: claimsFunc("dest-consumer-with-instance-key-test", "destination-flow", "client_id", cfg.TenantConfig.TestConsumerSubaccountID, "destination-consumer-with-instance-flow-identity", "destination-user-name@test.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.DestinationServiceConfig.SubaccountIDClaimKey: cfg.TenantConfig.TestConsumerSubaccountID, cfg.DestinationServiceConfig.ServiceInstanceClaimKey: cfg.DestinationServiceConfig.TestDestinationInstanceID}),
+		claims.AccountAuthenticatorClaimKey:            claimsFunc("unique-attr-authenticator-key", "unique-attr-authenticator-value", "client_id", "", "", "user-name-account-authenticator@test.com", extSvcMockURL, []string{"prefix.application:read", "prefix2.application:write"}, map[string]interface{}{"globalaccountid": "5984a414-1eed-4972-af2c-b2b6a415c7d7"}), // the '5984a414-1eed-4972-af2c-b2b6a415c7d7' is the external ID of 'ApplicationsForRuntimeTenantName' test tenant
+		claims.SubaccountAuthenticatorClaimKey:         claimsFunc("unique-attr-authenticator-key", "unique-attr-authenticator-value", "client_id", "", "", "user-name-subaccount-authenticator@test.com", extSvcMockURL, []string{"prefix.application:read", "prefix2.application:write"}, map[string]interface{}{"subaccountid": "e1e2f861-2b2e-42a9-ba9f-404d292e5471"}), // the 'e1e2f861-2b2e-42a9-ba9f-404d292e5471' is the external ID of 'TestTenantSubstitutionSubaccount2' test tenant
 	}
 
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -163,7 +192,7 @@ func main() {
 
 	destinationCreatorHandler := destinationcreator.NewHandler(cfg.DestinationCreatorConfig)
 
-	go startServer(ctx, initDefaultServer(cfg, key, staticClaimsMapping, httpClient, destinationCreatorHandler), wg)
+	go startServer(ctx, initDefaultServer(cfg, keyCache, key, staticClaimsMapping, httpClient, destinationCreatorHandler), wg)
 	go startServer(ctx, initDefaultCertServer(cfg, key, staticClaimsMapping, destinationCreatorHandler), wg)
 
 	for _, server := range ordServers {
@@ -181,10 +210,10 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client, destinationCreatorHandler *destinationcreator.Handler) *http.Server {
+func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client, destinationCreatorHandler *destinationcreator.Handler) *http.Server {
 	logger := logrus.New()
 	router := mux.NewRouter()
-	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint))
+	router.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint), header.AttachHeadersToContext())
 
 	router.HandleFunc(healthzEndpoint, health.HandleFunc)
 
@@ -205,10 +234,10 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 
 	// Both handlers below are part of the provider setup. On real environment when someone is subscribed to provider tenant we want to mock OnSubscription and GetDependency callbacks
 	// and return expected results. CMP will be returned as dependency and will execute its subscription logic.
-	// On local setup, subscription request will be directly to tenant fetcher component with preconfigured data, without need of these mocks.
+	// On local setup, subscription request will be directly to tenant fetcher component with preconfigured data, without a need of these mocks.
 
-	// OnSubscription callback handler. It handles subscription manager API callback request executed on real environment when someone is subscribed to a given tenant
 	providerHandler := provider.NewHandler(cfg.DirectDependencyXsappname)
+	// OnSubscription callback handler. It handles subscription manager API callback request executed on real environment when someone is subscribed to a given tenant
 	router.HandleFunc("/tenants/v1/regional/{region}/callback/{tenantId}", providerHandler.OnSubscription).Methods(http.MethodPut, http.MethodDelete)
 
 	// Get dependencies handler. It handles subscription manager API dependency callback request executed on real environment when someone is subscribed to a given tenant
@@ -229,7 +258,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 
 	// Destination Service handler
 	destinationHandler := destinationfetcher.NewHandler()
-	tenantDestinationEndpoint := cfg.DestinationServiceConfig.TenantDestinationsEndpoint
+	tenantDestinationEndpoint := cfg.DestinationServiceConfig.TenantDestinationsSubaccountLevelEndpoint
 	sensitiveDataEndpoint := cfg.DestinationServiceConfig.SensitiveDataEndpoint + "/{name}"
 	router.HandleFunc(tenantDestinationEndpoint,
 		destinationHandler.GetSubaccountDestinationsPage).Methods(http.MethodGet)
@@ -238,10 +267,10 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.HandleFunc(sensitiveDataEndpoint, destinationHandler.GetSensitiveData).Methods(http.MethodGet)
 
 	// destination service handlers but the destination creator handler is used due to shared mappings
-	router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationCreatorHandler.GetDestinationByNameFromDestinationSvc).Methods(http.MethodGet)
+	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationFindAPIEndpoint+"/{name}", destinationCreatorHandler.FindDestinationByNameFromDestinationSvc).Methods(http.MethodGet)
 
-	tenantDestinationCertificateEndpoint := cfg.DestinationServiceConfig.TenantDestinationCertificateEndpoint
-	router.HandleFunc(tenantDestinationCertificateEndpoint+"/{name}", destinationCreatorHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
+	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationCertificateSubaccountLevelEndpoint+"/{name}", destinationCreatorHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
+	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationCertificateInstanceLevelEndpoint+"/{name}", destinationCreatorHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
 
 	var iasConfig ias.Config
 	err := envconfig.Init(&iasConfig)
@@ -255,12 +284,23 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
 	router.Methods(http.MethodDelete).PathPrefix("/systemfetcher/reset").HandlerFunc(systemFetcherHandler.HandleReset)
 	systemsRouter := router.PathPrefix("/systemfetcher/systems").Subrouter()
-	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator([]string{cfg.DefaultTenant, cfg.TrustedTenant})))
+	systemsRouter.Use(oauthMiddlewareMultiple([]MiddlewareArgs{
+		{
+			key:            &key.PublicKey,
+			validateClaims: getClaimsValidator([]string{cfg.DefaultTenant, cfg.TrustedTenant}),
+			ClaimGetter:    func() jwt.Claims { return &oauth.Claims{} },
+		},
+		{
+			key:            keyCache.Get()[cfg.KeyLoaderConfig.KeysSecretName].PublicKey,
+			validateClaims: getClaimsValidator([]string{cfg.DefaultCustomerTenant, cfg.TrustedTenant}),
+			ClaimGetter:    func() jwt.Claims { return &modelJwt.Claims{} },
+		},
+	}))
 	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
 
 	// Tenant fetcher handlers
 	allowedSubaccounts := []string{cfg.OnDemandTenant, cfg.TenantConfig.TestTenantOnDemandID}
-	tenantFetcherHandler := tenantfetcher.NewHandler(allowedSubaccounts, cfg.DefaultTenant)
+	tenantFetcherHandler := tenantfetcher.NewHandler(allowedSubaccounts, cfg.DefaultTenant, cfg.DefaultCustomerTenant)
 
 	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.AccountCreationEventType))
 	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.AccountCreationEventType))
@@ -312,7 +352,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 
 	selfRegisterHandler := selfreg.NewSelfRegisterHandler(cfg.SelfRegConfig)
 	selfRegRouter := router.PathPrefix(cfg.SelfRegConfig.Path).Subrouter()
-	selfRegRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator))
+	selfRegRouter.Use(correlation.AttachCorrelationIDToContext(), header.AttachHeadersToContext(), log.RequestLogger(), oauthMiddleware(&key.PublicKey, noopClaimsValidator))
 	selfRegRouter.HandleFunc("", selfRegisterHandler.HandleSelfRegPrep).Methods(http.MethodPost)
 	selfRegRouter.HandleFunc(fmt.Sprintf("/{%s}", selfreg.NamePath), selfRegisterHandler.HandleSelfRegCleanup).Methods(http.MethodDelete)
 
@@ -324,7 +364,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 
 func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, destinationCreatorHandler *destinationcreator.Handler) *http.Server {
 	router := mux.NewRouter()
-	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint))
+	router.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint), header.AttachHeadersToContext())
 
 	// Healthz handler
 	router.HandleFunc(healthzEndpoint, health.HandleFunc)
@@ -340,28 +380,44 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
-	notificationHandler := formationnotification.NewHandler(cfg.NotificationConfig)
+	notificationHandler := formationnotification.NewHandler(cfg.NotificationConfig, cfg.ProviderDestinationConfig)
 	// formation assignment notifications sync handlers
 	router.HandleFunc("/formation-callback/{tenantId}", notificationHandler.Patch).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/no-configuration/{tenantId}", notificationHandler.RespondWithNoConfig).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/no-configuration/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/configuration/{tenantId}", notificationHandler.RespondWithIncomplete).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/configuration/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/with-state/{tenantId}", notificationHandler.PatchWithState).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/with-state/{tenantId}/{applicationId}", notificationHandler.DeleteWithState).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/configuration/redirect-notification/{tenantId}", notificationHandler.RespondWithIncompleteAndRedirectDetails).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/configuration/redirect-notification/{tenantId}/{applicationId}", notificationHandler.RespondWithIncompleteAndRedirectDetails).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/redirect-notification/{tenantId}", notificationHandler.RedirectNotificationHandler).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/fail-once/{tenantId}", notificationHandler.FailOnceResponse).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/fail-once/{tenantId}/{applicationId}", notificationHandler.FailOnceResponse).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/fail/{tenantId}", notificationHandler.FailResponse).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/fail/{tenantId}/{applicationId}", notificationHandler.FailResponse).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/reset-should-fail", notificationHandler.ResetShouldFail).Methods(http.MethodDelete)
 	// formation assignment notifications handlers for kyma integration
+	router.HandleFunc("/v1/tenants/emptyCredentials", notificationHandler.KymaEmptyCredentials).Methods(http.MethodPatch, http.MethodDelete)
 	router.HandleFunc("/v1/tenants/basicCredentials", notificationHandler.KymaBasicCredentials).Methods(http.MethodPatch, http.MethodDelete)
 	router.HandleFunc("/v1/tenants/oauthCredentials", notificationHandler.KymaOauthCredentials).Methods(http.MethodPatch, http.MethodDelete)
 	// formation assignment notifications async handlers
+	router.HandleFunc("/formation-callback/async-old/{tenantId}", notificationHandler.AsyncOld).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/async-old/{tenantId}/{applicationId}", notificationHandler.AsyncDelete).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async/{tenantId}", notificationHandler.Async).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async/{tenantId}/{applicationId}", notificationHandler.AsyncDelete).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/async-no-config/{tenantId}", notificationHandler.AsyncNoConfig).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-no-response/{tenantId}", notificationHandler.AsyncNoResponseAssign).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-no-response/{tenantId}/{applicationId}", notificationHandler.AsyncNoResponseUnassign).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/async-create-ready/{tenantId}", notificationHandler.AsyncNoConfigWithCreateReady).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/async-delete-ready/{tenantId}/{applicationId}", notificationHandler.AsyncNoConfigWithDeleteReady).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async-fail-once/{tenantId}", notificationHandler.AsyncFailOnce).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-fail-once/{tenantId}/{applicationId}", notificationHandler.AsyncFailOnce).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/async-fail/{tenantId}", notificationHandler.AsyncFail).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/async-fail/{tenantId}/{applicationId}", notificationHandler.AsyncFail).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/async-fail-no-error/{tenantId}", notificationHandler.AsyncFailNoError).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/async-fail-no-error/{tenantId}/{applicationId}", notificationHandler.AsyncFailNoError).Methods(http.MethodDelete)
 	// formation assignment notifications handler for the destination creation/deletion
 	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}", notificationHandler.RespondWithIncompleteAndDestinationDetails).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}/{applicationId}", notificationHandler.DestinationDelete).Methods(http.MethodDelete)
@@ -381,17 +437,25 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/cleanup", notificationHandler.Cleanup).Methods(http.MethodDelete)
 
 	// destination creator handlers
-	destinationCreatorPath := cfg.DestinationCreatorConfig.DestinationAPIConfig.Path
-	deleteDestinationCreatorPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.DestinationAPIConfig.DestinationNameParam)
+	destinationCreatorSubaccountLevelPath := cfg.DestinationCreatorConfig.DestinationAPIConfig.SubaccountLevelPath
+	deleteDestinationCreatorSubaccountLevelPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.DestinationAPIConfig.DestinationNameParam)
+	router.HandleFunc(destinationCreatorSubaccountLevelPath, destinationCreatorHandler.CreateDestinations).Methods(http.MethodPost)
+	router.HandleFunc(destinationCreatorSubaccountLevelPath+deleteDestinationCreatorSubaccountLevelPathSuffix, destinationCreatorHandler.DeleteDestinations).Methods(http.MethodDelete)
 
-	router.HandleFunc(destinationCreatorPath, destinationCreatorHandler.CreateDestinations).Methods(http.MethodPost)
-	router.HandleFunc(destinationCreatorPath+deleteDestinationCreatorPathSuffix, destinationCreatorHandler.DeleteDestinations).Methods(http.MethodDelete)
+	destinationCreatorInstanceLevelPath := cfg.DestinationCreatorConfig.DestinationAPIConfig.InstanceLevelPath
+	deleteDestinationCreatorInstanceLevelPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.DestinationAPIConfig.DestinationNameParam)
+	router.HandleFunc(destinationCreatorInstanceLevelPath, destinationCreatorHandler.CreateDestinations).Methods(http.MethodPost)
+	router.HandleFunc(destinationCreatorInstanceLevelPath+deleteDestinationCreatorInstanceLevelPathSuffix, destinationCreatorHandler.DeleteDestinations).Methods(http.MethodDelete)
 
-	certificatePath := cfg.DestinationCreatorConfig.CertificateAPIConfig.Path
-	deleteCertificatePathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.CertificateAPIConfig.CertificateNameParam)
+	certificateSubaccountLevelPath := cfg.DestinationCreatorConfig.CertificateAPIConfig.SubaccountLevelPath
+	deleteCertificateSubaccountLevelPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.CertificateAPIConfig.CertificateNameParam)
+	router.HandleFunc(certificateSubaccountLevelPath, destinationCreatorHandler.CreateCertificate).Methods(http.MethodPost)
+	router.HandleFunc(certificateSubaccountLevelPath+deleteCertificateSubaccountLevelPathSuffix, destinationCreatorHandler.DeleteCertificate).Methods(http.MethodDelete)
 
-	router.HandleFunc(certificatePath, destinationCreatorHandler.CreateCertificate).Methods(http.MethodPost)
-	router.HandleFunc(certificatePath+deleteCertificatePathSuffix, destinationCreatorHandler.DeleteCertificate).Methods(http.MethodDelete)
+	certificateInstanceLevelPath := cfg.DestinationCreatorConfig.CertificateAPIConfig.InstanceLevelPath
+	deleteCertificateInstanceLevelPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.CertificateAPIConfig.CertificateNameParam)
+	router.HandleFunc(certificateInstanceLevelPath, destinationCreatorHandler.CreateCertificate).Methods(http.MethodPost)
+	router.HandleFunc(certificateInstanceLevelPath+deleteCertificateInstanceLevelPathSuffix, destinationCreatorHandler.DeleteCertificate).Methods(http.MethodDelete)
 
 	// "internal technical" handlers for deleting in-memory destinations and destination certificates mappings
 	router.HandleFunc("/destinations/cleanup", destinationCreatorHandler.CleanupDestinations).Methods(http.MethodDelete)
@@ -495,14 +559,27 @@ func initUnsecuredORDServerWithAdditionalContent(cfg config) *http.Server {
 func initCertSecuredProxyORDServer(cfg config) *http.Server {
 	router := mux.NewRouter()
 	proxyPath := "/proxy"
+	proxyHeader := "target_host"
+	baseURL := fmt.Sprintf("%s:%d%s", cfg.BaseURL, cfg.ORDServers.ProxyPort, proxyPath)
+
+	router.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if exists := r.Header.Get(proxyHeader); exists == "" {
+				httphelpers.WriteError(w, errors.Errorf("required header %s is missing in the request", proxyHeader), http.StatusBadRequest)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	})
 
 	router.HandleFunc(proxyPath, ord_aggregator.HandleFuncOrdConfig(fmt.Sprintf("%s:%d%s", cfg.BaseURL, cfg.ORDServers.ProxyPort, proxyPath), "sap:cmp-mtls:v1"))
 
-	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d/proxy", cfg.BaseURL, cfg.ORDServers.ProxyPort), "sap:cmp-mtls:v1"))
-	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d/proxy", cfg.BaseURL, cfg.ORDServers.ProxyPort), "sap:cmp-mtls:v1"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(baseURL, "sap:cmp-mtls:v1"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(baseURL, "sap:cmp-mtls:v1"))
 
-	router.HandleFunc(fmt.Sprintf("%s/external-api/spec", proxyPath), apispec.HandleFunc)
-	router.HandleFunc(fmt.Sprintf("%s/external-api/spec/flapping", proxyPath), apispec.FlappingHandleFunc())
+	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
+	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.ProxyPort),
@@ -568,7 +645,56 @@ func initOauthSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	}
 }
 
-func oauthMiddleware(key *rsa.PublicKey, validateClaims func(claims *oauth.Claims) bool) func(next http.Handler) http.Handler {
+type MiddlewareArgs struct {
+	key            *rsa.PublicKey
+	validateClaims func(claims jwt.Claims) bool
+	ClaimGetter    func() jwt.Claims
+}
+
+func oauthMiddlewareMultiple(args []MiddlewareArgs) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authHeader := r.Header.Get(httphelpers.AuthorizationHeaderKey)
+			if len(authHeader) == 0 {
+				httphelpers.WriteError(w, errors.New("No Authorization header"), http.StatusUnauthorized)
+				return
+			}
+			if !strings.Contains(authHeader, "Bearer") {
+				httphelpers.WriteError(w, errors.New("No Bearer token"), http.StatusUnauthorized)
+				return
+			}
+
+			token := strings.TrimPrefix(authHeader, "Bearer ")
+
+			for _, middlewareArgs := range args {
+				claims := middlewareArgs.ClaimGetter()
+				if _, err := jwt.ParseWithClaims(token, claims, func(_ *jwt.Token) (interface{}, error) {
+					return middlewareArgs.key, nil
+				}); err != nil {
+					continue
+				}
+
+				if !middlewareArgs.validateClaims(claims) {
+					continue
+				}
+
+				tenant := getClaimsTenant(claims)
+
+				log.C(r.Context()).Infof("Middleware authenticated successfully. Continue with request.")
+				r.Header.Set("tenant", tenant)
+				log.C(r.Context()).Infof("Setting tenant %s for tenant header", tenant)
+
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			httphelpers.WriteError(w, errors.New("Could not validate token"), http.StatusUnauthorized)
+			return
+		})
+	}
+}
+
+func oauthMiddleware(key *rsa.PublicKey, validateClaims func(claims Claims) bool) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get(httphelpers.AuthorizationHeaderKey)
@@ -657,17 +783,33 @@ func stopServer(server *http.Server) {
 	}
 }
 
-func noopClaimsValidator(_ *oauth.Claims) bool {
+func noopClaimsValidator(_ Claims) bool {
 	return true
 }
 
-func getClaimsValidator(trustedTenants []string) func(*oauth.Claims) bool {
-	return func(claims *oauth.Claims) bool {
+type Claims interface {
+	GetTenant() string
+}
+
+func getClaimsValidator(trustedTenants []string) func(jwt.Claims) bool {
+	return func(claims jwt.Claims) bool {
 		for _, tenant := range trustedTenants {
-			if claims.Tenant == tenant {
+			claimsTenant := getClaimsTenant(claims)
+			if claimsTenant == tenant {
 				return true
 			}
 		}
 		return false
+	}
+}
+
+func getClaimsTenant(claims jwt.Claims) string {
+	switch c := claims.(type) {
+	case *oauth.Claims:
+		return c.GetTenant()
+	case *modelJwt.Claims:
+		return c.GetTenant()
+	default:
+		return ""
 	}
 }

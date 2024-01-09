@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 
@@ -159,6 +159,21 @@ func FixTenantsPageSearchRequest(searchTerm string, first int) *gcli.Request {
 				}`, searchTerm, first, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.OmitForTenant([]string{"labels", "initialized"}))))
 }
 
+func FixRootTenantRequest(externalTenant string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+                result: rootTenant(externalTenant: "%s") {
+                  id
+                  internalID
+                  initialized
+                  parentID
+                  provider
+                  type
+                  name
+                }
+              }`, externalTenant))
+}
+
 func FixTenantRequest(externalID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -195,7 +210,7 @@ func FixDeleteTenantsRequest(t require.TestingT, tenants []graphql.BusinessTenan
 	return gcli.NewRequest(tenantsQuery)
 }
 
-func FixCertSecuredHTTPClient(cc certloader.Cache, externalClientCertSecretName string, skipSSLValidation bool) *http.Client {
+func FixCertSecuredHTTPClient(cc credloader.CertCache, externalClientCertSecretName string, skipSSLValidation bool) *http.Client {
 	certSecuredHTTPClient := &http.Client{
 		Timeout: 10 * time.Second,
 		Transport: &http.Transport{

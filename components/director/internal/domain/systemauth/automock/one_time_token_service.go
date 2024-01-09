@@ -17,13 +17,16 @@ func (_m *OneTimeTokenService) IsTokenValid(systemAuth *model.SystemAuth) (bool,
 	ret := _m.Called(systemAuth)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.SystemAuth) (bool, error)); ok {
+		return rf(systemAuth)
+	}
 	if rf, ok := ret.Get(0).(func(*model.SystemAuth) bool); ok {
 		r0 = rf(systemAuth)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.SystemAuth) error); ok {
 		r1 = rf(systemAuth)
 	} else {
@@ -33,13 +36,12 @@ func (_m *OneTimeTokenService) IsTokenValid(systemAuth *model.SystemAuth) (bool,
 	return r0, r1
 }
 
-type mockConstructorTestingTNewOneTimeTokenService interface {
+// NewOneTimeTokenService creates a new instance of OneTimeTokenService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewOneTimeTokenService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewOneTimeTokenService creates a new instance of OneTimeTokenService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewOneTimeTokenService(t mockConstructorTestingTNewOneTimeTokenService) *OneTimeTokenService {
+}) *OneTimeTokenService {
 	mock := &OneTimeTokenService{}
 	mock.Mock.Test(t)
 

@@ -20,6 +20,10 @@ func (_m *FormationConstraintService) ListByFormationTemplateIDs(ctx context.Con
 	ret := _m.Called(ctx, formationTemplateIDs)
 
 	var r0 [][]*model.FormationConstraint
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([][]*model.FormationConstraint, error)); ok {
+		return rf(ctx, formationTemplateIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string) [][]*model.FormationConstraint); ok {
 		r0 = rf(ctx, formationTemplateIDs)
 	} else {
@@ -28,7 +32,6 @@ func (_m *FormationConstraintService) ListByFormationTemplateIDs(ctx context.Con
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
 		r1 = rf(ctx, formationTemplateIDs)
 	} else {
@@ -38,13 +41,12 @@ func (_m *FormationConstraintService) ListByFormationTemplateIDs(ctx context.Con
 	return r0, r1
 }
 
-type mockConstructorTestingTNewFormationConstraintService interface {
+// NewFormationConstraintService creates a new instance of FormationConstraintService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationConstraintService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationConstraintService creates a new instance of FormationConstraintService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationConstraintService(t mockConstructorTestingTNewFormationConstraintService) *FormationConstraintService {
+}) *FormationConstraintService {
 	mock := &FormationConstraintService{}
 	mock.Mock.Test(t)
 

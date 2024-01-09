@@ -467,6 +467,64 @@ func fixBundlePage(bundles []*model.Bundle) *model.BundlePage {
 	}
 }
 
+func fixModelIntegrationDependency(id, appID, name, description string) *model.IntegrationDependency {
+	return &model.IntegrationDependency{
+		ApplicationID: &appID,
+		Title:         name,
+		Description:   &description,
+		BaseEntity:    &model.BaseEntity{ID: id},
+	}
+}
+
+func fixGQLIntegrationDependency(id, name, description string) *graphql.IntegrationDependency {
+	return &graphql.IntegrationDependency{
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
+		Name:        name,
+		Description: &description,
+	}
+}
+
+func fixGQLIntegrationDependencyPage(integrationDependencies []*graphql.IntegrationDependency) *graphql.IntegrationDependencyPage {
+	return &graphql.IntegrationDependencyPage{
+		Data: integrationDependencies,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(integrationDependencies),
+	}
+}
+
+func fixIntegrationDependencyPage(integrationDependencies []*model.IntegrationDependency) *model.IntegrationDependencyPage {
+	return &model.IntegrationDependencyPage{
+		Data: integrationDependencies,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(integrationDependencies),
+	}
+}
+
+func fixModelIntegrationDependencyAspect(id, appID, intDepID string) *model.Aspect {
+	return &model.Aspect{
+		ApplicationID:           str.Ptr(appID),
+		IntegrationDependencyID: intDepID,
+		BaseEntity:              &model.BaseEntity{ID: id},
+	}
+}
+
+func fixModelAspectEventResource(appID, aspectID string) *model.AspectEventResource {
+	return &model.AspectEventResource{
+		ApplicationID: str.Ptr(appID),
+		AspectID:      aspectID,
+	}
+}
+
 func fixModelAPIDef(id, appID, name, description string) *model.APIDefinition {
 	return &model.APIDefinition{
 		ApplicationID: &appID,

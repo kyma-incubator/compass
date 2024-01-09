@@ -26,3 +26,17 @@ func (_m *RevokedCertificatesRepository) Insert(ctx context.Context, hash string
 
 	return r0
 }
+
+// NewRevokedCertificatesRepository creates a new instance of RevokedCertificatesRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRevokedCertificatesRepository(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *RevokedCertificatesRepository {
+	mock := &RevokedCertificatesRepository{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
+}

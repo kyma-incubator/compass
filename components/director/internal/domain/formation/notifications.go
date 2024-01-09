@@ -38,7 +38,7 @@ type notificationsGenerator interface {
 	GenerateFormationLifecycleNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateName, formationTemplateID string, formationOperation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationNotificationRequest, error)
 }
 
-var emptyFormationAssignment = &webhookdir.FormationAssignment{Value: "\"\""}
+var emptyFormationAssignment = &webhookdir.FormationAssignment{}
 
 type notificationsService struct {
 	tenantRepository            tenantRepository
@@ -175,16 +175,12 @@ func (ns *notificationsService) PrepareDetailsForNotificationStatusReturned(ctx 
 
 func (ns *notificationsService) prepareDetailsForSendNotification(webhookNotificationReq webhookclient.WebhookExtRequest) (*formationconstraint.SendNotificationOperationDetails, error) {
 	webhookGql := webhookNotificationReq.GetWebhook()
-	webhookModel, err := ns.webhookConverter.ToModel(&webhookGql)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting webhook to model")
-	}
 
 	joinPointDetails := &formationconstraint.SendNotificationOperationDetails{
 		ResourceType:               webhookNotificationReq.GetObjectType(),
 		ResourceSubtype:            webhookNotificationReq.GetObjectSubtype(),
 		Operation:                  webhookNotificationReq.GetOperation(),
-		Webhook:                    webhookModel,
+		Webhook:                    webhookGql,
 		CorrelationID:              webhookNotificationReq.GetCorrelationID(),
 		TemplateInput:              webhookNotificationReq.GetObject(),
 		FormationAssignment:        webhookNotificationReq.GetFormationAssignment(),

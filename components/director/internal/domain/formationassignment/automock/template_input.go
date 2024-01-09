@@ -19,6 +19,10 @@ type TemplateInput struct {
 func (_m *TemplateInput) Clone() webhook.FormationAssignmentTemplateInput {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for Clone")
+	}
+
 	var r0 webhook.FormationAssignmentTemplateInput
 	if rf, ok := ret.Get(0).(func() webhook.FormationAssignmentTemplateInput); ok {
 		r0 = rf()
@@ -34,6 +38,10 @@ func (_m *TemplateInput) Clone() webhook.FormationAssignmentTemplateInput {
 // GetAssignment provides a mock function with given fields:
 func (_m *TemplateInput) GetAssignment() *model.FormationAssignment {
 	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAssignment")
+	}
 
 	var r0 *model.FormationAssignment
 	if rf, ok := ret.Get(0).(func() *model.FormationAssignment); ok {
@@ -51,6 +59,10 @@ func (_m *TemplateInput) GetAssignment() *model.FormationAssignment {
 func (_m *TemplateInput) GetParticipantsIDs() []string {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetParticipantsIDs")
+	}
+
 	var r0 []string
 	if rf, ok := ret.Get(0).(func() []string); ok {
 		r0 = rf()
@@ -66,6 +78,10 @@ func (_m *TemplateInput) GetParticipantsIDs() []string {
 // GetReverseAssignment provides a mock function with given fields:
 func (_m *TemplateInput) GetReverseAssignment() *model.FormationAssignment {
 	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetReverseAssignment")
+	}
 
 	var r0 *model.FormationAssignment
 	if rf, ok := ret.Get(0).(func() *model.FormationAssignment); ok {
@@ -83,7 +99,15 @@ func (_m *TemplateInput) GetReverseAssignment() *model.FormationAssignment {
 func (_m *TemplateInput) ParseHeadersTemplate(tmpl *string) (http.Header, error) {
 	ret := _m.Called(tmpl)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ParseHeadersTemplate")
+	}
+
 	var r0 http.Header
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*string) (http.Header, error)); ok {
+		return rf(tmpl)
+	}
 	if rf, ok := ret.Get(0).(func(*string) http.Header); ok {
 		r0 = rf(tmpl)
 	} else {
@@ -92,7 +116,6 @@ func (_m *TemplateInput) ParseHeadersTemplate(tmpl *string) (http.Header, error)
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*string) error); ok {
 		r1 = rf(tmpl)
 	} else {
@@ -106,7 +129,15 @@ func (_m *TemplateInput) ParseHeadersTemplate(tmpl *string) (http.Header, error)
 func (_m *TemplateInput) ParseInputTemplate(tmpl *string) ([]byte, error) {
 	ret := _m.Called(tmpl)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ParseInputTemplate")
+	}
+
 	var r0 []byte
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*string) ([]byte, error)); ok {
+		return rf(tmpl)
+	}
 	if rf, ok := ret.Get(0).(func(*string) []byte); ok {
 		r0 = rf(tmpl)
 	} else {
@@ -115,7 +146,6 @@ func (_m *TemplateInput) ParseInputTemplate(tmpl *string) ([]byte, error) {
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*string) error); ok {
 		r1 = rf(tmpl)
 	} else {
@@ -129,7 +159,15 @@ func (_m *TemplateInput) ParseInputTemplate(tmpl *string) ([]byte, error) {
 func (_m *TemplateInput) ParseURLTemplate(tmpl *string) (*webhook.URL, error) {
 	ret := _m.Called(tmpl)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ParseURLTemplate")
+	}
+
 	var r0 *webhook.URL
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*string) (*webhook.URL, error)); ok {
+		return rf(tmpl)
+	}
 	if rf, ok := ret.Get(0).(func(*string) *webhook.URL); ok {
 		r0 = rf(tmpl)
 	} else {
@@ -138,7 +176,6 @@ func (_m *TemplateInput) ParseURLTemplate(tmpl *string) (*webhook.URL, error) {
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*string) error); ok {
 		r1 = rf(tmpl)
 	} else {
@@ -158,13 +195,12 @@ func (_m *TemplateInput) SetReverseAssignment(_a0 *model.FormationAssignment) {
 	_m.Called(_a0)
 }
 
-type mockConstructorTestingTNewTemplateInput interface {
+// NewTemplateInput creates a new instance of TemplateInput. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTemplateInput(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTemplateInput creates a new instance of TemplateInput. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTemplateInput(t mockConstructorTestingTNewTemplateInput) *TemplateInput {
+}) *TemplateInput {
 	mock := &TemplateInput{}
 	mock.Mock.Test(t)
 

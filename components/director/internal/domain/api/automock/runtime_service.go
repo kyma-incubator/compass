@@ -19,6 +19,10 @@ func (_m *RuntimeService) Get(ctx context.Context, id string) (*model.Runtime, e
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Runtime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Runtime, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Runtime); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -27,7 +31,6 @@ func (_m *RuntimeService) Get(ctx context.Context, id string) (*model.Runtime, e
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -37,13 +40,12 @@ func (_m *RuntimeService) Get(ctx context.Context, id string) (*model.Runtime, e
 	return r0, r1
 }
 
-type mockConstructorTestingTNewRuntimeService interface {
+// NewRuntimeService creates a new instance of RuntimeService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeService creates a new instance of RuntimeService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeService(t mockConstructorTestingTNewRuntimeService) *RuntimeService {
+}) *RuntimeService {
 	mock := &RuntimeService{}
 	mock.Mock.Test(t)
 

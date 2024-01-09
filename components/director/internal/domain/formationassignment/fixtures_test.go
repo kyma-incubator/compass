@@ -4,6 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+
+	"k8s.io/utils/strings/slices"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
@@ -28,7 +32,7 @@ const (
 	TestFormationTemplateID = "jjc0bd01-2441-4ca1-9b5e-a54e74fd7773"
 	TestTenantID            = "b4d1bd32-dd07-4141-9655-42bc33a4ae37"
 	TestSource              = "05e10560-2259-4adf-bb3e-6aee0518f573"
-	TestSourceType          = "application"
+	TestSourceType          = "APPLICATION"
 	TestTarget              = "1c22035a-72e4-4a78-9025-bbcb1f87760b"
 	TestTargetType          = "runtimeContext"
 	TestStateInitial        = "INITIAL"
@@ -99,6 +103,17 @@ func fixFormationAssignmentGQLModelWithConfigAndError(configValue, errorValue *s
 	}
 }
 
+func fixFormationAssignmentGQLModelWithState(state string) *graphql.FormationAssignment {
+	return &graphql.FormationAssignment{
+		ID:         TestID,
+		Source:     TestSource,
+		SourceType: TestSourceType,
+		Target:     TestTarget,
+		TargetType: TestTargetType,
+		State:      state,
+	}
+}
+
 func fixFormationAssignmentModel(configValue json.RawMessage) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:          TestID,
@@ -141,6 +156,20 @@ func fixFormationAssignmentModelWithConfigAndError(configValue, errorValue json.
 		State:       TestStateInitial,
 		Value:       configValue,
 		Error:       errorValue,
+	}
+}
+
+func fixFormationAssignmentModelWithState(state string) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:          TestID,
+		FormationID: TestFormationID,
+		TenantID:    TestTenantID,
+		Source:      TestSource,
+		SourceType:  TestSourceType,
+		Target:      TestTarget,
+		TargetType:  TestTargetType,
+		State:       state,
+		Error:       nil,
 	}
 }
 
@@ -289,6 +318,7 @@ func fixAppTenantMappingWebhookInput(formationID string, sourceApp, targetApp *w
 	return &webhook.ApplicationTenantMappingInput{
 		Operation:                 model.AssignFormation,
 		FormationID:               formationID,
+		Formation:                 formation,
 		SourceApplicationTemplate: sourceAppTemplate,
 		SourceApplication:         sourceApp,
 		TargetApplicationTemplate: targetAppTemplate,
@@ -328,37 +358,49 @@ func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapp
 func fixAssignmentMappingPairWithID(id string) *formationassignment.AssignmentMappingPairWithOperation {
 	return &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			Assignment: &formationassignment.FormationAssignmentRequestMapping{
+			AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 				Request:             nil,
 				FormationAssignment: &model.FormationAssignment{ID: id, Source: "source"},
 			},
-			ReverseAssignment: nil,
+			ReverseAssignmentReqMapping: nil,
 		},
 		Operation: model.AssignFormation,
 	}
 }
 
+func fixAssignmentMappingPairWithAssignment(assignment *model.FormationAssignment) *formationassignment.AssignmentMappingPairWithOperation {
+	return fixAssignmentMappingPairWithAssignmentAndRequest(assignment, nil)
+}
+
 func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
+	return fixAssignmentMappingPair(assignment, req, model.AssignFormation)
+}
+
+func fixAssignmentMappingPairWithUnassignOperation(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
+	return fixAssignmentMappingPair(assignment, req, model.UnassignFormation)
+}
+
+func fixAssignmentMappingPair(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest, operation model.FormationOperation) *formationassignment.AssignmentMappingPairWithOperation {
 	return &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			Assignment: &formationassignment.FormationAssignmentRequestMapping{
+			AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 				Request:             req,
 				FormationAssignment: assignment,
 			},
-			ReverseAssignment: nil,
+			ReverseAssignmentReqMapping: nil,
 		},
-		Operation: model.AssignFormation,
+		Operation: operation,
 	}
 }
 
 func fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(assignment, reverseAssignment *model.FormationAssignment, req, reverseReq *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
 	return &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			Assignment: &formationassignment.FormationAssignmentRequestMapping{
+			AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 				Request:             req,
 				FormationAssignment: assignment,
 			},
-			ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+			ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 				Request:             reverseReq,
 				FormationAssignment: reverseAssignment,
 			},
@@ -403,8 +445,8 @@ func fixConvertFAFromModel(formationAssignment *model.FormationAssignment) *webh
 		Target:      formationAssignment.Target,
 		TargetType:  formationAssignment.TargetType,
 		State:       formationAssignment.State,
-		Value:       string(formationAssignment.Value),
-		Error:       string(formationAssignment.Error),
+		Value:       str.Ptr(string(formationAssignment.Value)),
+		Error:       str.Ptr(string(formationAssignment.Error)),
 	}
 }
 
@@ -491,7 +533,83 @@ func fixFormationAssignmentsWithObjectTypeAndID(objectType model.FormationAssign
 			SourceType:  objectType,
 			Target:      objectID,
 			TargetType:  objectType,
-			State:       string(model.ReadyAssignmentState),
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+	}
+}
+
+func fixFormationAssignmentInputsWithObjectTypeAndID(objectType model.FormationAssignmentType, objectID, appID, rtmID, rtmCtxID string) []*model.FormationAssignmentInput {
+	return []*model.FormationAssignmentInput{
+		{
+			FormationID: "ID",
+			Source:      objectID,
+			SourceType:  objectType,
+			Target:      appID,
+			TargetType:  model.FormationAssignmentTypeApplication,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      appID,
+			SourceType:  model.FormationAssignmentTypeApplication,
+			Target:      objectID,
+			TargetType:  objectType,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      objectID,
+			SourceType:  objectType,
+			Target:      rtmID,
+			TargetType:  model.FormationAssignmentTypeRuntime,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      rtmID,
+			SourceType:  model.FormationAssignmentTypeRuntime,
+			Target:      objectID,
+			TargetType:  objectType,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      objectID,
+			SourceType:  objectType,
+			Target:      rtmCtxID,
+			TargetType:  model.FormationAssignmentTypeRuntimeContext,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      rtmCtxID,
+			SourceType:  model.FormationAssignmentTypeRuntimeContext,
+			Target:      objectID,
+			TargetType:  objectType,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		// Self formation assignments
+		{
+			FormationID: "ID",
+			Source:      objectID,
+			SourceType:  objectType,
+			Target:      objectID,
+			TargetType:  objectType,
+			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 			Error:       nil,
 		},
@@ -604,6 +722,61 @@ func fixFormationAssignmentsForRtmCtxWithAppAndRtmCtx(objectType model.Formation
 	}
 }
 
+func fixFormationAssignmentInputsForRtmCtxWithAppAndRtmCtx(objectType model.FormationAssignmentType, objectID, appID, rtmCtxID string) []*model.FormationAssignmentInput {
+	return []*model.FormationAssignmentInput{
+		{
+			FormationID: "ID",
+			Source:      objectID,
+			SourceType:  objectType,
+			Target:      appID,
+			TargetType:  model.FormationAssignmentTypeApplication,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      appID,
+			SourceType:  model.FormationAssignmentTypeApplication,
+			Target:      objectID,
+			TargetType:  objectType,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      objectID,
+			SourceType:  objectType,
+			Target:      rtmCtxID,
+			TargetType:  model.FormationAssignmentTypeRuntimeContext,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      rtmCtxID,
+			SourceType:  model.FormationAssignmentTypeRuntimeContext,
+			Target:      objectID,
+			TargetType:  objectType,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      objectID,
+			SourceType:  objectType,
+			Target:      objectID,
+			TargetType:  objectType,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+	}
+}
+
 func fixNotificationRequestAndReverseRequest(objectID, object2ID string, participants []string, assignment, assignmentReverse *model.FormationAssignment, webhookType, reverseWebhookType string, hasReverseWebhook bool) ([]*webhookclient.FormationAssignmentNotificationRequest, *automock.TemplateInput, *automock.TemplateInput) {
 	var request *webhookclient.FormationAssignmentNotificationRequest
 	var requestReverse *webhookclient.FormationAssignmentNotificationRequest
@@ -620,11 +793,11 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 		webhook.RuntimeID = &objectID
 	}
 
-	templateInput.Mock.On("GetParticipantsIDs").Return(participants).Times(1)
+	templateInput.Mock.On("GetParticipantsIDs").Return(slices.Clone(participants)).Times(1)
 	templateInput.Mock.On("SetAssignment", assignment).Times(2)
 	templateInput.Mock.On("SetReverseAssignment", assignmentReverse).Times(2)
 
-	request = &webhookclient.FormationAssignmentNotificationRequest{Webhook: webhook, Object: templateInput}
+	request = &webhookclient.FormationAssignmentNotificationRequest{Webhook: &webhook, Object: templateInput}
 
 	if hasReverseWebhook {
 		switch reverseWebhookType {
@@ -638,7 +811,7 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 		templateInputReverse.Mock.On("SetAssignment", assignmentReverse).Times(2)
 		templateInputReverse.Mock.On("SetReverseAssignment", assignment).Times(2)
 
-		requestReverse = &webhookclient.FormationAssignmentNotificationRequest{Webhook: webhookReverse, Object: templateInputReverse}
+		requestReverse = &webhookclient.FormationAssignmentNotificationRequest{Webhook: &webhookReverse, Object: templateInputReverse}
 	} else {
 		requestReverse = nil
 	}
@@ -646,14 +819,16 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 	return []*webhookclient.FormationAssignmentNotificationRequest{request, requestReverse}, templateInput, templateInputReverse
 }
 
-func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation) *formationconstraint.NotificationStatusReturnedOperationDetails {
+func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation, tenantID string, notificationStatusReport *statusreport.NotificationStatusReport) *formationconstraint.NotificationStatusReturnedOperationDetails {
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
 		ResourceType:               resourceType,
 		ResourceSubtype:            resourceSubtype,
 		Location:                   location,
+		Tenant:                     tenantID,
 		Operation:                  assignOperation,
 		FormationAssignment:        fa,
 		ReverseFormationAssignment: reverseFa,
+		NotificationStatusReport:   notificationStatusReport,
 		Formation:                  formation,
 	}
 }
@@ -702,7 +877,7 @@ func unusedNotificationBuilder() *automock.NotificationBuilder {
 
 func convertFormationAssignmentFromModel(formationAssignment *model.FormationAssignment) *webhook.FormationAssignment {
 	if formationAssignment == nil {
-		return &webhook.FormationAssignment{Value: "\"\"", Error: "\"\""}
+		return &webhook.FormationAssignment{}
 	}
 	return &webhook.FormationAssignment{
 		ID:          formationAssignment.ID,
@@ -716,4 +891,16 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 		Value:       str.StringifyJSONRawMessage(formationAssignment.Value),
 		Error:       str.StringifyJSONRawMessage(formationAssignment.Error),
 	}
+}
+
+func fixNotificationStatusReport() *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(TestConfigValueRawJSON, readyState, "")
+}
+
+func fixNotificationStatusReportWithStateAndConfig(configuration json.RawMessage, state string) *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(configuration, state, "")
+}
+
+func fixNotificationStatusReportWithStateAndError(state, errorMessage string) *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(nil, state, errorMessage)
 }

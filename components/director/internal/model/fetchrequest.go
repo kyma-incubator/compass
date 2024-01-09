@@ -26,6 +26,8 @@ const (
 	APISpecFetchRequestReference FetchRequestReferenceObjectType = "APISpec"
 	// EventSpecFetchRequestReference represents a fetch request for an Event Specification.
 	EventSpecFetchRequestReference FetchRequestReferenceObjectType = "EventSpec"
+	// CapabilitySpecFetchRequestReference represents a fetch request for a Capability Specification.
+	CapabilitySpecFetchRequestReference FetchRequestReferenceObjectType = "CapabilitySpec"
 	// DocumentFetchRequestReference represents a fetch request for an Document Specification.
 	DocumentFetchRequestReference FetchRequestReferenceObjectType = "Document"
 )
@@ -37,6 +39,8 @@ func (obj FetchRequestReferenceObjectType) GetResourceType() resource.Type {
 		return resource.APISpecFetchRequest
 	case EventSpecFetchRequestReference:
 		return resource.EventSpecFetchRequest
+	case CapabilitySpecFetchRequestReference:
+		return resource.CapabilitySpecFetchRequest
 	case DocumentFetchRequestReference:
 		return resource.DocFetchRequest
 	}

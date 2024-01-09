@@ -43,6 +43,7 @@ func TestHandler_SyncDestinations(t *testing.T) {
 			Request: reqWithUserContext,
 			DestinationManager: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(true, nil).Once()
 				svc.On("SyncTenantDestinations", mock.Anything, expectedTenantID).Return(nil)
 				return svc
 			},
@@ -61,6 +62,7 @@ func TestHandler_SyncDestinations(t *testing.T) {
 			Request: reqWithUserContext,
 			DestinationManager: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(true, nil).Once()
 				err := apperrors.NewNotFoundErrorWithMessage(resource.Label,
 					expectedTenantID, fmt.Sprintf("tenant %s not found", expectedTenantID))
 				svc.On("SyncTenantDestinations", mock.Anything, expectedTenantID).Return(err)
@@ -74,12 +76,33 @@ func TestHandler_SyncDestinations(t *testing.T) {
 			Request: reqWithUserContext,
 			DestinationManager: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(true, nil).Once()
 				err := fmt.Errorf("random error")
 				svc.On("SyncTenantDestinations", mock.Anything, expectedTenantID).Return(err)
 				return svc
 			},
 			ExpectedErrorOutput: fmt.Sprintf("Failed to sync destinations for tenant %s", expectedTenantID),
 			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+		{
+			Name:    "Error when getting subscribed tenants fails",
+			Request: reqWithUserContext,
+			DestinationManager: func() *automock.DestinationManager {
+				svc := &automock.DestinationManager{}
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(false, testErr).Once()
+				return svc
+			},
+			ExpectedStatusCode: http.StatusBadRequest,
+		},
+		{
+			Name:    "Error when tenant is not subscribed",
+			Request: reqWithUserContext,
+			DestinationManager: func() *automock.DestinationManager {
+				svc := &automock.DestinationManager{}
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(false, nil).Once()
+				return svc
+			},
+			ExpectedStatusCode: http.StatusInternalServerError,
 		},
 	}
 	for _, testCase := range testCases {
@@ -143,6 +166,7 @@ func TestHandler_FetchDestinationsSensitiveData(t *testing.T) {
 			DestQuery: namesQueryRaw,
 			DestinationFetcherSvc: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(true, nil).Once()
 				svc.On("FetchDestinationsSensitiveData", mock.Anything, expectedTenantID, names).
 					Return(
 						func(ctx context.Context, tenantID string, destNames []string) []byte {
@@ -168,9 +192,33 @@ func TestHandler_FetchDestinationsSensitiveData(t *testing.T) {
 			Name:    "Missing destination query parameter.",
 			Request: reqWithUserContext,
 			DestinationFetcherSvc: func() *automock.DestinationManager {
-				return &automock.DestinationManager{}
+				svc := &automock.DestinationManager{}
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(true, nil).Once()
+				return svc
 			},
 			ExpectedStatusCode: http.StatusBadRequest,
+		},
+		{
+			Name:      "Error when getting subscribed tenants fails",
+			Request:   reqWithUserContext,
+			DestQuery: namesQueryRaw,
+			DestinationFetcherSvc: func() *automock.DestinationManager {
+				svc := &automock.DestinationManager{}
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(false, testErr).Once()
+				return svc
+			},
+			ExpectedStatusCode: http.StatusBadRequest,
+		},
+		{
+			Name:      "Error when tenant is not subscribed",
+			Request:   reqWithUserContext,
+			DestQuery: namesQueryRaw,
+			DestinationFetcherSvc: func() *automock.DestinationManager {
+				svc := &automock.DestinationManager{}
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(false, nil).Once()
+				return svc
+			},
+			ExpectedStatusCode: http.StatusInternalServerError,
 		},
 	}
 	for _, testCase := range testCases {

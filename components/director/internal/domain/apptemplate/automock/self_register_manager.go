@@ -47,13 +47,16 @@ func (_m *SelfRegisterManager) IsSelfRegistrationFlow(ctx context.Context, label
 	ret := _m.Called(ctx, labels)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}) (bool, error)); ok {
+		return rf(ctx, labels)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}) bool); ok {
 		r0 = rf(ctx, labels)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, map[string]interface{}) error); ok {
 		r1 = rf(ctx, labels)
 	} else {
@@ -68,6 +71,10 @@ func (_m *SelfRegisterManager) PrepareForSelfRegistration(ctx context.Context, r
 	ret := _m.Called(ctx, resourceType, labels, id, validate)
 
 	var r0 map[string]interface{}
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, map[string]interface{}, string, func() error) (map[string]interface{}, error)); ok {
+		return rf(ctx, resourceType, labels, id, validate)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, map[string]interface{}, string, func() error) map[string]interface{}); ok {
 		r0 = rf(ctx, resourceType, labels, id, validate)
 	} else {
@@ -76,7 +83,6 @@ func (_m *SelfRegisterManager) PrepareForSelfRegistration(ctx context.Context, r
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, map[string]interface{}, string, func() error) error); ok {
 		r1 = rf(ctx, resourceType, labels, id, validate)
 	} else {
@@ -86,13 +92,12 @@ func (_m *SelfRegisterManager) PrepareForSelfRegistration(ctx context.Context, r
 	return r0, r1
 }
 
-type mockConstructorTestingTNewSelfRegisterManager interface {
+// NewSelfRegisterManager creates a new instance of SelfRegisterManager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSelfRegisterManager(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSelfRegisterManager creates a new instance of SelfRegisterManager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSelfRegisterManager(t mockConstructorTestingTNewSelfRegisterManager) *SelfRegisterManager {
+}) *SelfRegisterManager {
 	mock := &SelfRegisterManager{}
 	mock.Mock.Test(t)
 

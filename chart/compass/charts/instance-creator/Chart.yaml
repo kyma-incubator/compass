@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for Instance Creator
+name: instance-creator
+version: 0.1.0

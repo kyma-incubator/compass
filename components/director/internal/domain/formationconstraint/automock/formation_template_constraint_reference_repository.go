@@ -20,6 +20,10 @@ func (_m *FormationTemplateConstraintReferenceRepository) ListByFormationTemplat
 	ret := _m.Called(ctx, formationTemplateID)
 
 	var r0 []*model.FormationTemplateConstraintReference
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.FormationTemplateConstraintReference, error)); ok {
+		return rf(ctx, formationTemplateID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.FormationTemplateConstraintReference); ok {
 		r0 = rf(ctx, formationTemplateID)
 	} else {
@@ -28,7 +32,6 @@ func (_m *FormationTemplateConstraintReferenceRepository) ListByFormationTemplat
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, formationTemplateID)
 	} else {
@@ -43,6 +46,10 @@ func (_m *FormationTemplateConstraintReferenceRepository) ListByFormationTemplat
 	ret := _m.Called(ctx, formationTemplateIDs)
 
 	var r0 []*model.FormationTemplateConstraintReference
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]*model.FormationTemplateConstraintReference, error)); ok {
+		return rf(ctx, formationTemplateIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.FormationTemplateConstraintReference); ok {
 		r0 = rf(ctx, formationTemplateIDs)
 	} else {
@@ -51,7 +58,6 @@ func (_m *FormationTemplateConstraintReferenceRepository) ListByFormationTemplat
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
 		r1 = rf(ctx, formationTemplateIDs)
 	} else {
@@ -61,13 +67,12 @@ func (_m *FormationTemplateConstraintReferenceRepository) ListByFormationTemplat
 	return r0, r1
 }
 
-type mockConstructorTestingTNewFormationTemplateConstraintReferenceRepository interface {
+// NewFormationTemplateConstraintReferenceRepository creates a new instance of FormationTemplateConstraintReferenceRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationTemplateConstraintReferenceRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationTemplateConstraintReferenceRepository creates a new instance of FormationTemplateConstraintReferenceRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationTemplateConstraintReferenceRepository(t mockConstructorTestingTNewFormationTemplateConstraintReferenceRepository) *FormationTemplateConstraintReferenceRepository {
+}) *FormationTemplateConstraintReferenceRepository {
 	mock := &FormationTemplateConstraintReferenceRepository{}
 	mock.Mock.Test(t)
 

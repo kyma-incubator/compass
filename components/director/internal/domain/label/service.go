@@ -21,6 +21,7 @@ type LabelRepository interface {
 	UpsertGlobal(ctx context.Context, label *model.Label) error
 	UpdateWithVersion(ctx context.Context, tenant string, label *model.Label) error
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+	GetByKeyGlobal(ctx context.Context, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
 // LabelDefinitionRepository missing godoc

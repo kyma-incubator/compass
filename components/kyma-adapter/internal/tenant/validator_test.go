@@ -6,14 +6,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	authmiddleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/config"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	testCertSubject = "OU=testCertSubject"
-	tenant          = "testCertSubject"
+	testCertSubject               = "OU=testCertSubject"
+	tenant                        = "testCertSubject"
+	clientIDFromCertificateHeader = "Client-Id-From-Certificate"
 )
 
 func TestNewTenantValidationMiddleware(t *testing.T) {
@@ -73,25 +73,24 @@ func TestNewHTTPHandler(t *testing.T) {
 
 	testCases := []struct {
 		Name               string
-		Context            context.Context
+		ClientID           string
 		ExpectedStatusCode int
 		ExpectedResponse   string
 	}{
 		{
 			Name:               "Success",
-			Context:            authmiddleware.SaveToContext(context.Background(), tenant, tenant),
+			ClientID:           tenant,
 			ExpectedStatusCode: http.StatusOK,
 			ExpectedResponse:   "OK",
 		},
 		{
 			Name:               "Bad request when tenant is not present",
-			Context:            context.Background(),
 			ExpectedStatusCode: http.StatusBadRequest,
-			ExpectedResponse:   "cannot read tenant from context",
+			ExpectedResponse:   "Tenant not found in request",
 		},
 		{
 			Name:               "Unauthorized",
-			Context:            authmiddleware.SaveToContext(context.Background(), "random", "random"),
+			ClientID:           "random",
 			ExpectedStatusCode: http.StatusUnauthorized,
 			ExpectedResponse:   "Tenant random is not authorized",
 		},
@@ -99,8 +98,11 @@ func TestNewHTTPHandler(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			req, err := http.NewRequestWithContext(testCase.Context, "GET", "/", nil)
+			req, err := http.NewRequestWithContext(context.Background(), "GET", "/", nil)
 			require.NoError(t, err)
+			if testCase.ClientID != "" {
+				req.Header.Add(clientIDFromCertificateHeader, testCase.ClientID)
+			}
 
 			rr := httptest.NewRecorder()
 

@@ -18,13 +18,16 @@ func (_m *IntegrationSystemRepository) Exists(ctx context.Context, id string) (b
 	ret := _m.Called(ctx, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
 		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -34,13 +37,12 @@ func (_m *IntegrationSystemRepository) Exists(ctx context.Context, id string) (b
 	return r0, r1
 }
 
-type mockConstructorTestingTNewIntegrationSystemRepository interface {
+// NewIntegrationSystemRepository creates a new instance of IntegrationSystemRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewIntegrationSystemRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewIntegrationSystemRepository creates a new instance of IntegrationSystemRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewIntegrationSystemRepository(t mockConstructorTestingTNewIntegrationSystemRepository) *IntegrationSystemRepository {
+}) *IntegrationSystemRepository {
 	mock := &IntegrationSystemRepository{}
 	mock.Mock.Test(t)
 

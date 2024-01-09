@@ -18,6 +18,10 @@ func (_m *DestinationSyncer) GetSubscribedTenantIDs(ctx context.Context) ([]stri
 	ret := _m.Called(ctx)
 
 	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]string, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []string); ok {
 		r0 = rf(ctx)
 	} else {
@@ -26,7 +30,6 @@ func (_m *DestinationSyncer) GetSubscribedTenantIDs(ctx context.Context) ([]stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -50,13 +53,12 @@ func (_m *DestinationSyncer) SyncTenantDestinations(ctx context.Context, tenantI
 	return r0
 }
 
-type mockConstructorTestingTNewDestinationSyncer interface {
+// NewDestinationSyncer creates a new instance of DestinationSyncer. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDestinationSyncer(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDestinationSyncer creates a new instance of DestinationSyncer. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDestinationSyncer(t mockConstructorTestingTNewDestinationSyncer) *DestinationSyncer {
+}) *DestinationSyncer {
 	mock := &DestinationSyncer{}
 	mock.Mock.Test(t)
 

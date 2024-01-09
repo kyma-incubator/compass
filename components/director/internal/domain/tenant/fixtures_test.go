@@ -39,6 +39,8 @@ const (
 )
 
 var (
+	testCustomerID               = str.Ptr("0000customerID")
+	testCustomerIDTrimmed        = str.Ptr("customerID")
 	testError                    = errors.New("test error")
 	testTableColumns             = []string{"id", "external_name", "external_tenant", "parent", "type", "provider_name", "status"}
 	tenantAccessTestTableColumns = []string{"tenant_id", "id", "owner"}
@@ -86,6 +88,26 @@ var (
 	}
 	invalidTenantAccessModel = &model.TenantAccess{
 		ResourceType: invalidResourceType,
+	}
+	expectedTenantModel = &model.BusinessTenantMapping{
+		ID:             testExternal,
+		Name:           testName,
+		ExternalTenant: testExternal,
+		Parent:         "",
+		Type:           tenant.Account,
+		Provider:       testProvider,
+		Status:         tenant.Active,
+		Initialized:    nil,
+	}
+
+	expectedTenantGQL = &graphql.Tenant{
+		ID:          testExternal,
+		InternalID:  testInternal,
+		Name:        str.Ptr(testName),
+		Type:        string(tenant.Account),
+		ParentID:    "",
+		Initialized: nil,
+		Labels:      nil,
 	}
 )
 
@@ -197,6 +219,12 @@ func fixTenantMappingCreateArgs(ent tenant.Entity) []driver.Value {
 
 func newModelBusinessTenantMappingInput(name, subdomain, region string, licenseType *string) model.BusinessTenantMappingInput {
 	return newModelBusinessTenantMappingInputWithType(testExternal, name, "", subdomain, region, licenseType, tenant.Account)
+}
+
+func newModelBusinessTenantMappingInputWithCustomerID(name string, customerID *string) model.BusinessTenantMappingInput {
+	tnt := newModelBusinessTenantMappingInputWithType(testExternal, name, "", "", "", nil, tenant.Subaccount)
+	tnt.CustomerID = customerID
+	return tnt
 }
 
 func newModelBusinessTenantMappingInputWithType(tenantID, name, parent, subdomain, region string, licenseType *string, tenantType tenant.Type) model.BusinessTenantMappingInput {

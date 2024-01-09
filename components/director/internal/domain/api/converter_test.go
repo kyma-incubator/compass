@@ -124,24 +124,27 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// GIVEN
-	api1, spec1, bundleRef1 := fixFullAPIDefinitionModelWithAppID("test1")
-	api2, spec2, bundleRef2 := fixFullAPIDefinitionModelWithAppID("test2")
+	api1, _, bundleRef1 := fixFullAPIDefinitionModelWithAppID("test1")
+	api2, _, bundleRef2 := fixFullAPIDefinitionModelWithAppID("test2")
 
 	inputAPIs := []*model.APIDefinition{
 		&api1, &api2, {BaseEntity: &model.BaseEntity{}}, nil,
 	}
 
-	inputSpecs := []*model.Spec{
-		&spec1, &spec2, {}, nil,
-	}
+	var emptySpec *model.Spec
 
 	inputBundleRefs := []*model.BundleReference{
 		&bundleRef1, &bundleRef2, {}, nil,
 	}
 
+	apiDef1 := fixFullGQLAPIDefinition("test1")
+	apiDef1.Spec = nil
+	apiDef2 := fixFullGQLAPIDefinition("test2")
+	apiDef2.Spec = nil
+
 	expected := []*graphql.APIDefinition{
-		fixFullGQLAPIDefinition("test1"),
-		fixFullGQLAPIDefinition("test2"),
+		apiDef1,
+		apiDef2,
 		{BaseEntity: &graphql.BaseEntity{}},
 	}
 
@@ -153,12 +156,12 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 			continue
 		}
 		versionConverter.On("ToGraphQL", api.Version).Return(expected[i].Version).Once()
-		specConverter.On("ToGraphQLAPISpec", inputSpecs[i]).Return(expected[i].Spec, nil).Once()
+		specConverter.On("ToGraphQLAPISpec", emptySpec).Return(nil, nil)
 	}
 
 	// WHEN
 	converter := api.NewConverter(versionConverter, specConverter)
-	res, err := converter.MultipleToGraphQL(inputAPIs, inputSpecs, inputBundleRefs)
+	res, err := converter.MultipleToGraphQL(inputAPIs, inputBundleRefs)
 	assert.NoError(t, err)
 
 	// then

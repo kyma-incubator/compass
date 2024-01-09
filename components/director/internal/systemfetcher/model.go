@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	// ApplicationTemplates global static configuration which is set after reading the configuration during startup, should only be used for the unmarshaling of system data
+	// ApplicationTemplates contains available Application Templates, should only be used for the unmarshaling of system data
 	// It represents a model.ApplicationTemplate with its labels in the form of map[string]*model.Label
 	ApplicationTemplates []TemplateMapping
 	// ApplicationTemplateLabelFilter represent a label for the Application Templates which has a value that
@@ -65,14 +65,21 @@ func matchProps(data []byte, tm TemplateMapping) bool {
 		return false
 	}
 
-	templateMappingLabelValue, ok := lbl.Value.(string)
+	templateMappingLabelValues, ok := lbl.Value.([]interface{})
 	if !ok {
 		return false
 	}
 
-	if systemSourceKeyValue := gjson.GetBytes(data, SystemSourceKey).String(); systemSourceKeyValue != templateMappingLabelValue {
-		return false
+	for _, labelValue := range templateMappingLabelValues {
+		labelStr, ok := labelValue.(string)
+		if !ok {
+			continue
+		}
+
+		if systemSourceKeyValue := gjson.GetBytes(data, SystemSourceKey).String(); systemSourceKeyValue == labelStr {
+			return true
+		}
 	}
 
-	return true
+	return false
 }

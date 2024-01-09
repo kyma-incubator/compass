@@ -91,7 +91,6 @@ func TestClient_TenantEndpoint(t *testing.T) {
 		_, err := client.FetchTenantDestinationsPage(ctx, tenantID, "internalServerError")
 		// THEN
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "#3")
 		require.Contains(t, err.Error(), "status code 500")
 	})
 
@@ -141,7 +140,6 @@ func TestClient_SensitiveDataEndpoint(t *testing.T) {
 		_, err := client.FetchDestinationSensitiveData(ctx, "internalServerError")
 		// THEN
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "#3")
 		require.Contains(t, err.Error(), "status code 500")
 	})
 

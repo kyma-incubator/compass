@@ -1,6 +1,7 @@
 package apperrors
 
 // ErrorType represents an integer error code.
+//
 //go:generate stringer -type ErrorType
 type ErrorType int
 
@@ -43,6 +44,10 @@ const (
 	ConcurrentUpdate ErrorType = 35
 	// EmptyParentID is the error code for EmptyParentID errors.
 	EmptyParentID ErrorType = 36
+	// NoScheduledOperations is the error code when there are no scheduled operations.
+	NoScheduledOperations ErrorType = 37
+	// OperationInProgress is the error code when the operation is in progress.
+	OperationInProgress ErrorType = 38
 	// BadRequest is the error code for BadRequest errors.
 	BadRequest ErrorType = 400
 	// Conflict is the error code for Conflict errors.
@@ -106,4 +111,8 @@ const (
 	ShouldBeOwnerMsg = "Owner access is needed for resource modification"
 	// CannotUnassignObjectFromASA  is the error message returned when trying to unassign a Runtime Context that comes from an ASA.
 	CannotUnassignObjectFromASA = "Cannot unassign object with ID coming from ASA"
+	// NoScheduledOperationsMsg  is the error message returned when there are no sheduled operations currently in the priority queue.
+	NoScheduledOperationsMsg = "No scheduled operations"
+	// OperationInProgressMsg  is the error message returned when try to schedule the operation that is in IN_PROGRESS status.
+	OperationInProgressMsg = "Operation with id %q is in IN_PROGRESS status"
 )

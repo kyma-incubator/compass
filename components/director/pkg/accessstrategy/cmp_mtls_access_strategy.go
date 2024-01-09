@@ -4,12 +4,15 @@ import (
 	"context"
 	"crypto/tls"
 	"net/http"
+	"sync"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 )
 
 // HTTPRoundTripper missing godoc
@@ -22,14 +25,14 @@ type HTTPRoundTripper interface {
 const tenantHeader = "Tenant_Id"
 
 type cmpMTLSAccessStrategyExecutor struct {
-	certCache                    certloader.Cache
+	certCache                    credloader.CertCache
 	tenantProviderFunc           func(ctx context.Context) (string, error)
 	externalClientCertSecretName string
 	extSvcClientCertSecretName   string
 }
 
 // NewCMPmTLSAccessStrategyExecutor creates a new Executor for the CMP mTLS Access Strategy
-func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProviderFunc func(ctx context.Context) (string, error), externalClientCertSecretName, extSvcClientCertSecretName string) *cmpMTLSAccessStrategyExecutor {
+func NewCMPmTLSAccessStrategyExecutor(certCache credloader.CertCache, tenantProviderFunc func(ctx context.Context) (string, error), externalClientCertSecretName, extSvcClientCertSecretName string) *cmpMTLSAccessStrategyExecutor {
 	return &cmpMTLSAccessStrategyExecutor{
 		certCache:                    certCache,
 		tenantProviderFunc:           tenantProviderFunc,
@@ -39,7 +42,7 @@ func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProvider
 }
 
 // Execute performs the access strategy's specific execution logic
-func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, tnt string, additionalHeaders http.Header) (*http.Response, error) {
+func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, tnt string, additionalHeaders *sync.Map) (*http.Response, error) {
 	clientCerts := as.certCache.Get()
 	if clientCerts == nil {
 		return nil, errors.New("did not find client certificate in the cache")
@@ -69,7 +72,10 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 	}
 
 	if additionalHeaders != nil {
-		req.Header = additionalHeaders
+		additionalHeaders.Range(func(key, value any) bool {
+			req.Header.Set(str.CastOrEmpty(key), str.CastOrEmpty(value))
+			return true
+		})
 	}
 
 	// if it's not request to global registry && the webhook is associated with app template use the local tenant id as header
@@ -89,7 +95,7 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		if len(clientCerts) != 2 {
 			return nil, errors.Errorf("There must be exactly 2 certificates in the cert cache. Actual number of certificates: %d", len(clientCerts))
 		}
-		log.C(ctx).Info("Failed to execute request with initial mtls certificate. Will retry with backup certificate...")
+		log.C(ctx).Infof("Failed to execute request %q with initial mtls certificate. Will retry with backup certificate...", req.URL.String())
 		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.extSvcClientCertSecretName]}
 		client.Transport = tr
 		return client.Do(req)

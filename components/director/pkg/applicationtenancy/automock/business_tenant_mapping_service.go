@@ -35,13 +35,16 @@ func (_m *BusinessTenantMappingService) GetCustomerIDParentRecursively(ctx conte
 	ret := _m.Called(ctx, tenantID)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, tenantID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
 		r0 = rf(ctx, tenantID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, tenantID)
 	} else {
@@ -56,6 +59,10 @@ func (_m *BusinessTenantMappingService) GetTenantByExternalID(ctx context.Contex
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -64,7 +71,6 @@ func (_m *BusinessTenantMappingService) GetTenantByExternalID(ctx context.Contex
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -79,6 +85,10 @@ func (_m *BusinessTenantMappingService) GetTenantByID(ctx context.Context, id st
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -87,7 +97,6 @@ func (_m *BusinessTenantMappingService) GetTenantByID(ctx context.Context, id st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -102,6 +111,10 @@ func (_m *BusinessTenantMappingService) ListByParentAndType(ctx context.Context,
 	ret := _m.Called(ctx, parentID, tenantType)
 
 	var r0 []*model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, tenant.Type) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, parentID, tenantType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, tenant.Type) []*model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, parentID, tenantType)
 	} else {
@@ -110,7 +123,6 @@ func (_m *BusinessTenantMappingService) ListByParentAndType(ctx context.Context,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, tenant.Type) error); ok {
 		r1 = rf(ctx, parentID, tenantType)
 	} else {
@@ -120,13 +132,12 @@ func (_m *BusinessTenantMappingService) ListByParentAndType(ctx context.Context,
 	return r0, r1
 }
 
-type mockConstructorTestingTNewBusinessTenantMappingService interface {
+// NewBusinessTenantMappingService creates a new instance of BusinessTenantMappingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewBusinessTenantMappingService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewBusinessTenantMappingService creates a new instance of BusinessTenantMappingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBusinessTenantMappingService(t mockConstructorTestingTNewBusinessTenantMappingService) *BusinessTenantMappingService {
+}) *BusinessTenantMappingService {
 	mock := &BusinessTenantMappingService{}
 	mock.Mock.Test(t)
 

@@ -17,13 +17,16 @@ func (_m *AppConverter) CreateJSONInputGQLToJSON(in *graphql.ApplicationJSONInpu
 	ret := _m.Called(in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*graphql.ApplicationJSONInput) (string, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*graphql.ApplicationJSONInput) string); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*graphql.ApplicationJSONInput) error); ok {
 		r1 = rf(in)
 	} else {
@@ -33,13 +36,12 @@ func (_m *AppConverter) CreateJSONInputGQLToJSON(in *graphql.ApplicationJSONInpu
 	return r0, r1
 }
 
-type mockConstructorTestingTNewAppConverter interface {
+// NewAppConverter creates a new instance of AppConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAppConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewAppConverter creates a new instance of AppConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAppConverter(t mockConstructorTestingTNewAppConverter) *AppConverter {
+}) *AppConverter {
 	mock := &AppConverter{}
 	mock.Mock.Test(t)
 

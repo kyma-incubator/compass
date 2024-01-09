@@ -196,6 +196,8 @@ func (r *repository) referenceObjectFieldName(objectType model.FetchRequestRefer
 		fallthrough
 	case model.APISpecFetchRequestReference:
 		return specIDColumn, nil
+	case model.CapabilitySpecFetchRequestReference:
+		return specIDColumn, nil
 	}
 
 	return "", apperrors.NewInternalError("Invalid type of the Fetch Request reference object")

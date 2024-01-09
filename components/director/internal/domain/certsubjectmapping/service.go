@@ -11,6 +11,7 @@ import (
 )
 
 // CertMappingRepository represents the certificate subject mapping repository layer
+//
 //go:generate mockery --name=CertMappingRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type CertMappingRepository interface {
 	Create(ctx context.Context, item *model.CertSubjectMapping) error

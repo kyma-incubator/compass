@@ -26,6 +26,7 @@ import (
 type WebhookRepository interface {
 	GetByID(ctx context.Context, tenant, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error)
+	GetByIDAndWebhookTypeGlobal(ctx context.Context, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error)
 	ListByReferenceObjectID(ctx context.Context, tenant, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error)
 	ListByReferenceObjectIDGlobal(ctx context.Context, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error)
 	ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error)
@@ -83,8 +84,8 @@ func NewService(repo WebhookRepository, appRepo ApplicationRepository, uidSvc UI
 // Get missing godoc
 func (s *service) Get(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) (webhook *model.Webhook, err error) {
 	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil || tnt == "" {
-		log.C(ctx).Infof("tenant was not loaded while getting Webhook id %s", id)
+	if err != nil || tnt == "" || objectType.GetResourceType() == resource.Webhook {
+		log.C(ctx).Infof("empty tenant or global webhook resource with id %s", id)
 		webhook, err = s.webhookRepo.GetByIDGlobal(ctx, id)
 	} else {
 		webhook, err = s.webhookRepo.GetByID(ctx, tnt, id, objectType)
@@ -93,6 +94,11 @@ func (s *service) Get(ctx context.Context, id string, objectType model.WebhookRe
 		return nil, errors.Wrapf(err, "while getting Webhook with ID %s", id)
 	}
 	return
+}
+
+// GetByIDAndWebhookTypeGlobal returns a webhook given an objectID, objectType and webhookType
+func (s *service) GetByIDAndWebhookTypeGlobal(ctx context.Context, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) {
+	return s.webhookRepo.GetByIDAndWebhookTypeGlobal(ctx, objectID, objectType, webhookType)
 }
 
 // ListForApplication missing godoc
@@ -156,7 +162,10 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 		return "", err
 	}
 
-	id := s.uidSvc.Generate()
+	id := in.ID
+	if id == "" {
+		id = s.uidSvc.Generate()
+	}
 
 	webhook := in.ToWebhook(id, owningResourceID, objectType)
 
@@ -170,10 +179,6 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 
 // Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil && objectType.GetResourceType() != resource.Webhook { // If the webhook is not global
-		return err
-	}
 	webhook, err := s.Get(ctx, id, objectType)
 	if err != nil {
 		return errors.Wrap(err, "while getting Webhook")
@@ -181,6 +186,11 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput, 
 
 	if len(webhook.ObjectID) == 0 || (webhook.ObjectType != model.ApplicationWebhookReference && webhook.ObjectType != model.ApplicationTemplateWebhookReference && webhook.ObjectType != model.RuntimeWebhookReference && webhook.ObjectType != model.FormationTemplateWebhookReference) {
 		return errors.New("while updating Webhook: webhook doesn't have neither of application_id, application_template_id, runtime_id and formation_template_id")
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil && (webhook.ObjectType.GetResourceType() == resource.AppWebhook || webhook.ObjectType.GetResourceType() == resource.RuntimeWebhook) { // If the webhook is not global
+		return err
 	}
 
 	webhook = in.ToWebhook(id, webhook.ObjectID, webhook.ObjectType)
@@ -307,5 +317,11 @@ func (s *service) getTenantForWebhook(ctx context.Context, whType resource.Type)
 	if whType == resource.FormationTemplateWebhook {
 		return s.tenantSvc.ExtractTenantIDForTenantScopedFormationTemplates(ctx)
 	}
-	return tenant.LoadFromContext(ctx)
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if apperrors.IsCannotReadTenant(err) && whType == resource.Webhook {
+		return "", nil
+	}
+
+	return tnt, err
 }

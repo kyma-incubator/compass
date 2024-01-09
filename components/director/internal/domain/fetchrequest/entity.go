@@ -29,10 +29,13 @@ func (e *Entity) GetID() string {
 // GetParent returns the parent type and the parent ID of the entity.
 func (e *Entity) GetParent(currentResourceType resource.Type) (resource.Type, string) {
 	if e.SpecID.Valid {
-		if currentResourceType == resource.APISpecFetchRequest {
+		switch currentResourceType {
+		case resource.APISpecFetchRequest:
 			return resource.APISpecification, e.SpecID.String
-		} else {
+		case resource.EventSpecFetchRequest:
 			return resource.EventSpecification, e.SpecID.String
+		case resource.CapabilitySpecFetchRequest:
+			return resource.CapabilitySpecification, e.SpecID.String
 		}
 	}
 	return resource.Document, e.DocumentID.String

@@ -11,6 +11,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/avast/retry-go/v4"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -39,46 +42,55 @@ type APIConfig struct {
 
 // Client missing godoc
 type Client struct {
-	apiConfig  APIConfig
-	httpClient APIClient
+	apiConfig      APIConfig
+	httpClient     APIClient
+	jwtTokenClient APIClient
 }
 
 // NewClient missing godoc
-func NewClient(apiConfig APIConfig, client APIClient) *Client {
+func NewClient(apiConfig APIConfig, client APIClient, tokenClient APIClient) *Client {
 	return &Client{
-		apiConfig:  apiConfig,
-		httpClient: client,
+		apiConfig:      apiConfig,
+		httpClient:     client,
+		jwtTokenClient: tokenClient,
 	}
 }
 
 var currentRPS uint64
 
 // FetchSystemsForTenant fetches systems from the service
-func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string, mutex *sync.Mutex) ([]System, error) {
+func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, mutex *sync.Mutex) ([]System, error) {
 	mutex.Lock()
 	qp := c.buildFilter()
 	mutex.Unlock()
-	log.C(ctx).Infof("Fetching systems for tenant %s with query: %s", tenant, qp)
+	log.C(ctx).Infof("Fetching systems for tenant %s of type %s with query: %s", tenant.ExternalTenant, tenant.Type, qp)
 
 	var systems []System
 
 	systemsFunc := c.getSystemsPagingFunc(ctx, &systems, tenant)
 	pi := paging.NewPageIterator(c.apiConfig.Endpoint, c.apiConfig.PagingSkipParam, c.apiConfig.PagingSizeParam, qp, c.apiConfig.PageSize, systemsFunc)
 	if err := pi.FetchAll(); err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch systems for tenant %s", tenant)
+		return nil, errors.Wrapf(err, "failed to fetch systems for tenant %s", tenant.ExternalTenant)
 	}
 
-	log.C(ctx).Infof("Fetched systems for tenant %s", tenant)
+	log.C(ctx).Infof("Fetched systems for tenant %s", tenant.ExternalTenant)
 	return systems, nil
 }
 
-func (c *Client) fetchSystemsForTenant(ctx context.Context, url, tenant string) ([]System, error) {
+func (c *Client) fetchSystemsForTenant(ctx context.Context, url string, tenant *model.BusinessTenantMapping) ([]System, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new HTTP request")
 	}
 
-	resp, err := c.httpClient.Do(req, tenant)
+	var (
+		resp *http.Response
+	)
+	if tenant.Type == tenantEntity.Customer {
+		resp, err = c.jwtTokenClient.Do(req, tenant.ExternalTenant)
+	} else {
+		resp, err = c.httpClient.Do(req, tenant.ExternalTenant)
+	}
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute HTTP request")
 	}
@@ -105,7 +117,7 @@ func (c *Client) fetchSystemsForTenant(ctx context.Context, url, tenant string) 
 	return systems, nil
 }
 
-func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, tenant string) func(string) (uint64, error) {
+func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, tenant *model.BusinessTenantMapping) func(string) (uint64, error) {
 	return func(url string) (uint64, error) {
 		err := retry.Do(
 			func() error {
@@ -155,35 +167,42 @@ func (c *Client) buildFilter() map[string]string {
 	var filterBuilder FilterBuilder
 
 	for _, at := range ApplicationTemplates {
-		lbl, ok := at.Labels[ApplicationTemplateLabelFilter]
+		appTemplateLblFilter, ok := at.Labels[ApplicationTemplateLabelFilter]
 		if !ok {
 			continue
 		}
 
-		lblToString, ok := lbl.Value.(string)
+		appTemplateLblFilterArr, ok := appTemplateLblFilter.Value.([]interface{})
 		if !ok {
-			lblToString = ""
+			continue
 		}
-		expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", lblToString)
 
-		lblExists := false
-		minTime := time.Now()
+		for _, lbl := range appTemplateLblFilterArr {
+			appTemplateLblStr, ok := lbl.(string)
+			if !ok {
+				continue
+			}
 
-		for _, s := range SystemSynchronizationTimestamps {
-			v, ok := s[lblToString]
-			if ok {
-				lblExists = true
-				if v.LastSyncTimestamp.Before(minTime) {
-					minTime = v.LastSyncTimestamp
+			expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", appTemplateLblStr)
+
+			lblExists := false
+			minTime := time.Now()
+
+			for _, systemTimestamps := range SystemSynchronizationTimestamps {
+				if timestamp, ok := systemTimestamps[appTemplateLblStr]; ok {
+					lblExists = true
+					if timestamp.LastSyncTimestamp.Before(minTime) {
+						minTime = timestamp.LastSyncTimestamp
+					}
 				}
 			}
-		}
 
-		if lblExists {
-			expr2 := filterBuilder.NewExpression("lastChangeDateTime", "gt", minTime.String())
-			filterBuilder.addFilter(expr1, expr2)
-		} else {
-			filterBuilder.addFilter(expr1)
+			if lblExists {
+				expr2 := filterBuilder.NewExpression("lastChangeDateTime", "gt", minTime.String())
+				filterBuilder.addFilter(expr1, expr2)
+			} else {
+				filterBuilder.addFilter(expr1)
+			}
 		}
 	}
 	result := map[string]string{"fetchAcrossZones": "true"}

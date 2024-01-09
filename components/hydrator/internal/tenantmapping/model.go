@@ -3,7 +3,9 @@ package tenantmapping
 import (
 	"crypto/sha256"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 )
 
@@ -11,24 +13,10 @@ const (
 	scopesPerConsumerTypePrefix = "scopesPerConsumerType"
 )
 
-// TenantContext missing godoc
-type TenantContext struct {
-	ExternalTenantID string
-	TenantID         string
-}
-
-// NewTenantContext missing godoc
-func NewTenantContext(externalTenantID, tenantID string) TenantContext {
-	return TenantContext{
-		ExternalTenantID: externalTenantID,
-		TenantID:         tenantID,
-	}
-}
-
 // ObjectContext missing godoc
 type ObjectContext struct {
-	TenantContext
 	KeysExtra
+	Tenant              *graphql.Tenant
 	Scopes              string
 	ScopesMergeStrategy scopesMergeStrategy
 	Region              string
@@ -54,9 +42,9 @@ type KeysExtra struct {
 }
 
 // NewObjectContext missing godoc
-func NewObjectContext(tenantCtx TenantContext, keysExtra KeysExtra, scopes string, scopesMergeStrategy scopesMergeStrategy, region, clientID, consumerID string, authFlow oathkeeper.AuthFlow, consumerType consumer.ConsumerType, contextProvider string) ObjectContext {
+func NewObjectContext(tenant *graphql.Tenant, keysExtra KeysExtra, scopes string, scopesMergeStrategy scopesMergeStrategy, region, clientID, consumerID string, authFlow oathkeeper.AuthFlow, consumerType consumer.ConsumerType, contextProvider string) ObjectContext {
 	return ObjectContext{
-		TenantContext:       tenantCtx,
+		Tenant:              tenant,
 		KeysExtra:           keysExtra,
 		Scopes:              scopes,
 		ScopesMergeStrategy: scopesMergeStrategy,
@@ -72,7 +60,7 @@ func NewObjectContext(tenantCtx TenantContext, keysExtra KeysExtra, scopes strin
 func RedactConsumerIDForLogging(original ObjectContext) ObjectContext {
 	if original.ConsumerType == consumer.User {
 		return ObjectContext{
-			TenantContext:       original.TenantContext,
+			Tenant:              original.Tenant,
 			KeysExtra:           original.KeysExtra,
 			Scopes:              original.Scopes,
 			ScopesMergeStrategy: original.ScopesMergeStrategy,

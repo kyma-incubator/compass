@@ -1,7 +1,7 @@
 APP_NAME = pairing-adapter-tests
 COMPONENT = pairing-adapter
 APP_PATH = tests/pairing-adapter
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
+BUILDPACK = europe-docker.pkg.dev/kyma-project/prod/test-infra/buildpack-golang:v20230323-a1ac96db
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 INSTALLATION_SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/installation/scripts
 export GO111MODULE = on
@@ -16,7 +16,8 @@ e2e-test:
 	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh pairing-adapter
 
 e2e-test-clean:
-	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
+	kubectl config use-context k3d-kyma
+	kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
 
 sandbox-test:
 	@../sandbox.sh pairing-adapter
@@ -30,5 +31,6 @@ sandbox-deploy-test:
 	rm ./pairing-adapter.test
 
 sandbox-test-clean:
+	kubectl config use-context k3d-kyma
 	@kubectl delete testdefinitions.testing.kyma-project.io -n kyma-system compass-e2e-pairing-adapter-local || true
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true

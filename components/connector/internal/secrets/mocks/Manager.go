@@ -22,6 +22,10 @@ func (_m *Manager) Get(ctx context.Context, name string, options v1.GetOptions) 
 	ret := _m.Called(ctx, name, options)
 
 	var r0 *corev1.Secret
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, v1.GetOptions) (*corev1.Secret, error)); ok {
+		return rf(ctx, name, options)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, v1.GetOptions) *corev1.Secret); ok {
 		r0 = rf(ctx, name, options)
 	} else {
@@ -30,7 +34,6 @@ func (_m *Manager) Get(ctx context.Context, name string, options v1.GetOptions) 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, v1.GetOptions) error); ok {
 		r1 = rf(ctx, name, options)
 	} else {
@@ -38,4 +41,18 @@ func (_m *Manager) Get(ctx context.Context, name string, options v1.GetOptions) 
 	}
 
 	return r0, r1
+}
+
+// NewManager creates a new instance of Manager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewManager(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *Manager {
+	mock := &Manager{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
 }

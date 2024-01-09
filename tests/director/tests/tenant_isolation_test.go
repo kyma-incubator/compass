@@ -4,13 +4,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
+	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,6 +30,58 @@ func TestTenantIsolation(t *testing.T) {
 	anotherTenantsApps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customTenant)
 
 	assert.Empty(t, anotherTenantsApps.Data)
+}
+
+func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
+	ctx := context.Background()
+
+	accountTokenURL, err := token.ChangeSubdomain(conf.UsernameAuthCfg.Account.TokenURL, conf.UsernameAuthCfg.Account.Subdomain, conf.UsernameAuthCfg.Account.OAuthTokenPath)
+	require.NoError(t, err)
+	require.NotEmpty(t, accountTokenURL)
+
+	subaccountTokenURL, err := token.ChangeSubdomain(conf.UsernameAuthCfg.Subaccount.TokenURL, conf.UsernameAuthCfg.Subaccount.Subdomain, conf.UsernameAuthCfg.Subaccount.OAuthTokenPath)
+	require.NoError(t, err)
+	require.NotEmpty(t, subaccountTokenURL)
+
+	// The accountToken is JWT token containing claim with account ID for tenant. In local setup that's 'ApplicationsForRuntimeTenantName'
+	accountToken := token.GetUserToken(t, ctx, accountTokenURL, conf.UsernameAuthCfg.Account.ClientID, conf.UsernameAuthCfg.Account.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.AccountAuthenticatorClaimKey)
+	// The subaccountToken is JWT token containing claim with subaccount ID for tenant. In local setup that's 'TestTenantSubstitutionSubaccount2' test tenant, and it has 'customerId' label with value external tenant ID of 'ApplicationsForRuntimeTenantName'
+	subaccountToken := token.GetUserToken(t, ctx, subaccountTokenURL, conf.UsernameAuthCfg.Subaccount.ClientID, conf.UsernameAuthCfg.Subaccount.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubaccountAuthenticatorClaimKey)
+
+	accountGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accountToken, conf.DirectorUserNameAuthenticatorURL)
+	subaccountGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(subaccountToken, conf.DirectorUserNameAuthenticatorURL)
+
+	testCases := []struct {
+		name               string
+		graphqlClient      *gcli.Client
+		isSubaccountTenant bool
+	}{
+		{
+			name:          "with account token",
+			graphqlClient: accountGraphQLClient,
+		},
+		{
+			name:               "with subaccount token",
+			graphqlClient:      subaccountGraphQLClient,
+			isSubaccountTenant: true,
+		},
+	}
+
+	for _, ts := range testCases {
+		t.Run(ts.name, func(t *testing.T) {
+			// the tenant will be derived from the token part of the graphql client
+			app, err := fixtures.RegisterApplication(t, ctx, ts.graphqlClient, "e2e-user-auth-app", "")
+			defer fixtures.CleanupApplication(t, ctx, ts.graphqlClient, "", &app)
+			require.NoError(t, err)
+			require.NotEmpty(t, app.ID)
+
+			accountResp := fixtures.GetApplicationPageMinimal(t, ctx, accountGraphQLClient, "")
+			subaccountResp := fixtures.GetApplicationPageMinimal(t, ctx, subaccountGraphQLClient, "")
+
+			require.True(t, assertions.DoesAppExistsInAppPageData(app.ID, accountResp))
+			require.True(t, assertions.DoesAppExistsInAppPageData(app.ID, subaccountResp))
+		})
+	}
 }
 
 func TestHierarchicalTenantIsolation(t *testing.T) {
@@ -91,7 +146,7 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	accountTenant := tenant.TestTenants.GetDefaultTenantID()
 
 	// Register runtime in customer's tenant
-	input := fixRuntimeInput("customerRuntime")
+	input := fixtures.FixRuntimeRegisterInputWithoutLabels("customerRuntime")
 
 	var customerRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, customerTenant, &customerRuntime)
@@ -107,7 +162,7 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	require.Len(t, accountRuntimes.Data, 0)
 
 	// Register runtime in account's tenant
-	accountRuntimeInput := fixRuntimeInput("accountRuntime")
+	accountRuntimeInput := fixtures.FixRuntimeRegisterInputWithoutLabels("accountRuntime")
 	var accountRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, accountTenant, &accountRuntime)
 	accountRuntime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, accountTenant, accountRuntimeInput, conf.GatewayOauth)
@@ -122,12 +177,12 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	assertions.AssertRuntimePageContainOnlyIDs(t, customerRuntimes, customerRuntime.ID, accountRuntime.ID)
 
 	// Assert customer can update his own runtime
-	customerRuntimeUpdateInput := fixRuntimeUpdateInput("customerRuntimeUpdated")
+	customerRuntimeUpdateInput := fixtures.FixRuntimeUpdateInputWithoutLabels("customerRuntimeUpdated")
 	customerRuntime, err := fixtures.UpdateRuntimeWithinTenant(t, ctx, certSecuredGraphQLClient, customerTenant, customerRuntime.ID, customerRuntimeUpdateInput)
 	require.NoError(t, err)
 
 	// Assert customer can update his child account's runtime
-	accountRuntimeUpdateInput := fixRuntimeUpdateInput("accountRuntimeUpdated")
+	accountRuntimeUpdateInput := fixtures.FixRuntimeUpdateInputWithoutLabels("accountRuntimeUpdated")
 	accountRuntime, err = fixtures.UpdateRuntimeWithinTenant(t, ctx, certSecuredGraphQLClient, customerTenant, accountRuntime.ID, accountRuntimeUpdateInput)
 	require.NoError(t, err)
 
@@ -187,7 +242,7 @@ func TestTenantAccess(t *testing.T) {
 	require.NoError(t, err)
 
 	addTenantAccessRequest := fixtures.FixAddTenantAccessRequest(tenantAccessInputString)
-	saveExample(t, addTenantAccessRequest.Query(), "add tenant access")
+	example.SaveExample(t, addTenantAccessRequest.Query(), "add tenant access")
 
 	tenantAccess := &graphql.TenantAccess{}
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, addTenantAccessRequest, tenantAccess)
@@ -198,11 +253,30 @@ func TestTenantAccess(t *testing.T) {
 	require.Equal(t, anotherTenantsApps.Data[0].ID, actualApp.ID)
 
 	removeTenantAccessRequest := fixtures.FixRemoveTenantAccessRequest(customTenant, actualApp.ID, graphql.TenantAccessObjectTypeApplication)
-	saveExample(t, removeTenantAccessRequest.Query(), "remove tenant access")
+	example.SaveExample(t, removeTenantAccessRequest.Query(), "remove tenant access")
 
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, removeTenantAccessRequest, tenantAccess)
 	require.NoError(t, err)
 
 	anotherTenantsApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customTenant)
 	assert.Empty(t, anotherTenantsApps.Data)
+}
+
+func TestSubstituteCaller(t *testing.T) {
+	ctx := context.Background()
+	substitutionTenant := tenant.TestTenants.GetDefaultTenantID()
+
+	actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "e2e-test-substitution-app", substitutionTenant)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, substitutionTenant, &actualApp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+
+	tenantsApps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetIDByName(t, tenant.TestTenantSubstitutionAccount))
+	assert.Empty(t, tenantsApps.Data)
+
+	// The 'TestTenantSubstitutionSubaccount' tenant substitute 'testDefaultSubaccountTenant' that has 'testDefaultTenant' as parent.
+	// That's why when we call with 'TestTenantSubstitutionSubaccount' we see the apps registered in the 'testDefaultTenant'
+	tenantsApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetIDByName(t, tenant.TestTenantSubstitutionSubaccount))
+	require.Len(t, tenantsApps.Data, 1)
+	require.Equal(t, tenantsApps.Data[0].ID, actualApp.ID)
 }

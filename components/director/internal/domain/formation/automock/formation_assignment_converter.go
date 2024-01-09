@@ -19,6 +19,10 @@ func (_m *FormationAssignmentConverter) MultipleToGraphQL(in []*model.FormationA
 	ret := _m.Called(in)
 
 	var r0 []*graphql.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]*model.FormationAssignment) ([]*graphql.FormationAssignment, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func([]*model.FormationAssignment) []*graphql.FormationAssignment); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +31,6 @@ func (_m *FormationAssignmentConverter) MultipleToGraphQL(in []*model.FormationA
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func([]*model.FormationAssignment) error); ok {
 		r1 = rf(in)
 	} else {
@@ -42,6 +45,10 @@ func (_m *FormationAssignmentConverter) ToGraphQL(in *model.FormationAssignment)
 	ret := _m.Called(in)
 
 	var r0 *graphql.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.FormationAssignment) (*graphql.FormationAssignment, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.FormationAssignment) *graphql.FormationAssignment); ok {
 		r0 = rf(in)
 	} else {
@@ -50,7 +57,6 @@ func (_m *FormationAssignmentConverter) ToGraphQL(in *model.FormationAssignment)
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.FormationAssignment) error); ok {
 		r1 = rf(in)
 	} else {
@@ -60,13 +66,12 @@ func (_m *FormationAssignmentConverter) ToGraphQL(in *model.FormationAssignment)
 	return r0, r1
 }
 
-type mockConstructorTestingTNewFormationAssignmentConverter interface {
+// NewFormationAssignmentConverter creates a new instance of FormationAssignmentConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationAssignmentConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationAssignmentConverter creates a new instance of FormationAssignmentConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationAssignmentConverter(t mockConstructorTestingTNewFormationAssignmentConverter) *FormationAssignmentConverter {
+}) *FormationAssignmentConverter {
 	mock := &FormationAssignmentConverter{}
 	mock.Mock.Test(t)
 

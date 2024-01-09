@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
@@ -19,6 +20,18 @@ type ApplicationTemplate struct {
 	AccessLevel          ApplicationTemplateAccessLevel
 	Webhooks             []Webhook
 	Labels               map[string]interface{}
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+}
+
+// SetCreatedAt is a setter for CreatedAt property
+func (at *ApplicationTemplate) SetCreatedAt(t time.Time) {
+	at.CreatedAt = t
+}
+
+// SetUpdatedAt is a setter for UpdatedAt property
+func (at *ApplicationTemplate) SetUpdatedAt(t time.Time) {
+	at.UpdatedAt = t
 }
 
 // ApplicationTemplatePage missing godoc

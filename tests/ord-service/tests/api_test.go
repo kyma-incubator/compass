@@ -28,9 +28,10 @@ import (
 	"testing"
 	"time"
 
-	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
-
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
@@ -39,7 +40,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )
@@ -357,6 +357,22 @@ func TestORDService(stdT *testing.T) {
 			require.Equal(t, testData.appInput.Name, gjson.Get(respBody, "value.0.title").String())
 			require.Equal(t, *testData.appInput.Description, gjson.Get(respBody, "value.0.description").String())
 		})
+		t.Run(fmt.Sprintf("Requesting System Instances with apis for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
+			respBody := makeRequestWithHeaders(t, testData.client, testData.url+"/systemInstances?$expand=apis&$format=json", testData.headers)
+			require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
+			require.Equal(t, testData.appInput.Name, gjson.Get(respBody, "value.0.title").String())
+			require.Equal(t, *testData.appInput.Description, gjson.Get(respBody, "value.0.description").String())
+
+			assertEqualAPIDefinitions(t, testData.appInput.Bundles[0].APIDefinitions, gjson.Get(respBody, "value.0.apis").String(), testData.apisMap, testData.client, testData.headers)
+		})
+		t.Run(fmt.Sprintf("Requesting System Instances with events for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
+			respBody := makeRequestWithHeaders(t, testData.client, testData.url+"/systemInstances?$expand=events&$format=json", testData.headers)
+			require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
+			require.Equal(t, testData.appInput.Name, gjson.Get(respBody, "value.0.title").String())
+			require.Equal(t, *testData.appInput.Description, gjson.Get(respBody, "value.0.description").String())
+
+			assertEqualEventDefinitions(t, testData.appInput.Bundles[0].EventDefinitions, gjson.Get(respBody, "value.0.events").String(), testData.eventsMap, testData.client, testData.headers)
+		})
 
 		t.Run(fmt.Sprintf("Requesting Bundles for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			respBody := makeRequestWithHeaders(t, testData.client, testData.url+"/consumptionBundles?$format=json", testData.headers)
@@ -369,146 +385,13 @@ func TestORDService(stdT *testing.T) {
 		t.Run(fmt.Sprintf("Requesting APIs and their specs for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			respBody := makeRequestWithHeaders(t, testData.client, testData.url+"/apis?$format=json", testData.headers)
 
-			require.Equal(t, len(testData.appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
-
-			for i := range testData.appInput.Bundles[0].APIDefinitions {
-				name := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
-				require.NotEmpty(t, name)
-
-				expectedAPI, exists := testData.apisMap[name]
-				require.True(t, exists)
-
-				require.Equal(t, *expectedAPI.Description, gjson.Get(respBody, fmt.Sprintf("value.%d.description", i)).String())
-				require.Equal(t, expectedAPI.TargetURL, gjson.Get(respBody, fmt.Sprintf("value.%d.entryPoints.0.value", i)).String())
-				require.NotEmpty(t, gjson.Get(respBody, fmt.Sprintf("value.%d.partOfConsumptionBundles", i)).String())
-
-				releaseStatus := gjson.Get(respBody, fmt.Sprintf("value.%d.releaseStatus", i)).String()
-				switch releaseStatus {
-				case "decommissioned":
-					require.True(t, *expectedAPI.Version.ForRemoval)
-					require.True(t, *expectedAPI.Version.Deprecated)
-				case "deprecated":
-					require.False(t, *expectedAPI.Version.ForRemoval)
-					require.True(t, *expectedAPI.Version.Deprecated)
-				case "active":
-					require.False(t, *expectedAPI.Version.ForRemoval)
-					require.False(t, *expectedAPI.Version.Deprecated)
-				default:
-					panic(errors.New(fmt.Sprintf("Unknown release status: %s", releaseStatus)))
-				}
-
-				apiProtocol := gjson.Get(respBody, fmt.Sprintf("value.%d.apiProtocol", i)).String()
-				switch apiProtocol {
-				case "odata-v2":
-					require.Equal(t, expectedAPI.Spec.Type, directorSchema.APISpecTypeOdata)
-				case "rest":
-					require.Equal(t, expectedAPI.Spec.Type, directorSchema.APISpecTypeOpenAPI)
-				default:
-					t.Log(fmt.Sprintf("API Protocol for API %s is %s. It does not match a predefined spec type.", name, apiProtocol))
-				}
-
-				specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", i)).Array()
-				require.Equal(t, 1, len(specs))
-
-				specType := specs[0].Get("type").String()
-				switch specType {
-				case "edmx":
-					require.Equal(t, expectedAPI.Spec.Type, directorSchema.APISpecTypeOdata)
-				case "openapi-v3":
-					require.Equal(t, expectedAPI.Spec.Type, directorSchema.APISpecTypeOpenAPI)
-				default:
-					panic(errors.New(fmt.Sprintf("Unknown spec type: %s", specType)))
-				}
-
-				specFormat := specs[0].Get("mediaType").String()
-				switch specFormat {
-				case "text/yaml":
-					require.Equal(t, expectedAPI.Spec.Format, directorSchema.SpecFormatYaml)
-				case "application/json":
-					require.Equal(t, expectedAPI.Spec.Format, directorSchema.SpecFormatJSON)
-				case "application/xml":
-					require.Equal(t, expectedAPI.Spec.Format, directorSchema.SpecFormatXML)
-				default:
-					panic(errors.New(fmt.Sprintf("Unknown spec format: %s", specFormat)))
-				}
-
-				apiID := gjson.Get(respBody, fmt.Sprintf("value.%d.id", i)).String()
-				require.NotEmpty(t, apiID)
-
-				specURL := specs[0].Get("url").String()
-				specPath := fmt.Sprintf("/api/%s/specification", apiID)
-				require.Contains(t, specURL, conf.ORDServiceStaticPrefix+specPath)
-
-				respBody := makeRequestWithHeaders(t, testData.client, specURL, testData.headers)
-
-				require.Equal(t, string(*expectedAPI.Spec.Data), respBody)
-			}
+			assertEqualAPIDefinitions(t, testData.appInput.Bundles[0].APIDefinitions, gjson.Get(respBody, "value").String(), testData.apisMap, testData.client, testData.headers)
 		})
 
 		t.Run(fmt.Sprintf("Requesting Events and their specs for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			respBody := makeRequestWithHeaders(t, testData.client, testData.url+"/events?$format=json", testData.headers)
 
-			require.Equal(t, len(testData.appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
-
-			for i := range testData.appInput.Bundles[0].EventDefinitions {
-				name := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
-				require.NotEmpty(t, name)
-
-				expectedEvent, exists := testData.eventsMap[name]
-				require.True(t, exists)
-
-				require.Equal(t, *expectedEvent.Description, gjson.Get(respBody, fmt.Sprintf("value.%d.description", i)).String())
-				require.NotEmpty(t, gjson.Get(respBody, fmt.Sprintf("value.%d.partOfConsumptionBundles", i)).String())
-
-				releaseStatus := gjson.Get(respBody, fmt.Sprintf("value.%d.releaseStatus", i)).String()
-				switch releaseStatus {
-				case "decommissioned":
-					require.True(t, *expectedEvent.Version.ForRemoval)
-					require.True(t, *expectedEvent.Version.Deprecated)
-				case "deprecated":
-					require.False(t, *expectedEvent.Version.ForRemoval)
-					require.True(t, *expectedEvent.Version.Deprecated)
-				case "active":
-					require.False(t, *expectedEvent.Version.ForRemoval)
-					require.False(t, *expectedEvent.Version.Deprecated)
-				default:
-					panic(errors.New(fmt.Sprintf("Unknown release status: %s", releaseStatus)))
-				}
-
-				specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", i)).Array()
-				require.Equal(t, 1, len(specs))
-
-				specType := specs[0].Get("type").String()
-				switch specType {
-				case "asyncapi-v2":
-					require.Equal(t, expectedEvent.Spec.Type, directorSchema.EventSpecTypeAsyncAPI)
-				default:
-					panic(errors.New(fmt.Sprintf("Unknown spec type: %s", specType)))
-				}
-
-				specFormat := specs[0].Get("mediaType").String()
-				switch specFormat {
-				case "text/yaml":
-					require.Equal(t, expectedEvent.Spec.Format, directorSchema.SpecFormatYaml)
-				case "application/json":
-					require.Equal(t, expectedEvent.Spec.Format, directorSchema.SpecFormatJSON)
-				case "application/xml":
-					require.Equal(t, expectedEvent.Spec.Format, directorSchema.SpecFormatXML)
-				default:
-					panic(errors.New(fmt.Sprintf("Unknown spec format: %s", specFormat)))
-				}
-
-				eventID := gjson.Get(respBody, fmt.Sprintf("value.%d.id", i)).String()
-				require.NotEmpty(t, eventID)
-
-				specURL := specs[0].Get("url").String()
-				specPath := fmt.Sprintf("/event/%s/specification", eventID)
-				require.Contains(t, specURL, conf.ORDServiceStaticPrefix+specPath)
-
-				respBody := makeRequestWithHeaders(t, testData.client, specURL, testData.headers)
-
-				require.Equal(t, string(*expectedEvent.Spec.Data), respBody)
-			}
+			assertEqualEventDefinitions(t, testData.appInput.Bundles[0].EventDefinitions, gjson.Get(respBody, "value").String(), testData.eventsMap, testData.client, testData.headers)
 		})
 
 		// Paging:
@@ -524,23 +407,31 @@ func TestORDService(stdT *testing.T) {
 
 		t.Run(fmt.Sprintf("Requesting paging of Bundle APIs for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			totalCount := len(testData.appInput.Bundles[0].APIDefinitions)
+			params := urlpkg.Values{}
 
-			respBody := makeRequestWithHeaders(t, testData.client, testData.url+"/consumptionBundles?$expand=apis($top=10;$skip=0)&$format=json", testData.headers)
+			params.Add("$expand", "apis($top=10)")
+			params.Add("$format", "json")
+			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, totalCount, len(gjson.Get(respBody, "value.0.apis").Array()))
 
 			expectedItemCount := 1
-			respBody = makeRequestWithHeaders(t, testData.client, fmt.Sprintf("%s/consumptionBundles?$expand=apis($top=10;$skip=%d)&$format=json", testData.url, totalCount-expectedItemCount), testData.headers)
+			params.Set("$expand", fmt.Sprintf("apis($top=10;$skip=%d)", totalCount-expectedItemCount))
+			respBody = makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, expectedItemCount, len(gjson.Get(respBody, "value").Array()))
 		})
 
 		t.Run(fmt.Sprintf("Requesting paging of Bundle Events for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			totalCount := len(testData.appInput.Bundles[0].EventDefinitions)
+			params := urlpkg.Values{}
 
-			respBody := makeRequestWithHeaders(t, testData.client, testData.url+"/consumptionBundles?$expand=events($top=10;$skip=0)&$format=json", testData.headers)
+			params.Add("$expand", "events($top=10)")
+			params.Add("$format", "json")
+			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, totalCount, len(gjson.Get(respBody, "value.0.events").Array()))
 
 			expectedItemCount := 1
-			respBody = makeRequestWithHeaders(t, testData.client, fmt.Sprintf("%s/consumptionBundles?$expand=events($top=10;$skip=%d)&$format=json", testData.url, totalCount-expectedItemCount), testData.headers)
+			params.Set("$expand", fmt.Sprintf("events($top=10;$skip=%d)", totalCount-expectedItemCount))
+			respBody = makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, expectedItemCount, len(gjson.Get(respBody, "value").Array()))
 		})
 
@@ -704,10 +595,9 @@ func TestORDService(stdT *testing.T) {
 	t.Run("Additional non-ORD details about system instances are exposed", func(t *testing.T) {
 		expectedProductType := fmt.Sprintf("SAP %s", "productType")
 		appTmplInput := fixtures.FixApplicationTemplate(expectedProductType)
-		appTmplInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
 
-		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTmplInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTmpl)
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, appTmplInput)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, "", appTmpl)
 		require.NoError(t, err)
 
 		appFromTmpl := directorSchema.ApplicationFromTemplateInput{
@@ -750,7 +640,154 @@ func TestORDService(stdT *testing.T) {
 	})
 }
 
+func assertEqualAPIDefinitions(t *testing.T, expectedAPIDefinitions []*directorSchema.APIDefinitionInput, actualAPIDefinitions string, apisMap map[string]directorSchema.APIDefinitionInput, client *http.Client, headers map[string][]string) {
+	require.Equal(t, len(expectedAPIDefinitions), len(gjson.Parse(actualAPIDefinitions).Array()))
+
+	for i := range expectedAPIDefinitions {
+		name := gjson.Get(actualAPIDefinitions, fmt.Sprintf("%d.title", i)).String()
+		require.NotEmpty(t, name)
+
+		expectedAPI, exists := apisMap[name]
+		require.True(t, exists)
+
+		require.Equal(t, *expectedAPI.Description, gjson.Get(actualAPIDefinitions, fmt.Sprintf("%d.description", i)).String())
+		require.Equal(t, expectedAPI.TargetURL, gjson.Get(actualAPIDefinitions, fmt.Sprintf("%d.entryPoints.0.value", i)).String())
+		require.NotEmpty(t, gjson.Get(actualAPIDefinitions, fmt.Sprintf("%d.partOfConsumptionBundles", i)).String())
+
+		releaseStatus := gjson.Get(actualAPIDefinitions, fmt.Sprintf("%d.releaseStatus", i)).String()
+		switch releaseStatus {
+		case "decommissioned":
+			require.True(t, *expectedAPI.Version.ForRemoval)
+			require.True(t, *expectedAPI.Version.Deprecated)
+		case "deprecated":
+			require.False(t, *expectedAPI.Version.ForRemoval)
+			require.True(t, *expectedAPI.Version.Deprecated)
+		case "active":
+			require.False(t, *expectedAPI.Version.ForRemoval)
+			require.False(t, *expectedAPI.Version.Deprecated)
+		default:
+			panic(errors.New(fmt.Sprintf("Unknown release status: %s", releaseStatus)))
+		}
+
+		apiProtocol := gjson.Get(actualAPIDefinitions, fmt.Sprintf("%d.apiProtocol", i)).String()
+		switch apiProtocol {
+		case "odata-v2":
+			require.Equal(t, expectedAPI.Spec.Type, directorSchema.APISpecTypeOdata)
+		case "rest":
+			require.Equal(t, expectedAPI.Spec.Type, directorSchema.APISpecTypeOpenAPI)
+		default:
+			t.Log(fmt.Sprintf("API Protocol for API %s is %s. It does not match a predefined spec type.", name, apiProtocol))
+		}
+
+		specs := gjson.Get(actualAPIDefinitions, fmt.Sprintf("%d.resourceDefinitions", i)).Array()
+		require.Equal(t, 1, len(specs))
+
+		specType := specs[0].Get("type").String()
+		switch specType {
+		case "edmx":
+			require.Equal(t, expectedAPI.Spec.Type, directorSchema.APISpecTypeOdata)
+		case "openapi-v3":
+			require.Equal(t, expectedAPI.Spec.Type, directorSchema.APISpecTypeOpenAPI)
+		default:
+			panic(errors.New(fmt.Sprintf("Unknown spec type: %s", specType)))
+		}
+
+		specFormat := specs[0].Get("mediaType").String()
+		switch specFormat {
+		case "text/yaml":
+			require.Equal(t, expectedAPI.Spec.Format, directorSchema.SpecFormatYaml)
+		case "application/json":
+			require.Equal(t, expectedAPI.Spec.Format, directorSchema.SpecFormatJSON)
+		case "application/xml":
+			require.Equal(t, expectedAPI.Spec.Format, directorSchema.SpecFormatXML)
+		default:
+			panic(errors.New(fmt.Sprintf("Unknown spec format: %s", specFormat)))
+		}
+
+		apiID := gjson.Get(actualAPIDefinitions, fmt.Sprintf("%d.id", i)).String()
+		require.NotEmpty(t, apiID)
+
+		specURL := specs[0].Get("url").String()
+		specPath := fmt.Sprintf("/api/%s/specification", apiID)
+		require.Contains(t, specURL, conf.ORDServiceStaticPrefix+specPath)
+
+		respBody := makeRequestWithHeaders(t, client, specURL, headers)
+
+		require.Equal(t, string(*expectedAPI.Spec.Data), respBody)
+
+	}
+}
+
+func assertEqualEventDefinitions(t *testing.T, expectedEventDefinitions []*directorSchema.EventDefinitionInput, actualEventDefinitions string, eventsMap map[string]directorSchema.EventDefinitionInput, client *http.Client, headers map[string][]string) {
+	require.Equal(t, len(expectedEventDefinitions), len(gjson.Parse(actualEventDefinitions).Array()))
+
+	for i := range expectedEventDefinitions {
+		name := gjson.Get(actualEventDefinitions, fmt.Sprintf("%d.title", i)).String()
+		require.NotEmpty(t, name)
+
+		expectedEvent, exists := eventsMap[name]
+		require.True(t, exists)
+
+		require.Equal(t, *expectedEvent.Description, gjson.Get(actualEventDefinitions, fmt.Sprintf("%d.description", i)).String())
+		require.NotEmpty(t, gjson.Get(actualEventDefinitions, fmt.Sprintf("%d.partOfConsumptionBundles", i)).String())
+
+		releaseStatus := gjson.Get(actualEventDefinitions, fmt.Sprintf("%d.releaseStatus", i)).String()
+		switch releaseStatus {
+		case "decommissioned":
+			require.True(t, *expectedEvent.Version.ForRemoval)
+			require.True(t, *expectedEvent.Version.Deprecated)
+		case "deprecated":
+			require.False(t, *expectedEvent.Version.ForRemoval)
+			require.True(t, *expectedEvent.Version.Deprecated)
+		case "active":
+			require.False(t, *expectedEvent.Version.ForRemoval)
+			require.False(t, *expectedEvent.Version.Deprecated)
+		default:
+			panic(errors.New(fmt.Sprintf("Unknown release status: %s", releaseStatus)))
+		}
+
+		specs := gjson.Get(actualEventDefinitions, fmt.Sprintf("%d.resourceDefinitions", i)).Array()
+		require.Equal(t, 1, len(specs))
+
+		specType := specs[0].Get("type").String()
+		switch specType {
+		case "asyncapi-v2":
+			require.Equal(t, expectedEvent.Spec.Type, directorSchema.EventSpecTypeAsyncAPI)
+		default:
+			panic(errors.New(fmt.Sprintf("Unknown spec type: %s", specType)))
+		}
+
+		specFormat := specs[0].Get("mediaType").String()
+		switch specFormat {
+		case "text/yaml":
+			require.Equal(t, expectedEvent.Spec.Format, directorSchema.SpecFormatYaml)
+		case "application/json":
+			require.Equal(t, expectedEvent.Spec.Format, directorSchema.SpecFormatJSON)
+		case "application/xml":
+			require.Equal(t, expectedEvent.Spec.Format, directorSchema.SpecFormatXML)
+		default:
+			panic(errors.New(fmt.Sprintf("Unknown spec format: %s", specFormat)))
+		}
+
+		eventID := gjson.Get(actualEventDefinitions, fmt.Sprintf("%d.id", i)).String()
+		require.NotEmpty(t, eventID)
+
+		specURL := specs[0].Get("url").String()
+		specPath := fmt.Sprintf("/event/%s/specification", eventID)
+		require.Contains(t, specURL, conf.ORDServiceStaticPrefix+specPath)
+
+		respBody := makeRequestWithHeaders(t, client, specURL, headers)
+
+		require.Equal(t, string(*expectedEvent.Spec.Data), respBody)
+	}
+}
+
 func makeRequestWithHeaders(t require.TestingT, httpClient *http.Client, url string, headers map[string][]string) string {
+	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, conf.ORDServiceDefaultResponseType)
+}
+
+func makeRequestWithHeadersAndQueryParams(t require.TestingT, httpClient *http.Client, url string, headers map[string][]string, params urlpkg.Values) string {
+	url = url + params.Encode()
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, conf.ORDServiceDefaultResponseType)
 }
 
