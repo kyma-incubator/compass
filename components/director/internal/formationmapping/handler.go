@@ -172,16 +172,19 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 
 	formationOperation := determineOperationBasedOnFormationAssignmentState(fa)
 	notificationStatusReport := newNotificationStatusReportFromRequestBody(assignmentReqBody, fa)
-	stateFromStatusReport := notificationStatusReport.State
-	if !isStateSupportedForOperation(ctx, model.FormationAssignmentState(stateFromStatusReport), formationOperation, reset) {
-		log.C(ctx).Errorf("An invalid state: %q is provided for %q operation with reset option %t", stateFromStatusReport, formationOperation, reset)
-		errResp := errors.Errorf("An invalid state: %s is provided for %s operation. X-Request-Id: %s", stateFromStatusReport, formationOperation, correlationID)
+	originalStateFromStatusReport := notificationStatusReport.State
+	if !isStateSupportedForOperation(ctx, model.FormationAssignmentState(originalStateFromStatusReport), formationOperation, reset) {
+		log.C(ctx).Errorf("An invalid state: %q is provided for %q operation with reset option %t", originalStateFromStatusReport, formationOperation, reset)
+		errResp := errors.Errorf("An invalid state: %s is provided for %s operation. X-Request-Id: %s", originalStateFromStatusReport, formationOperation, correlationID)
 		respondWithError(ctx, w, http.StatusBadRequest, errResp)
 		return
 	}
 
+	changeToRegularReadyStateInStatusReport(notificationStatusReport)
+	stateFromStatusReport := notificationStatusReport.State
+
 	if reset {
-		if notificationStatusReport.State != string(model.ReadyAssignmentState) && notificationStatusReport.State != string(model.ConfigPendingAssignmentState) {
+		if stateFromStatusReport != string(model.ReadyAssignmentState) && stateFromStatusReport != string(model.ConfigPendingAssignmentState) {
 			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q to state %s. X-Request-Id: %s", fa.Source, fa.Target, assignmentReqBody.State, correlationID)
 			respondWithError(ctx, w, http.StatusBadRequest, errResp)
 			return
@@ -433,9 +436,9 @@ func (b FormationAssignmentRequestBody) Validate(ctx context.Context) error {
 		validation.Field(&b.State,
 			validation.Required.When(consumerType != consumer.BusinessIntegration),
 			validation.When(b.Error != "", validation.In(model.CreateErrorAssignmentState, model.DeleteErrorAssignmentState)),
-			validation.When(len(b.Configuration) > 0, validation.In(model.ReadyAssignmentState, model.ConfigPendingAssignmentState)),
+			validation.When(len(b.Configuration) > 0, validation.In(model.ReadyAssignmentState, model.ConfigPendingAssignmentState, model.CreateReadyFormationAssignmentState, model.DeleteReadyFormationAssignmentState)),
 			// in case of empty error and configuration
-			validation.In(model.ReadyAssignmentState, model.CreateErrorAssignmentState, model.DeleteErrorAssignmentState, model.ConfigPendingAssignmentState),
+			validation.In(model.ReadyAssignmentState, model.CreateErrorAssignmentState, model.DeleteErrorAssignmentState, model.ConfigPendingAssignmentState, model.CreateReadyFormationAssignmentState, model.DeleteReadyFormationAssignmentState),
 		),
 		validation.Field(&b.Configuration, validation.When(b.Error != "", validation.Empty)),
 		validation.Field(&b.Error, validation.When(len(b.Configuration) > 0, validation.Empty)),
@@ -743,6 +746,12 @@ func calculateState(requestBody FormationAssignmentRequestBody, fa *model.Format
 	return string(model.DeleteErrorAssignmentState)
 }
 
+func changeToRegularReadyStateInStatusReport(statusReport *statusreport.NotificationStatusReport) {
+	if statusReport.State == string(model.CreateReadyFormationAssignmentState) || statusReport.State == string(model.DeleteReadyFormationAssignmentState) {
+		statusReport.State = string(model.ReadyAssignmentState)
+	}
+}
+
 func isSupportedStateForReset(state model.FormationAssignmentState) bool {
 	return state == model.ReadyAssignmentState || state == model.ConfigPendingAssignmentState
 }
@@ -750,12 +759,14 @@ func isSupportedStateForReset(state model.FormationAssignmentState) bool {
 func isSupportedStateForStatusUpdateWithAssignOperation(state model.FormationAssignmentState) bool {
 	return state == model.CreateErrorAssignmentState ||
 		state == model.ReadyAssignmentState ||
+		state == model.CreateReadyFormationAssignmentState ||
 		state == model.ConfigPendingAssignmentState
 }
 
 func isSupportedStateForStatusUpdateWithUnassignOperation(state model.FormationAssignmentState) bool {
 	return state == model.DeleteErrorAssignmentState ||
-		state == model.ReadyAssignmentState
+		state == model.ReadyAssignmentState ||
+		state == model.DeleteReadyFormationAssignmentState
 }
 
 func isStateSupportedForOperation(ctx context.Context, state model.FormationAssignmentState, operation model.FormationOperation, isReset bool) bool {
