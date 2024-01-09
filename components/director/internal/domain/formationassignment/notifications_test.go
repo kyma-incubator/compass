@@ -2047,7 +2047,7 @@ func Test_GenerateFormationAssignmentPair(t *testing.T) {
 			tenantRepo: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", emptyCtx, faWithSourceRuntimeAndTargetApp.TenantID).Return(gaTenantObject, nil).Twice()
-				repo.On("GetCustomerIDParentRecursively", emptyCtx, faWithSourceRuntimeAndTargetApp.TenantID).Return(TntParentID, nil).Twice()
+				repo.On("GetParentsRecursivelyByExternalTenant", emptyCtx, faWithSourceRuntimeAndTargetApp.TenantID).Return(customerParentTenantResponse, nil).Twice()
 				return repo
 			},
 			webhookRepo: func() *automock.WebhookRepository {
@@ -2107,7 +2107,7 @@ func Test_GenerateFormationAssignmentPair(t *testing.T) {
 			tenantRepo: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", emptyCtx, faWithSourceRuntimeAndTargetApp.TenantID).Return(gaTenantObject, nil).Once()
-				repo.On("GetCustomerIDParentRecursively", emptyCtx, faWithSourceRuntimeAndTargetApp.TenantID).Return(TntParentID, nil).Once()
+				repo.On("GetParentsRecursivelyByExternalTenant", emptyCtx, faWithSourceRuntimeAndTargetApp.TenantID).Return(customerParentTenantResponse, nil).Once()
 				return repo
 			},
 			webhookRepo: func() *automock.WebhookRepository {
@@ -2172,7 +2172,7 @@ func Test_GenerateFormationAssignmentPair(t *testing.T) {
 			tenantRepo: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", emptyCtx, faWithSourceRuntimeAndTargetApp.TenantID).Return(gaTenantObject, nil).Once()
-				repo.On("GetCustomerIDParentRecursively", emptyCtx, faWithSourceRuntimeAndTargetApp.TenantID).Return(TntParentID, nil).Once()
+				repo.On("GetParentsRecursivelyByExternalTenant", emptyCtx, faWithSourceRuntimeAndTargetApp.TenantID).Return(customerParentTenantResponse, nil).Once()
 
 				repo.On("Get", emptyCtx, faWithSourceRuntimeAndTargetApp.TenantID).Return(nil, testErr).Once()
 				return repo
