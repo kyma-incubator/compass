@@ -113,6 +113,7 @@ func (o *ExecuteStatusReportOperation) Execute(t *testing.T, ctx context.Context
 	response, err := o.client.Do(request)
 	require.NoError(t, err)
 	require.Equal(t, o.statusCode, response.StatusCode)
+	// Log the unsuccessful HTTP responses
 	if o.statusCode > 299 {
 		bodyBytes, err := io.ReadAll(response.Body)
 		require.NoError(t, err)

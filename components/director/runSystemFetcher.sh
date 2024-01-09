@@ -169,6 +169,12 @@ export APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT=$(echo -E ${ENV_VARS} | jq -r '.[
 export APP_TEMPLATE_PLACEHOLDER_TO_SYSTEM_KEY_MAPPINGS=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_TEMPLATE_PLACEHOLDER_TO_SYSTEM_KEY_MAPPINGS") | .value' )
 export APP_ORD_WEBHOOK_MAPPINGS=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_ORD_WEBHOOK_MAPPINGS") | .value' )
 
+export APP_JWKS_ENDPOINT="file://hack/default-jwks.json"
+export APP_ROOT_API="/system-fetcher"
+
+export APP_ELECTION_LEASE_LOCK_NAME=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_ELECTION_LEASE_LOCK_NAME") | .value' )
+export APP_ELECTION_LEASE_LOCK_NAMESPACE=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_ELECTION_LEASE_LOCK_NAMESPACE") | .value' )
+
 # Adjust artifacts inside local cluster
 kubectl config use-context ${K3D_CONTEXT}
 kubectl create secret generic "$CLIENT_CERT_SECRET_NAME"-stage --from-literal="$APP_EXTERNAL_CLIENT_CERT_KEY"="$APP_EXTERNAL_CLIENT_CERT_VALUE" --from-literal="$APP_EXTERNAL_CLIENT_KEY_KEY"="$APP_EXTERNAL_CLIENT_KEY_VALUE" --save-config --dry-run=client -o yaml | kubectl apply -f -

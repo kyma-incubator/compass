@@ -204,7 +204,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			shouldSleep:        true,
 		},
 		{
-			name:       "Success when operation is assign and provided state is CREATE_ERROR",
+			name:       "Success when operation is assign and provided state is CREATE_READY",
 			transactFn: txGen.ThatSucceedsTwice,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
