@@ -155,7 +155,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err := h.handleUnassignOperation(ctx, svcInstanceNameProcurement, svcInstanceNameIAS); err != nil {
 				log.C(ctx).Error(err)
 				errMsg := fmt.Sprintf("%s. X-Request-Id: %s", err.Error(), correlationID)
-				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", errMsg)
+				reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": %q}", errMsg)
 				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
