@@ -22,71 +22,100 @@ CREATE TABLE tenant_parents
     PRIMARY KEY (tenant_id, parent_id)
 );
 
--- Create indexes for tenant_parents table
-CREATE INDEX tenant_parents_tenant_id ON tenant_parents (tenant_id);
-CREATE INDEX tenant_parents_parent_id ON tenant_parents (parent_id);
-
+-- Copy business_tenant_mappings table
+CREATE TABLE business_tenant_mappings_temp AS TABLE business_tenant_mappings;
+CREATE INDEX business_tenant_mappings_temp_external_tenant ON business_tenant_mappings_temp (external_tenant);
+CREATE INDEX business_tenant_mappings_temp_id ON business_tenant_mappings_temp (id);
 
 -- Populate 'tenant_parents' table with data from 'business_tenant_mappings'
 INSERT INTO tenant_parents (tenant_id, parent_id)
 SELECT id, parent
-FROM business_tenant_mappings
+FROM business_tenant_mappings_temp
 WHERE parent IS NOT NULL;
+
+-- Create indexes for tenant_parents table
+CREATE INDEX tenant_parents_tenant_id ON tenant_parents (tenant_id);
+CREATE INDEX tenant_parents_parent_id ON tenant_parents (parent_id);
 
 -- Migrate tenant access records for applications
 
--- Add source column to tenant_applications table
-ALTER TABLE tenant_applications
-    ADD COLUMN source uuid;
-ALTER TABLE tenant_applications
-    ADD CONSTRAINT tenant_applications_source_fk
-        FOREIGN KEY (source) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
-ALTER TABLE tenant_applications DROP CONSTRAINT tenant_applications_pkey;
+--
+CREATE TABLE tenant_applications_temp AS TABLE tenant_applications;
 
-ALTER TABLE  tenant_applications
-    ADD CONSTRAINT unique_tenant_applications UNIQUE (tenant_id,id,source);
+CREATE INDEX tenant_applications_temp_tenant_id ON tenant_applications_temp (tenant_id);
+CREATE INDEX tenant_applications_temp_app_id ON tenant_applications_temp (id);
+
+
+-- Add source column to tenant_applications_temp table
+ALTER TABLE tenant_applications_temp
+    ADD COLUMN source uuid;
+
+-- ALTER TABLE tenant_applications_temp DROP CONSTRAINT tenant_applications_temp_pkey;
+ALTER TABLE  tenant_applications_temp
+    ADD CONSTRAINT unique_tenant_applications_temp UNIQUE (tenant_id,id,source);
 
 -- Add tenant access for the parents of the owning tenant
-INSERT INTO tenant_applications
+INSERT INTO tenant_applications_temp
     (select tp.parent_id, ta.id, ta.owner, ta.tenant_id
-     from tenant_applications ta
-              JOIN tenant_parents tp on ta.tenant_id = tp.tenant_id)ON CONFLICT (tenant_id,id,source) DO NOTHING ;
+     from tenant_applications_temp ta
+               JOIN tenant_parents tp on ta.tenant_id = tp.tenant_id) ON CONFLICT (tenant_id,id,source) DO NOTHING ;
 
 -- Add tenant access records for the owning tenant itself
-update tenant_applications ta SET source = ta.tenant_id
-where ta.source is null and NOT EXISTS (select 1 from tenant_applications parent_ta
-         join tenant_parents tp on parent_ta.tenant_id=tp.parent_id
-         join tenant_applications child_ta on child_ta.tenant_id = tp.tenant_id and parent_ta.ID = child_ta.ID
-where ta.tenant_id=parent_ta.tenant_id AND ta.id =parent_ta.id);
+update tenant_applications_temp ta SET source = ta.tenant_id
+where ta.source is null and NOT EXISTS (select 1 from tenant_applications_temp parent_ta
+                                                          join tenant_parents tp on parent_ta.tenant_id=tp.parent_id
+                                                          join tenant_applications_temp child_ta on child_ta.tenant_id = tp.tenant_id and parent_ta.ID = child_ta.ID
+                                        where ta.tenant_id=parent_ta.tenant_id AND ta.id =parent_ta.id);
 
 -- Delete tenant access records with null source as they leftover access records for the parents of the owning tenant that were already populated by the previous queries
-delete from tenant_applications where source is null;
+delete from tenant_applications_temp where source is null;
 
 -- Tenant access records that originated from the directive were processed in the reverse direction. Now according to the TA table the CRM knows about the resource from the GA
 -- We have to swap the source and tenant_id for records where the source is GA, the tenant_id is CRM and there is a record for the same resource where the tenant_id is resource-group (this means that the resource was created in Atom)
-update tenant_applications ta
+update tenant_applications_temp ta
   set source = ta.tenant_id,  tenant_id = ta.source
-  from tenant_applications ta1
-      join business_tenant_mappings btm on btm.id = ta1.tenant_id AND btm.type = 'customer'::tenant_type
-      join business_tenant_mappings btm2 on btm2.id = ta1.source AND btm2.type = 'account'::tenant_type
-      join tenant_applications ta2 on ta1.id=ta2.id
-      join business_tenant_mappings btm3 on btm3.id = ta2.tenant_id AND btm3.type = 'resource-group'::tenant_type
+  from tenant_applications_temp ta1
+         join business_tenant_mappings_temp btm on btm.id = ta1.tenant_id AND btm.type = 'customer'::tenant_type
+         join business_tenant_mappings_temp btm2 on btm2.id = ta1.source AND btm2.type = 'account'::tenant_type
+         join tenant_applications_temp ta2 on ta1.id=ta2.id
+         join business_tenant_mappings_temp btm3 on btm3.id = ta2.tenant_id AND btm3.type = 'resource-group'::tenant_type
  where ta.tenant_id=ta1.tenant_id and ta.source=ta1.source and ta.id=ta1.id and ta.owner = ta1.owner;
 
 -- After fixing the swapped source and tenant_id there are leftover records stating that the GA knows about the resource from itself which is not correct as The GA knows about the resource from the CRM. Such records should be deleted
-delete from tenant_applications ta
+delete from tenant_applications_temp ta
 using
-        tenant_applications ta2
+        tenant_applications_temp ta2
        join tenant_parents tp on tp.parent_id = ta2.source and tp.tenant_id=ta2.tenant_id
     where ta.tenant_id =ta2.tenant_id AND ta.id=ta2.id and ta.tenant_id = ta.source;
 
+ALTER TABLE tenant_applications RENAME TO tenant_applications_old;
+ALTER TABLE tenant_applications_old RENAME CONSTRAINT tenant_applications_pkey TO tenant_applications_old_pkey;
+ALTER TABLE tenant_applications_old RENAME CONSTRAINT tenant_applications_id_fkey TO tenant_applications_old_id_fkey;
+ALTER TABLE tenant_applications_old RENAME CONSTRAINT tenant_applications_tenant_id_fkey TO tenant_applications_old_tenant_id_fkey;
+ALTER INDEX tenant_applications_app_id RENAME TO tenant_applications_old_app_id;
+ALTER INDEX tenant_applications_tenant_id RENAME TO tenant_applications_old_tenant_id;
+
+ALTER TABLE tenant_applications_temp RENAME TO tenant_applications;
+ALTER TABLE tenant_applications
+    ADD PRIMARY KEY (tenant_id, id, source);
+ALTER TABLE tenant_applications DROP CONSTRAINT unique_tenant_applications_temp;
+
+
+ALTER TABLE tenant_applications
+    ADD CONSTRAINT tenant_applications_tenant_id_fk
+        FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
+ALTER TABLE tenant_applications
+    ADD CONSTRAINT tenant_applications_id_fk
+        FOREIGN KEY (id) REFERENCES applications (id) ON DELETE CASCADE;
+ALTER TABLE tenant_applications
+    ADD CONSTRAINT tenant_applications_source_fk
+        FOREIGN KEY (source) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
 
 ALTER TABLE tenant_applications
     alter column source set not null;
 
-ALTER TABLE tenant_applications
-    ADD PRIMARY KEY (tenant_id, id, source);
-
+ALTER INDEX tenant_applications_temp_app_id RENAME TO tenant_applications_app_id;
+ALTER INDEX tenant_applications_temp_tenant_id RENAME TO tenant_applications_tenant_id;
 CREATE INDEX tenant_applications_source ON tenant_applications (source);
 
 -- Migrate tenant access records for runtimes
@@ -204,9 +233,9 @@ CREATE INDEX tenant_runtimes_contexts_source ON tenant_runtime_contexts (source)
 DROP VIEW IF EXISTS formation_templates_webhooks_tenants;
 
 CREATE
-OR REPLACE VIEW formation_templates_webhooks_tenants (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
-                                                             input_template, header_template, output_template, status_template, runtime_id, integration_system_id,
-                                                             app_template_id, formation_template_id, tenant_id, owner)
+    OR REPLACE VIEW formation_templates_webhooks_tenants (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
+                                                          input_template, header_template, output_template, status_template, runtime_id, integration_system_id,
+                                                          app_template_id, formation_template_id, tenant_id, owner)
 AS
 SELECT w.id,
        w.app_id,
@@ -260,7 +289,7 @@ FROM webhooks w
 DROP VIEW IF EXISTS webhooks_tenants;
 
 CREATE
-OR REPLACE VIEW webhooks_tenants
+    OR REPLACE VIEW webhooks_tenants
             (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
              input_template, header_template, output_template, status_template, runtime_id, integration_system_id,
              app_template_id, formation_template_id, tenant_id, owner)
@@ -360,32 +389,32 @@ FROM webhooks w
 
 -- Drop 'parent' column from 'business_tenant_mappings'
 ALTER TABLE business_tenant_mappings
-DROP
-COLUMN parent;
+    DROP
+        COLUMN parent;
 
 
 DROP TRIGGER tenant_id_is_direct_parent_of_target_tenant_id ON automatic_scenario_assignments;
 DROP FUNCTION IF EXISTS check_tenant_id_is_direct_parent_of_target_tenant_id();
 
 CREATE
-OR REPLACE FUNCTION check_tenant_id_is_direct_parent_of_target_tenant_id() RETURNS TRIGGER AS
+    OR REPLACE FUNCTION check_tenant_id_is_direct_parent_of_target_tenant_id() RETURNS TRIGGER AS
 $$
 DECLARE
-count INTEGER;
+    count INTEGER;
 BEGIN
-EXECUTE format('SELECT COUNT(1) FROM tenant_parents WHERE tenant_id = %L AND parent_id = %L', NEW.target_tenant_id,
-               NEW.tenant_id) INTO count;
-IF
-count = 0 THEN
+    EXECUTE format('SELECT COUNT(1) FROM tenant_parents WHERE tenant_id = %L AND parent_id = %L', NEW.target_tenant_id,
+                   NEW.tenant_id) INTO count;
+    IF
+            count = 0 THEN
         RAISE EXCEPTION 'target_tenant_id should be direct child of tenant_id';
-END IF;
-RETURN NULL;
+    END IF;
+    RETURN NULL;
 END
 $$
-LANGUAGE plpgsql;
+    LANGUAGE plpgsql;
 
 CREATE
-CONSTRAINT TRIGGER tenant_id_is_direct_parent_of_target_tenant_id AFTER INSERT ON automatic_scenario_assignments
+    CONSTRAINT TRIGGER tenant_id_is_direct_parent_of_target_tenant_id AFTER INSERT ON automatic_scenario_assignments
     FOR EACH ROW EXECUTE PROCEDURE check_tenant_id_is_direct_parent_of_target_tenant_id();
 
 

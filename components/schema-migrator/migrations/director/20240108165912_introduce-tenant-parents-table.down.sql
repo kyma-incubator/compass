@@ -43,6 +43,8 @@ FROM tenant_applications t1 USING tenant_applications t2
 WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner= false AND t2.owner= true;
 
 ALTER TABLE tenant_applications DROP column source;
+ALTER TABLE tenant_applications
+    ADD PRIMARY KEY (tenant_id, id);
 
 -- tenant_runtimes
 DELETE
