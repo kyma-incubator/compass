@@ -21,9 +21,7 @@
 /chart/compass/charts/ord-aggregator @kyma-incubator/team-falcon
 /chart/compass/charts/system-fetcher @kyma-incubator/team-falcon
 /chart/compass/templates/filters @kyma-incubator/team-raptor
-/components/connectivity-adapter/go.mod
-/components/connectivity-adapter/go.sum
-/components/connectivity-adapter @kyma-incubator/team-falcon
+
 /components/connector @kyma-incubator/team-raptor
 /components/connector/go.mod
 /components/director/cmd/ns-adapter @kyma-incubator/team-falcon
