@@ -3,10 +3,11 @@ package httputil
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/tm-adapter/internal/api/types"
-	"net/http"
 )
 
 const (
@@ -26,7 +27,7 @@ func RespondWithError(ctx context.Context, w http.ResponseWriter, status int, er
 	}
 }
 
-// RespondWithBody writes a http response using with the JSON encoded data as payload
+// RespondWithBody writes an http response using with the JSON encoded data as payload
 func RespondWithBody(ctx context.Context, w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Add(HeaderContentTypeKey, ContentTypeApplicationJSON)
 	w.WriteHeader(status)

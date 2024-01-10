@@ -3,14 +3,15 @@ package server
 import (
 	"context"
 	"fmt"
-	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/pkg/errors"
 	"net/http"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/pkg/errors"
 )
 
 type Server struct {

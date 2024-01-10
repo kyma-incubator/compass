@@ -5,6 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+	"strings"
+	"text/template"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -16,13 +24,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-	"io"
-	"net/http"
-	"net/url"
-	"os"
-	"strings"
-	"text/template"
-	"time"
 )
 
 const (
@@ -31,39 +32,36 @@ const (
 	AssignOperation   = "assign"
 	UnassignOperation = "unassign"
 
+	contentTypeHeaderKey       = "Content-Type"
+	contentTypeApplicationJSON = "application/json;charset=UTF-8"
+
 	catalogNameIAS = "identity"
 )
 
 type Handler struct {
-	cfg      *config.Config
-	caller   *external_caller.Caller
-	tenantID string
+	cfg            *config.Config
+	caller         *external_caller.Caller
+	mtlsHTTPClient *http.Client
+	tenantID       string
 }
 
-func NewHandler(cfg *config.Config, caller *external_caller.Caller) *Handler {
+func NewHandler(cfg *config.Config, caller *external_caller.Caller, mtlsHTTPClient *http.Client) *Handler {
 	return &Handler{
-		cfg:    cfg,
-		caller: caller,
+		cfg:            cfg,
+		caller:         caller,
+		mtlsHTTPClient: mtlsHTTPClient,
 	}
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDForRequest(r)
-	errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
 
 	log.C(ctx).Infof("Processing tenant mapping notification...")
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.C(ctx).Errorf("Failed to read request body: %v", err)
 		httputil.RespondWithError(ctx, w, http.StatusBadRequest, errors.New("Failed to read request body"))
-		return
-	}
-
-	formationID := gjson.Get(string(reqBody), "context.uclFormationId").String()
-	if formationID == "" {
-		log.C(ctx).Error("Failed to get the formation ID from the tenant mapping request body")
-		httputil.RespondWithError(ctx, w, http.StatusBadRequest, errors.New("Failed to get the formation ID from the tenant mapping request body"))
 		return
 	}
 
@@ -88,168 +86,241 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.tenantID = tm.ReceiverTenant.ApplicationTenantID
 	}
 
-	// only for live landscapes
-	h.adaptCredsBasedOnRegion(ctx, tm)
+	log.C(ctx).Infof(tm.String())
 
-	if tm.Context.Operation == AssignOperation && tm.ReceiverTenant.State == "INITIAL" && (string(tm.ReceiverTenant.Configuration) == "" || string(tm.ReceiverTenant.Configuration) == "\"\"" || string(tm.ReceiverTenant.Configuration) == "{}" || string(tm.ReceiverTenant.Configuration) == "null") {
-		log.C(ctx).Infof("Initial notification request is received with empty config in the receiver tenant. Returning \"initial config\"...")
-		initialConfig := `{"state":"CONFIG_PENDING","configuration":{"credentials":{"outboundCommunication":{"noAuthentication":{"url":"{{ .URL }}","uiUrl":"{{ .URL }}","correlationIds":["SAP_COM_0A00"]},"oauth2mtls":{"correlationIds":["SAP_COM_0545"]}},"inboundCommunication":{"clientCertificateAuthentication":{"correlationIds":["SAP_COM_0545"],"destinations":[{"name":"ngproc-consys"}]}}},"additionalAttributes":{"communicationSystemProperties":[{"name":"Business System","value":"{{ .SubaccountID }}","correlationIds":["SAP_COM_0545"]}],"outboundServicesProperties":[{"name":"Purchase Order – Notify about Update of Item History","path":"/api/s4-connectedsystem-soap-adapter-service-srv-api/v1/S4ConnectedSystemSoapAdapterService/updateStatus","isServiceActive":true,"correlationIds":["SAP_COM_0545"]}]}}}`
-		httputil.RespondWithBody(ctx, w, http.StatusOK, json.RawMessage(initialConfig))
+	statusAPIURL := r.Header.Get(LocationHeaderKey)
+	if statusAPIURL == "" {
+		err := errors.Errorf("The value of the %s header could not be empty", LocationHeaderKey)
+		log.C(ctx).Error(err)
+		httputil.RespondWithError(ctx, w, http.StatusBadRequest, err)
 		return
-	}
-
-	var inboundCert string
-	isAssignedTntCfgNonEmpty := isConfigNonEmpty(string(tm.AssignedTenant.Configuration))
-	if tm.Context.Operation == AssignOperation && tm.AssignedTenant.State == "CONFIG_PENDING" && tm.AssignedTenant.Configuration != nil && isAssignedTntCfgNonEmpty {
-		log.C(ctx).Infof("Notification request is received for %q operation with CONFIG_PENDING state and non empty configuration. Checking for inbound certificate...", AssignOperation)
-		cert := gjson.GetBytes(tm.AssignedTenant.Configuration, "credentials.inboundCommunication.oauth2mtls.certificate").String()
-		if cert == "" {
-			log.C(ctx).Error("The OAuth2 mTLS certificate in the assigned tenant configuration cannot be empty")
-			httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-			return
-		}
-		inboundCert = cert
 	}
 
 	readyResp := `{"state":"READY"}`
-	if tm.Context.Operation == AssignOperation && tm.AssignedTenant.State == "READY" && tm.AssignedTenant.Configuration != nil && isAssignedTntCfgNonEmpty {
-		log.C(ctx).Infof("Notification request is received for %q operation with READY state and non empty configuration. Returning only ready state...", AssignOperation)
-		httputil.RespondWithBody(ctx, w, http.StatusOK, json.RawMessage(readyResp))
-		return
-	}
+	formationID := tm.Context.FormationID
 
-	//catalogNameProcurement := "procurement-service-test" // todo::: that's the value for the CANARY env;; most probably should be provided as label on the runtime/app-template and will be used through TM notification body
-	catalogNameProcurement := "procurement-service" // todo::: that's the value for the LIVE env;; most probably should be provided as label on the runtime/app-template and will be used through TM notification body
-	planNameProcurement := "apiaccess"              // todo::: most probably should be provided as label on the runtime/app-template and will be used through TM notification body
-	svcInstanceNameProcurement := catalogNameProcurement + "-instance-" + formationID
+	// only for live landscapes
+	h.adaptCredsBasedOnRegion(ctx, tm)
 
-	//catalogNameIAS := "identity" // IAS
-	planNameIAS := "application"
-	svcInstanceNameIAS := catalogNameIAS + "-instance-" + formationID
+	httputil.Respond(w, http.StatusAccepted)
 
-	var serviceKeyIAS *types.ServiceKey
-	if tm.Context.Operation == UnassignOperation {
-		if err := h.handleUnassignOperation(ctx, svcInstanceNameProcurement, svcInstanceNameIAS); err != nil {
-			log.C(ctx).Error(err)
-			httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+	go func() {
+		ctx, cancel := context.WithCancel(context.TODO())
+		defer cancel()
+
+		correlationIDKey := correlation.RequestIDHeaderKey
+		ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
+		logger := log.C(ctx).WithField(correlationIDKey, correlationID)
+		ctx = log.ContextWithLogger(ctx, logger)
+
+		if tm.Context.Operation == AssignOperation && tm.ReceiverTenant.State == "INITIAL" && (string(tm.ReceiverTenant.Configuration) == "" || string(tm.ReceiverTenant.Configuration) == "\"\"" || string(tm.ReceiverTenant.Configuration) == "{}" || string(tm.ReceiverTenant.Configuration) == "null") {
+			log.C(ctx).Infof("Initial notification request is received with empty config in the receiver tenant. Returning \"initial config\"...")
+			initialConfig := `{"state":"CONFIG_PENDING","configuration":{"credentials":{"outboundCommunication":{"noAuthentication":{"url":"{{ .URL }}","uiUrl":"{{ .URL }}","correlationIds":["SAP_COM_0A00"]},"oauth2mtls":{"correlationIds":["SAP_COM_0545"]}},"inboundCommunication":{"clientCertificateAuthentication":{"correlationIds":["SAP_COM_0545"],"destinations":[{"name":"ngproc-consys"}]}}},"additionalAttributes":{"communicationSystemProperties":[{"name":"Business System","value":"{{ .SubaccountID }}","correlationIds":["SAP_COM_0545"]}],"outboundServicesProperties":[{"name":"Purchase Order – Notify about Update of Item History","path":"/api/s4-connectedsystem-soap-adapter-service-srv-api/v1/S4ConnectedSystemSoapAdapterService/updateStatus","isServiceActive":true,"correlationIds":["SAP_COM_0545"]}]}}}`
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, initialConfig); statusAPIErr != nil {
+				log.C(ctx).Error(statusAPIErr)
+			}
 			return
 		}
-		httputil.RespondWithBody(ctx, w, http.StatusOK, json.RawMessage(readyResp))
-		return
-	} else {
-		serviceKeyIAS, err = h.handleAssignOperation(ctx, catalogNameProcurement, planNameProcurement, svcInstanceNameProcurement, catalogNameIAS, planNameIAS, svcInstanceNameIAS, inboundCert)
+
+		var inboundCert string
+		isAssignedTntCfgNonEmpty := isConfigNonEmpty(string(tm.AssignedTenant.Configuration))
+		if tm.Context.Operation == AssignOperation && tm.AssignedTenant.State == "CONFIG_PENDING" && tm.AssignedTenant.Configuration != nil && isAssignedTntCfgNonEmpty {
+			log.C(ctx).Infof("Notification request is received for %q operation with CONFIG_PENDING state and non empty configuration. Checking for inbound certificate...", AssignOperation)
+			cert := gjson.GetBytes(tm.AssignedTenant.Configuration, "credentials.inboundCommunication.oauth2mtls.certificate").String()
+			if cert == "" {
+				logMsg := "The OAuth2 mTLS certificate in the assigned tenant configuration cannot be empty"
+				log.C(ctx).Error(logMsg)
+				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", fmt.Sprintf("%s. X-Request-Id: %s", logMsg, correlationID))
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+			inboundCert = cert
+		}
+
+		if tm.Context.Operation == AssignOperation && tm.AssignedTenant.State == "READY" && tm.AssignedTenant.Configuration != nil && isAssignedTntCfgNonEmpty {
+			log.C(ctx).Infof("Notification request is received for %q operation with READY state and non empty configuration. Returning only ready state...", AssignOperation)
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, readyResp); statusAPIErr != nil {
+				log.C(ctx).Error(statusAPIErr)
+			}
+			return
+		}
+
+		//catalogNameProcurement := "procurement-service-test" // todo::: that's the value for the CANARY env;; most probably should be provided as label on the runtime/app-template and will be used through TM notification body
+		catalogNameProcurement := "procurement-service" // todo::: that's the value for the LIVE env;; most probably should be provided as label on the runtime/app-template and will be used through TM notification body
+		planNameProcurement := "apiaccess"              // todo::: most probably should be provided as label on the runtime/app-template and will be used through TM notification body
+		svcInstanceNameProcurement := catalogNameProcurement + "-instance-" + formationID
+
+		//catalogNameIAS := "identity" // IAS
+		planNameIAS := "application"
+		svcInstanceNameIAS := catalogNameIAS + "-instance-" + formationID
+
+		var serviceKeyIAS *types.ServiceKey
+		if tm.Context.Operation == UnassignOperation {
+			if err := h.handleUnassignOperation(ctx, svcInstanceNameProcurement, svcInstanceNameIAS); err != nil {
+				log.C(ctx).Error(err)
+				errMsg := fmt.Sprintf("%s. X-Request-Id: %s", err.Error(), correlationID)
+				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", errMsg)
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, readyResp); statusAPIErr != nil {
+				log.C(ctx).Error(statusAPIErr)
+			}
+			return
+		} else {
+			serviceKeyIAS, err = h.handleAssignOperation(ctx, catalogNameProcurement, planNameProcurement, svcInstanceNameProcurement, catalogNameIAS, planNameIAS, svcInstanceNameIAS, inboundCert)
+			if err != nil {
+				log.C(ctx).Error(err)
+				errMsg := fmt.Sprintf("%s. X-Request-Id: %s", err.Error(), correlationID)
+				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", errMsg)
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+		}
+
+		if len(serviceKeyIAS.Credentials) < 0 {
+			errMsg := "The service key for the identity instance should not be empty"
+			log.C(ctx).Error(errMsg)
+			reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", errMsg+fmt.Sprintf(". X-Request-Id: %s", correlationID))
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
+				log.C(ctx).Error(statusAPIErr)
+			}
+			return
+		}
+
+		data, err := h.buildTemplateData(serviceKeyIAS.Credentials, tm)
 		if err != nil {
-			log.C(ctx).Error(err)
-			httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			errMsg := errors.Wrapf(err, "An error occurred while building template data").Error()
+			log.C(ctx).Error(errMsg)
+			reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", errMsg+fmt.Sprintf(". X-Request-Id: %s", correlationID))
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
+				log.C(ctx).Error(statusAPIErr)
+			}
 			return
 		}
-	}
 
-	if len(serviceKeyIAS.Credentials) < 0 {
-		log.C(ctx).Errorf("The credentials for service key with ID: %q should not be empty", serviceKeyIAS.ID)
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		// todo::: consider removing it. Currently we have hardcoded the expected app response
+		//mockURL := "https://guidedbuyingmockapi.free.beeceptor.com/v1/tenantMappings"
+		//req, err := http.NewRequest(http.MethodPatch, mockURL, nil)
+		//if err != nil {
+		//	log.C(ctx).Error("An error occurred while creating request to the mock API")
+		//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		//	return
+		//}
+		//
+		//log.C(ctx).Info("Calling beeceptor mock API...")
+		//resp, err := h.caller.Call(req)
+		//if err != nil {
+		//	log.C(ctx).Error("An error occurred while calling beeceptor mock API")
+		//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		//	return
+		//}
+		//defer closeResponseBody(ctx, resp)
+		//
+		//body, err := io.ReadAll(resp.Body)
+		//if err != nil {
+		//	log.C(ctx).Errorf("Failed to read response body from beeceptor mock API request: %v", err)
+		//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		//	return
+		//}
+		//
+		//if resp.StatusCode != http.StatusOK {
+		//	log.C(ctx).Errorf("Response status code is not the exepcted one, should be: %d, got: %d", http.StatusOK, resp.StatusCode)
+		//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		//	return
+		//}
+
+		if inboundCert == "" {
+			errMsg := "The inbound certificate cannot be empty"
+			log.C(ctx).Error(errMsg)
+			reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", errMsg+fmt.Sprintf(". X-Request-Id: %s", correlationID))
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
+				log.C(ctx).Error(statusAPIErr)
+			}
+			return
+		}
+
+		receiverTntCfg := tm.ReceiverTenant.Configuration
+		modifiedReceiverTntCfg, err := sjson.SetBytes(receiverTntCfg, "credentials.outboundCommunication.oauth2mtls.url", "{{ .URL }}")
+		if err != nil {
+			errMsg := "An error occurred while enriching outbound oauth2mtls url"
+			log.C(ctx).Error(errMsg)
+			reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", errMsg+fmt.Sprintf(". X-Request-Id: %s", correlationID))
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
+				log.C(ctx).Error(statusAPIErr)
+			}
+			return
+		}
+
+		modifiedReceiverTntCfg, err = sjson.SetBytes(modifiedReceiverTntCfg, "credentials.outboundCommunication.oauth2mtls.tokenServiceUrl", "{{ .TokenURL }}")
+		if err != nil {
+			errMsg := "An error occurred while enriching outbound oauth2mtls token service url"
+			log.C(ctx).Error(errMsg)
+			reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", errMsg+fmt.Sprintf(". X-Request-Id: %s", correlationID))
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
+				log.C(ctx).Error(statusAPIErr)
+			}
+			return
+		}
+
+		modifiedReceiverTntCfg, err = sjson.SetBytes(modifiedReceiverTntCfg, "credentials.outboundCommunication.oauth2mtls.clientId", "{{ .ClientID }}")
+		if err != nil {
+			errMsg := "An error occurred while enriching outbound oauth2mtls client ID"
+			log.C(ctx).Error(errMsg)
+			reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", errMsg+fmt.Sprintf(". X-Request-Id: %s", correlationID))
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
+				log.C(ctx).Error(statusAPIErr)
+			}
+			return
+		}
+
+		modifiedReceiverTntCfg, err = sjson.SetBytes(modifiedReceiverTntCfg, "credentials.outboundCommunication.oauth2mtls.certificate", inboundCert)
+		if err != nil {
+			errMsg := "An error occurred while enriching outbound oauth2mtls certificate"
+			log.C(ctx).Error(errMsg)
+			reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", errMsg+fmt.Sprintf(". X-Request-Id: %s", correlationID))
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
+				log.C(ctx).Error(statusAPIErr)
+			}
+			return
+		}
+
+		body := fmt.Sprintf(`{"state":"CONFIG_PENDING","configuration":%s}`, modifiedReceiverTntCfg)
+
+		t, err := template.New("").Parse(body)
+		if err != nil {
+			errMsg := errors.Wrapf(err, "An error occurred while creating template").Error()
+			log.C(ctx).Error(errMsg)
+			reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", errMsg+fmt.Sprintf(". X-Request-Id: %s", correlationID))
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
+				log.C(ctx).Error(statusAPIErr)
+			}
+			return
+		}
+
+		res := new(bytes.Buffer)
+		if err = t.Execute(res, data); err != nil {
+			errMsg := errors.Wrapf(err, "An error occurred while executing template").Error()
+			log.C(ctx).Error(errMsg)
+			reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", errMsg+fmt.Sprintf(". X-Request-Id: %s", correlationID))
+			if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
+				log.C(ctx).Error(statusAPIErr)
+			}
+			return
+		}
+
+		log.C(ctx).Infof("Successfully processed tenant mapping notification")
+		if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, res.String()); statusAPIErr != nil {
+			log.C(ctx).Error(statusAPIErr)
+		}
 		return
-	}
-
-	data, err := h.buildTemplateData(serviceKeyIAS.Credentials, tm)
-	if err != nil {
-		log.C(ctx).Error(err)
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
-	// todo::: consider removing it. Currently we have hardcoded the expected app response
-	//mockURL := "https://guidedbuyingmockapi.free.beeceptor.com/v1/tenantMappings"
-	//req, err := http.NewRequest(http.MethodPatch, mockURL, nil)
-	//if err != nil {
-	//	log.C(ctx).Error("An error occurred while creating request to the mock API")
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//log.C(ctx).Info("Calling beeceptor mock API...")
-	//resp, err := h.caller.Call(req)
-	//if err != nil {
-	//	log.C(ctx).Error("An error occurred while calling beeceptor mock API")
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//defer closeResponseBody(ctx, resp)
-	//
-	//body, err := io.ReadAll(resp.Body)
-	//if err != nil {
-	//	log.C(ctx).Errorf("Failed to read response body from beeceptor mock API request: %v", err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//if resp.StatusCode != http.StatusOK {
-	//	log.C(ctx).Errorf("Response status code is not the exepcted one, should be: %d, got: %d", http.StatusOK, resp.StatusCode)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-
-	if inboundCert == "" {
-		log.C(ctx).Error("The inbound certificate cannot be empty")
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
-	receiverTntCfg := tm.ReceiverTenant.Configuration
-	modifiedReceiverTntCfg, err := sjson.SetBytes(receiverTntCfg, "credentials.outboundCommunication.oauth2mtls.url", "{{ .URL }}")
-	if err != nil {
-		log.C(ctx).Error("An error occurred while enriching outbound oauth2mtls url")
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
-	modifiedReceiverTntCfg, err = sjson.SetBytes(modifiedReceiverTntCfg, "credentials.outboundCommunication.oauth2mtls.tokenServiceUrl", "{{ .TokenURL }}")
-	if err != nil {
-		log.C(ctx).Error("An error occurred while enriching outbound oauth2mtls token service url")
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
-	modifiedReceiverTntCfg, err = sjson.SetBytes(modifiedReceiverTntCfg, "credentials.outboundCommunication.oauth2mtls.clientId", "{{ .ClientID }}")
-	if err != nil {
-		log.C(ctx).Error("An error occurred while enriching outbound oauth2mtls client ID")
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
-	modifiedReceiverTntCfg, err = sjson.SetBytes(modifiedReceiverTntCfg, "credentials.outboundCommunication.oauth2mtls.certificate", inboundCert)
-	if err != nil {
-		log.C(ctx).Error("An error occurred while enriching outbound oauth2mtls certificate")
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
-	body := fmt.Sprintf(`{"state":"CONFIG_PENDING","configuration":%s}`, modifiedReceiverTntCfg)
-
-	t, err := template.New("").Parse(body)
-	if err != nil {
-		log.C(ctx).Errorf("An error occurred while creating template: %v", err)
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
-	res := new(bytes.Buffer)
-	if err = t.Execute(res, data); err != nil {
-		log.C(ctx).Errorf("An error occurred while executing template: %v", err)
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
-	var jsonRawMsg json.RawMessage
-	err = json.Unmarshal(res.Bytes(), &jsonRawMsg)
-	if err != nil {
-		log.C(ctx).Errorf("An error occurred while preparing response: %v", err)
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
-	log.C(ctx).Infof("Successfully processed tenant mapping notification")
-	httputil.RespondWithBody(ctx, w, http.StatusOK, jsonRawMsg)
+	}()
 }
 
 func (h *Handler) adaptCredsBasedOnRegion(ctx context.Context, tm types.TenantMapping) {
@@ -314,6 +385,32 @@ func (h *Handler) adaptCredsBasedOnRegion(ctx context.Context, tm types.TenantMa
 	}
 }
 
+func (h *Handler) sendStatusAPIRequest(ctx context.Context, statusAPIURL, reqBody string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, statusAPIURL, bytes.NewBuffer([]byte(reqBody)))
+	if err != nil {
+		return errors.Wrapf(err, "An error occurred while building status API request")
+	}
+	req.Header.Set(contentTypeHeaderKey, contentTypeApplicationJSON)
+
+	log.C(ctx).Infof("Sending notification status response to the status API URL: %s ...", statusAPIURL)
+	resp, err := h.mtlsHTTPClient.Do(req)
+	if err != nil {
+		return errors.Wrapf(err, "An error occurred while executing request to the status API")
+	}
+	defer closeResponseBody(ctx, resp)
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrapf(err, "An error occurred while reading status API response")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.Wrapf(err, "An error occurred while calling UCL status API. Received status: %d and body: %q", resp.StatusCode, body)
+	}
+
+	return nil
+}
+
 func closeResponseBody(ctx context.Context, resp *http.Response) {
 	if err := resp.Body.Close(); err != nil {
 		log.C(ctx).Errorf("An error has occurred while closing response body: %v", err)
@@ -326,7 +423,19 @@ func validate(tm types.TenantMapping) error {
 	}
 
 	if tm.Context.Operation != AssignOperation && tm.Context.Operation != UnassignOperation {
-		return errors.New("The operation in the tenant mapping request body is invalid")
+		return errors.Errorf("The operation in the tenant mapping request body is invalid: %s", tm.Context.Operation)
+	}
+
+	if tm.ReceiverTenant.DeploymentRegion == "" {
+		return errors.New("The deployment region in the receiver tenant in the tenant mapping request body should not be empty")
+	}
+
+	if tm.Context.FormationID == "" {
+		return errors.New("The formation ID in the tenant mapping request body should not be empty")
+	}
+
+	if tm.ReceiverTenant.SubaccountID == "" && tm.ReceiverTenant.ApplicationTenantID == "" {
+		return errors.New("The subaccount ID and the application tenant ID in the receiver tenant shouldn't be both empty. At least one of them should be provided")
 	}
 
 	return nil
