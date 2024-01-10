@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -112,6 +113,12 @@ func (o *ExecuteStatusReportOperation) Execute(t *testing.T, ctx context.Context
 	response, err := o.client.Do(request)
 	require.NoError(t, err)
 	require.Equal(t, o.statusCode, response.StatusCode)
+	// Log the unsuccessful HTTP responses
+	if o.statusCode > 299 {
+		bodyBytes, err := io.ReadAll(response.Body)
+		require.NoError(t, err)
+		t.Logf("Response was: %s", string(bodyBytes))
+	}
 	for _, asserter := range o.asserters {
 		asserter.AssertExpectations(t, ctx)
 	}
