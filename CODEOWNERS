@@ -22,7 +22,9 @@
 /chart/compass/charts/system-fetcher @kyma-incubator/team-falcon
 /chart/compass/templates/filters @kyma-incubator/team-raptor
 /components/connectivity-adapter @kyma-incubator/team-falcon
+/components/connectivity-adapter/go.mod
 /components/connector @kyma-incubator/team-raptor
+/components/connector/go.mod
 /components/director/cmd/ns-adapter @kyma-incubator/team-falcon
 /components/director/cmd/ordaggregator @kyma-incubator/team-falcon
 /components/director/cmd/scopessynchronizer @kyma-incubator/team-raptor
@@ -47,12 +49,19 @@ components/director/internal/domain/formationtemplateconstraintreferences @kyma-
 /components/director/pkg/operation @kyma-incubator/team-falcon
 /components/director/pkg/scenario @kyma-incubator/team-raptor
 /components/gateway @kyma-incubator/team-raptor
+/components/gateway/go.mod
 /components/hydrator @kyma-incubator/team-raptor
+/components/hydrator/go.mod
 /components/kyma-adapter @kyma-incubator/team-raptor
+/components/kyma-adapter/go.mod
 /components/instance-creator @kyma-incubator/team-raptor
+/components/instance-creator/go.mod
 /components/ias-adapter @kyma-incubator/team-atlas
+/components/ias-adapter/go.mod
 /components/operations-controller @kyma-incubator/team-falcon
+/components/operations-controller/go.mod
 /components/pairing-adapter @kyma-incubator/team-falcon
+/components/pairing-adapter/go.mod
 /components/schema-migrator @kyma-incubator/team-falcon @kyma-incubator/team-raptor
 /installation/cmd @kyma-incubator/team-raptor
 /installation/scripts @kyma-incubator/team-raptor
