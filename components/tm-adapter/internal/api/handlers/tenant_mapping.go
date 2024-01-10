@@ -123,9 +123,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log.C(ctx).Infof("Notification request is received for %q operation with CONFIG_PENDING state and non empty configuration. Checking for inbound certificate...", AssignOperation)
 			cert := gjson.GetBytes(tm.AssignedTenant.Configuration, "credentials.inboundCommunication.oauth2mtls.certificate").String()
 			if cert == "" {
-				errMsg := fmt.Sprintf("The OAuth2 mTLS certificate in the assigned tenant configuration cannot be empty. X-Request-Id: %s", correlationID)
-				log.C(ctx).Error(errMsg)
-				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", errMsg)
+				logMsg := "The OAuth2 mTLS certificate in the assigned tenant configuration cannot be empty"
+				log.C(ctx).Error(logMsg)
+				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", fmt.Sprintf("%s. X-Request-Id: %s", logMsg, correlationID))
 				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
@@ -351,7 +351,7 @@ func closeResponseBody(ctx context.Context, resp *http.Response) {
 
 func validate(tm types.TenantMapping) error {
 	if tm.ReceiverTenant.ApplicationTenantID == "" {
-		return errors.New("The subaccount ID in the receiver tenant in the tenant mapping request body should not be empty")
+		return errors.New("The application tenant ID/xsuaa tenant ID in the tenant mapping request body should not be empty")
 	}
 
 	if tm.Context.Operation != AssignOperation && tm.Context.Operation != UnassignOperation {
