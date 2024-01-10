@@ -156,7 +156,7 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3448"
+      version: "PR-3574"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
