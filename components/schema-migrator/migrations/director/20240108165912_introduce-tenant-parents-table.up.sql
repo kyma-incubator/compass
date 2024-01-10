@@ -449,9 +449,67 @@ CREATE
 CONSTRAINT TRIGGER tenant_id_is_direct_parent_of_target_tenant_id AFTER INSERT ON automatic_scenario_assignments
     FOR EACH ROW EXECUTE PROCEDURE check_tenant_id_is_direct_parent_of_target_tenant_id();
 
-
-
+DROP VIEW IF EXISTS tenants_packages;
+DROP VIEW IF EXISTS tenants_products;
+DROP VIEW IF EXISTS tenants_tombstones;
+DROP VIEW IF EXISTS tombstones_tenants;
+DROP VIEW IF EXISTS tenants_vendors;
+DROP VIEW IF EXISTS vendors_tenants;
 DROP VIEW IF EXISTS api_definitions_tenants;
+DROP VIEW IF EXISTS integration_dependencies_tenants;
+DROP VIEW IF EXISTS event_specifications_tenants;
+DROP VIEW IF EXISTS event_specifications_fetch_requests_tenants;
+DROP VIEW IF EXISTS event_api_definitions_tenants;
+DROP VIEW IF EXISTS entity_types_tenants;
+DROP VIEW IF EXISTS entity_type_mappings_tenants;
+DROP VIEW IF EXISTS api_specifications_fetch_requests_tenants;
+DROP VIEW IF EXISTS application_labels_tenants;
+DROP VIEW IF EXISTS api_specifications_tenants;
+DROP VIEW IF EXISTS bundle_instance_auths_tenants;
+DROP VIEW IF EXISTS aspects_tenants;
+DROP VIEW IF EXISTS aspect_event_resources_tenants;
+DROP VIEW IF EXISTS application_webhooks_tenants;
+DROP VIEW IF EXISTS capabilities_tenants;
+DROP VIEW IF EXISTS bundles_tenants;
+DROP VIEW IF EXISTS documents_tenants;
+DROP VIEW IF EXISTS document_fetch_requests_tenants;
+DROP VIEW IF EXISTS data_products_tenants;
+DROP VIEW IF EXISTS capability_specifications_tenants;
+DROP VIEW IF EXISTS capability_specifications_fetch_requests_tenants;
+DROP VIEW IF EXISTS tenants_aspect_event_resources;
+DROP VIEW IF EXISTS tenants_apps;
+DROP VIEW IF EXISTS products_tenants;
+DROP VIEW IF EXISTS packages_tenants;
+DROP VIEW IF EXISTS labels_tenants;
+DROP VIEW IF EXISTS tenants_integration_dependencies;
+DROP VIEW IF EXISTS tenants_entity_types;
+DROP VIEW IF EXISTS tenants_data_products;
+DROP VIEW IF EXISTS tenants_specifications;
+DROP VIEW IF EXISTS tenants_capabilities;
+DROP VIEW IF EXISTS tenants_bundles;
+DROP VIEW IF EXISTS tenants_aspects;
+DROP VIEW IF EXISTS tenants_entity_type_mappings;
+DROP VIEW IF EXISTS tenants_events;
+DROP VIEW IF EXISTS tenants_apis;
+
+CREATE OR REPLACE VIEW tenants_entity_type_mappings
+            (tenant_id, id, api_definition_id, event_definition_id, api_model_selectors, entity_type_targets)
+AS
+SELECT DISTINCT t_api_event_def.tenant_id,
+                etm.id,
+                etm.api_definition_id,
+                etm.event_definition_id,
+                etm.api_model_selectors,
+                etm.entity_type_targets
+FROM entity_type_mappings etm
+         JOIN (SELECT a.id,
+                      a.tenant_id
+               FROM tenants_apis a
+               UNION ALL
+               SELECT e.id,
+                      e.tenant_id
+               FROM tenants_events e) t_api_event_def
+              ON etm.api_definition_id = t_api_event_def.id OR etm.event_definition_id = t_api_event_def.id;
 
 CREATE
 OR REPLACE VIEW api_definitions_tenants AS
@@ -459,27 +517,22 @@ SELECT ad.*, ta.tenant_id, ta.owner
 FROM api_definitions AS ad
          INNER JOIN tenant_applications ta ON ta.id = ad.app_id;
 
-
-DROP VIEW IF EXISTS api_specifications_fetch_requests_tenants;
 CREATE OR REPLACE VIEW api_specifications_fetch_requests_tenants AS
 SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
                                              INNER JOIN specifications s ON fr.spec_id = s.id
                                              INNER JOIN api_definitions AS ad ON ad.id = s.api_def_id
                                              INNER JOIN tenant_applications ta on ta.id = ad.app_id;
 
-DROP VIEW IF EXISTS api_specifications_tenants;
 CREATE OR REPLACE VIEW api_specifications_tenants AS
 (SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
                                              INNER JOIN api_definitions AS ad ON ad.id = s.api_def_id
                                              INNER JOIN tenant_applications ta ON ta.id = ad.app_id);
 
-DROP VIEW IF EXISTS application_labels_tenants;
 CREATE OR REPLACE VIEW application_labels_tenants AS
 SELECT l.id, ta.tenant_id, ta.owner FROM labels AS l
                                              INNER JOIN tenant_applications ta
                                                         ON l.app_id = ta.id AND (l.tenant_id IS NULL OR l.tenant_id = ta.tenant_id);
 
-DROP VIEW IF EXISTS application_webhooks_tenants;
 CREATE OR REPLACE VIEW application_webhooks_tenants
             (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
              input_template, header_template, output_template, status_template, runtime_id, integration_system_id,
@@ -508,62 +561,51 @@ SELECT w.id,
 FROM webhooks w
          JOIN tenant_applications ta ON w.app_id = ta.id;
 
-DROP VIEW IF EXISTS aspect_event_resources_tenants;
 CREATE OR REPLACE VIEW aspect_event_resources_tenants AS
 SELECT a.*, ta.tenant_id, ta.owner FROM aspect_event_resources AS a
                                             INNER JOIN tenant_applications ta ON ta.id = a.app_id;
 
-DROP VIEW IF EXISTS aspects_tenants;
 CREATE OR REPLACE VIEW aspects_tenants AS
 SELECT a.*, ta.tenant_id, ta.owner FROM aspects AS a
                                             INNER JOIN tenant_applications ta ON ta.id = a.app_id;
 
-DROP VIEW IF EXISTS bundle_instance_auths_tenants;
 CREATE OR REPLACE VIEW bundle_instance_auths_tenants AS
 SELECT bia.*, ta.tenant_id, ta.owner  FROM bundle_instance_auths AS bia
                                                INNER JOIN bundles b ON b.id = bia.bundle_id
                                                INNER JOIN tenant_applications ta ON ta.id = b.app_id;
 
-DROP VIEW IF EXISTS bundles_tenants;
 CREATE OR REPLACE VIEW bundles_tenants AS
 SELECT b.*, ta.tenant_id, ta.owner FROM bundles AS b
                                             INNER JOIN tenant_applications ta ON ta.id = b.app_id;
 
-DROP VIEW IF EXISTS capabilities_tenants;
 CREATE OR REPLACE VIEW capabilities_tenants AS
 SELECT cd.*, ta.tenant_id, ta.owner FROM capabilities AS cd
                                              INNER JOIN tenant_applications ta ON ta.id = cd.app_id;
 
-DROP VIEW IF EXISTS capability_specifications_fetch_requests_tenants;
 CREATE OR REPLACE VIEW capability_specifications_fetch_requests_tenants AS
 (SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
                                               INNER JOIN specifications s ON fr.spec_id = s.id
                                               INNER JOIN capabilities AS cd ON cd.id = s.capability_def_id
                                               INNER JOIN tenant_applications ta ON ta.id = cd.app_id);
 
-DROP VIEW IF EXISTS capability_specifications_tenants;
 CREATE OR REPLACE VIEW capability_specifications_tenants AS
 (SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
                                              INNER JOIN capabilities AS cd ON cd.id = s.capability_def_id
                                              INNER JOIN tenant_applications ta ON ta.id = cd.app_id);
 
-DROP VIEW IF EXISTS data_products_tenants;
 CREATE OR REPLACE VIEW data_products_tenants AS
 SELECT d.*, ta.tenant_id, ta.owner FROM data_products AS d
                                             INNER JOIN tenant_applications ta ON ta.id = d.app_id;
 
-DROP VIEW IF EXISTS document_fetch_requests_tenants;
 CREATE OR REPLACE VIEW document_fetch_requests_tenants AS
 SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
                                              INNER JOIN documents d ON fr.document_id = d.id
                                              INNER JOIN tenant_applications ta ON ta.id = d.app_id;
 
-DROP VIEW IF EXISTS documents_tenants;
 CREATE OR REPLACE VIEW documents_tenants AS
 SELECT d.*, ta.tenant_id, ta.owner FROM documents AS d
                                             INNER JOIN tenant_applications ta ON ta.id = d.app_id;
 
-DROP VIEW IF EXISTS tenants_apis;
 CREATE OR REPLACE VIEW tenants_apis
             (tenant_id, formation_id, id, app_id, name, description, group_name, default_auth, version_value,
              version_deprecated, version_deprecated_since, version_for_removal, ord_id, local_tenant_id,
@@ -646,7 +688,6 @@ FROM api_definitions apis
      jsonb_to_record(apis.extensible) actions(supported text, description text);
 
 
-DROP VIEW IF EXISTS tenants_events;
 CREATE OR REPLACE VIEW tenants_events
             (tenant_id, formation_id, id, app_id, name, description, group_name, version_value, version_deprecated,
              version_deprecated_since, version_for_removal, ord_id, local_tenant_id, short_description,
@@ -722,7 +763,6 @@ FROM event_api_definitions events
      jsonb_to_record(events.extensible) actions(supported text, description text);
 
 
-DROP VIEW IF EXISTS entity_type_mappings_tenants;
 CREATE OR REPLACE VIEW entity_type_mappings_tenants(id, tenant_id, owner)
 AS
 SELECT DISTINCT etm.id,
@@ -742,35 +782,29 @@ FROM entity_type_mappings etm
                         JOIN tenant_applications ta ON ta.id = e.app_id) t_api_event_def
               ON etm.api_definition_id = t_api_event_def.id OR etm.event_definition_id = t_api_event_def.id;
 
-DROP VIEW IF EXISTS entity_types_tenants;
 CREATE OR REPLACE VIEW entity_types_tenants AS
 SELECT e.*, ta.tenant_id, ta.owner FROM entity_types AS e
                                             INNER JOIN tenant_applications ta ON ta.id = e.app_id;
 
-DROP VIEW IF EXISTS event_api_definitions_tenants;
 CREATE OR REPLACE VIEW event_api_definitions_tenants AS
 SELECT e.*, ta.tenant_id, ta.owner FROM event_api_definitions AS e
                                             INNER JOIN tenant_applications ta ON ta.id = e.app_id;
 
-DROP VIEW IF EXISTS event_specifications_fetch_requests_tenants;
 CREATE OR REPLACE VIEW event_specifications_fetch_requests_tenants AS
 SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
                                              INNER JOIN specifications s ON fr.spec_id = s.id
                                              INNER JOIN event_api_definitions AS ead ON ead.id = s.event_def_id
                                              INNER JOIN tenant_applications ta on ta.id = ead.app_id;
 
-DROP VIEW IF EXISTS event_specifications_tenants;
 CREATE OR REPLACE VIEW event_specifications_tenants AS
 (SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
                                             INNER JOIN event_api_definitions AS ead ON ead.id = s.event_def_id
                                             INNER JOIN tenant_applications ta ON ta.id = ead.app_id);
 
-DROP VIEW IF EXISTS integration_dependencies_tenants;
 CREATE OR REPLACE VIEW integration_dependencies_tenants AS
 SELECT i.*, ta.tenant_id, ta.owner FROM integration_dependencies AS i
                                             INNER JOIN tenant_applications ta ON ta.id = i.app_id;
 
-DROP VIEW IF EXISTS labels_tenants;
 CREATE OR REPLACE VIEW labels_tenants AS
 (SELECT l.id, ta.tenant_id, ta.owner FROM labels AS l
     INNER JOIN tenant_applications ta
@@ -784,7 +818,6 @@ UNION ALL
     INNER JOIN tenant_runtime_contexts trc
         ON l.runtime_context_id = trc.id AND (l.tenant_id IS NULL OR l.tenant_id = trc.tenant_id));
 
-DROP VIEW IF EXISTS packages_tenants;
 CREATE OR REPLACE VIEW packages_tenants
             (id, ord_id, title, short_description, description, version, package_links, links, licence_type, tags,
              countries, labels, policy_level, app_id, custom_policy_level, vendor, part_of_products, line_of_business,
@@ -817,12 +850,10 @@ SELECT p.id,
 FROM packages p
          JOIN tenant_applications ta ON ta.id = p.app_id;
 
-DROP VIEW IF EXISTS products_tenants;
 CREATE OR REPLACE VIEW products_tenants AS
 SELECT p.*, ta.tenant_id, ta.owner FROM products AS p
                                             INNER JOIN tenant_applications AS ta ON ta.id = p.app_id;
 
-DROP VIEW IF EXISTS tenants_apps;
 CREATE OR REPLACE VIEW tenants_apps
             (tenant_id, formation_id, id, name, description, status_condition, status_timestamp, healthcheck_url,
              integration_system_id, provider_name, base_url, labels, tags, ready, created_at, updated_at, deleted_at,
@@ -871,7 +902,6 @@ FROM applications apps
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON apps.id = t_apps.id;
 
-DROP VIEW IF EXISTS tenants_aspect_event_resources;
 CREATE OR REPLACE VIEW tenants_aspect_event_resources
             (tenant_id, formation_id, id, aspect_id, app_id, ord_id, min_version, subset, ready, created_at, updated_at, deleted_at, error)
 AS
@@ -904,7 +934,6 @@ FROM aspect_event_resources a
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON a.app_id = t_apps.id;
 
-DROP VIEW IF EXISTS tenants_aspects;
 CREATE OR REPLACE VIEW tenants_aspects
             (tenant_id, formation_id, id, integration_dependency_id, app_id, title, description, mandatory,
              support_multiple_providers, api_resources, ready, created_at, updated_at, deleted_at,
@@ -941,7 +970,6 @@ FROM aspects a
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON a.app_id = t_apps.id;
 
-DROP VIEW IF EXISTS tenants_bundles;
 CREATE OR REPLACE VIEW tenants_bundles
             (tenant_id, formation_id, id, app_id, name, description, version, instance_auth_request_json_schema,
              default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, tags,
@@ -987,7 +1015,6 @@ FROM bundles b
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON b.app_id = t_apps.id;
 
-DROP VIEW IF EXISTS tenants_capabilities;
 CREATE OR REPLACE VIEW tenants_capabilities
             (tenant_id, formation_id, id, app_id, name, description, type, custom_type, version_value,
              version_deprecated, version_deprecated_since, version_for_removal, ord_id, local_tenant_id,
@@ -1043,7 +1070,6 @@ FROM capabilities c
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON c.app_id = t_apps.id;
 
-DROP VIEW IF EXISTS tenants_specifications;
 CREATE OR REPLACE VIEW tenants_specifications
             (tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format,
              event_spec_type, capability_def_id, capability_spec_type, capability_spec_format, custom_type, created_at)
@@ -1077,7 +1103,6 @@ FROM specifications spec
               ON spec.api_def_id = t_api_event_capability_def.id OR spec.event_def_id = t_api_event_capability_def.id OR
                  spec.capability_def_id = t_api_event_capability_def.id;
 
-DROP VIEW IF EXISTS tenants_data_products;
 CREATE OR REPLACE VIEW tenants_data_products
             (tenant_id, formation_id, id, app_id, ord_id, local_tenant_id, correlation_ids, title, short_description, description, package_id, last_update,
              visibility, release_status, disabled, deprecation_date, sunset_date, successors, changelog_entries, type, category, entity_types, input_ports,
@@ -1145,7 +1170,6 @@ FROM data_products d
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps ON d.app_id = t_apps.id;
 
-DROP VIEW IF EXISTS tenants_entity_types;
 CREATE OR REPLACE VIEW tenants_entity_types
             (tenant_id, formation_id, id, ord_id, app_id, local_tenant_id, level, title, short_description, description,
              system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, last_update,
@@ -1203,7 +1227,6 @@ FROM entity_types et
                FROM apps_subaccounts) t_apps ON et.app_id = t_apps.id,
      jsonb_to_record(et.extensible) actions(supported text, description text);
 
-DROP VIEW IF EXISTS tenants_integration_dependencies;
 CREATE OR REPLACE VIEW tenants_integration_dependencies
             (tenant_id, formation_id, id, app_id, ord_id, local_tenant_id, correlation_ids, title, short_description,
              description, package_id, last_update, visibility, release_status, sunset_date, successors, mandatory,
@@ -1259,7 +1282,6 @@ FROM integration_dependencies i
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON i.app_id = t_apps.id;
 
-DROP VIEW IF EXISTS tenants_packages;
 CREATE OR REPLACE VIEW tenants_packages
             (tenant_id, formation_id, id, ord_id, title, short_description, description, version, package_links, links,
              licence_type, tags, runtime_restriction, countries, labels, policy_level, app_id, custom_policy_level, vendor, part_of_products,
@@ -1305,7 +1327,6 @@ FROM packages p
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON p.app_id = t_apps.id;
 
-DROP VIEW IF EXISTS tenants_products;
 CREATE OR REPLACE VIEW tenants_products
             (tenant_id, formation_id, ord_id, app_id, title, short_description, vendor, parent, labels, tags,
              correlation_ids, id, documentation_labels, description)
@@ -1340,7 +1361,6 @@ FROM products p
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON p.app_id = t_apps.id OR p.app_id IS NULL;
 
-DROP VIEW IF EXISTS tenants_tombstones;
 CREATE OR REPLACE VIEW tenants_tombstones (tenant_id, formation_id, ord_id, app_id, removal_date, id, description)
 AS
 SELECT DISTINCT t_apps.tenant_id,
@@ -1366,7 +1386,6 @@ FROM tombstones t
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON t.app_id = t_apps.id;
 
-DROP VIEW IF EXISTS tenants_vendors;
 CREATE OR REPLACE VIEW tenants_vendors
             (tenant_id, formation_id, ord_id, app_id, title, labels, tags, partners, id, documentation_labels)
 AS
@@ -1396,12 +1415,10 @@ FROM vendors v
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON v.app_id = t_apps.id OR v.app_id IS NULL;
 
-DROP VIEW IF EXISTS tombstones_tenants;
 CREATE OR REPLACE VIEW tombstones_tenants AS
 SELECT t.*, ta.tenant_id, ta.owner FROM tombstones AS t
                                             INNER JOIN tenant_applications AS ta ON ta.id = t.app_id;
 
-DROP VIEW IF EXISTS vendors_tenants;
 CREATE OR REPLACE VIEW vendors_tenants AS
 SELECT v.*, ta.tenant_id, ta.owner FROM vendors AS v
                                             INNER JOIN tenant_applications AS ta ON ta.id = v.app_id;
