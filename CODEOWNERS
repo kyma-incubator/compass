@@ -23,6 +23,7 @@
 /chart/compass/templates/filters @kyma-incubator/team-raptor
 /components/connectivity-adapter @kyma-incubator/team-falcon
 /components/connectivity-adapter/go.mod
+/components/connectivity-adapter/go.sum
 /components/connector @kyma-incubator/team-raptor
 /components/connector/go.mod
 /components/director/cmd/ns-adapter @kyma-incubator/team-falcon
