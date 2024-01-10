@@ -260,6 +260,7 @@ ALTER TABLE tenant_runtime_contexts
 
 CREATE INDEX tenant_runtimes_contexts_source ON tenant_runtime_contexts (source);
 
+DROP TABLE business_tenant_mappings_temp;
 
 DROP VIEW IF EXISTS formation_templates_webhooks_tenants;
 
