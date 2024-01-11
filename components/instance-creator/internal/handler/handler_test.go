@@ -5,6 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"reflect"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/types"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/types/tenantmapping"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/handler"
@@ -14,14 +23,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"reflect"
-	"strings"
-	"testing"
-	"time"
 )
 
 const (

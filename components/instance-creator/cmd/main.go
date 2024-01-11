@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	httputildirector "github.com/kyma-incubator/compass/components/director/pkg/auth"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
-	"github.com/kyma-incubator/compass/components/instance-creator/internal/persistence"
 	"net/http"
 	"os"
 	"time"
+
+	httputildirector "github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/persistence"
 
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/paths"

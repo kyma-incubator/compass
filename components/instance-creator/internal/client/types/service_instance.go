@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
 	"github.com/pkg/errors"
 

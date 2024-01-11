@@ -5,18 +5,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/avast/retry-go/v4"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
-	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/types"
-	"github.com/kyma-incubator/compass/components/instance-creator/internal/config"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/avast/retry-go/v4"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/types"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/config"
+	"github.com/pkg/errors"
 )
 
 const (

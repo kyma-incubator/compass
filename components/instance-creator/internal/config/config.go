@@ -1,10 +1,11 @@
 package config
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"

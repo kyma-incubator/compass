@@ -3,12 +3,13 @@ package persistence
 import (
 	"context"
 	"crypto/sha256"
+	"math/big"
+	"time"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	_ "github.com/lib/pq"
-	"math/big"
-	"time"
 )
 
 // RetryCount is a number of retries when trying to open the database

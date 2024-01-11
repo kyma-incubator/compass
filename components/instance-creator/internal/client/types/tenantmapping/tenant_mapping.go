@@ -3,11 +3,12 @@ package tenantmapping
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-	"strings"
 )
 
 // Contract
@@ -225,7 +226,7 @@ func FindKeyPath(json interface{}, targetKey string) string {
 func findKeyPathHelper(jsonData interface{}, targetKey string, currentPath string) string {
 	switch v := jsonData.(type) {
 	case map[string]interface{}:
-		for key, _ := range v {
+		for key := range v {
 			if key == targetKey {
 				return NewCurrentPath(currentPath, targetKey)
 			}
