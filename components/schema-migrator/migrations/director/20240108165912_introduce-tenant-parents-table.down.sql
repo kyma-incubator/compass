@@ -387,4 +387,41 @@ SELECT
 FROM event_api_definitions AS events
                                             INNER JOIN tenant_applications ta ON ta.id = events.app_id;
 
+DROP VIEW IF EXISTS capabilities_tenants;
+CREATE OR REPLACE VIEW capabilities_tenants AS
+SELECT
+    c.id,
+    c.app_id,
+    c.name,
+    c.description,
+    c.type,
+    c.custom_type,
+    c.version_value,
+    c.version_deprecated,
+    c.version_deprecated_since,
+    c.version_for_removal,
+    c.ord_id,
+    c.local_tenant_id,
+    c.short_description,
+    c.system_instance_aware,
+    c.tags,
+    c.links,
+    c.release_status,
+    c.labels,
+    c.package_id,
+    c.visibility,
+    c.ready,
+    c.created_at,
+    c.updated_at,
+    c.deleted_at,
+    c.error,
+    c.resource_hash,
+    c.documentation_labels,
+    c.correlation_ids,
+    c.last_update,
+    ta.tenant_id,
+    ta.owner
+FROM capabilities AS c
+         INNER JOIN tenant_applications ta ON ta.id = c.app_id;
+
 COMMIT;

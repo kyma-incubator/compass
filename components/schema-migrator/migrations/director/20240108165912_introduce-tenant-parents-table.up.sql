@@ -786,8 +786,41 @@ SELECT b.*, ta.tenant_id, ta.owner FROM bundles AS b
                                             INNER JOIN tenant_applications ta ON ta.id = b.app_id;
 
 CREATE OR REPLACE VIEW capabilities_tenants AS
-SELECT cd.*, ta.tenant_id, ta.owner FROM capabilities AS cd
-                                             INNER JOIN tenant_applications ta ON ta.id = cd.app_id;
+SELECT
+    c.id,
+    c.app_id,
+    c.name,
+    c.description,
+    c.type,
+    c.custom_type,
+    c.version_value,
+    c.version_deprecated,
+    c.version_deprecated_since,
+    c.version_for_removal,
+    c.ord_id,
+    c.local_tenant_id,
+    c.short_description,
+    c.system_instance_aware,
+    c.tags,
+    c.related_entity_types,
+    c.links,
+    c.release_status,
+    c.labels,
+    c.package_id,
+    c.visibility,
+    c.ready,
+    c.created_at,
+    c.updated_at,
+    c.deleted_at,
+    c.error,
+    c.resource_hash,
+    c.documentation_labels,
+    c.correlation_ids,
+    c.last_update,
+    ta.tenant_id,
+    ta.owner
+FROM capabilities AS c
+                                             INNER JOIN tenant_applications ta ON ta.id = c.app_id;
 
 CREATE OR REPLACE VIEW capability_specifications_fetch_requests_tenants AS
 (SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
