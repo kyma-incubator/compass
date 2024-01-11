@@ -4,6 +4,7 @@ import (
 	"context"
 	httputildirector "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/persistence"
 	"net/http"
 	"os"
 	"time"
@@ -52,6 +53,13 @@ func main() {
 	err = cfg.PrepareConfiguration()
 	exitOnError(err, "Failed to prepare configuration with regional credentials")
 
+	advisoryLocker, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "Error while closing the connection to the database")
+	}()
+
 	fetchJWKSClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
@@ -76,7 +84,7 @@ func main() {
 	exitOnError(err, "failed to initialize certificate loader")
 
 	mtlsHTTPClient := httputildirector.PrepareMTLSClientWithSSLValidation(cfg.ClientTimeout, certCache, cfg.SkipSSLValidation, cfg.ExternalClientCertSecretName)
-	c := handler.NewHandler(smClient, mtlsHTTPClient)
+	c := handler.NewHandler(smClient, mtlsHTTPClient, advisoryLocker)
 
 	creator.HandleFunc("/", c.HandlerFunc)
 	mainRouter.HandleFunc(paths.HealthzEndpoint, healthz.NewHTTPHandler())

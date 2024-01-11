@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/types"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/types/tenantmapping"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/persistence"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
@@ -46,6 +47,8 @@ const (
 	locationHeader             = "Location"
 	contentTypeHeaderKey       = "Content-Type"
 	contentTypeApplicationJSON = "application/json;charset=UTF-8"
+
+	subaccountIsMissingFormatter = "Subaccount with id %s is not known to CIS"
 )
 
 // Client is used to call SM
@@ -71,13 +74,15 @@ type mtlsHTTPClient interface {
 type InstanceCreatorHandler struct {
 	SMClient       Client
 	mtlsHTTPClient mtlsHTTPClient
+	connector      persistence.DatabaseConnector
 }
 
 // NewHandler creates an InstanceCreatorHandler
-func NewHandler(smClient Client, mtlsHTTPClient mtlsHTTPClient) *InstanceCreatorHandler {
+func NewHandler(smClient Client, mtlsHTTPClient mtlsHTTPClient, connector persistence.DatabaseConnector) *InstanceCreatorHandler {
 	return &InstanceCreatorHandler{
 		SMClient:       smClient,
 		mtlsHTTPClient: mtlsHTTPClient,
+		connector:      connector,
 	}
 }
 
@@ -123,13 +128,60 @@ func (i *InstanceCreatorHandler) handleInstances(r *http.Request, statusAPIURL, 
 	}
 
 	if reqBody.Context.Operation == assignOperation {
-		i.handleInstanceCreation(ctx, &reqBody, statusAPIURL, correlationID)
+		i.handleAssign(ctx, &reqBody, statusAPIURL, correlationID)
 	} else {
-		i.handleInstanceDeletion(ctx, &reqBody, statusAPIURL, correlationID)
+		i.handleUnassign(ctx, &reqBody, statusAPIURL, correlationID)
 	}
 }
 
 // Core Instance Creation Logic
+func (i *InstanceCreatorHandler) handleAssign(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL, correlationID string) {
+	// Get a single DB session
+	connection, err := i.connector.GetConnection(ctx)
+	if err != nil {
+		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrap(err, "while trying to get database connection"))
+		return
+	}
+	defer func() {
+		if err := connection.Close(); err != nil {
+			log.C(ctx).WithError(err).Error("Error while closing the database connection")
+		}
+	}()
+
+	assignmentID := reqBody.AssignedTenant.AssignmentID
+
+	advisoryLocker := connection.GetAdvisoryLocker()
+
+	// This lock prevents multiple assign operations to execute simultaneously
+	locked, err := advisoryLocker.TryLock(ctx, assignmentID+reqBody.Context.Operation)
+	if err != nil {
+		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
+		return
+	}
+	if !locked {
+		log.C(ctx).Debugf("Another instance creator is handling %q operation and assignment with ID %q", assignOperation, assignmentID)
+		return
+	}
+	defer func() {
+		if err := advisoryLocker.Unlock(ctx, assignmentID+reqBody.Context.Operation); err != nil {
+			log.C(ctx).WithError(err).Error("Error while releasing a previously-acquired advisory lock")
+		}
+	}()
+
+	// This lock prevents assign and unassign operations to execute simultaneously
+	if err := advisoryLocker.Lock(ctx, assignmentID); err != nil {
+		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
+		return
+	}
+	defer func() {
+		if err := advisoryLocker.Unlock(ctx, assignmentID); err != nil {
+			log.C(ctx).WithError(err).Error("Error while releasing a previously-acquired advisory lock")
+		}
+	}()
+
+	i.handleInstanceCreation(ctx, reqBody, statusAPIURL, correlationID)
+}
+
 func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL, correlationID string) {
 	// If receiver tenant outboundCommunication is missing - create it. It's here because if this code fails it's better to be before the instances are created.
 	err := reqBody.AddReceiverTenantOutboundCommunicationIfMissing()
@@ -291,7 +343,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 	receiverTenantOutboundCommunication := gjson.GetBytes(receiverTenantConfiguration, receiverTenantOutboundCommunicationPath)
 	assignedTenantInboundCommunication = gjson.GetBytes(assignedTenantConfiguration, assignedTenantInboundCommunicationPath)
 
-	mergedReceiverTenantOutboundCommunication := deepMergeJSON(receiverTenantOutboundCommunication, assignedTenantInboundCommunication)
+	mergedReceiverTenantOutboundCommunication := DeepMergeJSON(assignedTenantInboundCommunication, receiverTenantOutboundCommunication)
 
 	responseConfig, err := sjson.SetBytes(receiverTenantConfiguration, receiverTenantOutboundCommunicationPath, mergedReceiverTenantOutboundCommunication.Value())
 	if err != nil {
@@ -303,6 +355,53 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 	i.reportToUCLWithSuccess(ctx, statusAPIURL, correlationID, readyState, "Successfully processed Service Instance creation.", responseConfig)
 }
 
+func (i *InstanceCreatorHandler) handleUnassign(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL, correlationID string) {
+	// Get a single DB session
+	connection, err := i.connector.GetConnection(ctx)
+	if err != nil {
+		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrap(err, "while trying to get database connection"))
+		return
+	}
+	defer func() {
+		if err := connection.Close(); err != nil {
+			log.C(ctx).WithError(err).Error("Error while closing the database connection")
+		}
+	}()
+
+	advisoryLocker := connection.GetAdvisoryLocker()
+
+	assignmentID := reqBody.AssignedTenant.AssignmentID
+
+	// This lock prevents multiple unassign operations to execute simultaneously
+	locked, err := advisoryLocker.TryLock(ctx, assignmentID+reqBody.Context.Operation)
+	if err != nil {
+		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
+		return
+	}
+	if !locked {
+		log.C(ctx).Debugf("Another instance creator is handling %q operation and assignment with ID %q", "unassign", assignmentID)
+		return
+	}
+	defer func() {
+		if err := advisoryLocker.Unlock(ctx, assignmentID+reqBody.Context.Operation); err != nil {
+			log.C(ctx).WithError(err).Error("Error while releasing a previously-acquired advisory lock")
+		}
+	}()
+
+	// This lock prevents unassign and assign operations to execute simultaneously
+	if err := advisoryLocker.Lock(ctx, assignmentID); err != nil {
+		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
+		return
+	}
+	defer func() {
+		if err := advisoryLocker.Unlock(ctx, assignmentID); err != nil {
+			log.C(ctx).WithError(err).Error("Error while releasing a previously-acquired advisory lock")
+		}
+	}()
+
+	i.handleInstanceDeletion(ctx, reqBody, statusAPIURL, correlationID)
+}
+
 // Core Instance Deletion Logic
 func (i *InstanceCreatorHandler) handleInstanceDeletion(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL, correlationID string) {
 	assignmentID := reqBody.AssignedTenant.AssignmentID
@@ -310,7 +409,13 @@ func (i *InstanceCreatorHandler) handleInstanceDeletion(ctx context.Context, req
 	// Get the service instance with labels using the formation-id label key
 	serviceInstancesIDs, err := i.SMClient.RetrieveMultipleResourcesIDsByLabels(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceInstances{}, map[string][]string{assignmentIDKey: {assignmentID}})
 	if err != nil {
-		// TODO:: Maybe add an if to check if the error is not subaccount is missing - if it's missing return READY
+		// That's the case where the subaccount is deleted, and we are trying to delete its instances.
+		// We should return READY and not fail.
+		if strings.Contains(err.Error(), fmt.Sprintf(subaccountIsMissingFormatter, reqBody.ReceiverTenant.SubaccountID)) {
+			i.reportToUCLWithSuccess(ctx, statusAPIURL, correlationID, readyState, "Successfully processed Service Instance deletion.", nil)
+			return
+		}
+
 		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, deleteErrorState, errors.Wrapf(err, "while retrieving service instances for assignmentID: %q", assignmentID))
 		return
 	}
@@ -318,18 +423,33 @@ func (i *InstanceCreatorHandler) handleInstanceDeletion(ctx context.Context, req
 	// Retrieve all service instances bindings
 	serviceBindingsIDs, err := i.SMClient.RetrieveMultipleResources(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceKeys{}, &types.ServiceKeyMatchParameters{ServiceInstancesIDs: serviceInstancesIDs})
 	if err != nil {
+		if strings.Contains(err.Error(), fmt.Sprintf(subaccountIsMissingFormatter, reqBody.ReceiverTenant.SubaccountID)) {
+			i.reportToUCLWithSuccess(ctx, statusAPIURL, correlationID, readyState, "Successfully processed Service Instance deletion.", nil)
+			return
+		}
+
 		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, deleteErrorState, errors.Wrapf(err, "while retrieving service bindings for service instaces with IDs: %v", serviceInstancesIDs))
 		return
 	}
 
 	// Delete all service instances bindings for the service instances
 	if err = i.SMClient.DeleteMultipleResourcesByIDs(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceKeys{}, serviceBindingsIDs); err != nil {
+		if strings.Contains(err.Error(), fmt.Sprintf(subaccountIsMissingFormatter, reqBody.ReceiverTenant.SubaccountID)) {
+			i.reportToUCLWithSuccess(ctx, statusAPIURL, correlationID, readyState, "Successfully processed Service Instance deletion.", nil)
+			return
+		}
+
 		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, deleteErrorState, errors.Wrapf(err, "while deleting service bindings with IDs: %v", serviceBindingsIDs))
 		return
 	}
 
 	// Delete all service instances with serviceInstanceIDs
 	if err := i.SMClient.DeleteMultipleResourcesByIDs(ctx, reqBody.ReceiverTenant.Region, reqBody.ReceiverTenant.SubaccountID, &types.ServiceInstances{}, serviceInstancesIDs); err != nil {
+		if strings.Contains(err.Error(), fmt.Sprintf(subaccountIsMissingFormatter, reqBody.ReceiverTenant.SubaccountID)) {
+			i.reportToUCLWithSuccess(ctx, statusAPIURL, correlationID, readyState, "Successfully processed Service Instance deletion.", nil)
+			return
+		}
+
 		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, deleteErrorState, errors.Wrapf(err, "while deleting service instances with IDs: %v", serviceInstancesIDs))
 		return
 	}
@@ -429,8 +549,6 @@ func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, req
 			return nil, err
 		}
 
-		// Save the service instance binding in a var and delete it from the service instance map.
-		// That way later we will be able to substitute only the service instance json paths
 		serviceInstanceBinding := gjson.Get(serviceInstance.Raw, serviceBindingKey)
 		serviceBindingName := getResourceName(serviceInstanceBinding)
 
@@ -562,21 +680,20 @@ func SubstituteGJSON(json gjson.Result, rootMap interface{}) (gjson.Result, erro
 		} else {
 			concreteVal := value.String()
 			if strings.Contains(concreteVal, "$.") {
-				fmt.Printf("Before substituting: %q\n", concreteVal)
 				regex := regexp.MustCompile(`\{(\$.*?)\}`)
 				matches := regex.FindAllStringSubmatch(concreteVal, -1)
 				if len(matches) == 0 { // the value is something like "$.<>"
-					substitution, err := jsonpath.Get(concreteVal, rootMap)
+					var substitution interface{}
+					substitution, err = jsonpath.Get(concreteVal, rootMap)
 					if err != nil {
-						fmt.Println(err)
+						log.D().Debugf("Error while substituting jsonpaths for %q with rootmap %v", concreteVal, rootMap)
 						return
 					}
 					substitutedJsonStr, err := sjson.Set(substitutedJson.String(), path, substitution)
 					if err != nil {
+						log.D().Debugf("Error while setting %q key with value %q for json %q", path, value, substitutedJson)
 						return
 					}
-
-					fmt.Printf("After substituting: %q\n", substitution)
 
 					substitutedJson = gjson.Parse(substitutedJsonStr)
 				} else { // the value contains jsonPaths with concatenated static strings. for example, "{$.<>}/string..."
@@ -585,17 +702,17 @@ func SubstituteGJSON(json gjson.Result, rootMap interface{}) (gjson.Result, erro
 						var currentSubstitution interface{}
 						currentSubstitution, err = jsonpath.Get(match[1], rootMap)
 						if err != nil {
-							fmt.Println(err)
+							log.D().Debugf("Error while substituting jsonpaths for %q with rootmap %v", concreteVal, rootMap)
 							return
 						}
 						substitution = strings.ReplaceAll(substitution, match[0], currentSubstitution.(string))
 					}
-					substitutedJsonStr, err := sjson.Set(substitutedJson.String(), path, substitution)
+					var substitutedJsonStr string
+					substitutedJsonStr, err = sjson.Set(substitutedJson.String(), path, substitution)
 					if err != nil {
+						log.D().Debugf("Error while setting %q key with value %q for json %q", path, value, substitutedJson)
 						return
 					}
-
-					fmt.Printf("After substituting: %q\n", substitution)
 
 					substitutedJson = gjson.Parse(substitutedJsonStr)
 				}
@@ -606,93 +723,6 @@ func SubstituteGJSON(json gjson.Result, rootMap interface{}) (gjson.Result, erro
 	iterateAndSubstitute("", json, "")
 
 	return substitutedJson, err
-}
-
-func SubstituteJSON(json interface{}, rootMap interface{}) {
-	switch json.(type) {
-	case map[string]interface{}:
-		parseMap(json.(map[string]interface{}), rootMap)
-	case []interface{}:
-		parseArray(json.([]interface{}), rootMap)
-	default:
-		fmt.Println("Invalid JSON")
-	}
-}
-
-func parseMap(aMap map[string]interface{}, rootMap interface{}) {
-	for key, val := range aMap {
-		switch concreteVal := val.(type) {
-		case map[string]interface{}:
-			parseMap(val.(map[string]interface{}), rootMap)
-		case []interface{}:
-			parseArray(val.([]interface{}), rootMap)
-		case string:
-			if strings.Contains(concreteVal, "$.") {
-				fmt.Printf("Before substituting: %q\n", concreteVal)
-				regex := regexp.MustCompile(`\{(\$.*?)\}`)
-				matches := regex.FindAllStringSubmatch(concreteVal, -1)
-				if len(matches) == 0 { // the value is something like "$.<>"
-					substitution, err := jsonpath.Get(concreteVal, rootMap)
-					if err != nil {
-						fmt.Println(err)
-						return
-					}
-					aMap[key] = substitution
-					fmt.Printf("After substituting: %q\n", substitution)
-				} else { // the value contains jsonPaths with concatenated static strings. for example, "{$.<>}/string..."
-					for _, match := range matches {
-						substitution, err := jsonpath.Get(match[1], rootMap)
-						if err != nil {
-							fmt.Println(err)
-							return
-						}
-						concreteVal = strings.ReplaceAll(concreteVal, match[0], substitution.(string))
-					}
-
-					aMap[key] = concreteVal
-					fmt.Printf("After substituting: %q\n", concreteVal)
-				}
-			}
-		}
-	}
-}
-
-func parseArray(anArray []interface{}, rootMap interface{}) {
-	for i, val := range anArray {
-		switch concreteVal := val.(type) {
-		case map[string]interface{}:
-			parseMap(val.(map[string]interface{}), rootMap)
-		case []interface{}:
-			parseArray(val.([]interface{}), rootMap)
-		case string:
-			if strings.Contains(concreteVal, "$.") {
-				fmt.Printf("Before substituting: %q\n", concreteVal)
-				regex := regexp.MustCompile(`\{(\$.*?)\}`)
-				matches := regex.FindAllStringSubmatch(concreteVal, -1)
-				if len(matches) == 0 { // the value is something like "$.<>"
-					substitution, err := jsonpath.Get(concreteVal, rootMap)
-					if err != nil {
-						fmt.Println(err)
-						return
-					}
-					anArray[i] = substitution
-					fmt.Printf("After substituting: %q\n", substitution)
-				} else { // the value contains jsonPaths with concatenated static strings. for example, "{$.<>}/string..."
-					for _, match := range matches {
-						substitution, err := jsonpath.Get(match[1], rootMap)
-						if err != nil {
-							fmt.Println(err)
-							return
-						}
-						concreteVal = strings.ReplaceAll(concreteVal, match[0], substitution.(string))
-					}
-
-					anArray[i] = concreteVal
-					fmt.Printf("After substituting: %q\n", concreteVal)
-				}
-			}
-		}
-	}
 }
 
 func getResourceName(resource gjson.Result) string {
@@ -714,15 +744,7 @@ func getCurrentWaveHash(pathToServiceInstances string, serviceInstances interfac
 	return res, nil
 }
 
-//func interfaceToGJSONResult(i interface{}) (gjson.Result, error) {
-//	marshalledInterface, err := json.Marshal(i)
-//	if err != nil {
-//		return gjson.Result{}, err
-//	}
-//	return gjson.ParseBytes(marshalledInterface), nil
-//}
-
-func deepMergeJSON(src, dest gjson.Result) gjson.Result {
+func DeepMergeJSON(src, dest gjson.Result) gjson.Result {
 	res := dest
 
 	var merge func(src, dest gjson.Result, path string)
@@ -733,7 +755,8 @@ func deepMergeJSON(src, dest gjson.Result) gjson.Result {
 				currentPath = srcKey.String()
 			}
 
-			if !dest.Get(currentPath).Exists() {
+			destValue := dest.Get(currentPath)
+			if !destValue.Exists() || destValue.Type == gjson.Null {
 				newJson, err := sjson.Set(res.Raw, currentPath, srcValue.Value())
 				if err != nil {
 					return false
@@ -744,8 +767,37 @@ func deepMergeJSON(src, dest gjson.Result) gjson.Result {
 			}
 
 			// If both are objects, merge recursively
-			if srcValue.IsObject() {
+			if srcValue.IsObject() && destValue.IsObject() {
 				merge(srcValue, res, currentPath)
+			} else if srcValue.IsArray() && destValue.IsArray() {
+				merged := make([]interface{}, len(destValue.Array()))
+				for i, destItem := range destValue.Array() {
+					merged[i] = destItem.Value()
+				}
+
+				for _, srcItem := range srcValue.Array() {
+					exists := false
+					for _, destItem := range destValue.Array() {
+						if srcItem.Raw == destItem.Raw {
+							exists = true
+							break
+						}
+					}
+					if !exists {
+						merged = append(merged, srcItem.Value())
+					}
+				}
+				newJson, err := sjson.Set(res.Raw, currentPath, merged)
+				if err != nil {
+					return false
+				}
+				res = gjson.Parse(newJson)
+			} else {
+				newJson, err := sjson.Set(res.Raw, currentPath, srcValue.Value())
+				if err != nil {
+					return false
+				}
+				res = gjson.Parse(newJson)
 			}
 			return true
 		})

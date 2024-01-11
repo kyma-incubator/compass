@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"strings"
 	"time"
 
@@ -49,6 +50,8 @@ type Config struct {
 
 	Log        log.Config
 	TenantInfo TenantInfo
+
+	Database persistence.DatabaseConfig
 }
 
 // InstanceConfig is a service instance config

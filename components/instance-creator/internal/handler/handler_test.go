@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/types/tenantmapping"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/handler"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/handler/automock"
+	persistenceautomock "github.com/kyma-incubator/compass/components/instance-creator/internal/persistence/automock"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
@@ -24,8 +25,9 @@ import (
 )
 
 const (
+	assignOperation           = "assign"
+	unassignOperation         = "unassign"
 	inboundCommunicationKey   = "inboundCommunication"
-	outboundCommunicationKey  = "outboundCommunication"
 	serviceInstancesKey       = "serviceInstances"
 	serviceBindingKey         = "serviceBinding"
 	serviceInstanceServiceKey = "service"
@@ -33,8 +35,6 @@ const (
 	configurationKey          = "configuration"
 	nameKey                   = "name"
 	assignmentIDKey           = "assignment_id"
-	currentWaveHashKey        = "current_wave_hash"
-	reverseKey                = "reverse"
 )
 
 var (
@@ -73,8 +73,8 @@ func Test_HandlerFunc(t *testing.T) {
 	}`
 
 	reqBodyContextFormatter := `{"uclFormationId": %q, "operation": %q}`
-	reqBodyContextWithAssign := fmt.Sprintf(reqBodyContextFormatter, formationID, "assign")
-	reqBodyContextWithUnassign := fmt.Sprintf(reqBodyContextFormatter, formationID, "unassign")
+	reqBodyContextWithAssign := fmt.Sprintf(reqBodyContextFormatter, formationID, assignOperation)
+	reqBodyContextWithUnassign := fmt.Sprintf(reqBodyContextFormatter, formationID, unassignOperation)
 
 	assignedTenantFormatter := `{
 		"uclAssignmentId": %q,
@@ -892,6 +892,7 @@ func Test_HandlerFunc(t *testing.T) {
 		name                 string
 		smClientFn           func() *automock.Client
 		mtlsClientFn         func() *automock.MtlsHTTPClient
+		persistenceFn        func() (*persistenceautomock.DatabaseConnector, *persistenceautomock.AdvisoryLocker)
 		requestBody          string
 		expectedResponseCode int
 	}{
@@ -1018,6 +1019,7 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("Do", requestThatHasBody(`while retrieving service instances for assignmentID`)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
+			persistenceFn:        mockPersistence(assignmentID, unassignOperation),
 			expectedResponseCode: http.StatusAccepted,
 		},
 		{
@@ -1034,6 +1036,7 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("Do", requestThatHasBody(fmt.Sprintf("while retrieving service bindings for service instaces with IDs: %v", serviceInstancesIDs))).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
+			persistenceFn:        mockPersistence(assignmentID, unassignOperation),
 			expectedResponseCode: http.StatusAccepted,
 		},
 		{
@@ -1051,6 +1054,7 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("Do", requestThatHasBody(fmt.Sprintf("while deleting service bindings with IDs: %v", serviceInstancesBindingsIDs))).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
+			persistenceFn:        mockPersistence(assignmentID, unassignOperation),
 			expectedResponseCode: http.StatusAccepted,
 		},
 		{
@@ -1069,6 +1073,7 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("Do", requestThatHasBody(fmt.Sprintf("while deleting service instances with IDs: %v", serviceInstancesIDs))).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
+			persistenceFn:        mockPersistence(assignmentID, unassignOperation),
 			expectedResponseCode: http.StatusAccepted,
 		},
 		{
@@ -1087,6 +1092,7 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("Do", requestThatHasJSONBody(`{"state":"READY","configuration":null}`)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
+			persistenceFn:        mockPersistence(assignmentID, unassignOperation),
 			expectedResponseCode: http.StatusAccepted,
 		},
 		{
@@ -1097,6 +1103,7 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("Do", requestThatHasJSONBody(`{"state":"CONFIG_PENDING","configuration":null}`)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
+			persistenceFn:        mockPersistence(assignmentID, assignOperation),
 			expectedResponseCode: http.StatusAccepted,
 		},
 		{
@@ -1112,6 +1119,7 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("Do", requestThatHasJSONBody(expectedResponseForGlobalInstances)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
+			persistenceFn:        mockPersistence(assignmentID, assignOperation),
 			expectedResponseCode: http.StatusAccepted,
 		},
 		{
@@ -1127,6 +1135,7 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("Do", requestThatHasJSONBody(expectedResponseForGlobalInstances)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
+			persistenceFn:        mockPersistence(assignmentID, assignOperation),
 			expectedResponseCode: http.StatusAccepted,
 		},
 		{
@@ -1170,6 +1179,7 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("Do", requestThatHasJSONBody(expectedResponseForGlobalInstances)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
+			persistenceFn:        mockPersistence(assignmentID, assignOperation),
 			expectedResponseCode: http.StatusAccepted,
 		},
 		{
@@ -1185,6 +1195,7 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("Do", requestThatHasJSONBody(expectedResponseForGlobalInstances)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
+			persistenceFn:        mockPersistence(assignmentID, assignOperation),
 			expectedResponseCode: http.StatusAccepted,
 		},
 		{
@@ -1200,6 +1211,7 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("Do", requestThatHasJSONBody(expectedResponseForGlobalInstancesWithInbound)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
+			persistenceFn:        mockPersistence(assignmentID, assignOperation),
 			expectedResponseCode: http.StatusAccepted,
 		},
 		{
@@ -1215,6 +1227,7 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("Do", requestThatHasJSONBody(expectedResponseForGlobalInstancesWithInboundAndReverse)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
+			persistenceFn:        mockPersistence(assignmentID, assignOperation),
 			expectedResponseCode: http.StatusAccepted,
 		},
 		{
@@ -1230,6 +1243,7 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("Do", requestThatHasJSONBody(expectedResponseForLocalInstances)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
+			persistenceFn:        mockPersistence(assignmentID, assignOperation),
 			expectedResponseCode: http.StatusAccepted,
 		},
 		{
@@ -1245,6 +1259,7 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("Do", requestThatHasJSONBody(expectedResponseForFullConfig)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
+			persistenceFn:        mockPersistence(assignmentID, assignOperation),
 			expectedResponseCode: http.StatusAccepted,
 		},
 		{
@@ -1260,6 +1275,7 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("Do", requestThatHasJSONBody(expectedResponseForFullConfigWithReceiverTenantWithoutOutbound)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
+			persistenceFn:        mockPersistence(assignmentID, assignOperation),
 			expectedResponseCode: http.StatusAccepted,
 		},
 	}
@@ -1275,13 +1291,18 @@ func Test_HandlerFunc(t *testing.T) {
 			if testCase.mtlsClientFn != nil {
 				mtlsClient = testCase.mtlsClientFn()
 			}
-			defer mock.AssertExpectationsForObjects(t, smClient)
+			dbConnector := &persistenceautomock.DatabaseConnector{}
+			advisoryLocker := &persistenceautomock.AdvisoryLocker{}
+			if testCase.persistenceFn != nil {
+				dbConnector, advisoryLocker = testCase.persistenceFn()
+			}
+			defer mock.AssertExpectationsForObjects(t, smClient, dbConnector, advisoryLocker)
 
 			req, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(testCase.requestBody)))
 			require.NoError(t, err)
 			req.Header.Set("Location", statusUrl)
 
-			h := handler.NewHandler(smClient, mtlsClient)
+			h := handler.NewHandler(smClient, mtlsClient, dbConnector)
 			recorder := httptest.NewRecorder()
 
 			//WHEN
@@ -1510,5 +1531,25 @@ func mockSMClient(client *automock.Client, assignedTenantConfiguration string) {
 			client.On("CreateResource", mock.Anything, region, subaccount, serviceBindingReqBody(localInstanceBinding.GetName(), currentServiceInstanceID, localInstanceBinding.GetParameters()), mock.Anything).Return(currentServiceBindingID, nil).Once()
 			client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceKey{ID: currentServiceBindingID}).Return(localInstanceBinding.WithName(currentServiceInstanceBindingName).ToJSONRawMessage(), nil).Once()
 		}
+	}
+}
+
+func mockPersistence(assignmentID, operation string) func() (*persistenceautomock.DatabaseConnector, *persistenceautomock.AdvisoryLocker) {
+	return func() (*persistenceautomock.DatabaseConnector, *persistenceautomock.AdvisoryLocker) {
+		connection := &persistenceautomock.Connection{}
+
+		dbConnector := &persistenceautomock.DatabaseConnector{}
+		dbConnector.On("GetConnection", mock.Anything).Return(connection, nil).Once()
+
+		locker := &persistenceautomock.AdvisoryLocker{}
+		connection.On("GetAdvisoryLocker").Return(locker).Once()
+		connection.On("Close").Return(nil).Once()
+
+		locker.On("TryLock", mock.Anything, assignmentID+operation).Return(true, nil).Once()
+		locker.On("Unlock", mock.Anything, assignmentID+operation).Return(nil).Once()
+		locker.On("Lock", mock.Anything, assignmentID).Return(nil).Once()
+		locker.On("Unlock", mock.Anything, assignmentID).Return(nil).Once()
+
+		return dbConnector, locker
 	}
 }
