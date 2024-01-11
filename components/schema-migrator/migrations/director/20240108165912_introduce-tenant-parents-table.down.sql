@@ -279,4 +279,63 @@ DROP INDEX IF EXISTS tenant_parents_parent_id;
 -- Drop tenant_parents table
 DROP TABLE IF EXISTS tenant_parents;
 
+DROP VIEW IF EXISTS api_definitions_tenants;
+CREATE
+    OR REPLACE VIEW api_definitions_tenants AS
+SELECT
+    apis.id,
+    apis.app_id,
+    apis.name,
+    apis.description,
+    apis.group_name,
+    apis.default_auth,
+    apis.version_value,
+    apis.version_deprecated,
+    apis.version_deprecated_since,
+    apis.version_for_removal,
+    apis.ord_id,
+    apis.local_tenant_id,
+    apis.short_description,
+    apis.system_instance_aware,
+    apis.policy_level,
+    apis.custom_policy_level,
+    apis.api_protocol,
+    apis.tags,
+    apis.supported_use_cases,
+    apis.countries,
+    apis.links,
+    apis.api_resource_links,
+    apis.release_status,
+    apis.sunset_date,
+    apis.changelog_entries,
+    apis.labels,
+    apis.package_id,
+    apis.visibility,
+    apis.disabled,
+    apis.part_of_products,
+    apis.line_of_business,
+    apis.industry,
+    apis.ready,
+    apis.created_at,
+    apis.updated_at,
+    apis.deleted_at,
+    apis.error,
+    apis.implementation_standard,
+    apis.custom_implementation_standard,
+    apis.custom_implementation_standard_description,
+    apis.target_urls,
+    apis.successors,
+    apis.resource_hash,
+    apis.documentation_labels,
+    apis.correlation_ids,
+    apis.direction,
+    apis.last_update,
+    apis.deprecation_date,
+    apis.usage,
+    ta.tenant_id,
+    ta.owner
+FROM api_definitions AS apis
+         INNER JOIN tenant_applications ta ON ta.id = apis.app_id;
+
+
 COMMIT;

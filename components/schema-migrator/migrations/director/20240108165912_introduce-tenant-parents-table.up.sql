@@ -667,10 +667,62 @@ FROM entity_type_mappings etm
               ON etm.api_definition_id = t_api_event_def.id OR etm.event_definition_id = t_api_event_def.id;
 
 CREATE
-OR REPLACE VIEW api_definitions_tenants AS
-SELECT ad.*, ta.tenant_id, ta.owner
-FROM api_definitions AS ad
-         INNER JOIN tenant_applications ta ON ta.id = ad.app_id;
+    OR REPLACE VIEW api_definitions_tenants AS
+SELECT
+    apis.id,
+    apis.app_id,
+    apis.name,
+    apis.description,
+    apis.group_name,
+    apis.default_auth,
+    apis.version_value,
+    apis.version_deprecated,
+    apis.version_deprecated_since,
+    apis.version_for_removal,
+    apis.ord_id,
+    apis.local_tenant_id,
+    apis.short_description,
+    apis.system_instance_aware,
+    apis.policy_level,
+    apis.custom_policy_level,
+    apis.api_protocol,
+    apis.tags,
+    apis.supported_use_cases,
+    apis.countries,
+    apis.links,
+    apis.api_resource_links,
+    apis.release_status,
+    apis.sunset_date,
+    apis.changelog_entries,
+    apis.labels,
+    apis.package_id,
+    apis.visibility,
+    apis.disabled,
+    apis.part_of_products,
+    apis.line_of_business,
+    apis.industry,
+    apis.ready,
+    apis.created_at,
+    apis.updated_at,
+    apis.deleted_at,
+    apis.error,
+    apis.implementation_standard,
+    apis.custom_implementation_standard,
+    apis.custom_implementation_standard_description,
+    apis.target_urls,
+    apis.successors,
+    apis.resource_hash,
+    apis.documentation_labels,
+    apis.correlation_ids,
+    apis.direction,
+    apis.last_update,
+    apis.deprecation_date,
+    apis.responsible,
+    apis.usage,
+    ta.tenant_id,
+    ta.owner
+FROM api_definitions AS apis
+         INNER JOIN tenant_applications ta ON ta.id = apis.app_id;
 
 CREATE OR REPLACE VIEW api_specifications_fetch_requests_tenants AS
 SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
