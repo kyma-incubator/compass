@@ -98,9 +98,9 @@ on tp.parent_id = ta2.source and tp.tenant_id=ta2.tenant_id
 where ta.tenant_id =ta2.tenant_id AND ta.id=ta2.id and ta.tenant_id = ta.source;
 
 ALTER TABLE tenant_applications RENAME TO tenant_applications_old;
-ALTER TABLE tenant_applications_old RENAME CONSTRAINT tenant_applications_pkey TO tenant_applications_old_pkey;
-ALTER TABLE tenant_applications_old RENAME CONSTRAINT tenant_applications_id_fkey TO tenant_applications_old_id_fkey;
-ALTER TABLE tenant_applications_old RENAME CONSTRAINT tenant_applications_tenant_id_fkey TO tenant_applications_old_tenant_id_fkey;
+ALTER TABLE tenant_applications_old DROP CONSTRAINT tenant_applications_pkey;
+ALTER TABLE tenant_applications_old DROP CONSTRAINT tenant_applications_id_fkey;
+ALTER TABLE tenant_applications_old DROP CONSTRAINT tenant_applications_tenant_id_fkey;
 ALTER
 INDEX tenant_applications_app_id RENAME TO tenant_applications_old_app_id;
 ALTER
