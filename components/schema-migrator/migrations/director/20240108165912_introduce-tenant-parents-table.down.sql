@@ -331,7 +331,6 @@ SELECT
     apis.direction,
     apis.last_update,
     apis.deprecation_date,
-    apis.usage,
     ta.tenant_id,
     ta.owner
 FROM api_definitions AS apis
