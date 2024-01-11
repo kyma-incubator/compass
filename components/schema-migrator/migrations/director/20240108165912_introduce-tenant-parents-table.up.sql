@@ -492,7 +492,8 @@ DROP VIEW IF EXISTS tenants_entity_type_mappings;
 DROP VIEW IF EXISTS tenants_events;
 DROP VIEW IF EXISTS tenants_apis;
 
-CREATE OR REPLACE VIEW tenants_apis
+CREATE
+OR REPLACE VIEW tenants_apis
             (tenant_id, formation_id, id, app_id, name, description, group_name, default_auth, version_value,
              version_deprecated, version_deprecated_since, version_for_removal, ord_id, local_tenant_id,
              short_description, system_instance_aware, policy_level, custom_policy_level, api_protocol, tags,
@@ -563,8 +564,7 @@ FROM api_definitions apis
                FROM tenant_applications a1
                UNION ALL
                SELECT af.app_id,
-                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
-                      af.formation_id
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id, af.formation_id
                FROM apps_formations_id af
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -573,7 +573,8 @@ FROM api_definitions apis
                FROM apps_subaccounts) t_apps ON apis.app_id = t_apps.id,
      jsonb_to_record(apis.extensible) actions(supported text, description text);
 
-CREATE OR REPLACE VIEW tenants_events
+CREATE
+OR REPLACE VIEW tenants_events
             (tenant_id, formation_id, id, app_id, name, description, group_name, version_value, version_deprecated,
              version_deprecated_since, version_for_removal, ord_id, local_tenant_id, short_description,
              system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries,
@@ -637,8 +638,7 @@ FROM event_api_definitions events
                FROM tenant_applications a1
                UNION ALL
                SELECT af.app_id,
-                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
-                      af.formation_id
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id, af.formation_id
                FROM apps_formations_id af
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -647,7 +647,8 @@ FROM event_api_definitions events
                FROM apps_subaccounts) t_apps ON events.app_id = t_apps.id,
      jsonb_to_record(events.extensible) actions(supported text, description text);
 
-CREATE OR REPLACE VIEW tenants_entity_type_mappings
+CREATE
+OR REPLACE VIEW tenants_entity_type_mappings
             (tenant_id, id, api_definition_id, event_definition_id, api_model_selectors, entity_type_targets)
 AS
 SELECT DISTINCT t_api_event_def.tenant_id,
@@ -667,80 +668,85 @@ FROM entity_type_mappings etm
               ON etm.api_definition_id = t_api_event_def.id OR etm.event_definition_id = t_api_event_def.id;
 
 CREATE
-    OR REPLACE VIEW api_definitions_tenants AS
-SELECT
-    apis.id,
-    apis.app_id,
-    apis.name,
-    apis.description,
-    apis.group_name,
-    apis.default_auth,
-    apis.version_value,
-    apis.version_deprecated,
-    apis.version_deprecated_since,
-    apis.version_for_removal,
-    apis.ord_id,
-    apis.local_tenant_id,
-    apis.short_description,
-    apis.system_instance_aware,
-    apis.policy_level,
-    apis.custom_policy_level,
-    apis.api_protocol,
-    apis.tags,
-    apis.supported_use_cases,
-    apis.countries,
-    apis.links,
-    apis.api_resource_links,
-    apis.release_status,
-    apis.sunset_date,
-    apis.changelog_entries,
-    apis.labels,
-    apis.package_id,
-    apis.visibility,
-    apis.disabled,
-    apis.part_of_products,
-    apis.line_of_business,
-    apis.industry,
-    apis.ready,
-    apis.created_at,
-    apis.updated_at,
-    apis.deleted_at,
-    apis.error,
-    apis.implementation_standard,
-    apis.custom_implementation_standard,
-    apis.custom_implementation_standard_description,
-    apis.target_urls,
-    apis.successors,
-    apis.resource_hash,
-    apis.documentation_labels,
-    apis.correlation_ids,
-    apis.direction,
-    apis.last_update,
-    apis.deprecation_date,
-    apis.responsible,
-    apis.usage,
-    ta.tenant_id,
-    ta.owner
+OR REPLACE VIEW api_definitions_tenants AS
+SELECT apis.id,
+       apis.app_id,
+       apis.name,
+       apis.description,
+       apis.group_name,
+       apis.default_auth,
+       apis.version_value,
+       apis.version_deprecated,
+       apis.version_deprecated_since,
+       apis.version_for_removal,
+       apis.ord_id,
+       apis.local_tenant_id,
+       apis.short_description,
+       apis.system_instance_aware,
+       apis.policy_level,
+       apis.custom_policy_level,
+       apis.api_protocol,
+       apis.tags,
+       apis.supported_use_cases,
+       apis.countries,
+       apis.links,
+       apis.api_resource_links,
+       apis.release_status,
+       apis.sunset_date,
+       apis.changelog_entries,
+       apis.labels,
+       apis.package_id,
+       apis.visibility,
+       apis.disabled,
+       apis.part_of_products,
+       apis.line_of_business,
+       apis.industry,
+       apis.ready,
+       apis.created_at,
+       apis.updated_at,
+       apis.deleted_at,
+       apis.error,
+       apis.implementation_standard,
+       apis.custom_implementation_standard,
+       apis.custom_implementation_standard_description,
+       apis.target_urls,
+       apis.successors,
+       apis.resource_hash,
+       apis.documentation_labels,
+       apis.correlation_ids,
+       apis.direction,
+       apis.last_update,
+       apis.deprecation_date,
+       apis.responsible,
+       apis.usage,
+       ta.tenant_id,
+       ta.owner
 FROM api_definitions AS apis
          INNER JOIN tenant_applications ta ON ta.id = apis.app_id;
 
-CREATE OR REPLACE VIEW api_specifications_fetch_requests_tenants AS
-SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
-                                             INNER JOIN specifications s ON fr.spec_id = s.id
-                                             INNER JOIN api_definitions AS ad ON ad.id = s.api_def_id
-                                             INNER JOIN tenant_applications ta on ta.id = ad.app_id;
+CREATE
+OR REPLACE VIEW api_specifications_fetch_requests_tenants AS
+SELECT fr.*, ta.tenant_id, ta.owner
+FROM fetch_requests AS fr
+         INNER JOIN specifications s ON fr.spec_id = s.id
+         INNER JOIN api_definitions AS ad ON ad.id = s.api_def_id
+         INNER JOIN tenant_applications ta on ta.id = ad.app_id;
 
-CREATE OR REPLACE VIEW api_specifications_tenants AS
+CREATE
+OR REPLACE VIEW api_specifications_tenants AS
 (SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
                                              INNER JOIN api_definitions AS ad ON ad.id = s.api_def_id
                                              INNER JOIN tenant_applications ta ON ta.id = ad.app_id);
 
-CREATE OR REPLACE VIEW application_labels_tenants AS
-SELECT l.id, ta.tenant_id, ta.owner FROM labels AS l
-                                             INNER JOIN tenant_applications ta
-                                                        ON l.app_id = ta.id AND (l.tenant_id IS NULL OR l.tenant_id = ta.tenant_id);
+CREATE
+OR REPLACE VIEW application_labels_tenants AS
+SELECT l.id, ta.tenant_id, ta.owner
+FROM labels AS l
+         INNER JOIN tenant_applications ta
+                    ON l.app_id = ta.id AND (l.tenant_id IS NULL OR l.tenant_id = ta.tenant_id);
 
-CREATE OR REPLACE VIEW application_webhooks_tenants
+CREATE
+OR REPLACE VIEW application_webhooks_tenants
             (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
              input_template, header_template, output_template, status_template, runtime_id, integration_system_id,
              app_template_id, formation_template_id, tenant_id, owner)
@@ -768,86 +774,103 @@ SELECT w.id,
 FROM webhooks w
          JOIN tenant_applications ta ON w.app_id = ta.id;
 
-CREATE OR REPLACE VIEW aspect_event_resources_tenants AS
-SELECT a.*, ta.tenant_id, ta.owner FROM aspect_event_resources AS a
-                                            INNER JOIN tenant_applications ta ON ta.id = a.app_id;
+CREATE
+OR REPLACE VIEW aspect_event_resources_tenants AS
+SELECT a.*, ta.tenant_id, ta.owner
+FROM aspect_event_resources AS a
+         INNER JOIN tenant_applications ta ON ta.id = a.app_id;
 
-CREATE OR REPLACE VIEW aspects_tenants AS
-SELECT a.*, ta.tenant_id, ta.owner FROM aspects AS a
-                                            INNER JOIN tenant_applications ta ON ta.id = a.app_id;
+CREATE
+OR REPLACE VIEW aspects_tenants AS
+SELECT a.*, ta.tenant_id, ta.owner
+FROM aspects AS a
+         INNER JOIN tenant_applications ta ON ta.id = a.app_id;
 
-CREATE OR REPLACE VIEW bundle_instance_auths_tenants AS
-SELECT bia.*, ta.tenant_id, ta.owner  FROM bundle_instance_auths AS bia
-                                               INNER JOIN bundles b ON b.id = bia.bundle_id
-                                               INNER JOIN tenant_applications ta ON ta.id = b.app_id;
+CREATE
+OR REPLACE VIEW bundle_instance_auths_tenants AS
+SELECT bia.*, ta.tenant_id, ta.owner
+FROM bundle_instance_auths AS bia
+         INNER JOIN bundles b ON b.id = bia.bundle_id
+         INNER JOIN tenant_applications ta ON ta.id = b.app_id;
 
-CREATE OR REPLACE VIEW bundles_tenants AS
-SELECT b.*, ta.tenant_id, ta.owner FROM bundles AS b
-                                            INNER JOIN tenant_applications ta ON ta.id = b.app_id;
+CREATE
+OR REPLACE VIEW bundles_tenants AS
+SELECT b.*, ta.tenant_id, ta.owner
+FROM bundles AS b
+         INNER JOIN tenant_applications ta ON ta.id = b.app_id;
 
-CREATE OR REPLACE VIEW capabilities_tenants AS
-SELECT
-    c.id,
-    c.app_id,
-    c.name,
-    c.description,
-    c.type,
-    c.custom_type,
-    c.version_value,
-    c.version_deprecated,
-    c.version_deprecated_since,
-    c.version_for_removal,
-    c.ord_id,
-    c.local_tenant_id,
-    c.short_description,
-    c.system_instance_aware,
-    c.tags,
-    c.related_entity_types,
-    c.links,
-    c.release_status,
-    c.labels,
-    c.package_id,
-    c.visibility,
-    c.ready,
-    c.created_at,
-    c.updated_at,
-    c.deleted_at,
-    c.error,
-    c.resource_hash,
-    c.documentation_labels,
-    c.correlation_ids,
-    c.last_update,
-    ta.tenant_id,
-    ta.owner
+CREATE
+OR REPLACE VIEW capabilities_tenants AS
+SELECT c.id,
+       c.app_id,
+       c.name,
+       c.description,
+       c.type,
+       c.custom_type,
+       c.version_value,
+       c.version_deprecated,
+       c.version_deprecated_since,
+       c.version_for_removal,
+       c.ord_id,
+       c.local_tenant_id,
+       c.short_description,
+       c.system_instance_aware,
+       c.tags,
+       c.related_entity_types,
+       c.links,
+       c.release_status,
+       c.labels,
+       c.package_id,
+       c.visibility,
+       c.ready,
+       c.created_at,
+       c.updated_at,
+       c.deleted_at,
+       c.error,
+       c.resource_hash,
+       c.documentation_labels,
+       c.correlation_ids,
+       c.last_update,
+       ta.tenant_id,
+       ta.owner
 FROM capabilities AS c
-                                             INNER JOIN tenant_applications ta ON ta.id = c.app_id;
+         INNER JOIN tenant_applications ta ON ta.id = c.app_id;
 
-CREATE OR REPLACE VIEW capability_specifications_fetch_requests_tenants AS
+CREATE
+OR REPLACE VIEW capability_specifications_fetch_requests_tenants AS
 (SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
                                               INNER JOIN specifications s ON fr.spec_id = s.id
                                               INNER JOIN capabilities AS cd ON cd.id = s.capability_def_id
                                               INNER JOIN tenant_applications ta ON ta.id = cd.app_id);
 
-CREATE OR REPLACE VIEW capability_specifications_tenants AS
+CREATE
+OR REPLACE VIEW capability_specifications_tenants AS
 (SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
                                              INNER JOIN capabilities AS cd ON cd.id = s.capability_def_id
                                              INNER JOIN tenant_applications ta ON ta.id = cd.app_id);
 
-CREATE OR REPLACE VIEW data_products_tenants AS
-SELECT d.*, ta.tenant_id, ta.owner FROM data_products AS d
-                                            INNER JOIN tenant_applications ta ON ta.id = d.app_id;
+CREATE
+OR REPLACE VIEW data_products_tenants AS
+SELECT d.*, ta.tenant_id, ta.owner
+FROM data_products AS d
+         INNER JOIN tenant_applications ta ON ta.id = d.app_id;
 
-CREATE OR REPLACE VIEW document_fetch_requests_tenants AS
-SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
-                                             INNER JOIN documents d ON fr.document_id = d.id
-                                             INNER JOIN tenant_applications ta ON ta.id = d.app_id;
+CREATE
+OR REPLACE VIEW document_fetch_requests_tenants AS
+SELECT fr.*, ta.tenant_id, ta.owner
+FROM fetch_requests AS fr
+         INNER JOIN documents d ON fr.document_id = d.id
+         INNER JOIN tenant_applications ta ON ta.id = d.app_id;
 
-CREATE OR REPLACE VIEW documents_tenants AS
-SELECT d.*, ta.tenant_id, ta.owner FROM documents AS d
-                                            INNER JOIN tenant_applications ta ON ta.id = d.app_id;
+CREATE
+OR REPLACE VIEW documents_tenants AS
+SELECT d.*, ta.tenant_id, ta.owner
+FROM documents AS d
+         INNER JOIN tenant_applications ta ON ta.id = d.app_id;
 
 
-CREATE OR REPLACE VIEW entity_type_mappings_tenants(id, tenant_id, owner)
+CREATE
+OR REPLACE VIEW entity_type_mappings_tenants(id, tenant_id, owner)
 AS
 SELECT DISTINCT etm.id,
                 t_api_event_def.tenant_id,
@@ -866,76 +889,114 @@ FROM entity_type_mappings etm
                         JOIN tenant_applications ta ON ta.id = e.app_id) t_api_event_def
               ON etm.api_definition_id = t_api_event_def.id OR etm.event_definition_id = t_api_event_def.id;
 
-CREATE OR REPLACE VIEW entity_types_tenants AS
-SELECT e.*, ta.tenant_id, ta.owner FROM entity_types AS e
-                                            INNER JOIN tenant_applications ta ON ta.id = e.app_id;
+CREATE
+OR REPLACE VIEW entity_types_tenants AS
+SELECT et.id,
+       et.ord_id,
+       et.app_id,
+       et.local_tenant_id,
+       et.level,
+       et.title,
+       et.short_description,
+       et.description,
+       et.system_instance_aware,
+       et.changelog_entries,
+       et.package_id,
+       et.visibility,
+       et.links,
+       et.part_of_products,
+       et.last_update,
+       et.policy_level,
+       et.custom_policy_level,
+       et.release_status,
+       et.sunset_date,
+       et.successors,
+       et.tags,
+       et.labels,
+       et.documentation_labels,
+       et.resource_hash,
+       et.version_value,
+       et.version_deprecated,
+       et.version_deprecated_since,
+       et.version_for_removal,
+       et.deprecation_date,
+       ta.tenant_id,
+       ta.owner
+FROM entity_types AS et
+         INNER JOIN tenant_applications ta ON ta.id = et.app_id;
 
-CREATE OR REPLACE VIEW event_api_definitions_tenants AS
-SELECT
-    events.id,
-    events.app_id,
-    events.name,
-    events.description,
-    events.group_name,
-    events.version_value,
-    events.version_deprecated,
-    events.version_deprecated_since,
-    events.version_for_removal,
-    events.ord_id,
-    events.local_tenant_id,
-    events.short_description,
-    events.system_instance_aware,
-    events.policy_level,
-    events.custom_policy_level,
-    events.changelog_entries,
-    events.links,
-    events.tags,
-    events.countries,
-    events.release_status,
-    events.sunset_date,
-    events.labels,
-    events.package_id,
-    events.visibility,
-    events.disabled,
-    events.part_of_products,
-    events.line_of_business,
-    events.industry,
-    events.ready,
-    events.created_at,
-    events.updated_at,
-    events.deleted_at,
-    events.error,
-    events.implementation_standard,
-    events.custom_implementation_standard,
-    events.custom_implementation_standard_description,
-    events.successors,
-    events.resource_hash,
-    events.correlation_ids,
-    events.last_update,
-    events.deprecation_date,
-    events.event_resource_links,
-    events.responsible,
-    ta.tenant_id,
-    ta.owner
+CREATE
+OR REPLACE VIEW event_api_definitions_tenants AS
+SELECT events.id,
+       events.app_id,
+       events.name,
+       events.description,
+       events.group_name,
+       events.version_value,
+       events.version_deprecated,
+       events.version_deprecated_since,
+       events.version_for_removal,
+       events.ord_id,
+       events.local_tenant_id,
+       events.short_description,
+       events.system_instance_aware,
+       events.policy_level,
+       events.custom_policy_level,
+       events.changelog_entries,
+       events.links,
+       events.tags,
+       events.countries,
+       events.release_status,
+       events.sunset_date,
+       events.labels,
+       events.package_id,
+       events.visibility,
+       events.disabled,
+       events.part_of_products,
+       events.line_of_business,
+       events.industry,
+       events.ready,
+       events.created_at,
+       events.updated_at,
+       events.deleted_at,
+       events.error,
+       events.implementation_standard,
+       events.custom_implementation_standard,
+       events.custom_implementation_standard_description,
+       events.successors,
+       events.resource_hash,
+       events.correlation_ids,
+       events.last_update,
+       events.deprecation_date,
+       events.event_resource_links,
+       events.responsible,
+       ta.tenant_id,
+       ta.owner
 FROM event_api_definitions AS events
          INNER JOIN tenant_applications ta ON ta.id = events.app_id;
 
-CREATE OR REPLACE VIEW event_specifications_fetch_requests_tenants AS
-SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
-                                             INNER JOIN specifications s ON fr.spec_id = s.id
-                                             INNER JOIN event_api_definitions AS ead ON ead.id = s.event_def_id
-                                             INNER JOIN tenant_applications ta on ta.id = ead.app_id;
+CREATE
+OR REPLACE VIEW event_specifications_fetch_requests_tenants AS
+SELECT fr.*, ta.tenant_id, ta.owner
+FROM fetch_requests AS fr
+         INNER JOIN specifications s ON fr.spec_id = s.id
+         INNER JOIN event_api_definitions AS ead ON ead.id = s.event_def_id
+         INNER JOIN tenant_applications ta on ta.id = ead.app_id;
 
-CREATE OR REPLACE VIEW event_specifications_tenants AS
+CREATE
+OR REPLACE VIEW event_specifications_tenants AS
 (SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
                                             INNER JOIN event_api_definitions AS ead ON ead.id = s.event_def_id
                                             INNER JOIN tenant_applications ta ON ta.id = ead.app_id);
 
-CREATE OR REPLACE VIEW integration_dependencies_tenants AS
-SELECT i.*, ta.tenant_id, ta.owner FROM integration_dependencies AS i
-                                            INNER JOIN tenant_applications ta ON ta.id = i.app_id;
+CREATE
+OR REPLACE VIEW integration_dependencies_tenants AS
+SELECT i.*, ta.tenant_id, ta.owner
+FROM integration_dependencies AS i
+         INNER JOIN tenant_applications ta ON ta.id = i.app_id;
 
-CREATE OR REPLACE VIEW labels_tenants AS
+CREATE
+OR REPLACE VIEW labels_tenants AS
 (SELECT l.id, ta.tenant_id, ta.owner FROM labels AS l
     INNER JOIN tenant_applications ta
         ON l.app_id = ta.id AND (l.tenant_id IS NULL OR l.tenant_id = ta.tenant_id))
@@ -948,7 +1009,8 @@ UNION ALL
     INNER JOIN tenant_runtime_contexts trc
         ON l.runtime_context_id = trc.id AND (l.tenant_id IS NULL OR l.tenant_id = trc.tenant_id));
 
-CREATE OR REPLACE VIEW packages_tenants
+CREATE
+OR REPLACE VIEW packages_tenants
             (id, ord_id, title, short_description, description, version, package_links, links, licence_type, tags,
              countries, labels, policy_level, app_id, custom_policy_level, vendor, part_of_products, line_of_business,
              industry, resource_hash, documentation_labels, support_info, tenant_id, owner)
@@ -980,11 +1042,28 @@ SELECT p.id,
 FROM packages p
          JOIN tenant_applications ta ON ta.id = p.app_id;
 
-CREATE OR REPLACE VIEW products_tenants AS
-SELECT p.*, ta.tenant_id, ta.owner FROM products AS p
-                                            INNER JOIN tenant_applications AS ta ON ta.id = p.app_id;
+CREATE
+OR REPLACE VIEW products_tenants AS
+SELECT p.ord_id,
+       p.app_id,
+       p.title,
+       p.short_description,
+       p.vendor,
+       p.parent,
+       p.labels,
+       p.correlation_ids,
+       p.id,
+       p.documentation_labels,
+       p.tags,
+       p.app_template_version_id,
+       p.description,
+       ta.tenant_id,
+       ta.owner
+FROM products AS p
+         INNER JOIN tenant_applications AS ta ON ta.id = p.app_id;
 
-CREATE OR REPLACE VIEW tenants_apps
+CREATE
+OR REPLACE VIEW tenants_apps
             (tenant_id, formation_id, id, name, description, status_condition, status_timestamp, healthcheck_url,
              integration_system_id, provider_name, base_url, labels, tags, ready, created_at, updated_at, deleted_at,
              error, app_template_id, correlation_ids, system_number, application_namespace, local_tenant_id,
@@ -1023,8 +1102,7 @@ FROM applications apps
                FROM tenant_applications a1
                UNION ALL
                SELECT af.app_id,
-                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
-                       af.formation_id
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id, af.formation_id
                FROM apps_formations_id af
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -1032,7 +1110,8 @@ FROM applications apps
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON apps.id = t_apps.id;
 
-CREATE OR REPLACE VIEW tenants_aspect_event_resources
+CREATE
+OR REPLACE VIEW tenants_aspect_event_resources
             (tenant_id, formation_id, id, aspect_id, app_id, ord_id, min_version, subset, ready, created_at, updated_at, deleted_at, error)
 AS
 SELECT DISTINCT t_apps.tenant_id,
@@ -1055,8 +1134,7 @@ FROM aspect_event_resources a
                FROM tenant_applications a1
                UNION ALL
                SELECT af.app_id,
-                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
-                       af.formation_id
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id, af.formation_id
                FROM apps_formations_id af
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -1064,7 +1142,8 @@ FROM aspect_event_resources a
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON a.app_id = t_apps.id;
 
-CREATE OR REPLACE VIEW tenants_aspects
+CREATE
+OR REPLACE VIEW tenants_aspects
             (tenant_id, formation_id, id, integration_dependency_id, app_id, title, description, mandatory,
              support_multiple_providers, api_resources, ready, created_at, updated_at, deleted_at,
              error)
@@ -1091,8 +1170,7 @@ FROM aspects a
                FROM tenant_applications a1
                UNION ALL
                SELECT af.app_id,
-                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
-                       af.formation_id
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id, af.formation_id
                FROM apps_formations_id af
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -1100,7 +1178,8 @@ FROM aspects a
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON a.app_id = t_apps.id;
 
-CREATE OR REPLACE VIEW tenants_bundles
+CREATE
+OR REPLACE VIEW tenants_bundles
             (tenant_id, formation_id, id, app_id, name, description, version, instance_auth_request_json_schema,
              default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, tags,
              credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids,
@@ -1136,8 +1215,7 @@ FROM bundles b
                FROM tenant_applications a1
                UNION ALL
                SELECT af.app_id,
-                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
-                       af.formation_id
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id, af.formation_id
                FROM apps_formations_id af
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -1145,7 +1223,8 @@ FROM bundles b
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON b.app_id = t_apps.id;
 
-CREATE OR REPLACE VIEW tenants_capabilities
+CREATE
+OR REPLACE VIEW tenants_capabilities
             (tenant_id, formation_id, id, app_id, name, description, type, custom_type, version_value,
              version_deprecated, version_deprecated_since, version_for_removal, ord_id, local_tenant_id,
              short_description, system_instance_aware, tags, related_entity_types, links, release_status, labels,
@@ -1191,8 +1270,7 @@ FROM capabilities c
                FROM tenant_applications a1
                UNION ALL
                SELECT af.app_id,
-                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
-                       af.formation_id
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id, af.formation_id
                FROM apps_formations_id af
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -1200,7 +1278,8 @@ FROM capabilities c
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON c.app_id = t_apps.id;
 
-CREATE OR REPLACE VIEW tenants_specifications
+CREATE
+OR REPLACE VIEW tenants_specifications
             (tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format,
              event_spec_type, capability_def_id, capability_spec_type, capability_spec_format, custom_type, created_at)
 AS
@@ -1233,7 +1312,8 @@ FROM specifications spec
               ON spec.api_def_id = t_api_event_capability_def.id OR spec.event_def_id = t_api_event_capability_def.id OR
                  spec.capability_def_id = t_api_event_capability_def.id;
 
-CREATE OR REPLACE VIEW tenants_data_products
+CREATE
+OR REPLACE VIEW tenants_data_products
             (tenant_id, formation_id, id, app_id, ord_id, local_tenant_id, correlation_ids, title, short_description, description, package_id, last_update,
              visibility, release_status, disabled, deprecation_date, sunset_date, successors, changelog_entries, type, category, entity_types, input_ports,
              output_ports, responsible, data_product_links, links, industry, line_of_business, tags, labels, documentation_labels, policy_level, custom_policy_level,
@@ -1291,8 +1371,7 @@ FROM data_products d
                FROM tenant_applications a1
                UNION ALL
                SELECT af.app_id,
-                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
-                       af.formation_id
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id, af.formation_id
                FROM apps_formations_id af
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -1300,7 +1379,8 @@ FROM data_products d
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps ON d.app_id = t_apps.id;
 
-CREATE OR REPLACE VIEW tenants_entity_types
+CREATE
+OR REPLACE VIEW tenants_entity_types
             (tenant_id, formation_id, id, ord_id, app_id, local_tenant_id, level, title, short_description, description,
              system_instance_aware, changelog_entries, package_id, visibility, links, part_of_products, last_update,
              policy_level, custom_policy_level, release_status, sunset_date, successors, extensible_supported,
@@ -1347,8 +1427,7 @@ FROM entity_types et
                FROM tenant_applications a1
                UNION ALL
                SELECT af.app_id,
-                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
-                       af.formation_id
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id, af.formation_id
                FROM apps_formations_id af
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -1357,7 +1436,8 @@ FROM entity_types et
                FROM apps_subaccounts) t_apps ON et.app_id = t_apps.id,
      jsonb_to_record(et.extensible) actions(supported text, description text);
 
-CREATE OR REPLACE VIEW tenants_integration_dependencies
+CREATE
+OR REPLACE VIEW tenants_integration_dependencies
             (tenant_id, formation_id, id, app_id, ord_id, local_tenant_id, correlation_ids, title, short_description,
              description, package_id, last_update, visibility, release_status, sunset_date, successors, mandatory,
              related_integration_dependencies, links, tags, labels, documentation_labels, resource_hash, version_value,
@@ -1403,8 +1483,7 @@ FROM integration_dependencies i
                FROM tenant_applications a1
                UNION ALL
                SELECT af.app_id,
-                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
-                       af.formation_id
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id, af.formation_id
                FROM apps_formations_id af
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -1412,7 +1491,8 @@ FROM integration_dependencies i
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON i.app_id = t_apps.id;
 
-CREATE OR REPLACE VIEW tenants_packages
+CREATE
+OR REPLACE VIEW tenants_packages
             (tenant_id, formation_id, id, ord_id, title, short_description, description, version, package_links, links,
              licence_type, tags, runtime_restriction, countries, labels, policy_level, app_id, custom_policy_level, vendor, part_of_products,
              line_of_business, industry, resource_hash, support_info)
@@ -1448,8 +1528,7 @@ FROM packages p
                FROM tenant_applications a1
                UNION ALL
                SELECT af.app_id,
-                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
-                       af.formation_id
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id, af.formation_id
                FROM apps_formations_id af
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -1457,7 +1536,8 @@ FROM packages p
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON p.app_id = t_apps.id;
 
-CREATE OR REPLACE VIEW tenants_products
+CREATE
+OR REPLACE VIEW tenants_products
             (tenant_id, formation_id, ord_id, app_id, title, short_description, vendor, parent, labels, tags,
              correlation_ids, id, documentation_labels, description)
 AS
@@ -1482,8 +1562,7 @@ FROM products p
                FROM tenant_applications a1
                UNION ALL
                SELECT af.app_id,
-                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
-                       af.formation_id
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id, af.formation_id
                FROM apps_formations_id af
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -1491,7 +1570,8 @@ FROM products p
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON p.app_id = t_apps.id OR p.app_id IS NULL;
 
-CREATE OR REPLACE VIEW tenants_tombstones (tenant_id, formation_id, ord_id, app_id, removal_date, id, description)
+CREATE
+OR REPLACE VIEW tenants_tombstones (tenant_id, formation_id, ord_id, app_id, removal_date, id, description)
 AS
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.formation_id,
@@ -1507,8 +1587,7 @@ FROM tombstones t
                FROM tenant_applications a1
                UNION ALL
                SELECT af.app_id,
-                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
-                       af.formation_id
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id, af.formation_id
                FROM apps_formations_id af
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -1516,7 +1595,8 @@ FROM tombstones t
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON t.app_id = t_apps.id;
 
-CREATE OR REPLACE VIEW tenants_vendors
+CREATE
+OR REPLACE VIEW tenants_vendors
             (tenant_id, formation_id, ord_id, app_id, title, labels, tags, partners, id, documentation_labels)
 AS
 SELECT DISTINCT t_apps.tenant_id,
@@ -1536,8 +1616,7 @@ FROM vendors v
                FROM tenant_applications a1
                UNION ALL
                SELECT af.app_id,
-                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
-                       af.formation_id
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id, af.formation_id
                FROM apps_formations_id af
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -1545,12 +1624,23 @@ FROM vendors v
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON v.app_id = t_apps.id OR v.app_id IS NULL;
 
-CREATE OR REPLACE VIEW tombstones_tenants AS
-SELECT t.*, ta.tenant_id, ta.owner FROM tombstones AS t
-                                            INNER JOIN tenant_applications AS ta ON ta.id = t.app_id;
+CREATE
+OR REPLACE VIEW tombstones_tenants AS
+SELECT t.ord_id,
+       t.app_id,
+       t.removal_date,
+       t.id,
+       t.app_template_version_id,
+       t.description,
+       ta.tenant_id,
+       ta.owner
+FROM tombstones AS t
+         INNER JOIN tenant_applications AS ta ON ta.id = t.app_id;
 
-CREATE OR REPLACE VIEW vendors_tenants AS
-SELECT v.*, ta.tenant_id, ta.owner FROM vendors AS v
-                                            INNER JOIN tenant_applications AS ta ON ta.id = v.app_id;
+CREATE
+OR REPLACE VIEW vendors_tenants AS
+SELECT v.*, ta.tenant_id, ta.owner
+FROM vendors AS v
+         INNER JOIN tenant_applications AS ta ON ta.id = v.app_id;
 
 COMMIT;

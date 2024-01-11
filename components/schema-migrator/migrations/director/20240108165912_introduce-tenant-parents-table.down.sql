@@ -329,8 +329,6 @@ SELECT
     apis.documentation_labels,
     apis.correlation_ids,
     apis.direction,
-    apis.last_update,
-    apis.deprecation_date,
     ta.tenant_id,
     ta.owner
 FROM api_definitions AS apis
@@ -379,9 +377,6 @@ SELECT
        events.successors,
        events.resource_hash,
        events.correlation_ids,
-       events.last_update,
-       events.deprecation_date,
-       events.event_resource_links,
        ta.tenant_id,
        ta.owner
 FROM event_api_definitions AS events
@@ -424,4 +419,71 @@ SELECT
 FROM capabilities AS c
          INNER JOIN tenant_applications ta ON ta.id = c.app_id;
 
+DROP VIEW IF EXISTS entity_types_tenants;
+CREATE OR REPLACE VIEW entity_types_tenants AS
+SELECT et.id,
+       et.ord_id,
+       et.app_id,
+       et.local_tenant_id,
+       et.level,
+       et.title,
+       et.short_description,
+       et.description,
+       et.system_instance_aware,
+       et.changelog_entries,
+       et.package_id,
+       et.visibility,
+       et.links,
+       et.part_of_products,
+       et.last_update,
+       et.policy_level,
+       et.custom_policy_level,
+       et.release_status,
+       et.sunset_date,
+       et.successors,
+       et.tags,
+       et.labels,
+       et.documentation_labels,
+       et.resource_hash,
+       et.version_value,
+       et.version_deprecated,
+       et.version_deprecated_since,
+       et.version_for_removal,
+       ta.tenant_id,
+       ta.owner
+FROM entity_types AS et
+         INNER JOIN tenant_applications ta ON ta.id = et.app_id;
+
+DROP VIEW IF EXISTS products_tenants;
+CREATE
+    OR REPLACE VIEW products_tenants AS
+SELECT p.ord_id,
+       p.app_id,
+       p.title,
+       p.short_description,
+       p.vendor,
+       p.parent,
+       p.labels,
+       p.correlation_ids,
+       p.id,
+       p.documentation_labels,
+       p.tags,
+       p.app_template_version_id,
+       ta.tenant_id,
+       ta.owner
+FROM products AS p
+         INNER JOIN tenant_applications AS ta ON ta.id = p.app_id;
+
+DROP VIEW IF EXISTS tombstones_tenants;
+CREATE
+    OR REPLACE VIEW tombstones_tenants AS
+SELECT t.ord_id,
+       t.app_id,
+       t.removal_date,
+       t.id,
+       t.app_template_version_id,
+       ta.tenant_id,
+       ta.owner
+FROM tombstones AS t
+         INNER JOIN tenant_applications AS ta ON ta.id = t.app_id;
 COMMIT;
