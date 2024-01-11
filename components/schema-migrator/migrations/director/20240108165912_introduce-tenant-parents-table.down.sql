@@ -527,7 +527,6 @@ SELECT v.ord_id,
        v.labels,
        v.partners,
        v.id,
-       v.documentation_labels,
        ta.tenant_id,
        ta.owner
 FROM vendors AS v
