@@ -838,8 +838,54 @@ SELECT e.*, ta.tenant_id, ta.owner FROM entity_types AS e
                                             INNER JOIN tenant_applications ta ON ta.id = e.app_id;
 
 CREATE OR REPLACE VIEW event_api_definitions_tenants AS
-SELECT e.*, ta.tenant_id, ta.owner FROM event_api_definitions AS e
-                                            INNER JOIN tenant_applications ta ON ta.id = e.app_id;
+SELECT
+    events.id,
+    events.app_id,
+    events.name,
+    events.description,
+    events.group_name,
+    events.version_value,
+    events.version_deprecated,
+    events.version_deprecated_since,
+    events.version_for_removal,
+    events.ord_id,
+    events.local_tenant_id,
+    events.short_description,
+    events.system_instance_aware,
+    events.policy_level,
+    events.custom_policy_level,
+    events.changelog_entries,
+    events.links,
+    events.tags,
+    events.countries,
+    events.release_status,
+    events.sunset_date,
+    events.labels,
+    events.package_id,
+    events.visibility,
+    events.disabled,
+    events.part_of_products,
+    events.line_of_business,
+    events.industry,
+    events.ready,
+    events.created_at,
+    events.updated_at,
+    events.deleted_at,
+    events.error,
+    events.implementation_standard,
+    events.custom_implementation_standard,
+    events.custom_implementation_standard_description,
+    events.successors,
+    events.resource_hash,
+    events.correlation_ids,
+    events.last_update,
+    events.deprecation_date,
+    events.event_resource_links,
+    events.responsible,
+    ta.tenant_id,
+    ta.owner
+FROM event_api_definitions AS events
+         INNER JOIN tenant_applications ta ON ta.id = events.app_id;
 
 CREATE OR REPLACE VIEW event_specifications_fetch_requests_tenants AS
 SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
