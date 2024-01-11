@@ -159,9 +159,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var serviceKeyIAS *types.ServiceKey
 		if tm.Context.Operation == UnassignOperation {
 			if err := h.handleUnassignOperation(ctx, svcInstanceNameProcurement, svcInstanceNameIAS); err != nil {
+				if isConcurrentOperation(err.Error()) {
+					log.C(ctx).Warnf("Concurrent operation error was received: %s. Returning without any further actions.", err.Error())
+					return
+				}
+
 				log.C(ctx).Error(err)
 				errMsg := fmt.Sprintf("%s. X-Request-Id: %s", err.Error(), correlationID)
-				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", errMsg)
+				reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": %q}", errMsg)
 				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
@@ -174,6 +179,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else {
 			serviceKeyIAS, err = h.handleAssignOperation(ctx, catalogNameProcurement, planNameProcurement, svcInstanceNameProcurement, catalogNameIAS, planNameIAS, svcInstanceNameIAS, inboundCert)
 			if err != nil {
+				if strings.Contains(err.Error(), "Conflict") {
+					log.C(ctx).Warnf("Conflict error was received: %s.", err.Error())
+					return
+				}
 				log.C(ctx).Error(err)
 				errMsg := fmt.Sprintf("%s. X-Request-Id: %s", err.Error(), correlationID)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": %q}", errMsg)
@@ -409,6 +418,10 @@ func (h *Handler) sendStatusAPIRequest(ctx context.Context, statusAPIURL, reqBod
 	}
 
 	return nil
+}
+
+func isConcurrentOperation(errMsg string) bool {
+	return strings.Contains(errMsg, "ConcurrentOperationInProgress")
 }
 
 func closeResponseBody(ctx context.Context, resp *http.Response) {
