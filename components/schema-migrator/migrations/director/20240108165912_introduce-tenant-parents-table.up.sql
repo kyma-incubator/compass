@@ -795,7 +795,30 @@ FROM bundle_instance_auths AS bia
 
 CREATE
 OR REPLACE VIEW bundles_tenants AS
-SELECT b.*, ta.tenant_id, ta.owner
+SELECT b.app_id,
+       b.name,
+       b.description,
+       b.instance_auth_request_json_schema,
+       b.default_instance_auth,
+       b.ord_id,
+       b.short_description,
+       b.links,
+       b.labels,
+       b.credential_exchange_strategies,
+       b.ready,
+       b.created_at,
+       b.updated_at,
+       b.deleted_at,
+       b.error,
+       b.correlation_ids,
+       b.documentation_labels,
+       b.tags,
+       b.version,
+       b.resource_hash,
+       b.local_tenant_id,
+       b.app_template_version_id,
+       ta.tenant_id,
+       ta.owner
 FROM bundles AS b
          INNER JOIN tenant_applications ta ON ta.id = b.app_id;
 
@@ -864,7 +887,23 @@ FROM fetch_requests AS fr
 
 CREATE
 OR REPLACE VIEW documents_tenants AS
-SELECT d.*, ta.tenant_id, ta.owner
+SELECT d.id,
+       d. app_id,
+       d.title,
+       d.display_name,
+       d.description,
+       d.format,
+       d.kind,
+       d.data,
+       d.bundle_id,
+       d.ready,
+       d.created_at,
+       d.updated_at,
+       d.deleted_at,
+       d.error,
+       d.app_template_version_id,
+       ta.tenant_id,
+       ta.owner
 FROM documents AS d
          INNER JOIN tenant_applications ta ON ta.id = d.app_id;
 
@@ -1639,7 +1678,17 @@ FROM tombstones AS t
 
 CREATE
 OR REPLACE VIEW vendors_tenants AS
-SELECT v.*, ta.tenant_id, ta.owner
+SELECT v.ord_id,
+       v. app_id,
+       v.title,
+       v.labels,
+       v.partners,
+       v.id,
+       v.documentation_labels,
+       v.tags,
+       v.app_template_version_id,
+       ta.tenant_id,
+       ta.owner
 FROM vendors AS v
          INNER JOIN tenant_applications AS ta ON ta.id = v.app_id;
 

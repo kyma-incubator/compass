@@ -294,14 +294,10 @@ SELECT
     apis.version_deprecated_since,
     apis.version_for_removal,
     apis.ord_id,
-    apis.local_tenant_id,
     apis.short_description,
     apis.system_instance_aware,
-    apis.policy_level,
-    apis.custom_policy_level,
     apis.api_protocol,
     apis.tags,
-    apis.supported_use_cases,
     apis.countries,
     apis.links,
     apis.api_resource_links,
@@ -327,8 +323,6 @@ SELECT
     apis.successors,
     apis.resource_hash,
     apis.documentation_labels,
-    apis.correlation_ids,
-    apis.direction,
     ta.tenant_id,
     ta.owner
 FROM api_definitions AS apis
@@ -348,11 +342,8 @@ SELECT
        events.version_deprecated_since,
        events.version_for_removal,
        events.ord_id,
-       events.local_tenant_id,
        events.short_description,
        events.system_instance_aware,
-       events.policy_level,
-       events.custom_policy_level,
        events.changelog_entries,
        events.links,
        events.tags,
@@ -371,12 +362,8 @@ SELECT
        events.updated_at,
        events.deleted_at,
        events.error,
-       events.implementation_standard,
-       events.custom_implementation_standard,
-       events.custom_implementation_standard_description,
        events.successors,
        events.resource_hash,
-       events.correlation_ids,
        ta.tenant_id,
        ta.owner
 FROM event_api_definitions AS events
@@ -467,8 +454,6 @@ SELECT p.ord_id,
        p.correlation_ids,
        p.id,
        p.documentation_labels,
-       p.tags,
-       p.app_template_version_id,
        ta.tenant_id,
        ta.owner
 FROM products AS p
@@ -481,9 +466,70 @@ SELECT t.ord_id,
        t.app_id,
        t.removal_date,
        t.id,
-       t.app_template_version_id,
        ta.tenant_id,
        ta.owner
 FROM tombstones AS t
          INNER JOIN tenant_applications AS ta ON ta.id = t.app_id;
+
+DROP VIEW IF EXISTS bundles_tenants;
+CREATE
+    OR REPLACE VIEW bundles_tenants AS
+SELECT b.app_id,
+       b.name,
+       b.description,
+       b.instance_auth_request_json_schema,
+       b.default_instance_auth,
+       b.ord_id,
+       b.short_description,
+       b.links,
+       b.labels,
+       b.credential_exchange_strategies,
+       b.ready,
+       b.created_at,
+       b.updated_at,
+       b.deleted_at,
+       b.error,
+       b.correlation_ids,
+       b.documentation_labels,
+       ta.tenant_id,
+       ta.owner
+FROM bundles AS b
+         INNER JOIN tenant_applications ta ON ta.id = b.app_id;
+
+DROP VIEW IF EXISTS documents_tenants;
+CREATE
+    OR REPLACE VIEW documents_tenants AS
+SELECT d.id,
+       d. app_id,
+       d.title,
+       d.display_name,
+       d.description,
+       d.format,
+       d.kind,
+       d.data,
+       d.bundle_id,
+       d.ready,
+       d.created_at,
+       d.updated_at,
+       d.deleted_at,
+       d.error,
+       ta.tenant_id,
+       ta.owner
+FROM documents AS d
+         INNER JOIN tenant_applications ta ON ta.id = d.app_id;
+
+DROP VIEW IF EXISTS vendors_tenants;
+CREATE
+    OR REPLACE VIEW vendors_tenants AS
+SELECT v.ord_id,
+       v. app_id,
+       v.title,
+       v.labels,
+       v.partners,
+       v.id,
+       v.documentation_labels,
+       ta.tenant_id,
+       ta.owner
+FROM vendors AS v
+         INNER JOIN tenant_applications AS ta ON ta.id = v.app_id;
 COMMIT;
