@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.21.1-alpine3.18 as builder
+FROM --platform=$BUILDPLATFORM golang:1.21.6-alpine3.19 as builder
 
 WORKDIR /
 RUN apk --update --no-cache add bash git
@@ -15,7 +15,7 @@ RUN git checkout $VERSION
 ARG TARGETOS TARGETARCH
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -o migrate -ldflags="-X main.Version=$VERSION" -tags "$DATABASE $SOURCE" ./cmd/migrate
 
-FROM alpine:3.18.4
+FROM alpine:3.19
 
 ARG TARGETARCH
 
