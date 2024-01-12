@@ -243,7 +243,12 @@ func findKeyPathHelper(jsonData interface{}, targetKey string, currentPath strin
 				return path
 			}
 		}
+	case string:
+		if v == targetKey {
+			return currentPath
+		}
 	}
+
 	return ""
 }
 

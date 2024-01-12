@@ -122,10 +122,10 @@ func (c *client) RetrieveMultipleResourcesIDsByLabels(ctx context.Context, regio
 	}
 	strURL += createLabelsQuery(labels)
 
-	log.C(ctx).Infof("Getting %s by labels: %v for subaccount with ID: %q", resources.GetType(), labels, subaccountID)
+	log.C(ctx).Infof("Listing %s by labels: %v for subaccount with ID: %q", resources.GetType(), labels, subaccountID)
 	body, err := c.executeSyncRequest(ctx, strURL, region)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while executing request for getting %s for subaccount with ID: %q", resources.GetType(), subaccountID)
+		return nil, errors.Wrapf(err, "while executing request for listing %s for subaccount with ID: %q", resources.GetType(), subaccountID)
 	}
 	log.C(ctx).Infof("Successfully got %s by labels: %v for subaccount with ID: %q", resources.GetType(), labels, subaccountID)
 

@@ -193,6 +193,11 @@ func fixServiceKey() *types.ServiceKey {
 	}
 }
 
+func fixServiceKeyJson() json.RawMessage {
+	marshalledServiceKey, _ := json.Marshal(fixServiceKey())
+	return marshalledServiceKey
+}
+
 func fixServiceKeys() *types.ServiceKeys {
 	return &types.ServiceKeys{
 		NumItems: 1,
