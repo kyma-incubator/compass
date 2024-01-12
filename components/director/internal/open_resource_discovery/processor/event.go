@@ -2,8 +2,9 @@ package processor
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"

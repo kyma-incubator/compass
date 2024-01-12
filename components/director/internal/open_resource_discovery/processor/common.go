@@ -2,11 +2,12 @@ package processor
 
 import (
 	"context"
+	"strconv"
+	"time"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
-	"strconv"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
@@ -48,6 +49,7 @@ func checkIfShouldFetchSpecs(lastUpdateValueFromDoc, lastUpdateValueFromDB *stri
 	return lastUpdateTimeFromDoc.After(lastUpdateTimeFromDB), nil
 }
 
+// NewestLastUpdateTimestamp returns the newest lastUpdate timestamp comparing the lastUpdate from doc and db
 func NewestLastUpdateTimestamp(lastUpdateValueFromDoc, lastUpdateValueFromDB, hashFromDB *string, hashFromDoc uint64) (*string, error) {
 	newestLastUpdateTime, err := compareLastUpdateFromDocAndDB(lastUpdateValueFromDoc, lastUpdateValueFromDB)
 	if err != nil {
