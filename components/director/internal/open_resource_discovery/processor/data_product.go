@@ -2,6 +2,8 @@ package processor
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -106,6 +108,9 @@ func (id *DataProductProcessor) resyncDataProduct(ctx context.Context, resourceT
 	}
 
 	if !isDataProductFound {
+		currentTime := time.Now().Format(time.RFC3339)
+		dataProduct.LastUpdate = &currentTime
+
 		_, err := id.dataProductSvc.Create(ctx, resourceType, resourceID, packageID, dataProduct, dataProductHash)
 		if err != nil {
 			return err
@@ -114,7 +119,15 @@ func (id *DataProductProcessor) resyncDataProduct(ctx context.Context, resourceT
 		return nil
 	}
 
-	err := id.dataProductSvc.Update(ctx, resourceType, resourceID, dataProductsFromDB[i].ID, packageID, dataProduct, dataProductHash)
+	log.C(ctx).Infof("Calculate the newest lastUpdate time for Data Product")
+	newestLastUpdateTime, err := NewestLastUpdateTimestamp(dataProduct.LastUpdate, dataProductsFromDB[i].LastUpdate, dataProductsFromDB[i].ResourceHash, dataProductHash)
+	if err != nil {
+		return errors.Wrap(err, "error while calculating the newest lastUpdate time for Data Product")
+	}
+
+	dataProduct.LastUpdate = newestLastUpdateTime
+
+	err = id.dataProductSvc.Update(ctx, resourceType, resourceID, dataProductsFromDB[i].ID, packageID, dataProduct, dataProductHash)
 	if err != nil {
 		return err
 	}

@@ -463,6 +463,7 @@ func fixAPI(id string, ordID *string) *model.APIDefinition {
 			Value: "2.1.3",
 		},
 		DocumentationLabels: json.RawMessage(documentLabels),
+		ResourceHash:        str.Ptr(resourceHash),
 		BaseEntity: &model.BaseEntity{
 			ID:    id,
 			Ready: true,

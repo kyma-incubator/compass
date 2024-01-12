@@ -2,8 +2,8 @@ package processor
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -145,7 +145,15 @@ func (id *IntegrationDependencyProcessor) resyncIntegrationDependency(ctx contex
 		return nil
 	}
 
-	err := id.integrationDependencySvc.Update(ctx, resourceType, resourceID, integrationDependenciesFromDB[i].ID, packageID, integrationDependency, integrationDependencyHash)
+	log.C(ctx).Infof("Calculate the newest lastUpdate time for Integration Dependency")
+	newestLastUpdateTime, err := NewestLastUpdateTimestamp(integrationDependency.LastUpdate, integrationDependenciesFromDB[i].LastUpdate, integrationDependenciesFromDB[i].ResourceHash, integrationDependencyHash)
+	if err != nil {
+		return errors.Wrap(err, "error while calculating the newest lastUpdate time for Integration Dependency")
+	}
+
+	integrationDependency.LastUpdate = newestLastUpdateTime
+
+	err = id.integrationDependencySvc.Update(ctx, resourceType, resourceID, integrationDependenciesFromDB[i].ID, packageID, integrationDependency, integrationDependencyHash)
 	if err != nil {
 		return err
 	}

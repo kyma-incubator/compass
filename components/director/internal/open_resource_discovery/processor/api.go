@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -174,6 +175,9 @@ func (ap *APIProcessor) resyncAPI(ctx context.Context, resourceType resource.Typ
 	}
 
 	if !isAPIFound {
+		currentTime := time.Now().Format(time.RFC3339)
+		api.LastUpdate = &currentTime
+
 		apiID, err := ap.apiSvc.Create(ctx, resourceType, resourceID, nil, packageID, api, nil, defaultTargetURLPerBundle, apiHash, defaultConsumptionBundleID)
 		if err != nil {
 			return nil, err
@@ -192,7 +196,15 @@ func (ap *APIProcessor) resyncAPI(ctx context.Context, resourceType resource.Typ
 		return fr, nil
 	}
 
-	err := ap.resyncEntityTypeMappings(ctx, resource.API, apisFromDB[i].ID, api.EntityTypeMappings)
+	log.C(ctx).Infof("Calculate the newest lastUpdate time for API")
+	newestLastUpdateTime, err := NewestLastUpdateTimestamp(api.LastUpdate, apisFromDB[i].LastUpdate, apisFromDB[i].ResourceHash, apiHash)
+	if err != nil {
+		return nil, errors.Wrap(err, "error while calculating the newest lastUpdate time for API")
+	}
+
+	api.LastUpdate = newestLastUpdateTime
+
+	err = ap.resyncEntityTypeMappings(ctx, resource.API, apisFromDB[i].ID, api.EntityTypeMappings)
 	if err != nil {
 		return nil, err
 	}
@@ -367,22 +379,4 @@ func extractDefaultConsumptionBundle(bundlesFromDB []*model.Bundle, defaultConsu
 		}
 	}
 	return bundleID
-}
-
-func checkIfShouldFetchSpecs(lastUpdateValueFromDoc, lastUpdateValueFromDB *string) (bool, error) {
-	if lastUpdateValueFromDoc == nil || lastUpdateValueFromDB == nil {
-		return true, nil
-	}
-
-	lastUpdateTimeFromDoc, err := time.Parse(time.RFC3339, str.PtrStrToStr(lastUpdateValueFromDoc))
-	if err != nil {
-		return false, err
-	}
-
-	lastUpdateTimeFromDB, err := time.Parse(time.RFC3339, str.PtrStrToStr(lastUpdateValueFromDB))
-	if err != nil {
-		return false, err
-	}
-
-	return lastUpdateTimeFromDoc.After(lastUpdateTimeFromDB), nil
 }
