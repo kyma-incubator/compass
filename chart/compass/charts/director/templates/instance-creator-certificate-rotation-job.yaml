@@ -1,0 +1,153 @@
+# This rotation job and all configurations related to it are temporary!
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: "{{ $.Chart.Name }}-instance-creator-certificate-rotation-job"
+  namespace: {{ $.Release.Namespace }}
+spec:
+  schedule: "{{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.schedule }}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
+  startingDeadlineSeconds: 60
+  jobTemplate:
+    metadata:
+      labels:
+        cronjob: {{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.name }}
+    spec:
+      template:
+        metadata:
+          labels:
+            cronjob: {{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.name }}
+          annotations:
+            cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        spec:
+          serviceAccountName: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.name }}
+          restartPolicy: Never
+          containers:
+            - name: {{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.containerName }}
+              image: bitnami/kubectl:1.22.4
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -c
+                - |
+{{ .Files.Get "files/certificate_rotation.sh" | printf "%s" | indent 18 }}
+              env:
+                - name: EXT_NOT_EXTERNAL
+                  value: 'true'
+                - name: CERT_SVC_CSR_ENDPOINT
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.name }}
+                      key: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.csrEndpointKey }}
+                - name: CERT_SVC_API_PATH
+                  value: {{ .Values.global.instanceCreatorCertConfiguration.certSvcApiPath }}
+                - name: CERT_SUBJECT_PATTERN
+                  value: {{ printf .Values.global.instanceCreatorCertConfiguration.subjectPattern .Values.global.instanceCreatorCertConfiguration.ouCertSubaccountID .Values.global.instanceCreatorCertConfiguration.locality .Values.global.instanceCreatorCertConfiguration.commonName }}
+                - name: EXPECTED_ISSUER_LOCALITY
+                  value: {{ .Values.global.instanceCreatorCertConfiguration.issuerLocality }}
+                - name: CERT_VALIDITY
+                  value: {{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.certValidity | quote }}
+                - name: CLIENT_CERT_RETRY_ATTEMPTS
+                  value: {{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.clientCertRetryAttempts | quote }}
+                - name: CLIENT_CERT_SECRET_NAME
+                  value: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorClientCertSecret.name }}
+                - name: CLIENT_CERT_CERT_KEY
+                  value:  {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorClientCertSecret.certKey }}
+                - name: CLIENT_CERT_KEY_KEY
+                  value:  {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorClientCertSecret.keyKey }}
+                - name: CERT_SVC_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.name }}
+                      key: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.clientIdKey }}
+                - name: CERT_SVC_OAUTH_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.name }}
+                      key: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.oauthUrlKey }}
+                - name: CERT_SVC_TOKEN_PATH
+                  value: {{ .Values.global.instanceCreatorCertConfiguration.tokenPath }}
+                - name: CERT_SVC_OAUTH_CLIENT_CERT
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+                      key: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}
+                - name: CERT_SVC_OAUTH_CLIENT_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+                      key: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}
+                - name: SKIP_SSL_VALIDATION_FLAG
+                  value: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.skipSSLValidationFlag }}
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update", "patch"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.name }}
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.name }}
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: director-{{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["secrets"]
+    resourceNames: ["{{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.name }}"]
+    verbs: ["watch"]
