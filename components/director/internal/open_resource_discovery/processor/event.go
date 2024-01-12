@@ -2,7 +2,6 @@ package processor
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -54,8 +53,6 @@ func (ep *EventProcessor) Process(ctx context.Context, resourceType resource.Typ
 	if err != nil {
 		return nil, nil, err
 	}
-
-	fmt.Println(len(packagesFromDB))
 
 	fetchRequests := make([]*OrdFetchRequest, 0)
 	for _, event := range events {
@@ -133,10 +130,9 @@ func (ep *EventProcessor) resyncEvent(ctx context.Context, resourceType resource
 			}
 		}
 	}
-	fmt.Println(len(packagesFromDB))
+
 	var packageID *string
 	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
-		fmt.Println(packagesFromDB[i].OrdID, *event.OrdPackageID)
 		return equalStrings(&packagesFromDB[i].OrdID, event.OrdPackageID)
 	}); found {
 		packageID = &packagesFromDB[i].ID

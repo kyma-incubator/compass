@@ -2,7 +2,6 @@ package processor
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -57,14 +56,10 @@ func NewestLastUpdateTimestamp(lastUpdateValueFromDoc, lastUpdateValueFromDB, ha
 		return nil, err
 	}
 
-	fmt.Println(*newestLastUpdateTime, "after compare")
-
 	var hashIsEqual bool
 	if hashFromDB != nil {
 		hashIsEqual = cmp.Equal(*hashFromDB, strconv.FormatUint(hashFromDoc, 10))
 	}
-
-	fmt.Println(hashIsEqual, "HASH IS EQUAL")
 
 	if !hashIsEqual {
 		currentTime := time.Now().Format(time.RFC3339)
