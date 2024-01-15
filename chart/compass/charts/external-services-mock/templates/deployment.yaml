@@ -79,6 +79,8 @@ spec:
                     key: password
               - name: APP_DEFAULT_TENANT
                 value: "{{ (index .Values.global.tenants 9).id }}"
+              - name: APP_DEFAULT_CUSTOMER_TENANT
+                value: "{{ (index .Values.global.tenants 10).id }}"
               - name: APP_TRUSTED_TENANT
                 value: "{{ (index .Values.global.tenants 26).id }}"
               - name: APP_ON_DEMAND_TENANT
@@ -147,10 +149,12 @@ spec:
                 value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
               - name: APP_TENANT_CONFIG_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_ID
                 value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderIdValue | quote }}
-              - name: APP_TENANT_CONFIG_TEST_CONSUMER_ACCOUNT_ID
-                value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
+              - name: APP_TENANT_CONFIG_TEST_PROVIDER_ACCOUNT_ID
+                value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
               - name: APP_TENANT_CONFIG_TEST_PROVIDER_SUBACCOUNT_ID
                 value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
+              - name: APP_TENANT_CONFIG_TEST_CONSUMER_ACCOUNT_ID
+                value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_SUBACCOUNT_ID
                 value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_TENANT_ID
@@ -179,12 +183,12 @@ spec:
                 value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
               - name: APP_DESTINATION_TENANT_SUBACCOUNT_LEVEL_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
-              - name: APP_DESTINATION_TENANT_INSTANCE_LEVEL_ENDPOINT
-                value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationsEndpoint }}"
               - name: APP_DESTINATION_CERTIFICATE_TENANT_SUBACCOUNT_LEVEL_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
               - name: APP_DESTINATION_CERTIFICATE_TENANT_INSTANCE_LEVEL_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationCertificatesEndpoint }}"
+              - name: APP_DESTINATION_SERVICE_FIND_API_ENDPOINT
+                value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.findAPIEndpoint }}"
               - name: APP_DESTINATION_SENSITIVE_DATA_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.sensitiveDataEndpoint }}"
               - name: APP_DESTINATION_SUBACCOUNT_CLAIM_KEY
@@ -199,12 +203,18 @@ spec:
                 value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
               - name: APP_EXTERNAL_CLIENT_KEY_KEY
                 value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+              - name: APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_NAME
+                value: "{{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.name }}"
+              - name: APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET
+                value: "{{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.name }}"
+              - name: APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_DATA_KEY
+                value: "{{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.dataKey }}"
               - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
                 value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
               - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL
                 value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}"
               - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY
-                value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInSeconds  | quote}}
+                value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInMilliseconds  | quote}}
               - name : APP_IAS_ADAPTER_CONSUMER_APP_ID
                 value: {{ .Values.global.externalServicesMock.iasAdapter.consumerAppID }}
               - name : APP_IAS_ADAPTER_CONSUMER_APP_CLIENT_ID
@@ -249,6 +259,33 @@ spec:
                 value: {{ .Values.global.tests.destination.instanceID | quote }}
               - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
                 value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
+              - name: APP_PROVIDER_DESTINATION_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                    key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientIdKey }}
+              - name: APP_PROVIDER_DESTINATION_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                    key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientSecretKey }}
+              - name: APP_PROVIDER_DESTINATION_TOKEN_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                    key: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthUrlKey }}
+              - name: APP_PROVIDER_DESTINATION_TOKEN_PATH
+                value: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthTokenPath }}
+              - name: APP_PROVIDER_DESTINATION_SERVICE_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                    key: {{ .Values.global.tests.subscription.destinationOauthSecret.serviceUrlKey }}
+              - name: APP_PROVIDER_DESTINATION_DEPENDENCY
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                    key: {{ .Values.global.tests.subscription.destinationOauthSecret.dependencyKey }}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}

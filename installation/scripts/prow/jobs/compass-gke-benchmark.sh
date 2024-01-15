@@ -184,25 +184,15 @@ function installKyma() {
 function installOry() {
   ORY_SCRIPT_PATH="${COMPASS_SCRIPTS_DIR}"/install-ory.sh
 
-  if [[ -f "$ORY_SCRIPT_PATH" ]]; then
-    log::info "Installing Ory Helm chart..."
-    bash "${ORY_SCRIPT_PATH}" --overrides-file ~/ory_benchmark_overrides.yaml
-  # This else statement only exists as currently the main branch does not have the ory charts and still uses Ory created by Kyma
-  else
-    log::warn "Ory installation script is missing"
-    # If the installation is missing Kyma has installed Ory for us, we should schedule the cronjob
-    # as this is done by 'install-ory.sh'
-    kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
-    until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath="{.status.lastScheduleTime}") ]]; do
-      echo "Waiting for cronjob oathkeeper-jwks-rotator to be scheduled"
-      sleep 3
-    done
-    kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
-    
-    # Copy the Hydra Secret created by the Kyma deployment to avoid benchmark tests crashing with 401 due to HMAC key changes
-    kubectl create ns ory || true
-    kubectl get secret ory-hydra-credentials -n kyma-system -o yaml | sed 's/namespace: .*/namespace: ory/' | kubectl apply -f -
-  fi
+  log::info "Installing Ory Helm chart..."
+  bash "${ORY_SCRIPT_PATH}" --overrides-file ~/ory_benchmark_overrides.yaml
+}
+
+function installDatabase() {
+    mkdir "$COMPASS_SOURCES_DIR/installation/data"
+    bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --timeout 30m0s
+    STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
+    echo "DB installation status ${STATUS}"
 }
 
 function installCompassOld() {
@@ -211,14 +201,10 @@ function installCompassOld() {
   echo "Checkout $LATEST_VERSION"
   git checkout "${LATEST_VERSION}"
 
+  installOry
+
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
-
-  echo 'Installing DB'
-  mkdir "$COMPASS_SOURCES_DIR/installation/data"
-  bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
-  STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
-  echo "DB installation status ${STATUS}"
 
   echo 'Installing Compass'
   bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s --sql-helm-backend
@@ -241,14 +227,11 @@ function installCompassNew() {
   echo "Checkout $NEW_VERSION_COMMIT_ID"
   git checkout "${NEW_VERSION_COMMIT_ID}"
 
+  installOry
+
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
-
-  echo 'Installing DB'
-  bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
-  STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
-  echo "DB installation status ${STATUS}"
-
+  
   echo 'Installing Compass'
   bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s --sql-helm-backend
 
@@ -298,8 +281,8 @@ installKymaCLI
 log::info "Installing Kyma"
 installKyma
 
-log::info "Installing Ory"
-installOry
+log::info "Installing database"
+installDatabase
 
 NEW_VERSION_COMMIT_ID=$(cd "$COMPASS_SOURCES_DIR" && git rev-parse --short HEAD)
 log::info "Install Compass version from main"
@@ -343,18 +326,32 @@ for POD in $PODS; do
   kubectl logs -n kyma-system "$POD" -c "$CONTAINER" > "$CONTAINER"-new
 
   if [ -f "$CONTAINER"-old ]; then
-    log::info "Stats of the main installation"
+    echo "================================="
+    
+    log::info "logs of the main installation"
+    cat "$CONTAINER"-old
+    echo "---------------------------------"
+    log::info "benchstat of the main installation"
     benchstat "$CONTAINER"-old
+    
+    echo "================================="
 
-    log::info "Stats of the new installation"
+    log::info "logs of the new installation"
+    cat "$CONTAINER"-new
+    echo "---------------------------------"
+    log::info "benchstat of the new installation"
     benchstat "$CONTAINER"-new
+    
+    echo "================================="
 
     STATS=$(benchstat "$CONTAINER"-old "$CONTAINER"-new)
     log::info "Performance comparison statistics"
     echo "$STATS"
 
-    DELTA=$(echo -n "$STATS" | tail +2 | { grep -v '~' || true; } | awk '{print $(NF-2)}')
-    if [[ $DELTA == +* ]]; then # If delta is positive
+    # Delta - difference between performance - a positive value denotes performance degradation
+    # '|| true' is needed as grep returns exit code 1 when it cannot find a line and breaks the pipeline
+    DELTA=$(echo -n "$STATS" | tail +2 | { grep -v '~' || true; } | awk '{print $(NF-2)}' | grep '^+' || true)
+    if [[ -n "$DELTA" ]]; then # grep will only catch positive values that indicate degradation
       log::error "There is significant performance degradation in the new release!"
       CHECK_FAILED=true
       FAILED_TESTS="$CONTAINER\\n$FAILED_TESTS"

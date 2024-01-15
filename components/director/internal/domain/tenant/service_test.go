@@ -7,16 +7,15 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/jmoiron/sqlx"
-
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/stretchr/testify/mock"
 
@@ -426,6 +425,8 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 		newModelBusinessTenantMappingInput("test2", "", testRegion, nil).WithExternalTenant("external2")}
 	tenantInputsWithLicenseType := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1", "", "", str.Ptr(testLicenseType)),
 		newModelBusinessTenantMappingInput("test2", "", "", str.Ptr(testLicenseType)).WithExternalTenant("external2")}
+	tenantInputsWithCustomerID := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInputWithCustomerID("test1", testCustomerID),
+		newModelBusinessTenantMappingInputWithCustomerID("test2", testCustomerID)}
 	tenantModelInputsWithParent := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInputWithType(testID, "test1", testParentID, "", "", nil, tenantEntity.Account),
 		newModelBusinessTenantMappingInputWithType(testParentID, "test2", "", "", "", nil, tenantEntity.Customer)}
 	tenantWithSubdomainAndRegion := newModelBusinessTenantMappingInput("test1", testSubdomain, testRegion, nil)
@@ -584,6 +585,28 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 					Key:        "licensetype",
 					Value:      testLicenseType,
 					ObjectID:   tenantModelsWithLicense[1].ID,
+					ObjectType: model.TenantLabelableObject,
+				}
+				svc.On("UpsertLabel", ctx, testID, label).Return(nil).Twice()
+				return svc
+			},
+			ExpectedError:  nil,
+			ExpectedResult: expectedResult,
+		},
+		{
+			Name:         "Success when customerID should be added",
+			tenantInputs: tenantInputsWithCustomerID,
+			TenantMappingRepoFn: func(createFuncName string) *automock.TenantMappingRepository {
+				return createRepoSvc(ctx, createFuncName, *tenantInputsWithCustomerID[0].ToBusinessTenantMapping(testID), *tenantInputsWithCustomerID[1].ToBusinessTenantMapping(testID))
+			},
+			UIDSvcFn:    uidSvcFn,
+			LabelRepoFn: noopLabelRepo,
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				label := &model.LabelInput{
+					Key:        tenant.CustomerIDLabelKey,
+					Value:      *testCustomerID,
+					ObjectID:   testID,
 					ObjectType: model.TenantLabelableObject,
 				}
 				svc.On("UpsertLabel", ctx, testID, label).Return(nil).Twice()

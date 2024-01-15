@@ -12,6 +12,7 @@ import (
 
 type UnassignNotificationsAsserter struct {
 	op                                 string
+	state                              *string
 	expectedNotificationsCountForOp    int
 	targetObjectID                     string
 	sourceObjectID                     string
@@ -20,11 +21,12 @@ type UnassignNotificationsAsserter struct {
 	region                             string
 	tenant                             string
 	tenantParentCustomer               string
+	config                             string
 	externalServicesMockMtlsSecuredURL string
 	client                             *http.Client
 }
 
-func NewUnassignNotificationsAsserter(expectedNotificationsCountForOp int, targetObjectID string, sourceObjectID string, localTenantID string, appNamespace string, region string, tenant string, tenantParentCustomer string, externalServicesMockMtlsSecuredURL string, client *http.Client) *UnassignNotificationsAsserter {
+func NewUnassignNotificationsAsserter(expectedNotificationsCountForOp int, targetObjectID string, sourceObjectID string, localTenantID string, appNamespace string, region string, tenant string, tenantParentCustomer string, config string, externalServicesMockMtlsSecuredURL string, client *http.Client) *UnassignNotificationsAsserter {
 	return &UnassignNotificationsAsserter{
 		op:                                 unassignOperation,
 		expectedNotificationsCountForOp:    expectedNotificationsCountForOp,
@@ -35,9 +37,15 @@ func NewUnassignNotificationsAsserter(expectedNotificationsCountForOp int, targe
 		region:                             region,
 		tenant:                             tenant,
 		tenantParentCustomer:               tenantParentCustomer,
+		config:                             config,
 		externalServicesMockMtlsSecuredURL: externalServicesMockMtlsSecuredURL,
 		client:                             client,
 	}
+}
+
+func (a *UnassignNotificationsAsserter) WithState(state string) *UnassignNotificationsAsserter {
+	a.state = &state
+	return a
 }
 
 func (a *UnassignNotificationsAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
@@ -50,8 +58,9 @@ func (a *UnassignNotificationsAsserter) AssertExpectations(t *testing.T, ctx con
 		op := notification.Get("Operation").String()
 		if op == a.op {
 			notificationsFoundCount++
-			assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t, notification, unassignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.tenant, a.tenantParentCustomer, nil)
+			err := verifyFormationAssignmentNotification(t, notification, unassignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.config, a.tenant, a.tenantParentCustomer, false, a.state)
+			require.NoError(t, err)
 		}
 	}
-	require.Equal(t, a.expectedNotificationsCountForOp, notificationsFoundCount, "expected %s notifications for target object %s", a.expectedNotificationsCountForOp, a.targetObjectID)
+	require.Equal(t, a.expectedNotificationsCountForOp, notificationsFoundCount, "expected %d notifications for target object %s", a.expectedNotificationsCountForOp, a.targetObjectID)
 }

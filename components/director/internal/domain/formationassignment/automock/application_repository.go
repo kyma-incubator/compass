@@ -19,6 +19,10 @@ type ApplicationRepository struct {
 func (_m *ApplicationRepository) ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error) {
 	ret := _m.Called(ctx, tenant, scenarios)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListByScenariosNoPaging")
+	}
+
 	var r0 []*model.Application
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.Application, error)); ok {

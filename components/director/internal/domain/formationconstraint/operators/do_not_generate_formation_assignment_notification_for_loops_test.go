@@ -118,7 +118,7 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotificationForLoop
 			if testCase.FormationTemplateRepo != nil {
 				formationTemplateRepo = testCase.FormationTemplateRepo()
 			}
-			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, labelSvc, nil, runtimeContextRepo, formationTemplateRepo, nil, runtimeType, applicationType)
+			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, nil, labelSvc, nil, runtimeContextRepo, formationTemplateRepo, nil, nil, nil, runtimeType, applicationType)
 
 			result, err := engine.DoNotGenerateFormationAssignmentNotificationForLoops(ctx, testCase.Input)
 

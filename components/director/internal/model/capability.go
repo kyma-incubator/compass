@@ -26,6 +26,7 @@ type Capability struct {
 	ShortDescription             *string
 	SystemInstanceAware          *bool
 	Tags                         json.RawMessage
+	RelatedEntityTypes           json.RawMessage
 	Links                        json.RawMessage
 	ReleaseStatus                *string
 	Labels                       json.RawMessage
@@ -52,10 +53,11 @@ type CapabilityInput struct {
 	OrdID                 *string                 `json:"ordId"`
 	Type                  string                  `json:"type"`
 	CustomType            *string                 `json:"customType"`
-	LocalTenantID         *string                 `json:"localTenantId"`
+	LocalTenantID         *string                 `json:"localId"`
 	ShortDescription      *string                 `json:"shortDescription"`
 	SystemInstanceAware   *bool                   `json:"systemInstanceAware"`
 	Tags                  json.RawMessage         `json:"tags"`
+	RelatedEntityTypes    json.RawMessage         `json:"relatedEntityTypes"`
 	Links                 json.RawMessage         `json:"links"`
 	ReleaseStatus         *string                 `json:"releaseStatus"`
 	Labels                json.RawMessage         `json:"labels"`
@@ -88,7 +90,7 @@ func (cd *CapabilityDefinition) Validate() error {
 		validation.Field(&cd.MediaType, validation.Required, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML, SpecFormatApplicationXML, SpecFormatPlainText, SpecFormatOctetStream),
 			validation.When(cd.Type == CapabilitySpecTypeMDICapabilityDefinitionV1, validation.In(SpecFormatApplicationJSON))),
 		validation.Field(&cd.URL, validation.Required, is.RequestURI),
-		validation.Field(&cd.AccessStrategy, validation.Required),
+		validation.Field(&cd.AccessStrategy),
 	)
 }
 
@@ -135,6 +137,7 @@ func (a *CapabilityInput) ToCapability(id string, resourceType resource.Type, re
 		ShortDescription:    a.ShortDescription,
 		SystemInstanceAware: a.SystemInstanceAware,
 		Tags:                a.Tags,
+		RelatedEntityTypes:  a.RelatedEntityTypes,
 		Links:               a.Links,
 		ReleaseStatus:       a.ReleaseStatus,
 		Labels:              a.Labels,

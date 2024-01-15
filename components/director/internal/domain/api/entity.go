@@ -9,7 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
-// Entity is a representation of a API in the database.
+// Entity is a representation of an API in the database.
 type Entity struct {
 	ApplicationID                           sql.NullString `db:"app_id"`
 	ApplicationTemplateVersionID            sql.NullString `db:"app_template_version_id"`
@@ -49,6 +49,9 @@ type Entity struct {
 	CorrelationIDs                          sql.NullString `db:"correlation_ids"`
 	Direction                               sql.NullString `db:"direction"`
 	LastUpdate                              sql.NullString `db:"last_update"`
+	DeprecationDate                         sql.NullString `db:"deprecation_date"`
+	Responsible                             sql.NullString `db:"responsible"`
+	Usage                                   sql.NullString `db:"usage"`
 
 	*repo.BaseEntity
 	version.Version

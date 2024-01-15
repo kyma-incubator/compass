@@ -15,7 +15,7 @@ type EntityType struct {
 	ApplicationID                *string
 	ApplicationTemplateVersionID *string
 	OrdID                        string
-	LocalID                      string
+	LocalTenantID                string
 	CorrelationIDs               json.RawMessage
 	Level                        string
 	Title                        string
@@ -32,6 +32,7 @@ type EntityType struct {
 	CustomPolicyLevel            *string
 	ReleaseStatus                string
 	SunsetDate                   *string
+	DeprecationDate              *string
 	Successors                   json.RawMessage
 	Extensible                   json.RawMessage
 	Tags                         json.RawMessage
@@ -60,7 +61,7 @@ func (EntityTypePage) IsPageable() {}
 // EntityTypeInput missing godoc
 type EntityTypeInput struct {
 	OrdID               string          `json:"ordId"`
-	LocalID             string          `json:"localId"`
+	LocalTenantID       string          `json:"localId"`
 	CorrelationIDs      json.RawMessage `json:"correlationIds,omitempty"`
 	Level               string          `json:"level"`
 	Title               string          `json:"title"`
@@ -77,6 +78,7 @@ type EntityTypeInput struct {
 	CustomPolicyLevel   *string         `json:"customPolicyLevel,omitempty"`
 	ReleaseStatus       string          `json:"releaseStatus"`
 	SunsetDate          *string         `json:"sunsetDate,omitempty"`
+	DeprecationDate     *string         `json:"deprecationDate,omitempty"`
 	Successors          json.RawMessage `json:"successors,omitempty"`
 	Extensible          json.RawMessage `json:"extensible,omitempty"`
 	Tags                json.RawMessage `json:"tags,omitempty"`
@@ -103,7 +105,7 @@ func (i *EntityTypeInput) ToEntityType(id string, resourceType resource.Type, re
 			Ready: true,
 		},
 		OrdID:               i.OrdID,
-		LocalID:             i.LocalID,
+		LocalTenantID:       i.LocalTenantID,
 		CorrelationIDs:      i.CorrelationIDs,
 		Level:               i.Level,
 		Title:               i.Title,
@@ -120,6 +122,7 @@ func (i *EntityTypeInput) ToEntityType(id string, resourceType resource.Type, re
 		CustomPolicyLevel:   i.CustomPolicyLevel,
 		ReleaseStatus:       i.ReleaseStatus,
 		SunsetDate:          i.SunsetDate,
+		DeprecationDate:     i.DeprecationDate,
 		Successors:          i.Successors,
 		Extensible:          i.Extensible,
 		Tags:                i.Tags,
@@ -139,13 +142,13 @@ func (i *EntityTypeInput) ToEntityType(id string, resourceType resource.Type, re
 }
 
 // SetFromUpdateInput missing godoc
-func (entityType *EntityType) SetFromUpdateInput(update EntityTypeInput, entityTypeHash uint64) {
+func (entityType *EntityType) SetFromUpdateInput(update EntityTypeInput, packageID string, entityTypeHash uint64) {
 	var hash *string
 	if entityTypeHash != 0 {
 		hash = str.Ptr(strconv.FormatUint(entityTypeHash, 10))
 	}
 	entityType.OrdID = update.OrdID
-	entityType.LocalID = update.LocalID
+	entityType.LocalTenantID = update.LocalTenantID
 	entityType.CorrelationIDs = update.CorrelationIDs
 	entityType.Level = update.Level
 	entityType.Title = update.Title
@@ -153,7 +156,7 @@ func (entityType *EntityType) SetFromUpdateInput(update EntityTypeInput, entityT
 	entityType.Description = update.Description
 	entityType.SystemInstanceAware = update.SystemInstanceAware
 	entityType.ChangeLogEntries = update.ChangeLogEntries
-	entityType.PackageID = update.OrdPackageID
+	entityType.PackageID = packageID
 	entityType.Visibility = update.Visibility
 	entityType.Links = update.Links
 	entityType.PartOfProducts = update.PartOfProducts
@@ -162,6 +165,7 @@ func (entityType *EntityType) SetFromUpdateInput(update EntityTypeInput, entityT
 	entityType.CustomPolicyLevel = update.CustomPolicyLevel
 	entityType.ReleaseStatus = update.ReleaseStatus
 	entityType.SunsetDate = update.SunsetDate
+	entityType.DeprecationDate = update.DeprecationDate
 	entityType.Successors = update.Successors
 	entityType.Extensible = update.Extensible
 	entityType.Tags = update.Tags

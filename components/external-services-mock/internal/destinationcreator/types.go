@@ -40,8 +40,8 @@ type CertificateAPIConfig struct {
 }
 
 type DestinationRequestBody interface {
-	ToDestination() (json.RawMessage, error)
-	Validate(destinationCreatorCfg *Config) error
+	ToDestination() destinationcreator.Destination
+	Validate() error
 	GetDestinationType() string
 	GetDestinationUniqueIdentifier(subaccountID, instanceID string) string
 }
@@ -81,6 +81,14 @@ type ClientCertificateAuthDestRequestBody struct {
 	KeyStoreLocation string `json:"keyStoreLocation"`
 }
 
+// OAuth2ClientCredsDestRequestBody contains the necessary fields for the destination request body with authentication type OAuth2ClientCredentials
+type OAuth2ClientCredsDestRequestBody struct {
+	BaseDestinationRequestBody
+	TokenServiceURL string `json:"tokenServiceURL"`
+	ClientID        string `json:"clientId"`
+	ClientSecret    string `json:"clientSecret"`
+}
+
 // CertificateRequestBody contains the necessary fields for the destination creator certificate request body
 type CertificateRequestBody struct {
 	Name string `json:"name"`
@@ -100,8 +108,8 @@ func (b *BaseDestinationRequestBody) GetDestinationUniqueIdentifier(subaccountID
 	return fmt.Sprintf("name_%s_subacc_%s_instance_%s", b.Name, subaccountID, instanceID)
 }
 
-// Validate validates that the AuthTypeNoAuth request body contains the required fields and they are valid
-func (n *DesignTimeDestRequestBody) Validate(destinationCreatorCfg *Config) error {
+// Validate validates that the AuthTypeNoAuth request body contains the required fields, and they are valid
+func (n *DesignTimeDestRequestBody) Validate() error {
 	return validation.ValidateStruct(n,
 		validation.Field(&n.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&n.URL, validation.Required),
@@ -111,24 +119,22 @@ func (n *DesignTimeDestRequestBody) Validate(destinationCreatorCfg *Config) erro
 	)
 }
 
-func (n *DesignTimeDestRequestBody) ToDestination() (json.RawMessage, error) {
-	noAuthDest := destinationcreator.NoAuthenticationDestination{
+func (n *DesignTimeDestRequestBody) ToDestination() destinationcreator.Destination {
+	return &destinationcreator.NoAuthenticationDestination{
 		Name:           n.Name,
 		URL:            n.URL,
 		Type:           n.Type,
 		ProxyType:      n.ProxyType,
 		Authentication: n.AuthenticationType,
 	}
-
-	return json.Marshal(noAuthDest)
 }
 
 func (n *DesignTimeDestRequestBody) GetDestinationType() string {
-	return "design time"
+	return destinationcreator.DesignTimeDestinationType
 }
 
-// Validate validates that the AuthTypeBasic request body contains the required fields and they are valid
-func (b *BasicDestRequestBody) Validate(destinationCreatorCfg *Config) error {
+// Validate validates that the AuthTypeBasic request body contains the required fields, and they are valid
+func (b *BasicDestRequestBody) Validate() error {
 	return validation.ValidateStruct(b,
 		validation.Field(&b.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&b.URL, validation.Required),
@@ -139,8 +145,8 @@ func (b *BasicDestRequestBody) Validate(destinationCreatorCfg *Config) error {
 	)
 }
 
-func (b *BasicDestRequestBody) ToDestination() (json.RawMessage, error) {
-	basicAuthDest := destinationcreator.BasicDestination{
+func (b *BasicDestRequestBody) ToDestination() destinationcreator.Destination {
+	return &destinationcreator.BasicDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
 			Name:           b.Name,
 			Type:           b.Type,
@@ -151,16 +157,14 @@ func (b *BasicDestRequestBody) ToDestination() (json.RawMessage, error) {
 		User:     b.User,
 		Password: b.Password,
 	}
-
-	return json.Marshal(basicAuthDest)
 }
 
 func (b *BasicDestRequestBody) GetDestinationType() string {
-	return "basic"
+	return destinationcreator.BasicAuthDestinationType
 }
 
-// Validate validates that the AuthTypeSAMLAssertion request body contains the required fields and they are valid
-func (s *SAMLAssertionDestRequestBody) Validate(destinationCreatorCfg *Config) error {
+// Validate validates that the AuthTypeSAMLAssertion request body contains the required fields, and they are valid
+func (s *SAMLAssertionDestRequestBody) Validate() error {
 	return validation.ValidateStruct(s,
 		validation.Field(&s.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&s.URL, validation.Required),
@@ -172,8 +176,8 @@ func (s *SAMLAssertionDestRequestBody) Validate(destinationCreatorCfg *Config) e
 	)
 }
 
-func (s *SAMLAssertionDestRequestBody) ToDestination() (json.RawMessage, error) {
-	samlAssertionAuthDest := destinationcreator.SAMLAssertionDestination{
+func (s *SAMLAssertionDestRequestBody) ToDestination() destinationcreator.Destination {
+	return &destinationcreator.SAMLAssertionDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
 			Name:           s.Name,
 			Type:           s.Type,
@@ -184,16 +188,14 @@ func (s *SAMLAssertionDestRequestBody) ToDestination() (json.RawMessage, error) 
 		Audience:         s.Audience,
 		KeyStoreLocation: s.KeyStoreLocation,
 	}
-
-	return json.Marshal(samlAssertionAuthDest)
 }
 
 func (s *SAMLAssertionDestRequestBody) GetDestinationType() string {
-	return "SAML assertion"
+	return destinationcreator.SAMLAssertionDestinationType
 }
 
-// Validate validates that the AuthTypeClientCertificate request body contains the required fields and they are valid
-func (s *ClientCertificateAuthDestRequestBody) Validate(destinationCreatorCfg *Config) error {
+// Validate validates that the AuthTypeClientCertificate request body contains the required fields, and they are valid
+func (s *ClientCertificateAuthDestRequestBody) Validate() error {
 	return validation.ValidateStruct(s,
 		validation.Field(&s.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&s.URL, validation.Required),
@@ -204,8 +206,8 @@ func (s *ClientCertificateAuthDestRequestBody) Validate(destinationCreatorCfg *C
 	)
 }
 
-func (s *ClientCertificateAuthDestRequestBody) ToDestination() (json.RawMessage, error) {
-	clientCertAuthDest := destinationcreator.ClientCertificateAuthenticationDestination{
+func (s *ClientCertificateAuthDestRequestBody) ToDestination() destinationcreator.Destination {
+	return &destinationcreator.ClientCertificateAuthenticationDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
 			Name:           s.Name,
 			Type:           s.Type,
@@ -215,15 +217,46 @@ func (s *ClientCertificateAuthDestRequestBody) ToDestination() (json.RawMessage,
 		},
 		KeyStoreLocation: s.KeyStoreLocation,
 	}
-
-	return json.Marshal(clientCertAuthDest)
 }
 
 func (s *ClientCertificateAuthDestRequestBody) GetDestinationType() string {
-	return "client certificate authentication"
+	return destinationcreator.ClientCertDestinationType
 }
 
-// Validate validates that the SAML assertion certificate request body contains the required fields and they are valid
+// Validate validates that the AuthTypeBasic request body contains the required fields, and they are valid
+func (b *OAuth2ClientCredsDestRequestBody) Validate() error {
+	return validation.ValidateStruct(b,
+		validation.Field(&b.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
+		validation.Field(&b.URL, validation.Required),
+		validation.Field(&b.Type, validation.In(destinationcreatorpkg.TypeHTTP, destinationcreatorpkg.TypeRFC, destinationcreatorpkg.TypeLDAP, destinationcreatorpkg.TypeMAIL)),
+		validation.Field(&b.ProxyType, validation.In(destinationcreatorpkg.ProxyTypeInternet, destinationcreatorpkg.ProxyTypeOnPremise, destinationcreatorpkg.ProxyTypePrivateLink)),
+		validation.Field(&b.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeOAuth2ClientCredentials)),
+		validation.Field(&b.TokenServiceURL, validation.Required),
+		validation.Field(&b.ClientID, validation.Required),
+		validation.Field(&b.ClientSecret, validation.Required),
+	)
+}
+
+func (b *OAuth2ClientCredsDestRequestBody) ToDestination() destinationcreator.Destination {
+	return &destinationcreator.OAuth2ClientCredentialsDestination{
+		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
+			Name:           b.Name,
+			Type:           b.Type,
+			URL:            b.URL,
+			Authentication: b.AuthenticationType,
+			ProxyType:      b.ProxyType,
+		},
+		TokenServiceURL: b.TokenServiceURL,
+		ClientID:        b.ClientID,
+		ClientSecret:    b.ClientSecret,
+	}
+}
+
+func (b *OAuth2ClientCredsDestRequestBody) GetDestinationType() string {
+	return destinationcreator.OAuth2ClientCredentialsType
+}
+
+// Validate validates that the SAML assertion certificate request body contains the required fields, and they are valid
 func (c *CertificateRequestBody) Validate() error {
 	return validation.ValidateStruct(c,
 		validation.Field(&c.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),

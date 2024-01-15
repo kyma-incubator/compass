@@ -22,12 +22,12 @@ type converter struct {
 	vc VersionConverter
 }
 
-// NewConverter missing godoc
+// NewConverter returns new converter instance
 func NewConverter(vc VersionConverter) *converter {
 	return &converter{vc: vc}
 }
 
-// ToEntity missing godoc
+// ToEntity converts to Entity
 func (c *converter) ToEntity(entityModel *model.EntityType) *Entity {
 	if entityModel == nil {
 		return nil
@@ -50,7 +50,7 @@ func (c *converter) ToEntity(entityModel *model.EntityType) *Entity {
 		ApplicationID:                repo.NewNullableString(entityModel.ApplicationID),
 		ApplicationTemplateVersionID: repo.NewNullableString(entityModel.ApplicationTemplateVersionID),
 		OrdID:                        entityModel.OrdID,
-		LocalID:                      entityModel.LocalID,
+		LocalTenantID:                entityModel.LocalTenantID,
 		CorrelationIDs:               repo.NewNullableStringFromJSONRawMessage(entityModel.CorrelationIDs),
 		Level:                        entityModel.Level,
 		Title:                        entityModel.Title,
@@ -67,6 +67,7 @@ func (c *converter) ToEntity(entityModel *model.EntityType) *Entity {
 		CustomPolicyLevel:            repo.NewNullableString(entityModel.CustomPolicyLevel),
 		ReleaseStatus:                entityModel.ReleaseStatus,
 		SunsetDate:                   repo.NewNullableString(entityModel.SunsetDate),
+		DeprecationDate:              repo.NewNullableString(entityModel.DeprecationDate),
 		Successors:                   repo.NewNullableStringFromJSONRawMessage(entityModel.Successors),
 		Extensible:                   repo.NewNullableStringFromJSONRawMessage(entityModel.Extensible),
 		Tags:                         repo.NewNullableStringFromJSONRawMessage(entityModel.Tags),
@@ -87,7 +88,7 @@ func (c *converter) convertVersionToEntity(inVer *model.Version) version.Version
 	return c.vc.ToEntity(*inVer)
 }
 
-// FromEntity missing godoc
+// FromEntity converts from model.Entity*
 func (c *converter) FromEntity(entity *Entity) *model.EntityType {
 	if entity == nil {
 		return nil
@@ -105,7 +106,7 @@ func (c *converter) FromEntity(entity *Entity) *model.EntityType {
 		ApplicationID:                repo.StringPtrFromNullableString(entity.ApplicationID),
 		ApplicationTemplateVersionID: repo.StringPtrFromNullableString(entity.ApplicationTemplateVersionID),
 		OrdID:                        entity.OrdID,
-		LocalID:                      entity.LocalID,
+		LocalTenantID:                entity.LocalTenantID,
 		CorrelationIDs:               repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
 		Level:                        entity.Level,
 		Title:                        entity.Title,
@@ -122,6 +123,7 @@ func (c *converter) FromEntity(entity *Entity) *model.EntityType {
 		CustomPolicyLevel:            repo.StringPtrFromNullableString(entity.CustomPolicyLevel),
 		ReleaseStatus:                entity.ReleaseStatus,
 		SunsetDate:                   repo.StringPtrFromNullableString(entity.SunsetDate),
+		DeprecationDate:              repo.StringPtrFromNullableString(entity.DeprecationDate),
 		Successors:                   repo.JSONRawMessageFromNullableString(entity.Successors),
 		Extensible:                   repo.JSONRawMessageFromNullableString(entity.Extensible),
 		Tags:                         repo.JSONRawMessageFromNullableString(entity.Tags),

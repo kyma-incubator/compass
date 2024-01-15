@@ -597,7 +597,7 @@ func TestFormation(t *testing.T) {
 				service := &automock.Service{}
 				service.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(formationModel, nil).Once()
 				return service
-			}, ConverterFn:    unusedConverter,
+			}, ConverterFn: unusedConverter,
 			InputID:           FormationID,
 			ExpectedFormation: nil,
 			ExpectedError:     testErr,
@@ -711,7 +711,7 @@ func TestFormationByName(t *testing.T) {
 				service := &automock.Service{}
 				service.On("GetFormationByName", txtest.CtxWithDBMatcher(), testFormationName, tnt).Return(formationModel, nil).Once()
 				return service
-			}, ConverterFn:    unusedConverter,
+			}, ConverterFn: unusedConverter,
 			InputName:         testFormationName,
 			ExpectedFormation: nil,
 			ExpectedError:     testErr,

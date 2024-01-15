@@ -31,6 +31,7 @@ type EventDefinition struct {
 	CustomPolicyLevel                       *string
 	ChangeLogEntries                        json.RawMessage
 	Links                                   json.RawMessage
+	EventResourceLinks                      json.RawMessage
 	Tags                                    json.RawMessage
 	Countries                               json.RawMessage
 	ReleaseStatus                           *string
@@ -51,6 +52,8 @@ type EventDefinition struct {
 	DocumentationLabels                     json.RawMessage
 	CorrelationIDs                          json.RawMessage
 	LastUpdate                              *string
+	DeprecationDate                         *string
+	Responsible                             *string
 	*BaseEntity
 }
 
@@ -76,13 +79,14 @@ type EventDefinitionInput struct {
 	Description                             *string                       `json:"description"`
 	Group                                   *string                       `json:",omitempty"`
 	OrdID                                   *string                       `json:"ordId"`
-	LocalTenantID                           *string                       `json:"localTenantId"`
+	LocalTenantID                           *string                       `json:"localId"`
 	ShortDescription                        *string                       `json:"shortDescription"`
 	SystemInstanceAware                     *bool                         `json:"systemInstanceAware"`
 	PolicyLevel                             *string                       `json:"policyLevel"`
 	CustomPolicyLevel                       *string                       `json:"customPolicyLevel"`
 	ChangeLogEntries                        json.RawMessage               `json:"changelogEntries"`
 	Links                                   json.RawMessage               `json:"links"`
+	EventResourceLinks                      json.RawMessage               `json:"eventResourceLinks"`
 	Tags                                    json.RawMessage               `json:"tags"`
 	Countries                               json.RawMessage               `json:"countries"`
 	ReleaseStatus                           *string                       `json:"releaseStatus"`
@@ -101,11 +105,13 @@ type EventDefinitionInput struct {
 	ResourceDefinitions                     []*EventResourceDefinition    `json:"resourceDefinitions"`
 	PartOfConsumptionBundles                []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 	DefaultConsumptionBundle                *string                       `json:"defaultConsumptionBundle"`
+	EntityTypeMappings                      []*EntityTypeMappingInput     `json:"entityTypeMappings"`
 	DocumentationLabels                     json.RawMessage               `json:"documentationLabels"`
 	CorrelationIDs                          json.RawMessage               `json:"correlationIds,omitempty"`
 	LastUpdate                              *string                       `json:"lastUpdate"`
-
-	*VersionInput `hash:"ignore"`
+	DeprecationDate                         *string                       `json:"deprecationDate"`
+	Responsible                             *string                       `json:"responsible"`
+	*VersionInput                           `hash:"ignore"`
 }
 
 // EventResourceDefinition missing godoc
@@ -125,7 +131,7 @@ func (rd *EventResourceDefinition) Validate() error {
 		validation.Field(&rd.CustomType, validation.When(rd.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex)))),
 		validation.Field(&rd.MediaType, validation.Required, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML, SpecFormatApplicationXML, SpecFormatPlainText, SpecFormatOctetStream)),
 		validation.Field(&rd.URL, validation.Required, is.RequestURI),
-		validation.Field(&rd.AccessStrategy, validation.Required),
+		validation.Field(&rd.AccessStrategy),
 	)
 }
 
@@ -176,6 +182,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id string, resourceType resourc
 		Tags:                                    e.Tags,
 		Countries:                               e.Countries,
 		Links:                                   e.Links,
+		EventResourceLinks:                      e.EventResourceLinks,
 		ReleaseStatus:                           e.ReleaseStatus,
 		SunsetDate:                              e.SunsetDate,
 		Successors:                              e.Successors,
@@ -194,6 +201,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id string, resourceType resourc
 		DocumentationLabels:                     e.DocumentationLabels,
 		CorrelationIDs:                          e.CorrelationIDs,
 		LastUpdate:                              e.LastUpdate,
+		DeprecationDate:                         e.DeprecationDate,
 		ResourceHash:                            hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,

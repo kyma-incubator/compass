@@ -120,7 +120,6 @@ const ordDocument = `{
    "entityTypes":[
       {
          "ordId":"ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1",
-         "vendor":"sap:vendor:SAP:",
          "localId":"BusinessPartner",
          "level":"aggregate",
          "title":"ENTITYTYPE 1 TITLE",
@@ -427,6 +426,27 @@ const ordDocument = `{
                "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
             }
          ],
+         "entityTypeMappings":[
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "odata",
+                     "entitySetName": "A_OperationalAcctgDocItemCube"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:WorkforcePerson:v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:sap.odm.JobDetails_v1"
+                  }
+               ]
+            }
+         ],
          "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
          "version":"2.1.2"
 		 {{ .additionalProperties }}
@@ -472,6 +492,7 @@ const ordDocument = `{
          ],
          "releaseStatus":"deprecated",
          "sunsetDate":"2020-12-08T15:47:04+0000",
+         "deprecationDate": "2020-12-08T15:47:04+00:00",
          "successors":[
             "ns:apiResource:API_ID:v2"
          ],
@@ -586,6 +607,46 @@ const ordDocument = `{
             {
                "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
                "defaultEntryPoint":"https://exmaple.com/test/v1"
+            }
+         ],
+         "entityTypeMappings":[
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "odata",
+                     "entitySetName": "A_OperationalAcctgDocItemCube"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:WorkforcePerson:v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:sap.odm.JobDetails_v1"
+                  }
+               ]
+            },
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "odata",
+                     "entitySetName": "B_OperationalAcctgDocItemCube"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:WorkforcePerson:v2"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v2"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:sap.odm.JobDetails_v2"
+                  }
+               ]
             }
          ],
          "resourceDefinitions":[
@@ -764,6 +825,24 @@ const ordDocument = `{
                ]
             }
          ],
+         "entityTypeMappings":[
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "json-pointer",
+                     "jsonPointer": "#/components/messages/sap_odm_finance_costobject_CostCenter_Created_v1/payload"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:CostCenter:v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:CostCenter_v1"
+                  }
+               ]
+            }
+         ],         
          "partOfConsumptionBundles":[
             {
                "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1"
@@ -812,6 +891,7 @@ const ordDocument = `{
          ],
          "releaseStatus":"deprecated",
          "sunsetDate":"2020-12-08T15:47:04+0000",
+         "deprecationDate": "2020-12-08T15:47:04+00:00",
          "successors":[
             "ns2:eventResource:EVENT_ID:v1"
          ],
@@ -890,6 +970,41 @@ const ordDocument = `{
                "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1"
             }
          ],
+         "entityTypeMappings":[
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "json-pointer",
+                     "jsonPointer": "#/components/messages/sap_odm_finance_costobject_CostCenter_Created_v1/payload"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:CostCenter:v2"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:CostCenter_v2"
+                  }
+               ]
+            },
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "json-pointer",
+                     "jsonPointer": "#/components/messages/sap_odm_finance_costobject_CostCenter_Created_v2/payload"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:CostCenter:v2"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:CostCenter_v2"
+                  }
+               ]
+            }
+
+         ],         
          "resourceDefinitions":[
             {
                "type":"asyncapi-v2",
@@ -969,6 +1084,374 @@ const ordDocument = `{
           ]
         }
       ]
+    }
+  ],
+	"integrationDependencies": [
+    {
+      "ordId": "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2",
+      "version": "2.2.3",
+      "title": "INTEGRATION DEPENDENCY TITLE",
+      "shortDescription": "Short description of an integration dependency",
+      "description": "longer description of an integration dependency",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "correlationIds": [
+		 "sap.s4:communicationScenario:SAP_COM_123"
+      ],
+      "lastUpdate": "2023-08-03T10:14:26.941Z",
+      "visibility": "public",
+      "releaseStatus": "active",
+	  "mandatory": true,
+      "aspects": [
+        {
+          "title": "ASPECT TITLE",
+		  "description": "Aspect desc",
+          "mandatory": true,
+          "eventResources": [
+            {
+              "ordId": "ns1:eventResource:ASPECT_EVENT_RESOURCE_ID{{ .randomSuffix }}:v1",
+              "subset": [
+                {
+                  "eventType": "sap.billing.sb.Subscription.Created.v1"
+                },
+                {
+                  "eventType": "sap.billing.sb.Subscription.Updated.v1"
+                },
+                {
+                  "eventType": "sap.billing.sb.Subscription.Deleted.v1"
+                }
+              ]
+            }
+          ],
+		  "apiResources": [
+            {
+              "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2",
+              "minVersion": "2.3.0"
+            }
+          ]
+        }
+      ]
+    },
+	{
+      "ordId": "ns2:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2",
+      "version": "2.2.3",
+      "title": "INTEGRATION DEPENDENCY TITLE PRIVATE",
+      "shortDescription": "Short description of a private integration dependency",
+      "description": "longer description of a private integration dependency",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "correlationIds": [
+		 "sap.s4:communicationScenario:SAP_COM_123"
+      ],
+      "lastUpdate": "2023-08-03T10:14:26.941Z",
+      "visibility": "private",
+      "releaseStatus": "active",
+	  "mandatory": true,
+      "aspects": [
+        {
+          "title": "ASPECT TITLE PRIVATE",
+		  "description": "Aspect private desc",
+          "mandatory": true,
+          "eventResources": [
+            {
+              "ordId": "ns2:eventResource:ASPECT_EVENT_RESOURCE_ID{{ .randomSuffix }}:v1",
+              "subset": [
+                {
+                  "eventType": "sap.billing.sb.Subscription.Created.v1"
+                },
+                {
+                  "eventType": "sap.billing.sb.Subscription.Updated.v1"
+                },
+                {
+                  "eventType": "sap.billing.sb.Subscription.Deleted.v1"
+                }
+              ]
+            }
+          ],
+		  "apiResources": [
+            {
+              "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2",
+              "minVersion": "2.3.0"
+            }
+          ]
+        }
+      ]
+    },
+	{
+      "ordId": "ns3:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2",
+      "version": "2.2.3",
+      "title": "INTEGRATION DEPENDENCY TITLE INTERNAL",
+      "shortDescription": "Short description of an internal integration dependency",
+      "description": "longer description of an internal integration dependency",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "correlationIds": [
+		 "sap.s4:communicationScenario:SAP_COM_123"
+      ],
+      "lastUpdate": "2023-08-03T10:14:26.941Z",
+      "visibility": "internal",
+      "releaseStatus": "active",
+	  "mandatory": true,
+      "aspects": [
+        {
+          "title": "ASPECT TITLE INTERNAL",
+		  "description": "Aspect internal desc",
+          "mandatory": true,
+          "eventResources": [
+            {
+              "ordId": "ns3:eventResource:ASPECT_EVENT_RESOURCE_ID{{ .randomSuffix }}:v1",
+              "subset": [
+                {
+                  "eventType": "sap.billing.sb.Subscription.Created.v1"
+                },
+                {
+                  "eventType": "sap.billing.sb.Subscription.Updated.v1"
+                },
+                {
+                  "eventType": "sap.billing.sb.Subscription.Deleted.v1"
+                }
+              ]
+            }
+          ],
+		  "apiResources": [
+            {
+              "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2",
+              "minVersion": "2.3.0"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+   "dataProducts": [
+      {
+      "ordId": "ns:dataProduct:DATA_PRODUCT_ID{{ .randomSuffix }}:v1",
+      "localId": "Customer",
+      "correlationIds": [
+        "sap.xref:foo:bar"
+      ],
+      "title": "DATA PRODUCT TITLE",
+      "shortDescription": "Short description of Data Product",
+      "description": "Long description for a public Data Product resource",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "visibility": "public",
+      "releaseStatus": "deprecated",
+      "disabled": false,
+      "version": "1.9.2",
+      "lastUpdate": "2020-12-08T15:47:04+00:00",
+      "deprecationDate": "2020-12-08T15:47:04+00:00",
+      "sunsetDate": "2022-01-08T15:47:04+00:00",
+      "successors": [
+        "sap.xref:dataProduct:Customer:v2"
+      ],
+      "type": "base",
+      "category": "business-object",
+      "entityTypes": ["ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1"],
+      "inputPorts": [
+        {
+          "ordId": "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2"
+        }
+      ],
+      "outputPorts": [
+        {
+          "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2"
+        }
+      ],
+      "responsible": "sap:ach:CIC-DP-CO",
+      "dataProductLinks": [
+		{
+  			"type": "support",
+  			"url": "https://support.sap.com/CIC_DP_RT/issue/"
+		}
+	  ],
+      "links": [
+		{
+		   "description":"loremipsumdolornem",
+		   "title":"LinkTitle1",
+		   "url":"https://example.com/2018/04/11/testing/"
+		},
+		{
+		   "description":"loremipsumdolornem",
+		   "title":"LinkTitle2",
+		   "url":"/testing/relative"
+		}
+      ],
+      "industry": [
+		"Automotive",
+		"Banking",
+		"Chemicals"
+	  ],
+      "lineOfBusiness": [
+		"Finance",
+		"Sales"
+	  ],
+      "tags": [
+		"testTag"
+	  ],
+      "labels": {
+		"label-key-1": [
+		   "label-val"
+		],
+		"pkg-label": [
+		   "label-val"
+		]
+	 },
+	 "documentationLabels": {
+		"Documentation label key": [
+		   "Markdown Documentation with links",
+		   "With multiple values"
+		]
+	 },
+     "policyLevel": "sap:core:v1",
+     "systemInstanceAware": true
+    },
+    {
+      "ordId": "ns:dataProduct:DATA_PRODUCT_ID_2{{ .randomSuffix }}:v2",
+      "localId": "Customer",
+      "correlationIds": [
+        "sap.xref:foo:bar"
+      ],
+      "title": "DATA PRODUCT TITLE PRIVATE",
+      "shortDescription": "Short description of Data Product",
+      "description": "Long description for a private Data Product resource",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "visibility": "private",
+      "releaseStatus": "active",
+      "disabled": false,
+      "version": "2.1.0",
+      "lastUpdate": "2022-12-19T15:47:04+00:00",
+      "type": "base",
+      "category": "business-object",
+      "entityTypes": ["ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1"],
+      "inputPorts": [
+        {
+          "ordId": "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2"
+        }
+      ],
+      "outputPorts": [
+        {
+          "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2"
+        }
+      ],
+      "responsible": "sap:ach:CIC-DP-CO",
+      "dataProductLinks": [
+		{
+  			"type": "support",
+  			"url": "https://support.sap.com/CIC_DP_RT/issue/"
+		}
+	  ],
+      "links": [
+		{
+		   "description": "loremipsumdolornem",
+		   "title": "LinkTitle1",
+		   "url": "https://example.com/2018/04/11/testing/"
+		},
+		{
+		   "description": "loremipsumdolornem",
+		   "title": "LinkTitle2",
+		   "url": "/testing/relative"
+		}
+      ],
+      "industry": [
+		"Automotive",
+		"Banking",
+		"Chemicals"
+	  ],
+      "lineOfBusiness": [
+		"Finance",
+		"Sales"
+	  ],
+      "tags": [
+		"testTag"
+	  ],
+      "labels": {
+		"label-key-1": [
+		   "label-val"
+		],
+		"pkg-label": [
+		   "label-val"
+		]
+	 },
+	 "documentationLabels": {
+		"Documentation label key": [
+		   "Markdown Documentation with links",
+		   "With multiple values"
+		]
+	 },
+     "policyLevel": "sap:core:v1",
+     "systemInstanceAware": true
+    },
+    {
+      "ordId": "ns:dataProduct:DATA_PRODUCT_ID_3{{ .randomSuffix }}:v3",
+      "localId": "Customer",
+      "correlationIds": [
+        "sap.xref:foo:bar"
+      ],
+      "title": "DATA PRODUCT TITLE INTERNAL",
+      "shortDescription": "Short description of Data Product",
+      "description": "Long description for an internal Data Product resource",
+      "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "visibility": "internal",
+      "releaseStatus": "active",
+      "version": "2.1.0",
+      "lastUpdate": "2022-12-19T15:47:04+00:00",
+      "type": "base",
+      "category": "business-object",
+      "entityTypes": ["ns:entityType:ENTITYTYPE_ID{{ .randomSuffix }}:v1"],
+      "inputPorts": [
+        {
+          "ordId": "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID{{ .randomSuffix }}:v2"
+        }
+      ],
+      "outputPorts": [
+        {
+          "ordId": "ns:apiResource:API_ID{{ .randomSuffix }}:v2"
+        }
+      ],
+      "responsible": "sap:ach:CIC-DP-CO",
+      "dataProductLinks": [
+		{
+  			"type": "support",
+  			"url": "https://support.sap.com/CIC_DP_RT/issue/"
+		}
+	  ],
+      "links": [
+		{
+		   "description": "loremipsumdolornem",
+		   "title": "LinkTitle1",
+		   "url": "https://example.com/2018/04/11/testing/"
+		},
+		{
+		   "description": "loremipsumdolornem",
+		   "title": "LinkTitle2",
+		   "url": "/testing/relative"
+		}
+      ],
+      "industry": [
+		"Automotive",
+		"Banking",
+		"Chemicals"
+	  ],
+      "lineOfBusiness": [
+		"Finance",
+		"Sales"
+	  ],
+      "tags": [
+		"testTag"
+	  ],
+      "labels": {
+		"label-key-1": [
+		   "label-val"
+		],
+		"pkg-label": [
+		   "label-val"
+		]
+	 },
+	 "documentationLabels": {
+		"Documentation label key": [
+		   "Markdown Documentation with links",
+		   "With multiple values"
+		]
+	 },
+     "policyLevel": "sap:core:v1",
+     "systemInstanceAware": true
     }
   ],
    "tombstones":[

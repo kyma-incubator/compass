@@ -12,6 +12,10 @@ type CredentialData interface {
 	IsCredentialData()
 }
 
+type FormationParticipant interface {
+	IsFormationParticipant()
+}
+
 type OneTimeToken interface {
 	IsOneTimeToken()
 }
@@ -190,6 +194,27 @@ type ApplicationUpdateInput struct {
 	LocalTenantID        *string                     `json:"localTenantID"`
 }
 
+type AspectAPIDefinitionInput struct {
+	OrdID string `json:"ordId"`
+}
+
+type AspectEventDefinitionInput struct {
+	OrdID  string                              `json:"ordId"`
+	Subset []*AspectEventDefinitionSubsetInput `json:"subset"`
+}
+
+type AspectEventDefinitionSubsetInput struct {
+	EventType *string `json:"eventType"`
+}
+
+type AspectInput struct {
+	Name           string                        `json:"name"`
+	Description    *string                       `json:"description"`
+	Mandatory      *bool                         `json:"mandatory"`
+	APIResources   []*AspectAPIDefinitionInput   `json:"apiResources"`
+	EventResources []*AspectEventDefinitionInput `json:"eventResources"`
+}
+
 type Auth struct {
 	Credential                      CredentialData         `json:"credential"`
 	AccessStrategy                  *string                `json:"accessStrategy"`
@@ -353,6 +378,7 @@ type BusinessTenantMappingInput struct {
 	Type           string  `json:"type"`
 	Provider       string  `json:"provider"`
 	LicenseType    *string `json:"licenseType"`
+	CustomerID     *string `json:"customerId"`
 }
 
 type CSRFTokenCredentialRequestAuth struct {
@@ -513,18 +539,6 @@ type FetchRequestStatus struct {
 	Timestamp Timestamp                   `json:"timestamp"`
 }
 
-type FormationAssignment struct {
-	ID            string                  `json:"id"`
-	Source        string                  `json:"source"`
-	SourceType    FormationAssignmentType `json:"sourceType"`
-	Target        string                  `json:"target"`
-	TargetType    FormationAssignmentType `json:"targetType"`
-	State         string                  `json:"state"`
-	Value         *string                 `json:"value"`
-	Configuration *string                 `json:"configuration"`
-	Error         *string                 `json:"error"`
-}
-
 type FormationAssignmentPage struct {
 	Data       []*FormationAssignment `json:"data"`
 	PageInfo   *PageInfo              `json:"pageInfo"`
@@ -608,6 +622,7 @@ type FormationTemplateInput struct {
 	Webhooks               []*WebhookInput `json:"webhooks"`
 	LeadingProductIDs      []string        `json:"leadingProductIDs"`
 	SupportsReset          *bool           `json:"supportsReset"`
+	DiscoveryConsumers     []string        `json:"discoveryConsumers"`
 }
 
 type FormationTemplatePage struct {
@@ -643,6 +658,26 @@ type IntSysSystemAuth struct {
 }
 
 func (IntSysSystemAuth) IsSystemAuth() {}
+
+type IntegrationDependencyInput struct {
+	Name          string         `json:"name"`
+	Description   *string        `json:"description"`
+	OrdID         string         `json:"ordID"`
+	PartOfPackage *string        `json:"partOfPackage"`
+	Visibility    *string        `json:"visibility"`
+	ReleaseStatus *string        `json:"releaseStatus"`
+	Mandatory     *bool          `json:"mandatory"`
+	Aspects       []*AspectInput `json:"aspects"`
+	Version       *VersionInput  `json:"version"`
+}
+
+type IntegrationDependencyPage struct {
+	Data       []*IntegrationDependency `json:"data"`
+	PageInfo   *PageInfo                `json:"pageInfo"`
+	TotalCount int                      `json:"totalCount"`
+}
+
+func (IntegrationDependencyPage) IsPageable() {}
 
 type IntegrationSystemInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .

@@ -2,12 +2,16 @@ package formationconstraint
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 )
 
@@ -16,6 +20,8 @@ const (
 	IsNotAssignedToAnyFormationOfType string = "IsNotAssignedToAnyFormationOfType"
 	// DoesNotContainResourceOfSubtype contains the name of the DoesNotContainResourceOfSubtype operator
 	DoesNotContainResourceOfSubtype = "DoesNotContainResourceOfSubtype"
+	// ContainsScenarioGroups contains the name of the ContainsScenarioGroups operator
+	ContainsScenarioGroups = "ContainsScenarioGroups"
 	// DoNotGenerateFormationAssignmentNotificationOperator represents the DoNotGenerateFormationAssignmentNotification operator
 	DoNotGenerateFormationAssignmentNotificationOperator = "DoNotGenerateFormationAssignmentNotification"
 	// DoNotGenerateFormationAssignmentNotificationForLoopsOperator represents the DoNotGenerateFormationAssignmentNotificationForLoops operator
@@ -26,6 +32,8 @@ const (
 	ConfigMutatorOperator = "ConfigMutator"
 	// RedirectNotificationOperator contains the name of the RedirectNotificationOperator
 	RedirectNotificationOperator = "RedirectNotification"
+	// AsynchronousFlowControlOperator represents the asynchronous flow control operator
+	AsynchronousFlowControlOperator = "AsynchronousFlowControl"
 )
 
 // OperatorInput represent the input needed by the operators
@@ -35,11 +43,13 @@ type OperatorInput interface{}
 var FormationConstraintInputByOperator = map[string]OperatorInput{
 	IsNotAssignedToAnyFormationOfType:                            &IsNotAssignedToAnyFormationOfTypeInput{},
 	DoesNotContainResourceOfSubtype:                              &DoesNotContainResourceOfSubtypeInput{},
+	ContainsScenarioGroups:                                       &ContainsScenarioGroupsInput{},
 	DoNotGenerateFormationAssignmentNotificationOperator:         &DoNotGenerateFormationAssignmentNotificationInput{},
 	DoNotGenerateFormationAssignmentNotificationForLoopsOperator: &DoNotGenerateFormationAssignmentNotificationInput{},
 	DestinationCreator:                                           &DestinationCreatorInput{},
 	ConfigMutatorOperator:                                        &ConfigMutatorInput{},
 	RedirectNotificationOperator:                                 &RedirectNotificationInput{},
+	AsynchronousFlowControlOperator:                              &AsynchronousFlowControlOperatorInput{},
 }
 
 // JoinPointDetailsByLocation represents a mapping between JoinPointLocation and JoinPointDetails
@@ -77,7 +87,7 @@ func NewFormationConstraintInputWrapper(input *graphql.FormationConstraintInput)
 func (i FormationConstraintInputWrapper) Validate() error {
 	if i.ConstraintType != graphql.ConstraintTypeUI {
 		input := FormationConstraintInputByOperator[i.Operator]
-		if err := ParseInputTemplate(i.InputTemplate, JoinPointDetailsByLocation[JoinPointLocation{ConstraintType: model.FormationConstraintType(i.ConstraintType), OperationName: model.TargetOperation(i.TargetOperation)}], input); err != nil {
+		if err := templatehelper.ParseTemplate(&i.InputTemplate, JoinPointDetailsByLocation[JoinPointLocation{ConstraintType: model.FormationConstraintType(i.ConstraintType), OperationName: model.TargetOperation(i.TargetOperation)}], input); err != nil {
 			return apperrors.NewInvalidDataError("failed to parse input template: %s", err)
 		}
 	}
@@ -178,28 +188,42 @@ func emptySendNotificationOperationDetails() *SendNotificationOperationDetails {
 		Webhook: &graphql.Webhook{
 			CreatedAt: &graphql.Timestamp{},
 		},
-		TemplateInput: nil,
-		FormationAssignment: &model.FormationAssignment{
-			Value: json.RawMessage("\"\""),
-			Error: json.RawMessage("\"\""),
+		TemplateInput: &webhook.ApplicationTenantMappingInput{
+			Operation: model.AssignFormation,
+			Formation: &model.Formation{},
+			SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixLabels(),
+			},
+			SourceApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(),
+				Labels:      fixLabels(),
+			},
+			TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixLabels(),
+			},
+			TargetApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(),
+				Labels:      fixLabels(),
+			},
+			CustomerTenantContext: &webhook.CustomerTenantContext{},
+			// The assignment and reverse assignment are present on top level in the joinPointDetails and should be used from there.
+			// Here they are intentionally set to nil so that if a template that uses them will fail to register.
+			Assignment:        nil,
+			ReverseAssignment: nil,
 		},
-		ReverseFormationAssignment: &model.FormationAssignment{
-			Value: json.RawMessage("\"\""),
-			Error: json.RawMessage("\"\""),
-		},
-		Formation: &model.Formation{
-			Error: json.RawMessage("\"\""),
-		},
+		FormationAssignment:        &model.FormationAssignment{},
+		ReverseFormationAssignment: &model.FormationAssignment{},
+		Formation:                  &model.Formation{},
 	}
 }
 
 func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturnedOperationDetails {
 	return &NotificationStatusReturnedOperationDetails{
-		Location: JoinPointLocation{},
-		FormationAssignment: &model.FormationAssignment{
-			Value: json.RawMessage("\"\""),
-			Error: json.RawMessage("\"\""),
-		},
+		Location:                 JoinPointLocation{},
+		FormationAssignment:      &model.FormationAssignment{},
+		NotificationStatusReport: &statusreport.NotificationStatusReport{},
 		FormationAssignmentTemplateInput: &webhook.ApplicationTenantMappingInput{
 			Operation: model.AssignFormation,
 			Formation: &model.Formation{},
@@ -219,19 +243,15 @@ func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturn
 				Application: fixApplicationModel(),
 				Labels:      fixLabels(),
 			},
+			CustomerTenantContext: &webhook.CustomerTenantContext{},
 			// The assignment and reverse assignment are present on top level in the joinPointDetails and should be used from there.
 			// Here they are intentionally set to nil so that if a template that uses them will fail to register.
 			Assignment:        nil,
 			ReverseAssignment: nil,
 		},
-		ReverseFormationAssignment: &model.FormationAssignment{
-			Value: json.RawMessage("\"\""),
-			Error: json.RawMessage("\"\""),
-		},
-		Formation: &model.Formation{
-			Error: json.RawMessage("\"\""),
-		},
-		FormationTemplate: &model.FormationTemplate{},
+		ReverseFormationAssignment: &model.FormationAssignment{},
+		Formation:                  &model.Formation{},
+		FormationTemplate:          &model.FormationTemplate{},
 	}
 }
 

@@ -95,30 +95,18 @@ func (_m *FormationService) ResynchronizeFormationNotifications(ctx context.Cont
 	return r0, r1
 }
 
-// UnassignFormation provides a mock function with given fields: ctx, tnt, objectID, objectType, formation
-func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
+// UnassignFromScenarioLabel provides a mock function with given fields: ctx, tnt, objectID, objectType, formation
+func (_m *FormationService) UnassignFromScenarioLabel(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) error {
 	ret := _m.Called(ctx, tnt, objectID, objectType, formation)
 
-	var r0 *model.Formation
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)); ok {
-		return rf(ctx, tnt, objectID, objectType, formation)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) *model.Formation); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, *model.Formation) error); ok {
 		r0 = rf(ctx, tnt, objectID, objectType, formation)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Formation)
-		}
+		r0 = ret.Error(0)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) error); ok {
-		r1 = rf(ctx, tnt, objectID, objectType, formation)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // NewFormationService creates a new instance of FormationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

@@ -3,8 +3,9 @@ package tenant
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
 	"github.com/pkg/errors"
 )

@@ -34,7 +34,8 @@ e2e-test-formation:
 	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh director-formation
 
 e2e-test-clean:
-	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
+	kubectl config use-context k3d-kyma
+	kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
 
 generate-examples:
 	@./generate_examples.sh
@@ -93,5 +94,6 @@ sandbox-deploy-bench-test:
 	rm ./director.bench
 
 sandbox-test-clean:
+	kubectl config use-context k3d-kyma
 	@kubectl delete testdefinitions.testing.kyma-project.io -n kyma-system compass-e2e-director-local || true
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true

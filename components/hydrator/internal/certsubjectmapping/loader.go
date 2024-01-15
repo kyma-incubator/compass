@@ -41,8 +41,9 @@ type certSubjectMappingLoader struct {
 }
 
 var (
-	CertSubjectMappingLoaderCorrelationID = "cert-subject-mapping-loader-correlation-id"
-	CertSubjectMappingRetryInterval       = 50 * time.Millisecond
+	CertSubjectMappingLoaderCorrelationID        = "cert-subject-mapping-loader-correlation-id"
+	CertSubjectMappingInitialLoaderCorrelationID = "cert-subject-mapping-initial-loader-correlation-id"
+	CertSubjectMappingRetryInterval              = 50 * time.Millisecond
 )
 
 func NewCertSubjectMappingLoader(certSubjectMappingCache *certSubjectMappingCache, certSubjectMappingCfg Config, directorClient DirectorClient) Loader {
@@ -87,7 +88,7 @@ func StartCertSubjectMappingLoader(ctx context.Context, certSubjectMappingCfg Co
 
 func (cl *certSubjectMappingLoader) InitialiseCertSubjectMappings(ctx context.Context, certSubjectMappingsFromEnv string) error {
 	entry := log.C(ctx)
-	entry = entry.WithField(log.FieldRequestID, CertSubjectMappingLoaderCorrelationID)
+	entry = entry.WithField(log.FieldRequestID, CertSubjectMappingInitialLoaderCorrelationID)
 	ctx = log.ContextWithLogger(ctx, entry)
 
 	var mappings []SubjectConsumerTypeMapping
@@ -100,7 +101,7 @@ func (cl *certSubjectMappingLoader) InitialiseCertSubjectMappings(ctx context.Co
 		}
 		return nil
 	},
-		retry.Attempts(0), // we want to try until the call succeeds; if it keeps failing and failing, the pod will be stuck, and we leave the decision when to terminate it to kubernetes
+		retry.Attempts(0), // we want to try until the call succeeds; if it keeps failing and failing, the pod will be stuck, and we leave the decision when to terminate it to kubernetes.
 		retry.Delay(CertSubjectMappingRetryInterval),
 		retry.DelayType(retry.BackOffDelay),
 		retry.OnRetry(func(n uint, err error) {
@@ -160,8 +161,18 @@ func (cl *certSubjectMappingLoader) loadCertSubjectMappings(ctx context.Context,
 		if err != nil {
 			return mappings, errors.Wrap(err, "while listing certificate subject mappings from DB")
 		}
+
+		// The graphql response could be nil, and there could be NO graphql error in case something else failed.
+		// E.g., an error from the oathkeeper or other components
+		if csmGQLPage == nil {
+			return mappings, errors.Errorf("the certificate subject mappings page cannot be nil")
+		}
 		csmTotalCount = csmGQLPage.TotalCount
 		mappings = append(mappings, convertGQLCertSubjectMappings(csmGQLPage.Data)...)
+
+		if csmGQLPage.PageInfo == nil {
+			return mappings, errors.Errorf("the certificate subject mappings page info cannot be nil")
+		}
 		hasNextPage = csmGQLPage.PageInfo.HasNextPage
 		after = string(csmGQLPage.PageInfo.EndCursor)
 	}

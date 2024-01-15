@@ -8,6 +8,9 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
+
+	"github.com/avast/retry-go/v4"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -30,6 +33,8 @@ import (
 // ClientConfig contains configuration for the ORD aggregator client
 type ClientConfig struct {
 	maxParallelDocumentsPerApplication int
+	retryDelay                         time.Duration
+	retryAttempts                      uint
 }
 
 // Resource represents a resource that is being aggregated. This would be an Application or Application Template
@@ -42,9 +47,11 @@ type Resource struct {
 }
 
 // NewClientConfig creates new ClientConfig from the supplied parameters
-func NewClientConfig(maxParallelDocumentsPerApplication int) ClientConfig {
+func NewClientConfig(maxParallelDocumentsPerApplication int, retryDelay time.Duration, retryAttempts uint) ClientConfig {
 	return ClientConfig{
 		maxParallelDocumentsPerApplication: maxParallelDocumentsPerApplication,
+		retryDelay:                         retryDelay,
+		retryAttempts:                      retryAttempts,
 	}
 }
 
@@ -84,9 +91,23 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 		tenantValue = tntFromCtx.ExternalID
 	}
 
-	log.C(ctx).Infof("Fetching ORD well-known config")
-	config, err := c.fetchConfig(ctx, resource, webhook, tenantValue, requestObject)
+	log.C(ctx).Infof("Fetching ORD well-known config with retry")
+	var config *WellKnownConfig
+	err := retry.Do(
+		func() error {
+			var err error
+			config, err = c.fetchConfig(ctx, resource, webhook, tenantValue, requestObject)
+			return err
+		},
+		retry.Attempts(c.config.retryAttempts),
+		retry.Delay(c.config.retryDelay),
+		retry.OnRetry(func(n uint, err error) {
+			log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
+		}),
+	)
+
 	if err != nil {
+		log.C(ctx).Error(errors.Wrap(err, "error fetching ORD well-known config").Error())
 		return nil, "", err
 	}
 
@@ -118,7 +139,7 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 
 			documentURL, err := buildDocumentURL(docDetails.URL, webhookBaseURL, str.PtrStrToStr(webhook.ProxyURL), ordWebhookMapping)
 			if err != nil {
-				log.C(ctx).Warn(errors.Wrap(err, "error building document URL").Error())
+				log.C(ctx).Error(errors.Wrap(err, "error building document URL").Error())
 				addError(&fetchDocErrors, err, &errMutex)
 				return
 			}
@@ -127,9 +148,21 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 				log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
 			}
 
-			doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, requestObject)
+			var doc *Document
+			err = retry.Do(
+				func() error {
+					var innerErr error
+					doc, innerErr = c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, requestObject)
+					return innerErr
+				},
+				retry.Attempts(c.config.retryAttempts),
+				retry.Delay(c.config.retryDelay),
+				retry.OnRetry(func(n uint, err error) {
+					log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
+				}),
+			)
 			if err != nil {
-				log.C(ctx).Warn(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
+				log.C(ctx).Error(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
 				addError(&fetchDocErrors, err, &errMutex)
 				return
 			}

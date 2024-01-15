@@ -9,12 +9,12 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
-// Entity is a representation of a API in the database.
+// Entity is a representation of a EntityType in the database.
 type Entity struct {
 	ApplicationID                sql.NullString `db:"app_id"`
 	ApplicationTemplateVersionID sql.NullString `db:"app_template_version_id"`
 	OrdID                        string         `db:"ord_id"`
-	LocalID                      string         `db:"local_id"`
+	LocalTenantID                string         `db:"local_tenant_id"`
 	CorrelationIDs               sql.NullString `db:"correlation_ids"`
 	Level                        string         `db:"level"`
 	Title                        string         `db:"title"`
@@ -31,6 +31,7 @@ type Entity struct {
 	CustomPolicyLevel            sql.NullString `db:"custom_policy_level"`
 	ReleaseStatus                string         `db:"release_status"`
 	SunsetDate                   sql.NullString `db:"sunset_date"`
+	DeprecationDate              sql.NullString `db:"deprecation_date"`
 	Successors                   sql.NullString `db:"successors"`
 	Extensible                   sql.NullString `db:"extensible"`
 	Tags                         sql.NullString `db:"tags"`

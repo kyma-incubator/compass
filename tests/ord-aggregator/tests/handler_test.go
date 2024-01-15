@@ -44,87 +44,125 @@ const (
 	tenantHeader            = "Tenant"
 	internalVisibilityScope = "internal_visibility:read"
 
-	descriptionField      = "description"
-	shortDescriptionField = "shortDescription"
-	apisField             = "apis"
-	eventsField           = "events"
-	capabilitiesField     = "capabilities"
-	publicAPIsField       = "publicAPIs"
-	publicEventsField     = "publicEvents"
+	descriptionField                   = "description"
+	shortDescriptionField              = "shortDescription"
+	apisField                          = "apis"
+	eventsField                        = "events"
+	capabilitiesField                  = "capabilities"
+	integrationDependenciesField       = "integrationDependencies"
+	publicIntegrationDependenciesField = "publicIntegrationDependencies"
+	dataProductsField                  = "dataProducts"
+	publicDataProductsField            = "publicDataProducts"
+	publicAPIsField                    = "publicAPIs"
+	publicEventsField                  = "publicEvents"
 
-	expectedSpecType                         = "openapi-v3"
-	expectedCapabilitySpecType               = "sap.mdo:mdi-capability-definition:v1"
-	expectedSpecFormat                       = "application/json"
-	expectedSystemInstanceName               = "test-app"
-	expectedSecondSystemInstanceName         = "second-test-app"
-	expectedThirdSystemInstanceName          = "third-test-app"
-	expectedFourthSystemInstanceName         = "fourth-test-app"
-	expectedFifthSystemInstanceName          = "fifth-test-app"
-	expectedSixthSystemInstanceName          = "sixth-test-app"
-	expectedSeventhSystemInstanceName        = "seventh-test-app"
-	expectedSystemInstanceDescription        = "test-app1-description"
-	expectedSecondSystemInstanceDescription  = "test-app2-description"
-	expectedThirdSystemInstanceDescription   = "test-app3-description"
-	expectedFourthSystemInstanceDescription  = "test-app4-description"
-	expectedFifthSystemInstanceDescription   = "test-app5-description"
-	expectedSixthSystemInstanceDescription   = "test-app6-description"
-	expectedSeventhSystemInstanceDescription = "test-app7-description"
-	expectedBundleTitle                      = "BUNDLE TITLE"
-	secondExpectedBundleTitle                = "BUNDLE TITLE 2"
-	expectedBundleDescription                = "lorem ipsum dolor nsq sme"
-	secondExpectedBundleDescription          = ""
-	firstBundleOrdIDRegex                    = "ns:consumptionBundle:BUNDLE_ID(.+):v1"
-	expectedPackageTitle                     = "PACKAGE 1 TITLE"
-	expectedPackageDescription               = "lorem ipsum dolor set"
-	expectedEntityTypeTitle                  = "ENTITYTYPE 1 TITLE"
-	expectedEntityTypeDescription            = "lorem ipsum dolor set"
-	firstProductTitle                        = "PRODUCT TITLE"
-	firstProductShortDescription             = "lorem ipsum"
-	secondProductTitle                       = "SAP Business Technology Platform"
-	secondProductShortDescription            = "Accelerate business outcomes with integration, data to value, and extensibility."
-	firstAPIExpectedTitle                    = "API TITLE"
-	firstAPIExpectedDescription              = "lorem ipsum dolor sit amet"
-	firstAPIExpectedNumberOfSpecs            = 3
-	secondAPIExpectedTitle                   = "API TITLE INTERNAL"
-	secondAPIExpectedDescription             = "Test description internal"
-	secondAPIExpectedNumberOfSpecs           = 2
-	thirdAPIExpectedTitle                    = "API TITLE PRIVATE"
-	thirdAPIExpectedDescription              = "Test description private"
-	thirdAPIExpectedNumberOfSpecs            = 2
-	firstEventTitle                          = "EVENT TITLE"
-	firstEventDescription                    = "lorem ipsum dolor sit amet"
-	secondEventTitle                         = "EVENT TITLE 2"
-	secondEventDescription                   = "lorem ipsum dolor sit amet"
-	thirdEventTitle                          = "EVENT TITLE INTERNAL"
-	thirdEventDescription                    = "Test description internal"
-	fourthEventTitle                         = "EVENT TITLE PRIVATE"
-	fourthEventDescription                   = "Test description private"
-	expectedCapabilityTitle                  = "CAPABILITY TITLE"
-	expectedCapabilityDescription            = "Optional, longer description"
-	expectedCapabilityNumberOfSpecs          = 1
-	expectedTombstoneOrdIDRegex              = "ns:apiResource:API_ID2(.+):v1"
-	expectedVendorTitle                      = "SAP SE"
+	expectedSpecType                               = "openapi-v3"
+	expectedCapabilitySpecType                     = "sap.mdo:mdi-capability-definition:v1"
+	expectedSpecFormat                             = "application/json"
+	expectedSystemInstanceName                     = "test-app"
+	expectedSecondSystemInstanceName               = "second-test-app"
+	expectedThirdSystemInstanceName                = "third-test-app"
+	expectedFourthSystemInstanceName               = "fourth-test-app"
+	expectedFifthSystemInstanceName                = "fifth-test-app"
+	expectedSixthSystemInstanceName                = "sixth-test-app"
+	expectedSeventhSystemInstanceName              = "seventh-test-app"
+	expectedSystemInstanceDescription              = "test-app1-description"
+	expectedSecondSystemInstanceDescription        = "test-app2-description"
+	expectedThirdSystemInstanceDescription         = "test-app3-description"
+	expectedFourthSystemInstanceDescription        = "test-app4-description"
+	expectedFifthSystemInstanceDescription         = "test-app5-description"
+	expectedSixthSystemInstanceDescription         = "test-app6-description"
+	expectedSeventhSystemInstanceDescription       = "test-app7-description"
+	expectedBundleTitle                            = "BUNDLE TITLE"
+	secondExpectedBundleTitle                      = "BUNDLE TITLE 2"
+	expectedBundleDescription                      = "lorem ipsum dolor nsq sme"
+	secondExpectedBundleDescription                = ""
+	firstBundleOrdIDRegex                          = "ns:consumptionBundle:BUNDLE_ID(.+):v1"
+	expectedPackageTitle                           = "PACKAGE 1 TITLE"
+	expectedPackageDescription                     = "lorem ipsum dolor set"
+	expectedEntityTypeTitle                        = "ENTITYTYPE 1 TITLE"
+	expectedEntityTypeDescription                  = "lorem ipsum dolor set"
+	firstProductTitle                              = "PRODUCT TITLE"
+	firstProductShortDescription                   = "lorem ipsum"
+	secondProductTitle                             = "SAP Business Technology Platform"
+	secondProductShortDescription                  = "Accelerate business outcomes with integration, data to value, and extensibility."
+	firstAPIExpectedTitle                          = "API TITLE"
+	firstAPIExpectedDescription                    = "lorem ipsum dolor sit amet"
+	firstAPIExpectedNumberOfSpecs                  = 3
+	secondAPIExpectedTitle                         = "API TITLE INTERNAL"
+	secondAPIExpectedDescription                   = "Test description internal"
+	secondAPIExpectedNumberOfSpecs                 = 2
+	thirdAPIExpectedTitle                          = "API TITLE PRIVATE"
+	thirdAPIExpectedDescription                    = "Test description private"
+	thirdAPIExpectedNumberOfSpecs                  = 2
+	firstEventTitle                                = "EVENT TITLE"
+	firstEventDescription                          = "lorem ipsum dolor sit amet"
+	secondEventTitle                               = "EVENT TITLE 2"
+	secondEventDescription                         = "lorem ipsum dolor sit amet"
+	thirdEventTitle                                = "EVENT TITLE INTERNAL"
+	thirdEventDescription                          = "Test description internal"
+	fourthEventTitle                               = "EVENT TITLE PRIVATE"
+	fourthEventDescription                         = "Test description private"
+	expectedCapabilityTitle                        = "CAPABILITY TITLE"
+	expectedCapabilityDescription                  = "Optional, longer description"
+	expectedCapabilityNumberOfSpecs                = 1
+	firstIntegrationDependencyExpectedTitle        = "INTEGRATION DEPENDENCY TITLE"
+	firstIntegrationDependencyExpectedDescription  = "longer description of an integration dependency"
+	secondIntegrationDependencyExpectedTitle       = "INTEGRATION DEPENDENCY TITLE PRIVATE"
+	secondIntegrationDependencyExpectedDescription = "longer description of a private integration dependency"
+	thirdIntegrationDependencyExpectedTitle        = "INTEGRATION DEPENDENCY TITLE INTERNAL"
+	thirdIntegrationDependencyExpectedDescription  = "longer description of an internal integration dependency"
+	firstAspectExpectedTitle                       = "ASPECT TITLE"
+	firstAspectExpectedDescription                 = "Aspect desc"
+	secondAspectExpectedTitle                      = "ASPECT TITLE PRIVATE"
+	secondAspectExpectedDescription                = "Aspect private desc"
+	thirdAspectExpectedTitle                       = "ASPECT TITLE INTERNAL"
+	thirdAspectExpectedDescription                 = "Aspect internal desc"
+	firstDataProductExpectedTitle                  = "DATA PRODUCT TITLE"
+	firstDataProductExpectedDescription            = "Long description for a public Data Product resource"
+	secondDataProductExpectedTitle                 = "DATA PRODUCT TITLE PRIVATE"
+	secondDataProductExpectedDescription           = "Long description for a private Data Product resource"
+	thirdDataProductExpectedTitle                  = "DATA PRODUCT TITLE INTERNAL"
+	thirdDataProductExpectedDescription            = "Long description for an internal Data Product resource"
+	expectedTombstoneOrdIDRegex                    = "ns:apiResource:API_ID2(.+):v1"
+	expectedVendorTitle                            = "SAP SE"
 
-	expectedNumberOfSystemInstances               = 7
-	expectedNumberOfSystemInstancesInSubscription = 1
-	expectedNumberOfPackages                      = 7
-	expectedNumberOfPackagesInSubscription        = 1
-	expectedNumberOfEntityTypes                   = 7
-	expectedNumberOfEntityTypesInSubscription     = 1
-	expectedNumberOfBundles                       = 14
-	expectedNumberOfBundlesInSubscription         = 2
-	expectedNumberOfAPIs                          = 21
-	expectedNumberOfAPIsInSubscription            = 3
-	expectedNumberOfEvents                        = 28
-	expectedNumberOfEventsInSubscription          = 4
-	expectedNumberOfCapabilities                  = 7
-	expectedNumberOfCapabilitiesInSubscription    = 1
-	expectedNumberOfTombstones                    = 7
-	expectedNumberOfTombstonesInSubscription      = 1
+	expectedNumberOfSystemInstances                       = 7
+	expectedNumberOfSystemInstancesInSubscription         = 1
+	expectedNumberOfPackages                              = 7
+	expectedNumberOfPackagesInSubscription                = 1
+	expectedNumberOfEntityTypes                           = 7
+	expectedNumberOfEntityTypesInSubscription             = 1
+	expectedNumberOfBundles                               = 14
+	expectedNumberOfBundlesInSubscription                 = 2
+	expectedNumberOfAPIs                                  = 21
+	expectedNumberOfAPIsInSubscription                    = 3
+	expectedNumberOfEvents                                = 28
+	expectedNumberOfEventsInSubscription                  = 4
+	expectedNumberOfCapabilities                          = 7
+	expectedNumberOfCapabilitiesInSubscription            = 1
+	expectedNumberOfIntegrationDependencies               = 21
+	expectedNumberOfIntegrationDependenciesInSubscription = 3
+	expectedNumberOfAspects                               = 21
+	expectedNumberOfAspectsInSubscription                 = 3
+	expectedNumberOfAspectsApiResources                   = 21
+	expectedNumberOfAspectsApiResourcesInSubscription     = 3
+	expectedNumberOfAspectsEventResources                 = 21
+	expectedNumberOfAspectsEventResourcesInSubscription   = 3
+	expectedNumberOfDataProducts                          = 21
+	expectedNumberOfDataProductsInSubscription            = 3
+	expectedNumberOfTombstones                            = 7
+	expectedNumberOfTombstonesInSubscription              = 1
 
-	expectedNumberOfPublicAPIs         = 7
-	expectedNumberOfPublicEvents       = 14
-	expectedNumberOfPublicCapabilities = 7
+	expectedNumberOfPublicAPIs                             = 7
+	expectedNumberOfPublicEvents                           = 14
+	expectedNumberOfPublicCapabilities                     = 7
+	expectedNumberOfPublicIntegrationDependencies          = 7
+	expectedNumberOfPublicIntegrationDependenciesForOneApp = 1
+	expectedNumberOfIntegrationDependenciesForOneApp       = 3
+	expectedNumberOfPublicDataProducts                     = 7
+	expectedNumberOfDataProductsForOneApp                  = 3
+	expectedNumberOfPublicDataProductsForOneApp            = 1
 
 	expectedNumberOfAPIsInFirstBundle    = 2
 	expectedNumberOfAPIsInSecondBundle   = 2
@@ -236,6 +274,31 @@ func TestORDAggregator(stdT *testing.T) {
 
 		capabilitySpecsMap := make(map[string]int)
 		capabilitySpecsMap[expectedCapabilityTitle] = expectedCapabilityNumberOfSpecs
+
+		integrationDependenciesMap := make(map[string]string)
+		integrationDependenciesMap[firstIntegrationDependencyExpectedTitle] = firstIntegrationDependencyExpectedDescription
+		integrationDependenciesMap[secondIntegrationDependencyExpectedTitle] = secondIntegrationDependencyExpectedDescription
+		integrationDependenciesMap[thirdIntegrationDependencyExpectedTitle] = thirdIntegrationDependencyExpectedDescription
+
+		publicIntegrationDependenciesMap := make(map[string]string)
+		publicIntegrationDependenciesMap[firstIntegrationDependencyExpectedTitle] = firstIntegrationDependencyExpectedDescription
+
+		integrationDependenciesNumber := make(map[string]int)
+		integrationDependenciesNumber[integrationDependenciesField] = expectedNumberOfIntegrationDependenciesForOneApp
+		integrationDependenciesNumber[publicIntegrationDependenciesField] = expectedNumberOfPublicIntegrationDependenciesForOneApp
+
+		aspectsMap := make(map[string]string)
+		aspectsMap[firstAspectExpectedTitle] = firstAspectExpectedDescription
+		aspectsMap[secondAspectExpectedTitle] = secondAspectExpectedDescription
+		aspectsMap[thirdAspectExpectedTitle] = thirdAspectExpectedDescription
+
+		dataProductsMap := make(map[string]string)
+		dataProductsMap[firstDataProductExpectedTitle] = firstDataProductExpectedDescription
+		dataProductsMap[secondDataProductExpectedTitle] = secondDataProductExpectedDescription
+		dataProductsMap[thirdDataProductExpectedTitle] = thirdDataProductExpectedDescription
+
+		publicDataProductsMap := make(map[string]string)
+		publicDataProductsMap[firstDataProductExpectedTitle] = firstDataProductExpectedDescription
 
 		apisAndEventsNumber := make(map[string]int)
 		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
@@ -429,7 +492,7 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified products")
 
 			// Verify apis
-			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$expand=entityTypeMappings&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAPIs {
 				t.Log("Missing APIs...will try again")
 				return false
@@ -438,6 +501,19 @@ func TestORDAggregator(stdT *testing.T) {
 			// In the document there are actually 4 APIs but there is a tombstone for one of them so in the end there will be 3 APIs
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, apisMap, expectedNumberOfAPIs, descriptionField)
 			t.Log("Successfully verified apis")
+
+			// Verify EntityTypeMappings
+			apiTitlesWithEntityTypeMappingsCountToCheck := map[string]int{}
+			apiTitlesWithEntityTypeMappingsExpectedContent := map[string]string{}
+			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE"] = 1
+			apiTitlesWithEntityTypeMappingsExpectedContent["API TITLE"] = "A_OperationalAcctgDocItemCube"
+
+			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE INTERNAL"] = 2
+			apiTitlesWithEntityTypeMappingsExpectedContent["API TITLE INTERNAL"] = "B_OperationalAcctgDocItemCube"
+
+			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE PRIVATE"] = 0
+			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfAPIsInSubscription, apiTitlesWithEntityTypeMappingsCountToCheck, apiTitlesWithEntityTypeMappingsExpectedContent)
+			t.Log("Successfully verified api entity type mappings")
 
 			assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfAPIs, apisDefaultBundleMap, ordAndInternalIDsMappingForBundles)
 			t.Log("Successfully verified defaultBundles for apis")
@@ -467,7 +543,7 @@ func TestORDAggregator(stdT *testing.T) {
 			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicApisMap, apisField, expectedNumberOfPublicAPIs)
 
 			// Verify events
-			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$expand=entityTypeMappings&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfEvents {
 				t.Log("Missing Events...will try again")
@@ -476,6 +552,19 @@ func TestORDAggregator(stdT *testing.T) {
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfEvents)
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEvents, descriptionField)
 			t.Log("Successfully verified events")
+
+			// Verify EntityTypeMappings
+			eventTitlesWithEntityTypeMappingsCountToCheck := map[string]int{}
+			eventTitlesWithEntityTypeMappingsExpectedContent := map[string]string{}
+			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE"] = 1
+			eventTitlesWithEntityTypeMappingsExpectedContent["EVENT TITLE"] = "sap.odm:entityType:CostCenter:v1"
+
+			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE INTERNAL"] = 2
+			eventTitlesWithEntityTypeMappingsExpectedContent["EVENT TITLE INTERNAL"] = "sap.odm:entityType:CostCenter:v2"
+
+			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE PRIVATE"] = 0
+			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfEventsInSubscription, eventTitlesWithEntityTypeMappingsCountToCheck, eventTitlesWithEntityTypeMappingsExpectedContent)
+			t.Log("Successfully verified api entity type mappings")
 
 			// Verify defaultBundle for events
 			assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfEvents, eventsDefaultBundleMap, ordAndInternalIDsMappingForBundles)
@@ -521,6 +610,63 @@ func TestORDAggregator(stdT *testing.T) {
 
 			// verify public capabilities via ORD Service
 			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicCapabilitiesMap, capabilitiesField, expectedNumberOfPublicCapabilities)
+
+			// Verify integration dependencies
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/integrationDependencies?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfIntegrationDependencies {
+				t.Log("Missing Integration Dependencies...will try again")
+				return false
+			}
+
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfIntegrationDependencies)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, integrationDependenciesMap, expectedNumberOfIntegrationDependencies, descriptionField)
+			t.Log("Successfully verified integration dependencies")
+
+			// verify public integration dependencies via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicIntegrationDependenciesMap, integrationDependenciesField, expectedNumberOfPublicIntegrationDependencies)
+
+			// verify integration dependencies visibility via Director's graphql
+			verifyIntegrationDependenciesEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, integrationDependenciesMap, publicIntegrationDependenciesMap, integrationDependenciesNumber, app.ID)
+
+			// Verify aspects
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspects {
+				t.Log("Missing Aspects...will try again")
+				return false
+			}
+
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, aspectsMap, expectedNumberOfAspects, descriptionField)
+			t.Log("Successfully verified aspects")
+
+			// Verify aspects api resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectApiResources&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspectsApiResources {
+				t.Log("Missing Aspects API Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects api resources")
+
+			// Verify aspects event resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectEventResources&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspectsEventResources {
+				t.Log("Missing Aspects Event Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects event resources")
+
+			// Verify Data Products
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/dataProducts?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfDataProducts {
+				t.Log("Missing Data Products...will try again")
+				return false
+			}
+
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfDataProducts)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, dataProductsMap, expectedNumberOfDataProducts, descriptionField)
+			t.Log("Successfully verified data products")
+
+			// verify public data products via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicDataProductsMap, dataProductsField, expectedNumberOfPublicDataProducts)
 
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
@@ -586,6 +732,24 @@ func TestORDAggregator(stdT *testing.T) {
 
 		capabilitySpecsMap := make(map[string]int)
 		capabilitySpecsMap[expectedCapabilityTitle] = expectedCapabilityNumberOfSpecs
+
+		integrationDependenciesMap := make(map[string]string)
+		integrationDependenciesMap[firstIntegrationDependencyExpectedTitle] = firstIntegrationDependencyExpectedDescription
+		integrationDependenciesMap[secondIntegrationDependencyExpectedTitle] = secondIntegrationDependencyExpectedDescription
+		integrationDependenciesMap[thirdIntegrationDependencyExpectedTitle] = thirdIntegrationDependencyExpectedDescription
+
+		publicIntegrationDependenciesMap := make(map[string]string)
+		publicIntegrationDependenciesMap[firstIntegrationDependencyExpectedTitle] = firstIntegrationDependencyExpectedDescription
+
+		aspectsMap := make(map[string]string)
+		aspectsMap[firstAspectExpectedTitle] = firstAspectExpectedDescription
+		aspectsMap[secondAspectExpectedTitle] = secondAspectExpectedDescription
+		aspectsMap[thirdAspectExpectedTitle] = thirdAspectExpectedDescription
+
+		dataProductsMap := make(map[string]string)
+		dataProductsMap[firstDataProductExpectedTitle] = firstDataProductExpectedDescription
+		dataProductsMap[secondDataProductExpectedTitle] = secondDataProductExpectedDescription
+		dataProductsMap[thirdDataProductExpectedTitle] = thirdDataProductExpectedDescription
 
 		apisAndEventsNumber := make(map[string]int)
 		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
@@ -812,7 +976,7 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified products")
 
 			// Verify apis
-			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$expand=entityTypeMappings&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAPIsInSubscription {
 				t.Log("Missing APIs...will try again")
 				return false
@@ -825,6 +989,19 @@ func TestORDAggregator(stdT *testing.T) {
 			// Verify defaultBundle for apis
 			assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfAPIsInSubscription, apisDefaultBundleMap, ordAndInternalIDsMappingForBundles)
 			t.Log("Successfully verified defaultBundles for apis")
+
+			// Verify EntityTypeMappings
+			apiTitlesWithEntityTypeMappingsCountToCheck := map[string]int{}
+			apiTitlesWithEntityTypeMappingsExpectedContent := map[string]string{}
+			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE"] = 1
+			apiTitlesWithEntityTypeMappingsExpectedContent["API TITLE"] = "A_OperationalAcctgDocItemCube"
+
+			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE INTERNAL"] = 2
+			apiTitlesWithEntityTypeMappingsExpectedContent["API TITLE INTERNAL"] = "B_OperationalAcctgDocItemCube"
+
+			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE PRIVATE"] = 0
+			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfAPIsInSubscription, apiTitlesWithEntityTypeMappingsCountToCheck, apiTitlesWithEntityTypeMappingsExpectedContent)
+			t.Log("Successfully verified api entity type mappings")
 
 			// Verify the api spec
 			specs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfAPIsInSubscription, apiSpecsMap, apiResourceDefinitionsFieldName)
@@ -848,12 +1025,26 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified api spec")
 
 			// Verify events
-			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$expand=entityTypeMappings&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfEventsInSubscription {
 				t.Log("Missing Events...will try again")
 				return false
 			}
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfEventsInSubscription)
+
+			// Verify EntityTypeMappings
+			eventTitlesWithEntityTypeMappingsCountToCheck := map[string]int{}
+			eventTitlesWithEntityTypeMappingsExpectedContent := map[string]string{}
+			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE"] = 1
+			eventTitlesWithEntityTypeMappingsExpectedContent["EVENT TITLE"] = "sap.odm:entityType:CostCenter:v1"
+
+			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE INTERNAL"] = 2
+			eventTitlesWithEntityTypeMappingsExpectedContent["EVENT TITLE INTERNAL"] = "sap.odm:entityType:CostCenter:v2"
+
+			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE PRIVATE"] = 0
+			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfEventsInSubscription, eventTitlesWithEntityTypeMappingsCountToCheck, eventTitlesWithEntityTypeMappingsExpectedContent)
+			t.Log("Successfully verified event entity type mappings")
+
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEventsInSubscription, descriptionField)
 			t.Log("Successfully verified events")
 
@@ -903,6 +1094,54 @@ func TestORDAggregator(stdT *testing.T) {
 			}
 			t.Log("Successfully verified capability spec")
 
+			// Verify integration dependencies
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/integrationDependencies?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfIntegrationDependenciesInSubscription {
+				t.Log("Missing Integration Dependencies...will try again")
+				return false
+			}
+
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfIntegrationDependenciesInSubscription)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, integrationDependenciesMap, expectedNumberOfIntegrationDependenciesInSubscription, descriptionField)
+			t.Log("Successfully verified integration dependencies")
+
+			// Verify aspects
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspectsInSubscription {
+				t.Log("Missing Aspects...will try again")
+				return false
+			}
+
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, aspectsMap, expectedNumberOfAspectsInSubscription, descriptionField)
+			t.Log("Successfully verified aspects")
+
+			// Verify aspects api resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectApiResources&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspectsApiResourcesInSubscription {
+				t.Log("Missing Aspects API Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects api resources")
+
+			// Verify aspects event resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectEventResources&$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAspectsEventResourcesInSubscription {
+				t.Log("Missing Aspects Event Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects event resources")
+
+			// Verify Data Products
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/dataProducts?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
+			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfDataProductsInSubscription {
+				t.Log("Missing Data Products...will try again")
+				return false
+			}
+
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfDataProductsInSubscription)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, dataProductsMap, expectedNumberOfDataProductsInSubscription, descriptionField)
+			t.Log("Successfully verified data products")
+
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.TestConsumerSubaccountID}})
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfTombstonesInSubscription {
@@ -940,6 +1179,13 @@ func TestORDAggregator(stdT *testing.T) {
 		numberOfPublicEvents := 2
 		numberOfCapabilities := 1
 		numberOfPublicCapabilities := 1
+		numberOfIntegrationDependencies := 3
+		numberOfAspects := 3
+		numberOfAspectsApiResources := 3
+		numberOfAspectsEventResources := 3
+		numberOfPublicIntegrationDependencies := 1
+		numberOfDataProducts := 3
+		numberOfPublicDataProducts := 1
 		numberOfTombstones := 1
 
 		ctx := context.Background()
@@ -1009,14 +1255,43 @@ func TestORDAggregator(stdT *testing.T) {
 		capabilitiesMap := make(map[string]string)
 		capabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
 
-		entityTypesMap := make(map[string]string)
-		entityTypesMap[expectedEntityTypeTitle] = expectedEntityTypeDescription
-
 		publicCapabilitiesMap := make(map[string]string)
 		publicCapabilitiesMap[expectedCapabilityTitle] = expectedCapabilityDescription
 
 		capabilitySpecsMap := make(map[string]int)
 		capabilitySpecsMap[expectedCapabilityTitle] = expectedCapabilityNumberOfSpecs
+
+		integrationDependenciesMap := make(map[string]string)
+		integrationDependenciesMap[firstIntegrationDependencyExpectedTitle] = firstIntegrationDependencyExpectedDescription
+		integrationDependenciesMap[secondIntegrationDependencyExpectedTitle] = secondIntegrationDependencyExpectedDescription
+		integrationDependenciesMap[thirdIntegrationDependencyExpectedTitle] = thirdIntegrationDependencyExpectedDescription
+
+		aspectsMap := make(map[string]string)
+		aspectsMap[firstAspectExpectedTitle] = firstAspectExpectedDescription
+		aspectsMap[secondAspectExpectedTitle] = secondAspectExpectedDescription
+		aspectsMap[thirdAspectExpectedTitle] = thirdAspectExpectedDescription
+
+		publicIntegrationDependenciesMap := make(map[string]string)
+		publicIntegrationDependenciesMap[firstIntegrationDependencyExpectedTitle] = firstIntegrationDependencyExpectedDescription
+
+		integrationDependenciesNumber := make(map[string]int)
+		integrationDependenciesNumber[integrationDependenciesField] = expectedNumberOfIntegrationDependenciesForOneApp
+		integrationDependenciesNumber[publicIntegrationDependenciesField] = expectedNumberOfPublicIntegrationDependenciesForOneApp
+
+		dataProductsMap := make(map[string]string)
+		dataProductsMap[firstDataProductExpectedTitle] = firstDataProductExpectedDescription
+		dataProductsMap[secondDataProductExpectedTitle] = secondDataProductExpectedDescription
+		dataProductsMap[thirdDataProductExpectedTitle] = thirdDataProductExpectedDescription
+
+		publicDataProductsMap := make(map[string]string)
+		publicDataProductsMap[firstDataProductExpectedTitle] = firstDataProductExpectedDescription
+
+		dataProductsNumber := make(map[string]int)
+		dataProductsNumber[dataProductsField] = expectedNumberOfDataProductsForOneApp
+		dataProductsNumber[publicDataProductsField] = expectedNumberOfPublicDataProductsForOneApp
+
+		entityTypesMap := make(map[string]string)
+		entityTypesMap[expectedEntityTypeTitle] = expectedEntityTypeDescription
 
 		apisAndEventsNumber := make(map[string]int)
 		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
@@ -1158,7 +1433,7 @@ func TestORDAggregator(stdT *testing.T) {
 			t.Log("Successfully verified products")
 
 			// Verify apis
-			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$expand=entityTypeMappings&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 			if len(gjson.Get(respBody, "value").Array()) < 3 {
 				t.Log("Missing APIs...will try again")
 				return false
@@ -1166,6 +1441,19 @@ func TestORDAggregator(stdT *testing.T) {
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfAPIs)
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, apisMap, numberOfAPIs, descriptionField)
 			t.Log("Successfully verified apis")
+
+			// Verify EntityTypeMappings
+			apiTitlesWithEntityTypeMappingsCountToCheck := map[string]int{}
+			apiTitlesWithEntityTypeMappingsExpectedContent := map[string]string{}
+			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE"] = 1
+			apiTitlesWithEntityTypeMappingsExpectedContent["API TITLE"] = "A_OperationalAcctgDocItemCube"
+
+			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE INTERNAL"] = 2
+			apiTitlesWithEntityTypeMappingsExpectedContent["API TITLE INTERNAL"] = "B_OperationalAcctgDocItemCube"
+
+			apiTitlesWithEntityTypeMappingsCountToCheck["API TITLE PRIVATE"] = 0
+			assertions.AssertEntityTypeMappings(t, respBody, expectedNumberOfAPIsInSubscription, apiTitlesWithEntityTypeMappingsCountToCheck, apiTitlesWithEntityTypeMappingsExpectedContent)
+			t.Log("Successfully verified api entity type mappings")
 
 			// Verify defaultBundle for apis
 			assertions.AssertDefaultBundleID(t, respBody, numberOfAPIs, apisDefaultBundleMap, ordAndInternalIDsMappingForBundles)
@@ -1196,7 +1484,7 @@ func TestORDAggregator(stdT *testing.T) {
 			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicApisMap, apisField, numberOfPublicAPIs)
 
 			// Verify events
-			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$expand=entityTypeMappings&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 			if len(gjson.Get(respBody, "value").Array()) < numberOfEvents {
 				t.Log("Missing Events...will try again")
 				return false
@@ -1204,6 +1492,19 @@ func TestORDAggregator(stdT *testing.T) {
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfEvents)
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, numberOfEvents, descriptionField)
 			t.Log("Successfully verified events")
+
+			// Verify EntityTypeMappings
+			eventTitlesWithEntityTypeMappingsCountToCheck := map[string]int{}
+			eventTitlesWithEntityTypeMappingsExpectedContent := map[string]string{}
+			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE"] = 1
+			eventTitlesWithEntityTypeMappingsExpectedContent["EVENT TITLE"] = "sap.odm:entityType:CostCenter:v1"
+
+			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE INTERNAL"] = 2
+			eventTitlesWithEntityTypeMappingsExpectedContent["EVENT TITLE INTERNAL"] = "sap.odm:entityType:CostCenter:v2"
+
+			eventTitlesWithEntityTypeMappingsCountToCheck["EVENT TITLE PRIVATE"] = 0
+			assertions.AssertEntityTypeMappings(t, respBody, numberOfEvents, eventTitlesWithEntityTypeMappingsCountToCheck, eventTitlesWithEntityTypeMappingsExpectedContent)
+			t.Log("Successfully verified api entity type mappings")
 
 			// Verify defaultBundle for events
 			assertions.AssertDefaultBundleID(t, respBody, numberOfEvents, eventsDefaultBundleMap, ordAndInternalIDsMappingForBundles)
@@ -1259,6 +1560,63 @@ func TestORDAggregator(stdT *testing.T) {
 
 			// verify public capabilities via ORD Service
 			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicCapabilitiesMap, capabilitiesField, numberOfPublicCapabilities)
+
+			// Verify integration dependencies
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/integrationDependencies?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfIntegrationDependencies {
+				t.Log("Missing Integration Dependencies...will try again")
+				return false
+			}
+
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfIntegrationDependencies)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, integrationDependenciesMap, numberOfIntegrationDependencies, descriptionField)
+			t.Log("Successfully verified integration dependencies")
+
+			// verify public integration dependencies via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicIntegrationDependenciesMap, integrationDependenciesField, numberOfPublicIntegrationDependencies)
+
+			// verify integration dependencies visibility via Director's graphql
+			verifyIntegrationDependenciesEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, integrationDependenciesMap, publicIntegrationDependenciesMap, integrationDependenciesNumber, app.ID)
+
+			// Verify aspects
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfAspects {
+				t.Log("Missing Aspects...will try again")
+				return false
+			}
+
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, aspectsMap, numberOfAspects, descriptionField)
+			t.Log("Successfully verified aspects")
+
+			// Verify aspects api resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectApiResources&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfAspectsApiResources {
+				t.Log("Missing Aspects API Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects api resources")
+
+			// Verify aspects event resources can be expanded
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/aspects?$expand=aspectEventResources&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfAspectsEventResources {
+				t.Log("Missing Aspects Event Resources...will try again")
+				return false
+			}
+			t.Log("Successfully verified expanding aspects event resources")
+
+			// Verify Data Products
+			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/dataProducts?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+			if len(gjson.Get(respBody, "value").Array()) < numberOfDataProducts {
+				t.Log("Missing Data Products...will try again")
+				return false
+			}
+
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfDataProducts)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, dataProductsMap, numberOfDataProducts, descriptionField)
+			t.Log("Successfully verified data products")
+
+			// verify public data products via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicDataProductsMap, dataProductsField, numberOfPublicDataProducts)
 
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
@@ -1378,6 +1736,28 @@ func verifyEntitiesVisibilityViaGraphql(t *testing.T, clientWithInternalScope, c
 	require.Equal(t, len(publicEvents), expectedNumberOfEntities[publicEventsField])
 	t.Log("Successfully verified public Events via Director graphql api")
 
+}
+
+func verifyIntegrationDependenciesEntitiesVisibilityViaGraphql(t *testing.T, clientWithInternalScope, clientWithoutInternalScope *gcli.Client, entitiesMap, publicEntitiesMap map[string]string, expectedNumberOfEntities map[string]int, appID string) {
+	appWithAllEntities := fixtures.GetApplication(t, context.Background(), clientWithInternalScope, testConfig.DefaultTestTenant, appID)
+	appWithPublicEntities := fixtures.GetApplication(t, context.Background(), clientWithoutInternalScope, testConfig.DefaultTestTenant, appID)
+
+	allIntDeps := appWithAllEntities.IntegrationDependencies.Data
+	publicIntDeps := appWithPublicEntities.IntegrationDependencies.Data
+
+	t.Log("Start verifying all Integration Dependencies via Director graphql api")
+	for _, intDep := range allIntDeps {
+		require.Equal(t, entitiesMap[intDep.Name], *intDep.Description)
+	}
+	require.Equal(t, len(allIntDeps), expectedNumberOfEntities[integrationDependenciesField])
+	t.Log("Successfully verified all Integration Dependencies via Director graphql api")
+
+	t.Log("Start verifying public Integration Dependencies via Director graphql api")
+	for _, intDep := range publicIntDeps {
+		require.Equal(t, publicEntitiesMap[intDep.Name], *intDep.Description)
+	}
+	require.Equal(t, len(publicIntDeps), expectedNumberOfEntities[publicIntegrationDependenciesField])
+	t.Log("Successfully verified public Integration Dependencies via Director graphql api")
 }
 
 func getGlobalResourcesNumber(ctx context.Context, t *testing.T, httpClient *http.Client) (int, int) {

@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
-ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+CURRENT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+# Currently not used but kept for easier transition to enable db dump
+DUMP_DB=false
 
-source ${ROOT_PATH}/kyma-scripts/testing-common.sh
+source "${CURRENT_PATH}"/kyma-scripts/testing-common.sh
+source "${CURRENT_PATH}"/utils.sh
 
 readonly TMP_DIR=$(mktemp -d)
 
@@ -22,10 +25,9 @@ do
     key="$1"
 
     case ${key} in
+        # Currently not used but kept for easier transition to enable db dump
         --dump-db)
-            checkInputParameterValue "${2}"
-            DUMP_DB="$2"
-            shift
+            DUMP_DB=true
             shift
         ;;
         --benchmark)
@@ -49,21 +51,29 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 suiteName="compass-e2e-tests"
 testDefinitionName=$1
 benchmarkLabelSelector="!benchmark"
+
+# Benchmark tests are executed in a GCP environment not k3d
+# All other tests should be executed facing k3d kyma
+KUBECTL="kubectl_k3d_kyma"
+if [[ "${BENCHMARK}" == "true" ]]
+then
+  benchmarkLabelSelector='benchmark'
+  KUBECTL="kubectl"
+fi
+
 echo "${1:-All tests}"
 echo "----------------------------"
 echo "- Testing Compass..."
 echo "----------------------------"
 
-kc="kubectl $(context_arg)"
-
-${kc} get clustertestsuites.testing.kyma-project.io > /dev/null 2>&1
+"$KUBECTL" get clustertestsuites.testing.kyma-project.io > /dev/null 2>&1
 if [[ $? -eq 1 ]]
 then
    echo "ERROR: script requires ClusterTestSuite CRD"
    exit 1
 fi
 
-${kc} get cts  ${suiteName} -ojsonpath="{.metadata.name}" > /dev/null 2>&1
+"$KUBECTL" get cts  ${suiteName} -ojsonpath="{.metadata.name}" > /dev/null 2>&1
 if [[ $? -eq 0 ]]
 then
    echo "ERROR: Another ClusterTestSuite CRD is currently running in this cluster."
@@ -73,18 +83,12 @@ fi
 # match all tests
 if [ -z "$testDefinitionName" ]
 then
-  if [[ "${DUMP_DB}" == "true" ]]
+  labelSelector=''
+  if [ "$DUMP_DB" = true ]
   then
     labelSelector=',!disable-db-dump'
-  elif [[ "${DUMP_DB}" == "false" ]]
-  then
-    labelSelector=',disable-db-dump'
   fi
-  if [[ "${BENCHMARK}" == "true" ]]
-  then
-    benchmarkLabelSelector='benchmark'
-  fi
-      cat <<EOF | ${kc} apply -f -
+      cat <<EOF | "$KUBECTL" apply -f -
       apiVersion: testing.kyma-project.io/v1alpha1
       kind: ClusterTestSuite
       metadata:
@@ -100,7 +104,7 @@ then
 EOF
 
 else
-      cat <<EOF | ${kc} apply -f -
+      cat <<EOF | "$KUBECTL" apply -f -
       apiVersion: testing.kyma-project.io/v1alpha1
       kind: ClusterTestSuite
       metadata:
@@ -126,9 +130,9 @@ previousPrintTime=-1
 while true
 do
     currTime=$(date +%s)
-    statusSucceeded=$(${kc} get cts ${suiteName}  -ojsonpath="{.status.conditions[?(@.type=='Succeeded')]}")
-    statusFailed=$(${kc} get cts ${suiteName}  -ojsonpath="{.status.conditions[?(@.type=='Failed')]}")
-    statusError=$(${kc} get cts  ${suiteName} -ojsonpath="{.status.conditions[?(@.type=='Error')]}" )
+    statusSucceeded=$("$KUBECTL" get cts ${suiteName}  -ojsonpath="{.status.conditions[?(@.type=='Succeeded')]}")
+    statusFailed=$("$KUBECTL" get cts ${suiteName}  -ojsonpath="{.status.conditions[?(@.type=='Failed')]}")
+    statusError=$("$KUBECTL" get cts  ${suiteName} -ojsonpath="{.status.conditions[?(@.type=='Error')]}" )
 
     if [[ "${statusSucceeded}" == *"True"* ]]; then
        echo "Test suite '${suiteName}' succeeded."
@@ -155,13 +159,13 @@ do
         break
     fi
     if (( ${previousPrintTime} != ${min} )); then
-        running_test=$(kubectl get cts ${suiteName} -o yaml | grep "status: Running" -B5 | head -n 1 | cut -d ':' -f 2 | tr -d " ")
+        running_test=$("$KUBECTL" get cts ${suiteName} -o yaml | grep "status: Running" -B5 | head -n 1 | cut -d ':' -f 2 | tr -d " ")
         if [ -z "$running_test" ]; then
           running_test="none"
         fi
         echo "Running test is ${running_test}"
         if [[ ! "${running_test}" == "none" ]]; then
-          logs_from_last_min=$(kubectl logs -n kyma-system --since=1m ${running_test})
+          logs_from_last_min=$("$KUBECTL" logs -n kyma-system --since=1m ${running_test})
           if echo "${logs_from_last_min}" | grep -q "FAIL:"; then
             echo "----------------------------"
             echo "A test has failed in the last minute."
@@ -176,16 +180,16 @@ do
 done
 
 echo "Test summary"
-kubectl get cts  ${suiteName} -o=go-template --template='{{range .status.results}}{{printf "Test status: %s - %s" .name .status }}{{ if gt (len .executions) 1 }}{{ print " (Retried)" }}{{end}}{{print "\n"}}{{end}}'
+"$KUBECTL" get cts  ${suiteName} -o=go-template --template='{{range .status.results}}{{printf "Test status: %s - %s" .name .status }}{{ if gt (len .executions) 1 }}{{ print " (Retried)" }}{{end}}{{print "\n"}}{{end}}'
 
-waitForTerminationAndPrintLogs ${suiteName}
+waitForTerminationAndPrintLogs ${suiteName} ${KUBECTL}
 cleanupExitCode=$?
 
 echo "ClusterTestSuite details:"
-kubectl get cts ${suiteName} -oyaml
+"$KUBECTL" get cts ${suiteName} -oyaml
 
 echo "Pod execution time details:"
-podInfo=$(kubectl get cts ${suiteName} -o=go-template --template='{{range .status.results}}{{range .executions }}{{printf "%s %s %s\n" .id .startTime .completionTime }}{{end}}{{end}}')
+podInfo=$("$KUBECTL" get cts ${suiteName} -o=go-template --template='{{range .status.results}}{{range .executions }}{{printf "%s %s %s\n" .id .startTime .completionTime }}{{end}}{{end}}')
 
 if [ "$(uname)" == "Darwin" ]; then
   extra_flags="-j -f %Y-%m-%dT%H:%M:%SZ"
@@ -210,10 +214,10 @@ done <<< "$podInfo"
 
 if [[ ! "${BENCHMARK}" == "true" ]]
 then
-  kubectl delete cts ${suiteName}
+  "$KUBECTL" delete cts ${suiteName}
 fi
 
-printImagesWithLatestTag
+printImagesWithLatestTag "$KUBECTL"
 latestTagExitCode=$?
 
 exit $((${testExitCode} + ${cleanupExitCode} + ${latestTagExitCode}))

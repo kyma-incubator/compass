@@ -127,6 +127,9 @@ global:
       id: 777ce47b-d901-4647-9223-14e94819830b
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      # The "substitution" tenants should be used only in specific use cases and not as "regular" test tenants
+      # because when using them, the operation is actually executed on behalf of another tenant,
+      # the one defined in a label of the substituted tenant
     - name: Test Tenant Substitution Account
       id: baf425d1-8630-46da-bf80-f4ed5f405a27
       type: account
@@ -134,68 +137,78 @@ global:
       id: 818005d6-9264-4abb-af4c-29c754630a7d
       type: subaccount
       parent: baf425d1-8630-46da-bf80-f4ed5f405a27
+    - name: Test Tenant Substitution Account 2
+      id: 46c189a1-9e04-4cbf-9c59-ba7b120492ad
+      type: account
+    - name: Test Tenant Substitution Subaccount 2
+      id: e1e2f861-2b2e-42a9-ba9f-404d292e5471
+      type: subaccount
+      parent: 46c189a1-9e04-4cbf-9c59-ba7b120492ad
   tenantsLabels:
-    - tenantID: 818005d6-9264-4abb-af4c-29c754630a7d
+    - tenantID: 818005d6-9264-4abb-af4c-29c754630a7d # TestTenantSubstitutionSubaccount
       key: customerId
       value: 777ce47b-d901-4647-9223-14e94819830b
+    - tenantID: e1e2f861-2b2e-42a9-ba9f-404d292e5471 # TestTenantSubstitutionSubaccount2
+      key: customerId
+      value: 5984a414-1eed-4972-af2c-b2b6a415c7d7 # ApplicationsForRuntimeTenantName, randomly chosen Account tenant
   images:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3404"
+      version: "PR-3577"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3404"
+      version: "PR-3577"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3404"
+      version: "PR-3577"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3419"
+      version: "PR-3577"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3419"
+      version: "PR-3577"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3380"
+      version: "PR-3577"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3404"
+      version: "PR-3577"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3331"
+      version: "PR-3577"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3404"
+      version: "PR-3577"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
-      version: "PR-3404"
+      version: "PR-3577"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3331"
+      version: "PR-3577"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-104"
+      version: "PR-119"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3423"
+      version: "PR-3577"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
-      version: "PR-3404"
+      version: "PR-3577"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -204,7 +217,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3413"
+      version: "PR-3577"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -212,7 +225,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3425"
+      version: "PR-3577"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -525,7 +538,7 @@ global:
     port: 3000
     prefix: /hydrators
     certSubjectMappingResyncInterval: "3s"
-    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount", "global", "organization", "folder", "resource-group"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount", "global", "organization", "folder", "resource-group"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}, {"consumer_type": "Instance Creator", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=47b4575a-f102-414a-8398-2d973ad65f3a, CN=instance-creator"}]'
     certificateDataHeader: "Certificate-Data"
     consumerClaimsKeys:
       clientIDKey: "client_id"
@@ -710,7 +723,7 @@ global:
     ns_adapter_timeout_ms: 3600000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write bundle_instance_auth:write bundle.instance_auths:read","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync system_fetcher:sync certificate_subject_mapping:read certificate_subject_mapping:write bundle_instance_auth:write bundle.instance_auths:read","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -732,8 +745,8 @@ global:
             enabled: false
             createRule: true
             gatewayHost: "compass-gateway-xsuaa"
-            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
-            attributes: '{"uniqueAttribute": { "key": "ns-adapter-test", "value": "ns-adapter-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" }, "clientid": { "key": "client_id" } }'
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefixes": ["prefix."], "protocol": "http"}]'
+            attributes: '{"uniqueAttribute": { "key": "ns-adapter-test", "value": "ns-adapter-flow" }, "tenants": [{ "key": "tenant" }], "identity": { "key": "identity" }, "clientid": { "key": "client_id" } }'
             path: /nsadapter/api/v1/notifications
             upstreamComponent: "compass-gateway"
             checkSuffix: true
@@ -749,8 +762,8 @@ global:
             enabled: false
             createRule: true
             gatewayHost: "compass-gateway"
-            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
-            attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefixes": ["prefix."], "protocol": "http"}]'
+            attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenants": [{ "key": "tenant" }], "identity": { "key": "identity" } }'
             path: /tenants/<.*>
             upstreamComponent: "compass-tenant-fetcher"
             checkSuffix: false
@@ -766,9 +779,26 @@ global:
             enabled: false
             createRule: false
             gatewayHost: "compass-gateway-sap-mtls"
-            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http", "region": "eu-1"}]'
-            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "user_name" }, "clientid": { "key": "client_id" } }'
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefixes": ["prefix."], "protocol": "http", "region": "eu-1"}]'
+            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenants": [{ "key": "tenant" }], "identity": { "key": "user_name" }, "clientid": { "key": "client_id" } }'
             path: /<.*>
+            checkSuffix: false
+        user-name-authenticator:
+          cfg:
+            config:
+              api:
+                url: http://compass-hydrator.compass-system.svc.cluster.local:3000/hydrators/authn-mapping/user-name-authenticator
+                retry:
+                  give_up_after: 6s
+                  max_delay: 2000ms
+          authenticator:
+            enabled: false
+            createRule: true
+            gatewayHost: "compass-gateway-user-name"
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefixes": ["prefix.", "prefix2."], "protocol": "http", "region": "eu-1"}]'
+            attributes: '{"uniqueAttribute": { "key": "unique-attr-authenticator-key", "value": "unique-attr-authenticator-value" }, "tenants": [{ "key": "ext_attr.subaccountid", "priority": 1 },{ "key": "ext_attr.globalaccountid", "priority": 2 }], "identity": { "key": "user_name" }, "clientid": { "key": "client_id" } }'
+            path: "/director/graphql"
+            upstreamComponent: "compass-gateway"
             checkSuffix: false
       tenantMappingService:
         config:
@@ -815,10 +845,10 @@ global:
       appDetinationsSensitiveDataScope: "destinations_sensitive_data:read"
     server:
       tenantDestinationsEndpoint: "/v1/subaccountDestinations"
-      tenantInstanceLevelDestinationsEndpoint: "/v1/instanceDestinations"
       tenantDestinationCertificatesEndpoint: "/v1/subaccountCertificates"
       tenantInstanceLevelDestinationCertificatesEndpoint: "/v1/instanceCertificates"
       sensitiveDataEndpoint: "/v1/destinations"
+      findAPIEndpoint: "/local/v1/destinations" # used by external-services-mock in the destination creator flows; due to the fact that in ESM there are separate handlers for the two flows (dest-creator & dest-fetcher), we need different endpoints where each one of them can call the destination service find API
       sensitiveDataQueryParam: "name"
     request:
       skipSSLValidation: false
@@ -922,12 +952,22 @@ global:
         namespace: compass-system
         certKey: tls.crt
         keyKey: tls.key
+      publicPrivateKeysSecret:
+        name: "system-fetcher-external-keys"
+        namespace: compass-system
+        dataKey: data
+        manage: false
     rotationCronjob:
       name: "external-certificate-rotation"
       schedule: "*/1 * * * *" # Executes every minute
       certValidity: "7"
       clientCertRetryAttempts: "8"
       containerName: "certificate-rotation"
+    preInstallJob:
+      enabled: false
+      name: "external-certificate-pre-install"
+      certValidity: "7"
+      clientCertRetryAttempts: "8"
   extSvcCertConfiguration:
     issuerLocality: "local,local2" # In local setup we have manually created connector CA certificate with 'local' Locality property
     subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
@@ -958,6 +998,11 @@ global:
       certValidity: "7"
       clientCertRetryAttempts: "8"
       containerName: "ext-svc-certificate-rotation"
+    preInstallJob:
+      enabled: false
+      name: "ext-svc-certificate-pre-install"
+      certValidity: "7"
+      clientCertRetryAttempts: "8"
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
     prefix: /open-resource-discovery-service/v0
@@ -1002,9 +1047,17 @@ global:
     maintainOperationsJobInterval: 60m
     operationProcessorsQuietPeriod: 5s
   systemFetcher:
-    enabled: false
+    syncGlobalAccountTenants: true
     name: "system-fetcher"
-    schedule: "0 0 * * *"
+    port: 3000
+    prefix: /system-fetcher
+    job:
+      schedulePeriod: 60m
+      isSchedulable: true
+    lease:
+      lockname: systemfetcherlease
+    authentication:
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
     manageSecrets: true
     # enableSystemDeletion - whether systems in deleted state should be deleted from director database
     enableSystemDeletion: true
@@ -1041,6 +1094,8 @@ global:
       tenantHeaderName: "x-zid"
       tokenRequestTimeout: 30s
       skipSSLValidation: true
+    jwt:
+      expireAfter: 60m
     secret:
       name: "compass-system-fetcher-secret"
       clientIdKey: client-id
@@ -1099,6 +1154,7 @@ global:
           discriminatorField: ""
           discriminatorValue: ""
           detailsField: "details"
+          labelsField: "labels"
           entityTypeField: "entityType"
           globalAccountID: "gaID"
           regionField: "region"
@@ -1128,6 +1184,7 @@ global:
           entityTypeField: "entityType"
           globalAccountID: "globalAccountGUID"
           regionField: "region"
+          labelsField: "labels"
           movedSubaccountTargetField: "targetGlobalAccountGUID"
           movedSubaccountSourceField: "sourceGlobalAccountGUID"
         regions:
@@ -1223,11 +1280,11 @@ global:
       proxyApplicationTemplateName: "SAP Proxy Template"
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
-      skipPattern: "(.*Requesting_filtering_of_Bundles_that_have_only_ODATA_APIs|.*Requesting_filtering_of_Bundles_that_do_not_have_only_ODATA_APIs)"
+      skipPattern: ""
     externalServicesMock:
       skipPattern: ""
       tenantMappingStatusAPI:
-        responseDelayInSeconds: 3
+        responseDelayInMilliseconds: 1
     selfRegistration:
       region: "eu-1"
       region2: "eu-2"
@@ -1289,6 +1346,24 @@ global:
     systemBrokerFQDN: http://compass-system-broker.compass-system.svc.cluster.local
     tenantFetcherFQDN: http://compass-tenant-fetcher.compass-system.svc.cluster.local
     hydratorFQDN: http://compass-hydrator.compass-system.svc.cluster.local
+    userNameAuthenticators:
+      gatewayHost: "compass-gateway-user-name"
+      account:
+        manage: false
+        secretName: "user-name-account-authenticator"
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
+        oauthTokenPath: "/secured/oauth/token"
+        subdomain: "compass-external-services-mock"
+      subaccount:
+        manage: false
+        secretName: "user-name-subaccount-authenticator"
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
+        oauthTokenPath: "/secured/oauth/token"
+        subdomain: "compass-external-services-mock"
     basicCredentials:
       manage: false
       secretName: "test-basic-credentials-secret"
@@ -1367,6 +1442,11 @@ global:
         - "tenant_access:write"
         - "formation:read"
         - "formation:write"
+      instance_creator:
+        - "application_template:read"
+        - "formation:read"
+        - "formation_template:read"
+        - "formation_template.webhooks:read"
       technical_client:
         - "tenant:read"
         - "tenant:write"
@@ -1389,6 +1469,7 @@ global:
         - "webhook:write"
         - "application_template:read"
         - "application_template:write"
+        - "application_template.webhooks:read"
         - "formation_template:read"
         - "formation_template:write"
         - "formation_template.webhooks:read"

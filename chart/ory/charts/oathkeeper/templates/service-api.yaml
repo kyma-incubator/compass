@@ -18,11 +18,16 @@ metadata:
   {{- end }}
 spec:
   type: {{ .Values.service.api.type }}
+  {{- if eq .Values.service.api.type "LoadBalancer" }}
+  {{- with .Values.service.api.loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+  {{- end }}
   ports:
     - port: {{ .Values.service.api.port }}
       targetPort: http-api
       protocol: TCP
-      name: {{ .Values.service.api.name }}
+      name: {{ .Values.service.api.name }} 
   selector:
     app.kubernetes.io/name: {{ include "oathkeeper.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}

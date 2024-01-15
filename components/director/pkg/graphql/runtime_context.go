@@ -7,6 +7,9 @@ type RuntimeContext struct {
 	Value string `json:"value"`
 }
 
+// IsFormationParticipant implements the FormationParticipant interface
+func (e *RuntimeContext) IsFormationParticipant() {}
+
 // RuntimeContextPageExt is an extended types used by external API
 type RuntimeContextPageExt struct {
 	RuntimeContextPage

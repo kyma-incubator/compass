@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/hashicorp/go-multierror"
@@ -15,6 +15,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 	"github.com/pkg/errors"
 )
 
@@ -39,14 +41,20 @@ type destinationService interface {
 	CreateBasicCredentialDestinations(ctx context.Context, destinationsDetails []Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
 	CreateSAMLAssertionDestination(ctx context.Context, destinationsDetails []Destination, samlAssertionAuthCredentials *SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
 	CreateClientCertificateAuthenticationDestination(ctx context.Context, destinationsDetails []Destination, clientCertAuthCredentials *ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
+	CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationsDetails []Destination, oauth2ClientCredsCredentials *OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
 	DeleteDestinations(ctx context.Context, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error
 }
 
 //go:generate mockery --exported --name=destinationCreatorService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationCreatorService interface {
-	CreateCertificate(ctx context.Context, destinationsDetails []Destination, destinationAuthType destinationcreatorpkg.AuthType, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) (*CertificateData, error)
+	CreateCertificate(ctx context.Context, destinationsDetails []Destination, destinationAuthType destinationcreatorpkg.AuthType, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation, useSelfSignedCert bool) (*CertificateData, error)
 	EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *CertificateData) (json.RawMessage, error)
 	EnrichAssignmentConfigWithSAMLCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *CertificateData) (json.RawMessage, error)
+}
+
+//go:generate mockery --exported --name=systemAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type systemAuthService interface {
+	ListForObject(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string) ([]pkgmodel.SystemAuth, error)
 }
 
 //go:generate mockery --exported --name=formationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -83,11 +91,19 @@ type formationTemplateRepo interface {
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
 }
 
-// FormationAssignmentRepository represents the Formation Assignment repository layer
-//
-//go:generate mockery --name=formationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --exported --name=formationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentRepository interface {
 	Update(ctx context.Context, model *model.FormationAssignment) error
+}
+
+//go:generate mockery --exported --name=formationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationAssignmentService interface {
+	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
+}
+
+//go:generate mockery --exported --name=formationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationAssignmentNotificationService interface {
+	GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)
 }
 
 // OperatorInput represents the input needed by the constraint operator
@@ -104,49 +120,57 @@ type OperatorInputConstructor func() OperatorInput
 
 // ConstraintEngine determines which constraints are applicable to the reached join point and enforces them
 type ConstraintEngine struct {
-	transact                  persistence.Transactioner
-	constraintSvc             formationConstraintSvc
-	tenantSvc                 tenantService
-	asaSvc                    automaticScenarioAssignmentService
-	destinationSvc            destinationService
-	destinationCreatorSvc     destinationCreatorService
-	formationRepo             formationRepository
-	labelRepo                 labelRepository
-	labelService              labelService
-	applicationRepository     applicationRepository
-	runtimeContextRepo        runtimeContextRepo
-	formationTemplateRepo     formationTemplateRepo
-	formationAssignmentRepo   formationAssignmentRepository
-	operators                 map[OperatorName]OperatorFunc
-	operatorInputConstructors map[OperatorName]OperatorInputConstructor
-	runtimeTypeLabelKey       string
-	applicationTypeLabelKey   string
+	transact                           persistence.Transactioner
+	constraintSvc                      formationConstraintSvc
+	tenantSvc                          tenantService
+	asaSvc                             automaticScenarioAssignmentService
+	destinationSvc                     destinationService
+	destinationCreatorSvc              destinationCreatorService
+	systemAuthSvc                      systemAuthService
+	formationRepo                      formationRepository
+	labelRepo                          labelRepository
+	labelService                       labelService
+	applicationRepository              applicationRepository
+	runtimeContextRepo                 runtimeContextRepo
+	formationTemplateRepo              formationTemplateRepo
+	formationAssignmentRepo            formationAssignmentRepository
+	formationAssignmentService         formationAssignmentService
+	formationAssignmentNotificationSvc formationAssignmentNotificationService
+	operators                          map[OperatorName]OperatorFunc
+	operatorInputConstructors          map[OperatorName]OperatorInputConstructor
+	runtimeTypeLabelKey                string
+	applicationTypeLabelKey            string
 }
 
 // NewConstraintEngine returns new ConstraintEngine
-func NewConstraintEngine(transact persistence.Transactioner, constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc destinationService, destinationCreatorSvc destinationCreatorService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, formationAssignmentRepo formationAssignmentRepository, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
+func NewConstraintEngine(transact persistence.Transactioner, constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc destinationService, destinationCreatorSvc destinationCreatorService, systemAuthSvc systemAuthService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, formationAssignmentRepo formationAssignmentRepository, formationAssignmentService formationAssignmentService, formationAssignmentNotificationSvc formationAssignmentNotificationService, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
 	ce := &ConstraintEngine{
-		transact:                transact,
-		constraintSvc:           constraintSvc,
-		tenantSvc:               tenantSvc,
-		asaSvc:                  asaSvc,
-		destinationSvc:          destinationSvc,
-		destinationCreatorSvc:   destinationCreatorSvc,
-		formationRepo:           formationRepo,
-		labelRepo:               labelRepo,
-		labelService:            labelService,
-		applicationRepository:   applicationRepository,
-		runtimeContextRepo:      runtimeContextRepo,
-		formationTemplateRepo:   formationTemplateRepo,
-		formationAssignmentRepo: formationAssignmentRepo,
+		transact:                           transact,
+		constraintSvc:                      constraintSvc,
+		tenantSvc:                          tenantSvc,
+		asaSvc:                             asaSvc,
+		destinationSvc:                     destinationSvc,
+		destinationCreatorSvc:              destinationCreatorSvc,
+		systemAuthSvc:                      systemAuthSvc,
+		formationRepo:                      formationRepo,
+		labelRepo:                          labelRepo,
+		labelService:                       labelService,
+		applicationRepository:              applicationRepository,
+		runtimeContextRepo:                 runtimeContextRepo,
+		formationTemplateRepo:              formationTemplateRepo,
+		formationAssignmentRepo:            formationAssignmentRepo,
+		formationAssignmentService:         formationAssignmentService,
+		formationAssignmentNotificationSvc: formationAssignmentNotificationSvc,
 		operatorInputConstructors: map[OperatorName]OperatorInputConstructor{
 			IsNotAssignedToAnyFormationOfTypeOperator:                    NewIsNotAssignedToAnyFormationOfTypeInput,
 			DoesNotContainResourceOfSubtypeOperator:                      NewDoesNotContainResourceOfSubtypeInput,
+			ContainsScenarioGroupsOperator:                               NewContainsScenarioGroupsInput,
 			DoNotGenerateFormationAssignmentNotificationOperator:         NewDoNotGenerateFormationAssignmentNotificationInput,
 			DoNotGenerateFormationAssignmentNotificationForLoopsOperator: NewDoNotGenerateFormationAssignmentNotificationForLoopsInput,
 			DestinationCreatorOperator:                                   NewDestinationCreatorInput,
 			ConfigMutatorOperator:                                        NewConfigMutatorInput,
 			RedirectNotificationOperator:                                 NewRedirectNotificationInput,
+			AsynchronousFlowControlOperator:                              AsynchronousFlowControlOperatorInput,
 		},
 		runtimeTypeLabelKey:     runtimeTypeLabelKey,
 		applicationTypeLabelKey: applicationTypeLabelKey,
@@ -154,13 +178,25 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 	ce.operators = map[OperatorName]OperatorFunc{
 		IsNotAssignedToAnyFormationOfTypeOperator:                    ce.IsNotAssignedToAnyFormationOfType,
 		DoesNotContainResourceOfSubtypeOperator:                      ce.DoesNotContainResourceOfSubtype,
+		ContainsScenarioGroupsOperator:                               ce.ContainsScenarioGroups,
 		DoNotGenerateFormationAssignmentNotificationOperator:         ce.DoNotGenerateFormationAssignmentNotification,
 		DoNotGenerateFormationAssignmentNotificationForLoopsOperator: ce.DoNotGenerateFormationAssignmentNotificationForLoops,
 		DestinationCreatorOperator:                                   ce.DestinationCreator,
 		ConfigMutatorOperator:                                        ce.MutateConfig,
 		RedirectNotificationOperator:                                 ce.RedirectNotification,
+		AsynchronousFlowControlOperator:                              ce.AsynchronousFlowControlOperator,
 	}
 	return ce
+}
+
+// SetFormationAssignmentService sets the formation assignment service of the constraint engine
+func (e *ConstraintEngine) SetFormationAssignmentService(formationAssignmentService formationAssignmentService) {
+	e.formationAssignmentService = formationAssignmentService
+}
+
+// SetFormationAssignmentNotificationService sets the formation assignment notification service of the constraint engine
+func (e *ConstraintEngine) SetFormationAssignmentNotificationService(formationAssignmentNotificationSvc formationAssignmentNotificationService) {
+	e.formationAssignmentNotificationSvc = formationAssignmentNotificationSvc
 }
 
 // EnforceConstraints finds all the applicable constraints based on JoinPointLocation and JoinPointDetails. Checks for each constraint if it is satisfied.
@@ -208,7 +244,7 @@ func (e *ConstraintEngine) EnforceConstraints(ctx context.Context, location form
 		}
 
 		operatorInput := operatorInputConstructor()
-		if err := formationconstraintpkg.ParseInputTemplate(mc.InputTemplate, details, operatorInput); err != nil {
+		if err := templatehelper.ParseTemplate(&mc.InputTemplate, details, operatorInput); err != nil {
 			log.C(ctx).Errorf("An error occurred while parsing input template for formation constraint %q: %s", mc.Name, err.Error())
 			errs = multierror.Append(errs, formationconstraint.ConstraintError{
 				ConstraintName: mc.Name,

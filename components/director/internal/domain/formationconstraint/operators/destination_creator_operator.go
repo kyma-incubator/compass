@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"runtime/debug"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -46,13 +48,21 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q for location with constraint type: %q and operation name: %q during %q operation", di.ResourceType, di.ResourceSubtype, di.Location.ConstraintType, di.Location.OperationName, di.Operation)
 
-	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsFAMemoryAddress)
+	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.FAMemoryAddress)
 	if err != nil {
 		return false, err
 	}
 
+	var notificationStatusReport *statusreport.NotificationStatusReport
+	if di.Location.OperationName == model.NotificationStatusReturned {
+		notificationStatusReport, err = RetrieveNotificationStatusReportPointer(ctx, di.NotificationStatusReportMemoryAddress)
+		if err != nil {
+			return false, err
+		}
+	}
+
 	if di.Operation == model.UnassignFormation {
-		if di.Location.OperationName == model.NotificationStatusReturned && formationAssignment != nil && formationAssignment.State == string(model.ReadyAssignmentState) {
+		if di.Location.OperationName == model.NotificationStatusReturned && notificationStatusReport != nil && notificationStatusReport.State == string(model.ReadyAssignmentState) {
 			log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.UnassignFormation, formationAssignment.ID)
 			if err := e.destinationSvc.DeleteDestinations(ctx, formationAssignment, di.SkipSubaccountValidation); err != nil {
 				return false, err
@@ -62,18 +72,12 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		return true, nil
 	}
 
-	isAssignmentCfgEmpty := isFormationAssignmentConfigEmpty(formationAssignment)
-	if formationAssignment != nil && (formationAssignment.State == string(model.InitialAssignmentState) || isAssignmentCfgEmpty) {
-		log.C(ctx).Infof("The formation assignment with ID: %s has either %s state or empty configuration. Returning without executing the destination creator operator.", formationAssignment.ID, model.InitialAssignmentState)
-		return true, nil
-	}
-
-	if formationAssignment != nil && !isAssignmentCfgEmpty && di.Location.OperationName == model.NotificationStatusReturned {
+	if di.Location.OperationName == model.NotificationStatusReturned && notificationStatusReport != nil && !isNotificationStatusReportConfigEmpty(notificationStatusReport) {
 		log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
 
 		var assignmentConfig Configuration
-		if err := json.Unmarshal(formationAssignment.Value, &assignmentConfig); err != nil {
-			return false, errors.Wrapf(err, "while unmarshalling tenant mapping response configuration from assignment with ID: %q", formationAssignment.ID)
+		if err := json.Unmarshal(notificationStatusReport.Configuration, &assignmentConfig); err != nil {
+			return false, errors.Wrapf(err, "while unmarshalling tenant mapping response configuration for assignment with ID: %q", formationAssignment.ID)
 		}
 
 		if len(assignmentConfig.Destinations) > 0 {
@@ -92,16 +96,21 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 					return true, nil
 				}
 
-				certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, samlAssertionDetails.Destinations, destinationcreatorpkg.AuthTypeSAMLAssertion, formationAssignment, 0, di.SkipSubaccountValidation)
+				var useSelfSignedCert bool
+				if !di.UseCertSvcKeystoreForSAML {
+					useSelfSignedCert = true
+				}
+
+				certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, samlAssertionDetails.Destinations, destinationcreatorpkg.AuthTypeSAMLAssertion, formationAssignment, 0, di.SkipSubaccountValidation, useSelfSignedCert)
 				if err != nil {
 					return false, errors.Wrap(err, "while creating SAML assertion certificate")
 				}
 
-				config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithSAMLCertificateData(formationAssignment.Value, destinationcreatorpkg.SAMLAssertionDestPath, certData)
+				config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithSAMLCertificateData(notificationStatusReport.Configuration, destinationcreatorpkg.SAMLAssertionDestPath, certData)
 				if err != nil {
 					return false, err
 				}
-				formationAssignment.Value = config
+				notificationStatusReport.Configuration = config
 			}
 
 			if clientCertDetails := assignmentConfig.Credentials.InboundCommunicationDetails.ClientCertificateAuthenticationDetails; clientCertDetails != nil && len(clientCertDetails.Destinations) > 0 {
@@ -112,16 +121,16 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 					return true, nil
 				}
 
-				certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, clientCertDetails.Destinations, destinationcreatorpkg.AuthTypeClientCertificate, formationAssignment, 0, di.SkipSubaccountValidation)
+				certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, clientCertDetails.Destinations, destinationcreatorpkg.AuthTypeClientCertificate, formationAssignment, 0, di.SkipSubaccountValidation, false)
 				if err != nil {
 					return false, errors.Wrap(err, "while creating client certificate authentication certificate")
 				}
 
-				config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithCertificateData(formationAssignment.Value, destinationcreatorpkg.ClientCertAuthDestPath, certData)
+				config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithCertificateData(notificationStatusReport.Configuration, destinationcreatorpkg.ClientCertAuthDestPath, certData)
 				if err != nil {
 					return false, err
 				}
-				formationAssignment.Value = config
+				notificationStatusReport.Configuration = config
 			}
 		}
 
@@ -129,7 +138,13 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		return true, nil
 	}
 
-	reverseFormationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsReverseFAMemoryAddress)
+	isAssignmentCfgEmpty := isFormationAssignmentConfigEmpty(formationAssignment)
+	if formationAssignment != nil && (formationAssignment.State == string(model.InitialAssignmentState) || isAssignmentCfgEmpty) {
+		log.C(ctx).Infof("The formation assignment with ID: %s has either %s state or empty configuration. Returning without executing the destination creator operator.", formationAssignment.ID, model.InitialAssignmentState)
+		return true, nil
+	}
+
+	reverseFormationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.ReverseFAMemoryAddress)
 	if err != nil {
 		return false, err
 	}
@@ -185,6 +200,15 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			}
 		}
 
+		oauth2ClientCredsDetails := assignmentConfig.Credentials.InboundCommunicationDetails.OAuth2ClientCredentialsDetails
+		oauth2ClientCredsCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.OAuth2ClientCredentialsAuthentication
+		if oauth2ClientCredsDetails != nil && oauth2ClientCredsCreds != nil && len(oauth2ClientCredsDetails.Destinations) > 0 {
+			log.C(ctx).Infof("There is/are %d inbound oauth2 client credentials destination(s) details available in the configuration", len(oauth2ClientCredsDetails.Destinations))
+			if err := e.destinationSvc.CreateOAuth2ClientCredentialsDestinations(ctx, oauth2ClientCredsDetails.Destinations, oauth2ClientCredsCreds, formationAssignment, oauth2ClientCredsDetails.CorrelationIDs, di.SkipSubaccountValidation); err != nil {
+				return false, errors.Wrap(err, "while creating oauth2 client credentials destinations")
+			}
+		}
+
 		log.C(ctx).Infof("Finished executing operator: %q for location with constraint type: %q and operation name: %q during %q operation", DestinationCreatorOperator, di.Location.ConstraintType, di.Location.OperationName, model.AssignFormation)
 		return true, nil
 	}
@@ -193,12 +217,16 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 	return true, nil
 }
 
-func isFormationAssignmentConfigEmpty(assignment *model.FormationAssignment) bool {
-	if assignment != nil && (string(assignment.Value) == "" || string(assignment.Value) == "{}" || string(assignment.Value) == "\"\"" || string(assignment.Value) == "null") {
-		return true
-	}
+func isConfigEmpty(config string) bool {
+	return config == "" || config == "{}" || config == "\"\"" || config == "null"
+}
 
-	return false
+func isFormationAssignmentConfigEmpty(assignment *model.FormationAssignment) bool {
+	return assignment != nil && isConfigEmpty(string(assignment.Value))
+}
+
+func isNotificationStatusReportConfigEmpty(notificationStatusReport *statusreport.NotificationStatusReport) bool {
+	return notificationStatusReport != nil && isConfigEmpty(string(notificationStatusReport.Configuration))
 }
 
 // Destination Creator Operator types
@@ -232,14 +260,12 @@ type OutboundCommunicationCredentials struct {
 // NoAuthentication represents outbound communication without any authentication
 type NoAuthentication struct {
 	URL            string   `json:"url"`
-	UIURL          string   `json:"uiUrl,omitempty"`
 	CorrelationIds []string `json:"correlationIds,omitempty"`
 }
 
 // BasicAuthentication represents outbound communication with basic authentication
 type BasicAuthentication struct {
 	URL            string   `json:"url"`
-	UIURL          string   `json:"uiUrl,omitempty"`
 	Username       string   `json:"username"`
 	Password       string   `json:"password"`
 	CorrelationIds []string `json:"correlationIds,omitempty"`
@@ -261,14 +287,12 @@ type OAuth2SAMLBearerAssertionAuthentication struct {
 // ClientCertAuthentication represents outbound communication with client certificate authentication
 type ClientCertAuthentication struct {
 	URL            string   `json:"url"`
-	UIURL          string   `json:"uiUrl,omitempty"`
 	CorrelationIds []string `json:"correlationIds,omitempty"`
 }
 
 // OAuth2ClientCredentialsAuthentication represents outbound communication with OAuth 2 client credentials authentication
 type OAuth2ClientCredentialsAuthentication struct {
 	URL             string   `json:"url"`
-	UIURL           string   `json:"uiUrl,omitempty"`
 	TokenServiceURL string   `json:"tokenServiceUrl"`
 	ClientID        string   `json:"clientId"`
 	ClientSecret    string   `json:"clientSecret"`
@@ -281,6 +305,7 @@ type InboundCommunicationDetails struct {
 	SAMLAssertionDetails                   *InboundSAMLAssertionDetails             `json:"samlAssertion,omitempty"`
 	OAuth2SAMLBearerAssertionDetails       *InboundOAuth2SAMLBearerAssertionDetails `json:"oauth2SamlBearerAssertion,omitempty"`
 	ClientCertificateAuthenticationDetails *InboundClientCertAuthenticationDetails  `json:"clientCertificateAuthentication,omitempty"`
+	OAuth2ClientCredentialsDetails         *InboundOAuth2ClientCredentialsDetails   `json:"oauth2ClientCredentials,omitempty"`
 }
 
 // InboundBasicAuthenticationDetails represents inbound communication configuration details for basic authentication
@@ -312,6 +337,12 @@ type InboundClientCertAuthenticationDetails struct {
 	Certificate    *string       `json:"certificate,omitempty"`
 }
 
+// InboundOAuth2ClientCredentialsDetails represents inbound communication configuration details for oauth2 client credentials authentication
+type InboundOAuth2ClientCredentialsDetails struct {
+	CorrelationIDs []string      `json:"correlationIds"`
+	Destinations   []Destination `json:"destinations"`
+}
+
 // Destination holds different destination types properties
 type Destination struct {
 	Name                 string          `json:"name"`
@@ -323,6 +354,7 @@ type Destination struct {
 	SubaccountID         string          `json:"subaccountId,omitempty"`
 	InstanceID           string          `json:"instanceId,omitempty"`
 	AdditionalProperties json.RawMessage `json:"additionalProperties,omitempty"`
+	TokenServiceURLType  string          `json:"tokenServiceURLType,omitempty"`
 }
 
 // CertificateData contains the data for the certificate resource from the destination creator component

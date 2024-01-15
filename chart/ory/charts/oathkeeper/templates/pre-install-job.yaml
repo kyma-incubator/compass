@@ -1,0 +1,109 @@
+# Custom resources used to generate the initial Oathkeeper JWKS
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ory-oathkeeper-pre-install-service-account
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    helm.sh/hook: "pre-install"
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: {{.Release.Namespace}}
+  name: ory-oathkeeper-pre-install-job-role
+  annotations:
+    helm.sh/hook: "pre-install"
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+rules:
+  - apiGroups: [ "" ]
+    resources: [ "secrets" ]
+    verbs: [ "get", "update", "patch" ]
+    resourceNames: [ "{{ include "oathkeeper.secretname" . }}" ]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: ory-oathkeeper-pre-install-job-role-binding
+  namespace: {{.Release.Namespace}}
+  annotations:
+    helm.sh/hook: "pre-install"
+    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+subjects:
+  - kind: ServiceAccount
+    name: ory-oathkeeper-pre-install-service-account
+    namespace: {{.Release.Namespace}}
+roleRef:
+  kind: Role
+  name: ory-oathkeeper-pre-install-job-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Create the JWKS Secret needed to run Oathkeeper
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "oathkeeper.fullname" . }}-pre-install-secret
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    helm.sh/hook: "pre-install"
+    "helm.sh/hook-weight": "3"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    metadata:
+      name: {{ include "oathkeeper.fullname" . }}-pre-install-secret
+      labels:
+        {{ include "oathkeeper.labels" . | indent 8 }}
+    spec:
+      initContainers:
+      - name: keys-generator
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        command:
+          - /bin/sh
+          - -c
+          - |
+            oathkeeper credentials generate --alg RS256 > {{ .Values.secret.mountPath }}/jwks.json
+        securityContext:
+          {{- toYaml .Values.deployment.securityContext.oathkeeper | nindent 10 }}
+        volumeMounts:
+          - name: {{ include "oathkeeper.name" . }}-keys-volume
+            mountPath: {{ .Values.secret.mountPath }}
+      containers:
+      - name: keys-supplier
+        image: {{ .Values.global.images.job }}
+        command:
+          - /bin/bash
+          - -c
+          - |
+            set -e
+            until wget -q --spider http://127.0.0.1:15021/healthz/ready 2>/dev/null; do echo "Waiting for Istio sidecar..."; sleep 3; done;
+            echo \"Sidecar available. Running...\";
+
+            if [ ! "$(kubectl get secret {{ include "oathkeeper.secretname" . }} -n {{ .Release.Namespace }})" ]; then
+              echo "Creating JWKS Secret for Oathkeeper..."
+              kubectl create secret generic {{ include "oathkeeper.secretname" . }} \
+                --from-file={{ .Values.secret.mountPath }}/jwks.json \
+                -n {{ .Release.Namespace }} -o yaml --dry-run=client | kubectl apply -f -
+            else
+              echo "Secret exists, skipping creation..."
+            fi
+            x=$?; wget -q --post-data='' -S -O /dev/null http://127.0.0.1:15020/quitquitquit && exit $x
+        securityContext:
+          {{- toYaml .Values.deployment.securityContext.anonymous | nindent 10 }}
+        volumeMounts:
+          - name: {{ include "oathkeeper.name" . }}-keys-volume
+            mountPath: {{ .Values.secret.mountPath }}
+            readOnly: true
+      volumes:
+        - name: {{ include "oathkeeper.name" . }}-keys-volume
+          emptyDir: { }
+      restartPolicy: OnFailure
+      serviceAccountName: ory-oathkeeper-pre-install-service-account

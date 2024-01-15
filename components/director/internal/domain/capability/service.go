@@ -109,14 +109,14 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 }
 
 // Update updates a Capability.
-func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.CapabilityInput, capabilityHash uint64) error {
+func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, packageID *string, in model.CapabilityInput, capabilityHash uint64) error {
 	capability, err := s.getCapability(ctx, id, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Capability with ID %s for %s", id, resourceType)
 	}
 
 	resourceID := getParentResourceID(capability)
-	capability = in.ToCapability(id, resourceType, resourceID, capability.PackageID, capabilityHash)
+	capability = in.ToCapability(id, resourceType, resourceID, packageID, capabilityHash)
 
 	err = s.updateCapability(ctx, capability, resourceType)
 	if err != nil {
@@ -157,16 +157,16 @@ func (s *service) getCapability(ctx context.Context, id string, resourceType res
 	return s.Get(ctx, id)
 }
 
-func (s *service) updateCapability(ctx context.Context, api *model.Capability, resourceType resource.Type) error {
+func (s *service) updateCapability(ctx context.Context, capability *model.Capability, resourceType resource.Type) error {
 	if resourceType.IsTenantIgnorable() {
-		return s.repo.UpdateGlobal(ctx, api)
+		return s.repo.UpdateGlobal(ctx, capability)
 	}
 
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
-	return s.repo.Update(ctx, tnt, api)
+	return s.repo.Update(ctx, tnt, capability)
 }
 
 func (s *service) processSpecs(ctx context.Context, capabilityID string, specs []*model.SpecInput, resourceType resource.Type) error {

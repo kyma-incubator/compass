@@ -25,6 +25,8 @@ const (
 	ManagedApplicationConsumerType = "Managed Application Consumer"
 	// LandscapeResourceOperatorType represents a landscape resource operator consumer type
 	LandscapeResourceOperatorType = "Landscape Resource Operator"
+	// InstanceCreator is a consumer type that is used by Instance Creator operator
+	InstanceCreator = "Instance Creator"
 	// TechnicalClient represents a technical client consumer type
 	TechnicalClient = "Technical Client"
 
@@ -42,6 +44,7 @@ var SupportedConsumerTypes = map[string]bool{
 	ManagedApplicationProviderOperatorType: true,
 	ManagedApplicationConsumerType:         true,
 	LandscapeResourceOperatorType:          true,
+	InstanceCreator:                        true,
 	TechnicalClient:                        true,
 }
 
@@ -53,6 +56,7 @@ var SupportedAccessLevels = map[string]bool{
 	string(tenantEntity.Organization):  true,
 	string(tenantEntity.Folder):        true,
 	string(tenantEntity.ResourceGroup): true,
+	string(tenantEntity.CostObject):    true,
 	string(GlobalAccessLevel):          true,
 }
 

@@ -19,13 +19,13 @@ const (
 )
 
 var (
-	entityTypeColumns = []string{"id", "ready", "created_at", "updated_at", "deleted_at", "error", "app_id", "app_template_version_id", "ord_id", "local_id",
+	entityTypeColumns = []string{"id", "ready", "created_at", "updated_at", "deleted_at", "error", "app_id", "app_template_version_id", "ord_id", "local_tenant_id",
 		"correlation_ids", "level", "title", "short_description", "description", "system_instance_aware", "changelog_entries", "package_id", "visibility",
-		"links", "part_of_products", "last_update", "policy_level", "custom_policy_level", "release_status", "sunset_date", "successors", "extensible", "tags", "labels",
+		"links", "part_of_products", "last_update", "policy_level", "custom_policy_level", "release_status", "sunset_date", "deprecation_date", "successors", "extensible", "tags", "labels",
 		"documentation_labels", "resource_hash", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
-	updatableColumns = []string{"ready", "created_at", "updated_at", "deleted_at", "error", "ord_id", "local_id",
+	updatableColumns = []string{"ready", "created_at", "updated_at", "deleted_at", "error", "ord_id", "local_tenant_id",
 		"correlation_ids", "level", "title", "short_description", "description", "system_instance_aware", "changelog_entries", "package_id", "visibility",
-		"links", "part_of_products", "last_update", "policy_level", "custom_policy_level", "release_status", "sunset_date", "successors", "extensible", "tags", "labels",
+		"links", "part_of_products", "last_update", "policy_level", "custom_policy_level", "release_status", "sunset_date", "deprecation_date", "successors", "extensible", "tags", "labels",
 		"documentation_labels", "resource_hash", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
 )
 
@@ -53,7 +53,7 @@ type pgRepository struct {
 	updaterGlobal      repo.UpdaterGlobal
 }
 
-// NewRepository missing godoc
+// NewRepository returns a repository instance
 func NewRepository(conv EntityTypeConverter) *pgRepository {
 	return &pgRepository{
 		conv:               conv,
@@ -67,8 +67,8 @@ func NewRepository(conv EntityTypeConverter) *pgRepository {
 		deleterGlobal:      repo.NewDeleterGlobal(resource.EntityType, entityTypeTable),
 		creator:            repo.NewCreator(entityTypeTable, entityTypeColumns),
 		creatorGlobal:      repo.NewCreatorGlobal(resource.EntityType, entityTypeTable, entityTypeColumns),
-		updater:            repo.NewUpdater(entityTypeTable, updatableColumns, []string{"id"}),
-		updaterGlobal:      repo.NewUpdaterGlobal(resource.EntityType, entityTypeTable, updatableColumns, []string{"id"}),
+		updater:            repo.NewUpdater(entityTypeTable, updatableColumns, []string{idColumn}),
+		updaterGlobal:      repo.NewUpdaterGlobal(resource.EntityType, entityTypeTable, updatableColumns, []string{idColumn}),
 	}
 }
 
@@ -80,7 +80,7 @@ func (r EntityTypeCollection) Len() int {
 	return len(r)
 }
 
-// Create missing godoc
+// Create creates an Entity Type for a given resource.Type
 func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.EntityType) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
@@ -100,7 +100,7 @@ func (r *pgRepository) CreateGlobal(ctx context.Context, model *model.EntityType
 	return r.creatorGlobal.Create(ctx, r.conv.ToEntity(model))
 }
 
-// Update missing godoc
+// Update updates an Entity Type by ID for a given resource.Type
 func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.EntityType) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
@@ -109,7 +109,7 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.E
 	return r.updater.UpdateSingle(ctx, resource.EntityType, tenant, r.conv.ToEntity(model))
 }
 
-// UpdateGlobal updates n entity type globally without tenant isolation
+// UpdateGlobal updates entity type globally without tenant isolation
 func (r *pgRepository) UpdateGlobal(ctx context.Context, model *model.EntityType) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
@@ -118,28 +118,28 @@ func (r *pgRepository) UpdateGlobal(ctx context.Context, model *model.EntityType
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, r.conv.ToEntity(model))
 }
 
-// Delete missing godoc
+// Delete deletes an Entity Type by ID
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	log.C(ctx).Debugf("Deleting EntityType entity with id %q", id)
-	return r.deleter.DeleteOne(ctx, resource.EntityType, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.EntityType, tenant, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
-// DeleteGlobal deletes n Entity Type without tenant isolation
+// DeleteGlobal deletes an Entity Type without tenant isolation
 func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 	log.C(ctx).Debugf("Deleting EntityType entity with id %q", id)
-	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
-// Exists missing godoc
+// Exists checks if an Entity Type with ID exists
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, resource.EntityType, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerier.Exists(ctx, resource.EntityType, tenant, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
-// GetByID missing godoc
+// GetByID returns an Entity Type by ID
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.EntityType, error) {
 	log.C(ctx).Debugf("Getting EntityType entity with id %q", id)
 	var entityTypeEnt Entity
-	if err := r.singleGetter.Get(ctx, resource.EntityType, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entityTypeEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.EntityType, tenant, repo.Conditions{repo.NewEqualCondition(idColumn, id)}, repo.NoOrderBy, &entityTypeEnt); err != nil {
 		return nil, err
 	}
 
@@ -148,11 +148,11 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.E
 	return entityTypeModel, nil
 }
 
-// GetByIDGlobal gets a netity type by ID without tenant isolation
+// GetByIDGlobal gets an entity type by ID without tenant isolation
 func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.EntityType, error) {
 	log.C(ctx).Debugf("Getting EntityType entity with id %q", id)
 	var entityTypeEnt Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entityTypeEnt); err != nil {
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)}, repo.NoOrderBy, &entityTypeEnt); err != nil {
 		return nil, err
 	}
 
@@ -177,7 +177,7 @@ func (r *pgRepository) GetByApplicationID(ctx context.Context, tenantID string, 
 // ListByApplicationIDPage lists all EntityTypes for a given application ID with paging.
 func (r *pgRepository) ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.EntityTypePage, error) {
 	var entityTypeCollection EntityTypeCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, resource.EntityType, tenantID, pageSize, cursor, idColumn, &entityTypeCollection, repo.NewEqualCondition("app_id", appID))
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.EntityType, tenantID, pageSize, cursor, idColumn, &entityTypeCollection, repo.NewEqualCondition(appIDColumn, appID))
 
 	if err != nil {
 		return nil, errors.Wrap(err, "while decoding page cursor")
@@ -198,7 +198,7 @@ func (r *pgRepository) ListByApplicationIDPage(ctx context.Context, tenantID str
 
 // ListByResourceID lists EntityTypes by a given resource type and resource ID
 func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.EntityType, error) {
-	entityTypeCollection := entityTypeCollection{}
+	entityTypeCollection := EntityTypeCollection{}
 
 	var condition repo.Condition
 	var err error
@@ -219,11 +219,4 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceI
 		entityTypes = append(entityTypes, entityTypeModel)
 	}
 	return entityTypes, nil
-}
-
-type entityTypeCollection []Entity
-
-// Len missing godoc
-func (etc entityTypeCollection) Len() int {
-	return len(etc)
 }

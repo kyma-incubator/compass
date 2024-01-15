@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -17,7 +18,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy/automock"
@@ -231,7 +232,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			Name: "Well-known config fetch with access strategy fails when access strategy provider returns error",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				executorProvider := &automock.ExecutorProvider{}
-				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(nil, testErr).Once()
+				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(nil, testErr).Times(5)
 				return executorProvider
 			},
 			AccessStrategy: testAccessStrategy,
@@ -242,10 +243,10 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			Name: "Well-known config fetch with access strategy fails when access strategy executor returns error",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				executor := &automock.Executor{}
-				executor.On("Execute", context.TODO(), mock.Anything, baseURL+ord.WellKnownEndpoint, "", &sync.Map{}).Return(nil, testErr).Once()
+				executor.On("Execute", context.TODO(), mock.Anything, baseURL+ord.WellKnownEndpoint, "", &sync.Map{}).Return(nil, testErr).Times(5)
 
 				executorProvider := &automock.ExecutorProvider{}
-				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
+				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Times(5)
 				return executorProvider
 			},
 			AccessStrategy: testAccessStrategy,
@@ -402,13 +403,13 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			}
 			testHTTPClient := NewTestClient(test.RoundTripFunc)
 
-			certCache := certloader.NewCertificateCache()
+			certCache := credloader.NewCertificateCache()
 			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName)
 			if test.ExecutorProviderFunc != nil {
 				executorProviderMock = test.ExecutorProviderFunc()
 			}
 
-			clientCfg := ord.NewClientConfig(5)
+			clientCfg := ord.NewClientConfig(5, time.Millisecond, 5)
 			client := ord.NewClient(clientCfg, testHTTPClient, executorProviderMock)
 
 			testApp := fixApplicationPage().Data[0]

@@ -20,9 +20,10 @@ type ApplicationTemplateProvider struct {
 	displayNamePlaceholder  string
 	tenantID                string
 	applicationWebhookInput *graphql.WebhookInput
+	condition               graphql.ApplicationStatusCondition
 }
 
-func NewApplicationTemplateProvider(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder, tenantID string, webhookInput *graphql.WebhookInput) *ApplicationTemplateProvider {
+func NewApplicationTemplateProvider(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder, tenantID string, webhookInput *graphql.WebhookInput, condition graphql.ApplicationStatusCondition) *ApplicationTemplateProvider {
 	p := &ApplicationTemplateProvider{
 		applicationType:         applicationType,
 		localTenantID:           localTenantID,
@@ -32,13 +33,14 @@ func NewApplicationTemplateProvider(applicationType, localTenantID, region, name
 		displayNamePlaceholder:  displayNamePlaceholder,
 		tenantID:                tenantID,
 		applicationWebhookInput: webhookInput,
+		condition:               condition,
 	}
 
 	return p
 }
 
 func (p *ApplicationTemplateProvider) Provide(t *testing.T, ctx context.Context, gqlClient *gcli.Client) string {
-	in := fixtures.FixApplicationTemplateWithWebhookInput(p.applicationType, p.localTenantID, p.region, p.namespace, p.namePlaceholder, p.displayNamePlaceholder, p.applicationWebhookInput)
+	in := fixtures.FixApplicationTemplateWithWebhookInput(p.applicationType, p.localTenantID, p.region, p.namespace, p.namePlaceholder, p.displayNamePlaceholder, p.applicationWebhookInput, p.condition)
 	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, gqlClient, p.tenantID, in)
 	require.NoError(t, err)
 	p.applicationTemplate = appTpl

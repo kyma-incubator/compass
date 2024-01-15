@@ -53,10 +53,10 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 		statusCondition: {{ .StatusCondition }},
 		{{- end }}
 		{{- if .BaseURL }}
-		baseUrl: "{{ .BaseURL }}"
+		baseUrl: "{{ .BaseURL }}",
 		{{- end }}
 		{{- if .ApplicationNamespace }}
-		applicationNamespace: "{{ .ApplicationNamespace }}"
+		applicationNamespace: "{{ .ApplicationNamespace }}",
 		{{- end }}
 	}`)
 }
@@ -462,6 +462,94 @@ func (g *Graphqlizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput)
 	}`)
 }
 
+// IntegrationDependencyInputToGQL missing godoc
+func (g *Graphqlizer) IntegrationDependencyInputToGQL(in graphql.IntegrationDependencyInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{ .Name}}",
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end}}
+		{{- if .OrdID }}
+		ordID: "{{.OrdID}}",
+		{{- end}}
+		{{- if .PartOfPackage }}
+		partOfPackage: "{{.PartOfPackage}}",
+		{{- end}}
+		{{- if .Visibility }}
+		visibility: "{{.Visibility}}",
+		{{- end}}
+		{{- if .ReleaseStatus }}
+		releaseStatus: "{{.ReleaseStatus}}",
+		{{- end}}
+		{{- if .Mandatory }}
+		mandatory: {{.Mandatory}},
+		{{- end}}
+		{{- if .Aspects }}
+		aspects: [
+			{{- range $i, $e := .Aspects }}
+				{{- if $i}}, {{- end}} {{ AspectInputToGQL $e }}
+			{{- end }} ],
+		{{- end}}
+		{{- if .Version }}
+		version: {{- VersionInputToGQL .Version }},
+		{{- end}}
+	}`)
+}
+
+// AspectInputToGQL missing godoc
+func (g *Graphqlizer) AspectInputToGQL(in graphql.AspectInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{ .Name}}",
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end}}
+		{{- if .Mandatory }}
+		mandatory: {{.Mandatory}},
+		{{- end}}
+		{{- if .APIResources }}
+		apiResources: [
+			{{- range $i, $e := .APIResources }}
+				{{- if $i}}, {{- end}} {{ AspectAPIDefinitionInputToGQL $e }}
+			{{- end }} ],
+		{{- end}}
+		{{- if .EventResources }}
+		eventResources: [
+			{{- range $i, $e := .EventResources }}
+				{{- if $i}}, {{- end}} {{ AspectEventDefinitionInputToGQL $e }}
+			{{- end }} ],
+		{{- end}}
+	}`)
+}
+
+// AspectAPIDefinitionInputToGQL missing godoc
+func (g *Graphqlizer) AspectAPIDefinitionInputToGQL(in graphql.AspectAPIDefinitionInput) (string, error) {
+	return g.genericToGQL(in, `{
+		ordId: "{{ .OrdID}}",
+	}`)
+}
+
+// AspectEventDefinitionInputToGQL missing godoc
+func (g *Graphqlizer) AspectEventDefinitionInputToGQL(in graphql.AspectEventDefinitionInput) (string, error) {
+	return g.genericToGQL(in, `{
+		ordId: "{{ .OrdID}}",
+		{{- if .Subset }}
+		subset: [
+			{{- range $i, $e := .Subset }}
+				{{- if $i}}, {{- end}} {{ AspectEventDefinitionSubsetInputToGQL $e }}
+			{{- end }} ],
+		{{- end}}
+	}`)
+}
+
+// AspectEventDefinitionSubsetInputToGQL missing godoc
+func (g *Graphqlizer) AspectEventDefinitionSubsetInputToGQL(in graphql.AspectEventDefinitionSubsetInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .EventType }}
+		eventType: "{{.EventType}}",
+		{{- end}}
+	}`)
+}
+
 // EventAPISpecInputToGQL missing godoc
 func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventSpecInput) (string, error) {
 	in.Data = quoteCLOB(in.Data)
@@ -640,6 +728,12 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 		{{- if .LeadingProductIDs }} 
 		leadingProductIDs: [
 			{{- range $i, $e := .LeadingProductIDs }}
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
+		{{- end}}
+		{{- if .DiscoveryConsumers }} 
+		discoveryConsumers: [
+			{{- range $i, $e := .DiscoveryConsumers }}
 				{{- if $i}}, {{- end}} {{ marshal $e }}
 			{{- end }} ],
 		{{- end}}
@@ -892,6 +986,9 @@ func (g *Graphqlizer) WriteTenantsInputToGQL(in []graphql.BusinessTenantMappingI
 				{{- if $tenant.LicenseType }}
 				licenseType: {{ quote $tenant.LicenseType }},
 				{{- end }}
+				{{- if $tenant.CustomerID }}
+				customerId: {{ quote $tenant.CustomerID }},
+				{{- end }}
 				type: {{ quote $tenant.Type }},
 				provider: {{ quote $tenant.Provider }}
 			}
@@ -1017,6 +1114,11 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["AuthInputToGQL"] = g.AuthInputToGQL
 	fm["LabelsToGQL"] = g.LabelsToGQL
 	fm["WebhookInputToGQL"] = g.WebhookInputToGQL
+	fm["IntegrationDependencyInputToGQL"] = g.IntegrationDependencyInputToGQL
+	fm["AspectInputToGQL"] = g.AspectInputToGQL
+	fm["AspectAPIDefinitionInputToGQL"] = g.AspectAPIDefinitionInputToGQL
+	fm["AspectEventDefinitionInputToGQL"] = g.AspectEventDefinitionInputToGQL
+	fm["AspectEventDefinitionSubsetInputToGQL"] = g.AspectEventDefinitionSubsetInputToGQL
 	fm["APIDefinitionInputToGQL"] = g.APIDefinitionInputToGQL
 	fm["EventDefinitionInputToGQL"] = g.EventDefinitionInputToGQL
 	fm["APISpecInputToGQL"] = g.APISpecInputToGQL

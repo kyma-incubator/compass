@@ -14,7 +14,7 @@ import (
 //go:generate mockery --name=EntityTypeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityTypeService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID string, in model.EntityTypeInput, entityTypeHash uint64) (string, error)
-	Update(ctx context.Context, resourceType resource.Type, id string, in model.EntityTypeInput, entityTypeHash uint64) error
+	Update(ctx context.Context, resourceType resource.Type, id string, packageID string, in model.EntityTypeInput, entityTypeHash uint64) error
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.EntityType, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.EntityType, error)
@@ -95,7 +95,7 @@ func (ep *EntityTypeProcessor) resyncEntityTypeInTx(ctx context.Context, resourc
 
 func (ep *EntityTypeProcessor) resyncEntityType(ctx context.Context, resourceType resource.Type, resourceID string, entityTypesFromDB []*model.EntityType, packagesFromDB []*model.Package, entityType model.EntityTypeInput, entityTypeHash uint64) error {
 	ctx = addFieldToLogger(ctx, "entity_type_ord_id", entityType.OrdID)
-	_, isEntityTypeFound := searchInSlice(len(entityTypesFromDB), func(i int) bool {
+	i, isEntityTypeFound := searchInSlice(len(entityTypesFromDB), func(i int) bool {
 		return equalStrings(&entityTypesFromDB[i].OrdID, &entityType.OrdID)
 	})
 
@@ -112,7 +112,7 @@ func (ep *EntityTypeProcessor) resyncEntityType(ctx context.Context, resourceTyp
 			return err
 		}
 	} else {
-		err := ep.entityTypeSvc.Update(ctx, resourceType, resourceID, entityType, entityTypeHash)
+		err := ep.entityTypeSvc.Update(ctx, resourceType, entityTypesFromDB[i].ID, packageID, entityType, entityTypeHash)
 		if err != nil {
 			return err
 		}

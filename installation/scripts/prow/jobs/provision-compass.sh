@@ -91,10 +91,13 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+ARTIFACTS="/var/log/prow_artifacts"
+mkdir -p "${ARTIFACTS}"
+
 log::info "Triggering the compass installation"
-${COMPASS_SOURCE_DIR}/installation/scripts/prow/provision.sh ${DUMP_DB}
+${COMPASS_SOURCE_DIR}/installation/cmd/run.sh --k3d-memory 12288MB ${DUMP_DB}
 log::info "Compass provisioning done"
 
 log::info "Triggering the tests"
-${COMPASS_SOURCE_DIR}/installation/scripts/prow/execute-tests.sh ${DUMP_DB}
+ARTIFACTS=${ARTIFACTS} ${COMPASS_SOURCE_DIR}/installation/scripts/testing.sh ${DUMP_DB}
 log::info "Test execution completed"

@@ -2,6 +2,9 @@ package formationassignment
 
 import (
 	"context"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
@@ -92,8 +95,45 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 	}
 }
 
+// GenerateFormationAssignmentPair generates a formation assignment pair with operation given an assignment and reverse assignment
+// If there is a missing reverse assignment, it still generates a pair with an empty ReverseAssignmentReqMapping
+func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*AssignmentMappingPairWithOperation, error) {
+	log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
+	notificationReq, err := fan.GenerateFormationAssignmentNotification(ctx, fa, operation)
+	if err != nil {
+		return nil, errors.Wrapf(err, "An error occurred while generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
+	}
+
+	var reverseNotificationReq *webhookclient.FormationAssignmentNotificationRequest
+	if reverseFA != nil {
+		log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q", reverseFA.ID, reverseFA.FormationID)
+		reverseNotificationReq, err = fan.GenerateFormationAssignmentNotification(ctx, reverseFA, operation)
+		if err != nil {
+			return nil, errors.Wrapf(err, "An error occurred while generating reverse formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
+		}
+	}
+
+	faReqMapping := FormationAssignmentRequestMapping{
+		Request:             notificationReq,
+		FormationAssignment: fa,
+	}
+
+	reverseFAReqMapping := FormationAssignmentRequestMapping{
+		Request:             reverseNotificationReq,
+		FormationAssignment: reverseFA,
+	}
+
+	return &AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &AssignmentMappingPair{
+			AssignmentReqMapping:        &faReqMapping,
+			ReverseAssignmentReqMapping: &reverseFAReqMapping,
+		},
+		Operation: operation,
+	}, nil
+}
+
 // PrepareDetailsForNotificationStatusReturned creates NotificationStatusReturnedOperationDetails by given tenantID, formation assignment and formation operation
-func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState, lastFormationAssignmentConfiguration string) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
+func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, notificationStatusReport *statusreport.NotificationStatusReport) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
 	var targetType model.ResourceType
 	switch fa.TargetType {
 	case model.FormationAssignmentTypeApplication:
@@ -135,16 +175,15 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 	}
 
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		ResourceType:                         targetType,
-		ResourceSubtype:                      targetSubtype,
-		LastFormationAssignmentState:         lastFormationAssignmentState,
-		LastFormationAssignmentConfiguration: lastFormationAssignmentConfiguration,
-		Tenant:                               tenantID,
-		FormationAssignmentTemplateInput:     formationAssignmentTemplateInput,
-		Operation:                            operation,
-		FormationAssignment:                  fa,
-		ReverseFormationAssignment:           reverseFa,
-		Formation:                            formation,
+		ResourceType:                     targetType,
+		ResourceSubtype:                  targetSubtype,
+		NotificationStatusReport:         notificationStatusReport,
+		Tenant:                           tenantID,
+		FormationAssignmentTemplateInput: formationAssignmentTemplateInput,
+		Operation:                        operation,
+		FormationAssignment:              fa,
+		ReverseFormationAssignment:       reverseFa,
+		Formation:                        formation,
 	}, nil
 }
 
@@ -577,8 +616,9 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 
 func convertFormationAssignmentFromModel(formationAssignment *model.FormationAssignment) *webhook.FormationAssignment {
 	if formationAssignment == nil {
-		return &webhook.FormationAssignment{Value: "\"\"", Error: "\"\""}
+		return &webhook.FormationAssignment{}
 	}
+	state := formationAssignment.GetNotificationState()
 	return &webhook.FormationAssignment{
 		ID:          formationAssignment.ID,
 		FormationID: formationAssignment.FormationID,
@@ -587,7 +627,7 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 		SourceType:  formationAssignment.SourceType,
 		Target:      formationAssignment.Target,
 		TargetType:  formationAssignment.TargetType,
-		State:       formationAssignment.State,
+		State:       state,
 		Value:       str.StringifyJSONRawMessage(formationAssignment.Value),
 		Error:       str.StringifyJSONRawMessage(formationAssignment.Error),
 	}

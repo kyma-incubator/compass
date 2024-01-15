@@ -20,25 +20,25 @@ type DestinationCreatorService struct {
 	mock.Mock
 }
 
-// CreateCertificate provides a mock function with given fields: ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation
-func (_m *DestinationCreatorService) CreateCertificate(ctx context.Context, destinationsDetails []operators.Destination, destinationAuthType destinationcreator.AuthType, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) (*operators.CertificateData, error) {
-	ret := _m.Called(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation)
+// CreateCertificate provides a mock function with given fields: ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation, useSelfSignedCert
+func (_m *DestinationCreatorService) CreateCertificate(ctx context.Context, destinationsDetails []operators.Destination, destinationAuthType destinationcreator.AuthType, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool, useSelfSignedCert bool) (*operators.CertificateData, error) {
+	ret := _m.Called(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation, useSelfSignedCert)
 
 	var r0 *operators.CertificateData
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, destinationcreator.AuthType, *model.FormationAssignment, uint8, bool) (*operators.CertificateData, error)); ok {
-		return rf(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation)
+	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, destinationcreator.AuthType, *model.FormationAssignment, uint8, bool, bool) (*operators.CertificateData, error)); ok {
+		return rf(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation, useSelfSignedCert)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, destinationcreator.AuthType, *model.FormationAssignment, uint8, bool) *operators.CertificateData); ok {
-		r0 = rf(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation)
+	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, destinationcreator.AuthType, *model.FormationAssignment, uint8, bool, bool) *operators.CertificateData); ok {
+		r0 = rf(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation, useSelfSignedCert)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*operators.CertificateData)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []operators.Destination, destinationcreator.AuthType, *model.FormationAssignment, uint8, bool) error); ok {
-		r1 = rf(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation)
+	if rf, ok := ret.Get(1).(func(context.Context, []operators.Destination, destinationcreator.AuthType, *model.FormationAssignment, uint8, bool, bool) error); ok {
+		r1 = rf(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation, useSelfSignedCert)
 	} else {
 		r1 = ret.Error(1)
 	}

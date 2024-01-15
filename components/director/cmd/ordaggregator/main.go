@@ -4,11 +4,20 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/dataproduct"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/aspect"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/capability"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/entitytypemapping"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationdependency"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -68,13 +77,14 @@ import (
 	httputilpkg "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
@@ -101,11 +111,15 @@ type config struct {
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 
-	ClientTimeout     time.Duration `envconfig:"default=120s"`
-	SkipSSLValidation bool          `envconfig:"default=false"`
+	ClientTimeout                  time.Duration `envconfig:"default=120s"`
+	ClientMaxConnectionsPerHost    int           `envconfig:"APP_CLIENT_MAX_CONNECTIONS_PER_HOST,default=1000"`
+	ClientMaxIdlConnectionsPerHost int           `envconfig:"APP_CLIENT_MAX_IDLE_CONNECTIONS_PER_HOST,default=1000"`
+	ClientRetryAttempts            uint          `envconfig:"default=5"`
+	ClientRetryDelay               time.Duration `envconfig:"default=5s"`
+	SkipSSLValidation              bool          `envconfig:"default=false"`
 
 	RetryConfig                   retry.Config
-	CertLoaderConfig              certloader.Config
+	CertLoaderConfig              credloader.CertConfig
 	GlobalRegistryConfig          ord.GlobalRegistryConfig
 	ElectionConfig                cronjob.ElectionConfig
 	MaintainOperationsJobInterval time.Duration `envconfig:"APP_MAINTAIN_OPERATIONS_JOB_INTERVAL,default=60m"`
@@ -170,12 +184,19 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	certCache, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   15 * time.Second,
+				KeepAlive: 15 * time.Second,
+			}).DialContext,
+			MaxConnsPerHost:     cfg.ClientMaxConnectionsPerHost,
+			MaxIdleConnsPerHost: cfg.ClientMaxIdlConnectionsPerHost,
+			MaxIdleConns:        cfg.ClientMaxIdlConnectionsPerHost,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
@@ -198,7 +219,12 @@ func main() {
 	apiConverter := api.NewConverter(versionConverter, specConverter)
 	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	entityTypeConverter := entitytype.NewConverter(versionConverter)
+	entityTypeMappingConverter := entitytypemapping.NewConverter()
 	capabilityConverter := capability.NewConverter(versionConverter)
+	aspectEventResourceConverter := aspecteventresource.NewConverter()
+	aspectConverter := aspect.NewConverter(aspectEventResourceConverter)
+	integrationDependencyConverter := integrationdependency.NewConverter(versionConverter, aspectConverter)
+	dataProductConverter := dataproduct.NewConverter(versionConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
 	intSysConverter := integrationsystem.NewConverter()
@@ -232,7 +258,12 @@ func main() {
 	apiRepo := api.NewRepository(apiConverter)
 	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
 	entityTypeRepo := entitytype.NewRepository(entityTypeConverter)
+	entityTypeMappingRepo := entitytypemapping.NewRepository(entityTypeMappingConverter)
 	capabilityRepo := capability.NewRepository(capabilityConverter)
+	aspectRepo := aspect.NewRepository(aspectConverter)
+	aspectEventResourceRepo := aspecteventresource.NewRepository(aspectEventResourceConverter)
+	integrationDependencyRepo := integrationdependency.NewRepository(integrationDependencyConverter)
+	dataProductRepo := dataproduct.NewRepository(dataProductConverter)
 	specRepo := spec.NewRepository(specConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
@@ -255,6 +286,9 @@ func main() {
 	bundleInstanceAuthRepo := bundleinstanceauth.NewRepository(bundleInstanceAuthConv)
 	certSubjectMappingRepo := certsubjectmapping.NewRepository(certSubjectMappingConv)
 
+	systemAuthConverter := systemauth.NewConverter(authConverter)
+	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
+
 	timeSvc := directorTime.NewService()
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
@@ -266,6 +300,10 @@ func main() {
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	entityTypeSvc := entitytype.NewService(entityTypeRepo, uidSvc)
 	capabilitySvc := capability.NewService(capabilityRepo, uidSvc, specSvc)
+	aspectSvc := aspect.NewService(aspectRepo, uidSvc)
+	aspectEventResourceSvc := aspecteventresource.NewService(aspectEventResourceRepo, uidSvc)
+	integrationDependencySvc := integrationdependency.NewService(integrationDependencyRepo, uidSvc)
+	dataProductSvc := dataproduct.NewService(dataProductRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, tenantMappingConfig, cfg.TenantMappingCallbackURL)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
@@ -279,7 +317,8 @@ func main() {
 	certSubjectInputBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, webhookLabelBuilder, webhookTenantBuilder, certSubjectInputBuilder)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, nil, nil, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
+	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, nil, nil, systemAuthSvc, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, nil, nil, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
 	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo)
@@ -293,13 +332,25 @@ func main() {
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
+	entityTypeMappingSvc := entitytypemapping.NewService(entityTypeMappingRepo, uidSvc)
 	tombstoneProcessor := processor.NewTombstoneProcessor(transact, tombstoneSvc)
+	vendorProcessor := processor.NewVendorProcessor(transact, vendorSvc)
+	packageProcessor := processor.NewPackageProcessor(transact, packageSvc)
+	productProcessor := processor.NewProductProcessor(transact, productSvc)
+	apiProcessor := processor.NewAPIProcessor(transact, apiSvc, entityTypeSvc, entityTypeMappingSvc, bundleReferenceSvc, specSvc)
+	eventProcessor := processor.NewEventProcessor(transact, eventAPISvc, entityTypeSvc, entityTypeMappingSvc, bundleReferenceSvc, specSvc)
+	integrationDependencyProcessor := processor.NewIntegrationDependencyProcessor(transact, integrationDependencySvc, aspectSvc, aspectEventResourceSvc)
+	dataProductProcessor := processor.NewDataProductProcessor(transact, dataProductSvc)
 	entityTypeProcessor := processor.NewEntityTypeProcessor(transact, entityTypeSvc)
+	capabilityProcessor := processor.NewCapabilityProcessor(transact, capabilitySvc, specSvc)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
 	appTemplateVersionSvc := apptemplateversion.NewService(appTemplateVersionRepo, appTemplateSvc, uidSvc, timeSvc)
-
+	tombstonedResourcesDeleter := processor.NewTombstonedResourcesDeleter(transact, packageSvc, apiSvc, eventAPISvc, entityTypeSvc, capabilitySvc, integrationDependencySvc, dataProductSvc, vendorSvc, productSvc, bundleSvc)
 	opRepo := operation.NewRepository(operation.NewConverter())
 	opSvc := operation.NewService(opRepo, uuid.NewService())
+
+	constraintEngine.SetFormationAssignmentNotificationService(faNotificationSvc)
+	constraintEngine.SetFormationAssignmentService(formationAssignmentSvc)
 
 	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeOrdAggregation, cfg.OperationsManagerConfig)
 
@@ -321,14 +372,14 @@ func main() {
 		shutdownMainSrv()
 	}()
 
-	clientConfig := ord.NewClientConfig(cfg.MaxParallelDocumentsPerApplication)
+	clientConfig := ord.NewClientConfig(cfg.MaxParallelDocumentsPerApplication, cfg.ClientRetryDelay, cfg.ClientRetryAttempts)
 	ordClientWithTenantExecutor := newORDClientWithTenantExecutor(cfg, clientConfig, certCache)
 	ordClientWithoutTenantExecutor := newORDClientWithoutTenantExecutor(cfg, clientConfig, certCache)
 
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
 	ordConfig := ord.NewServiceConfig(cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
-	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, entityTypeSvc, entityTypeProcessor, capabilitySvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping, opSvc)
+	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, apiProcessor, eventAPISvc, eventProcessor, entityTypeSvc, entityTypeProcessor, capabilitySvc, capabilityProcessor, integrationDependencySvc, integrationDependencyProcessor, dataProductSvc, dataProductProcessor, specSvc, fetchRequestSvc, packageSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, ordWebhookMapping, opSvc)
 	ordOpProcessor := &ord.OperationsProcessor{
 		OrdSvc: ordSvc,
 	}
@@ -387,10 +438,17 @@ func main() {
 	runMainSrv()
 }
 
-func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache certloader.Cache) *ord.ORDDocumentsClient {
+func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache credloader.CertCache) *ord.ORDDocumentsClient {
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   15 * time.Second,
+				KeepAlive: 15 * time.Second,
+			}).DialContext,
+			MaxConnsPerHost:     cfg.ClientMaxConnectionsPerHost,
+			MaxIdleConnsPerHost: cfg.ClientMaxIdlConnectionsPerHost,
+			MaxIdleConns:        cfg.ClientMaxIdlConnectionsPerHost,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
@@ -400,10 +458,17 @@ func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, c
 	return ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithTenant)
 }
 
-func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache certloader.Cache) *ord.ORDDocumentsClient {
+func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache credloader.CertCache) *ord.ORDDocumentsClient {
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   15 * time.Second,
+				KeepAlive: 15 * time.Second,
+			}).DialContext,
+			MaxConnsPerHost:     cfg.ClientMaxConnectionsPerHost,
+			MaxIdleConnsPerHost: cfg.ClientMaxIdlConnectionsPerHost,
+			MaxIdleConns:        cfg.ClientMaxIdlConnectionsPerHost,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
@@ -427,13 +492,20 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	log.C(ctx).Infof("Taken operation for processing: %s", op.ID)
 	if errProcess := opProcessor.Process(ctx, op); errProcess != nil {
 		log.C(ctx).Infof("Error while processing operation with id %q. Err: %v", op.ID, errProcess)
+		if strings.Contains(errProcess.Error(), ord.ValidationErrorMsg) && !strings.Contains(errProcess.Error(), ord.ProcessingErrorMsg) { // if is only validation error
+			if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, errProcess.Error()); errMarkAsCompleted != nil {
+				log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
+				return op.ID, errMarkAsCompleted
+			}
+			return op.ID, nil
+		}
 		if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, errProcess.Error()); errMarkAsFailed != nil {
 			log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
 			return op.ID, errMarkAsFailed
 		}
 		return op.ID, errProcess
 	}
-	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID); errMarkAsCompleted != nil {
+	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, ""); errMarkAsCompleted != nil {
 		log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
 		return op.ID, errMarkAsCompleted
 	}

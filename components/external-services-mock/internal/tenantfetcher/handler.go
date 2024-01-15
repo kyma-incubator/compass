@@ -30,14 +30,16 @@ type Handler struct {
 	mockedEvents             map[string][][]byte
 	allowedTenantOnDemandIDs []string
 	defaultTenantID          string
+	defaultCustomerTenantID  string
 }
 
-func NewHandler(allowedTenantOnDemandIDs []string, defaultTenantID string) *Handler {
+func NewHandler(allowedTenantOnDemandIDs []string, defaultTenantID, defaultCustomerTenantID string) *Handler {
 	return &Handler{
 		mutex:                    sync.Mutex{},
 		mockedEvents:             make(map[string][][]byte),
 		allowedTenantOnDemandIDs: allowedTenantOnDemandIDs,
 		defaultTenantID:          defaultTenantID,
+		defaultCustomerTenantID:  defaultCustomerTenantID,
 	}
 }
 
@@ -123,7 +125,10 @@ func (s *Handler) getMockEventForSubaccount(tenantOnDemandID string) []byte {
 				"subdomain": "%s",
 				"licenseType": "%s",
 				"parentGuid": "%s",
-				"region": "%s"
+				"region": "%s",
+				"labels": {
+					"customerId": ["%s"]
+				}
            	},
 			"globalAccountGUID": "%s",
 			"type": "Subaccount"
@@ -141,7 +146,7 @@ func (s *Handler) getMockEventForSubaccount(tenantOnDemandID string) []byte {
 }`
 
 	if slices.Contains(s.allowedTenantOnDemandIDs, tenantOnDemandID) {
-		mockedEvent := fmt.Sprintf(mockSubaccountEventPattern, tenantOnDemandID, "Subaccount on demand", "subdomain", "LICENSETYPE", s.defaultTenantID, "region", s.defaultTenantID)
+		mockedEvent := fmt.Sprintf(mockSubaccountEventPattern, tenantOnDemandID, "Subaccount on demand", "subdomain", "LICENSETYPE", s.defaultTenantID, "region", s.defaultCustomerTenantID, s.defaultTenantID)
 		return []byte(mockedEvent)
 	}
 	return []byte(emptyTenantProviderResponse)

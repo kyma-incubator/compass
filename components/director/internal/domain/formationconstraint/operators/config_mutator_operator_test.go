@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
@@ -14,15 +17,14 @@ import (
 )
 
 func TestConstraintOperators_ConfigMutator(t *testing.T) {
-	cfg := "{\"config\": {\"description\": \"dummy description\", \"credentials\": {\"url\":\"test.test\", \"mode\":\"SYNC\"}}}"
-	cfg2 := "{\"config2\": {\"description\": \"dummy description\"}}"
+	cfg := "{\"config2\": {\"description\": \"dummy description\"}}"
 	subtype := "someType"
 	sourceID := "ID"
 	otherSubtype := "otherType"
 	state := string(model.ConfigPendingAssignmentState)
-	faWithConfig := fixFormationAssignmentWithConfig(json.RawMessage(cfg))
-	faWithConfig.SourceType = model.FormationAssignmentTypeApplication
-	faWithConfig.Source = sourceID
+	faInInput := fixFormationAssignmentWithState(model.InitialAssignmentState)
+	faInInput.SourceType = model.FormationAssignmentTypeApplication
+	faInInput.Source = sourceID
 
 	testCases := []struct {
 		Name                  string
@@ -31,72 +33,82 @@ func TestConstraintOperators_ConfigMutator(t *testing.T) {
 		NewConfig             *string
 		OnlyForSourceSubtypes []string
 		LabelSvcFn            func() *automock.LabelService
+		StatusReport          *statusreport.NotificationStatusReport
 		ExpectedState         string
 		ExpectedConfig        json.RawMessage
 		ExpectedErrorMsg      string
 	}{
 		{
 			Name:           "Update State and Config",
-			InputFa:        faWithConfig.Clone(),
+			InputFa:        faInInput,
 			NewState:       &state,
-			NewConfig:      &cfg2,
-			ExpectedState:  string(model.ConfigPendingAssignmentState),
-			ExpectedConfig: json.RawMessage(cfg2),
-		},
-		{
-			Name:           "Update State only",
-			InputFa:        faWithConfig.Clone(),
-			NewState:       &state,
+			NewConfig:      &cfg,
+			StatusReport:   fixNotificationStatusReport(),
 			ExpectedState:  string(model.ConfigPendingAssignmentState),
 			ExpectedConfig: json.RawMessage(cfg),
 		},
 		{
+			Name:          "Update State only",
+			InputFa:       faInInput,
+			NewState:      &state,
+			StatusReport:  fixNotificationStatusReport(),
+			ExpectedState: string(model.ConfigPendingAssignmentState),
+		},
+		{
 			Name:           "Update Config only",
-			InputFa:        faWithConfig.Clone(),
-			NewConfig:      &cfg2,
-			ExpectedState:  string(model.ReadyAssignmentState),
-			ExpectedConfig: json.RawMessage(cfg2),
+			InputFa:        faInInput,
+			NewConfig:      &cfg,
+			StatusReport:   fixNotificationStatusReport(),
+			ExpectedConfig: json.RawMessage(cfg),
 		},
 		{
 			Name:                  "Update State and Config when source subtype is supported",
-			InputFa:               faWithConfig.Clone(),
+			InputFa:               faInInput,
 			NewState:              &state,
-			NewConfig:             &cfg2,
+			NewConfig:             &cfg,
 			OnlyForSourceSubtypes: []string{subtype},
 			LabelSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, sourceID, applicationTypeLabel).Return(&model.Label{Value: subtype}, nil).Once()
 				return svc
 			},
+			StatusReport:   fixNotificationStatusReport(),
 			ExpectedState:  string(model.ConfigPendingAssignmentState),
-			ExpectedConfig: json.RawMessage(cfg2),
+			ExpectedConfig: json.RawMessage(cfg),
 		},
 		{
 			Name:                  "No op when source subtype is not supported",
-			InputFa:               faWithConfig.Clone(),
+			InputFa:               faInInput,
 			NewState:              &state,
-			NewConfig:             &cfg2,
+			NewConfig:             &cfg,
 			OnlyForSourceSubtypes: []string{otherSubtype},
 			LabelSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, sourceID, applicationTypeLabel).Return(&model.Label{Value: subtype}, nil).Once()
 				return svc
 			},
-			ExpectedState:  string(model.ReadyAssignmentState),
-			ExpectedConfig: json.RawMessage(cfg),
+			StatusReport: fixNotificationStatusReport(),
 		},
 		{
 			Name:                  "Error while getting label",
-			InputFa:               faWithConfig.Clone(),
+			InputFa:               faInInput,
 			NewState:              &state,
-			NewConfig:             &cfg2,
+			NewConfig:             &cfg,
 			OnlyForSourceSubtypes: []string{otherSubtype},
 			LabelSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, sourceID, applicationTypeLabel).Return(nil, testErr).Once()
 				return svc
 			},
+			StatusReport:     fixNotificationStatusReport(),
 			ExpectedErrorMsg: "while getting subtype of resource with type:",
+		},
+		{
+			Name:             "Error when status report is missing",
+			InputFa:          faInInput,
+			NewState:         &state,
+			NewConfig:        &cfg,
+			ExpectedErrorMsg: "The join point details' notification status report memory address cannot be 0",
 		},
 	}
 	for _, testCase := range testCases {
@@ -107,11 +119,10 @@ func TestConstraintOperators_ConfigMutator(t *testing.T) {
 			if testCase.LabelSvcFn != nil {
 				labelService = testCase.LabelSvcFn()
 			}
-			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, labelService, nil, nil, nil, nil, runtimeType, applicationType)
+			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 			// WHEN
-			fa := testCase.InputFa
-			input := fixConfigMutatorInput(testCase.InputFa, testCase.NewState, testCase.NewConfig, testCase.OnlyForSourceSubtypes)
+			input := fixConfigMutatorInput(testCase.InputFa, testCase.StatusReport, testCase.NewState, testCase.NewConfig, testCase.OnlyForSourceSubtypes)
 			result, err := engine.MutateConfig(ctx, input)
 
 			// THEN
@@ -121,8 +132,10 @@ func TestConstraintOperators_ConfigMutator(t *testing.T) {
 				assert.Equal(t, false, result)
 			} else {
 				assert.Equal(t, true, result)
-				assert.Equal(t, testCase.ExpectedConfig, fa.Value)
-				assert.Equal(t, testCase.ExpectedState, fa.State)
+				retrieveNotificationStatusReport, err := operators.RetrieveNotificationStatusReportPointer(ctx, input.NotificationStatusReportMemoryAddress)
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedConfig, retrieveNotificationStatusReport.Configuration)
+				assert.Equal(t, testCase.ExpectedState, retrieveNotificationStatusReport.State)
 				assert.NoError(t, err)
 			}
 			mock.AssertExpectationsForObjects(t, labelService)
@@ -132,7 +145,7 @@ func TestConstraintOperators_ConfigMutator(t *testing.T) {
 	t.Run("Error when incorrect input is provided", func(t *testing.T) {
 		// GIVEN
 
-		engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 		// WHEN
 		input := &formationconstraintpkg.DestinationCreatorInput{}
