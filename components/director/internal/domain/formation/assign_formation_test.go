@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
@@ -215,6 +216,12 @@ func TestServiceAssignFormation(t *testing.T) {
 		ObjectType: model.RuntimeContextLabelableObject,
 		Version:    0,
 	}
+	existingApp := &model.Application{
+		BaseEntity: &model.BaseEntity{
+			DeletedAt: nil,
+			Ready:     true,
+		},
+	}
 
 	assignments := []*model.FormationAssignment{
 		{
@@ -260,7 +267,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				uidService.On("Generate").Return(fixUUID()).Once()
 				return uidService
 			},
-			ApplicationRepoFn: expectEmptySliceApplicationRepo,
+			ApplicationRepoFn: expectEmptySliceApplicationAndReadyApplicationRepo,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
@@ -312,7 +319,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &applicationLblInput).Return(nil).Once()
 				return labelService
 			},
-			ApplicationRepoFn:    expectEmptySliceApplicationRepo,
+			ApplicationRepoFn:    expectEmptySliceApplicationAndReadyApplicationRepo,
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
@@ -371,6 +378,8 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ApplicationRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
+
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(existingApp, nil).Once()
 				repo.On("ListAllByIDs", ctx, TntInternalID, []string{ApplicationID}).Return([]*model.Application{{BaseEntity: &model.BaseEntity{ID: ApplicationID}, ApplicationTemplateID: str.Ptr(ApplicationTemplateID)}}, nil).Once()
 				return repo
 			},
@@ -432,6 +441,8 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ApplicationRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
+
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(existingApp, nil).Once()
 				repo.On("ListAllByIDs", ctx, TntInternalID, []string{ApplicationID}).Return([]*model.Application{{BaseEntity: &model.BaseEntity{ID: ApplicationID}, ApplicationTemplateID: str.Ptr(ApplicationTemplateID)}}, nil).Once()
 				return repo
 			},
@@ -846,6 +857,11 @@ func TestServiceAssignFormation(t *testing.T) {
 				uidService.On("Generate").Return(fixUUID()).Once()
 				return uidService
 			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(existingApp, nil).Once()
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
@@ -881,6 +897,11 @@ func TestServiceAssignFormation(t *testing.T) {
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationLbl2Input).Return(nil, testErr).Once()
 				return labelService
+			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(existingApp, nil).Once()
+				return repo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
@@ -925,6 +946,11 @@ func TestServiceAssignFormation(t *testing.T) {
 				}, nil).Once()
 				return labelService
 			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(existingApp, nil).Once()
+				return repo
+			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
 				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedSecondFormation, nil).Once()
@@ -946,6 +972,81 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: "cannot convert label value to slice of strings",
 		},
 		{
+			Name: "error for application if application is not ready",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
+				return labelService
+			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(&model.Application{
+					BaseEntity: &model.BaseEntity{
+						Ready: false,
+					},
+				}, nil).Once()
+				return repo
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedSecondFormation, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+				return repo
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			ObjectID:           ApplicationID,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: fmt.Sprintf("application with ID %q is not ready", ApplicationID),
+		},
+		{
+			Name: "error for application if application is not being deleted",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
+				return labelService
+			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(&model.Application{
+					BaseEntity: &model.BaseEntity{
+						DeletedAt: &time.Time{},
+						Ready:     true,
+					},
+				}, nil).Once()
+				return repo
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedSecondFormation, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+				return repo
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			ObjectID:           ApplicationID,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: fmt.Sprintf("application with ID %q is currently being deleted", ApplicationID),
+		},
+		{
 			Name: "error for application while converting label value to string",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			LabelServiceFn: func() *automock.LabelService {
@@ -961,6 +1062,11 @@ func TestServiceAssignFormation(t *testing.T) {
 					Version:    0,
 				}, nil).Once()
 				return labelService
+			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(existingApp, nil).Once()
+				return repo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
@@ -1000,6 +1106,11 @@ func TestServiceAssignFormation(t *testing.T) {
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+				return repo
+			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(existingApp, nil).Once()
 				return repo
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
@@ -1729,6 +1840,11 @@ func TestServiceAssignFormation(t *testing.T) {
 				uidService.On("Generate").Return(fixUUID()).Once()
 				return uidService
 			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(existingApp, nil).Once()
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
@@ -1793,7 +1909,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		{
 			Name:              "error for application if generating notifications fails",
 			TxFn:              txGen.ThatSucceedsTwice,
-			ApplicationRepoFn: expectEmptySliceApplicationRepo,
+			ApplicationRepoFn: expectEmptySliceApplicationAndReadyApplicationRepo,
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
 				uidService.On("Generate").Return(fixUUID()).Once()
@@ -1846,6 +1962,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ApplicationRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(existingApp, nil).Once()
 				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return(nil, testErr).Once()
 				return repo
 			},
@@ -1897,6 +2014,11 @@ func TestServiceAssignFormation(t *testing.T) {
 				uidService.On("Generate").Return(fixUUID()).Once()
 				return uidService
 			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(existingApp, nil).Once()
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
@@ -1937,6 +2059,11 @@ func TestServiceAssignFormation(t *testing.T) {
 				uidService := &automock.UuidService{}
 				uidService.On("Generate").Return(fixUUID()).Once()
 				return uidService
+			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(existingApp, nil).Once()
+				return repo
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -1979,6 +2106,11 @@ func TestServiceAssignFormation(t *testing.T) {
 				uidService := &automock.UuidService{}
 				uidService.On("Generate").Return(fixUUID()).Once()
 				return uidService
+			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(existingApp, nil).Once()
+				return repo
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -2028,7 +2160,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				uidService.On("Generate").Return(fixUUID()).Once()
 				return uidService
 			},
-			ApplicationRepoFn: expectEmptySliceApplicationRepo,
+			ApplicationRepoFn: expectEmptySliceApplicationAndReadyApplicationRepo,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
@@ -2278,7 +2410,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		{
 			Name:              "error for application if generating formation assignments fails",
 			TxFn:              txGen.ThatSucceedsTwice,
-			ApplicationRepoFn: expectEmptySliceApplicationRepo,
+			ApplicationRepoFn: expectEmptySliceApplicationAndReadyApplicationRepo,
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
 				uidService.On("Generate").Return(fixUUID()).Once()
@@ -2332,7 +2464,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		{
 			Name:              "error for application if processing formation assignments fails",
 			TxFn:              txGen.ThatSucceedsTwice,
-			ApplicationRepoFn: expectEmptySliceApplicationRepo,
+			ApplicationRepoFn: expectEmptySliceApplicationAndReadyApplicationRepo,
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
 				uidService.On("Generate").Return(fixUUID()).Once()
@@ -2420,7 +2552,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				uidService.On("Generate").Return(fixUUID()).Once()
 				return uidService
 			},
-			ApplicationRepoFn: expectEmptySliceApplicationRepo,
+			ApplicationRepoFn: expectEmptySliceApplicationAndReadyApplicationRepo,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()

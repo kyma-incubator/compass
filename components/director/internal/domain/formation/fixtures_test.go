@@ -923,6 +923,19 @@ func expectEmptySliceApplicationRepo() *automock.ApplicationRepository {
 	return appRepo
 }
 
+func expectEmptySliceApplicationAndReadyApplicationRepo() *automock.ApplicationRepository {
+	appRepo := &automock.ApplicationRepository{}
+	app := &model.Application{
+		BaseEntity: &model.BaseEntity{
+			DeletedAt: nil,
+			Ready:     true,
+		},
+	}
+	appRepo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(app, nil).Once()
+	appRepo.On("ListAllByIDs", mock.Anything, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+	return appRepo
+}
+
 func unusedApplicationRepo() *automock.ApplicationRepository {
 	return &automock.ApplicationRepository{}
 }
