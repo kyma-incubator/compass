@@ -2,6 +2,9 @@ package processor
 
 import (
 	"context"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -141,6 +144,9 @@ func (ep *EventProcessor) resyncEvent(ctx context.Context, resourceType resource
 	}
 
 	if !isEventFound {
+		currentTime := time.Now().Format(time.RFC3339)
+		event.LastUpdate = &currentTime
+
 		eventID, err := ep.eventSvc.Create(ctx, resourceType, resourceID, nil, packageID, event, nil, bundleIDsFromBundleReference, eventHash, defaultConsumptionBundleID)
 		if err != nil {
 			return nil, err
@@ -152,7 +158,16 @@ func (ep *EventProcessor) resyncEvent(ctx context.Context, resourceType resource
 
 		return ep.createSpecs(ctx, model.EventSpecReference, eventID, specs, resourceType)
 	}
-	err := ep.resyncEntityTypeMappings(ctx, resource.EventDefinition, eventsFromDB[i].ID, event.EntityTypeMappings)
+
+	log.C(ctx).Infof("Calculate the newest lastUpdate time for Event")
+	newestLastUpdateTime, err := NewestLastUpdateTimestamp(event.LastUpdate, eventsFromDB[i].LastUpdate, eventsFromDB[i].ResourceHash, eventHash)
+	if err != nil {
+		return nil, errors.Wrap(err, "error while calculating the newest lastUpdate time for Event")
+	}
+
+	event.LastUpdate = newestLastUpdateTime
+
+	err = ep.resyncEntityTypeMappings(ctx, resource.EventDefinition, eventsFromDB[i].ID, event.EntityTypeMappings)
 	if err != nil {
 		return nil, err
 	}

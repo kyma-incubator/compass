@@ -134,7 +134,7 @@ func (rd *FormationConfigurationChangeInput) SetAssignment(assignment *model.For
 		SourceType:  assignment.SourceType,
 		Target:      assignment.Target,
 		TargetType:  assignment.TargetType,
-		State:       assignment.State,
+		State:       assignment.GetNotificationState(),
 		Value:       str.StringifyJSONRawMessage(assignment.Value),
 		Error:       str.StringifyJSONRawMessage(assignment.Error),
 	}
@@ -150,7 +150,7 @@ func (rd *FormationConfigurationChangeInput) SetReverseAssignment(reverseAssignm
 		SourceType:  reverseAssignment.SourceType,
 		Target:      reverseAssignment.Target,
 		TargetType:  reverseAssignment.TargetType,
-		State:       reverseAssignment.State,
+		State:       reverseAssignment.GetNotificationState(),
 		Value:       str.StringifyJSONRawMessage(reverseAssignment.Value),
 		Error:       str.StringifyJSONRawMessage(reverseAssignment.Error),
 	}

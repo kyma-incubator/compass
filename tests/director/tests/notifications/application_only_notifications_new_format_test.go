@@ -974,7 +974,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		notificationCountAsyncAsserter := asserters.NewNotificationsCountAsyncAsserter(1, unassignOperation, localTenantID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		notificationsUnassignAsserter := asserters.NewUnassignNotificationsAsserter(1, localTenantID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		notificationCountRedirectNotificationAsyncAsserter := asserters.NewNotificationsCountAsyncAsserter(1, unassignOperation, redirectedTntID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
-		notificationsUnassignRedirectedAsserter := asserters.NewUnassignNotificationsAsserter(1, redirectedTntID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		notificationsUnassignRedirectedAsserter := asserters.NewUnassignNotificationsAsserter(1, redirectedTntID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).WithState(deletingAssignmentState)
 		op = operations.NewUnassignAppToFormationOperation(app2ID, tnt).WithAsserters(faAsserter, statusAsserter, notificationCountAsyncAsserter, notificationsUnassignAsserter, notificationCountRedirectNotificationAsyncAsserter, notificationsUnassignRedirectedAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)

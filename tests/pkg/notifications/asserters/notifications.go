@@ -24,6 +24,7 @@ const (
 type NotificationsAsserter struct {
 	expectedNotificationsCount         int
 	op                                 string
+	state                              *string
 	targetObjectID                     string
 	sourceObjectID                     string
 	localTenantID                      string
@@ -53,6 +54,11 @@ func NewNotificationsAsserter(expectedNotificationsCount int, op string, targetO
 	}
 }
 
+func (a *NotificationsAsserter) WithState(state string) *NotificationsAsserter {
+	a.state = &state
+	return a
+}
+
 func (a *NotificationsAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
 	formationID := ctx.Value(context_keys.FormationIDKey).(string)
 
@@ -61,7 +67,7 @@ func (a *NotificationsAsserter) AssertExpectations(t *testing.T, ctx context.Con
 
 	notificationsForTarget := gjson.GetBytes(body, a.targetObjectID)
 	assignNotificationAboutSource := notificationsForTarget.Array()[0]
-	err := verifyFormationAssignmentNotification(t, assignNotificationAboutSource, assignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.config, a.tenant, a.tenantParentCustomer, false)
+	err := verifyFormationAssignmentNotification(t, assignNotificationAboutSource, assignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.config, a.tenant, a.tenantParentCustomer, false, a.state)
 	require.NoError(t, err)
 }
 
@@ -114,7 +120,7 @@ func assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t 
 	}
 }
 
-func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Result, op, formationID, expectedObjectID, expectedAppLocalTenantID, expectedObjectNamespace, expectedObjectRegion, expectedConfiguration, expectedTenant, expectedCustomerID string, shouldRemoveDestinationCertificateData bool) error {
+func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Result, op, formationID, expectedObjectID, expectedAppLocalTenantID, expectedObjectNamespace, expectedObjectRegion, expectedConfiguration, expectedTenant, expectedCustomerID string, shouldRemoveDestinationCertificateData bool, expectedState *string) error {
 	actualOp := notification.Get("Operation").String()
 	if op != actualOp {
 		return errors.Errorf("Operation does not match - expected: %q, but got: %q", op, actualOp)
@@ -159,6 +165,13 @@ func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Resu
 	actualObjectNamespace := notification.Get("RequestBody.receiverTenant.applicationNamespace").String()
 	if expectedObjectNamespace != actualObjectNamespace {
 		return errors.Errorf("RequestBody.receiverTenant.applicationNamespace does not match - expected: %q, but got: %q", expectedObjectNamespace, actualObjectNamespace)
+	}
+
+	if expectedState != nil {
+		notificationReceiverState := notification.Get("RequestBody.receiverTenant.state").String()
+		if notificationReceiverState != *expectedState {
+			return errors.Errorf("RequestBody.receiverTenant.state does not match - expeted: %q, but got: %q", *expectedState, notificationReceiverState)
+		}
 	}
 
 	if shouldRemoveDestinationCertificateData {
