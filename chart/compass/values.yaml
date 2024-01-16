@@ -200,11 +200,11 @@ global:
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-121"
+      version: "PR-120"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3577"
+      version: "PR-3576"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
@@ -1423,6 +1423,7 @@ global:
         - "formation_template:read"
         - "formation_template:write"
         - "formation_template.webhooks:read"
+        - "tenant_access:write"
       managed_application_provider_operator:
         - "application.local_tenant_id:write"
         - "application_template:write"

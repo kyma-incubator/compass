@@ -2,7 +2,9 @@ package processor_test
 
 import (
 	"context"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
@@ -39,6 +41,9 @@ func TestDataProductProcessor_Process(t *testing.T) {
 	resourceHashes := map[string]uint64{
 		dataProductORDID1: hashDataProduct,
 	}
+
+	uintHashDataProduct := strconv.FormatUint(hashDataProduct, 10)
+	dataProductModel[0].ResourceHash = &uintHashDataProduct
 
 	dataProductInputs := []*model.DataProductInput{
 		fixDataProductInputModel(dataProductORDID1),
@@ -101,6 +106,11 @@ func TestDataProductProcessor_Process(t *testing.T) {
 			DataProductSvcFn: func() *automock.DataProductService {
 				dataProductSvc := &automock.DataProductService{}
 				dataProductSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return([]*model.DataProduct{}, nil).Once()
+
+				// set to time.Now, because on Create the lastUpdate is set to current time
+				currentTime := time.Now().Format(time.RFC3339)
+				dataProductInputs[0].LastUpdate = &currentTime
+
 				dataProductSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID1), *dataProductInputs[0], mock.Anything).Return(dataProductID, nil).Once()
 				dataProductSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(dataProductModel, nil).Once()
 				return dataProductSvc
@@ -186,6 +196,11 @@ func TestDataProductProcessor_Process(t *testing.T) {
 			DataProductSvcFn: func() *automock.DataProductService {
 				dataProductSvc := &automock.DataProductService{}
 				dataProductSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(dataProductModel, nil).Once()
+
+				// set to time.Now, because on Create the lastUpdate is set to current time
+				currentTime := time.Now().Format(time.RFC3339)
+				dataProductCreateInputs[0].LastUpdate = &currentTime
+
 				dataProductSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID1), *dataProductCreateInputs[0], mock.Anything).Return("", testErr).Once()
 				return dataProductSvc
 			},
