@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"net/http"
+	"net/http/httptrace"
 	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -85,6 +86,14 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 	} else {
 		req.Header.Set(tenantHeader, tnt)
 	}
+
+	trace := &httptrace.ClientTrace{
+		GotConn: func(connInfo httptrace.GotConnInfo) {
+			log.C(ctx).Infof("Connection reused: %+v\n", connInfo)
+		},
+	}
+
+	req = req.WithContext(httptrace.WithClientTrace(ctx, trace))
 
 	resp, err := baseClient.Do(req)
 	if err != nil || resp.StatusCode >= http.StatusBadRequest {
