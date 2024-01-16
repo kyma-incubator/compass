@@ -41,10 +41,10 @@ FROM bundles b
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM tenant_applications a1
                UNION ALL
-               SELECT apps_subaccounts.id,
-                      apps_subaccounts.tenant_id,
-                      apps_subaccounts.formation_id
-               FROM apps_subaccounts
+               SELECT af.app_id,
+                      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid AS tenant_id,
+                       af.formation_id
+               FROM apps_formations_id af
                UNION ALL
                SELECT apps_subaccounts.id,
                       apps_subaccounts.tenant_id,
