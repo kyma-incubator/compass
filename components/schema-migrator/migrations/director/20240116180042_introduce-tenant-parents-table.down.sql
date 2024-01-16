@@ -1,7 +1,7 @@
 BEGIN;
 
 UPDATE webhooks
-SET input_template = '{"context":{"platform":"{{if .CustomerTenantContext.AccountID}}btp{{else}}unified-services{{end}}","uclFormationId":"{{.FormationID}}","accountId":"{{if .CustomerTenantContext.AccountID}}{{.CustomerTenantContext.AccountID}}{{else}}{{.CustomerTenantContext.Path}}{{end}}","crmId":"{{.CustomerTenantContext.CustomerID}}","operation":"{{.Operation}}"},"assignedTenant":{"state":"{{.Assignment.State}}","uclAssignmentId":"{{.Assignment.ID}}","deploymentRegion":"{{if .Application.Labels.region}}{{.Application.Labels.region}}{{else}}{{.ApplicationTemplate.Labels.region}}{{end}}","applicationNamespace":"{{if .Application.ApplicationNamespace}}{{.Application.ApplicationNamespace}}{{else}}{{.ApplicationTemplate.ApplicationNamespace}}{{end}}","applicationUrl":"{{.Application.BaseURL}}","applicationTenantId":"{{.Application.LocalTenantID}}","uclSystemName":"{{.Application.Name}}","uclSystemTenantId":"{{.Application.ID}}",{{if .ApplicationTemplate.Labels.parameters}}"parameters":{{.ApplicationTemplate.Labels.parameters}},{{end}}"configuration":{{.ReverseAssignment.Value}}},"receiverTenant":{"ownerTenants": [{{ Join .Runtime.Tenant.Parents }}],"state":"{{.ReverseAssignment.State}}","uclAssignmentId":"{{.ReverseAssignment.ID}}","deploymentRegion":"{{if and .RuntimeContext .RuntimeContext.Labels.region}}{{.RuntimeContext.Labels.region}}{{else}}{{.Runtime.Labels.region}}{{end}}","applicationNamespace":"{{.Runtime.ApplicationNamespace}}","applicationTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.Value}}{{else}}{{.Runtime.Labels.global_subaccount_id}}{{end}}","uclSystemTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}",{{if .Runtime.Labels.parameters}}"parameters":{{.Runtime.Labels.parameters}},{{end}}"configuration":{{.Assignment.Value}}}}'
+SET input_template = '{"context":{"platform":"{{if .CustomerTenantContext.AccountID}}btp{{else}}unified-services{{end}}","uclFormationId":"{{.FormationID}}","accountId":"{{if .CustomerTenantContext.AccountID}}{{.CustomerTenantContext.AccountID}}{{else}}{{.CustomerTenantContext.Path}}{{end}}","crmId":"{{.CustomerTenantContext.CustomerID}}","operation":"{{.Operation}}"},"assignedTenant":{"state":"{{.Assignment.State}}","uclAssignmentId":"{{.Assignment.ID}}","deploymentRegion":"{{if .Application.Labels.region}}{{.Application.Labels.region}}{{else}}{{.ApplicationTemplate.Labels.region}}{{end}}","applicationNamespace":"{{if .Application.ApplicationNamespace}}{{.Application.ApplicationNamespace}}{{else}}{{.ApplicationTemplate.ApplicationNamespace}}{{end}}","applicationUrl":"{{.Application.BaseURL}}","applicationTenantId":"{{.Application.LocalTenantID}}","uclSystemName":"{{.Application.Name}}","uclSystemTenantId":"{{.Application.ID}}",{{if .ApplicationTemplate.Labels.parameters}}"parameters":{{.ApplicationTemplate.Labels.parameters}},{{end}}"configuration":{{.ReverseAssignment.Value}}},"receiverTenant":{"ownerTenant":"{{.Runtime.Tenant.Parent}}","state":"{{.ReverseAssignment.State}}","uclAssignmentId":"{{.ReverseAssignment.ID}}","deploymentRegion":"{{if and .RuntimeContext .RuntimeContext.Labels.region}}{{.RuntimeContext.Labels.region}}{{else}}{{.Runtime.Labels.region}}{{end}}","applicationNamespace":"{{.Runtime.ApplicationNamespace}}","applicationTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.Value}}{{else}}{{.Runtime.Labels.global_subaccount_id}}{{end}}","uclSystemTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}",{{if .Runtime.Labels.parameters}}"parameters":{{.Runtime.Labels.parameters}},{{end}}"configuration":{{.Assignment.Value}}}}'
 where runtime_id IN
       (SELECT runtime_id
        FROM labels
@@ -17,7 +17,7 @@ ALTER TABLE business_tenant_mappings
 
 -- Fill parent column
 UPDATE business_tenant_mappings SET parent=parent_id
-FROM tenant_parents
+    FROM tenant_parents
 WHERE  business_tenant_mappings.id = tenant_parents.tenant_id AND business_tenant_mappings.type <> 'cost-object'::tenant_type;
 
 
@@ -296,7 +296,7 @@ DROP TABLE IF EXISTS tenant_parents;
 
 DROP VIEW IF EXISTS api_definitions_tenants;
 CREATE
-    OR REPLACE VIEW api_definitions_tenants AS
+OR REPLACE VIEW api_definitions_tenants AS
 SELECT
     apis.id,
     apis.app_id,
@@ -347,42 +347,42 @@ FROM api_definitions AS apis
 DROP VIEW IF EXISTS event_api_definitions_tenants;
 CREATE OR REPLACE VIEW event_api_definitions_tenants AS
 SELECT
-       events.id,
-       events.app_id,
-       events.name,
-       events.description,
-       events.group_name,
-       events.version_value,
-       events.version_deprecated,
-       events.version_deprecated_since,
-       events.version_for_removal,
-       events.ord_id,
-       events.short_description,
-       events.system_instance_aware,
-       events.changelog_entries,
-       events.links,
-       events.tags,
-       events.countries,
-       events.release_status,
-       events.sunset_date,
-       events.labels,
-       events.package_id,
-       events.visibility,
-       events.disabled,
-       events.part_of_products,
-       events.line_of_business,
-       events.industry,
-       events.ready,
-       events.created_at,
-       events.updated_at,
-       events.deleted_at,
-       events.error,
-       events.successors,
-       events.resource_hash,
-       ta.tenant_id,
-       ta.owner
+    events.id,
+    events.app_id,
+    events.name,
+    events.description,
+    events.group_name,
+    events.version_value,
+    events.version_deprecated,
+    events.version_deprecated_since,
+    events.version_for_removal,
+    events.ord_id,
+    events.short_description,
+    events.system_instance_aware,
+    events.changelog_entries,
+    events.links,
+    events.tags,
+    events.countries,
+    events.release_status,
+    events.sunset_date,
+    events.labels,
+    events.package_id,
+    events.visibility,
+    events.disabled,
+    events.part_of_products,
+    events.line_of_business,
+    events.industry,
+    events.ready,
+    events.created_at,
+    events.updated_at,
+    events.deleted_at,
+    events.error,
+    events.successors,
+    events.resource_hash,
+    ta.tenant_id,
+    ta.owner
 FROM event_api_definitions AS events
-                                            INNER JOIN tenant_applications ta ON ta.id = events.app_id;
+         INNER JOIN tenant_applications ta ON ta.id = events.app_id;
 
 DROP VIEW IF EXISTS capabilities_tenants;
 CREATE OR REPLACE VIEW capabilities_tenants AS
@@ -458,7 +458,7 @@ FROM entity_types AS et
 
 DROP VIEW IF EXISTS products_tenants;
 CREATE
-    OR REPLACE VIEW products_tenants AS
+OR REPLACE VIEW products_tenants AS
 SELECT p.ord_id,
        p.app_id,
        p.title,
@@ -476,7 +476,7 @@ FROM products AS p
 
 DROP VIEW IF EXISTS tombstones_tenants;
 CREATE
-    OR REPLACE VIEW tombstones_tenants AS
+OR REPLACE VIEW tombstones_tenants AS
 SELECT t.ord_id,
        t.app_id,
        t.removal_date,
@@ -488,7 +488,7 @@ FROM tombstones AS t
 
 DROP VIEW IF EXISTS bundles_tenants;
 CREATE
-    OR REPLACE VIEW bundles_tenants AS
+OR REPLACE VIEW bundles_tenants AS
 SELECT b.app_id,
        b.name,
        b.description,
@@ -513,7 +513,7 @@ FROM bundles AS b
 
 DROP VIEW IF EXISTS documents_tenants;
 CREATE
-    OR REPLACE VIEW documents_tenants AS
+OR REPLACE VIEW documents_tenants AS
 SELECT d.id,
        d. app_id,
        d.title,
@@ -535,7 +535,7 @@ FROM documents AS d
 
 DROP VIEW IF EXISTS vendors_tenants;
 CREATE
-    OR REPLACE VIEW vendors_tenants AS
+OR REPLACE VIEW vendors_tenants AS
 SELECT v.ord_id,
        v. app_id,
        v.title,

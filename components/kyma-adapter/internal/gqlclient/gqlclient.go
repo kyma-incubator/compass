@@ -67,7 +67,7 @@ func (c *client) runWithTenant(ctx context.Context, gqlReq *gcli.Request, tenant
 	return c.run(ctx, gqlReq, resp)
 }
 
-// runWithTenant executes gql request with tenant header and with retry on connectivity problems
+// run executes gql request with retry on connectivity problems
 func (c *client) run(ctx context.Context, gqlReq *gcli.Request, resp interface{}) error {
 	return withRetryOnTemporaryConnectionProblems(ctx, func() error {
 		return c.Client.Run(ctx, gqlReq, resp)
@@ -209,6 +209,7 @@ func (c *client) DeleteBundleInstanceAuth(ctx context.Context, tenant string, in
 	return nil
 }
 
+// TenantByInternalIDQuery gets the business tenant by tenantID
 func (c *client) TenantByInternalIDQuery(ctx context.Context, tenantID string) (*graphql.Tenant, error) {
 	gqlReq := gcli.NewRequest(fmt.Sprintf(`query {
 		result: tenantByInternalID(id: "%s") {

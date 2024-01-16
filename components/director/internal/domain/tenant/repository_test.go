@@ -1912,8 +1912,6 @@ func TestPgRepository_ListByIDs(t *testing.T) {
 }
 
 func TestPgRepository_ListBySubscribedRuntimesAndApplicationTemplates(t *testing.T) {
-	//parentID := "test"
-
 	testCases := []struct {
 		Name                 string
 		ConverterFn          func() *automock.Converter

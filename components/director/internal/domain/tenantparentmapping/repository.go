@@ -131,6 +131,7 @@ func (r *pgRepository) UpsertMultiple(ctx context.Context, tenantID string, pare
 	return nil
 }
 
+// Delete deletes the tenant parent mapping for tenantID and parentID
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, parentID string) error {
 	if err := r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{
 		repo.NewEqualCondition(tenantIDColumn, tenantID),

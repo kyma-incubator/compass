@@ -239,14 +239,7 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 		return nil, errors.Wrap(err, "while listing tenants from DB")
 	}
 
-	btms := r.multipleFromEntities(entityCollection)
-	for _, btm := range btms {
-		if _, err = r.enrichWithParents(ctx, btm); err != nil {
-			return nil, err
-		}
-	}
-
-	return btms, nil
+	return r.enrichManyWithParents(ctx, entityCollection)
 }
 
 // ListPageBySearchTerm retrieves a page of tenants from the Compass storage filtered by a search term.
@@ -313,13 +306,7 @@ func (r *pgRepository) listByExternalTenantIDs(ctx context.Context, externalTena
 		return nil, err
 	}
 
-	btms := r.multipleFromEntities(entityCollection)
-	for _, btm := range btms {
-		if _, err := r.enrichWithParents(ctx, btm); err != nil {
-			return nil, err
-		}
-	}
-	return btms, nil
+	return r.enrichManyWithParents(ctx, entityCollection)
 }
 
 // Update updates the values of tenant with matching internal, and external IDs.
@@ -608,13 +595,7 @@ func (r *pgRepository) GetParentsRecursivelyByExternalTenant(ctx context.Context
 		return nil, persistence.MapSQLError(ctx, err, resource.Tenant, resource.List, "while listing parents for external tenant: %q", externalTenant)
 	}
 
-	btms := r.multipleFromEntities(entityCollection)
-	for _, btm := range btms {
-		if _, err = r.enrichWithParents(ctx, btm); err != nil {
-			return nil, err
-		}
-	}
-	return btms, nil
+	return r.enrichManyWithParents(ctx, entityCollection)
 }
 
 func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx context.Context, selfRegDistinguishLabel string) ([]*model.BusinessTenantMapping, error) {
@@ -655,16 +636,10 @@ func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx conte
 	)
 
 	if err := r.conditionTreeLister.ListConditionTreeGlobal(ctx, resource.Tenant, &entityCollection, conditions); err != nil {
-		return nil, errors.Wrapf(err, "while listing tenants by label")
+		return nil, errors.Wrap(err, "while listing tenants by label")
 	}
 
-	btms := r.multipleFromEntities(entityCollection)
-	for _, btm := range btms {
-		if _, err = r.enrichWithParents(ctx, btm); err != nil {
-			return nil, err
-		}
-	}
-	return btms, nil
+	return r.enrichManyWithParents(ctx, entityCollection)
 }
 
 // ListByParentAndType list tenants by parent ID and tenant.Type
@@ -684,13 +659,7 @@ func (r *pgRepository) ListByParentAndType(ctx context.Context, parentID string,
 		return nil, errors.Wrapf(err, "while listing tenants of type %s with ids %v", tenantType, tenantIDs)
 	}
 
-	btms := r.multipleFromEntities(entityCollection)
-	for _, btm := range btms {
-		if _, err = r.enrichWithParents(ctx, btm); err != nil {
-			return nil, err
-		}
-	}
-	return btms, nil
+	return r.enrichManyWithParents(ctx, entityCollection)
 }
 
 // ListByIds list tenants by ids
@@ -705,13 +674,7 @@ func (r *pgRepository) ListByIds(ctx context.Context, ids []string) ([]*model.Bu
 		return nil, errors.Wrapf(err, "while listing tenants with ids %v", ids)
 	}
 
-	btms := r.multipleFromEntities(entityCollection)
-	for _, btm := range btms {
-		if _, err := r.enrichWithParents(ctx, btm); err != nil {
-			return nil, err
-		}
-	}
-	return btms, nil
+	return r.enrichManyWithParents(ctx, entityCollection)
 }
 
 // ListByType list tenants by tenant.Type
@@ -726,13 +689,7 @@ func (r *pgRepository) ListByType(ctx context.Context, tenantType tenant.Type) (
 		return nil, errors.Wrapf(err, "while listing tenants of type %s", tenantType)
 	}
 
-	btms := r.multipleFromEntities(entityCollection)
-	for _, btm := range btms {
-		if _, err := r.enrichWithParents(ctx, btm); err != nil {
-			return nil, err
-		}
-	}
-	return btms, nil
+	return r.enrichManyWithParents(ctx, entityCollection)
 }
 
 // ListByIdsAndType list tenants by ids that are of the specified type
@@ -748,13 +705,7 @@ func (r *pgRepository) ListByIdsAndType(ctx context.Context, ids []string, tenan
 		return nil, errors.Wrapf(err, "while listing tenants of type %s with ids %v", tenantType, ids)
 	}
 
-	btms := r.multipleFromEntities(entityCollection)
-	for _, btm := range btms {
-		if _, err := r.enrichWithParents(ctx, btm); err != nil {
-			return nil, err
-		}
-	}
-	return btms, nil
+	return r.enrichManyWithParents(ctx, entityCollection)
 }
 
 func (r *pgRepository) multipleFromEntities(entities tenant.EntityCollection) []*model.BusinessTenantMapping {
@@ -776,4 +727,14 @@ func (r *pgRepository) enrichWithParents(ctx context.Context, btm *model.Busines
 
 	btm.Parents = parents
 	return btm, nil
+}
+
+func (r *pgRepository) enrichManyWithParents(ctx context.Context,entityCollection tenant.EntityCollection) ([]*model.BusinessTenantMapping, error) {
+	btms := r.multipleFromEntities(entityCollection)
+	for _, btm := range btms {
+		if _, err := r.enrichWithParents(ctx, btm); err != nil {
+			return nil, err
+		}
+	}
+	return btms, nil
 }

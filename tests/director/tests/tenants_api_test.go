@@ -609,8 +609,6 @@ func TestTenantParentUpdateWithCostObject(t *testing.T) {
 	_, err = fixtures.UpdateTenant(t, ctx, directorInternalGQLClient, ga.InternalID, updateAccountInput)
 	assert.NoError(t, err)
 
-	//time.Sleep(2 * time.Minute) TODO check the tenant access - expected two ta costobject- ga, ga-ga
-
 	// Check that the cost-object has access to the application
 	app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, costObjectExternalTenantID, actualApp.ID)
 	require.NotEmpty(t, app)

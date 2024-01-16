@@ -180,8 +180,8 @@ func (s *service) MultipleToTenantMapping(ctx context.Context, tenantInputs []mo
 			if parentID == "" {
 				continue
 			}
-			if _, ok := tenantIDs[parentID]; ok { // If the parent is inserted in this request
-				parentInternalIDs = append(parentInternalIDs, tenantIDs[parentID])
+			if parentInternalID, ok := tenantIDs[parentID]; ok { // If the parent is inserted in this request
+				parentInternalIDs = append(parentInternalIDs, parentInternalID)
 			} else { // If the parent is already present in the DB - swap the external ID for the parent that is provided with the internal ID from the DB
 				internalPrentID, err := s.GetInternalTenant(ctx, parentID)
 				if err != nil {

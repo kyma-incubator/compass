@@ -191,7 +191,7 @@ func (r *Resolver) TenantByLowestOwnerForResource(ctx context.Context, resourceS
 	return tenantID, nil
 }
 
-// RootTenants fetches the top parent external ID for a given tenant
+// RootTenants fetches the top parents external IDs for a given externalTenant
 func (r *Resolver) RootTenants(ctx context.Context, externalTenant string) ([]*graphql.Tenant, error) {
 	log.C(ctx).Infof("Getting the top parent ID for a external tenant: %q", externalTenant)
 	tx, err := r.transact.Begin()
