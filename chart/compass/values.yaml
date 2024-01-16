@@ -179,7 +179,7 @@ global:
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3567"
+      version: "PR-3577"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
@@ -191,7 +191,7 @@ global:
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3448"
+      version: "PR-3577"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
@@ -203,7 +203,7 @@ global:
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-117"
+      version: "PR-120"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
@@ -1426,6 +1426,7 @@ global:
         - "formation_template:read"
         - "formation_template:write"
         - "formation_template.webhooks:read"
+        - "tenant_access:write"
       managed_application_provider_operator:
         - "application.local_tenant_id:write"
         - "application_template:write"

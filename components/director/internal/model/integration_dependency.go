@@ -51,7 +51,7 @@ type IntegrationDependencyInput struct {
 	ShortDescription               *string         `json:"shortDescription,omitempty"`
 	Description                    *string         `json:"description,omitempty"`
 	OrdPackageID                   *string         `json:"partOfPackage"`
-	LastUpdate                     *string         `json:"lastUpdate,omitempty"`
+	LastUpdate                     *string         `json:"lastUpdate,omitempty" hash:"ignore"`
 	Visibility                     string          `json:"visibility"`
 	ReleaseStatus                  *string         `json:"releaseStatus"`
 	SunsetDate                     *string         `json:"sunsetDate,omitempty"`
