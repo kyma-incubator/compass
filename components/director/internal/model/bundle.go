@@ -29,6 +29,7 @@ type Bundle struct {
 	CorrelationIDs                 json.RawMessage
 	Tags                           json.RawMessage
 	DocumentationLabels            json.RawMessage
+	LastUpdate                     *string
 	*BaseEntity
 }
 
@@ -82,6 +83,7 @@ type BundleCreateInput struct {
 	CorrelationIDs                 json.RawMessage         `json:"correlationIds"`
 	Tags                           json.RawMessage         `json:"tags"`
 	DocumentationLabels            json.RawMessage         `json:"documentationLabels"`
+	LastUpdate                     *string                 `json:"lastUpdate" hash:"ignore"`
 }
 
 // BundleUpdateInput missing godoc
@@ -100,6 +102,7 @@ type BundleUpdateInput struct {
 	CorrelationIDs                 json.RawMessage
 	Tags                           json.RawMessage
 	DocumentationLabels            json.RawMessage
+	LastUpdate                     *string
 }
 
 // BundlePage missing godoc
@@ -139,6 +142,7 @@ func (i *BundleCreateInput) ToBundle(id string, resourceType resource.Type, reso
 		CorrelationIDs:                 i.CorrelationIDs,
 		Tags:                           i.Tags,
 		DocumentationLabels:            i.DocumentationLabels,
+		LastUpdate:                     i.LastUpdate,
 		BaseEntity: &BaseEntity{
 			ID:    id,
 			Ready: true,

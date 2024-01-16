@@ -62,7 +62,7 @@ type DataProductInput struct {
 	ShortDescription    *string         `json:"shortDescription,omitempty"`
 	Description         *string         `json:"description"`
 	OrdPackageID        *string         `json:"partOfPackage"`
-	LastUpdate          *string         `json:"lastUpdate,omitempty"`
+	LastUpdate          *string         `json:"lastUpdate,omitempty" hash:"ignore"`
 	Visibility          *string         `json:"visibility"`
 	ReleaseStatus       *string         `json:"releaseStatus"`
 	Disabled            *bool           `json:"disabled"`

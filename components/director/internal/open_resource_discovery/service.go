@@ -908,8 +908,19 @@ func (s *Service) resyncBundle(ctx context.Context, resourceType directorresourc
 	if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
 		return equalStrings(bundlesFromDB[i].OrdID, bndl.OrdID)
 	}); found {
+		log.C(ctx).Infof("Calculate the newest lastUpdate time for Consumption Bundle")
+		newestLastUpdateTime, err := processor.NewestLastUpdateTimestamp(bndl.LastUpdate, bundlesFromDB[i].LastUpdate, bundlesFromDB[i].ResourceHash, bndlHash)
+		if err != nil {
+			return errors.Wrap(err, "error while calculating the newest lastUpdate time for Consumption Bundle")
+		}
+
+		bndl.LastUpdate = newestLastUpdateTime
+
 		return s.bundleSvc.UpdateBundle(ctx, resourceType, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl), bndlHash)
 	}
+
+	currentTime := time.Now().Format(time.RFC3339)
+	bndl.LastUpdate = &currentTime
 
 	_, err := s.bundleSvc.CreateBundle(ctx, resourceType, resourceID, bndl, bndlHash)
 	return err
