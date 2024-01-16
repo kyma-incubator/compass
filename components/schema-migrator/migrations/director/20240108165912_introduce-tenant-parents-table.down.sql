@@ -15,6 +15,19 @@ where runtime_id IN
 ALTER TABLE business_tenant_mappings
     ADD COLUMN parent uuid;
 
+-- Fill parent column
+UPDATE business_tenant_mappings SET parent=parent_id
+FROM tenant_parents
+WHERE  business_tenant_mappings.id = tenant_parents.tenant_id AND business_tenant_mappings.type <> 'cost-object'::tenant_type;
+
+
+create business_tenant_mappings_temp
+rename business_tenant_mappings -> business_tenant_mappings_update
+rename business_tenant_mappings_temp - business_tenant_mappings
+
+Add parent business_tenant_mappings_update
+revert swap
+
 -- Add business tenant mapping parent fk
 ALTER TABLE business_tenant_mappings
     ADD CONSTRAINT business_tenant_mappings_parent_fk
@@ -23,11 +36,6 @@ ALTER TABLE business_tenant_mappings
 
 -- Create parent index
 CREATE INDEX parent_index ON business_tenant_mappings (parent);
-
--- Fill parent column
-UPDATE business_tenant_mappings SET parent=parent_id
-FROM tenant_parents
-WHERE  business_tenant_mappings.id = tenant_parents.tenant_id AND business_tenant_mappings.type <> 'cost-object'::tenant_type;
 
 -- tenant_applications
 DELETE
@@ -61,6 +69,9 @@ WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner= false AND t2.own
 
 ALTER TABLE tenant_runtimes DROP column source;
 
+ALTER TABLE tenant_runtimes
+    ADD PRIMARY KEY (tenant_id, id);
+
 -- tenant_runtime_contexts
 DELETE
 FROM tenant_runtime_contexts t1 USING tenant_runtime_contexts t2
@@ -75,6 +86,10 @@ FROM tenant_runtime_contexts t1 USING tenant_runtime_contexts t2
 WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner= false AND t2.owner= true;
 
 ALTER TABLE tenant_runtime_contexts DROP column source;
+ALTER TABLE tenant_runtime_contexts
+    ADD PRIMARY KEY (tenant_id, id);
+
+
 
 -- Identify duplicates and keep the one with owner=true
 -- WITH ranked_rows AS (

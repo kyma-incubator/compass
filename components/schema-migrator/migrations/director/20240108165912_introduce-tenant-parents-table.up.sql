@@ -15,11 +15,7 @@ where runtime_id IN
 CREATE TABLE tenant_parents
 (
     tenant_id uuid NOT NULL,
-    parent_id uuid NOT NULL,
-
-    CONSTRAINT tenant_parents_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE,
-    CONSTRAINT tenant_parents_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE,
-    PRIMARY KEY (tenant_id, parent_id)
+    parent_id uuid NOT NULL
 );
 
 -- Copy business_tenant_mappings table
@@ -33,6 +29,11 @@ SELECT id, parent
 FROM business_tenant_mappings_temp
 WHERE parent IS NOT NULL;
 
+-- Create key constraints
+ALTER TABLE tenant_parents ADD CONSTRAINT tenant_parents_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
+ALTER TABLE tenant_parents ADD CONSTRAINT tenant_parents_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE
+ALTER TABLE tenant_parents ADD PRIMARY KEY (tenant_id, parent_id);
+
 -- Create indexes for tenant_parents table
 CREATE INDEX tenant_parents_tenant_id ON tenant_parents (tenant_id);
 CREATE INDEX tenant_parents_parent_id ON tenant_parents (parent_id);
@@ -41,10 +42,6 @@ CREATE INDEX tenant_parents_parent_id ON tenant_parents (parent_id);
 
 --
 CREATE TABLE tenant_applications_temp AS TABLE tenant_applications;
-
-CREATE INDEX tenant_applications_temp_tenant_id ON tenant_applications_temp (tenant_id);
-CREATE INDEX tenant_applications_temp_app_id ON tenant_applications_temp (id);
-
 
 -- Add source column to tenant_applications_temp table
 ALTER TABLE tenant_applications_temp
@@ -125,10 +122,8 @@ ALTER TABLE tenant_applications
 ALTER TABLE tenant_applications
     alter column source set not null;
 
-ALTER
-INDEX tenant_applications_temp_app_id RENAME TO tenant_applications_app_id;
-ALTER
-INDEX tenant_applications_temp_tenant_id RENAME TO tenant_applications_tenant_id;
+CREATE INDEX tenant_applications_app_id ON tenant_applications (id);
+CREATE INDEX tenant_applications_tenant_id ON tenant_applications (tenant_id);
 CREATE INDEX tenant_applications_source ON tenant_applications (source);
 
 -- Migrate tenant access records for runtimes
