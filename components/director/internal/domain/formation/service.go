@@ -1767,11 +1767,11 @@ func (s *service) isValidApplication(ctx context.Context, tnt string, applicatio
 		return errors.Wrapf(err, "while getting application with ID %q", applicationID)
 	}
 
-	if !application.Ready {
-		return apperrors.NewInvalidOperationError(fmt.Sprintf("application with ID %q is not ready", applicationID))
-	}
 	if application.DeletedAt != nil {
 		return apperrors.NewInvalidOperationError(fmt.Sprintf("application with ID %q is currently being deleted", applicationID))
+	}
+	if !application.Ready {
+		return apperrors.NewInvalidOperationError(fmt.Sprintf("application with ID %q is not ready", applicationID))
 	}
 	return nil
 }
