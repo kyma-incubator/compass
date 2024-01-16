@@ -3185,6 +3185,7 @@ func TestPgRepository_GetLowestOwnerForResource(t *testing.T) {
 }
 
 func TestPgRepository_GetParentRecursivelyByExternalTenant(t *testing.T) {
+
 	dbQuery := `WITH RECURSIVE parents AS
                    (SELECT t1.id, t1.external_name, t1.external_tenant, t1.provider_name, t1.status, t1.type, tp1.parent_id, 0 AS depth
                     FROM business_tenant_mappings t1 JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
@@ -3193,7 +3194,7 @@ func TestPgRepository_GetParentRecursivelyByExternalTenant(t *testing.T) {
                     SELECT t2.id, t2.external_name, t2.external_tenant, t2.provider_name, t2.status, t2.type, tp2.parent_id, p.depth+ 1
                     FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
                                                      INNER JOIN parents p on p.parent_id = t2.id)
-			SELECT id, external_name, external_tenant, provider_name, status, type FROM parents WHERE parent_id is NULL AND (type != 'cost-object'`
+			SELECT id, external_name, external_tenant, provider_name, status, type FROM parents WHERE parent_id is NULL AND (type != 'cost-object' OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')))`
 
 	tenantMappingModel := &model.BusinessTenantMapping{
 		ID:             testID,

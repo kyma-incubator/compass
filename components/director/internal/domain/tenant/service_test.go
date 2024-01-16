@@ -1118,7 +1118,7 @@ func Test_MoveBeforeIndex(t *testing.T) {
 		Name           string
 		InputSlice     []model.BusinessTenantMapping
 		TargetTenantID string
-		TargetIndex    int
+		ChildTenantID string
 		ExpectedSlice  []model.BusinessTenantMapping
 		ShouldMove     bool
 	}{
@@ -1128,7 +1128,7 @@ func Test_MoveBeforeIndex(t *testing.T) {
 				{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"},
 			},
 			TargetTenantID: "4",
-			TargetIndex:    1,
+			ChildTenantID:    "2",
 			ExpectedSlice: []model.BusinessTenantMapping{
 				{ID: "1"}, {ID: "4"}, {ID: "2"}, {ID: "3"}, {ID: "5"},
 			},
@@ -1140,7 +1140,7 @@ func Test_MoveBeforeIndex(t *testing.T) {
 				{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"},
 			},
 			TargetTenantID: "3",
-			TargetIndex:    0,
+			ChildTenantID:    "1",
 			ExpectedSlice: []model.BusinessTenantMapping{
 				{ID: "3"}, {ID: "1"}, {ID: "2"}, {ID: "4"}, {ID: "5"},
 			},
@@ -1152,7 +1152,7 @@ func Test_MoveBeforeIndex(t *testing.T) {
 				{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"},
 			},
 			TargetTenantID: "3",
-			TargetIndex:    4,
+			ChildTenantID:    "5",
 			ExpectedSlice: []model.BusinessTenantMapping{
 				{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"},
 			},
@@ -1161,9 +1161,9 @@ func Test_MoveBeforeIndex(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//result, moved := tenant.MoveBeforeIfShould(testCase.InputSlice, testCase.TargetTenantID, testCase.TargetIndex)
-			//require.Equal(t, testCase.ShouldMove, moved)
-			//require.Equal(t, testCase.ExpectedSlice, result)
+			result, moved := tenant.MoveBeforeIfShould(testCase.InputSlice, testCase.TargetTenantID, testCase.ChildTenantID)
+			require.Equal(t, testCase.ShouldMove, moved)
+			require.Equal(t, testCase.ExpectedSlice, result)
 		})
 	}
 }
