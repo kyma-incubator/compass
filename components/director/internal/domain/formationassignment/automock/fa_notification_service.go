@@ -26,6 +26,10 @@ type FaNotificationService struct {
 func (_m *FaNotificationService) GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping *formationassignment.FormationAssignmentRequestMapping, reverseFaRequestMapping *formationassignment.FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error) {
 	ret := _m.Called(ctx, faRequestMapping, reverseFaRequestMapping, operation)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GenerateFormationAssignmentNotificationExt")
+	}
+
 	var r0 *webhookclient.FormationAssignmentNotificationRequestExt
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.FormationAssignmentRequestMapping, *formationassignment.FormationAssignmentRequestMapping, model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)); ok {
@@ -51,6 +55,10 @@ func (_m *FaNotificationService) GenerateFormationAssignmentNotificationExt(ctx 
 // PrepareDetailsForNotificationStatusReturned provides a mock function with given fields: ctx, tenantID, fa, operation, notificationStatusReport
 func (_m *FaNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, notificationStatusReport *statusreport.NotificationStatusReport) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
 	ret := _m.Called(ctx, tenantID, fa, operation, notificationStatusReport)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PrepareDetailsForNotificationStatusReturned")
+	}
 
 	var r0 *formationconstraint.NotificationStatusReturnedOperationDetails
 	var r1 error

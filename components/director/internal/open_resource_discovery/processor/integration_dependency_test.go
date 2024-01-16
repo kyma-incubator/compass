@@ -2,6 +2,7 @@ package processor_test
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -43,6 +44,9 @@ func TestIntegrationDependencyProcessor_Process(t *testing.T) {
 	resourceHashes := map[string]uint64{
 		integrationDependencyORDID: hashIntegrationDependency,
 	}
+
+	uintHashDataProduct := strconv.FormatUint(hashIntegrationDependency, 10)
+	integrationDependencyModel[0].ResourceHash = &uintHashDataProduct
 
 	integrationDependencyInputs := []*model.IntegrationDependencyInput{
 		fixIntegrationDependencyInputModel(integrationDependencyORDID),

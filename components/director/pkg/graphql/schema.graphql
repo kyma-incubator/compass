@@ -283,6 +283,8 @@ interface SystemAuth {
 
 union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData
 
+union FormationParticipant = Application | Runtime | RuntimeContext
+
 input APIDefinitionInput {
 	"""
 	**Validation:** ASCII printable characters, max=100
@@ -767,6 +769,7 @@ input FormationTemplateInput {
 	webhooks: [WebhookInput!]
 	leadingProductIDs: [String!]
 	supportsReset: Boolean
+	discoveryConsumers: [String!]
 }
 
 input IntegrationDependencyInput {
@@ -1320,8 +1323,10 @@ type FormationAssignment {
 	id: ID!
 	source: ID!
 	sourceType: FormationAssignmentType!
+	sourceEntity: FormationParticipant!
 	target: ID!
 	targetType: FormationAssignmentType!
+	targetEntity: FormationParticipant!
 	state: String!
 	value: String
 	configuration: String
@@ -1382,6 +1387,7 @@ type FormationTemplate {
 	leadingProductIDs: [String!]
 	formationConstraints: [FormationConstraint!]
 	supportsReset: Boolean!
+	discoveryConsumers: [String!]
 }
 
 type FormationTemplatePage implements Pageable {

@@ -21,6 +21,10 @@ type NotificationService struct {
 func (_m *NotificationService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhook.Response, error) {
 	ret := _m.Called(ctx, webhookNotificationReq)
 
+	if len(ret) == 0 {
+		panic("no return value specified for SendNotification")
+	}
+
 	var r0 *webhook.Response
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, webhookclient.WebhookExtRequest) (*webhook.Response, error)); ok {

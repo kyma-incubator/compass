@@ -3,7 +3,6 @@ package json
 import (
 	"encoding/json"
 	"strconv"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/assert"
@@ -46,7 +45,7 @@ func UnmarshalJSONSchema(t require.TestingT, schema *graphql.JSONSchema) interfa
 	return output
 }
 
-func AssertJSONStringEquality(t *testing.T, expectedValue, actualValue *string) bool {
+func AssertJSONStringEquality(t require.TestingT, expectedValue, actualValue *string) bool {
 	expectedValueStr := str.PtrStrToStr(expectedValue)
 	actualValueStr := str.PtrStrToStr(actualValue)
 	if !isJSONStringEmpty(expectedValueStr) && !isJSONStringEmpty(actualValueStr) {

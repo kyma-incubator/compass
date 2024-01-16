@@ -13,6 +13,7 @@ import (
 	"time"
 
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
 	directordestinationcreator "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -45,6 +46,8 @@ const (
 	eventuallyTimeout                = 8 * time.Second
 	eventuallyTick                   = 50 * time.Millisecond
 	readyAssignmentState             = "READY"
+	createReadyAssignmentState       = "CREATE_READY"
+	deleteReadyAssignmentState       = "DELETE_READY"
 	initialAssignmentState           = "INITIAL"
 	configPendingAssignmentState     = "CONFIG_PENDING"
 	deletingAssignmentState          = "DELETING"
@@ -89,43 +92,44 @@ func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, for
 
 func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, timeout, tick time.Duration) {
 	t.Logf("Asserting formation assignments with eventually...")
+	tOnce := testingx.NewOnceLogger(t)
 	require.Eventually(t, func() (isOkay bool) {
-		t.Logf("Getting formation assignments...")
+		tOnce.Logf("Getting formation assignments...")
 		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
 		if expectedAssignmentsCount != assignmentsPage.TotalCount {
 			t.Logf("The expected assignments count: %d didn't match the actual: %d", expectedAssignmentsCount, assignmentsPage.TotalCount)
 			return
 		}
-		t.Logf("There is/are: %d assignment(s), assert them with the expected ones...", assignmentsPage.TotalCount)
+		tOnce.Logf("There is/are: %d assignment(s), assert them with the expected ones...", assignmentsPage.TotalCount)
 
 		assignments := assignmentsPage.Data
 		for _, assignment := range assignments {
 			sourceAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
 			if !ok {
-				t.Logf("Could not find expectations for assignment with ID: %q and source ID: %q", assignment.ID, assignment.Source)
+				tOnce.Logf("Could not find expectations for assignment with ID: %q and source ID: %q", assignment.ID, assignment.Source)
 				return
 			}
 			assignmentExpectation, ok := sourceAssignmentsExpectations[assignment.Target]
 			if !ok {
-				t.Logf("Could not find expectations for assignment with ID: %q, source ID: %q and target ID: %q", assignment.ID, assignment.Source, assignment.Target)
+				tOnce.Logf("Could not find expectations for assignment with ID: %q, source ID: %q and target ID: %q", assignment.ID, assignment.Source, assignment.Target)
 				return
 			}
 			if assignmentExpectation.State != assignment.State {
-				t.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
+				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
 				return
 			}
-			if isEqual := jsonutils.AssertJSONStringEquality(t, assignmentExpectation.Error, assignment.Error); !isEqual {
-				t.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
+			if isEqual := jsonutils.AssertJSONStringEquality(tOnce, assignmentExpectation.Error, assignment.Error); !isEqual {
+				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
 				return
 			}
-			if isEqual := jsonutils.AssertJSONStringEquality(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
-				t.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
+			if isEqual := jsonutils.AssertJSONStringEquality(tOnce, assignmentExpectation.Config, assignment.Configuration); !isEqual {
+				tOnce.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
 				return
 			}
 		}
 
-		t.Logf("Successfully asserted formation asssignments asynchronously")
+		tOnce.Logf("Successfully asserted formation asssignments asynchronously")
 		return true
 	}, timeout, tick)
 }
@@ -519,38 +523,39 @@ func assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEven
 	require.Equal(t, formationName, notificationForFormationDetails.Get("name").String())
 
 	t.Logf("Asserting formation with eventually...")
+	tOnce := testingx.NewOnceLogger(t)
 	require.Eventually(t, func() (isOkay bool) {
-		t.Log("Assert formation lifecycle notifications are successfully processed...")
+		tOnce.Log("Assert formation lifecycle notifications are successfully processed...")
 		formationPage := fixtures.ListFormationsWithinTenant(t, ctx, tenantID, certSecuredGraphQLClient)
 		if shouldExpectDeleted {
 			if formationPage.TotalCount != 0 {
-				t.Logf("Formation lifecycle notification is expected to have deleted formation with ID %q, but it is still there", formationID)
+				tOnce.Logf("Formation lifecycle notification is expected to have deleted formation with ID %q, but it is still there", formationID)
 				return
 			}
 			if formationPage.Data != nil && len(formationPage.Data) > 0 {
-				t.Logf("Formation lifecycle notification is expected to have deleted formation with ID %q, but it is still there", formationID)
+				tOnce.Logf("Formation lifecycle notification is expected to have deleted formation with ID %q, but it is still there", formationID)
 				return
 			}
 		} else {
 			if formationPage.TotalCount != 1 {
-				t.Log("Formation count does not match")
+				tOnce.Log("Formation count does not match")
 				return
 			}
 			if formationPage.Data[0].State != formationState {
-				t.Logf("Formation state for formation with ID %q is %q, expected: %q", formationID, formationPage.Data[0].State, formationState)
+				tOnce.Logf("Formation state for formation with ID %q is %q, expected: %q", formationID, formationPage.Data[0].State, formationState)
 				return
 			}
 			if formationPage.Data[0].ID != formationID {
-				t.Logf("Formation ID is %q, expected: %q", formationPage.Data[0].ID, formationID)
+				tOnce.Logf("Formation ID is %q, expected: %q", formationPage.Data[0].ID, formationID)
 				return
 			}
 			if formationPage.Data[0].Name != formationName {
-				t.Logf("Formation name is %q, expected: %q", formationPage.Data[0].Name, formationName)
+				tOnce.Logf("Formation name is %q, expected: %q", formationPage.Data[0].Name, formationName)
 				return
 			}
 		}
 
-		t.Logf("Asynchronous formation lifecycle notifications are successfully validated for %q operation.", formationOperation)
+		tOnce.Logf("Asynchronous formation lifecycle notifications are successfully validated for %q operation.", formationOperation)
 		return true
 	}, timeout, tick)
 }

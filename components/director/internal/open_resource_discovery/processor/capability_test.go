@@ -3,6 +3,7 @@ package processor_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -37,7 +38,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 		fixCapabilityInput(),
 	}
 
-	resourceHashes := map[string]uint64{ordID: uint64ResourceHash}
+	resourceHashes := map[string]uint64{capabilityORDID: uint64ResourceHash}
 
 	testCases := []struct {
 		Name                       string
@@ -79,7 +80,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities, nil).Twice()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], uint64ResourceHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -106,7 +107,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilitiesNoNewerLastUpdate(), nil).Once()
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities, nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], uint64ResourceHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -131,7 +132,12 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				apiSvc := &automock.CapabilityService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities2, nil).Twice()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID1), *fixCapabilityInputs[0], nilSpecInputSlice, emptyHash).Return(capabilityID, nil).Once()
+
+				// set to time.Now, because on Create the lastUpdate is set to current time
+				currentTime := time.Now().Format(time.RFC3339)
+				fixCapabilityInputs[0].LastUpdate = &currentTime
+
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, str.Ptr(packageID1), *fixCapabilityInputs[0], nilSpecInputSlice, uint64ResourceHash).Return(capabilityID, nil).Once()
 				return apiSvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -226,7 +232,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities, nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], emptyHash).Return(testErr).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], uint64ResourceHash).Return(testErr).Once()
 				return capabilitySvc
 			},
 			InputResource:       resource.Application,
@@ -248,7 +254,12 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities2, nil).Once()
-				capabilitySvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, *fixCapabilityInputs[0], nilSpecInputSlice, emptyHash).Return("", testErr).Once()
+
+				// set to time.Now, because on Create the lastUpdate is set to current time
+				currentTime := time.Now().Format(time.RFC3339)
+				fixCapabilityInputs[0].LastUpdate = &currentTime
+
+				capabilitySvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, *fixCapabilityInputs[0], nilSpecInputSlice, uint64ResourceHash).Return("", testErr).Once()
 				return capabilitySvc
 			},
 			InputResource:       resource.Application,
@@ -270,7 +281,12 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities2, nil).Once()
-				capabilitySvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, *fixCapabilityInputs[0], nilSpecInputSlice, emptyHash).Return(capabilityID, nil).Once()
+
+				// set to time.Now, because on Create the lastUpdate is set to current time
+				currentTime := time.Now().Format(time.RFC3339)
+				fixCapabilityInputs[0].LastUpdate = &currentTime
+
+				capabilitySvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilString, *fixCapabilityInputs[0], nilSpecInputSlice, uint64ResourceHash).Return(capabilityID, nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -300,7 +316,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities, nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], uint64ResourceHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -327,7 +343,10 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilitiesNoNewerLastUpdate(), nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				fixCapabilityInputs := []*model.CapabilityInput{
+					fixCapabilityInput(),
+				}
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], uint64ResourceHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -339,7 +358,9 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			InputResource:       resource.Application,
 			InputResourceID:     appID,
 			InputPackagesFromDB: fixPackages(),
-			CapabilityInput:     fixCapabilityInputs,
+			CapabilityInput: []*model.CapabilityInput{
+				fixCapabilityInput(),
+			},
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         testErr,
 		},
@@ -355,7 +376,10 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			CapabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
 				capabilitySvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixCapabilitiesNoNewerLastUpdate(), nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				fixCapabilityInputs := []*model.CapabilityInput{
+					fixCapabilityInput(),
+				}
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, fixCapabilities[0].ID, str.Ptr(packageID1), *fixCapabilityInputs[0], uint64ResourceHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {
@@ -367,7 +391,9 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 			InputResource:       resource.ApplicationTemplateVersion,
 			InputResourceID:     appTemplateVersionID,
 			InputPackagesFromDB: fixPackages(),
-			CapabilityInput:     fixCapabilityInputs,
+			CapabilityInput: []*model.CapabilityInput{
+				fixCapabilityInput(),
+			},
 			InputResourceHashes: resourceHashes,
 			ExpectedErr:         testErr,
 		},
@@ -381,7 +407,7 @@ func TestCapabilityProcessor_Process(t *testing.T) {
 				fixCapabilityInputs[0].OrdPackageID = str.Ptr(packageORDID2)
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilities, nil).Once()
 				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixUpdatedCapabilities, nil).Once()
-				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID2), *fixCapabilityInputs[0], emptyHash).Return(nil).Once()
+				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, fixCapabilities[0].ID, str.Ptr(packageID2), *fixCapabilityInputs[0], uint64ResourceHash).Return(nil).Once()
 				return capabilitySvc
 			},
 			SpecSvcFn: func() *automock.SpecService {

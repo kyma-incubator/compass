@@ -12,6 +12,10 @@ type CredentialData interface {
 	IsCredentialData()
 }
 
+type FormationParticipant interface {
+	IsFormationParticipant()
+}
+
 type OneTimeToken interface {
 	IsOneTimeToken()
 }
@@ -535,18 +539,6 @@ type FetchRequestStatus struct {
 	Timestamp Timestamp                   `json:"timestamp"`
 }
 
-type FormationAssignment struct {
-	ID            string                  `json:"id"`
-	Source        string                  `json:"source"`
-	SourceType    FormationAssignmentType `json:"sourceType"`
-	Target        string                  `json:"target"`
-	TargetType    FormationAssignmentType `json:"targetType"`
-	State         string                  `json:"state"`
-	Value         *string                 `json:"value"`
-	Configuration *string                 `json:"configuration"`
-	Error         *string                 `json:"error"`
-}
-
 type FormationAssignmentPage struct {
 	Data       []*FormationAssignment `json:"data"`
 	PageInfo   *PageInfo              `json:"pageInfo"`
@@ -630,6 +622,7 @@ type FormationTemplateInput struct {
 	Webhooks               []*WebhookInput `json:"webhooks"`
 	LeadingProductIDs      []string        `json:"leadingProductIDs"`
 	SupportsReset          *bool           `json:"supportsReset"`
+	DiscoveryConsumers     []string        `json:"discoveryConsumers"`
 }
 
 type FormationTemplatePage struct {

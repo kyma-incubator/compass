@@ -84,3 +84,11 @@ type RedirectNotificationInput struct {
 	ResourceSubtype      string                   `json:"resource_subtype"`
 	Location             JoinPointLocation        `json:"join_point_location"`
 }
+
+// AsynchronousFlowControlOperatorInput is an input for AsynchronousFlowControlOperator operator
+type AsynchronousFlowControlOperatorInput struct {
+	RedirectNotificationInput
+	NotificationStatusReportMemoryAddress uintptr `json:"notification_status_report_memory_address"`
+	FAMemoryAddress                       uintptr `json:"formation_assignment_memory_address"`         // contains the memory address of the join point details' formation assignment in form of an integer
+	ReverseFAMemoryAddress                uintptr `json:"reverse_formation_assignment_memory_address"` // contains the memory address of the join point details' reverse formation assignment in form of an integer
+}

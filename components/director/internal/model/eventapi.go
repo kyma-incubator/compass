@@ -53,6 +53,7 @@ type EventDefinition struct {
 	CorrelationIDs                          json.RawMessage
 	LastUpdate                              *string
 	DeprecationDate                         *string
+	Responsible                             *string
 	*BaseEntity
 }
 
@@ -107,8 +108,9 @@ type EventDefinitionInput struct {
 	EntityTypeMappings                      []*EntityTypeMappingInput     `json:"entityTypeMappings"`
 	DocumentationLabels                     json.RawMessage               `json:"documentationLabels"`
 	CorrelationIDs                          json.RawMessage               `json:"correlationIds,omitempty"`
-	LastUpdate                              *string                       `json:"lastUpdate"`
+	LastUpdate                              *string                       `json:"lastUpdate" hash:"ignore"`
 	DeprecationDate                         *string                       `json:"deprecationDate"`
+	Responsible                             *string                       `json:"responsible"`
 	*VersionInput                           `hash:"ignore"`
 }
 
@@ -129,7 +131,7 @@ func (rd *EventResourceDefinition) Validate() error {
 		validation.Field(&rd.CustomType, validation.When(rd.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex)))),
 		validation.Field(&rd.MediaType, validation.Required, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML, SpecFormatApplicationXML, SpecFormatPlainText, SpecFormatOctetStream)),
 		validation.Field(&rd.URL, validation.Required, is.RequestURI),
-		validation.Field(&rd.AccessStrategy, validation.Required),
+		validation.Field(&rd.AccessStrategy),
 	)
 }
 

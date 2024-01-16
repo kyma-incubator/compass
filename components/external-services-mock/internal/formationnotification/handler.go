@@ -156,6 +156,12 @@ const CreateErrorAssignmentState FormationAssignmentState = "CREATE_ERROR"
 // DeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment
 const DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
 
+// CreateReadyAssignmentState indicates that the formation assignment is in a ready state
+const CreateReadyAssignmentState FormationAssignmentState = "CREATE_READY"
+
+// DeleteReadyAssignmentState indicates that the formation assignment is in a ready state
+const DeleteReadyAssignmentState FormationAssignmentState = "DELETE_READY"
+
 // ConfigPendingAssignmentState indicates that the config is either missing or not finalized in the formation assignment
 const ConfigPendingAssignmentState FormationAssignmentState = "CONFIG_PENDING"
 
@@ -557,6 +563,33 @@ func (h *Handler) AsyncNoConfig(writer http.ResponseWriter, r *http.Request) {
 	}
 
 	h.asyncFAResponse(ctx, writer, r, Assign, "", responseFunc)
+
+}
+
+// AsyncNoConfigWithCreateReady handles asynchronous formation assignment notification requests for Assign. Sends request without configuration in the body
+func (h *Handler) AsyncNoConfigWithCreateReady(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, CreateReadyAssignmentState, &config, formationID, formationAssignmentID); err != nil {
+			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
+		}
+	}
+
+	h.asyncFAResponse(ctx, writer, r, Assign, "", responseFunc)
+}
+
+// AsyncNoConfigWithDeleteReady handles asynchronous formation assignment notification requests for Assign. Sends request without configuration in the body
+func (h *Handler) AsyncNoConfigWithDeleteReady(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, DeleteReadyAssignmentState, &config, formationID, formationAssignmentID); err != nil {
+			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
+		}
+	}
+
+	h.asyncFAResponse(ctx, writer, r, Unassign, "", responseFunc)
 }
 
 // AsyncDestinationPatch handles asynchronous formation assignment notification requests for destination creation during Assign operation
@@ -746,7 +779,11 @@ func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPC
 
 	request.Header.Add(correlation.RequestIDHeaderKey, correlationID)
 	request.Header.Add(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationJSON)
-	log.C(ctx).Infof("Calling status API for formation assignment status update with the following data - formation ID: %s, assignment with ID: %s, state: %s and config: %v", formationID, formationAssignmentID, state, testConfig)
+	if testConfig != nil && *testConfig != "" {
+		log.C(ctx).Infof("Calling status API for formation assignment status update with the following data - formation ID: %s, assignment with ID: %s, state: %s and config: %s", formationID, formationAssignmentID, state, *testConfig)
+	} else {
+		log.C(ctx).Infof("Calling status API for formation assignment status update with the following data - formation ID: %s, assignment with ID: %s, state: %s and without config", formationID, formationAssignmentID, state)
+	}
 	_, err = certSecuredHTTPClient.Do(request)
 	return err
 }

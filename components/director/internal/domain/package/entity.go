@@ -21,6 +21,7 @@ type Entity struct {
 	Links                        sql.NullString `db:"links"`
 	LicenseType                  sql.NullString `db:"licence_type"`
 	SupportInfo                  sql.NullString `db:"support_info"`
+	RuntimeRestriction           sql.NullString `db:"runtime_restriction"`
 	Tags                         sql.NullString `db:"tags"`
 	Countries                    sql.NullString `db:"countries"`
 	Labels                       sql.NullString `db:"labels"`

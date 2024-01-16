@@ -69,6 +69,7 @@ func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 		CorrelationIDs:                repo.NewNullableStringFromJSONRawMessage(in.CorrelationIDs),
 		Tags:                          repo.NewNullableStringFromJSONRawMessage(in.Tags),
 		DocumentationLabels:           repo.NewNullableStringFromJSONRawMessage(in.DocumentationLabels),
+		LastUpdate:                    repo.NewNullableString(in.LastUpdate),
 		BaseEntity: &repo.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
@@ -111,6 +112,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 		CorrelationIDs:                 repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
 		Tags:                           repo.JSONRawMessageFromNullableString(entity.Tags),
 		DocumentationLabels:            repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
+		LastUpdate:                     repo.StringPtrFromNullableString(entity.LastUpdate),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,

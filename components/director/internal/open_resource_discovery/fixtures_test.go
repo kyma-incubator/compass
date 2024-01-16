@@ -45,6 +45,7 @@ const (
 	capability2ORDID            = "sap2.foo.bar:capability:fieldExtensibility:v1"
 	integrationDependency1ORDID = "sap.foo.bar:integrationDependency:CustomerOrder:v1"
 	integrationDependency2ORDID = "sap2.foo.bar:integrationDependency:CustomerOrder:v1"
+	dataProductORDID            = "sap.foo.bar:dataProduct:CustomerOrder:v1"
 
 	whID                     = "testWh"
 	tenantID                 = "testTenant"
@@ -62,6 +63,7 @@ const (
 	capability2ID            = "testCapability2"
 	integrationDependency1ID = "testIntegrationDependency1"
 	integrationDependency2ID = "testIntegrationDependency2"
+	dataProductID            = "data-product-id"
 	tombstoneID              = "testTs"
 	localTenantID            = "localTenantID"
 	webhookID                = "webhookID"
@@ -155,7 +157,7 @@ var (
       }`)
 
 	supportedUseCases = removeWhitespace(`[
-        "mass-extraction"
+        "data-federation"
       ]`)
 
 	credentialExchangeStrategiesWithCustomTypeFormat = removeWhitespace(`[
@@ -269,6 +271,24 @@ var (
 		}
 	  ]`)
 
+	dataProductEntityTypes = `["sap.odm:entityType:CustomerOrder:v1","sap.odm:entityType:BusinessPartner:v1"]`
+
+	dataProductOutputPorts = removeWhitespace(`[
+		{
+			"ordId": "sap.cic:apiResource:RetailTransactionOData:v1"
+		},
+		{
+			"ordId": "sap.cic:eventResource:RawCustomerOrder:v2"
+		}
+	  ]`)
+
+	dataProductLinks = removeWhitespace(`[
+		{
+  			"type": "support",
+  			"url": "https://support.sap.com/CIC_DP_RT/issue/"
+		}
+	  ]`)
+
 	boolPtr = true
 
 	apisFromDB = map[string]*model.APIDefinition{
@@ -289,6 +309,10 @@ var (
 	integrationDependenciesFromDB = map[string]*model.IntegrationDependency{
 		integrationDependency1ORDID: fixIntegrationDependenciesWithHash()[0],
 		integrationDependency2ORDID: fixIntegrationDependenciesWithHash()[1],
+	}
+
+	dataProductsFromDB = map[string]*model.DataProduct{
+		dataProductORDID: fixDataProductsWithHash()[0],
 	}
 
 	pkgsFromDB = map[string]*model.Package{
@@ -358,6 +382,10 @@ func fixResourceHashesForDocument(doc *ord.Document) map[string]uint64 {
 	for _, resource := range doc.EntityTypes {
 		hash, _ := ord.HashObject(resource)
 		result[resource.OrdID] = hash
+	}
+	for _, resource := range doc.DataProducts {
+		hash, _ := ord.HashObject(resource)
+		result[*resource.OrdID] = hash
 	}
 	for _, resource := range doc.ConsumptionBundles {
 		hash, _ := ord.HashObject(resource)
@@ -473,6 +501,12 @@ func sanitizeResources(doc *ord.Document) {
 	doc.IntegrationDependencies[0].Labels = json.RawMessage(mergedLabels)
 	doc.IntegrationDependencies[1].Tags = json.RawMessage(`["testTag","integrationDependencyTestTag"]`)
 	doc.IntegrationDependencies[1].Labels = json.RawMessage(mergedLabels)
+
+	doc.DataProducts[0].PolicyLevel = str.Ptr(policyLevel)
+	doc.DataProducts[0].Tags = json.RawMessage(`["testTag","dataProductTestTag"]`)
+	doc.DataProducts[0].Labels = json.RawMessage(mergedLabels)
+	doc.DataProducts[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
+	doc.DataProducts[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 }
 
 func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
@@ -963,6 +997,43 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				},
 			},
 		},
+		DataProducts: []*model.DataProductInput{
+			{
+				OrdID:               str.Ptr(dataProductORDID),
+				LocalTenantID:       str.Ptr(localTenantID),
+				CorrelationIDs:      json.RawMessage(correlationIDs),
+				Title:               "Data Product Title",
+				ShortDescription:    str.Ptr("Short description for Data Product"),
+				Description:         str.Ptr("Description for Data Product"),
+				OrdPackageID:        str.Ptr(packageORDID),
+				LastUpdate:          str.Ptr("2023-12-14T15:47:04+00:00"),
+				Visibility:          str.Ptr("public"),
+				ReleaseStatus:       str.Ptr("active"),
+				Disabled:            &boolPtr,
+				SunsetDate:          nil,
+				Successors:          nil,
+				ChangeLogEntries:    json.RawMessage(changeLogEntries),
+				Type:                "base",
+				Category:            "other",
+				EntityTypes:         json.RawMessage(dataProductEntityTypes),
+				InputPorts:          json.RawMessage("[]"),
+				OutputPorts:         json.RawMessage(dataProductOutputPorts),
+				Responsible:         str.Ptr("sap:ach:CIC-DP-CO"),
+				DataProductLinks:    json.RawMessage(dataProductLinks),
+				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+				LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
+				Tags:                json.RawMessage(`["dataProductTestTag"]`),
+				Labels:              json.RawMessage(labels),
+				DocumentationLabels: json.RawMessage(documentLabels),
+				SystemInstanceAware: &boolPtr,
+				PolicyLevel:         nil,
+				CustomPolicyLevel:   nil,
+				VersionInput: &model.VersionInput{
+					Value: "1.1.1",
+				},
+			},
+		},
 		Tombstones: []*model.TombstoneInput{
 			{
 				OrdID:       api2ORDID,
@@ -1357,6 +1428,18 @@ func fixIntegrationDependenciesWithHash() []*model.IntegrationDependency {
 		integrationDependency.Version.Value = fixORDDocument().IntegrationDependencies[idx].VersionInput.Value
 	}
 	return integrationDependencies
+}
+
+func fixDataProductsWithHash() []*model.DataProduct {
+	dataProducts := fixDataProducts()
+
+	for idx, dataProduct := range dataProducts {
+		ordID := str.PtrStrToStr(dataProduct.OrdID)
+		hash := str.Ptr(strconv.FormatUint(resourceHashes[ordID], 10))
+		dataProduct.ResourceHash = hash
+		dataProduct.Version.Value = fixORDDocument().DataProducts[idx].VersionInput.Value
+	}
+	return dataProducts
 }
 
 func fixPackagesWithHash() []*model.Package {
@@ -1835,6 +1918,46 @@ func fixEntityTypes() []*model.EntityType {
 			DocumentationLabels:          json.RawMessage(documentationLabels),
 			Version:                      fixVersionModel(versionValue, versionDeprecated, versionDeprecatedSince, versionForRemoval),
 			ResourceHash:                 &resourceHash,
+		},
+	}
+}
+
+func fixDataProducts() []*model.DataProduct {
+	return []*model.DataProduct{
+		{
+			OrdID:               str.Ptr(dataProductORDID),
+			LocalTenantID:       str.Ptr(localTenantID),
+			CorrelationIDs:      json.RawMessage(correlationIDs),
+			Title:               "Data Product Title",
+			ShortDescription:    str.Ptr("Short description for Data Product"),
+			Description:         str.Ptr("Description for Data Product"),
+			PackageID:           str.Ptr(packageID),
+			LastUpdate:          str.Ptr("2023-12-14T15:47:04+00:00"),
+			Visibility:          str.Ptr("public"),
+			ReleaseStatus:       str.Ptr("active"),
+			Disabled:            &boolPtr,
+			SunsetDate:          nil,
+			Successors:          nil,
+			ChangeLogEntries:    json.RawMessage(changeLogEntries),
+			Type:                "base",
+			Category:            "other",
+			EntityTypes:         json.RawMessage(dataProductEntityTypes),
+			InputPorts:          nil,
+			OutputPorts:         json.RawMessage(dataProductOutputPorts),
+			Responsible:         str.Ptr("sap:ach:CIC-DP-CO"),
+			DataProductLinks:    json.RawMessage(dataProductLinks),
+			Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+			LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
+			Tags:                json.RawMessage(`["dataProductTestTag"]`),
+			Labels:              json.RawMessage(labels),
+			DocumentationLabels: json.RawMessage(documentLabels),
+			SystemInstanceAware: &boolPtr,
+			Version:             fixVersionModel(versionValue, versionDeprecated, versionDeprecatedSince, versionForRemoval),
+			BaseEntity: &model.BaseEntity{
+				ID:    dataProductID,
+				Ready: true,
+			},
 		},
 	}
 }
