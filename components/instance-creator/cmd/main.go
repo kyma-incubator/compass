@@ -7,7 +7,7 @@ import (
 	"time"
 
 	httputildirector "github.com/kyma-incubator/compass/components/director/pkg/auth"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/persistence"
 
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client"
@@ -81,13 +81,13 @@ func main() {
 	creator.Use(tenantValidationMiddleware.Handler())
 
 	smClient := client.NewClient(cfg, client.NewCallerProvider())
-	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	certCache, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	exitOnError(err, "failed to initialize certificate loader")
 
 	mtlsHTTPClient := httputildirector.PrepareMTLSClientWithSSLValidation(cfg.ClientTimeout, certCache, cfg.SkipSSLValidation, cfg.ExternalClientCertSecretName)
 	c := handler.NewHandler(smClient, mtlsHTTPClient, advisoryLocker)
 
-	creator.HandleFunc("/", c.HandlerFunc)
+	creator.HandleFunc(cfg.APITenantMappingsEndpoint, c.HandlerFunc).Methods(http.MethodPatch)
 	mainRouter.HandleFunc(paths.HealthzEndpoint, healthz.NewHTTPHandler())
 
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)

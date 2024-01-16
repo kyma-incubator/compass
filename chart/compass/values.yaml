@@ -595,6 +595,7 @@ global:
   instanceCreator:
     port: 8080
     apiRootPath: "/instance-creator"
+    apiTenantMappingsEndpoint: "/v1/tenantMappings/{tenant-id}"
     tenantInfo:
       requestTimeout: 30s
     authentication:

@@ -477,7 +477,7 @@ func (i *InstanceCreatorHandler) callUCLStatusAPI(statusAPIURL, correlationID st
 	}
 
 	if statusAPIURL == "" {
-		log.C(ctx).WithError(err).Error("status API URL is empty...")
+		log.C(ctx).Error("status API URL is empty...")
 		return
 	}
 
