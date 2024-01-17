@@ -1242,7 +1242,7 @@ FROM aspects a
 CREATE OR REPLACE VIEW tenants_bundles
             (tenant_id, formation_id, id, app_id, name, description, version, instance_auth_request_json_schema,
              default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, tags,
-             credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids,
+             credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, last_update,
              resource_hash)
 AS
 SELECT DISTINCT t_apps.tenant_id,
@@ -1267,6 +1267,7 @@ SELECT DISTINCT t_apps.tenant_id,
                 b.deleted_at,
                 b.error,
                 b.correlation_ids,
+                b.last_update,
                 b.resource_hash
 FROM bundles b
          JOIN (SELECT a1.id,
