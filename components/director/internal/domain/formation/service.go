@@ -771,7 +771,7 @@ func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID
 			return errors.Wrapf(err, "while validating application type for application %q", objectID)
 		}
 		if err := s.isValidApplication(ctx, tnt, objectID); err != nil {
-			return errors.Wrapf(err, "while application %q", objectID)
+			return errors.Wrapf(err, "while validating application with ID: %q", objectID)
 		}
 	case graphql.FormationObjectTypeRuntime:
 		if err := s.isValidRuntimeType(ctx, tnt, objectID, formationTemplate); err != nil {

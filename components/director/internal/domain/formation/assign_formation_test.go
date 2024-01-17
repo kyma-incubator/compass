@@ -972,7 +972,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: "cannot convert label value to slice of strings",
 		},
 		{
-			Name: "error for application if application is not ready",
+			Name: "error when the application is not in ready state",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
