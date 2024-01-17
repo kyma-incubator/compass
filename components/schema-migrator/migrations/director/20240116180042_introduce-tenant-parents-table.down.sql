@@ -2,13 +2,13 @@ BEGIN;
 
 UPDATE webhooks
 SET input_template = '{"context":{"platform":"{{if .CustomerTenantContext.AccountID}}btp{{else}}unified-services{{end}}","uclFormationId":"{{.FormationID}}","accountId":"{{if .CustomerTenantContext.AccountID}}{{.CustomerTenantContext.AccountID}}{{else}}{{.CustomerTenantContext.Path}}{{end}}","crmId":"{{.CustomerTenantContext.CustomerID}}","operation":"{{.Operation}}"},"assignedTenant":{"state":"{{.Assignment.State}}","uclAssignmentId":"{{.Assignment.ID}}","deploymentRegion":"{{if .Application.Labels.region}}{{.Application.Labels.region}}{{else}}{{.ApplicationTemplate.Labels.region}}{{end}}","applicationNamespace":"{{if .Application.ApplicationNamespace}}{{.Application.ApplicationNamespace}}{{else}}{{.ApplicationTemplate.ApplicationNamespace}}{{end}}","applicationUrl":"{{.Application.BaseURL}}","applicationTenantId":"{{.Application.LocalTenantID}}","uclSystemName":"{{.Application.Name}}","uclSystemTenantId":"{{.Application.ID}}",{{if .ApplicationTemplate.Labels.parameters}}"parameters":{{.ApplicationTemplate.Labels.parameters}},{{end}}"configuration":{{.ReverseAssignment.Value}}},"receiverTenant":{"ownerTenant":"{{.Runtime.Tenant.Parent}}","state":"{{.ReverseAssignment.State}}","uclAssignmentId":"{{.ReverseAssignment.ID}}","deploymentRegion":"{{if and .RuntimeContext .RuntimeContext.Labels.region}}{{.RuntimeContext.Labels.region}}{{else}}{{.Runtime.Labels.region}}{{end}}","applicationNamespace":"{{.Runtime.ApplicationNamespace}}","applicationTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.Value}}{{else}}{{.Runtime.Labels.global_subaccount_id}}{{end}}","uclSystemTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}",{{if .Runtime.Labels.parameters}}"parameters":{{.Runtime.Labels.parameters}},{{end}}"configuration":{{.Assignment.Value}}}}'
-where runtime_id IN
+WHERE runtime_id IN
       (SELECT runtime_id
        FROM labels
        WHERE runtime_id IS NOT NULL
          AND
-    key = 'runtimeType'
-  AND value = '"kyma"'
+    KEY = 'runtimeType'
+  AND VALUE = '"kyma"'
     );
 
 -- tenant_applications
@@ -22,9 +22,9 @@ WHERE t1.source
 
 DELETE
 FROM tenant_applications t1 USING tenant_applications t2
-WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner= false AND t2.owner= true;
+WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner= FALSE AND t2.owner= TRUE;
 
-ALTER TABLE tenant_applications DROP column source;
+ALTER TABLE tenant_applications DROP COLUMN SOURCE;
 ALTER TABLE tenant_applications
     ADD PRIMARY KEY (tenant_id, id);
 
@@ -39,9 +39,9 @@ WHERE t1.source
 
 DELETE
 FROM tenant_runtimes t1 USING tenant_runtimes t2
-WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner= false AND t2.owner= true;
+WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner= FALSE AND t2.owner= TRUE;
 
-ALTER TABLE tenant_runtimes DROP column source;
+ALTER TABLE tenant_runtimes DROP COLUMN SOURCE;
 
 ALTER TABLE tenant_runtimes
     ADD PRIMARY KEY (tenant_id, id);
@@ -57,30 +57,20 @@ WHERE t1.source
 
 DELETE
 FROM tenant_runtime_contexts t1 USING tenant_runtime_contexts t2
-WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner= false AND t2.owner= true;
+WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner= FALSE AND t2.owner= TRUE;
 
-ALTER TABLE tenant_runtime_contexts DROP column source;
+ALTER TABLE tenant_runtime_contexts DROP COLUMN SOURCE;
 ALTER TABLE tenant_runtime_contexts
     ADD PRIMARY KEY (tenant_id, id);
 
--- Identify duplicates and keep the one with owner=true
--- WITH ranked_rows AS (
---     SELECT
---         tenant_id,
---         id,
---         source,
---         ROW_NUMBER() OVER (PARTITION BY tenant_id, id ORDER BY owner DESC) AS row_num
---     FROM
---         tenant_applications
--- )
--- DELETE FROM tenant_applications
--- WHERE (tenant_id, id, source) IN (SELECT tenant_id, id, source FROM ranked_rows WHERE row_num > 1);
-
+-- Add parent column to business tenant mapping
+ALTER TABLE business_tenant_mappings
+    ADD COLUMN parent uuid;
 
 DROP VIEW IF EXISTS formation_templates_webhooks_tenants;
 
 CREATE
-OR REPLACE VIEW formation_templates_webhooks_tenants (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
+OR REPLACE VIEW formation_templates_webhooks_tenants (id, app_id, url, TYPE, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
                                                              input_template, header_template, output_template, status_template, runtime_id, integration_system_id,
                                                              app_template_id, formation_template_id, tenant_id, owner)
 AS
@@ -103,9 +93,9 @@ SELECT w.id,
        w.app_template_id,
        w.formation_template_id,
        ft.tenant_id,
-       true
+       TRUE
 FROM webhooks w
-         JOIN formation_templates ft on w.formation_template_id = ft.id
+         JOIN formation_templates ft ON w.formation_template_id = ft.id
 UNION ALL
 SELECT w.id,
        w.app_id,
@@ -126,17 +116,15 @@ SELECT w.id,
        w.app_template_id,
        w.formation_template_id,
        btm.id,
-       true
+       TRUE
 FROM webhooks w
-         JOIN formation_templates ft on w.formation_template_id = ft.id
-         JOIN business_tenant_mappings btm on ft.tenant_id = btm.parent;
-
-
+         JOIN formation_templates ft ON w.formation_template_id = ft.id
+         JOIN business_tenant_mappings btm ON ft.tenant_id = btm.parent;
 
 DROP VIEW IF EXISTS webhooks_tenants;
 CREATE
 OR REPLACE VIEW webhooks_tenants
-            (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
+            (id, app_id, url, TYPE, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
              input_template, header_template, output_template, status_template, runtime_id, integration_system_id,
              app_template_id, formation_template_id, tenant_id, owner)
 AS
@@ -205,9 +193,9 @@ SELECT w.id,
        w.app_template_id,
        w.formation_template_id,
        ft.tenant_id,
-       true
+       TRUE
 FROM webhooks w
-         JOIN formation_templates ft on w.formation_template_id = ft.id
+         JOIN formation_templates ft ON w.formation_template_id = ft.id
 UNION ALL
 SELECT w.id,
        w.app_id,
@@ -228,10 +216,10 @@ SELECT w.id,
        w.app_template_id,
        w.formation_template_id,
        btm.id,
-       true
+       TRUE
 FROM webhooks w
-         JOIN formation_templates ft on w.formation_template_id = ft.id
-         JOIN business_tenant_mappings btm on ft.tenant_id = btm.parent;
+         JOIN formation_templates ft ON w.formation_template_id = ft.id
+         JOIN business_tenant_mappings btm ON ft.tenant_id = btm.parent;
 
 -- Drop indexes for tenant_parents table
 DROP INDEX IF EXISTS tenant_parents_tenant_id;
@@ -243,132 +231,132 @@ DROP TABLE IF EXISTS tenant_parents;
 DROP VIEW IF EXISTS api_definitions_tenants;
 CREATE
 OR REPLACE VIEW api_definitions_tenants AS
-SELECT
-    apis.id,
-    apis.app_id,
-    apis.name,
-    apis.description,
-    apis.group_name,
-    apis.default_auth,
-    apis.version_value,
-    apis.version_deprecated,
-    apis.version_deprecated_since,
-    apis.version_for_removal,
-    apis.ord_id,
-    apis.short_description,
-    apis.system_instance_aware,
-    apis.api_protocol,
-    apis.tags,
-    apis.countries,
-    apis.links,
-    apis.api_resource_links,
-    apis.release_status,
-    apis.sunset_date,
-    apis.changelog_entries,
-    apis.labels,
-    apis.package_id,
-    apis.visibility,
-    apis.disabled,
-    apis.part_of_products,
-    apis.line_of_business,
-    apis.industry,
-    apis.ready,
-    apis.created_at,
-    apis.updated_at,
-    apis.deleted_at,
-    apis.error,
-    apis.implementation_standard,
-    apis.custom_implementation_standard,
-    apis.custom_implementation_standard_description,
-    apis.target_urls,
-    apis.successors,
-    apis.resource_hash,
-    apis.documentation_labels,
-    ta.tenant_id,
-    ta.owner
+SELECT apis.id,
+       apis.app_id,
+       apis.name,
+       apis.description,
+       apis.group_name,
+       apis.default_auth,
+       apis.version_value,
+       apis.version_deprecated,
+       apis.version_deprecated_since,
+       apis.version_for_removal,
+       apis.ord_id,
+       apis.short_description,
+       apis.system_instance_aware,
+       apis.api_protocol,
+       apis.tags,
+       apis.countries,
+       apis.links,
+       apis.api_resource_links,
+       apis.release_status,
+       apis.sunset_date,
+       apis.changelog_entries,
+       apis.labels,
+       apis.package_id,
+       apis.visibility,
+       apis.disabled,
+       apis.part_of_products,
+       apis.line_of_business,
+       apis.industry,
+       apis.ready,
+       apis.created_at,
+       apis.updated_at,
+       apis.deleted_at,
+       apis.error,
+       apis.implementation_standard,
+       apis.custom_implementation_standard,
+       apis.custom_implementation_standard_description,
+       apis.target_urls,
+       apis.successors,
+       apis.resource_hash,
+       apis.documentation_labels,
+       ta.tenant_id,
+       ta.owner
 FROM api_definitions AS apis
          INNER JOIN tenant_applications ta ON ta.id = apis.app_id;
 
 
 DROP VIEW IF EXISTS event_api_definitions_tenants;
-CREATE OR REPLACE VIEW event_api_definitions_tenants AS
-SELECT
-    events.id,
-    events.app_id,
-    events.name,
-    events.description,
-    events.group_name,
-    events.version_value,
-    events.version_deprecated,
-    events.version_deprecated_since,
-    events.version_for_removal,
-    events.ord_id,
-    events.short_description,
-    events.system_instance_aware,
-    events.changelog_entries,
-    events.links,
-    events.tags,
-    events.countries,
-    events.release_status,
-    events.sunset_date,
-    events.labels,
-    events.package_id,
-    events.visibility,
-    events.disabled,
-    events.part_of_products,
-    events.line_of_business,
-    events.industry,
-    events.ready,
-    events.created_at,
-    events.updated_at,
-    events.deleted_at,
-    events.error,
-    events.successors,
-    events.resource_hash,
-    ta.tenant_id,
-    ta.owner
+CREATE
+OR REPLACE VIEW event_api_definitions_tenants AS
+SELECT events.id,
+       events.app_id,
+       events.name,
+       events.description,
+       events.group_name,
+       events.version_value,
+       events.version_deprecated,
+       events.version_deprecated_since,
+       events.version_for_removal,
+       events.ord_id,
+       events.short_description,
+       events.system_instance_aware,
+       events.changelog_entries,
+       events.links,
+       events.tags,
+       events.countries,
+       events.release_status,
+       events.sunset_date,
+       events.labels,
+       events.package_id,
+       events.visibility,
+       events.disabled,
+       events.part_of_products,
+       events.line_of_business,
+       events.industry,
+       events.ready,
+       events.created_at,
+       events.updated_at,
+       events.deleted_at,
+       events.error,
+       events.successors,
+       events.resource_hash,
+       ta.tenant_id,
+       ta.owner
 FROM event_api_definitions AS events
          INNER JOIN tenant_applications ta ON ta.id = events.app_id;
 
 DROP VIEW IF EXISTS capabilities_tenants;
-CREATE OR REPLACE VIEW capabilities_tenants AS
-SELECT
-    c.id,
-    c.app_id,
-    c.name,
-    c.description,
-    c.type,
-    c.custom_type,
-    c.version_value,
-    c.version_deprecated,
-    c.version_deprecated_since,
-    c.version_for_removal,
-    c.ord_id,
-    c.local_tenant_id,
-    c.short_description,
-    c.system_instance_aware,
-    c.tags,
-    c.links,
-    c.release_status,
-    c.labels,
-    c.package_id,
-    c.visibility,
-    c.ready,
-    c.created_at,
-    c.updated_at,
-    c.deleted_at,
-    c.error,
-    c.resource_hash,
-    c.documentation_labels,
-    c.correlation_ids,
-    c.last_update,
-    ta.tenant_id,
-    ta.owner
+CREATE
+OR REPLACE VIEW capabilities_tenants AS
+SELECT c.id,
+       c.app_id,
+       c.name,
+       c.description,
+       c.type,
+       c.custom_type,
+       c.version_value,
+       c.version_deprecated,
+       c.version_deprecated_since,
+       c.version_for_removal,
+       c.ord_id,
+       c.local_tenant_id,
+       c.short_description,
+       c.system_instance_aware,
+       c.tags,
+       c.links,
+       c.release_status,
+       c.labels,
+       c.package_id,
+       c.visibility,
+       c.ready,
+       c.created_at,
+       c.updated_at,
+       c.deleted_at,
+       c.error,
+       c.resource_hash,
+       c.documentation_labels,
+       c.correlation_ids,
+       c.last_update,
+       ta.tenant_id,
+       ta.owner
 FROM capabilities AS c
          INNER JOIN tenant_applications ta ON ta.id = c.app_id;
 
 DROP VIEW IF EXISTS entity_types_tenants;
-CREATE OR REPLACE VIEW entity_types_tenants AS
+CREATE
+OR REPLACE VIEW entity_types_tenants AS
 SELECT et.id,
        et.ord_id,
        et.app_id,
@@ -461,7 +449,7 @@ DROP VIEW IF EXISTS documents_tenants;
 CREATE
 OR REPLACE VIEW documents_tenants AS
 SELECT d.id,
-       d. app_id,
+       d.app_id,
        d.title,
        d.display_name,
        d.description,
@@ -483,7 +471,7 @@ DROP VIEW IF EXISTS vendors_tenants;
 CREATE
 OR REPLACE VIEW vendors_tenants AS
 SELECT v.ord_id,
-       v. app_id,
+       v.app_id,
        v.title,
        v.labels,
        v.partners,
@@ -493,16 +481,14 @@ SELECT v.ord_id,
 FROM vendors AS v
          INNER JOIN tenant_applications AS ta ON ta.id = v.app_id;
 
-LOCK business_tenant_mappings IN EXCLUSIVE MODE;
-
--- Add parent column to business tenant mapping
-ALTER TABLE business_tenant_mappings
-    ADD COLUMN parent uuid;
+LOCK
+business_tenant_mappings IN EXCLUSIVE MODE;
 
 -- Fill parent column
-UPDATE business_tenant_mappings SET parent=parent_id
-    FROM tenant_parents
-WHERE  business_tenant_mappings.id = tenant_parents.tenant_id AND business_tenant_mappings.type <> 'cost-object'::tenant_type;
+UPDATE business_tenant_mappings
+SET parent=parent_id FROM tenant_parents
+WHERE business_tenant_mappings.id = tenant_parents.tenant_id
+  AND business_tenant_mappings.type <> 'cost-object'::tenant_type;
 
 -- Add business tenant mapping parent fk
 ALTER TABLE business_tenant_mappings
@@ -521,12 +507,12 @@ CREATE
 OR REPLACE FUNCTION check_tenant_id_is_direct_parent_of_target_tenant_id() RETURNS TRIGGER AS
 $$
 DECLARE
-count INTEGER;
+COUNT INTEGER;
 BEGIN
 EXECUTE format('SELECT COUNT(1) FROM business_tenant_mappings WHERE id = %L AND parent = %L', NEW.target_tenant_id,
-               NEW.tenant_id) INTO count;
+               NEW.tenant_id) INTO COUNT;
 IF
-count = 0 THEN
+COUNT = 0 THEN
         RAISE EXCEPTION 'target_tenant_id should be direct child of tenant_id';
 END IF;
 RETURN NULL;
