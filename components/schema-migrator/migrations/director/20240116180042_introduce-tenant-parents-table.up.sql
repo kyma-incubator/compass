@@ -11,17 +11,17 @@ where runtime_id IN
   AND value = '"kyma"'
     );
 
+-- Copy business_tenant_mappings table
+CREATE TABLE business_tenant_mappings_temp AS TABLE business_tenant_mappings;
+CREATE INDEX business_tenant_mappings_temp_external_tenant ON business_tenant_mappings_temp (external_tenant);
+CREATE INDEX business_tenant_mappings_temp_id ON business_tenant_mappings_temp (id);
+
 -- Create many to many tenant_parents table
 CREATE TABLE tenant_parents
 (
     tenant_id uuid NOT NULL,
     parent_id uuid NOT NULL
 );
-
--- Copy business_tenant_mappings table
-CREATE TABLE business_tenant_mappings_temp AS TABLE business_tenant_mappings;
-CREATE INDEX business_tenant_mappings_temp_external_tenant ON business_tenant_mappings_temp (external_tenant);
-CREATE INDEX business_tenant_mappings_temp_id ON business_tenant_mappings_temp (id);
 
 -- Populate 'tenant_parents' table with data from 'business_tenant_mappings'
 INSERT INTO tenant_parents (tenant_id, parent_id)
@@ -94,46 +94,12 @@ from tenant_applications_temp ta using
 on tp.parent_id = ta2.source and tp.tenant_id=ta2.tenant_id
 where ta.tenant_id =ta2.tenant_id AND ta.id=ta2.id and ta.tenant_id = ta.source;
 
-ALTER TABLE tenant_applications RENAME TO tenant_applications_old;
-ALTER TABLE tenant_applications_old DROP CONSTRAINT tenant_applications_pkey;
-ALTER TABLE tenant_applications_old DROP CONSTRAINT tenant_applications_id_fkey;
-ALTER TABLE tenant_applications_old DROP CONSTRAINT tenant_applications_tenant_id_fkey;
-ALTER
-INDEX tenant_applications_app_id RENAME TO tenant_applications_old_app_id;
-ALTER
-INDEX tenant_applications_tenant_id RENAME TO tenant_applications_old_tenant_id;
-
-ALTER TABLE tenant_applications_temp RENAME TO tenant_applications;
-ALTER TABLE tenant_applications
-    ADD PRIMARY KEY (tenant_id, id, source);
-ALTER TABLE tenant_applications DROP CONSTRAINT unique_tenant_applications_temp;
-
-
-ALTER TABLE tenant_applications
-    ADD CONSTRAINT tenant_applications_tenant_id_fk
-        FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
-ALTER TABLE tenant_applications
-    ADD CONSTRAINT tenant_applications_id_fk
-        FOREIGN KEY (id) REFERENCES applications (id) ON DELETE CASCADE;
-ALTER TABLE tenant_applications
-    ADD CONSTRAINT tenant_applications_source_fk
-        FOREIGN KEY (source) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
-
-ALTER TABLE tenant_applications
-    alter column source set not null;
-
-CREATE INDEX tenant_applications_app_id ON tenant_applications (id);
-CREATE INDEX tenant_applications_tenant_id ON tenant_applications (tenant_id);
-CREATE INDEX tenant_applications_source ON tenant_applications (source);
-
 -- Migrate tenant access records for runtimes
 
 -- Add source column to tenant_runtimes table
 ALTER TABLE tenant_runtimes
     ADD COLUMN source uuid;
-ALTER TABLE tenant_runtimes
-    ADD CONSTRAINT tenant_runtimes_source_fk
-        FOREIGN KEY (source) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
+
 ALTER TABLE tenant_runtimes DROP CONSTRAINT tenant_runtimes_pkey;
 
 ALTER TABLE tenant_runtimes
@@ -167,11 +133,11 @@ WHERE source IS NULL;
 UPDATE tenant_runtimes ta
 SET source    = ta.tenant_id,
     tenant_id = ta.source FROM tenant_runtimes ta1
-         JOIN business_tenant_mappings btm
+         JOIN business_tenant_mappings_temp btm
 ON btm.id = ta1.tenant_id AND btm.type = 'customer'::tenant_type
-    JOIN business_tenant_mappings btm2 ON btm2.id = ta1.source AND btm2.type = 'account'::tenant_type
+    JOIN business_tenant_mappings_temp btm2 ON btm2.id = ta1.source AND btm2.type = 'account'::tenant_type
     JOIN tenant_runtimes ta2 ON ta1.id=ta2.id
-    JOIN business_tenant_mappings btm3 ON btm3.id = ta2.tenant_id AND btm3.type = 'resource-group'::tenant_type
+    JOIN business_tenant_mappings_temp btm3 ON btm3.id = ta2.tenant_id AND btm3.type = 'resource-group'::tenant_type
 WHERE ta.tenant_id=ta1.tenant_id AND ta.source=ta1.source AND ta.id=ta1.id AND ta.owner = ta1.owner;
 
 -- After fixing the swapped source and tenant_id there are leftover records stating that the GA knows about the resource from itself which is not correct as The GA knows about the resource from the CRM. Such records should be deleted
@@ -181,6 +147,10 @@ FROM tenant_runtimes ta USING
             JOIN tenant_parents tp
 ON tp.parent_id = ta2.source AND tp.tenant_id=ta2.tenant_id
 WHERE ta.tenant_id =ta2.tenant_id AND ta.id=ta2.id AND ta.tenant_id = ta.source;
+
+ALTER TABLE tenant_runtimes
+    ADD CONSTRAINT tenant_runtimes_source_fk
+        FOREIGN KEY (source) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
 
 ALTER TABLE tenant_runtimes
     ALTER COLUMN source SET NOT NULL;
@@ -196,9 +166,7 @@ CREATE INDEX tenant_runtimes_source ON tenant_runtimes (source);
 -- Add source column to tenant_runtime_contexts table
 ALTER TABLE tenant_runtime_contexts
     ADD COLUMN source uuid;
-ALTER TABLE tenant_runtime_contexts
-    ADD CONSTRAINT tenant_runtime_contexts_source_fk
-        FOREIGN KEY (source) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
+
 ALTER TABLE tenant_runtime_contexts DROP CONSTRAINT tenant_runtime_contexts_pkey;
 
 ALTER TABLE tenant_runtime_contexts
@@ -232,11 +200,11 @@ where source is null;
 UPDATE tenant_runtime_contexts ta
 SET source    = ta.tenant_id,
     tenant_id = ta.source FROM tenant_runtime_contexts ta1
-         JOIN business_tenant_mappings btm
+         JOIN business_tenant_mappings_temp btm
 ON btm.id = ta1.tenant_id AND btm.type = 'customer'::tenant_type
-    JOIN business_tenant_mappings btm2 ON btm2.id = ta1.source AND btm2.type = 'account'::tenant_type
+    JOIN business_tenant_mappings_temp btm2 ON btm2.id = ta1.source AND btm2.type = 'account'::tenant_type
     JOIN tenant_runtime_contexts ta2 ON ta1.id=ta2.id
-    JOIN business_tenant_mappings btm3 ON btm3.id = ta2.tenant_id AND btm3.type = 'resource-group'::tenant_type
+    JOIN business_tenant_mappings_temp btm3 ON btm3.id = ta2.tenant_id AND btm3.type = 'resource-group'::tenant_type
 WHERE ta.tenant_id=ta1.tenant_id AND ta.source=ta1.source AND ta.id=ta1.id AND ta.owner = ta1.owner;
 
 -- After fixing the swapped source and tenant_id there are leftover records stating that the GA knows about the resource from itself which is not correct as The GA knows about the resource from the CRM. Such records should be deleted
@@ -246,6 +214,10 @@ FROM tenant_runtime_contexts ta USING
             JOIN tenant_parents tp
 ON tp.parent_id = ta2.source AND tp.tenant_id=ta2.tenant_id
 where ta.tenant_id =ta2.tenant_id AND ta.id=ta2.id AND ta.tenant_id = ta.source;
+
+ALTER TABLE tenant_runtime_contexts
+    ADD CONSTRAINT tenant_runtime_contexts_source_fk
+        FOREIGN KEY (source) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
 
 ALTER TABLE tenant_runtime_contexts
     ALTER COLUMN source SET NOT NULL;
@@ -1686,5 +1658,39 @@ SELECT v.ord_id,
        ta.owner
 FROM vendors AS v
          INNER JOIN tenant_applications AS ta ON ta.id = v.app_id;
+
+LOCK business_tenant_mappings IN EXCLUSIVE MODE;
+
+ALTER TABLE tenant_applications RENAME TO tenant_applications_old;
+ALTER TABLE tenant_applications_old DROP CONSTRAINT tenant_applications_pkey;
+ALTER TABLE tenant_applications_old DROP CONSTRAINT tenant_applications_id_fkey;
+ALTER TABLE tenant_applications_old DROP CONSTRAINT tenant_applications_tenant_id_fkey;
+ALTER
+    INDEX tenant_applications_app_id RENAME TO tenant_applications_old_app_id;
+ALTER
+    INDEX tenant_applications_tenant_id RENAME TO tenant_applications_old_tenant_id;
+
+ALTER TABLE tenant_applications_temp RENAME TO tenant_applications;
+ALTER TABLE tenant_applications
+    ADD PRIMARY KEY (tenant_id, id, source);
+ALTER TABLE tenant_applications DROP CONSTRAINT unique_tenant_applications_temp;
+
+
+ALTER TABLE tenant_applications
+    ADD CONSTRAINT tenant_applications_tenant_id_fk
+        FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
+ALTER TABLE tenant_applications
+    ADD CONSTRAINT tenant_applications_id_fk
+        FOREIGN KEY (id) REFERENCES applications (id) ON DELETE CASCADE;
+ALTER TABLE tenant_applications
+    ADD CONSTRAINT tenant_applications_source_fk
+        FOREIGN KEY (source) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
+
+ALTER TABLE tenant_applications
+    alter column source set not null;
+
+CREATE INDEX tenant_applications_app_id ON tenant_applications (id);
+CREATE INDEX tenant_applications_tenant_id ON tenant_applications (tenant_id);
+CREATE INDEX tenant_applications_source ON tenant_applications (source);
 
 COMMIT;

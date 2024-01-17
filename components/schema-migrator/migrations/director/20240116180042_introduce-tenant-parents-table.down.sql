@@ -11,32 +11,6 @@ where runtime_id IN
   AND value = '"kyma"'
     );
 
--- Add parent column to business tenant mapping
-ALTER TABLE business_tenant_mappings
-    ADD COLUMN parent uuid;
-
--- Fill parent column
-UPDATE business_tenant_mappings SET parent=parent_id
-    FROM tenant_parents
-WHERE  business_tenant_mappings.id = tenant_parents.tenant_id AND business_tenant_mappings.type <> 'cost-object'::tenant_type;
-
-
-create business_tenant_mappings_temp
-rename business_tenant_mappings -> business_tenant_mappings_update
-rename business_tenant_mappings_temp - business_tenant_mappings
-
-Add parent business_tenant_mappings_update
-revert swap
-
--- Add business tenant mapping parent fk
-ALTER TABLE business_tenant_mappings
-    ADD CONSTRAINT business_tenant_mappings_parent_fk
-        FOREIGN KEY (parent)
-            REFERENCES business_tenant_mappings (id);
-
--- Create parent index
-CREATE INDEX parent_index ON business_tenant_mappings (parent);
-
 -- tenant_applications
 DELETE
 FROM tenant_applications t1 USING tenant_applications t2
@@ -89,8 +63,6 @@ ALTER TABLE tenant_runtime_contexts DROP column source;
 ALTER TABLE tenant_runtime_contexts
     ADD PRIMARY KEY (tenant_id, id);
 
-
-
 -- Identify duplicates and keep the one with owner=true
 -- WITH ranked_rows AS (
 --     SELECT
@@ -104,34 +76,8 @@ ALTER TABLE tenant_runtime_contexts
 -- DELETE FROM tenant_applications
 -- WHERE (tenant_id, id, source) IN (SELECT tenant_id, id, source FROM ranked_rows WHERE row_num > 1);
 
--- Create tenant_id_is_direct_parent_of_target_tenant_id trigger
-DROP TRIGGER tenant_id_is_direct_parent_of_target_tenant_id ON automatic_scenario_assignments;
-DROP FUNCTION IF EXISTS check_tenant_id_is_direct_parent_of_target_tenant_id();
-
-CREATE
-OR REPLACE FUNCTION check_tenant_id_is_direct_parent_of_target_tenant_id() RETURNS TRIGGER AS
-$$
-DECLARE
-count INTEGER;
-BEGIN
-EXECUTE format('SELECT COUNT(1) FROM business_tenant_mappings WHERE id = %L AND parent = %L', NEW.target_tenant_id,
-               NEW.tenant_id) INTO count;
-IF
-count = 0 THEN
-        RAISE EXCEPTION 'target_tenant_id should be direct child of tenant_id';
-END IF;
-RETURN NULL;
-END
-$$
-LANGUAGE plpgsql;
-
-CREATE
-CONSTRAINT TRIGGER tenant_id_is_direct_parent_of_target_tenant_id AFTER INSERT ON automatic_scenario_assignments
-    FOR EACH ROW EXECUTE PROCEDURE check_tenant_id_is_direct_parent_of_target_tenant_id();
-
 
 DROP VIEW IF EXISTS formation_templates_webhooks_tenants;
-
 
 CREATE
 OR REPLACE VIEW formation_templates_webhooks_tenants (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
@@ -546,4 +492,50 @@ SELECT v.ord_id,
        ta.owner
 FROM vendors AS v
          INNER JOIN tenant_applications AS ta ON ta.id = v.app_id;
+
+LOCK business_tenant_mappings IN EXCLUSIVE MODE;
+
+-- Add parent column to business tenant mapping
+ALTER TABLE business_tenant_mappings
+    ADD COLUMN parent uuid;
+
+-- Fill parent column
+UPDATE business_tenant_mappings SET parent=parent_id
+    FROM tenant_parents
+WHERE  business_tenant_mappings.id = tenant_parents.tenant_id AND business_tenant_mappings.type <> 'cost-object'::tenant_type;
+
+-- Add business tenant mapping parent fk
+ALTER TABLE business_tenant_mappings
+    ADD CONSTRAINT business_tenant_mappings_parent_fk
+        FOREIGN KEY (parent)
+            REFERENCES business_tenant_mappings (id);
+
+-- Create parent index
+CREATE INDEX parent_index ON business_tenant_mappings (parent);
+
+-- Create tenant_id_is_direct_parent_of_target_tenant_id trigger
+DROP TRIGGER tenant_id_is_direct_parent_of_target_tenant_id ON automatic_scenario_assignments;
+DROP FUNCTION IF EXISTS check_tenant_id_is_direct_parent_of_target_tenant_id();
+
+CREATE
+OR REPLACE FUNCTION check_tenant_id_is_direct_parent_of_target_tenant_id() RETURNS TRIGGER AS
+$$
+DECLARE
+count INTEGER;
+BEGIN
+EXECUTE format('SELECT COUNT(1) FROM business_tenant_mappings WHERE id = %L AND parent = %L', NEW.target_tenant_id,
+               NEW.tenant_id) INTO count;
+IF
+count = 0 THEN
+        RAISE EXCEPTION 'target_tenant_id should be direct child of tenant_id';
+END IF;
+RETURN NULL;
+END
+$$
+LANGUAGE plpgsql;
+
+CREATE
+CONSTRAINT TRIGGER tenant_id_is_direct_parent_of_target_tenant_id AFTER INSERT ON automatic_scenario_assignments
+    FOR EACH ROW EXECUTE PROCEDURE check_tenant_id_is_direct_parent_of_target_tenant_id();
+
 COMMIT;
