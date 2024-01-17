@@ -221,13 +221,6 @@ FROM webhooks w
          JOIN formation_templates ft ON w.formation_template_id = ft.id
          JOIN business_tenant_mappings btm ON ft.tenant_id = btm.parent;
 
--- Drop indexes for tenant_parents table
-DROP INDEX IF EXISTS tenant_parents_tenant_id;
-DROP INDEX IF EXISTS tenant_parents_parent_id;
-
--- Drop tenant_parents table
-DROP TABLE IF EXISTS tenant_parents;
-
 DROP VIEW IF EXISTS api_definitions_tenants;
 CREATE
 OR REPLACE VIEW api_definitions_tenants AS
@@ -523,5 +516,12 @@ LANGUAGE plpgsql;
 CREATE
 CONSTRAINT TRIGGER tenant_id_is_direct_parent_of_target_tenant_id AFTER INSERT ON automatic_scenario_assignments
     FOR EACH ROW EXECUTE PROCEDURE check_tenant_id_is_direct_parent_of_target_tenant_id();
+
+-- Drop indexes for tenant_parents table
+DROP INDEX IF EXISTS tenant_parents_tenant_id;
+DROP INDEX IF EXISTS tenant_parents_parent_id;
+
+-- Drop tenant_parents table
+DROP TABLE IF EXISTS tenant_parents;
 
 COMMIT;
