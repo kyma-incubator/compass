@@ -822,7 +822,8 @@ FROM bundle_instance_auths AS bia
          INNER JOIN tenant_applications ta ON ta.id = b.app_id;
 
 CREATE OR REPLACE VIEW bundles_tenants AS
-SELECT b.app_id,
+SELECT b.id,
+       b.app_id,
        b.name,
        b.description,
        b.instance_auth_request_json_schema,
@@ -844,6 +845,7 @@ SELECT b.app_id,
        b.resource_hash,
        b.local_tenant_id,
        b.app_template_version_id,
+       b.last_update,
        ta.tenant_id,
        ta.owner
 FROM bundles AS b
