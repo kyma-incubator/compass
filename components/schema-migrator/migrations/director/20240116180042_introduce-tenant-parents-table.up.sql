@@ -253,6 +253,47 @@ CREATE INDEX tenant_runtimes_contexts_source ON tenant_runtime_contexts (source)
 
 DROP TABLE business_tenant_mappings_temp;
 
+-- Rename use the new tenant_applications table
+LOCK business_tenant_mappings IN EXCLUSIVE MODE;
+
+ALTER TABLE tenant_applications
+    RENAME TO tenant_applications_old;
+ALTER TABLE tenant_applications_old
+    DROP CONSTRAINT tenant_applications_pkey;
+ALTER TABLE tenant_applications_old
+    DROP CONSTRAINT tenant_applications_id_fkey;
+ALTER TABLE tenant_applications_old
+    DROP CONSTRAINT tenant_applications_tenant_id_fkey;
+ALTER
+    INDEX tenant_applications_app_id RENAME TO tenant_applications_old_app_id;
+ALTER
+    INDEX tenant_applications_tenant_id RENAME TO tenant_applications_old_tenant_id;
+
+ALTER TABLE tenant_applications_temp
+    RENAME TO tenant_applications;
+ALTER TABLE tenant_applications
+    ADD PRIMARY KEY (tenant_id, id, source);
+ALTER TABLE tenant_applications
+    DROP CONSTRAINT unique_tenant_applications_temp;
+
+
+ALTER TABLE tenant_applications
+    ADD CONSTRAINT tenant_applications_tenant_id_fk
+        FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
+ALTER TABLE tenant_applications
+    ADD CONSTRAINT tenant_applications_id_fk
+        FOREIGN KEY (id) REFERENCES applications (id) ON DELETE CASCADE;
+ALTER TABLE tenant_applications
+    ADD CONSTRAINT tenant_applications_source_fk
+        FOREIGN KEY (source) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
+
+ALTER TABLE tenant_applications
+    ALTER COLUMN source SET NOT NULL;
+
+CREATE INDEX tenant_applications_app_id ON tenant_applications (id);
+CREATE INDEX tenant_applications_tenant_id ON tenant_applications (tenant_id);
+CREATE INDEX tenant_applications_source ON tenant_applications (source);
+
 DROP VIEW IF EXISTS formation_templates_webhooks_tenants;
 
 CREATE OR REPLACE VIEW formation_templates_webhooks_tenants
@@ -1674,46 +1715,5 @@ SELECT v.ord_id,
        ta.owner
 FROM vendors AS v
          INNER JOIN tenant_applications AS ta ON ta.id = v.app_id;
-
--- Rename use the new tenant_applications table
-LOCK business_tenant_mappings IN EXCLUSIVE MODE;
-
-ALTER TABLE tenant_applications
-    RENAME TO tenant_applications_old;
-ALTER TABLE tenant_applications_old
-    DROP CONSTRAINT tenant_applications_pkey;
-ALTER TABLE tenant_applications_old
-    DROP CONSTRAINT tenant_applications_id_fkey;
-ALTER TABLE tenant_applications_old
-    DROP CONSTRAINT tenant_applications_tenant_id_fkey;
-ALTER
-    INDEX tenant_applications_app_id RENAME TO tenant_applications_old_app_id;
-ALTER
-    INDEX tenant_applications_tenant_id RENAME TO tenant_applications_old_tenant_id;
-
-ALTER TABLE tenant_applications_temp
-    RENAME TO tenant_applications;
-ALTER TABLE tenant_applications
-    ADD PRIMARY KEY (tenant_id, id, source);
-ALTER TABLE tenant_applications
-    DROP CONSTRAINT unique_tenant_applications_temp;
-
-
-ALTER TABLE tenant_applications
-    ADD CONSTRAINT tenant_applications_tenant_id_fk
-        FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
-ALTER TABLE tenant_applications
-    ADD CONSTRAINT tenant_applications_id_fk
-        FOREIGN KEY (id) REFERENCES applications (id) ON DELETE CASCADE;
-ALTER TABLE tenant_applications
-    ADD CONSTRAINT tenant_applications_source_fk
-        FOREIGN KEY (source) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
-
-ALTER TABLE tenant_applications
-    ALTER COLUMN source SET NOT NULL;
-
-CREATE INDEX tenant_applications_app_id ON tenant_applications (id);
-CREATE INDEX tenant_applications_tenant_id ON tenant_applications (tenant_id);
-CREATE INDEX tenant_applications_source ON tenant_applications (source);
 
 COMMIT;
