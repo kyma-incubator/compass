@@ -31,7 +31,7 @@ WHERE parent IS NOT NULL;
 
 -- Create key constraints
 ALTER TABLE tenant_parents ADD CONSTRAINT tenant_parents_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
-ALTER TABLE tenant_parents ADD CONSTRAINT tenant_parents_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE
+ALTER TABLE tenant_parents ADD CONSTRAINT tenant_parents_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
 ALTER TABLE tenant_parents ADD PRIMARY KEY (tenant_id, parent_id);
 
 -- Create indexes for tenant_parents table
