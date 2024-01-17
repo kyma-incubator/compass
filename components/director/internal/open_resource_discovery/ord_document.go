@@ -2,6 +2,7 @@ package ord
 
 import (
 	"encoding/json"
+	"github.com/davecgh/go-spew/spew"
 	"net/url"
 	"path"
 	"regexp"
@@ -701,6 +702,10 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 				api.CustomPolicyLevel = doc.CustomPolicyLevel
 			}
 
+			if *api.OrdID == "sap.s4:apiResource:STORAGELOCATIONSUBSTNCTRL_0001:v1" {
+				spew.Dump(*api.OrdPackageID)
+				spew.Dump(packages)
+			}
 			referredPkg, ok := packages[*api.OrdPackageID]
 			if !ok {
 				return errors.Errorf("api with ord id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID)
