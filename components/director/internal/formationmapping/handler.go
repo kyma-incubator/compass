@@ -393,6 +393,8 @@ func (h *Handler) processFormationUnassign(ctx context.Context, formation *model
 		return errors.Wrapf(err, "while unassigning object with type: %q and ID: %q", fa.SourceType, fa.Source)
 	}
 
+	// Skip second unassign from formation in case the formation assignment is self-referenced one,
+	// and if happened to be the last one. It will be handled above.
 	if fa.Source != fa.Target {
 		if err = h.unassignObjectFromFormationWhenThereAreNoFormationAssignments(unassignCtx, fa, formation, fa.Target, fa.TargetType); err != nil {
 			return errors.Wrapf(err, "while unassigning object with type: %q and ID: %q", fa.TargetType, fa.Target)
