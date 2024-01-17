@@ -729,7 +729,7 @@ func (r *pgRepository) enrichWithParents(ctx context.Context, btm *model.Busines
 	return btm, nil
 }
 
-func (r *pgRepository) enrichManyWithParents(ctx context.Context,entityCollection tenant.EntityCollection) ([]*model.BusinessTenantMapping, error) {
+func (r *pgRepository) enrichManyWithParents(ctx context.Context, entityCollection tenant.EntityCollection) ([]*model.BusinessTenantMapping, error) {
 	btms := r.multipleFromEntities(entityCollection)
 	for _, btm := range btms {
 		if _, err := r.enrichWithParents(ctx, btm); err != nil {
