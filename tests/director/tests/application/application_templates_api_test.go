@@ -189,7 +189,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "")
+		require.Contains(t, err.Error(), "Regional Application Template input with systemRole label has a different region placeholder from the other Application Templates with the same label")
 
 	})
 
@@ -200,9 +200,9 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		productLabelValue := "productLabelValue"
 		appTemplateName1 := fixtures.CreateAppTemplateName("app-template-name-product-1")
 		appTemplateInput1 := fixtures.FixRegionalApplicationTemplate(appTemplateName1, region1, regionPlaceholderJSONPath1)
-		appTemplateInput1.Labels = graphql.Labels{
-			conf.ApplicationTemplateProductLabel: productLabelValue,
-			"nonRegionLabel":                     "{{region}}",
+		appTemplateInput1.Labels[conf.ApplicationTemplateProductLabel] = productLabelValue
+		appTemplateInput1.ApplicationInput.Labels = graphql.Labels{
+			"nonRegionLabel": "{{region}}",
 		}
 		appTemplate1, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput1)
 		require.NoError(t, err)
@@ -211,13 +211,13 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		output1 := graphql.ApplicationTemplate{}
 
 		// WHEN
-		t.Log("Create first regional application template")
+		t.Log("Create regional application template")
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createApplicationTemplateRequest1, &output1)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantID, output1)
 
 		// THEN
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "")
+		require.Contains(t, err.Error(), "App Template with region label has a missing region label in the applicationInput")
 	})
 
 	t.Run("Error when mixing global and regional App Templates for a single product label", func(t *testing.T) {
@@ -253,7 +253,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createGlobalApplicationTemplateRequest1, &globalOutput1)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantID, globalOutput1)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "")
+		require.Contains(t, err.Error(), "Application Template with systemRole label is regional. The Application Template should contain a region label")
 
 		// Create Global and then Regional
 		productLabelValue2 := "productLabelValue2"
@@ -284,7 +284,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createRegionalApplicationTemplateRequest2, &regionalOutput2)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantID, regionalOutput2)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "")
+		require.Contains(t, err.Error(), "Application Template with systemRole label is global and already exists")
 	})
 
 	t.Run("Error for self register when distinguished label or product label have not been defined and the call is made with a certificate", func(t *testing.T) {
