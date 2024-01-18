@@ -299,6 +299,7 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 	return r.conv.ToGraphQL(newFormation)
 }
 
+// UnassignFormationApplicationGlobal unassigns the application from the provided formation globally
 func (r *Resolver) UnassignFormationApplicationGlobal(ctx context.Context, applicationID, formationID string) (*graphql.Formation, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
