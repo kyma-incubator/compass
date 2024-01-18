@@ -3,6 +3,7 @@ package processor_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
@@ -73,6 +74,11 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 				entityTypeSvc := &automock.EntityTypeService{}
 				entityTypeSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(emptyEntityTypeModels, nil).Once()
 				entityTypeSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(entityTypeModels, nil).Once()
+
+				// set to time.Now, because on Create the lastUpdate is set to current time
+				currentTime := time.Now().Format(time.RFC3339)
+				entityTypeInputs[0].LastUpdate = &currentTime
+
 				entityTypeSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, packageID1, *entityTypeInputs[0], uint64ResourceHash).Return(entityTypeID, nil).Once()
 				return entityTypeSvc
 			},
@@ -108,6 +114,11 @@ func TestEntityTypeProcessor_Process(t *testing.T) {
 				entityTypeSvc := &automock.EntityTypeService{}
 				entityTypeSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(emptyEntityTypeModels, nil).Once()
 				entityTypeSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(entityTypeModels, nil).Once()
+
+				// set to time.Now, because on Create the lastUpdate is set to current time
+				currentTime := time.Now().Format(time.RFC3339)
+				entityTypeInputs[0].LastUpdate = &currentTime
+
 				entityTypeSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, packageID1, *entityTypeInputs[0], uint64ResourceHash).Return(entityTypeID, nil).Once()
 				return entityTypeSvc
 			},
