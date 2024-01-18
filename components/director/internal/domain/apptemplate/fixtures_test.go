@@ -29,6 +29,7 @@ const (
 	testAppID          = "app-id"
 	testConsumerID     = "consumer-id"
 	testLabelInputKey  = "applicationType"
+	region             = "region"
 
 	testWebhookID                               = "webhook-id-1"
 	testName                                    = "bar"
@@ -38,6 +39,8 @@ const (
 	testPageSize                                = 3
 	testCursor                                  = ""
 	appInputJSONString                          = `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"displayName":"bar","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
+	appInputJSONStringNoRegionString            = `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"displayName":"{{region}}","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
+	appInputJSONWithRegionString                = `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"displayName":"bar","region":"{{region}}","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
 	appInputJSONWithoutDisplayNameLabelString   = `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
 	appInputJSONWithAppTypeLabelString          = `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"%s","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
 	appInputJSONNonStringDisplayNameLabelString = `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"displayName":false,"test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
@@ -49,6 +52,7 @@ var (
 	testUUID                       = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
 	testDescription                = "Lorem ipsum"
 	testJSONPath                   = "$.test"
+	testDifferentJSONPath          = "$.invalid.differentPath"
 	testDescriptionWithPlaceholder = "Lorem ipsum {{test}}"
 	testProviderName               = "provider-display-name"
 	testURL                        = "http://valid.url"
@@ -67,6 +71,24 @@ func fixModelApplicationTemplate(id, name string, webhooks []*model.Webhook) *mo
 		ApplicationNamespace: str.Ptr("ns"),
 		ApplicationInputJSON: appInputJSONString,
 		Placeholders:         fixModelPlaceholders(),
+		Webhooks:             modelPtrsToWebhooks(webhooks),
+		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
+		CreatedAt:            timestamp,
+		UpdatedAt:            timestamp,
+	}
+
+	return &out
+}
+
+func fixModelApplicationTemplateWithRegionPlaceholders(id, name string, webhooks []*model.Webhook) *model.ApplicationTemplate {
+	desc := testDescription
+	out := model.ApplicationTemplate{
+		ID:                   id,
+		Name:                 name,
+		Description:          &desc,
+		ApplicationNamespace: str.Ptr("ns"),
+		ApplicationInputJSON: appInputJSONString,
+		Placeholders:         fixModelPlaceholdersWithRegion(),
 		Webhooks:             modelPtrsToWebhooks(webhooks),
 		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
 		CreatedAt:            timestamp,
@@ -169,6 +191,49 @@ func fixModelAppTemplateInput(name string, appInputString string) *model.Applica
 	}
 }
 
+func fixModelAppTemplateInputWithRegionLabel(name, appInputString, region string) *model.ApplicationTemplateInput {
+	desc := testDescription
+
+	return &model.ApplicationTemplateInput{
+		Name:                 name,
+		Description:          &desc,
+		ApplicationNamespace: str.Ptr("ns"),
+		ApplicationInputJSON: appInputString,
+		Placeholders:         fixModelPlaceholdersWithRegion(),
+		Labels:               map[string]interface{}{"test": "test", RegionKey: region},
+		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
+	}
+}
+
+func fixModelAppTemplateInputWithRegionLabelAndDifferentPlaceholders(name, appInputString, region string) *model.ApplicationTemplateInput {
+	desc := testDescription
+	placeholderDesc := testDescription
+	placeholderJSONPath := testDifferentJSONPath
+	isOptional := false
+	return &model.ApplicationTemplateInput{
+		Name:                 name,
+		Description:          &desc,
+		ApplicationNamespace: str.Ptr("ns"),
+		ApplicationInputJSON: appInputString,
+		Placeholders: []model.ApplicationTemplatePlaceholder{
+			{
+				Name:        "test",
+				Description: &placeholderDesc,
+				JSONPath:    &placeholderJSONPath,
+				Optional:    &isOptional,
+			},
+			{
+				Name:        "region",
+				Description: &placeholderDesc,
+				JSONPath:    &placeholderJSONPath,
+				Optional:    &isOptional,
+			},
+		},
+		Labels:      map[string]interface{}{"test": "test", "region": region},
+		AccessLevel: model.GlobalApplicationTemplateAccessLevel,
+	}
+}
+
 func fixModelAppTemplateInputWithOrdWebhook(name string, appInputString string) *model.ApplicationTemplateInput {
 	desc := testDescription
 
@@ -238,6 +303,56 @@ func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 		Placeholders: fixGQLPlaceholderDefinitionInput(),
 		Labels:       map[string]interface{}{"test": "test"},
 		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
+func fixGQLAppTemplateInputWithRegionPlaceholder(name string) *graphql.ApplicationTemplateInput {
+	desc := testDescriptionWithPlaceholder
+
+	return &graphql.ApplicationTemplateInput{
+		Name:                 name,
+		Description:          &desc,
+		ApplicationNamespace: str.Ptr("ns"),
+		ApplicationInput: &graphql.ApplicationJSONInput{
+			Name:        "foo",
+			Description: &desc,
+			Labels:      map[string]interface{}{RegionKey: "{{region}}"},
+		},
+		Placeholders: fixGQLPlaceholderDefinitionWithRegionInput(),
+		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
+func fixGQLAppTemplateInputWithDifferentRegionPlaceholder(name string) *graphql.ApplicationTemplateInput {
+	desc := testDescriptionWithPlaceholder
+	placeholderDesc := testDescription
+	placeholderJSONPath := testDifferentJSONPath
+	isOptional := false
+
+	return &graphql.ApplicationTemplateInput{
+		Name:                 name,
+		Description:          &desc,
+		ApplicationNamespace: str.Ptr("ns"),
+		ApplicationInput: &graphql.ApplicationJSONInput{
+			Name:        "foo",
+			Description: &desc,
+			Labels:      map[string]interface{}{RegionKey: "{{region}}"},
+		},
+		Placeholders: []*graphql.PlaceholderDefinitionInput{
+			{
+				Name:        "test",
+				Description: &placeholderDesc,
+				JSONPath:    &placeholderJSONPath,
+				Optional:    &isOptional,
+			},
+			{
+				Name:        "region",
+				Description: &placeholderDesc,
+				JSONPath:    &placeholderJSONPath,
+				Optional:    &isOptional,
+			},
+		},
+		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 	}
 }
 
@@ -405,6 +520,26 @@ func fixModelPlaceholders() []model.ApplicationTemplatePlaceholder {
 	}
 }
 
+func fixModelPlaceholdersWithRegion() []model.ApplicationTemplatePlaceholder {
+	placeholderDesc := testDescription
+	placeholderJSONPath := testJSONPath
+	isOptional := false
+	return []model.ApplicationTemplatePlaceholder{
+		{
+			Name:        "test",
+			Description: &placeholderDesc,
+			JSONPath:    &placeholderJSONPath,
+			Optional:    &isOptional,
+		},
+		{
+			Name:        "region",
+			Description: &placeholderDesc,
+			JSONPath:    &placeholderJSONPath,
+			Optional:    &isOptional,
+		},
+	}
+}
+
 func fixModelPlaceholdersWithPayload() []model.ApplicationTemplatePlaceholder {
 	placeholderTestDesc := testDescription
 	placeholderTestJSONPath := testJSONPath
@@ -457,6 +592,26 @@ func fixGQLPlaceholderDefinitionInput() []*graphql.PlaceholderDefinitionInput {
 	return []*graphql.PlaceholderDefinitionInput{
 		{
 			Name:        "test",
+			Description: &placeholderDesc,
+			JSONPath:    &placeholderJSONPath,
+			Optional:    &isOptional,
+		},
+	}
+}
+
+func fixGQLPlaceholderDefinitionWithRegionInput() []*graphql.PlaceholderDefinitionInput {
+	placeholderDesc := testDescription
+	placeholderJSONPath := testJSONPath
+	isOptional := false
+	return []*graphql.PlaceholderDefinitionInput{
+		{
+			Name:        "test",
+			Description: &placeholderDesc,
+			JSONPath:    &placeholderJSONPath,
+			Optional:    &isOptional,
+		},
+		{
+			Name:        "region",
 			Description: &placeholderDesc,
 			JSONPath:    &placeholderJSONPath,
 			Optional:    &isOptional,
