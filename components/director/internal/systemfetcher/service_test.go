@@ -28,6 +28,8 @@ const (
 	testID     = "testID"
 )
 
+// TODO Not working!!!
+
 func TestSyncSystems(t *testing.T) {
 	const appTemplateID = "appTmp1"
 	testErr := errors.New("testErr")
@@ -1333,7 +1335,7 @@ func TestSyncSystems(t *testing.T) {
 				VerifyTenant:         testCase.verificationTenant,
 			})
 
-			err := svc.SyncSystems(context.TODO(), tenantEntity.Account)
+			err := svc.ProcessTenant(context.TODO(), "t1")
 			if testCase.expectedErr != nil {
 				require.ErrorIs(t, err, testCase.expectedErr)
 			} else {
@@ -1346,12 +1348,10 @@ func TestSyncSystems(t *testing.T) {
 func TestUpsertSystemsSyncTimestamps(t *testing.T) {
 	testError := errors.New("testError")
 
-	systemfetcher.SystemSynchronizationTimestamps = map[string]map[string]systemfetcher.SystemSynchronizationTimestamp{
-		"t": {
-			"type1": {
-				ID:                "time",
-				LastSyncTimestamp: time.Date(2023, 5, 2, 20, 30, 0, 0, time.UTC).UTC(),
-			},
+	systemSynchronizationTimestamps := map[string]systemfetcher.SystemSynchronizationTimestamp{
+		"type1": {
+			ID:                "time",
+			LastSyncTimestamp: time.Date(2023, 5, 2, 20, 30, 0, 0, time.UTC).UTC(),
 		},
 	}
 
@@ -1472,7 +1472,7 @@ func TestUpsertSystemsSyncTimestamps(t *testing.T) {
 				VerifyTenant:         testCase.verificationTenant,
 			})
 
-			err := svc.UpsertSystemsSyncTimestamps(context.TODO(), transactioner)
+			err := svc.UpsertSystemsSyncTimestampsForTenant(context.TODO(), "t1", systemSynchronizationTimestamps)
 			if testCase.expectedErr != nil {
 				require.ErrorIs(t, err, testCase.expectedErr)
 			} else {
@@ -1480,8 +1480,6 @@ func TestUpsertSystemsSyncTimestamps(t *testing.T) {
 			}
 		})
 	}
-
-	systemfetcher.SystemSynchronizationTimestamps = nil
 }
 
 func fixAppsInputsWithTemplatesBySystems(t *testing.T, systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {

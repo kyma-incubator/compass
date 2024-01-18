@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -59,10 +58,9 @@ func NewClient(apiConfig APIConfig, client APIClient, tokenClient APIClient) *Cl
 var currentRPS uint64
 
 // FetchSystemsForTenant fetches systems from the service
-func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, mutex *sync.Mutex) ([]System, error) {
-	mutex.Lock()
-	qp := c.buildFilter()
-	mutex.Unlock()
+func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, systemSynchronizationTimestamps map[string]SystemSynchronizationTimestamp) ([]System, error) {
+
+	qp := c.buildFilter(systemSynchronizationTimestamps)
 	log.C(ctx).Infof("Fetching systems for tenant %s of type %s with query: %s", tenant.ExternalTenant, tenant.Type, qp)
 
 	var systems []System
@@ -163,7 +161,7 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 	}
 }
 
-func (c *Client) buildFilter() map[string]string {
+func (c *Client) buildFilter(systemSynchronizationTimestamps map[string]SystemSynchronizationTimestamp) map[string]string {
 	var filterBuilder FilterBuilder
 
 	for _, at := range ApplicationTemplates {
@@ -188,15 +186,12 @@ func (c *Client) buildFilter() map[string]string {
 			lblExists := false
 			minTime := time.Now()
 
-			for _, systemTimestamps := range SystemSynchronizationTimestamps {
-				if timestamp, ok := systemTimestamps[appTemplateLblStr]; ok {
-					lblExists = true
-					if timestamp.LastSyncTimestamp.Before(minTime) {
-						minTime = timestamp.LastSyncTimestamp
-					}
+			if timestamp, ok := systemSynchronizationTimestamps[appTemplateLblStr]; ok {
+				lblExists = true
+				if timestamp.LastSyncTimestamp.Before(minTime) {
+					minTime = timestamp.LastSyncTimestamp
 				}
 			}
-
 			if lblExists {
 				expr2 := filterBuilder.NewExpression("lastChangeDateTime", "gt", minTime.String())
 				filterBuilder.addFilter(expr1, expr2)

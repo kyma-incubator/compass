@@ -1539,6 +1539,81 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 	}
 }
 
+func Test_Exists(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+
+		tenantRepo := &automock.TenantMappingRepository{}
+		tenantRepo.On("Exists", ctx, testID).Return(true, nil)
+
+		defer mock.AssertExpectationsForObjects(t, tenantRepo)
+
+		svc := tenant.NewService(tenantRepo, nil, nil)
+
+		// WHEN
+		err := svc.Exists(ctx, testID)
+
+		// THEN
+		assert.NoError(t, err)
+	})
+	t.Run("Returns error when retrieval from DB fails", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+
+		tenantRepo := &automock.TenantMappingRepository{}
+		tenantRepo.On("Exists", ctx, testID).Return(false, testError)
+
+		defer mock.AssertExpectationsForObjects(t, tenantRepo)
+
+		svc := tenant.NewService(tenantRepo, nil, nil)
+
+		// WHEN
+		err := svc.Exists(ctx, testID)
+
+		// THEN
+		assert.Error(t, err)
+		require.Contains(t, err.Error(), testError.Error())
+	})
+}
+
+func Test_ExistsByExternalTenant(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+
+		tenantRepo := &automock.TenantMappingRepository{}
+		tenantRepo.On("ExistsByExternalTenant", ctx, testID).Return(true, nil)
+
+		defer mock.AssertExpectationsForObjects(t, tenantRepo)
+
+		svc := tenant.NewService(tenantRepo, nil, nil)
+
+		// WHEN
+		err := svc.ExistsByExternalTenant(ctx, testID)
+
+		// THEN
+		assert.NoError(t, err)
+	})
+	t.Run("Returns error when retrieval from DB fails", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+
+		tenantRepo := &automock.TenantMappingRepository{}
+		tenantRepo.On("ExistsByExternalTenant", ctx, testID).Return(false, testError)
+
+		defer mock.AssertExpectationsForObjects(t, tenantRepo)
+
+		svc := tenant.NewService(tenantRepo, nil, nil)
+
+		// WHEN
+		err := svc.ExistsByExternalTenant(ctx, testID)
+
+		// THEN
+		assert.Error(t, err)
+		require.Contains(t, err.Error(), testError.Error())
+	})
+}
 func TestService_GetTenantAccessForResource(t *testing.T) {
 	testCases := []struct {
 		Name             string

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -47,8 +46,8 @@ const (
 //go:generate mockery --name=tenantService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type tenantService interface {
 	ListByType(ctx context.Context, tenantType tenantEntity.Type) ([]*model.BusinessTenantMapping, error)
+	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
 //go:generate mockery --name=systemsService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
@@ -62,7 +61,7 @@ type systemsService interface {
 //
 //go:generate mockery --name=SystemsSyncService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type SystemsSyncService interface {
-	List(ctx context.Context) ([]*model.SystemSynchronizationTimestamp, error)
+	ListByTenant(ctx context.Context, tenant string) ([]*model.SystemSynchronizationTimestamp, error)
 	Upsert(ctx context.Context, in *model.SystemSynchronizationTimestamp) error
 }
 
@@ -75,7 +74,7 @@ type tenantBusinessTypeService interface {
 
 //go:generate mockery --name=systemsAPIClient --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type systemsAPIClient interface {
-	FetchSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, mutex *sync.Mutex) ([]System, error)
+	FetchSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, systemSynchronizationTimestamps map[string]SystemSynchronizationTimestamp) ([]System, error)
 }
 
 //go:generate mockery --name=directorClient --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
@@ -141,30 +140,27 @@ type tenantSystems struct {
 	syncTimestamp time.Time
 }
 
-func splitBusinessTenantMappingsToChunks(slice []*model.BusinessTenantMapping, chunkSize int) [][]*model.BusinessTenantMapping {
-	var chunks [][]*model.BusinessTenantMapping
-	for {
-		if len(slice) == 0 {
-			break
-		}
-
-		if len(slice) < chunkSize {
-			chunkSize = len(slice)
-		}
-
-		chunks = append(chunks, slice[0:chunkSize])
-		slice = slice[chunkSize:]
+// ProcessTenant performs resync of systems for provided tenant
+func (s *SystemFetcher) ProcessTenant(ctx context.Context, tenantID string) error {
+	log.C(ctx).Infof("Processing systems for tenant %s", tenantID)
+	systemSynchronizationTimestamps, err := s.loadSystemsSynchronizationTimestampsForTenant(ctx, tenantID)
+	if err != nil {
+		return errors.Wrap(err, "failed while loading systems synchronization timestamps")
 	}
 
-	return chunks
-}
-
-// SyncSystems synchronizes applications between Compass and external source. It deletes the applications with deleted state in the external source from Compass,
-// and creates any new applications present in the external source.
-func (s *SystemFetcher) SyncSystems(ctx context.Context, tenantType tenantEntity.Type) error {
-	tenants, err := s.listTenants(ctx, tenantType)
+	tenant, err := s.tenantService.GetTenantByID(ctx, tenantID)
 	if err != nil {
-		return errors.Wrap(err, "failed to list tenants")
+		return errors.Wrap(err, "failed while loading tenant synchronization timestamps")
+	}
+
+	systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, tenant, systemSynchronizationTimestamps)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s of type %s", tenant.ExternalTenant, tenant.Type))
+	}
+
+	log.C(ctx).Infof("Found %d systems for tenant %s of type %s", len(systems), tenant.ExternalTenant, tenant.Type)
+	if len(s.config.VerifyTenant) > 0 {
+		log.C(ctx).Infof("Systems: %#v", systems)
 	}
 
 	tenantBusinessTypes, err := s.getTenantBusinessTypes(ctx)
@@ -172,118 +168,86 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context, tenantType tenantEntity
 		return errors.Wrap(err, "failed to get tenant business types")
 	}
 
-	systemsQueue := make(chan tenantSystems, s.config.SystemsQueueSize)
-	wgDB := sync.WaitGroup{}
-	wgDB.Add(1)
-	var mutex sync.Mutex
-	go func() {
-		defer func() {
-			wgDB.Done()
-		}()
-		for tenantSystems := range systemsQueue {
-			entry := log.C(ctx)
-			entry = entry.WithField(log.FieldRequestID, uuid.New().String())
-			ctx = log.ContextWithLogger(ctx, entry)
-
-			if err = s.processSystemsForTenant(ctx, tenantSystems.tenant, tenantSystems.systems, tenantBusinessTypes); err != nil {
-				log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to save systems for tenant %s", tenantSystems.tenant.ExternalTenant)))
-				continue
-			}
-
-			mutex.Lock()
-			if SystemSynchronizationTimestamps == nil {
-				SystemSynchronizationTimestamps = make(map[string]map[string]SystemSynchronizationTimestamp, 0)
-			}
-
-			for _, i := range tenantSystems.systems {
-				currentTenant := tenantSystems.tenant.ExternalTenant
-				currentTimestamp := SystemSynchronizationTimestamp{
-					ID:                uuid.NewString(),
-					LastSyncTimestamp: tenantSystems.syncTimestamp,
-				}
-
-				if _, ok := SystemSynchronizationTimestamps[currentTenant]; !ok {
-					SystemSynchronizationTimestamps[currentTenant] = make(map[string]SystemSynchronizationTimestamp, 0)
-				}
-
-				systemPayload, err := json.Marshal(i.SystemPayload)
-				if err != nil {
-					log.C(ctx).Error(errors.Wrapf(err, "failed to marshal a system payload for tenant %s", tenantSystems.tenant.ExternalTenant))
-					return
-				}
-				productID := gjson.GetBytes(systemPayload, productIDKey).String()
-
-				if v, ok1 := SystemSynchronizationTimestamps[currentTenant][productID]; ok1 {
-					currentTimestamp.ID = v.ID
-				}
-
-				SystemSynchronizationTimestamps[currentTenant][productID] = currentTimestamp
-			}
-			mutex.Unlock()
-
-			log.C(ctx).Info(fmt.Sprintf("Successfully synced systems for tenant %s", tenantSystems.tenant.ExternalTenant))
-		}
-	}()
-
-	chunks := splitBusinessTenantMappingsToChunks(tenants, 15)
-
-	for _, chunk := range chunks {
-		time.Sleep(time.Second * 1)
-
-		wg := sync.WaitGroup{}
-		for _, t := range chunk {
-			wg.Add(1)
-			s.workers <- struct{}{}
-			go func(t *model.BusinessTenantMapping) {
-				defer func() {
-					wg.Done()
-					<-s.workers
-				}()
-				currentTime := time.Now()
-				systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t, &mutex)
-				if err != nil {
-					log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s of type %s", t.ExternalTenant, t.Type)))
-					return
-				}
-
-				log.C(ctx).Infof("Found %d systems for tenant %s of type %s", len(systems), t.ExternalTenant, t.Type)
-				if len(s.config.VerifyTenant) > 0 {
-					log.C(ctx).Infof("Systems: %#v", systems)
-				}
-
-				if len(systems) > 0 {
-					systemsQueue <- tenantSystems{
-						tenant:        t,
-						systems:       systems,
-						syncTimestamp: currentTime,
-					}
-				}
-			}(t)
-		}
-
-		wg.Wait()
+	if err := s.processSystemsForTenant(ctx, tenant, systems, tenantBusinessTypes); err != nil {
+		return errors.Wrap(err, fmt.Sprintf("failed to save systems for tenant %s", tenantID))
 	}
-	close(systemsQueue)
-	wgDB.Wait()
 
+	currentTime := time.Now()
+	for _, i := range systems {
+		currentTimestamp := SystemSynchronizationTimestamp{
+			ID:                uuid.NewString(),
+			LastSyncTimestamp: currentTime,
+		}
+
+		systemPayload, err := json.Marshal(i.SystemPayload)
+		if err != nil {
+			return errors.Wrapf(err, "failed to marshal a system payload for tenant %s", tenantID)
+		}
+		productID := gjson.GetBytes(systemPayload, productIDKey).String()
+
+		if v, ok1 := systemSynchronizationTimestamps[productID]; ok1 {
+			currentTimestamp.ID = v.ID
+		}
+
+		systemSynchronizationTimestamps[productID] = currentTimestamp
+	}
+
+	err = s.UpsertSystemsSyncTimestampsForTenant(ctx, tenantID, systemSynchronizationTimestamps)
+	if err != nil {
+		// Do not exit, as this is not a business error.
+		log.C(ctx).Errorf(fmt.Sprintf("Failed to upsert timestamps for synced systems for tenant %s", tenantID))
+	}
+
+	log.C(ctx).Info(fmt.Sprintf("Successfully synced systems for tenant %s", tenantID))
 	return nil
 }
 
-// UpsertSystemsSyncTimestamps updates the synchronization timestamps of the systems for each tenant or creates new ones if they don't exist in the database
-func (s *SystemFetcher) UpsertSystemsSyncTimestamps(ctx context.Context, transact persistence.Transactioner) error {
-	tx, err := transact.Begin()
+func (s *SystemFetcher) loadSystemsSynchronizationTimestampsForTenant(ctx context.Context, tenant string) (map[string]SystemSynchronizationTimestamp, error) {
+	systemSynchronizationTimestamps := make(map[string]SystemSynchronizationTimestamp, 0)
+
+	tx, err := s.transaction.Begin()
 	if err != nil {
-		return errors.Wrap(err, "Error while beginning transaction")
+		return nil, errors.Wrap(err, "failed to begin transaction")
 	}
-	defer transact.RollbackUnlessCommitted(ctx, tx)
+	defer s.transaction.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	for tnt, v := range SystemSynchronizationTimestamps {
-		err := s.upsertSystemsSyncTimestampsForTenant(ctx, tnt, v)
-		if err != nil {
-			return errors.Wrapf(err, "failed to upsert systems sync timestamps for tenant %s", tnt)
+	syncTimestamps, err := s.systemsSyncService.ListByTenant(ctx, tenant)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, s := range syncTimestamps {
+		currentTimestamp := SystemSynchronizationTimestamp{
+			ID:                s.ID,
+			LastSyncTimestamp: s.LastSyncTimestamp,
 		}
+
+		systemSynchronizationTimestamps[s.ProductID] = currentTimestamp
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to commit transaction")
+	}
+
+	return systemSynchronizationTimestamps, nil
+}
+
+// UpsertSystemsSyncTimestampsForTenant updates the synchronization timestamps of the systems for each tenant or creates new ones if they don't exist in the database
+func (s *SystemFetcher) UpsertSystemsSyncTimestampsForTenant(ctx context.Context, tenant string, timestamps map[string]SystemSynchronizationTimestamp) error {
+	tx, err := s.transaction.Begin()
+	if err != nil {
+		return errors.Wrap(err, "Error while beginning transaction")
+	}
+	defer s.transaction.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	err = s.upsertSystemsSyncTimestampsForTenant(ctx, tenant, timestamps)
+	if err != nil {
+		return errors.Wrapf(err, "failed to upsert systems sync timestamps for tenant %s", tenant)
 	}
 
 	err = tx.Commit()

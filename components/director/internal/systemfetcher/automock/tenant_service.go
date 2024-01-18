@@ -16,23 +16,25 @@ type TenantService struct {
 	mock.Mock
 }
 
-// GetInternalTenant provides a mock function with given fields: ctx, externalTenant
-func (_m *TenantService) GetInternalTenant(ctx context.Context, externalTenant string) (string, error) {
-	ret := _m.Called(ctx, externalTenant)
+// GetTenantByExternalID provides a mock function with given fields: ctx, id
+func (_m *TenantService) GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, id)
 
-	var r0 string
+	var r0 *model.BusinessTenantMapping
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
-		return rf(ctx, externalTenant)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, id)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = rf(ctx, externalTenant)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
+		r0 = rf(ctx, id)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.BusinessTenantMapping)
+		}
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, externalTenant)
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -40,8 +42,8 @@ func (_m *TenantService) GetInternalTenant(ctx context.Context, externalTenant s
 	return r0, r1
 }
 
-// GetTenantByExternalID provides a mock function with given fields: ctx, id
-func (_m *TenantService) GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
+// GetTenantByID provides a mock function with given fields: ctx, id
+func (_m *TenantService) GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.BusinessTenantMapping

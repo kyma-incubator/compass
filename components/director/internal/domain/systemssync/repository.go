@@ -11,6 +11,7 @@ import (
 const tableName string = `public.systems_sync_timestamps`
 
 var (
+	tenantColumn       = "tenant_id"
 	tableColumns       = []string{"id", "tenant_id", "product_id", "last_sync_timestamp"}
 	conflictingColumns = []string{"id"}
 	updateColumns      = []string{"tenant_id", "product_id", "last_sync_timestamp"}
@@ -40,10 +41,10 @@ func NewRepository(conv EntityConverter) *repository {
 }
 
 // List returns all system sync timestamps from database
-func (r *repository) List(ctx context.Context) ([]*model.SystemSynchronizationTimestamp, error) {
+func (r *repository) ListByTenant(ctx context.Context, tenant string) ([]*model.SystemSynchronizationTimestamp, error) {
 	var entityCollection EntityCollection
 
-	err := r.listerGlobal.ListGlobal(ctx, &entityCollection)
+	err := r.listerGlobal.ListGlobal(ctx, &entityCollection, repo.NewEqualCondition(tenantColumn, tenant))
 
 	if err != nil {
 		return nil, err
