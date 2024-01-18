@@ -1,4 +1,4 @@
-package credloader
+package credloader_test
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"math/big"
 	"testing"
 	"time"
@@ -45,7 +46,7 @@ func (tw *testWatch) ResultChan() <-chan watch.Event {
 }
 
 func Test_CertificateLoaderWatch(t *testing.T) {
-	config := CertConfig{
+	config := credloader.CertConfig{
 		ExternalClientCertSecret:  "namespace/resource-name",
 		ExternalClientCertCertKey: "tls.crt",
 		ExternalClientCertKeyKey:  "tls.key",
@@ -252,7 +253,7 @@ func Test_CertificateLoaderWatch(t *testing.T) {
 
 func Test_CertificateParsing(t *testing.T) {
 	ctx := context.Background()
-	config := CertConfig{
+	config := credloader.CertConfig{
 		ExternalClientCertCertKey: "tls.crt",
 		ExternalClientCertKeyKey:  "tls.key",
 	}
@@ -264,7 +265,7 @@ func Test_CertificateParsing(t *testing.T) {
 		Name             string
 		SecretData       map[string][]byte
 		ExpectedErrorMsg string
-		Cfg              CertConfig
+		Cfg              credloader.CertConfig
 	}{
 		{
 			Name:       "Successfully get certificate from cache",
@@ -274,7 +275,7 @@ func Test_CertificateParsing(t *testing.T) {
 		{
 			Name:       "Successfully get ext svc certificate from cache",
 			SecretData: map[string][]byte{secretCertKey: certBytes, secretKeyKey: keyBytes},
-			Cfg: CertConfig{
+			Cfg: credloader.CertConfig{
 				ExtSvcClientCertCertKey: "tls.crt",
 				ExtSvcClientCertKeyKey:  "tls.key",
 			},
@@ -313,7 +314,7 @@ func Test_CertificateParsing(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			tlsCert, err := parseCertificate(ctx, testCase.SecretData, testCase.Cfg)
+			tlsCert, err := credloader.ParseCertificate(ctx, testCase.SecretData, testCase.Cfg)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
@@ -327,21 +328,21 @@ func Test_CertificateParsing(t *testing.T) {
 	}
 }
 
-func preparation(ctx context.Context, number int, config CertConfig) (CertCache, *testWatch, *automock.Manager) {
-	cache := NewCertificateCache()
+func preparation(ctx context.Context, number int, config credloader.CertConfig) (credloader.CertCache, *testWatch, *automock.Manager) {
+	cache := credloader.NewCertificateCache()
 	watcher := &testWatch{
 		events: make(chan watch.Event, 50),
 	}
 	secretManagerMock := &automock.Manager{}
 
-	managers := map[string]Manager{
+	managers := map[string]credloader.Manager{
 		secretName: secretManagerMock,
 	}
-	secrets := map[string]credentialType{
-		secretName: certificateCredential,
+	secrets := map[string]credloader.CredentialType{
+		secretName: credloader.CertificateCredential,
 	}
 	secretManagerMock.On("Watch", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(watcher, nil).Times(number)
-	loader := NewCertificateLoader(config, cache, managers, secrets, time.Millisecond)
+	loader := credloader.NewCertificateLoader(config, cache, managers, secrets, time.Millisecond)
 	go loader.Run(ctx)
 
 	return cache, watcher, secretManagerMock
