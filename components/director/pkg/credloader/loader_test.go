@@ -7,10 +7,11 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"math/big"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader/automock"
 	"github.com/stretchr/testify/assert"

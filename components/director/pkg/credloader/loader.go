@@ -25,10 +25,13 @@ import (
 
 const certsListLoaderCorrelationID = "creds-loader-id"
 
+// CredentialType determines if the loader is for Keys or for Certificates
 type CredentialType string
 
 const (
-	KeysCredential        CredentialType = "KeysCredentials"
+	// KeysCredential is a constant for Keys
+	KeysCredential CredentialType = "KeysCredentials"
+	// CertificateCredential is a constant for Certificates
 	CertificateCredential CredentialType = "CertificateCredentials"
 )
 
@@ -190,7 +193,7 @@ func (cl *loader) startKubeWatch(ctx context.Context) {
 	}
 }
 
-func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, secretName string, CredentialType CredentialType) {
+func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, secretName string, credentialType CredentialType) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -203,13 +206,13 @@ func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, 
 			case watch.Added:
 				fallthrough
 			case watch.Modified:
-				log.C(ctx).Infof("Updating the cache with %s data...", CredentialType)
+				log.C(ctx).Infof("Updating the cache with %s data...", credentialType)
 				secret, ok := ev.Object.(*v1.Secret)
 				if !ok {
 					log.C(ctx).Error("Unexpected error: object is not secret. Try again")
 					continue
 				}
-				if CredentialType == CertificateCredential {
+				if credentialType == CertificateCredential {
 					tlsCert, err := ParseCertificate(ctx, secret.Data, cl.config)
 					if err != nil {
 						log.C(ctx).WithError(err).Error("Fail during certificate parsing")
@@ -223,21 +226,22 @@ func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, 
 					cl.keyCache.put(secretName, keys)
 				}
 			case watch.Deleted:
-				log.C(ctx).Infof("Removing %s secret data from cache...", CredentialType)
+				log.C(ctx).Infof("Removing %s secret data from cache...", credentialType)
 
-				if CredentialType == CertificateCredential {
+				if credentialType == CertificateCredential {
 					cl.certCache.put(secretName, nil)
 				} else {
 					cl.keyCache.put(secretName, nil)
 				}
 			case watch.Error:
-				log.C(ctx).Errorf("Error event is received, stop %s secret watcher and try again...", CredentialType)
+				log.C(ctx).Errorf("Error event is received, stop %s secret watcher and try again...", credentialType)
 				return
 			}
 		}
 	}
 }
 
+// ParseCertificate parses a certificate by secret data map
 func ParseCertificate(ctx context.Context, secretData map[string][]byte, config CertConfig) (*tls.Certificate, error) {
 	log.C(ctx).Info("Parsing provided certificate data...")
 	certChainBytes, existsCertKey := secretData[config.ExternalClientCertCertKey]
@@ -257,6 +261,7 @@ func ParseCertificate(ctx context.Context, secretData map[string][]byte, config 
 	return nil, errors.New("There is no certificate data provided")
 }
 
+// ParseKeys parses keys by secret data map
 func ParseKeys(ctx context.Context, secretData map[string][]byte, config KeysConfig) (*KeyStore, error) {
 	log.C(ctx).Info("Parsing provided keys data...")
 	dataBytes, exists := secretData[config.KeysData]
