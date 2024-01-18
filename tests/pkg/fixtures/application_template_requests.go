@@ -3,6 +3,8 @@ package fixtures
 import (
 	"fmt"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -51,6 +53,18 @@ func FixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 	}
+	return appTemplateInput
+}
+
+func FixRegionalApplicationTemplate(name, region, jsonPath string) graphql.ApplicationTemplateInput {
+	appTemplateInput := FixApplicationTemplate(name)
+	appTemplateInput.Labels[tenantfetcher.RegionKey] = region
+	appTemplateInput.Placeholders = append(appTemplateInput.Placeholders, &graphql.PlaceholderDefinitionInput{
+		Name:     "region",
+		JSONPath: &jsonPath,
+	})
+	appTemplateInput.ApplicationInput.Labels[tenantfetcher.RegionKey] = "{{region}}"
+
 	return appTemplateInput
 }
 
