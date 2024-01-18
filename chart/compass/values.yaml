@@ -1420,6 +1420,7 @@ global:
         - "formation:read"
         - "formation:write"
         - "formation.state:write"
+        - "formation:global_write"
         - "formation_template:read"
         - "formation_template:write"
         - "formation_template.webhooks:read"
@@ -1551,6 +1552,7 @@ global:
         - "formation.state:write"
         - "tenant_access:write"
         - "bundle_instance_auth:write"
+        - "formation:global_write"
       default:
         - "runtime:read"
         - "runtime:write"

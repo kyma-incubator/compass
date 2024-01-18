@@ -242,6 +242,7 @@ clientCredentialsRegistrationScopes:
     - "certificate_subject_mapping:read"
     - "certificate_subject_mapping:write"
     - "formation.state:write"
+    - "formation:global_write"
 applicationHideSelectors:
   applicationHideSelectorKey:
     - "applicationHideSelectorValue"

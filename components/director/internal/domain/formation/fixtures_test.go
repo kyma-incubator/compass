@@ -107,7 +107,8 @@ var (
 	nilFormationModel      *model.Formation
 	runtimeTypeDisplayName = str.Ptr("display name")
 
-	testErr = errors.New("Test error")
+	emptyCtx = context.Background()
+	testErr  = errors.New("Test error")
 
 	CustomerTenantContextPath = &webhook.CustomerTenantContext{
 		CustomerID: TntCustomerID,
@@ -122,6 +123,12 @@ var (
 		ID:                  FormationID,
 		FormationTemplateID: FormationTemplateID,
 		Name:                testFormationName,
+	}
+	modelFormationWithTenant = model.Formation{
+		ID:                  FormationID,
+		FormationTemplateID: FormationTemplateID,
+		Name:                testFormationName,
+		TenantID:            TntInternalID,
 	}
 	graphqlFormation = graphql.Formation{
 		ID:                  FormationID,

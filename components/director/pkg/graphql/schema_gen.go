@@ -589,6 +589,7 @@ type ComplexityRoot struct {
 		SetRuntimeLabel                              func(childComplexity int, runtimeID string, key string, value interface{}) int
 		SubscribeTenant                              func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string, subscriptionPayload string) int
 		UnassignFormation                            func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
+		UnassignFormationApplicationGlobal           func(childComplexity int, applicationID string, formationID string) int
 		UnpairApplication                            func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterApplication                        func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterIntegrationSystem                  func(childComplexity int, id string) int
@@ -944,6 +945,7 @@ type MutationResolver interface {
 	DeleteFormation(ctx context.Context, formation FormationInput) (*Formation, error)
 	AssignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
 	UnassignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
+	UnassignFormationApplicationGlobal(ctx context.Context, applicationID string, formationID string) (*Formation, error)
 	CreateFormationConstraint(ctx context.Context, formationConstraint FormationConstraintInput) (*FormationConstraint, error)
 	DeleteFormationConstraint(ctx context.Context, id string) (*FormationConstraint, error)
 	UpdateFormationConstraint(ctx context.Context, id string, in FormationConstraintUpdateInput) (*FormationConstraint, error)
@@ -3972,6 +3974,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UnassignFormation(childComplexity, args["objectID"].(string), args["objectType"].(FormationObjectType), args["formation"].(FormationInput)), true
+
+	case "Mutation.unassignFormationApplicationGlobal":
+		if e.complexity.Mutation.UnassignFormationApplicationGlobal == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unassignFormationApplicationGlobal_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UnassignFormationApplicationGlobal(childComplexity, args["applicationID"].(string), args["formationID"].(string)), true
 
 	case "Mutation.unpairApplication":
 		if e.complexity.Mutation.UnpairApplication == nil {
@@ -7592,6 +7606,7 @@ type Mutation {
 	- [unassign tenant from formation](examples/unassign-formation/unassign-tenant-from-formation.graphql)
 	"""
 	unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unassignFormation")
+	unassignFormationApplicationGlobal(applicationID: ID!, formationID: ID!): Formation! @hasScopes(path: "graphql.mutation.unassignFormationApplicationGlobal")
 	"""
 	**Examples**
 	- [create formation constraint](examples/create-formation-constraint/create-formation-constraint.graphql)
@@ -9622,6 +9637,28 @@ func (ec *executionContext) field_Mutation_subscribeTenant_args(ctx context.Cont
 		}
 	}
 	args["subscriptionPayload"] = arg6
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_unassignFormationApplicationGlobal_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["applicationID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["applicationID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["formationID"]; ok {
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["formationID"] = arg1
 	return args, nil
 }
 
@@ -24890,6 +24927,71 @@ func (ec *executionContext) _Mutation_unassignFormation(ctx context.Context, fie
 	return ec.marshalNFormation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormation(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_unassignFormationApplicationGlobal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_unassignFormationApplicationGlobal_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UnassignFormationApplicationGlobal(rctx, args["applicationID"].(string), args["formationID"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unassignFormationApplicationGlobal")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Formation); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Formation`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Formation)
+	fc.Result = res
+	return ec.marshalNFormation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormation(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_createFormationConstraint(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -39712,6 +39814,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "unassignFormation":
 			out.Values[i] = ec._Mutation_unassignFormation(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "unassignFormationApplicationGlobal":
+			out.Values[i] = ec._Mutation_unassignFormationApplicationGlobal(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
