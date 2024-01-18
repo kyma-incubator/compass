@@ -278,13 +278,13 @@ ALTER TABLE tenant_applications
 
 
 ALTER TABLE tenant_applications
-    ADD CONSTRAINT tenant_applications_tenant_id_fk
+    ADD CONSTRAINT tenant_applications_tenant_id_fkey
         FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
 ALTER TABLE tenant_applications
-    ADD CONSTRAINT tenant_applications_id_fk
+    ADD CONSTRAINT tenant_applications_id_fkey
         FOREIGN KEY (id) REFERENCES applications (id) ON DELETE CASCADE;
 ALTER TABLE tenant_applications
-    ADD CONSTRAINT tenant_applications_source_fk
+    ADD CONSTRAINT tenant_applications_source_fkey
         FOREIGN KEY (source) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE;
 
 ALTER TABLE tenant_applications
