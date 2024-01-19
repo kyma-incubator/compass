@@ -3,6 +3,7 @@ package formationassignment_test
 import (
 	"database/sql"
 	"encoding/json"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
@@ -43,13 +44,15 @@ const (
 )
 
 var (
+	fixColumns = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value", "error", "last_state_change_timestamp", "last_notification_sent_timestamp"}
+
 	TestConfigValueRawJSON        = json.RawMessage(`{"configKey":"configValue"}`)
 	TestInvalidConfigValueRawJSON = json.RawMessage(`{invalid}`)
 	TestErrorValueRawJSON         = json.RawMessage(`{"error":"error message"}`)
 	TestEmptyErrorValueRawJSON    = json.RawMessage(`\"\"`)
 	TestConfigValueStr            = "{\"configKey\":\"configValue\"}"
 	TestErrorValueStr             = "{\"error\":\"error message\"}"
-	fixColumns                    = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value", "error"}
+	defaultTime                   = time.Time{}
 
 	nilFormationAssignmentModel *model.FormationAssignment
 
@@ -91,15 +94,17 @@ func fixFormationAssignmentGQLModelWithError(errorValue *string) *graphql.Format
 
 func fixFormationAssignmentGQLModelWithConfigAndError(configValue, errorValue *string) *graphql.FormationAssignment {
 	return &graphql.FormationAssignment{
-		ID:            TestID,
-		Source:        TestSource,
-		SourceType:    TestSourceType,
-		Target:        TestTarget,
-		TargetType:    TestTargetType,
-		State:         TestStateInitial,
-		Value:         errorValue,
-		Error:         errorValue,
-		Configuration: configValue,
+		ID:                            TestID,
+		Source:                        TestSource,
+		SourceType:                    TestSourceType,
+		Target:                        TestTarget,
+		TargetType:                    TestTargetType,
+		State:                         TestStateInitial,
+		Value:                         errorValue,
+		Error:                         errorValue,
+		Configuration:                 configValue,
+		LastStateChangeTimestamp:      graphql.TimePtrToGraphqlTimestampPtr(&defaultTime),
+		LastNotificationSentTimestamp: graphql.TimePtrToGraphqlTimestampPtr(&defaultTime),
 	}
 }
 
@@ -146,16 +151,18 @@ func fixFormationAssignmentModelWithError(errorValue json.RawMessage) *model.For
 
 func fixFormationAssignmentModelWithConfigAndError(configValue, errorValue json.RawMessage) *model.FormationAssignment {
 	return &model.FormationAssignment{
-		ID:          TestID,
-		FormationID: TestFormationID,
-		TenantID:    TestTenantID,
-		Source:      TestSource,
-		SourceType:  TestSourceType,
-		Target:      TestTarget,
-		TargetType:  TestTargetType,
-		State:       TestStateInitial,
-		Value:       configValue,
-		Error:       errorValue,
+		ID:                            TestID,
+		FormationID:                   TestFormationID,
+		TenantID:                      TestTenantID,
+		Source:                        TestSource,
+		SourceType:                    TestSourceType,
+		Target:                        TestTarget,
+		TargetType:                    TestTargetType,
+		State:                         TestStateInitial,
+		Value:                         configValue,
+		Error:                         errorValue,
+		LastStateChangeTimestamp:      &defaultTime,
+		LastNotificationSentTimestamp: &defaultTime,
 	}
 }
 
@@ -287,16 +294,18 @@ func fixFormationAssignmentEntityWithError(errorValue string) *formationassignme
 
 func fixFormationAssignmentEntityWithConfigurationAndError(configValue, errorValue string) *formationassignment.Entity {
 	return &formationassignment.Entity{
-		ID:          TestID,
-		FormationID: TestFormationID,
-		TenantID:    TestTenantID,
-		Source:      TestSource,
-		SourceType:  TestSourceType,
-		Target:      TestTarget,
-		TargetType:  TestTargetType,
-		State:       TestStateInitial,
-		Value:       repo.NewValidNullableString(configValue),
-		Error:       repo.NewValidNullableString(errorValue),
+		ID:                            TestID,
+		FormationID:                   TestFormationID,
+		TenantID:                      TestTenantID,
+		Source:                        TestSource,
+		SourceType:                    TestSourceType,
+		Target:                        TestTarget,
+		TargetType:                    TestTargetType,
+		State:                         TestStateInitial,
+		Value:                         repo.NewValidNullableString(configValue),
+		Error:                         repo.NewValidNullableString(errorValue),
+		LastStateChangeTimestamp:      &defaultTime,
+		LastNotificationSentTimestamp: &defaultTime,
 	}
 }
 

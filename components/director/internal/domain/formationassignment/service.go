@@ -609,14 +609,16 @@ func (s *service) ProcessFormationAssignmentPair(ctx context.Context, mappingPai
 }
 
 func (s *service) processFormationAssignmentsWithReverseNotification(ctx context.Context, mappingPair *AssignmentMappingPairWithOperation, depth int, isReverseProcessed *bool) error {
-	fa := mappingPair.AssignmentReqMapping.FormationAssignment
-	log.C(ctx).Infof("Processing formation assignment with ID: %q for formation with ID: %q with Source: %q of Type: %q and Target: %q of Type: %q and State %q", fa.ID, fa.FormationID, fa.Source, fa.SourceType, fa.Target, fa.TargetType, fa.State)
 	assignmentReqMappingClone := mappingPair.AssignmentReqMapping.Clone()
 	var reverseAssignmentReqMappingClone *FormationAssignmentRequestMapping
 	if mappingPair.ReverseAssignmentReqMapping != nil {
 		reverseAssignmentReqMappingClone = mappingPair.ReverseAssignmentReqMapping.Clone()
 	}
 	assignment := assignmentReqMappingClone.FormationAssignment
+
+	if assignment != nil {
+		log.C(ctx).Infof("Processing formation assignment with ID: %q for formation with ID: %q with Source: %q of Type: %q and Target: %q of Type: %q and State %q", assignment.ID, assignment.FormationID, assignment.Source, assignment.SourceType, assignment.Target, assignment.TargetType, assignment.State)
+	}
 
 	if assignment.State == string(model.ReadyAssignmentState) {
 		log.C(ctx).Infof("The formation assignment with ID: %q is in %q state. No notifications will be sent for it.", assignment.ID, assignment.State)

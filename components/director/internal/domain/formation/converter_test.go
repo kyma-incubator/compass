@@ -44,8 +44,8 @@ func TestToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:              "Success",
-			Input:             &model.Formation{Name: testFormationName},
-			ExpectedFormation: &graphql.Formation{Name: testFormationName},
+			Input:             fixFormationModel(),
+			ExpectedFormation: fixGqlFormation(),
 		},
 		{
 			Name:              "Success when input is empty",

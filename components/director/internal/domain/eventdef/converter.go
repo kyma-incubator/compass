@@ -1,8 +1,6 @@
 package eventdef
 
 import (
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
@@ -66,9 +64,9 @@ func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundl
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
-			CreatedAt: timePtrToTimestampPtr(in.CreatedAt),
-			UpdatedAt: timePtrToTimestampPtr(in.UpdatedAt),
-			DeletedAt: timePtrToTimestampPtr(in.DeletedAt),
+			CreatedAt: graphql.TimePtrToGraphqlTimestampPtr(in.CreatedAt),
+			UpdatedAt: graphql.TimePtrToGraphqlTimestampPtr(in.UpdatedAt),
+			DeletedAt: graphql.TimePtrToGraphqlTimestampPtr(in.DeletedAt),
 			Error:     in.Error,
 		},
 	}, nil
@@ -247,13 +245,4 @@ func (c *converter) convertVersionToEntity(inVer *model.Version) version.Version
 	}
 
 	return c.vc.ToEntity(*inVer)
-}
-
-func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
-	if time == nil {
-		return nil
-	}
-
-	t := graphql.Timestamp(*time)
-	return &t
 }

@@ -2,6 +2,7 @@ package formationassignment
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
@@ -18,8 +19,8 @@ const tableName string = `public.formation_assignments`
 
 var (
 	idTableColumns        = []string{"id"}
-	updatableTableColumns = []string{"state", "value", "error"}
-	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value", "error"}
+	updatableTableColumns = []string{"state", "value", "error", "last_state_change_timestamp", "last_notification_sent_timestamp"}
+	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value", "error", "last_state_change_timestamp", "last_notification_sent_timestamp"}
 	tenantColumn          = "tenant_id"
 )
 
@@ -329,8 +330,20 @@ func (r *repository) Update(ctx context.Context, model *model.FormationAssignmen
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
+	newEntity := r.conv.ToEntity(model)
 
-	return r.updaterGlobal.UpdateSingleGlobal(ctx, r.conv.ToEntity(model))
+	var retrievedEntity Entity
+	if err := r.globalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", model.ID)}, repo.NoOrderBy, &retrievedEntity); err != nil {
+		return err
+	}
+
+	if retrievedEntity.State != newEntity.State {
+		log.C(ctx).Debugf("State of formation assignment with ID: %s was changed from: %s to: %s, updating the last state change timestamp", newEntity.ID, retrievedEntity.State, newEntity.State)
+		now := time.Now()
+		newEntity.LastStateChangeTimestamp = &now
+	}
+
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, newEntity)
 }
 
 // Delete deletes a Formation Assignment with given ID

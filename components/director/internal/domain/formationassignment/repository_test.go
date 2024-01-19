@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
@@ -28,7 +29,7 @@ func TestRepository_Create(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:       `^INSERT INTO public.formation_assignments \(.+\) VALUES \(.+\)$`,
-				Args:        []driver.Value{TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr},
+				Args:        []driver.Value{TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime},
 				ValidResult: sqlmock.NewResult(-1, 1),
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -55,11 +56,11 @@ func TestRepository_Get(t *testing.T) {
 		MethodName: "Get",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE tenant_id = $1 AND id = $2`),
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE tenant_id = $1 AND id = $2`),
 				Args:     []driver.Value{TestTenantID, TestID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -85,11 +86,11 @@ func TestRepository_GetGlobalByID(t *testing.T) {
 		MethodName: "GetGlobalByID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE id = $1`),
 				Args:     []driver.Value{TestID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -115,11 +116,11 @@ func TestRepository_GetGlobalByIDAndFormationID(t *testing.T) {
 		MethodName: "GetGlobalByIDAndFormationID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE id = $1 AND formation_id = $2`),
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE id = $1 AND formation_id = $2`),
 				Args:     []driver.Value{TestID, TestFormationID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -144,12 +145,12 @@ func TestRepository_GetForFormation(t *testing.T) {
 		Name: "Get Formation Assignment For Formation",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE tenant_id = $1 AND id = $2 AND formation_id = $3`),
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE tenant_id = $1 AND id = $2 AND formation_id = $3`),
 				Args:     []driver.Value{TestTenantID, TestID, TestFormationID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{
-						sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr),
+						sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -178,12 +179,12 @@ func TestRepository_GetBySourceAndTarget(t *testing.T) {
 		Name: "Get Formation Assignment by Source and Target",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 AND source = $3 AND target = $4`),
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 AND source = $3 AND target = $4`),
 				Args:     []driver.Value{TestTenantID, TestFormationID, TestSource, TestTarget},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{
-						sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr),
+						sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -212,12 +213,12 @@ func TestRepository_GetReverseBySourceAndTarget(t *testing.T) {
 		Name: "Get Reverse Formation Assignment by Source and Target",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 AND source = $3 AND target = $4`),
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 AND source = $3 AND target = $4`),
 				Args:     []driver.Value{TestTenantID, TestFormationID, TestTarget, TestSource},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{
-						sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr),
+						sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -247,11 +248,11 @@ func TestRepository_List(t *testing.T) {
 		MethodName: "List",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE tenant_id = $1 ORDER BY id LIMIT 4 OFFSET 0`),
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE tenant_id = $1 ORDER BY id LIMIT 4 OFFSET 0`),
 				Args:     []driver.Value{TestTenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -313,17 +314,17 @@ func TestRepository_ListByFormationIDs(t *testing.T) {
 		Name: "List Formation Assignments by Formation IDs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`(SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 ORDER BY formation_id ASC, id ASC LIMIT $3 OFFSET $4)
+				Query: regexp.QuoteMeta(`(SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 ORDER BY formation_id ASC, id ASC LIMIT $3 OFFSET $4)
 												UNION
-												(SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE tenant_id = $5 AND formation_id = $6 ORDER BY formation_id ASC, id ASC LIMIT $7 OFFSET $8)
+												(SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE tenant_id = $5 AND formation_id = $6 ORDER BY formation_id ASC, id ASC LIMIT $7 OFFSET $8)
 												UNION
-												(SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE tenant_id = $9 AND formation_id = $10 ORDER BY formation_id ASC, id ASC LIMIT $11 OFFSET $12)`),
+												(SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE tenant_id = $9 AND formation_id = $10 ORDER BY formation_id ASC, id ASC LIMIT $11 OFFSET $12)`),
 				Args:     []driver.Value{TestTenantID, emptyPageFormationID, pageSize, 0, TestTenantID, onePageFormationID, pageSize, 0, TestTenantID, multiplePageFormationID, pageSize, 0},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(faEntity1.ID, faEntity1.FormationID, faEntity1.TenantID, faEntity1.Source, faEntity1.SourceType, faEntity1.Target, faEntity1.TargetType, faEntity1.State, faEntity1.Value, faEntity1.Error).
-						AddRow(faEntity2.ID, faEntity2.FormationID, faEntity2.TenantID, faEntity2.Source, faEntity2.SourceType, faEntity2.Target, faEntity2.TargetType, faEntity2.State, faEntity2.Value, faEntity2.Error),
+						AddRow(faEntity1.ID, faEntity1.FormationID, faEntity1.TenantID, faEntity1.Source, faEntity1.SourceType, faEntity1.Target, faEntity1.TargetType, faEntity1.State, faEntity1.Value, faEntity1.Error, faEntity1.LastStateChangeTimestamp, faEntity1.LastNotificationSentTimestamp).
+						AddRow(faEntity2.ID, faEntity2.FormationID, faEntity2.TenantID, faEntity2.Source, faEntity2.SourceType, faEntity2.Target, faEntity2.TargetType, faEntity2.State, faEntity2.Value, faEntity2.Error, faEntity2.LastStateChangeTimestamp, faEntity2.LastNotificationSentTimestamp),
 					}
 				},
 			},
@@ -395,11 +396,11 @@ func TestRepository_ListAllForObject(t *testing.T) {
 		MethodName: "ListAllForObject",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE (tenant_id = $1 AND (formation_id = $2 AND (source = $3 OR target = $4)))`),
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE (tenant_id = $1 AND (formation_id = $2 AND (source = $3 OR target = $4)))`),
 				Args:     []driver.Value{TestTenantID, TestFormationID, TestSource, TestSource},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -448,11 +449,11 @@ func TestRepository_ListAllForObjectIDs(t *testing.T) {
 		MethodName: "ListAllForObjectIDs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE (tenant_id = $1 AND (formation_id = $2 AND (source IN ($3, $4) OR target IN ($5, $6)))`),
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE (tenant_id = $1 AND (formation_id = $2 AND (source IN ($3, $4) OR target IN ($5, $6)))`),
 				Args:     []driver.Value{TestTenantID, TestFormationID, TestSource, TestTarget, TestSource, TestTarget},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -486,13 +487,24 @@ func TestRepository_ListAllForObjectIDs(t *testing.T) {
 }
 
 func TestRepository_Update(t *testing.T) {
-	updateStmt := regexp.QuoteMeta(`UPDATE public.formation_assignments SET state = ?, value = ?, error = ? WHERE id = ? AND tenant_id = ?`)
+	updateStmt := regexp.QuoteMeta(`UPDATE public.formation_assignments SET state = ?, value = ?, error = ?, last_state_change_timestamp = ?, last_notification_sent_timestamp = ? WHERE id = ? AND tenant_id = ?`)
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Formation Assignment by ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE id = $1`),
+				Args:     []driver.Value{TestID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+			{
 				Query:         updateStmt,
-				Args:          []driver.Value{TestStateInitial, TestConfigValueStr, TestErrorValueStr, TestID, TestTenantID},
+				Args:          []driver.Value{TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime, TestID, TestTenantID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -508,6 +520,39 @@ func TestRepository_Update(t *testing.T) {
 	}
 
 	suite.Run(t)
+
+	t.Run("test", func(t *testing.T) {
+		// GIVEN
+		faModelWithReadyState := fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON)
+		faModelWithReadyState.State = TestReadyState
+
+		faEntityWithReadyState := fixFormationAssignmentEntityWithConfigurationAndError(TestConfigValueStr, TestErrorValueStr)
+		faEntityWithReadyState.State = TestReadyState
+
+		slqxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		ctx := persistence.SaveToContext(emptyCtx, slqxDB)
+
+		rows := sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE id = $1`)).
+			WithArgs(TestID).WillReturnRows(rows)
+
+		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formation_assignments SET state = ?, value = ?, error = ?, last_state_change_timestamp = ?, last_notification_sent_timestamp = ? WHERE id = ? AND tenant_id = ?`)).
+			WithArgs(TestReadyState, TestConfigValueStr, TestErrorValueStr, sqlmock.AnyArg(), &defaultTime, TestID, TestTenantID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", faModelWithReadyState).Return(faEntityWithReadyState)
+
+		repo := formationassignment.NewRepository(mockConverter)
+
+		// WHEN
+		err := repo.Update(ctx, faModelWithReadyState)
+
+		// THEN
+		require.NoError(t, err)
+	})
 }
 
 func TestRepository_Delete(t *testing.T) {
@@ -567,11 +612,11 @@ func TestRepository_GetByTargetAndSource(t *testing.T) {
 		MethodName: "GetByTargetAndSource",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 AND target = $3 AND source = $4`),
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 AND target = $3 AND source = $4`),
 				Args:     []driver.Value{TestTenantID, TestFormationID, TestTarget, TestSource},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -597,11 +642,11 @@ func TestRepository_ListForIDs(t *testing.T) {
 		MethodName: "ListForIDs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE tenant_id = $1 AND id IN ($2)`),
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE tenant_id = $1 AND id IN ($2)`),
 				Args:     []driver.Value{TestTenantID, TestSource},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -645,9 +690,9 @@ func TestRepository_ListByFormationIDsNoPaging(t *testing.T) {
 
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		defer sqlMock.AssertExpectations(t)
-		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id IN ($2)`)).
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id IN ($2)`)).
 			WithArgs(TestTenantID, TestFormationID).WillReturnRows(sqlmock.NewRows(fixColumns).
-			AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr))
+			AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		expected := [][]*model.FormationAssignment{{faModelWithConfigAndError}}
@@ -700,11 +745,11 @@ func TestRepository_GetAssignmentsForFormationWithStates(t *testing.T) {
 		Name: "GetAssignmentsForFormationWithStates",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 AND state IN ($3, $4)`),
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 AND state IN ($3, $4)`),
 				Args:     []driver.Value{TestTenantID, TestFormationID, TestStateInitial, TestReadyState},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -744,11 +789,11 @@ func TestRepository_GetAssignmentsForFormation(t *testing.T) {
 		Name: "GetAssignmentsForFormation",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2`),
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2`),
 				Args:     []driver.Value{TestTenantID, TestFormationID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}

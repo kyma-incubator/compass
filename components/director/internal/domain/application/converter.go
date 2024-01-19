@@ -127,9 +127,9 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
-			CreatedAt: timePtrToTimestampPtr(in.CreatedAt),
-			UpdatedAt: timePtrToTimestampPtr(in.UpdatedAt),
-			DeletedAt: timePtrToTimestampPtr(in.DeletedAt),
+			CreatedAt: graphql.TimePtrToGraphqlTimestampPtr(in.CreatedAt),
+			UpdatedAt: graphql.TimePtrToGraphqlTimestampPtr(in.UpdatedAt),
+			DeletedAt: graphql.TimePtrToGraphqlTimestampPtr(in.DeletedAt),
 			Error:     in.Error,
 		},
 	}
@@ -301,13 +301,4 @@ func (c *converter) statusGraphQLToModel(in *graphql.ApplicationStatus) *model.A
 		Condition: model.ApplicationStatusCondition(in.Condition),
 		Timestamp: time.Time(in.Timestamp),
 	}
-}
-
-func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
-	if time == nil {
-		return nil
-	}
-
-	t := graphql.Timestamp(*time)
-	return &t
 }
