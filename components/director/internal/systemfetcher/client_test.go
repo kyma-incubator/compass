@@ -71,8 +71,8 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	tenantID := "tenantId1"
 	syncTimestampID := "timestampId1"
 
-	tenantModel := newModelBusinessTenantMapping(tenantID, "tenantName")
-	tenantCustomerModel := newModelBusinessTenantMapping(tenantID, "tenantName")
+	tenantModel := newModelBusinessTenantMapping(tenantID, testExternal, "tenantName")
+	tenantCustomerModel := newModelBusinessTenantMapping(tenantID, testExternal, "tenantName")
 	tenantCustomerModel.Type = tenant.Customer
 	systemfetcher.SystemSourceKey = sourceKey
 	systemfetcher.ApplicationTemplateLabelFilter = labelFilter

@@ -14,7 +14,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -45,7 +44,6 @@ const (
 
 //go:generate mockery --name=tenantService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type tenantService interface {
-	ListByType(ctx context.Context, tenantType tenantEntity.Type) ([]*model.BusinessTenantMapping, error)
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
@@ -153,6 +151,12 @@ func (s *SystemFetcher) ProcessTenant(ctx context.Context, tenantID string) erro
 		return errors.Wrap(err, "failed while loading tenant synchronization timestamps")
 	}
 
+	if tenant == nil {
+		// Stop processing early.
+		log.C(ctx).Warnf("Cannot find tenant with ID %s", tenantID)
+		return nil
+	}
+
 	systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, tenant, systemSynchronizationTimestamps)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s of type %s", tenant.ExternalTenant, tenant.Type))
@@ -194,8 +198,8 @@ func (s *SystemFetcher) ProcessTenant(ctx context.Context, tenantID string) erro
 
 	err = s.UpsertSystemsSyncTimestampsForTenant(ctx, tenantID, systemSynchronizationTimestamps)
 	if err != nil {
-		// Do not exit, as this is not a business error.
-		log.C(ctx).Errorf(fmt.Sprintf("Failed to upsert timestamps for synced systems for tenant %s", tenantID))
+		// Not a breaking case - exit without error.
+		log.C(ctx).Warnf(fmt.Sprintf("Failed to upsert timestamps for synced systems for tenant %s", tenantID))
 	}
 
 	log.C(ctx).Info(fmt.Sprintf("Successfully synced systems for tenant %s", tenantID))
@@ -274,38 +278,6 @@ func (s *SystemFetcher) upsertSystemsSyncTimestampsForTenant(ctx context.Context
 	}
 
 	return nil
-}
-
-func (s *SystemFetcher) listTenants(ctx context.Context, tenantType tenantEntity.Type) ([]*model.BusinessTenantMapping, error) {
-	tx, err := s.transaction.Begin()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to begin transaction")
-	}
-	defer s.transaction.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	var tenants []*model.BusinessTenantMapping
-	if len(s.config.VerifyTenant) > 0 {
-		singleTenant, err := s.tenantService.GetTenantByExternalID(ctx, s.config.VerifyTenant)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to retrieve tenant %s", s.config.VerifyTenant)
-		}
-		tenants = append(tenants, singleTenant)
-	} else {
-		log.C(ctx).Infof("Listing tenants for type %s", tenantType)
-		tenants, err = s.tenantService.ListByType(ctx, tenantType)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to retrieve tenants")
-		}
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to commit while retrieving tenants")
-	}
-
-	return tenants, nil
 }
 
 func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMapping *model.BusinessTenantMapping, systems []System, tenantBusinessTypes map[string]*model.TenantBusinessType) error {
