@@ -253,7 +253,7 @@ func TestRepository_Update(t *testing.T) {
 
 	suite.Run(t)
 
-	t.Run("test", func(t *testing.T) {
+	t.Run("Success when the formation state is changed and timestamp is updated", func(t *testing.T) {
 		// GIVEN
 		formationModelWithReadyState := fixFormationModel()
 		formationModelWithReadyState.State = model.ReadyFormationState

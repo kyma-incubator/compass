@@ -1025,16 +1025,18 @@ func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestM
 	var formationAssignment *model.FormationAssignment
 	if f.FormationAssignment != nil {
 		formationAssignment = &model.FormationAssignment{
-			ID:          f.FormationAssignment.ID,
-			FormationID: f.FormationAssignment.FormationID,
-			TenantID:    f.FormationAssignment.TenantID,
-			Source:      f.FormationAssignment.Source,
-			SourceType:  f.FormationAssignment.SourceType,
-			Target:      f.FormationAssignment.Target,
-			TargetType:  f.FormationAssignment.TargetType,
-			State:       f.FormationAssignment.State,
-			Value:       f.FormationAssignment.Value,
-			Error:       f.FormationAssignment.Error,
+			ID:                            f.FormationAssignment.ID,
+			FormationID:                   f.FormationAssignment.FormationID,
+			TenantID:                      f.FormationAssignment.TenantID,
+			Source:                        f.FormationAssignment.Source,
+			SourceType:                    f.FormationAssignment.SourceType,
+			Target:                        f.FormationAssignment.Target,
+			TargetType:                    f.FormationAssignment.TargetType,
+			State:                         f.FormationAssignment.State,
+			Value:                         f.FormationAssignment.Value,
+			Error:                         f.FormationAssignment.Error,
+			LastStateChangeTimestamp:      f.FormationAssignment.LastStateChangeTimestamp,
+			LastNotificationSentTimestamp: f.FormationAssignment.LastNotificationSentTimestamp,
 		}
 	}
 

@@ -126,16 +126,18 @@ func (i *FormationAssignmentInput) ToModel(id, tenantID string) *FormationAssign
 // Clone clones the formation assignment
 func (fa *FormationAssignment) Clone() *FormationAssignment {
 	return &FormationAssignment{
-		ID:          fa.ID,
-		FormationID: fa.FormationID,
-		TenantID:    fa.TenantID,
-		Source:      fa.Source,
-		SourceType:  fa.SourceType,
-		Target:      fa.Target,
-		TargetType:  fa.TargetType,
-		State:       fa.State,
-		Value:       fa.Value,
-		Error:       fa.Error,
+		ID:                            fa.ID,
+		FormationID:                   fa.FormationID,
+		TenantID:                      fa.TenantID,
+		Source:                        fa.Source,
+		SourceType:                    fa.SourceType,
+		Target:                        fa.Target,
+		TargetType:                    fa.TargetType,
+		State:                         fa.State,
+		Value:                         fa.Value,
+		Error:                         fa.Error,
+		LastStateChangeTimestamp:      fa.LastStateChangeTimestamp,
+		LastNotificationSentTimestamp: fa.LastNotificationSentTimestamp,
 	}
 }
 
