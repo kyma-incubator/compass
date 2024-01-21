@@ -693,6 +693,105 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
+func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
+	ctx := context.TODO()
+	region1 := "cf-eu10"
+	region2 := "cf-eu20"
+
+	mockSystems := []byte(fmt.Sprintf(`[{
+		"systemNumber": "1",
+		"displayName": "name1",
+		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
+		"type": "type1",
+		"%s": "val1",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {"mainUrl":"http://mainurl.com"},
+		"additionalAttributes": {"systemSCPLandscapeID":"%s"}
+	},{
+		"systemNumber": "2",
+		"displayName": "name2",
+		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
+		"type": "type2",
+		"%s": "val1",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {"mainUrl":"http://mainurl.com"},
+		"additionalAttributes": {"systemSCPLandscapeID":"%s"}
+	}]`, cfg.SystemInformationSourceKey, region1, cfg.SystemInformationSourceKey, region2))
+	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
+	defer cleanupMockSystems(t)
+
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
+
+	appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
+	template1, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixRegionalApplicationTemplateWithSystemRoles(appTemplateName1, intSys.ID, []string{"val1"}, region1))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template1)
+	require.NoError(t, err)
+	require.NotEmpty(t, template1.ID)
+
+	appTemplateName2 := fixtures.CreateAppTemplateName("temp2")
+	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixRegionalApplicationTemplateWithSystemRoles(appTemplateName2, intSys.ID, []string{"val2"}, region2))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
+	require.NoError(t, err)
+	require.NotEmpty(t, template2.ID)
+
+	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
+
+	description1 := "name1"
+	description2 := "name2"
+	baseUrl := "http://mainurl.com"
+	expectedApps := []directorSchema.ApplicationExt{
+		{
+			Application: directorSchema.Application{
+				Name:                  "name1",
+				Description:           &description1,
+				BaseURL:               &baseUrl,
+				ApplicationTemplateID: &template1.ID,
+				SystemNumber:          str.Ptr("1"),
+				IntegrationSystemID:   &intSys.ID,
+			},
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, region1),
+		},
+		{
+			Application: directorSchema.Application{
+				Name:                  "name2",
+				Description:           &description2,
+				BaseURL:               &baseUrl,
+				ApplicationTemplateID: &template2.ID,
+				SystemNumber:          str.Ptr("2"),
+				IntegrationSystemID:   &intSys.ID,
+			},
+			Labels: applicationLabels("name2", appTemplateName1, intSys.ID, true, region2),
+		},
+	}
+
+	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
+	for _, app := range resp.Data {
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+	}
+
+	require.ElementsMatch(t, expectedApps, actualApps)
+}
+
 // fail
 func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	ctx := context.TODO()
@@ -1341,8 +1440,56 @@ func fixApplicationTemplate(name, intSystemID string) directorSchema.Application
 	return appTemplateInput
 }
 
+func fixRegionalApplicationTemplate(name, intSystemID, region string) directorSchema.ApplicationTemplateInput {
+	appTemplateInput := directorSchema.ApplicationTemplateInput{
+		Name:        name,
+		Description: str.Ptr("template description"),
+		ApplicationInput: &directorSchema.ApplicationJSONInput{
+			Name:        fmt.Sprintf("{{%s}}", namePlaceholder),
+			Description: ptr.String(fmt.Sprintf("{{%s}}", displayNamePlaceholder)),
+			Labels: directorSchema.Labels{
+				nameLabelKey:   "{{name}}",
+				regionLabelKey: "{{region}}",
+			},
+			Webhooks: []*directorSchema.WebhookInput{{
+				Type: directorSchema.WebhookTypeConfigurationChanged,
+				URL:  ptr.String("http://url.com"),
+			}},
+			HealthCheckURL:      ptr.String("http://url.valid"),
+			IntegrationSystemID: &intSystemID,
+		},
+		Labels: directorSchema.Labels{
+			regionLabelKey: region,
+		},
+		Placeholders: []*directorSchema.PlaceholderDefinitionInput{
+			{
+				Name: namePlaceholder,
+			},
+			{
+				Name: displayNamePlaceholder,
+			},
+			{
+				Name: regionLabelKey,
+			},
+		},
+		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
+	}
+
+	return appTemplateInput
+}
+
 func fixApplicationTemplateWithSystemRoles(name, intSystemID string, systemRoles []string) directorSchema.ApplicationTemplateInput {
 	appTemplateInput := fixApplicationTemplate(name, intSystemID)
+
+	appTemplateInput.Labels = map[string]interface{}{
+		cfg.TemplateLabelFilter: systemRoles,
+	}
+
+	return appTemplateInput
+}
+
+func fixRegionalApplicationTemplateWithSystemRoles(name, intSystemID string, systemRoles []string, region string) directorSchema.ApplicationTemplateInput {
+	appTemplateInput := fixRegionalApplicationTemplate(name, intSystemID, region)
 
 	appTemplateInput.Labels = map[string]interface{}{
 		cfg.TemplateLabelFilter: systemRoles,

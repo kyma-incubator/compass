@@ -1,18 +1,21 @@
 package systemfetcher
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+	"github.com/pkg/errors"
 
-	"github.com/tidwall/gjson"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
 var (
 	// ApplicationTemplates contains available Application Templates, should only be used for the unmarshaling of system data
 	// It represents a model.ApplicationTemplate with its labels in the form of map[string]*model.Label
-	ApplicationTemplates []TemplateMapping
+	ApplicationTemplates map[TemplateMappingKey]TemplateMapping
 	// ApplicationTemplateLabelFilter represent a label for the Application Templates which has a value that
 	// should match to the SystemSourceKey's value of the fetched systems
 	ApplicationTemplateLabelFilter string
@@ -24,10 +27,16 @@ var (
 	SystemSynchronizationTimestamps map[string]map[string]SystemSynchronizationTimestamp
 )
 
+type TemplateMappingKey struct {
+	Label  string
+	Region string
+}
+
 // TemplateMapping holds data for Application Templates and their Labels
 type TemplateMapping struct {
 	AppTemplate *model.ApplicationTemplate
 	Labels      map[string]*model.Label
+	Renderer    TemplateRenderer
 }
 
 // System missing godoc
@@ -49,17 +58,50 @@ func (s *System) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	for _, tm := range ApplicationTemplates {
-		if matchProps(data, tm) {
-			s.TemplateID = tm.AppTemplate.ID
-			return nil
-		}
-	}
-
 	return nil
 }
 
-func matchProps(data []byte, tm TemplateMapping) bool {
+func (s *System) EnhanceWithTemplateID() (System, error) {
+	fmt.Println("EnhanceWithTemplateID", s)
+	for tmKey, tm := range ApplicationTemplates {
+		if !s.isMatchedBySystemRole(tmKey) {
+			continue
+		}
+		fmt.Println("tmKey.Region", tmKey.Region)
+		// Global Application Template
+		if tmKey.Region == "" {
+			s.TemplateID = tm.AppTemplate.ID
+			break
+		}
+
+		// Regional Application Template
+		appInput, err := tm.Renderer.GenerateAppRegisterInput(context.Background(), *s, tm.AppTemplate, false)
+		if err != nil {
+			return *s, err
+		}
+
+		regionLabel, ok := appInput.Labels[selfregmanager.RegionLabel]
+		if !ok {
+			return *s, errors.New("label is missing - more info...")
+		}
+
+		regionLabelStr, ok := regionLabel.(string)
+		if !ok {
+			return *s, errors.New("label is not a string missing - more info...")
+		}
+
+		foundTemplateMapping := getTemplateMappingBySystemRoleAndRegion(s.SystemPayload, regionLabelStr)
+		if foundTemplateMapping.AppTemplate == nil {
+			return *s, errors.New("no template mapping found. more info...")
+		}
+
+		s.TemplateID = foundTemplateMapping.AppTemplate.ID
+	}
+
+	return *s, nil
+}
+
+func (s *System) isMatched(tmKey TemplateMappingKey, tm TemplateMapping) bool {
 	lbl, ok := tm.Labels[ApplicationTemplateLabelFilter]
 	if !ok {
 		return false
@@ -76,10 +118,54 @@ func matchProps(data []byte, tm TemplateMapping) bool {
 			continue
 		}
 
-		if systemSourceKeyValue := gjson.GetBytes(data, SystemSourceKey).String(); systemSourceKeyValue == labelStr {
+		systemSource, systemSourceKeyExists := s.SystemPayload[SystemSourceKey]
+		if !systemSourceKeyExists {
+			continue
+		}
+
+		systemSourceValue, ok := systemSource.(string)
+		if !ok {
+			continue
+		}
+
+		if systemSourceValue == labelStr {
 			return true
 		}
 	}
 
 	return false
+}
+
+func (s *System) isMatchedBySystemRole(tmKey TemplateMappingKey) bool {
+	systemSource, systemSourceKeyExists := s.SystemPayload[SystemSourceKey]
+	if !systemSourceKeyExists {
+		return false
+	}
+
+	systemSourceValue, ok := systemSource.(string)
+	if !ok {
+		return false
+	}
+
+	return tmKey.Label == systemSourceValue
+}
+
+func getTemplateMappingBySystemRoleAndRegion(systemPayload map[string]interface{}, region string) TemplateMapping {
+	systemSource, systemSourceKeyExists := systemPayload[SystemSourceKey]
+	if !systemSourceKeyExists {
+		return TemplateMapping{}
+	}
+
+	systemSourceValue, ok := systemSource.(string)
+	if !ok {
+		return TemplateMapping{}
+	}
+
+	for key, mapping := range ApplicationTemplates {
+		if key.Label == systemSourceValue && key.Region == region {
+			return mapping
+		}
+	}
+
+	return TemplateMapping{}
 }

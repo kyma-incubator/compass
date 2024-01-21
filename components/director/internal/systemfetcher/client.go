@@ -114,6 +114,14 @@ func (c *Client) fetchSystemsForTenant(ctx context.Context, url string, tenant *
 		return nil, errors.Wrap(err, "failed to unmarshal systems response")
 	}
 
+	for idx, system := range systems {
+		templatedSystem, err := system.EnhanceWithTemplateID()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to map systems with Application Template ID")
+		}
+		systems[idx] = templatedSystem
+	}
+
 	return systems, nil
 }
 

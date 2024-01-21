@@ -10,6 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
+
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/jwt"
@@ -46,7 +50,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
-	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 
@@ -492,13 +495,13 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		return nil, errors.Wrapf(err, "while unmarshaling placeholders mapping")
 	}
 
-	if err := calculateTemplateMappings(ctx, cfg, tx, appTemplateSvc, placeholdersMapping); err != nil {
-		return nil, errors.Wrap(err, "failed while calculating application templates mappings")
-	}
-
 	templateRenderer, err := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter, cfg.TemplateConfig.OverrideApplicationInput, placeholdersMapping)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating template renderer")
+	}
+
+	if err := calculateTemplateMappings(ctx, cfg, tx, appTemplateSvc, placeholdersMapping, templateRenderer); err != nil {
+		return nil, errors.Wrap(err, "failed while calculating application templates mappings")
 	}
 
 	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsSyncSvc, tenantBusinessTypeSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
@@ -522,8 +525,8 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 	return provider
 }
 
-func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, placeholdersMapping []systemfetcher.PlaceholderMapping) error {
-	applicationTemplates := make([]systemfetcher.TemplateMapping, 0)
+func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, placeholdersMapping []systemfetcher.PlaceholderMapping, renderer systemfetcher.TemplateRenderer) error {
+	applicationTemplates := make(map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping)
 
 	tx, err := transact.Begin()
 	if err != nil {
@@ -539,12 +542,40 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 
 	selectFilterProperties := make(map[string]bool, 0)
 	for _, appTemplate := range appTemplates {
-		lbl, err := appTemplateSvc.ListLabels(ctx, appTemplate.ID)
+		labels, err := appTemplateSvc.ListLabels(ctx, appTemplate.ID)
 		if err != nil {
 			return errors.Wrapf(err, "while listing labels for application template with ID %q", appTemplate.ID)
 		}
 
-		applicationTemplates = append(applicationTemplates, systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: lbl})
+		regionModel, hasRegionLabel := labels[selfregmanager.RegionLabel]
+		regionValue := ""
+		ok := false
+		if hasRegionLabel {
+			regionValue, ok = regionModel.Value.(string)
+			if !ok {
+				return errors.Errorf("%s label for Application Template with ID %s is not a string", selfregmanager.RegionLabel, appTemplate.ID)
+			}
+		}
+
+		systemRoleModel := labels[cfg.TemplateConfig.LabelFilter]
+		appTemplateLblFilterArr, ok := systemRoleModel.Value.([]interface{})
+		if !ok {
+			continue
+		}
+
+		for _, systemRoleValue := range appTemplateLblFilterArr {
+			systemRoleStrValue, ok := systemRoleValue.(string)
+			if !ok {
+				continue
+			}
+
+			mapKey := systemfetcher.TemplateMappingKey{
+				Label:  systemRoleStrValue,
+				Region: regionValue,
+			}
+
+			applicationTemplates[mapKey] = systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: labels, Renderer: renderer}
+		}
 
 		addPropertiesFromAppTemplatePlaceholders(selectFilterProperties, appTemplate.Placeholders)
 	}
