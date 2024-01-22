@@ -93,6 +93,21 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 			ExpectedResult:   mockedGraphQLApplicationNextOutput(),
 		},
 		{
+			Name: "NEW_APPLICATION flow: Success - no parent",
+			TxFn: txtest.NewTransactionContextGenerator(nil).ThatSucceeds,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantService := &automock.BusinessTenantMappingService{}
+				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), tenantID).Return(rgTenantModel, nil)
+				tenantService.On("GetParentsRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), tenantID).Return([]*model.BusinessTenantMapping{}, nil)
+				return tenantService
+			},
+			GetCtx:           fixContextWithTenant,
+			ApplicationSvcFn: fixEmptyApplicationService,
+			Resolver:         fixSuccessGraphQLApplicationResolver,
+			EventType:        schema.EventTypeNewApplication,
+			ExpectedResult:   mockedGraphQLApplicationNextOutput(),
+		},
+		{
 			Name:             "Should not do anything when resolver fails",
 			TxFn:             txtest.NewTransactionContextGenerator(nil).ThatDoesntStartTransaction,
 			TenantSvcFn:      fixEmptyTenantService,

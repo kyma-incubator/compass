@@ -24,7 +24,7 @@ DELETE
 FROM tenant_applications t1 USING tenant_applications t2
 WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner= FALSE AND t2.owner= TRUE;
 
-ALTER TABLE tenant_applications DROP COLUMN SOURCE;
+ALTER TABLE tenant_applications DROP COLUMN source;
 ALTER TABLE tenant_applications
     ADD PRIMARY KEY (tenant_id, id);
 
@@ -41,7 +41,7 @@ DELETE
 FROM tenant_runtimes t1 USING tenant_runtimes t2
 WHERE t1.tenant_id = t2.tenant_id AND t1.id=t2.id AND t1.owner= FALSE AND t2.owner= TRUE;
 
-ALTER TABLE tenant_runtimes DROP COLUMN SOURCE;
+ALTER TABLE tenant_runtimes DROP COLUMN source;
 
 ALTER TABLE tenant_runtimes
     ADD PRIMARY KEY (tenant_id, id);
@@ -70,7 +70,7 @@ ALTER TABLE business_tenant_mappings
 DROP VIEW IF EXISTS formation_templates_webhooks_tenants;
 
 CREATE
-OR REPLACE VIEW formation_templates_webhooks_tenants (id, app_id, url, TYPE, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
+OR REPLACE VIEW formation_templates_webhooks_tenants (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
                                                              input_template, header_template, output_template, status_template, runtime_id, integration_system_id,
                                                              app_template_id, formation_template_id, tenant_id, owner)
 AS

@@ -135,6 +135,116 @@ func TestService_GetInternalTenant(t *testing.T) {
 	}
 }
 
+func TestService_GetParentsRecursivelyByExternalTenant(t *testing.T) {
+	// GIVEN
+	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
+	tenantMappingModel := newModelBusinessTenantMapping(testID, testName, nil)
+	tenantMappingModels := []*model.BusinessTenantMapping{tenantMappingModel}
+
+	testCases := []struct {
+		Name                string
+		TenantMappingRepoFn func() *automock.TenantMappingRepository
+		ExpectedError       error
+		ExpectedOutput      []*model.BusinessTenantMapping
+	}{
+		{
+			Name: "Success",
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("GetParentsRecursivelyByExternalTenant", ctx, testExternal).Return(tenantMappingModels, nil).Once()
+				return tenantMappingRepo
+			},
+			ExpectedOutput: tenantMappingModels,
+		},
+		{
+			Name: "Error when getting parents recursively by external tenant",
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("GetParentsRecursivelyByExternalTenant", ctx, testExternal).Return(nil, testError).Once()
+				return tenantMappingRepo
+			},
+			ExpectedError:  testError,
+			ExpectedOutput: nil,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantMappingRepoFn := testCase.TenantMappingRepoFn()
+			svc := tenant.NewService(tenantMappingRepoFn, nil, nil)
+
+			// WHEN
+			result, err := svc.GetParentsRecursivelyByExternalTenant(ctx, testExternal)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			tenantMappingRepoFn.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_ListByIDsAndType(t *testing.T) {
+	// GIVEN
+	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
+	tenantMappingModel := newModelBusinessTenantMapping(testID, testName, nil)
+	tenantMappingModels := []*model.BusinessTenantMapping{tenantMappingModel}
+
+	testCases := []struct {
+		Name                string
+		TenantMappingRepoFn func() *automock.TenantMappingRepository
+		ExpectedError       error
+		ExpectedOutput      []*model.BusinessTenantMapping
+	}{
+		{
+			Name: "Success",
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("ListByIdsAndType", ctx, []string{testExternal}, tenantEntity.Account).Return(tenantMappingModels, nil).Once()
+				return tenantMappingRepo
+			},
+			ExpectedOutput: tenantMappingModels,
+		},
+		{
+			Name: "Error when getting parents recursively by external tenant",
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("ListByIdsAndType", ctx, []string{testExternal}, tenantEntity.Account).Return(nil, testError).Once()
+				return tenantMappingRepo
+			},
+			ExpectedError:  testError,
+			ExpectedOutput: nil,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantMappingRepoFn := testCase.TenantMappingRepoFn()
+			svc := tenant.NewService(tenantMappingRepoFn, nil, nil)
+
+			// WHEN
+			result, err := svc.ListByIDsAndType(ctx, []string{testExternal}, tenantEntity.Account)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			tenantMappingRepoFn.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_ExtractTenantIDForTenantScopedFormationTemplates(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testID, testExternal)
@@ -182,6 +292,18 @@ func TestService_ExtractTenantIDForTenantScopedFormationTemplates(t *testing.T) 
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
 				tenantMappingRepo.On("Get", ctx, testID).Return(nil, testError).Once()
+				return tenantMappingRepo
+			},
+			ExpectedError:  testError.Error(),
+			ExpectedOutput: "",
+		},
+		{
+			Name:    "Error when getting parent internal tenant",
+			Context: ctx,
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("Get", ctx, testID).Return(newModelBusinessTenantMappingWithType(testID, testName, []string{testParentID}, nil, tenantEntity.Subaccount), nil).Once()
+				tenantMappingRepo.On("Get", ctx, testParentID).Return(nil, testError).Once()
 				return tenantMappingRepo
 			},
 			ExpectedError:  testError.Error(),
@@ -788,8 +910,10 @@ func Test_UpsertSingle(t *testing.T) {
 			Name:        "Success",
 			tenantInput: tenantInput,
 			TenantMappingRepoFn: func(createRepoFunc string) *automock.TenantMappingRepository {
-				tmRepoSvc := createRepoSvc(ctx, createRepoFunc, *tenantModel)
-				tmRepoSvc.On("ListByExternalTenants", ctx, []string{}).Return([]*model.BusinessTenantMapping{}, nil)
+				tntModel := newModelBusinessTenantMapping(testID, "test1", []string{})
+				tntModel.Parents = []string{tenantModel.ID}
+				tmRepoSvc := createRepoSvc(ctx, createRepoFunc, *tntModel)
+				tmRepoSvc.On("ListByExternalTenants", ctx, []string{}).Return([]*model.BusinessTenantMapping{tenantModel}, nil)
 				return tmRepoSvc
 			},
 			UIDSvcFn:         uidSvcFn,
