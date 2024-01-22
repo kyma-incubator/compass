@@ -25,6 +25,8 @@ type applicationConverter interface {
 	CreateInputJSONToModel(ctx context.Context, in string) (model.ApplicationRegisterInput, error)
 }
 
+// TemplateRenderer is a service for go templating on Application Input JSON
+//
 //go:generate mockery --name=TemplateRenderer --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type TemplateRenderer interface {
 	GenerateAppRegisterInput(ctx context.Context, sc System, appTemplate *model.ApplicationTemplate, overridePlaceholders bool) (*model.ApplicationRegisterInput, error)

@@ -3,7 +3,6 @@ package systemfetcher
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
@@ -61,13 +60,12 @@ func (s *System) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// EnhanceWithTemplateID tries to find an Application Template ID for the system
 func (s *System) EnhanceWithTemplateID() (System, error) {
-	fmt.Println("EnhanceWithTemplateID", s)
 	for tmKey, tm := range ApplicationTemplates {
 		if !s.isMatchedBySystemRole(tmKey) {
 			continue
 		}
-		fmt.Println("tmKey.Region", tmKey.Region)
 		// Global Application Template
 		if tmKey.Region == "" {
 			s.TemplateID = tm.AppTemplate.ID
@@ -101,7 +99,7 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 	return *s, nil
 }
 
-func (s *System) isMatched(tmKey TemplateMappingKey, tm TemplateMapping) bool {
+func (s *System) isMatched(tm TemplateMapping) bool {
 	lbl, ok := tm.Labels[ApplicationTemplateLabelFilter]
 	if !ok {
 		return false

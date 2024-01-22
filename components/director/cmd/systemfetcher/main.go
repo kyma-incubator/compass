@@ -542,19 +542,21 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 
 	selectFilterProperties := make(map[string]bool, 0)
 	for _, appTemplate := range appTemplates {
+		templateMappingKey := systemfetcher.TemplateMappingKey{}
+
 		labels, err := appTemplateSvc.ListLabels(ctx, appTemplate.ID)
 		if err != nil {
 			return errors.Wrapf(err, "while listing labels for application template with ID %q", appTemplate.ID)
 		}
 
 		regionModel, hasRegionLabel := labels[selfregmanager.RegionLabel]
-		regionValue := ""
-		ok := false
 		if hasRegionLabel {
-			regionValue, ok = regionModel.Value.(string)
+			regionValue, ok := regionModel.Value.(string)
 			if !ok {
 				return errors.Errorf("%s label for Application Template with ID %s is not a string", selfregmanager.RegionLabel, appTemplate.ID)
 			}
+
+			templateMappingKey.Region = regionValue
 		}
 
 		systemRoleModel := labels[cfg.TemplateConfig.LabelFilter]
@@ -569,12 +571,9 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 				continue
 			}
 
-			mapKey := systemfetcher.TemplateMappingKey{
-				Label:  systemRoleStrValue,
-				Region: regionValue,
-			}
+			templateMappingKey.Label = systemRoleStrValue
 
-			applicationTemplates[mapKey] = systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: labels, Renderer: renderer}
+			applicationTemplates[templateMappingKey] = systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: labels, Renderer: renderer}
 		}
 
 		addPropertiesFromAppTemplatePlaceholders(selectFilterProperties, appTemplate.Placeholders)

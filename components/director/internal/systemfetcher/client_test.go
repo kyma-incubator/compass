@@ -107,9 +107,13 @@ func TestFetchSystemsForTenant(t *testing.T) {
 
 	t.Run("Success with template mappings", func(t *testing.T) {
 		mock.expectedFilterCriteria = "(key eq 'type1')"
+		templateMappingKey := systemfetcher.TemplateMappingKey{
+			Label:  "type1",
+			Region: "",
+		}
 
-		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
-			{
+		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
+			templateMappingKey: {
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type1",
 				},
@@ -145,9 +149,13 @@ func TestFetchSystemsForTenant(t *testing.T) {
 
 	t.Run("Success with template mappings and SystemSynchronizationTimestamps exist", func(t *testing.T) {
 		mock.expectedFilterCriteria = "(key eq 'type1' and lastChangeDateTime gt '2023-05-02 20:30:00 +0000 UTC')"
+		templateMappingKey := systemfetcher.TemplateMappingKey{
+			Label:  "type1",
+			Region: "",
+		}
 
-		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
-			{
+		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
+			templateMappingKey: {
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type1",
 				},
@@ -195,9 +203,12 @@ func TestFetchSystemsForTenant(t *testing.T) {
 
 	t.Run("Success for more than one page", func(t *testing.T) {
 		mock.expectedFilterCriteria = "(key eq 'type1')"
-
-		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
-			{
+		templateMappingKey := systemfetcher.TemplateMappingKey{
+			Label:  "type1",
+			Region: "",
+		}
+		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
+			templateMappingKey: {
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type1",
 				},
@@ -228,8 +239,21 @@ func TestFetchSystemsForTenant(t *testing.T) {
 
 	t.Run("Does not map to the last template mapping if haven't matched before", func(t *testing.T) {
 		mock.expectedFilterCriteria = "(key eq 'type1') or (key eq 'type2') or (key eq 'type3')"
-		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
-			{
+		templateMappingKey1 := systemfetcher.TemplateMappingKey{
+			Label:  "type1",
+			Region: "",
+		}
+		templateMappingKey2 := systemfetcher.TemplateMappingKey{
+			Label:  "type2",
+			Region: "",
+		}
+		templateMappingKey3 := systemfetcher.TemplateMappingKey{
+			Label:  "type3",
+			Region: "",
+		}
+
+		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
+			templateMappingKey1: {
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type1",
 				},
@@ -240,7 +264,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 					},
 				},
 			},
-			{
+			templateMappingKey2: {
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type2",
 				},
@@ -251,7 +275,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 					},
 				},
 			},
-			{
+			templateMappingKey3: {
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type3",
 				},
