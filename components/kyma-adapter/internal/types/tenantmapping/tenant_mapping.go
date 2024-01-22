@@ -50,8 +50,8 @@ type Configuration struct {
 
 // ReceiverTenant is a structure used to JSON decode the receiverTenant in the Body
 type ReceiverTenant struct {
-	UclSystemTenantID string `json:"uclSystemTenantId"`
-	OwnerTenant       string `json:"ownerTenant"`
+	UclSystemTenantID string   `json:"uclSystemTenantId"`
+	OwnerTenants      []string `json:"ownerTenants"`
 }
 
 // AssignedTenant is a structure used to JSON decode the assignedTenant in the Body
@@ -73,7 +73,7 @@ func (b Body) Validate() error {
 		return apperrors.NewInvalidDataError(fmt.Sprintf("Context operation must be either %q or %q", assignOperation, unassignOperation))
 	}
 
-	if len(b.ReceiverTenant.OwnerTenant) == 0 {
+	if len(b.ReceiverTenant.OwnerTenants) == 0 {
 		return apperrors.NewInvalidDataError("Receiver tenant owner tenant must be provided.")
 	}
 
