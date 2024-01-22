@@ -58,7 +58,7 @@ func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchrono
 	require.Eventually(t, func() (isOkay bool) {
 		tOnce.Logf("Getting formation assignments...")
 		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
-		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
+		assignmentsPage := fixtures.ListFormationAssignments(tOnce, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
 		if expectedAssignmentsCount != assignmentsPage.TotalCount {
 			tOnce.Logf("The expected assignments count: %d didn't match the actual: %d", expectedAssignmentsCount, assignmentsPage.TotalCount)
 			return
@@ -81,11 +81,11 @@ func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchrono
 				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
 				return
 			}
-			if isEqual := json.AssertJSONStringEquality(t, assignmentExpectation.Error, assignment.Error); !isEqual {
+			if isEqual := json.AssertJSONStringEquality(tOnce, assignmentExpectation.Error, assignment.Error); !isEqual {
 				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
 				return
 			}
-			if isEqual := json.AssertJSONStringEquality(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
+			if isEqual := json.AssertJSONStringEquality(tOnce, assignmentExpectation.Config, assignment.Configuration); !isEqual {
 				tOnce.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
 				return
 			}

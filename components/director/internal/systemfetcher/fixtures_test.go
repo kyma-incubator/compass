@@ -22,8 +22,8 @@ func newModelBusinessTenantMapping(id, externalTenant, name string) *model.Busin
 	return &model.BusinessTenantMapping{
 		ID:             id,
 		Name:           name,
-		ExternalTenant: externalTenant,
-		Parent:         "",
+		ExternalTenant: testExternal,
+		Parents:        []string{},
 		Type:           tenant.Account,
 		Provider:       testProvider,
 		Status:         tenant.Active,

@@ -34,7 +34,7 @@ global:
     - name: Test Default
       id: 5577cf46-4f78-45fa-b55f-a42a3bdba868
       type: account
-      parent: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
+      parents: [2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0]
     - name: Test_DefaultCustomer
       id: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
       type: customer
@@ -65,68 +65,68 @@ global:
     - name: TestProviderSubaccount
       id: 47b4575a-f102-414a-8398-2d973ad65f3a
       type: subaccount
-      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      parents: [5577cf46-4f78-45fa-b55f-a42a3bdba868]
     - name: TestCompassProviderSubaccount
       id: f8075207-1478-4a80-bd26-24a4785a2bfd
       type: subaccount
-      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      parents: [5577cf46-4f78-45fa-b55f-a42a3bdba868]
     - name: TestProviderSubaccountRegion2
       id: 731b7bc4-5472-41d2-a447-e4c0f45de739
       type: subaccount
       region: "eu-2"
-      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      parents: [5577cf46-4f78-45fa-b55f-a42a3bdba868]
     - name: TestCertificateSubaccount
       id: 123e4567-e89b-12d3-a456-426614174001
       type: subaccount
-      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      parents: [5577cf46-4f78-45fa-b55f-a42a3bdba868]
     - name: TestNsAdapter
       id: 08b6da37-e911-48fb-a0cb-fa635a6c5678
       type: subaccount
-      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      parents: [5577cf46-4f78-45fa-b55f-a42a3bdba868]
     - name: TestNsAdapterSubaccountWithApplications
       id: 08b6da37-e911-48fb-a0cb-fa635a6c4321
       type: subaccount
-      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      parents: [5577cf46-4f78-45fa-b55f-a42a3bdba868]
     - name: TestIntegrationSystemManagedSubaccount
       id: 3cfcdd62-320d-403b-b66a-4ee3cdd06947
       type: subaccount
-      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      parents: [5577cf46-4f78-45fa-b55f-a42a3bdba868]
     - name: TestIntegrationSystemManagedAccount
       id: 7e8ab2e3-3bb4-42e3-92b2-4e0bf48559d3
       type: account
-      parent: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
+      parents: [2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0]
     - name: TestSystemFetcherAccount
       id: c395681d-11dd-4cde-bbcf-570b4a153e79
       type: account
-      parent: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
+      parents: [2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0]
     - name: TestConsumerSubaccount
       id: 1f538f34-30bf-4d3d-aeaa-02e69eef84ae
       type: subaccount
-      parent: 5984a414-1eed-4972-af2c-b2b6a415c7d7
+      parents: [5984a414-1eed-4972-af2c-b2b6a415c7d7]
     - name: TestTenantsOnDemandAPI
       id: 8d42d818-d4c4-4036-b82f-b199db7ffeb5
       type: subaccount
-      parent: 5984a414-1eed-4972-af2c-b2b6a415c7d7
+      parents: [5984a414-1eed-4972-af2c-b2b6a415c7d7]
     - name: TestExternalCertificateSubaccount
       id: bad76f69-e5c2-4d55-bca5-240944824b83
       type: subaccount
-      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      parents: [5577cf46-4f78-45fa-b55f-a42a3bdba868]
     - name: TestAtomOrganization
       id: f2724f8e-1a58-4f32-bfd0-8b831de34e71
       type: organization
-      parent: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
+      parents: [2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0]
     - name: TestAtomFolder
       id: 4c31b7c7-2bea-4bd5-9ea5-e9a8d704f900
       type: folder
-      parent: f2724f8e-1a58-4f32-bfd0-8b831de34e71
+      parents: [f2724f8e-1a58-4f32-bfd0-8b831de34e71]
     - name: TestAtomResourceGroup
       id: ff30da87-7685-4462-869a-baae6441898b
       type: resource-group
-      parent: 4c31b7c7-2bea-4bd5-9ea5-e9a8d704f900
+      parents: [4c31b7c7-2bea-4bd5-9ea5-e9a8d704f900]
     - name: Test Default Subaccount
       id: 777ce47b-d901-4647-9223-14e94819830b
       type: subaccount
-      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      parents: [5577cf46-4f78-45fa-b55f-a42a3bdba868]
       # The "substitution" tenants should be used only in specific use cases and not as "regular" test tenants
       # because when using them, the operation is actually executed on behalf of another tenant,
       # the one defined in a label of the substituted tenant
@@ -136,18 +136,21 @@ global:
     - name: Test Tenant Substitution Subaccount
       id: 818005d6-9264-4abb-af4c-29c754630a7d
       type: subaccount
-      parent: baf425d1-8630-46da-bf80-f4ed5f405a27
+      parents: [baf425d1-8630-46da-bf80-f4ed5f405a27]
     - name: Test Tenant Substitution Account 2
       id: 46c189a1-9e04-4cbf-9c59-ba7b120492ad
       type: account
     - name: Test Tenant Substitution Subaccount 2
       id: e1e2f861-2b2e-42a9-ba9f-404d292e5471
       type: subaccount
-      parent: 46c189a1-9e04-4cbf-9c59-ba7b120492ad
+      parents: [46c189a1-9e04-4cbf-9c59-ba7b120492ad]
+    - name: TestIsolatedAccount
+      id: ded8eca9-12b9-4076-9458-9deabff87bd8
+      type: account
   tenantsLabels:
     - tenantID: 818005d6-9264-4abb-af4c-29c754630a7d # TestTenantSubstitutionSubaccount
       key: customerId
-      value: 777ce47b-d901-4647-9223-14e94819830b
+      value: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
     - tenantID: e1e2f861-2b2e-42a9-ba9f-404d292e5471 # TestTenantSubstitutionSubaccount2
       key: customerId
       value: 5984a414-1eed-4972-af2c-b2b6a415c7d7 # ApplicationsForRuntimeTenantName, randomly chosen Account tenant
@@ -156,59 +159,59 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3448"
+      version: "PR-3507"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3448"
+      version: "PR-3507"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3448"
+      version: "PR-3507"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3571"
+      version: "PR-3507"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3531"
+      version: "PR-3507"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3567"
+      version: "PR-3577"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3448"
+      version: "PR-3507"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3560"
+      version: "PR-3507"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3448"
+      version: "PR-3577"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
-      version: "PR-3448"
+      version: "PR-3507"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3448"
+      version: "PR-3507"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-117"
+      version: "PR-120"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3531"
+      version: "PR-3507"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
-      version: "PR-3448"
+      version: "PR-3507"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -217,7 +220,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3542"
+      version: "PR-3507"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -225,7 +228,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3571"
+      version: "PR-3507"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -538,7 +541,7 @@ global:
     port: 3000
     prefix: /hydrators
     certSubjectMappingResyncInterval: "3s"
-    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount", "global", "organization", "folder", "resource-group"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}, {"consumer_type": "Instance Creator", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=47b4575a-f102-414a-8398-2d973ad65f3a, CN=instance-creator"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount", "global", "organization", "folder", "resource-group", "cost-object"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}, {"consumer_type": "Instance Creator", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=47b4575a-f102-414a-8398-2d973ad65f3a, CN=instance-creator"}]'
     certificateDataHeader: "Certificate-Data"
     consumerClaimsKeys:
       clientIDKey: "client_id"
@@ -587,7 +590,7 @@ global:
       type: CONFIGURATION_CHANGED
       mode: SYNC
       urlTemplate: '{"path":"%s/kyma-adapter/v1/tenantMappings/{{.Runtime.Labels.global_subaccount_id}}","method":"PATCH"}'
-      inputTemplate: '{"context":{"platform":"{{if .CustomerTenantContext.AccountID}}btp{{else}}unified-services{{end}}","uclFormationId":"{{.FormationID}}","accountId":"{{if .CustomerTenantContext.AccountID}}{{.CustomerTenantContext.AccountID}}{{else}}{{.CustomerTenantContext.Path}}{{end}}","crmId":"{{.CustomerTenantContext.CustomerID}}","operation":"{{.Operation}}"},"assignedTenant":{"state":"{{.Assignment.State}}","uclAssignmentId":"{{.Assignment.ID}}","deploymentRegion":"{{if .Application.Labels.region}}{{.Application.Labels.region}}{{else}}{{.ApplicationTemplate.Labels.region}}{{end}}","applicationNamespace":"{{if .Application.ApplicationNamespace}}{{.Application.ApplicationNamespace}}{{else}}{{.ApplicationTemplate.ApplicationNamespace}}{{end}}","applicationUrl":"{{.Application.BaseURL}}","applicationTenantId":"{{.Application.LocalTenantID}}","uclSystemName":"{{.Application.Name}}","uclSystemTenantId":"{{.Application.ID}}",{{if .ApplicationTemplate.Labels.parameters}}"parameters":{{.ApplicationTemplate.Labels.parameters}},{{end}}"configuration":{{.ReverseAssignment.Value}}},"receiverTenant":{"ownerTenant":"{{.Runtime.Tenant.Parent}}","state":"{{.ReverseAssignment.State}}","uclAssignmentId":"{{.ReverseAssignment.ID}}","deploymentRegion":"{{if and .RuntimeContext .RuntimeContext.Labels.region}}{{.RuntimeContext.Labels.region}}{{else}}{{.Runtime.Labels.region}}{{end}}","applicationNamespace":"{{.Runtime.ApplicationNamespace}}","applicationTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.Value}}{{else}}{{.Runtime.Labels.global_subaccount_id}}{{end}}","uclSystemTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}",{{if .Runtime.Labels.parameters}}"parameters":{{.Runtime.Labels.parameters}},{{end}}"configuration":{{.Assignment.Value}}}}'
+      inputTemplate: '{"context":{"platform":"{{if .CustomerTenantContext.AccountID}}btp{{else}}unified-services{{end}}","uclFormationId":"{{.FormationID}}","accountId":"{{if .CustomerTenantContext.AccountID}}{{.CustomerTenantContext.AccountID}}{{else}}{{.CustomerTenantContext.Path}}{{end}}","crmId":"{{.CustomerTenantContext.CustomerID}}","operation":"{{.Operation}}"},"assignedTenant":{"state":"{{.Assignment.State}}","uclAssignmentId":"{{.Assignment.ID}}","deploymentRegion":"{{if .Application.Labels.region}}{{.Application.Labels.region}}{{else}}{{.ApplicationTemplate.Labels.region}}{{end}}","applicationNamespace":"{{if .Application.ApplicationNamespace}}{{.Application.ApplicationNamespace}}{{else}}{{.ApplicationTemplate.ApplicationNamespace}}{{end}}","applicationUrl":"{{.Application.BaseURL}}","applicationTenantId":"{{.Application.LocalTenantID}}","uclSystemName":"{{.Application.Name}}","uclSystemTenantId":"{{.Application.ID}}",{{if .ApplicationTemplate.Labels.parameters}}"parameters":{{.ApplicationTemplate.Labels.parameters}},{{end}}"configuration":{{.ReverseAssignment.Value}}},"receiverTenant":{"ownerTenants": [{{ Join .Runtime.Tenant.Parents }}],"state":"{{.ReverseAssignment.State}}","uclAssignmentId":"{{.ReverseAssignment.ID}}","deploymentRegion":"{{if and .RuntimeContext .RuntimeContext.Labels.region}}{{.RuntimeContext.Labels.region}}{{else}}{{.Runtime.Labels.region}}{{end}}","applicationNamespace":"{{.Runtime.ApplicationNamespace}}","applicationTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.Value}}{{else}}{{.Runtime.Labels.global_subaccount_id}}{{end}}","uclSystemTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}",{{if .Runtime.Labels.parameters}}"parameters":{{.Runtime.Labels.parameters}},{{end}}"configuration":{{.Assignment.Value}}}}'
       headerTemplate: '{"Content-Type": ["application/json"]}'
       outputTemplate: '{"error":"{{.Body.error}}","state":"{{.Body.state}}","success_status_code": 200,"incomplete_status_code": 422}'
     authentication:
@@ -1423,6 +1426,7 @@ global:
         - "formation_template:read"
         - "formation_template:write"
         - "formation_template.webhooks:read"
+        - "tenant_access:write"
       managed_application_provider_operator:
         - "application.local_tenant_id:write"
         - "application_template:write"

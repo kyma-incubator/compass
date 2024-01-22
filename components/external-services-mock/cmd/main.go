@@ -410,6 +410,8 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/async-no-config/{tenantId}", notificationHandler.AsyncNoConfig).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-no-response/{tenantId}", notificationHandler.AsyncNoResponseAssign).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-no-response/{tenantId}/{applicationId}", notificationHandler.AsyncNoResponseUnassign).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/async-create-ready/{tenantId}", notificationHandler.AsyncNoConfigWithCreateReady).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/async-delete-ready/{tenantId}/{applicationId}", notificationHandler.AsyncNoConfigWithDeleteReady).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async-fail-once/{tenantId}", notificationHandler.AsyncFailOnce).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-fail-once/{tenantId}/{applicationId}", notificationHandler.AsyncFailOnce).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async-fail/{tenantId}", notificationHandler.AsyncFail).Methods(http.MethodPatch)

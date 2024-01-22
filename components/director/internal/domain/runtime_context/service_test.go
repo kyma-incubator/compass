@@ -124,7 +124,7 @@ func TestService_Create(t *testing.T) {
 	tnt := "tenant"
 	externalTnt := "external-tnt"
 	parentTnt := "parent"
-	modelTnt := &model.BusinessTenantMapping{ID: tnt, Parent: parentTnt}
+	modelTnt := &model.BusinessTenantMapping{ID: tnt, Parents: []string{parentTnt}}
 	ctxWithoutTenant := context.TODO()
 	ctxWithTenant := tenant.SaveToContext(ctxWithoutTenant, tnt, externalTnt)
 	ctxWithParentTenant := tenant.SaveToContext(ctxWithTenant, parentTnt, "")

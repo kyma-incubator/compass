@@ -72,6 +72,10 @@ const (
 	InstanceCreatorDeletingAssignmentState FormationAssignmentState = "INSTANCE_CREATOR_DELETING"
 	// DeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment
 	DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
+	// CreateReadyFormationAssignmentState indicates that the formation assignment is in a ready state and the response is for an assign notification
+	CreateReadyFormationAssignmentState FormationAssignmentState = "CREATE_READY"
+	// DeleteReadyFormationAssignmentState indicates that the formation assignment is in a ready state and the response is for an unassign notification
+	DeleteReadyFormationAssignmentState FormationAssignmentState = "DELETE_READY"
 	// InstanceCreatorDeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment by the instance creator operator
 	InstanceCreatorDeleteErrorAssignmentState FormationAssignmentState = "INSTANCE_CREATOR_DELETE_ERROR"
 	// NotificationRecursionDepthLimit is the maximum count of configuration exchanges during assigning an object to formation

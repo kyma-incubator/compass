@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/gqlclient"
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/types/credentials"
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/types/tenantmapping"
@@ -34,6 +36,7 @@ type Client interface {
 	CreateBundleInstanceAuth(ctx context.Context, tenant string, input gqlclient.BundleInstanceAuthInput) error
 	UpdateBundleInstanceAuth(ctx context.Context, tenant string, input gqlclient.BundleInstanceAuthInput) error
 	DeleteBundleInstanceAuth(ctx context.Context, tenant string, input gqlclient.BundleInstanceAuthInput) error
+	TenantByInternalIDQuery(ctx context.Context, tenantID string) (*graphql.Tenant, error)
 }
 
 // AdapterHandler is the Kyma Tenant Mapping Adapter handler which processes the received requests
@@ -71,8 +74,22 @@ func (a AdapterHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 		respondWithError(ctx, w, http.StatusBadRequest, "", errors.Wrapf(err, "while validating the request body"))
 		return
 	}
-	tenantID := reqBody.ReceiverTenant.OwnerTenant
-	log.C(ctx).Infof("The request has tenant with id %q", tenantID)
+
+	var ownerTenantID string
+	tenantIDs := reqBody.ReceiverTenant.OwnerTenants
+	for _, tenantID := range tenantIDs {
+		tenantObject, err := a.DirectorGqlClient.TenantByInternalIDQuery(ctx, tenantID)
+		if err != nil {
+			respondWithError(ctx, w, http.StatusBadRequest, "", errors.Wrapf(err, "while getting parent tenant"))
+			return
+		}
+		if tenantObject.Type == string(tenantpkg.Account) {
+			ownerTenantID = tenantObject.InternalID
+			break
+		}
+	}
+
+	log.C(ctx).Infof("The request has tenant with id %q", ownerTenantID)
 
 	operation := reqBody.Context.Operation
 	log.C(ctx).Infof("The request operation is %q", operation)
@@ -91,8 +108,8 @@ func (a AdapterHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	appID := reqBody.GetApplicationID()
 	rtmID := reqBody.GetRuntimeID()
 
-	log.C(ctx).Infof("Getting application bundles for app with id %q and tenant %q", appID, tenantID)
-	bundles, err := a.DirectorGqlClient.GetApplicationBundles(ctx, appID, tenantID)
+	log.C(ctx).Infof("Getting application bundles for app with id %q and tenant %q", appID, ownerTenantID)
+	bundles, err := a.DirectorGqlClient.GetApplicationBundles(ctx, appID, ownerTenantID)
 	if err != nil {
 		respondWithError(ctx, w, http.StatusBadRequest, createErrorState, errors.Wrapf(err, "while getting application bundles"))
 		return
@@ -124,7 +141,7 @@ out:
 	modifyFunc := a.determineAuthModifyFunc(instanceAuthExist, operation)
 	for _, bundle := range bundles {
 		input := buildInstanceAuthInput(instanceAuthExist, operation, bundle, rtmID, creds)
-		if state, err := modifyFunc(ctx, tenantID, input); err != nil {
+		if state, err := modifyFunc(ctx, ownerTenantID, input); err != nil {
 			respondWithError(ctx, w, http.StatusBadRequest, state, err)
 			return
 		}

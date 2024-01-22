@@ -3,8 +3,11 @@ package processor
 import (
 	"context"
 
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -130,6 +133,9 @@ func (cp *CapabilityProcessor) resyncCapability(ctx context.Context, resourceTyp
 	}
 
 	if !isCapabilityFound {
+		currentTime := time.Now().Format(time.RFC3339)
+		capability.LastUpdate = &currentTime
+
 		capabilityID, err := cp.capabilitySvc.Create(ctx, resourceType, resourceID, packageID, capability, nil, capabilityHash)
 		if err != nil {
 			return nil, err
@@ -143,7 +149,15 @@ func (cp *CapabilityProcessor) resyncCapability(ctx context.Context, resourceTyp
 		return fetchRequests, nil
 	}
 
-	err := cp.capabilitySvc.Update(ctx, resourceType, capabilitiesFromDB[i].ID, packageID, capability, capabilityHash)
+	log.C(ctx).Infof("Calculate the newest lastUpdate time for Capability")
+	newestLastUpdateTime, err := NewestLastUpdateTimestamp(capability.LastUpdate, capabilitiesFromDB[i].LastUpdate, capabilitiesFromDB[i].ResourceHash, capabilityHash)
+	if err != nil {
+		return nil, errors.Wrap(err, "error while calculating the newest lastUpdate time for Capability")
+	}
+
+	capability.LastUpdate = newestLastUpdateTime
+
+	err = cp.capabilitySvc.Update(ctx, resourceType, capabilitiesFromDB[i].ID, packageID, capability, capabilityHash)
 	if err != nil {
 		return nil, err
 	}

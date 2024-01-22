@@ -282,6 +282,7 @@ func fixEntityTypeModel(entityTypeID string) *model.EntityType {
 		Tags:                         json.RawMessage(tags),
 		Labels:                       json.RawMessage(labels),
 		DocumentationLabels:          json.RawMessage(documentationLabels),
+		LastUpdate:                   str.Ptr("2023-01-25T15:47:04+00:00"),
 		Version:                      fixVersionModel(versionValue, versionDeprecated, versionDeprecatedSince, versionForRemoval),
 		ResourceHash:                 &resourceHash,
 	}
@@ -311,6 +312,7 @@ func fixEntityTypeInputModel() *model.EntityTypeInput {
 		Tags:                json.RawMessage(tags),
 		Labels:              json.RawMessage(labels),
 		DocumentationLabels: json.RawMessage(documentationLabels),
+		LastUpdate:          str.Ptr("2023-01-25T15:47:04+00:00"),
 	}
 }
 
@@ -324,6 +326,7 @@ func fixIntegrationDependencyModel(integrationDependencyID, integrationDependenc
 		ApplicationID:                &appID,
 		ApplicationTemplateVersionID: &appTemplateVersionID,
 		PackageID:                    str.Ptr(packageORDID1),
+		LastUpdate:                   str.Ptr("2023-01-25T15:47:04+00:00"),
 	}
 }
 
@@ -337,6 +340,7 @@ func fixIntegrationDependencyInputModel(integrationDependencyORDID string) *mode
 				Mandatory: &mandatoryTrue,
 			},
 		},
+		LastUpdate: str.Ptr("2023-01-25T15:47:04+00:00"),
 	}
 }
 
@@ -350,6 +354,7 @@ func fixDataProductModel(dataProductID, dataProductORDID string) *model.DataProd
 		ApplicationID:                &appID,
 		ApplicationTemplateVersionID: &appTemplateVersionID,
 		PackageID:                    str.Ptr(packageID1),
+		LastUpdate:                   str.Ptr("2023-01-25T15:47:04+00:00"),
 	}
 }
 
@@ -359,6 +364,7 @@ func fixDataProductInputModel(dataProductORDID string) *model.DataProductInput {
 		OrdPackageID: str.Ptr(packageORDID1),
 		Title:        "Data Product title",
 		Visibility:   str.Ptr("public"),
+		LastUpdate:   str.Ptr("2023-01-25T15:47:04+00:00"),
 	}
 }
 
@@ -463,6 +469,7 @@ func fixAPI(id string, ordID *string) *model.APIDefinition {
 			Value: "2.1.3",
 		},
 		DocumentationLabels: json.RawMessage(documentLabels),
+		ResourceHash:        str.Ptr(resourceHash),
 		BaseEntity: &model.BaseEntity{
 			ID:    id,
 			Ready: true,
@@ -578,6 +585,7 @@ func fixEvent(id string, ordID *string) *model.EventDefinition {
 		Version: &model.Version{
 			Value: "2.1.3",
 		},
+		ResourceHash: str.Ptr(resourceHash),
 		BaseEntity: &model.BaseEntity{
 			ID:    id,
 			Ready: true,
@@ -608,6 +616,7 @@ func fixCapability(id string, ordID *string) *model.Capability {
 			Value: "2.1.3",
 		},
 		DocumentationLabels: json.RawMessage(documentLabels),
+		ResourceHash:        str.Ptr(resourceHash),
 		BaseEntity: &model.BaseEntity{
 			ID:    id,
 			Ready: true,
@@ -674,6 +683,15 @@ func fixCapabilitiesNoNewerLastUpdate() []*model.Capability {
 	return []*model.Capability{
 		capability,
 	}
+}
+
+func fixEventInputsWithNewPkg() []*model.EventDefinitionInput {
+	events := []*model.EventDefinitionInput{
+		fixEventInput(),
+	}
+	events[0].OrdPackageID = str.Ptr(packageORDID2)
+
+	return events
 }
 
 func fixEventInput() *model.EventDefinitionInput {

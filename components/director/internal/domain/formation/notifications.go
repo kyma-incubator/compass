@@ -18,7 +18,7 @@ import (
 //go:generate mockery --exported --name=tenantRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantRepository interface {
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-	GetCustomerIDParentRecursively(ctx context.Context, tenant string) (string, error)
+	GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error)
 }
 
 //go:generate mockery --exported --name=webhookClient --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -205,14 +205,25 @@ func (ns *notificationsService) extractCustomerTenantContext(ctx context.Context
 		path = &tenantObject.ExternalTenant
 	}
 
-	customerID, err := ns.tenantRepository.GetCustomerIDParentRecursively(ctx, internalTenantID)
+	tenantParents, err := ns.tenantRepository.GetParentsRecursivelyByExternalTenant(ctx, tenantObject.ExternalTenant)
 	if err != nil {
 		return nil, err
 	}
 
+	var customerID string
+	var costObjectID string
+	for _, parent := range tenantParents {
+		if parent.Type == tenant.Customer {
+			customerID = parent.ExternalTenant
+		} else if parent.Type == tenant.CostObject {
+			costObjectID = parent.ExternalTenant
+		}
+	}
+
 	return &webhookdir.CustomerTenantContext{
-		CustomerID: customerID,
-		AccountID:  accountID,
-		Path:       path,
+		CustomerID:   customerID,
+		CostObjectID: costObjectID,
+		AccountID:    accountID,
+		Path:         path,
 	}, nil
 }
