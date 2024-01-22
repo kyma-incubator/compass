@@ -125,6 +125,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				},
 			},
 		}
+		systemfetcher.SortedTemplateMappingKeys = []systemfetcher.TemplateMappingKey{templateMappingKey}
 		mock.bodiesToReturn = [][]byte{[]byte(`[{
 			"displayName": "name1",
 			"productDescription": "description",
@@ -167,7 +168,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				},
 			},
 		}
-
+		systemfetcher.SortedTemplateMappingKeys = []systemfetcher.TemplateMappingKey{templateMappingKey}
 		systemfetcher.SystemSynchronizationTimestamps = map[string]map[string]systemfetcher.SystemSynchronizationTimestamp{
 			tenantID: {
 				"type1": {
@@ -220,6 +221,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				},
 			},
 		}
+		systemfetcher.SortedTemplateMappingKeys = []systemfetcher.TemplateMappingKey{templateMappingKey}
 
 		mock.bodiesToReturn = [][]byte{
 			[]byte(fourSystemsResp),
@@ -287,6 +289,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				},
 			},
 		}
+		systemfetcher.SortedTemplateMappingKeys = []systemfetcher.TemplateMappingKey{templateMappingKey1, templateMappingKey2, templateMappingKey3}
 
 		mock.bodiesToReturn = [][]byte{[]byte(`[{
 			"displayName": "name1",
@@ -318,6 +321,10 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	})
 
 	t.Run("Fail with unexpected status code", func(t *testing.T) {
+		mock.expectedFilterCriteria = ""
+		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{}
+		systemfetcher.SortedTemplateMappingKeys = []systemfetcher.TemplateMappingKey{}
+
 		mock.callNumber = 0
 		mock.pageCount = 1
 		mock.statusCodeToReturn = http.StatusBadRequest

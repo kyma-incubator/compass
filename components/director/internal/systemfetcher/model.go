@@ -15,6 +15,8 @@ var (
 	// ApplicationTemplates contains available Application Templates, should only be used for the unmarshaling of system data
 	// It represents a model.ApplicationTemplate with its labels in the form of map[string]*model.Label
 	ApplicationTemplates map[TemplateMappingKey]TemplateMapping
+	// SortedTemplateMappingKeys contains an array of TemplateMappingKey that have been sorted by the label proeprty
+	SortedTemplateMappingKeys []TemplateMappingKey
 	// ApplicationTemplateLabelFilter represent a label for the Application Templates which has a value that
 	// should match to the SystemSourceKey's value of the fetched systems
 	ApplicationTemplateLabelFilter string
@@ -26,6 +28,7 @@ var (
 	SystemSynchronizationTimestamps map[string]map[string]SystemSynchronizationTimestamp
 )
 
+// TemplateMappingKey is a mapping for regional Application Templates
 type TemplateMappingKey struct {
 	Label  string
 	Region string
@@ -97,41 +100,6 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 	}
 
 	return *s, nil
-}
-
-func (s *System) isMatched(tm TemplateMapping) bool {
-	lbl, ok := tm.Labels[ApplicationTemplateLabelFilter]
-	if !ok {
-		return false
-	}
-
-	templateMappingLabelValues, ok := lbl.Value.([]interface{})
-	if !ok {
-		return false
-	}
-
-	for _, labelValue := range templateMappingLabelValues {
-		labelStr, ok := labelValue.(string)
-		if !ok {
-			continue
-		}
-
-		systemSource, systemSourceKeyExists := s.SystemPayload[SystemSourceKey]
-		if !systemSourceKeyExists {
-			continue
-		}
-
-		systemSourceValue, ok := systemSource.(string)
-		if !ok {
-			continue
-		}
-
-		if systemSourceValue == labelStr {
-			return true
-		}
-	}
-
-	return false
 }
 
 func (s *System) isMatchedBySystemRole(tmKey TemplateMappingKey) bool {

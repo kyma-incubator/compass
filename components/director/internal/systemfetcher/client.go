@@ -174,8 +174,10 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 func (c *Client) buildFilter() map[string]string {
 	var filterBuilder FilterBuilder
 
-	for _, at := range ApplicationTemplates {
-		appTemplateLblFilter, ok := at.Labels[ApplicationTemplateLabelFilter]
+	for _, key := range SortedTemplateMappingKeys {
+		templateMapping := ApplicationTemplates[key]
+
+		appTemplateLblFilter, ok := templateMapping.Labels[ApplicationTemplateLabelFilter]
 		if !ok {
 			continue
 		}

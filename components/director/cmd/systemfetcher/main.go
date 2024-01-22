@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -504,6 +505,8 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		return nil, errors.Wrap(err, "failed while calculating application templates mappings")
 	}
 
+	calculateSortedTemplateMappingKeys()
+
 	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsSyncSvc, tenantBusinessTypeSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
 }
 
@@ -669,4 +672,20 @@ func createSelectFilter(selectFilterProperties map[string]bool, placeholdersMapp
 	}
 
 	return selectFilter
+}
+
+func calculateSortedTemplateMappingKeys() {
+	templateMappingKeys := make([]systemfetcher.TemplateMappingKey, 0, len(systemfetcher.ApplicationTemplates))
+	for key := range systemfetcher.ApplicationTemplates {
+		templateMappingKeys = append(templateMappingKeys, key)
+	}
+
+	sort.Slice(templateMappingKeys, func(i, j int) bool {
+		if templateMappingKeys[i].Label != templateMappingKeys[j].Label {
+			return templateMappingKeys[i].Label < templateMappingKeys[j].Label
+		}
+		return templateMappingKeys[i].Label < templateMappingKeys[j].Label
+	})
+
+	systemfetcher.SortedTemplateMappingKeys = templateMappingKeys
 }
