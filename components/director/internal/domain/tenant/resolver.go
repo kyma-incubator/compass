@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -29,13 +28,13 @@ type BusinessTenantMappingService interface {
 	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error)
 	UpsertSingle(ctx context.Context, tenantInput model.BusinessTenantMappingInput) (string, error)
 	Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error
-	DeleteMany(ctx context.Context, tenantInputs []string) error
+	DeleteMany(ctx context.Context, externalTenantIDs []string) error
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 	CreateTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
 	DeleteTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
 	GetTenantAccessForResource(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) (*model.TenantAccess, error)
-	GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
+	GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error)
 }
 
 // BusinessTenantMappingConverter is used to convert the internally used tenant representation model.BusinessTenantMapping
@@ -192,8 +191,8 @@ func (r *Resolver) TenantByLowestOwnerForResource(ctx context.Context, resourceS
 	return tenantID, nil
 }
 
-// RootTenant fetches the top parent external ID for a given tenant
-func (r *Resolver) RootTenant(ctx context.Context, externalTenant string) (*graphql.Tenant, error) {
+// RootTenants fetches the top parents external IDs for a given externalTenant
+func (r *Resolver) RootTenants(ctx context.Context, externalTenant string) ([]*graphql.Tenant, error) {
 	log.C(ctx).Infof("Getting the top parent ID for a external tenant: %q", externalTenant)
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -203,7 +202,7 @@ func (r *Resolver) RootTenant(ctx context.Context, externalTenant string) (*grap
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	result, err := r.srv.GetParentRecursivelyByExternalTenant(ctx, externalTenant)
+	result, err := r.srv.GetParentsRecursivelyByExternalTenant(ctx, externalTenant)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while fetching the top parent ID for a external tenant %q", externalTenant)
 	}
@@ -212,7 +211,7 @@ func (r *Resolver) RootTenant(ctx context.Context, externalTenant string) (*grap
 		return nil, err
 	}
 
-	return r.conv.ToGraphQL(result), nil
+	return r.conv.MultipleToGraphQL(result), nil
 }
 
 // Labels transactionally retrieves all existing labels of the given tenant if it exists.
@@ -321,7 +320,7 @@ func (r *Resolver) Delete(ctx context.Context, externalTenantIDs []string) (int,
 	return len(externalTenantIDs), nil
 }
 
-// Update update single tenant
+// Update update single tenant. The parent IDs from the input are INTERNAL IDs
 func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -382,6 +381,7 @@ func (r *Resolver) AddTenantAccess(ctx context.Context, in graphql.TenantAccessI
 		return nil, errors.Wrapf(err, "while getting internal tenant for external tenant ID: %q", tenantAccess.ExternalTenantID)
 	}
 	tenantAccess.InternalTenantID = internalTenant
+	tenantAccess.Source = internalTenant
 
 	if err := r.srv.CreateTenantAccessForResourceRecursively(ctx, tenantAccess); err != nil {
 		return nil, errors.Wrapf(err, "while creating tenant access record for tenant %q about resource %q of type %q", tenantAccess.InternalTenantID, tenantAccess.ResourceID, tenantAccess.ResourceType)

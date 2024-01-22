@@ -112,6 +112,8 @@ const (
 	Tenant Type = "tenant"
 	// TenantAccess type represents tenant access resource.
 	TenantAccess Type = "tenantAccess"
+	// TenantParent type represents tenant parent resource.
+	TenantParent Type = "tenantParent"
 	// TenantBusinessType type represents tenant business type resource.
 	TenantBusinessType Type = "tenantBusinessType"
 	// Schema type represents schema resource.
@@ -132,7 +134,6 @@ var tenantAccessTable = map[Type]string{
 	RuntimeContext: "tenant_runtime_contexts",
 
 	// Views
-
 	Label:                      "labels_tenants",
 	ApplicationLabel:           "application_labels_tenants",
 	RuntimeLabel:               "runtime_labels_tenants",

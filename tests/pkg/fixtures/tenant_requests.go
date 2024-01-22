@@ -26,6 +26,17 @@ func DeleteTenants(t require.TestingT, ctx context.Context, gqlClient *gcli.Clie
 	return gqlClient.Run(ctx, req, nil)
 }
 
+func UpdateTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string, tenant graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {
+	req := FixUpdateTenantRequest(t, id, tenant)
+
+	var response TenantResponse
+	if err := gqlClient.Run(ctx, req, &response); err != nil {
+		return nil, err
+	}
+
+	return response.Result, nil
+}
+
 func AddTenantAccess(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, applicationID string) {
 	in := graphql.TenantAccessInput{
 		TenantID:     tenantID,

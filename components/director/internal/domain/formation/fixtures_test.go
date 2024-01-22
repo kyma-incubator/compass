@@ -67,6 +67,7 @@ const (
 	Webhook4ID = "43fa5d0b-b037-478d-919a-2f0431feedd4"
 
 	TntParentID                      = "ede0241d-caa1-4ee4-b8bf-f733e180fbf9"
+	TntParentIDExternal              = "934fe388-982d-11ee-b9d1-0242ac120002"
 	WebhookForRuntimeContextID       = "5202f196-46d7-4d1e-be50-434dd9fcd157"
 	AppTenantMappingWebhookIDForApp1 = "b91e7d97-65ed-4b72-a225-4a3b484c27e1"
 	AppTenantMappingWebhookIDForApp2 = "df7e9387-7bdf-46bb-b0c2-de5ec9a40a21"
@@ -109,14 +110,6 @@ var (
 
 	emptyCtx = context.Background()
 	testErr  = errors.New("Test error")
-
-	CustomerTenantContextPath = &webhook.CustomerTenantContext{
-		CustomerID: TntCustomerID,
-		AccountID:  nil,
-		Path:       str.Ptr(TntExternalID),
-	}
-
-	CustomerTenantContextAccount = fixCustomerTenantContext(TntCustomerID, TntExternalID)
 
 	formationModelWithoutError = fixFormationModelWithoutError()
 	modelFormation             = model.Formation{
@@ -590,7 +583,7 @@ var (
 	formationNotificationSyncCreateRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
-			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
+			Object:        fixFormationLifecycleInput(model.CreateFormation, TntParentIDExternal, TntExternalID),
 			CorrelationID: "",
 		},
 		Operation:     model.CreateFormation,
@@ -602,14 +595,14 @@ var (
 	formationNotificationSyncDeleteRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
-			Object:        fixFormationLifecycleInput(model.DeleteFormation, TntCustomerID, TntExternalID),
+			Object:        fixFormationLifecycleInput(model.DeleteFormation, TntParentIDExternal, TntExternalID),
 			CorrelationID: "",
 		},
 	}
 	formationNotificationAsyncCreateRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModelAsync(FormationLifecycleWebhookID, FormationTemplateID),
-			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
+			Object:        fixFormationLifecycleInput(model.CreateFormation, TntParentIDExternal, TntExternalID),
 			CorrelationID: "",
 		},
 		Operation:     model.CreateFormation,
@@ -620,7 +613,7 @@ var (
 	formationNotificationAsyncDeleteRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModelAsync(FormationLifecycleWebhookID, FormationTemplateID),
-			Object:        fixFormationLifecycleInput(model.DeleteFormation, TntCustomerID, TntExternalID),
+			Object:        fixFormationLifecycleInput(model.DeleteFormation, TntParentIDExternal, TntExternalID),
 			CorrelationID: "",
 		},
 		Operation:     model.DeleteFormation,
@@ -840,20 +833,26 @@ var (
 		FormationType:         testFormationTemplateName,
 		FormationTemplateID:   FormationTemplateID,
 		TenantID:              TntInternalID,
-		CustomerTenantContext: CustomerTenantContextAccount,
+		CustomerTenantContext: customerTenantContext,
 	}
 
 	gaTenantObject = fixModelBusinessTenantMappingWithType(tnt.Account)
 	rgTenantObject = fixModelBusinessTenantMappingWithType(tnt.ResourceGroup)
 
 	customerTenantContext = &webhook.CustomerTenantContext{
-		CustomerID: TntParentID,
+		CustomerID: TntParentIDExternal,
 		AccountID:  str.Ptr(gaTenantObject.ExternalTenant),
 		Path:       nil,
 	}
 
+	customerTenantContextWithCostObject = &webhook.CustomerTenantContext{
+		CostObjectID: TntParentIDExternal,
+		AccountID:    str.Ptr(gaTenantObject.ExternalTenant),
+		Path:         nil,
+	}
+
 	rgCustomerTenantContext = &webhook.CustomerTenantContext{
-		CustomerID: TntParentID,
+		CustomerID: TntParentIDExternal,
 		AccountID:  nil,
 		Path:       str.Ptr(gaTenantObject.ExternalTenant),
 	}
@@ -861,6 +860,9 @@ var (
 	secondFormationStatusParams = dataloader.ParamFormationStatus{ID: FormationID + "2", State: string(model.InitialFormationState)}
 	thirdFormationStatusParams  = dataloader.ParamFormationStatus{ID: FormationID + "3", State: string(model.ReadyFormationState)}
 	fourthPageFormations        = dataloader.ParamFormationStatus{ID: FormationID + "4", State: string(model.ReadyFormationState)}
+
+	customerParentTenantResponse   = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.Customer)}
+	costObjectParentTenantResponse = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.CostObject)}
 )
 
 func formationAssignmentsWithSourceAndTarget(objectID string, assignments []*model.FormationAssignment) []*model.FormationAssignment {
@@ -1137,7 +1139,19 @@ func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapp
 		ID:             TntInternalID,
 		Name:           "test-name",
 		ExternalTenant: TntExternalID,
-		Parent:         TntCustomerID,
+		Parents:        []string{TntCustomerID},
+		Type:           t,
+		Provider:       testProvider,
+		Status:         tnt.Active,
+	}
+}
+
+func fixParentTenant(id, externalID string, t tnt.Type) *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             id,
+		Name:           "test-name",
+		ExternalTenant: externalID,
+		Parents:        []string{},
 		Type:           t,
 		Provider:       testProvider,
 		Status:         tnt.Active,
