@@ -1050,7 +1050,6 @@ global:
     maintainOperationsJobInterval: 60m
     operationProcessorsQuietPeriod: 5s
   systemFetcher:
-    syncGlobalAccountTenants: true
     name: "system-fetcher"
     port: 3000
     prefix: /system-fetcher
@@ -1064,11 +1063,6 @@ global:
     manageSecrets: true
     # enableSystemDeletion - whether systems in deleted state should be deleted from director database
     enableSystemDeletion: true
-    # fetchParallelism - shows how many http calls will be made in parallel to fetch systems
-    fetchParallellism: 30
-    # queueSize - shows how many system fetches (individual requests may fetch more than 1 system)
-    # can be put in the queue for processing before blocking. It is best for the queue to be about 2 times bigger than the parallellism
-    queueSize: 100
     # fetchRequestTimeout - shows the timeout to wait for oauth token and for fetching systems (in one request) separately
     fetchRequestTimeout: "30s"
     # directorRequestTimeout - graphql requests timeout to director
@@ -1108,6 +1102,14 @@ global:
       sizeParam: "$top"
       skipParam: "$skip"
     containerName: "system-fetcher"
+    parallelOperationProcessors: 10
+    priorityQueueLimit: 10
+    rescheduleJobInterval: 24h
+    reschedulePeriod: 168h
+    rescheduleHangedJobInterval: 1h
+    rescheduleHangedPeriod: 1h
+    maintainOperationsJobInterval: 60m
+    operationProcessorsQuietPeriod: 5s
   tenantFetchers:
     job1:
       enabled: false

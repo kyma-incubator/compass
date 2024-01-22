@@ -199,17 +199,11 @@ func main() {
 	systemFetcherSvc, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, certCache, keyCache)
 	exitOnError(err, "Failed to initialize System Fetcher")
 
-	systemfetcherOperationProcessor := &systemfetcher.OperationsProcessor{
-		SystemFetcherSvc: systemFetcherSvc,
-	}
-
 	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeSystemFetcherAggregation, cfg.OperationsManagerConfig)
 
 	onDemandChannel := make(chan string, 100)
 	handler := initHandler(ctx, operationsManager, businessTenantMappingSvc, transact, onDemandChannel, cfg)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
-
-	systemFetcherOperationMaintainer := systemfetcher.NewOperationMaintainer(model.OperationTypeSystemFetcherAggregation, transact, opSvc, businessTenantMappingSvc)
 
 	go func() {
 		<-ctx.Done()
@@ -217,55 +211,62 @@ func main() {
 		shutdownMainSrv()
 	}()
 
-	for i := 0; i < cfg.ParallelOperationProcessors; i++ {
-		go func(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *systemfetcher.OperationsProcessor, executorIndex int) {
-			for {
-				select {
-				case <-onDemandChannel:
-				default:
-				}
+	if cfg.SystemFetcher.OperationalMode == discoverSystemsOpMode {
+		systemfetcherOperationProcessor := &systemfetcher.OperationsProcessor{
+			SystemFetcherSvc: systemFetcherSvc,
+		}
+		systemFetcherOperationMaintainer := systemfetcher.NewOperationMaintainer(model.OperationTypeSystemFetcherAggregation, transact, opSvc, businessTenantMappingSvc)
 
-				processedOperationID, err := claimAndProcessOperation(ctx, opManager, opProcessor)
-				if err != nil {
-					log.C(ctx).Errorf("Failed during claim and process operation %q by executor %d . Err: %v", processedOperationID, executorIndex, err)
-				}
-				if len(processedOperationID) > 0 {
-					log.C(ctx).Infof("Processed Operation: %s by executor %d", processedOperationID, executorIndex)
-				} else {
-					// Queue is empty - no operation claimed
-					log.C(ctx).Infof("No Processed Operation by executor %d", executorIndex)
-
+		for i := 0; i < cfg.ParallelOperationProcessors; i++ {
+			go func(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *systemfetcher.OperationsProcessor, executorIndex int) {
+				for {
 					select {
-					case operationID := <-onDemandChannel:
-						log.C(ctx).Infof("Opeartion %q send for processing through OnDemand channel to executor %d", operationID, executorIndex)
-					case <-time.After(cfg.OperationProcessorQuietPeriod):
-						log.C(ctx).Infof("Quiet period finished for executor %d", executorIndex)
+					case <-onDemandChannel:
+					default:
+					}
+
+					processedOperationID, err := claimAndProcessOperation(ctx, opManager, opProcessor)
+					if err != nil {
+						log.C(ctx).Errorf("Failed during claim and process operation %q by executor %d . Err: %v", processedOperationID, executorIndex, err)
+					}
+					if len(processedOperationID) > 0 {
+						log.C(ctx).Infof("Processed Operation: %s by executor %d", processedOperationID, executorIndex)
+					} else {
+						// Queue is empty - no operation claimed
+						log.C(ctx).Infof("No Processed Operation by executor %d", executorIndex)
+
+						select {
+						case operationID := <-onDemandChannel:
+							log.C(ctx).Infof("Opeartion %q send for processing through OnDemand channel to executor %d", operationID, executorIndex)
+						case <-time.After(cfg.OperationProcessorQuietPeriod):
+							log.C(ctx).Infof("Quiet period finished for executor %d", executorIndex)
+						}
 					}
 				}
+			}(ctx, operationsManager, systemfetcherOperationProcessor, i)
+		}
+
+		go func() {
+			if err := startSyncSystemFetcherOperationsJob(ctx, systemFetcherOperationMaintainer, cfg); err != nil {
+				log.C(ctx).WithError(err).Error("Failed to start sync System Fetcher cronjob. Stopping app...")
 			}
-		}(ctx, operationsManager, systemfetcherOperationProcessor, i)
+			cancel()
+		}()
+
+		go func() {
+			if err := operationsManager.StartRescheduleOperationsJob(ctx); err != nil {
+				log.C(ctx).WithError(err).Error("Failed to run  RescheduleOperationsJob. Stopping app...")
+				cancel()
+			}
+		}()
+
+		go func() {
+			if err := operationsManager.StartRescheduleHangedOperationsJob(ctx); err != nil {
+				log.C(ctx).WithError(err).Error("Failed to run RescheduleHangedOperationsJob. Stopping app...")
+				cancel()
+			}
+		}()
 	}
-
-	go func() {
-		if err := startSyncSystemFetcherOperationsJob(ctx, systemFetcherOperationMaintainer, cfg); err != nil {
-			log.C(ctx).WithError(err).Error("Failed to start sync System Fetcher cronjob. Stopping app...")
-		}
-		cancel()
-	}()
-
-	go func() {
-		if err := operationsManager.StartRescheduleOperationsJob(ctx); err != nil {
-			log.C(ctx).WithError(err).Error("Failed to run  RescheduleOperationsJob. Stopping app...")
-			cancel()
-		}
-	}()
-
-	go func() {
-		if err := operationsManager.StartRescheduleHangedOperationsJob(ctx); err != nil {
-			log.C(ctx).WithError(err).Error("Failed to run RescheduleHangedOperationsJob. Stopping app...")
-			cancel()
-		}
-	}()
 
 	runMainSrv()
 }
@@ -304,13 +305,13 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	return op.ID, nil
 }
 
-func startSyncSystemFetcherOperationsJob(ctx context.Context, ordOperationMaintainer systemfetcher.OperationMaintainer, cfg config) error {
+func startSyncSystemFetcherOperationsJob(ctx context.Context, systemFetcherOperationMaintainer systemfetcher.OperationMaintainer, cfg config) error {
 	resyncJob := cronjob.CronJob{
 		Name: "SyncSystemFetcherOperations",
 		Fn: func(jobCtx context.Context) {
 			log.C(jobCtx).Infof("Start syncing System Fetcher operations...")
 
-			if err := ordOperationMaintainer.Maintain(ctx); err != nil {
+			if err := systemFetcherOperationMaintainer.Maintain(ctx); err != nil {
 				log.C(jobCtx).Errorf("Cannot sync System Fetcher operations. Err: %v", err)
 			}
 
@@ -344,7 +345,11 @@ func initHandler(ctx context.Context, opMgr *operationsmanager.OperationsManager
 	}
 
 	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.SystemFetcherSyncScope)
-	apiRouter.HandleFunc(syncEndpoint, handler.ScheduleAggregationForSystemFetcherData).Methods(http.MethodPost)
+	if cfg.SystemFetcher.OperationalMode == discoverSystemsOpMode {
+		apiRouter.HandleFunc(syncEndpoint, handler.ScheduleAggregationForSystemFetcherData).Methods(http.MethodPost)
+	} else {
+		apiRouter.HandleFunc(syncEndpoint, newNotSupportedHandler()).Methods(http.MethodPost)
+	}
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
@@ -372,6 +377,12 @@ func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, route
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
+	}
+}
+
+func newNotSupportedHandler() func(writer http.ResponseWriter, request *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusNotAcceptable)
 	}
 }
 

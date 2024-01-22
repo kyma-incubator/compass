@@ -87,10 +87,6 @@ type templateRenderer interface {
 
 // Config holds the configuration available for the SystemFetcher.
 type Config struct {
-	SyncGlobalAccounts bool `envconfig:"APP_SYNC_GLOBAL_ACCOUNTS"`
-
-	SystemsQueueSize          int           `envconfig:"default=100,APP_SYSTEM_INFORMATION_QUEUE_SIZE"`
-	FetcherParallellism       int           `envconfig:"default=30,APP_SYSTEM_INFORMATION_PARALLELLISM"`
 	DirectorGraphqlURL        string        `envconfig:"APP_DIRECTOR_GRAPHQL_URL"`
 	DirectorRequestTimeout    time.Duration `envconfig:"default=30s,APP_DIRECTOR_REQUEST_TIMEOUT"`
 	DirectorSkipSSLValidation bool          `envconfig:"default=false,APP_DIRECTOR_SKIP_SSL_VALIDATION"`
@@ -112,8 +108,7 @@ type SystemFetcher struct {
 	systemsAPIClient   systemsAPIClient
 	directorClient     directorClient
 
-	config  Config
-	workers chan struct{}
+	config Config
 }
 
 // NewSystemFetcher returns a new SystemFetcher.
@@ -127,7 +122,6 @@ func NewSystemFetcher(tx persistence.Transactioner, ts tenantService, ss systems
 		templateRenderer:   tr,
 		systemsAPIClient:   sac,
 		directorClient:     directorClient,
-		workers:            make(chan struct{}, config.FetcherParallellism),
 		config:             config,
 	}
 }
