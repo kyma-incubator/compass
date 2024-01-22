@@ -130,6 +130,16 @@ func DeleteFormationWithTenantObjectType(t require.TestingT, ctx context.Context
 	return &formation
 }
 
+func UnassignFormationApplicationGlobal(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, applicationID, formationID string) *graphql.Formation {
+	unassignRequest := FixUnassignFormationApplicationGlobalRequest(applicationID, formationID)
+
+	formation := graphql.Formation{}
+
+	err := testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, unassignRequest, &formation)
+	require.NoError(t, err)
+	return &formation
+}
+
 func AssignFormationWithApplicationObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, appID, tenantID string) *graphql.Formation {
 	return assignFormationWithCustomObjectType(t, ctx, gqlClient, in, appID, string(graphql.FormationObjectTypeApplication), tenantID)
 }
