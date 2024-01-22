@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -225,6 +226,19 @@ func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *h
 	}
 
 	mainTenantID := subscriptionRequest.MainTenantID()
+	envMainTenantID, exists := os.LookupEnv("MAIN_TENANT_ID")
+	if exists {
+		if envMainTenantID == mainTenantID {
+			log.C(ctx).Infof("Main tenant ID matches expected: %s", mainTenantID)
+			time.Sleep(20 * time.Second)
+			log.C(ctx).Infof("Proceeding with processing of Main tenant ID: %s", mainTenantID)
+		} else {
+			log.C(ctx).Infof("Main tenant ID: %s does not match expected: %s", mainTenantID, envMainTenantID)
+		}
+	} else {
+		log.C(ctx).Info("Missing env var MAIN_TENANT_ID")
+	}
+
 	if err := subscriptionFunc(ctx, subscriptionRequest); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to apply subscription change for tenant %s: %v", mainTenantID, err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
