@@ -202,17 +202,17 @@ func (ep EventsPage) eventDataToTenant(ctx context.Context, eventType EventsType
 }
 
 func constructGlobalAccountTenant(ctx context.Context, jsonPayload, name, subdomain, externalTenant string, licenseType *string, ep EventsPage) *model.BusinessTenantMappingInput {
-	parentID := ""
+	parents := make([]string, 0)
 	customerIDResult := gjson.Get(jsonPayload, ep.FieldMapping.CustomerIDField)
 	if !customerIDResult.Exists() {
 		log.C(ctx).Warnf("Missig or invalid format of field: %s for tenant with id: %s", ep.FieldMapping.CustomerIDField, externalTenant)
 	} else {
-		parentID = tenant.TrimCustomerIDLeadingZeros(customerIDResult.String())
+		parents = append(parents, customerIDResult.String())
 	}
 	return &model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: externalTenant,
-		Parent:         parentID,
+		Parents:        parents,
 		Subdomain:      subdomain,
 		Region:         "",
 		Type:           tenant.TypeToStr(tenant.Account),
@@ -243,7 +243,7 @@ func constructSubaccountTenant(ctx context.Context, jsonPayload, name, subdomain
 	return &model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: externalTenant,
-		Parent:         parentID,
+		Parents:        []string{parentID},
 		Subdomain:      subdomain,
 		Region:         region,
 		Type:           tenant.TypeToStr(tenant.Subaccount),

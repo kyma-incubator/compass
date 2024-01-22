@@ -730,7 +730,7 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 	jobConfig := configForTenantType(tenant.Account)
 
 	busTenant := fixBusinessTenantMappingInput("1", provider, "subdomain-1", region, "", tenant.Subaccount, &testLicenseType)
-	event := fixEvent(t, "Subaccount", busTenant.Parent, eventFieldsFromTenant(tenant.Subaccount, jobConfig.APIConfig.TenantFieldMapping, busTenant))
+	event := fixEvent(t, "Subaccount", busTenant.Parents[0], eventFieldsFromTenant(tenant.Subaccount, jobConfig.APIConfig.TenantFieldMapping, busTenant))
 
 	queryParams := resync.QueryParams{
 		"pageSize": "1",
@@ -937,11 +937,11 @@ func eventFieldsFromTenant(tenantType tenant.Type, tenantFieldMapping resync.Ten
 	case tenant.Account:
 		fields[tenantFieldMapping.EntityTypeField] = "GlobalAccount"
 		fields[tenantFieldMapping.GlobalAccountGUIDField] = tenantInput.ExternalTenant
-		fields[tenantFieldMapping.CustomerIDField] = tenantInput.Parent
+		fields[tenantFieldMapping.CustomerIDField] = tenantInput.Parents[0]
 	case tenant.Subaccount:
 		fields[tenantFieldMapping.EntityTypeField] = "Subaccount"
 		fields[tenantFieldMapping.SubaccountIDField] = tenantInput.ExternalTenant
-		fields[tenantFieldMapping.GlobalAccountGUIDField] = tenantInput.Parent
+		fields[tenantFieldMapping.GlobalAccountGUIDField] = tenantInput.Parents[0]
 	}
 	return fields
 }

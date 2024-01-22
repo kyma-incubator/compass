@@ -64,6 +64,11 @@ type DeleteBundleInstanceAuthInput struct {
 func (c *client) runWithTenant(ctx context.Context, gqlReq *gcli.Request, tenant string, resp interface{}) error {
 	gqlReq.Header.Set(tenantHeader, tenant)
 
+	return c.run(ctx, gqlReq, resp)
+}
+
+// run executes gql request with retry on connectivity problems
+func (c *client) run(ctx context.Context, gqlReq *gcli.Request, resp interface{}) error {
 	return withRetryOnTemporaryConnectionProblems(ctx, func() error {
 		return c.Client.Run(ctx, gqlReq, resp)
 	})
@@ -202,6 +207,28 @@ func (c *client) DeleteBundleInstanceAuth(ctx context.Context, tenant string, in
 	}
 
 	return nil
+}
+
+// TenantByInternalIDQuery gets the business tenant by tenantID
+func (c *client) TenantByInternalIDQuery(ctx context.Context, tenantID string) (*graphql.Tenant, error) {
+	gqlReq := gcli.NewRequest(fmt.Sprintf(`query {
+		result: tenantByInternalID(id: "%s") {
+			id
+			internalID
+			name
+			type
+			parents
+		}
+	}`, tenantID))
+
+	tenant := &graphql.Tenant{}
+	gqlRes := gqlResult{Result: tenant}
+	if err := c.run(ctx, gqlReq, &gqlRes); err != nil {
+		errMsg := fmt.Sprintf("Error while getting teant with id %q", tenantID)
+		log.C(ctx).WithError(err).Error(errMsg)
+		return nil, errors.New(errMsg)
+	}
+	return tenant, nil
 }
 
 // GetBundlesEndCursor returns bundles page end cursor
