@@ -110,7 +110,7 @@ type APIDefinitionInput struct {
 	DocumentationLabels                     json.RawMessage               `json:"documentationLabels"`
 	CorrelationIDs                          json.RawMessage               `json:"correlationIds,omitempty"`
 	Direction                               *string                       `json:"direction"`
-	LastUpdate                              *string                       `json:"lastUpdate"`
+	LastUpdate                              *string                       `json:"lastUpdate" hash:"ignore"`
 	DeprecationDate                         *string                       `json:"deprecationDate"`
 	Responsible                             *string                       `json:"responsible"`
 	Usage                                   *string                       `json:"usage"`

@@ -1,19 +1,14 @@
 package tenant
 
-import (
-	"database/sql"
-)
-
 // Entity represents a Compass tenant.
 type Entity struct {
-	ID             string         `db:"id"`
-	Name           string         `db:"external_name"`
-	ExternalTenant string         `db:"external_tenant"`
-	Parent         sql.NullString `db:"parent"`
-	Type           Type           `db:"type"`
-	ProviderName   string         `db:"provider_name"`
-	Initialized    *bool          `db:"initialized"` // computed value
-	Status         Status         `db:"status"`
+	ID             string `db:"id"`
+	Name           string `db:"external_name"`
+	ExternalTenant string `db:"external_tenant"`
+	Type           Type   `db:"type"`
+	ProviderName   string `db:"provider_name"`
+	Initialized    *bool  `db:"initialized"` // computed value
+	Status         Status `db:"status"`
 }
 
 // Type missing godoc
@@ -34,7 +29,7 @@ const (
 	Folder Type = "folder"
 	// ResourceGroup tenants must have a parent of type Folder or Organization.
 	ResourceGroup Type = "resource-group"
-	// CostObject tenants must have a parent of type Folder or Organization.
+	// CostObject tenants can be parents of Folder or Account.
 	CostObject Type = "cost-object"
 )
 

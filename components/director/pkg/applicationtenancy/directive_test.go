@@ -37,8 +37,9 @@ var (
 	newAccountTenantModel           = fixBusinessTenantMappingModel(newTenantID, tenantpkg.Account, true)
 	accountTenantWithoutParentModel = fixBusinessTenantMappingModel(tenantID, tenantpkg.Account, false)
 	customerTenantModel             = fixBusinessTenantMappingModel(parentTenantID, tenantpkg.Customer, false)
-	tenantAccessWithOwnerTrue       = fixTenantAccessModel(tenantID, applicationID, resource.Application, true)
-	tenantAccessWithOwnerFalse      = fixTenantAccessModel(newTenantID, applicationID, resource.Application, false)
+	costObjectTenantModel           = fixBusinessTenantMappingModel(parentTenantID, tenantpkg.CostObject, false)
+	tenantAccessWithOwnerTrue       = fixTenantAccessModel(tenantID, applicationID, resource.Application, true, parentTenantID)
+	tenantAccessWithOwnerFalse      = fixTenantAccessModel(newTenantID, applicationID, resource.Application, false, parentTenantID)
 	orgTenantsModel                 = []*model.BusinessTenantMapping{fixBusinessTenantMappingModel(tenantID, tenantpkg.Organization, true)}
 	applicationsModel               = []*model.Application{fixApplicationModel(applicationID)}
 )
@@ -61,11 +62,43 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), tenantID).Return(rgTenantModel, nil)
-				tenantService.On("GetCustomerIDParentRecursively", txtest.CtxWithDBMatcher(), tenantID).Return(parentTenantID, nil)
-				tenantService.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), parentTenantID).Return(customerTenantModel, nil)
+				tenantService.On("GetParentsRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), tenantID).Return([]*model.BusinessTenantMapping{customerTenantModel}, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Account).Return([]*model.BusinessTenantMapping{accountTenantModel}, nil)
 				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerTrue).Return(nil)
 
+				return tenantService
+			},
+			GetCtx:           fixContextWithTenant,
+			ApplicationSvcFn: fixEmptyApplicationService,
+			Resolver:         fixSuccessGraphQLApplicationResolver,
+			EventType:        schema.EventTypeNewApplication,
+			ExpectedResult:   mockedGraphQLApplicationNextOutput(),
+		},
+		{
+			Name: "NEW_APPLICATION flow: Success when parent is cost object",
+			TxFn: txtest.NewTransactionContextGenerator(nil).ThatSucceeds,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantService := &automock.BusinessTenantMappingService{}
+				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), tenantID).Return(rgTenantModel, nil)
+				tenantService.On("GetParentsRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), tenantID).Return([]*model.BusinessTenantMapping{costObjectTenantModel}, nil)
+				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Account).Return([]*model.BusinessTenantMapping{accountTenantModel}, nil)
+				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerTrue).Return(nil)
+
+				return tenantService
+			},
+			GetCtx:           fixContextWithTenant,
+			ApplicationSvcFn: fixEmptyApplicationService,
+			Resolver:         fixSuccessGraphQLApplicationResolver,
+			EventType:        schema.EventTypeNewApplication,
+			ExpectedResult:   mockedGraphQLApplicationNextOutput(),
+		},
+		{
+			Name: "NEW_APPLICATION flow: Success - no parent",
+			TxFn: txtest.NewTransactionContextGenerator(nil).ThatSucceeds,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantService := &automock.BusinessTenantMappingService{}
+				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), tenantID).Return(rgTenantModel, nil)
+				tenantService.On("GetParentsRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), tenantID).Return([]*model.BusinessTenantMapping{}, nil)
 				return tenantService
 			},
 			GetCtx:           fixContextWithTenant,
@@ -154,23 +187,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), tenantID).Return(rgTenantModel, nil)
-				tenantService.On("GetCustomerIDParentRecursively", txtest.CtxWithDBMatcher(), tenantID).Return("", testErr)
-				return tenantService
-			},
-			GetCtx:           fixContextWithTenant,
-			ApplicationSvcFn: fixEmptyApplicationService,
-			Resolver:         fixSuccessGraphQLApplicationResolver,
-			EventType:        schema.EventTypeNewApplication,
-			ExpectedError:    testErr,
-		},
-		{
-			Name: "NEW_APPLICATION flow: Should fail when getting tenant by external ID",
-			TxFn: txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit,
-			TenantSvcFn: func() *automock.BusinessTenantMappingService {
-				tenantService := &automock.BusinessTenantMappingService{}
-				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), tenantID).Return(rgTenantModel, nil)
-				tenantService.On("GetCustomerIDParentRecursively", txtest.CtxWithDBMatcher(), tenantID).Return(parentTenantID, nil)
-				tenantService.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), parentTenantID).Return(nil, testErr)
+				tenantService.On("GetParentsRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), tenantID).Return(nil, testErr)
 				return tenantService
 			},
 			GetCtx:           fixContextWithTenant,
@@ -185,8 +202,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), tenantID).Return(rgTenantModel, nil)
-				tenantService.On("GetCustomerIDParentRecursively", txtest.CtxWithDBMatcher(), tenantID).Return(parentTenantID, nil)
-				tenantService.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), parentTenantID).Return(customerTenantModel, nil)
+				tenantService.On("GetParentsRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), tenantID).Return([]*model.BusinessTenantMapping{customerTenantModel}, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Account).Return(nil, testErr)
 				return tenantService
 			},
@@ -202,8 +218,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), tenantID).Return(rgTenantModel, nil)
-				tenantService.On("GetCustomerIDParentRecursively", txtest.CtxWithDBMatcher(), tenantID).Return(parentTenantID, nil)
-				tenantService.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), parentTenantID).Return(customerTenantModel, nil)
+				tenantService.On("GetParentsRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), tenantID).Return([]*model.BusinessTenantMapping{customerTenantModel}, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Account).Return([]*model.BusinessTenantMapping{accountTenantModel}, nil)
 				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerTrue).Return(testErr)
 				return tenantService
@@ -222,6 +237,28 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(newAccountTenantModel, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Organization).Return(orgTenantsModel, nil)
 				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerFalse).Return(nil)
+				tenantService.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{parentTenantID}).Return([]*model.BusinessTenantMapping{customerTenantModel}, nil)
+				return tenantService
+			},
+			GetCtx: fixContextWithTenant,
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				appService := &automock.ApplicationService{}
+				appService.On("ListAll", txtest.CtxWithDBMatcher()).Return(applicationsModel, nil)
+				return appService
+			},
+			Resolver:       fixSuccessTenantResolver,
+			EventType:      schema.EventTypeNewSingleTenant,
+			ExpectedResult: mockedTenantNextOutput(),
+		},
+		{
+			Name: "NEW_SINGLE_TENANT flow: Success with cost object",
+			TxFn: txtest.NewTransactionContextGenerator(nil).ThatSucceeds,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantService := &automock.BusinessTenantMappingService{}
+				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(newAccountTenantModel, nil)
+				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Folder).Return(orgTenantsModel, nil)
+				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerFalse).Return(nil)
+				tenantService.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{parentTenantID}).Return([]*model.BusinessTenantMapping{costObjectTenantModel}, nil)
 				return tenantService
 			},
 			GetCtx: fixContextWithTenant,
@@ -287,11 +324,27 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 			ExpectedResult:   mockedTenantNextOutput(),
 		},
 		{
+			Name: "NEW_SINGLE_TENANT flow: Should fail when listing tenants by ids",
+			TxFn: txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantService := &automock.BusinessTenantMappingService{}
+				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(accountTenantModel, nil)
+				tenantService.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{parentTenantID}).Return(nil, testErr)
+				return tenantService
+			},
+			GetCtx:           fixContextWithTenant,
+			ApplicationSvcFn: fixEmptyApplicationService,
+			Resolver:         fixSuccessTenantResolver,
+			EventType:        schema.EventTypeNewSingleTenant,
+			ExpectedError:    testErr,
+		},
+		{
 			Name: "NEW_SINGLE_TENANT flow: Should fail when listing tenants by parent and type errors",
 			TxFn: txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(accountTenantModel, nil)
+				tenantService.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{parentTenantID}).Return([]*model.BusinessTenantMapping{customerTenantModel}, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Organization).Return(nil, testErr)
 				return tenantService
 			},
@@ -307,6 +360,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(accountTenantModel, nil)
+				tenantService.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{parentTenantID}).Return([]*model.BusinessTenantMapping{customerTenantModel}, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Organization).Return(orgTenantsModel, nil)
 				return tenantService
 			},
@@ -326,6 +380,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(newAccountTenantModel, nil)
+				tenantService.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{parentTenantID}).Return([]*model.BusinessTenantMapping{customerTenantModel}, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Organization).Return(orgTenantsModel, nil)
 				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerFalse).Return(testErr)
 				return tenantService
@@ -346,7 +401,29 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(newAccountTenantModel, nil)
+				tenantService.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{parentTenantID}).Return([]*model.BusinessTenantMapping{customerTenantModel}, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Organization).Return(orgTenantsModel, nil)
+				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerFalse).Return(nil)
+				return tenantService
+			},
+			GetCtx: fixContextWithTenant,
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				appService := &automock.ApplicationService{}
+				appService.On("ListAll", txtest.CtxWithDBMatcher()).Return(applicationsModel, nil)
+				return appService
+			},
+			Resolver:       fixSuccessMultipleTenantResolver,
+			EventType:      schema.EventTypeNewMultipleTenants,
+			ExpectedResult: mockedMultipleTenantsNextOutput(),
+		},
+		{
+			Name: "NEW_MULTIPLE_TENANTS flow: Success with cost object",
+			TxFn: txtest.NewTransactionContextGenerator(nil).ThatSucceeds,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantService := &automock.BusinessTenantMappingService{}
+				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(newAccountTenantModel, nil)
+				tenantService.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{parentTenantID}).Return([]*model.BusinessTenantMapping{costObjectTenantModel}, nil)
+				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Folder).Return(orgTenantsModel, nil)
 				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerFalse).Return(nil)
 				return tenantService
 			},
@@ -413,11 +490,27 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 			ExpectedResult:   mockedMultipleTenantsNextOutput(),
 		},
 		{
+			Name: "NEW_MULTIPLE_TENANTS flow: Should fail when listing tenants by ids",
+			TxFn: txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantService := &automock.BusinessTenantMappingService{}
+				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(accountTenantModel, nil)
+				tenantService.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{parentTenantID}).Return(nil, testErr)
+				return tenantService
+			},
+			GetCtx:           fixContextWithTenant,
+			ApplicationSvcFn: fixEmptyApplicationService,
+			Resolver:         fixSuccessMultipleTenantResolver,
+			EventType:        schema.EventTypeNewMultipleTenants,
+			ExpectedError:    testErr,
+		},
+		{
 			Name: "NEW_MULTIPLE_TENANTS flow: Should fail when listing tenants by parent and type errors",
 			TxFn: txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(accountTenantModel, nil)
+				tenantService.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{parentTenantID}).Return([]*model.BusinessTenantMapping{customerTenantModel}, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Organization).Return(nil, testErr)
 				return tenantService
 			},
@@ -433,6 +526,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(accountTenantModel, nil)
+				tenantService.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{parentTenantID}).Return([]*model.BusinessTenantMapping{customerTenantModel}, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Organization).Return(orgTenantsModel, nil)
 				return tenantService
 			},
@@ -452,6 +546,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(newAccountTenantModel, nil)
+				tenantService.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{parentTenantID}).Return([]*model.BusinessTenantMapping{customerTenantModel}, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Organization).Return(orgTenantsModel, nil)
 				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerFalse).Return(testErr)
 				return tenantService
@@ -472,6 +567,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(newAccountTenantModel, nil)
+				tenantService.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{parentTenantID}).Return([]*model.BusinessTenantMapping{customerTenantModel}, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Organization).Return(orgTenantsModel, nil)
 				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerFalse).Return(nil)
 				return tenantService
@@ -575,16 +671,16 @@ func fixErrorResolver() func(_ context.Context) (res interface{}, err error) {
 }
 
 func fixBusinessTenantMappingModel(id string, tntType tenantpkg.Type, hasParent bool) *model.BusinessTenantMapping {
-	parent := ""
-	if hasParent {
-		parent = parentTenantID
-	}
-	return &model.BusinessTenantMapping{
+	btm := &model.BusinessTenantMapping{
 		ID:             id,
 		ExternalTenant: id,
 		Type:           tntType,
-		Parent:         parent,
 	}
+
+	if hasParent {
+		btm.Parents = []string{parentTenantID}
+	}
+	return btm
 }
 
 func fixApplicationModel(id string) *model.Application {
@@ -609,11 +705,12 @@ func fixContextWithTenant() context.Context {
 	return context.WithValue(context.TODO(), tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 }
 
-func fixTenantAccessModel(tenantID, resourceID string, resourceType resource.Type, owner bool) *model.TenantAccess {
+func fixTenantAccessModel(tenantID, resourceID string, resourceType resource.Type, owner bool, source string) *model.TenantAccess {
 	return &model.TenantAccess{
 		InternalTenantID: tenantID,
 		ResourceType:     resourceType,
 		ResourceID:       resourceID,
 		Owner:            owner,
+		Source:           source,
 	}
 }

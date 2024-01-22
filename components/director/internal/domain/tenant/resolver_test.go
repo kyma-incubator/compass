@@ -39,8 +39,8 @@ func TestResolver_Tenants(t *testing.T) {
 	testFirstParameterMissingError := errors.New("Invalid data [reason=missing required parameter 'first']")
 
 	modelTenants := []*model.BusinessTenantMapping{
-		newModelBusinessTenantMapping(testID, testName),
-		newModelBusinessTenantMapping("test1", "name1"),
+		newModelBusinessTenantMapping(testID, testName, nil),
+		newModelBusinessTenantMapping("test1", "name1", nil),
 	}
 
 	modelTenantsPage := &model.BusinessTenantMappingPage{
@@ -349,7 +349,7 @@ func TestResolver_TenantByID(t *testing.T) {
 		ID:             testInternal,
 		Name:           testName,
 		ExternalTenant: testInternal,
-		Parent:         tenantParent,
+		Parents:        []string{tenantParent},
 		Type:           tnt.Account,
 		Provider:       testProvider,
 		Status:         tnt.Active,
@@ -361,7 +361,7 @@ func TestResolver_TenantByID(t *testing.T) {
 		InternalID:  tenantInternalID,
 		Name:        str.Ptr(testName),
 		Type:        string(tnt.Account),
-		ParentID:    tenantParent,
+		Parents:     []string{tenantParent},
 		Initialized: nil,
 		Labels:      nil,
 	}
@@ -664,7 +664,7 @@ func TestResolver_Write(t *testing.T) {
 		{
 			Name:           tenantNames[0],
 			ExternalTenant: tenantExternalTenants[0],
-			Parent:         str.Ptr(tenantParent),
+			Parents:        []*string{str.Ptr(tenantParent)},
 			Subdomain:      str.Ptr(tenantSubdomain),
 			Region:         str.Ptr(tenantRegion),
 			Type:           string(tnt.Account),
@@ -673,7 +673,7 @@ func TestResolver_Write(t *testing.T) {
 		{
 			Name:           tenantNames[1],
 			ExternalTenant: tenantExternalTenants[1],
-			Parent:         str.Ptr(tenantParent),
+			Parents:        []*string{str.Ptr(tenantParent)},
 			Subdomain:      str.Ptr(tenantSubdomain),
 			Region:         str.Ptr(tenantRegion),
 			Type:           string(tnt.Account),
@@ -684,7 +684,7 @@ func TestResolver_Write(t *testing.T) {
 		{
 			Name:           tenantNames[0],
 			ExternalTenant: tenantExternalTenants[0],
-			Parent:         tenantParent,
+			Parents:        []string{tenantParent},
 			Subdomain:      tenantSubdomain,
 			Region:         tenantRegion,
 			Type:           string(tnt.Account),
@@ -693,7 +693,7 @@ func TestResolver_Write(t *testing.T) {
 		{
 			Name:           tenantNames[1],
 			ExternalTenant: tenantExternalTenants[1],
-			Parent:         tenantParent,
+			Parents:        []string{tenantParent},
 			Subdomain:      tenantSubdomain,
 			Region:         tenantRegion,
 			Type:           string(tnt.Account),
@@ -813,7 +813,7 @@ func TestResolver_WriteSingle(t *testing.T) {
 	tenantToUpsertGQL := graphql.BusinessTenantMappingInput{
 		Name:           tenantName,
 		ExternalTenant: tenantExternalTenant,
-		Parent:         str.Ptr(tenantParent),
+		Parents:        []*string{str.Ptr(tenantParent)},
 		Subdomain:      str.Ptr(tenantSubdomain),
 		Region:         str.Ptr(tenantRegion),
 		Type:           string(tnt.Account),
@@ -822,7 +822,7 @@ func TestResolver_WriteSingle(t *testing.T) {
 	tenantToUpsertModel := model.BusinessTenantMappingInput{
 		Name:           tenantName,
 		ExternalTenant: tenantExternalTenant,
-		Parent:         tenantParent,
+		Parents:        []string{tenantParent},
 		Subdomain:      tenantSubdomain,
 		Region:         tenantRegion,
 		Type:           string(tnt.Account),
@@ -1026,7 +1026,7 @@ func TestResolver_Update(t *testing.T) {
 		{
 			Name:           testName,
 			ExternalTenant: testExternal,
-			Parent:         str.Ptr(tenantParent),
+			Parents:        []*string{str.Ptr(tenantParent)},
 			Subdomain:      str.Ptr(testSubdomain),
 			Region:         str.Ptr(testRegion),
 			Type:           string(tnt.Account),
@@ -1038,7 +1038,7 @@ func TestResolver_Update(t *testing.T) {
 		{
 			Name:           testName,
 			ExternalTenant: testExternal,
-			Parent:         tenantParent,
+			Parents:        []string{tenantParent},
 			Subdomain:      testSubdomain,
 			Region:         testRegion,
 			Type:           string(tnt.Account),
@@ -1050,7 +1050,7 @@ func TestResolver_Update(t *testing.T) {
 		ID:             testExternal,
 		Name:           testName,
 		ExternalTenant: testExternal,
-		Parent:         tenantParent,
+		Parents:        []string{tenantParent},
 		Type:           tnt.Account,
 		Provider:       testProvider,
 		Status:         tnt.Active,
@@ -1062,7 +1062,7 @@ func TestResolver_Update(t *testing.T) {
 		InternalID:  tenantInternalID,
 		Name:        str.Ptr(testName),
 		Type:        string(tnt.Account),
-		ParentID:    tenantParent,
+		Parents:     []string{tenantParent},
 		Initialized: nil,
 		Labels:      nil,
 	}
@@ -1320,7 +1320,7 @@ func TestResolver_AddTenantAccess(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
 				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
-				TenantSvc.On("CreateTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				TenantSvc.On("CreateTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModelWithSource).Return(nil).Once()
 				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
 				return TenantSvc
 			},
@@ -1339,7 +1339,7 @@ func TestResolver_AddTenantAccess(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
 				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
-				TenantSvc.On("CreateTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				TenantSvc.On("CreateTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModelWithSource).Return(nil).Once()
 				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
 				return TenantSvc
 			},
@@ -1358,7 +1358,7 @@ func TestResolver_AddTenantAccess(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
 				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
-				TenantSvc.On("CreateTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				TenantSvc.On("CreateTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModelWithSource).Return(nil).Once()
 				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
 				return TenantSvc
 			},
@@ -1377,7 +1377,7 @@ func TestResolver_AddTenantAccess(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
 				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
-				TenantSvc.On("CreateTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				TenantSvc.On("CreateTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModelWithSource).Return(nil).Once()
 				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(nil, testError).Once()
 				return TenantSvc
 			},
@@ -1395,7 +1395,7 @@ func TestResolver_AddTenantAccess(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
 				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
-				TenantSvc.On("CreateTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(testError).Once()
+				TenantSvc.On("CreateTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModelWithSource).Return(testError).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
@@ -1636,7 +1636,7 @@ func TestResolver_RemoveTenantAccess(t *testing.T) {
 	}
 }
 
-func TestResolver_RootTenant(t *testing.T) {
+func TestResolver_RootTenants(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
 	txGen := txtest.NewTransactionContextGenerator(testError)
@@ -1655,12 +1655,12 @@ func TestResolver_RootTenant(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			TenantConverterFn: func() *automock.BusinessTenantMappingConverter {
 				converter := &automock.BusinessTenantMappingConverter{}
-				converter.On("ToGraphQL", expectedTenantModel).Return(expectedTenantGQL).Once()
+				converter.On("MultipleToGraphQL", expectedTenantModels).Return(expectedTenantGQLs).Once()
 				return converter
 			},
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("GetParentRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), externalTenant).Return(expectedTenantModel, nil).Once()
+				TenantSvc.On("GetParentsRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), externalTenant).Return(expectedTenantModels, nil).Once()
 				return TenantSvc
 			},
 		},
@@ -1674,7 +1674,7 @@ func TestResolver_RootTenant(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("GetParentRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), externalTenant).Return(nil, testError).Once()
+				TenantSvc.On("GetParentsRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), externalTenant).Return(nil, testError).Once()
 				return TenantSvc
 			},
 			ExpectedError: testError,
@@ -1684,7 +1684,7 @@ func TestResolver_RootTenant(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("GetParentRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), externalTenant).Return(expectedTenantModel, nil).Once()
+				TenantSvc.On("GetParentsRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), externalTenant).Return(expectedTenantModels, nil).Once()
 				return TenantSvc
 			},
 			ExpectedError: testError,
@@ -1705,7 +1705,7 @@ func TestResolver_RootTenant(t *testing.T) {
 			resolver := tenant.NewResolver(transact, tenantSvc, tenantConverter, nil)
 
 			// WHEN
-			result, err := resolver.RootTenant(ctx, externalTenant)
+			result, err := resolver.RootTenants(ctx, externalTenant)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -1713,7 +1713,7 @@ func TestResolver_RootTenant(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, expectedTenantGQL, result)
+				assert.Equal(t, expectedTenantGQLs, result)
 			}
 
 			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, tenantConverter)

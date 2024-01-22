@@ -159,14 +159,14 @@ func FixTenantsPageSearchRequest(searchTerm string, first int) *gcli.Request {
 				}`, searchTerm, first, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.OmitForTenant([]string{"labels", "initialized"}))))
 }
 
-func FixRootTenantRequest(externalTenant string) *gcli.Request {
+func FixRootTenantsRequest(externalTenant string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
-                result: rootTenant(externalTenant: "%s") {
+                result: rootTenants(externalTenant: "%s") {
                   id
                   internalID
                   initialized
-                  parentID
+                  parents
                   provider
                   type
                   name
@@ -209,6 +209,18 @@ func FixWriteTenantRequest(t require.TestingT, tenant graphql.BusinessTenantMapp
 	require.NoError(t, err)
 
 	tenantsQuery := fmt.Sprintf("mutation { writeTenant(in:%s)}", in)
+	return gcli.NewRequest(tenantsQuery)
+}
+
+func FixUpdateTenantRequest(t require.TestingT, id string, tenant graphql.BusinessTenantMappingInput) *gcli.Request {
+	gqlizer := graphqlizer.Graphqlizer{}
+	in, err := gqlizer.WriteTenantInputToGQL(tenant)
+	require.NoError(t, err)
+
+	tenantsQuery := fmt.Sprintf(`mutation { updateTenant(id:"%s",in:%s)
+		{
+		%s
+		}}`, id, in, testctx.Tc.GQLFieldsProvider.ForTenant())
 	return gcli.NewRequest(tenantsQuery)
 }
 

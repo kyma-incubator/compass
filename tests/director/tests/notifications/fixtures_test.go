@@ -46,6 +46,8 @@ const (
 	eventuallyTimeout                = 8 * time.Second
 	eventuallyTick                   = 50 * time.Millisecond
 	readyAssignmentState             = "READY"
+	createReadyAssignmentState       = "CREATE_READY"
+	deleteReadyAssignmentState       = "DELETE_READY"
 	initialAssignmentState           = "INITIAL"
 	configPendingAssignmentState     = "CONFIG_PENDING"
 	deletingAssignmentState          = "DELETING"
