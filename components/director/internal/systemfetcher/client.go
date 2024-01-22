@@ -59,7 +59,6 @@ var currentRPS uint64
 
 // FetchSystemsForTenant fetches systems from the service
 func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, systemSynchronizationTimestamps map[string]SystemSynchronizationTimestamp) ([]System, error) {
-
 	qp := c.buildFilter(systemSynchronizationTimestamps)
 	log.C(ctx).Infof("Fetching systems for tenant %s of type %s with query: %s", tenant.ExternalTenant, tenant.Type, qp)
 

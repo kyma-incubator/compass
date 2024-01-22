@@ -98,7 +98,7 @@ func (om *SytemFetcherOperationMaintainer) buildNonExistingOperationInputs(ctx c
 	for _, tenant := range tenants {
 		switch tenant.Type {
 		case tenantpkg.Customer, tenantpkg.Account:
-			op, err := om.tenantToOperation(ctx, tenant)
+			op, err := om.tenantToOperation(tenant)
 			if err != nil {
 				return nil, nil, errors.Wrapf(err, "while creating operation from account tenant %q", tenant.ID)
 			}
@@ -187,7 +187,7 @@ func (om *SytemFetcherOperationMaintainer) listBusinessTenantMappings(ctx contex
 	return tenants, nil
 }
 
-func (om *SytemFetcherOperationMaintainer) tenantToOperation(ctx context.Context, tenant *model.BusinessTenantMapping) (*model.OperationInput, error) {
+func (om *SytemFetcherOperationMaintainer) tenantToOperation(tenant *model.BusinessTenantMapping) (*model.OperationInput, error) {
 	opData := NewSystemFetcherOperationData(tenant.ID)
 	data, err := opData.GetData()
 	if err != nil {
