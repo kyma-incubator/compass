@@ -47,7 +47,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -80,11 +80,48 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
+			Name: "success with costObject",
+			TenantRepoFn: func() *automock.TenantRepository {
+				repo := &automock.TenantRepository{}
+				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(costObjectParentTenantResponse, nil)
+				return repo
+			},
+			NotificationsGenerator: func() *automock.NotificationsGenerator {
+				generator := &automock.NotificationsGenerator{}
+
+				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned", ctx, TntInternalID, RuntimeID, inputFormation, model.AssignFormation, customerTenantContextWithCostObject).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
+						applicationNotificationWithAppTemplate,
+						applicationNotificationWithoutAppTemplate,
+					}, nil).Once()
+
+				generator.On("GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned", ctx, TntInternalID, RuntimeID, inputFormation, model.AssignFormation, customerTenantContextWithCostObject).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
+						runtimeNotificationWithAppTemplate,
+						runtimeNotificationWithoutAppTemplate,
+					}, nil).Once()
+
+				return generator
+			},
+			ObjectType:     graphql.FormationObjectTypeRuntime,
+			OperationType:  model.AssignFormation,
+			ObjectID:       RuntimeID,
+			InputFormation: inputFormation,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
+				runtimeNotificationWithAppTemplate,
+				runtimeNotificationWithoutAppTemplate,
+				applicationNotificationWithAppTemplate,
+				applicationNotificationWithoutAppTemplate,
+			},
+			ExpectedErrMessage: "",
+		},
+		{
 			Name: "success for runtime when customer tenant context is resource group",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(rgTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -121,7 +158,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -148,7 +185,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -170,7 +207,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -207,7 +244,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -234,7 +271,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -256,7 +293,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -301,7 +338,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -334,7 +371,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -361,7 +398,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -382,7 +419,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return("", testErr)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(nil, testErr)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -409,7 +446,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeTenant,
@@ -469,12 +506,12 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 			tenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("Get", ctx, TntInternalID).Return(gaTenantObject, nil).Once()
-				tenantRepo.On("GetCustomerIDParentRecursively", ctx, TntInternalID).Return(TntCustomerID, nil).Once()
+				tenantRepo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return tenantRepo
 			},
 			notificationsGeneratorFn: func() *automock.NotificationsGenerator {
 				notificationGenerator := &automock.NotificationsGenerator{}
-				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, CustomerTenantContextAccount).Return(formationNotificationSyncCreateRequests, nil).Once()
+				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, customerTenantContext).Return(formationNotificationSyncCreateRequests, nil).Once()
 				return notificationGenerator
 			},
 			expectedFormationNotificationReqs: formationNotificationSyncCreateRequests,
@@ -493,12 +530,12 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 			tenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("Get", ctx, TntInternalID).Return(gaTenantObject, nil).Once()
-				tenantRepo.On("GetCustomerIDParentRecursively", ctx, TntInternalID).Return(TntCustomerID, nil).Once()
+				tenantRepo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return tenantRepo
 			},
 			notificationsGeneratorFn: func() *automock.NotificationsGenerator {
 				notificationGenerator := &automock.NotificationsGenerator{}
-				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, CustomerTenantContextAccount).Return(nil, testErr).Once()
+				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, customerTenantContext).Return(nil, testErr).Once()
 				return notificationGenerator
 			},
 			expectedErrMsg: testErr.Error(),

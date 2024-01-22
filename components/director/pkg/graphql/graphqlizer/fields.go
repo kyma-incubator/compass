@@ -672,7 +672,7 @@ func (fp *GqlFieldsProvider) ForTenant() string {
 		name
 		initialized
 		labels
-		parentID
+		parents
 		type`
 }
 

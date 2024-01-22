@@ -54,7 +54,7 @@ func fixBusinessTenantMappingInput(externalTenant, provider, subdomain, region, 
 		Provider:       provider,
 		Subdomain:      subdomain,
 		Region:         region,
-		Parent:         parent,
+		Parents:        []string{parent},
 		Type:           tenant.TypeToStr(tenantType),
 		LicenseType:    licenseType,
 	}

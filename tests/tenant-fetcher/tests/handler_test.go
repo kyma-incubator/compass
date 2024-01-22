@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/utils/strings/slices"
 	"net/http"
 	"strings"
 	"testing"
@@ -618,7 +619,7 @@ func TestMoveSubaccounts(t *testing.T) {
 		{
 			Name:           gaNames[0],
 			ExternalTenant: gaExternalTenantIDs[0],
-			Parent:         nil,
+			Parents:        []*string{},
 			Subdomain:      &subdomains[0],
 			Region:         &region,
 			Type:           string(tenant.Account),
@@ -628,7 +629,7 @@ func TestMoveSubaccounts(t *testing.T) {
 		{
 			Name:           gaNames[1],
 			ExternalTenant: gaExternalTenantIDs[1],
-			Parent:         nil,
+			Parents:        []*string{},
 			Subdomain:      &subdomains[1],
 			Region:         &region,
 			Type:           string(tenant.Account),
@@ -638,7 +639,7 @@ func TestMoveSubaccounts(t *testing.T) {
 		{
 			Name:           subaccountNames[0],
 			ExternalTenant: subaccountExternalTenants[0],
-			Parent:         &subaccountParent,
+			Parents:        []*string{&subaccountParent},
 			Subdomain:      &subaccountSubdomain,
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
@@ -648,7 +649,7 @@ func TestMoveSubaccounts(t *testing.T) {
 		{
 			Name:           subaccountNames[1],
 			ExternalTenant: subaccountExternalTenants[1],
-			Parent:         &subaccountParent,
+			Parents:        []*string{&subaccountParent},
 			Subdomain:      &subaccountSubdomain,
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
@@ -689,20 +690,20 @@ func TestMoveSubaccounts(t *testing.T) {
 		assert.NoError(t, err)
 
 		subaccount1, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
-		if subaccount1 == nil || subaccount1.ParentID == tenant1.InternalID {
+		if subaccount1 == nil || slices.Contains(subaccount1.Parents, tenant1.InternalID) {
 			t.Logf("Waiting for moved subaccount %s to be read", subaccountExternalTenants[0])
 			return false
 		}
 		assert.NoError(t, err)
-		assert.Equal(t, tenant2.InternalID, subaccount1.ParentID)
+		assert.True(t, slices.Contains(subaccount1.Parents, tenant2.InternalID))
 
 		subaccount2, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[1])
-		if subaccount2 == nil || subaccount2.ParentID == tenant1.InternalID {
+		if subaccount2 == nil || slices.Contains(subaccount2.Parents, tenant1.InternalID) {
 			t.Logf("Waiting for moved subaccount %s to be read", subaccountExternalTenants[1])
 			return false
 		}
 		assert.NoError(t, err)
-		assert.Equal(t, tenant2.InternalID, subaccount2.ParentID)
+		assert.True(t, slices.Contains(subaccount2.Parents, tenant2.InternalID))
 
 		rtm1 := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant2.InternalID, runtime1.ID)
 		if len(rtm1.Name) == 0 {
@@ -748,7 +749,7 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 		{
 			Name:           gaNames[0],
 			ExternalTenant: gaExternalTenantIDs[0],
-			Parent:         nil,
+			Parents:        []*string{},
 			Subdomain:      &subdomains[0],
 			Region:         &region,
 			Type:           string(tenant.Account),
@@ -758,7 +759,7 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 		{
 			Name:           subaccountExternalTenants[0],
 			ExternalTenant: subaccountExternalTenants[0],
-			Parent:         &defaultTenant.InternalID,
+			Parents:        []*string{&defaultTenant.ID},
 			Subdomain:      &subaccountSubdomain,
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
@@ -806,7 +807,7 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 			return false
 		}
 		assert.NoError(t, err)
-		assert.Equal(t, tenant1.InternalID, subaccount1.ParentID)
+		assert.True(t, slices.Contains(subaccount1.Parents, tenant1.InternalID))
 
 		rtm1 := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant1.InternalID, runtime1.ID)
 		if len(rtm1.Name) == 0 {
@@ -842,7 +843,7 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 		{
 			Name:           gaName,
 			ExternalTenant: gaExternalTenant,
-			Parent:         nil,
+			Parents:        []*string{},
 			Subdomain:      &subdomain1,
 			Region:         &region,
 			Type:           string(tenant.Account),
@@ -852,7 +853,7 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 		{
 			Name:           subaccountNames[0],
 			ExternalTenant: subaccountExternalTenants[0],
-			Parent:         &subaccountParent,
+			Parents:        []*string{&subaccountParent},
 			Subdomain:      &subaccountSubdomain,
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
@@ -861,7 +862,7 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 		},
 	}
 	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// cleanup global account and subaccounts
 	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(subaccountExternalTenants, gaExternalTenant))
@@ -899,7 +900,7 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 			return false
 		}
 		assert.NoError(t, err)
-		assert.Equal(t, parent.InternalID, subaccount2.ParentID)
+		assert.True(t, slices.Contains(subaccount2.Parents, parent.InternalID))
 
 		t.Log("TestCreateDeleteSubaccounts checks are successful")
 		return true
@@ -922,7 +923,7 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 		{
 			Name:           gaExternalTenantIDs[1],
 			ExternalTenant: gaExternalTenantIDs[1],
-			Parent:         nil,
+			Parents:        []*string{},
 			Subdomain:      &subaccountSubdomain,
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Account),
@@ -956,7 +957,7 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 		}
 		assert.NoError(t, err)
 		assert.Equal(t, subaccount.ID, subaccountExternalTenant)
-		assert.Equal(t, subaccount.ParentID, parent.InternalID)
+		assert.True(t, slices.Contains(subaccount.Parents, parent.InternalID))
 
 		t.Log("TestMoveMissingSubaccounts checks are successful")
 		return true
@@ -980,14 +981,14 @@ func TestGetSubaccountOnDemandIfMissing(t *testing.T) {
 
 	t.Logf("Deleting tenant %q", subaccountExternalTenant)
 	err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenantsToDelete)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Logf("Retrieving tenant %q by external id", subaccountExternalTenant)
 	subaccount, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenant)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, subaccount)
-	assert.Equal(t, subaccount.ID, subaccountExternalTenant)
+	require.NoError(t, err)
+	require.NotNil(t, subaccount)
+	require.Equal(t, subaccount.ID, subaccountExternalTenant)
 
 	t.Log("TestGetSubaccountOnDemandIfMissing checks are successful")
 }

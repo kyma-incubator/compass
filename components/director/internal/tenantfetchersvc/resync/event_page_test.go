@@ -34,7 +34,7 @@ func Test_getMovedSubaccounts(t *testing.T) {
 		TenantMappingInput: model.BusinessTenantMappingInput{
 			Name:           "subaccount-name",
 			ExternalTenant: "label-value",
-			Parent:         "parent",
+			Parents:        []string{"parent"},
 			Subdomain:      "subdomain",
 			Region:         "region",
 			Type:           string(tenant.Subaccount),
@@ -194,6 +194,7 @@ func Test_getTenantMappings(t *testing.T) {
 		ExternalTenant: id,
 		Name:           name,
 		Subdomain:      subdomain,
+		Parents:        []string{},
 		Type:           entityType,
 		Provider:       providerName,
 	}

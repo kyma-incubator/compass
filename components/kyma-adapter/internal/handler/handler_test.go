@@ -9,6 +9,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/gqlclient"
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/types/credentials"
 
@@ -29,6 +31,7 @@ func Test_HandlerFunc(t *testing.T) {
 	platform := "unit-tests"
 	receiverTenantID := "receiver-tenant-id"
 	receiverOwnerTenantID := "receiver-owner-tenant-id"
+	receiverOwnerTenantIDs := []string{"\"receiver-owner-tenant-id\""}
 	assignedTenantID := "assigned-tenant-id"
 	assignOperation := "assign"
 	unassignOperation := "unassign"
@@ -40,12 +43,18 @@ func Test_HandlerFunc(t *testing.T) {
 	tokenServiceURL := "token-url"
 	oauthCredentials := fmt.Sprintf(`{"credentials":{"outboundCommunication":{"oauth2ClientCredentials":{"clientId":%q,"clientSecret":%q,"tokenServiceUrl":%q}}}}`, clientID, clientSecret, tokenServiceURL)
 
-	bodyFormatterBasic := `{"context":{"platform":%q,"operation":%q},"receiverTenant":{"ownerTenant":%q,"uclSystemTenantId":%q},"assignedTenant":{"uclSystemTenantId":%q,"configuration":%s}}`
+	bodyFormatterBasic := `{"context":{"platform":%q,"operation":%q},"receiverTenant":{"ownerTenants":%v,"uclSystemTenantId":%q},"assignedTenant":{"uclSystemTenantId":%q,"configuration":%s}}`
 
-	bodyFormatterWithoutConfiguration := `{"context":{"platform":%q,"operation":%q},"receiverTenant":{"ownerTenant":%q,"uclSystemTenantId":%q},"assignedTenant":{"uclSystemTenantId":%q}}`
+	bodyFormatterWithoutConfiguration := `{"context":{"platform":%q,"operation":%q},"receiverTenant":{"ownerTenants":%v,"uclSystemTenantId":%q},"assignedTenant":{"uclSystemTenantId":%q}}`
 
 	bodyWithConfigPendingState := "{\"state\":\"CONFIG_PENDING\"}\n"
 	bodyWithReadyState := "{\"state\":\"READY\"}\n"
+
+	receiverOwnerTenant := &graphql.Tenant{
+		ID:         "",
+		InternalID: receiverOwnerTenantID,
+		Type:       string(tenantpkg.Account),
+	}
 
 	bundles := []*graphql.BundleExt{{Bundle: graphql.Bundle{BaseEntity: &graphql.BaseEntity{ID: "bndl-1"}}}, {Bundle: graphql.Bundle{BaseEntity: &graphql.BaseEntity{ID: "bndl-1"}}}}
 	bundlesWithAuths := []*graphql.BundleExt{
@@ -124,37 +133,58 @@ func Test_HandlerFunc(t *testing.T) {
 		expectedResponseCode int
 	}{
 		{
-			name:                 "Success - assign with missing config(empty json)",
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, `{}`),
+			name:         "Success - assign with missing config(empty json)",
+			requestBody:  fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, `{}`),
+			expectedBody: bodyWithConfigPendingState,
+			clientFn: func() *automock.Client {
+				client := &automock.Client{}
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
+				return client
+			},
+			expectedResponseCode: http.StatusOK,
+		},
+		{
+			name:        "Success - assign with missing config(null)",
+			requestBody: fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, `null`),
+			clientFn: func() *automock.Client {
+				client := &automock.Client{}
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
+				return client
+			},
 			expectedBody:         bodyWithConfigPendingState,
 			expectedResponseCode: http.StatusOK,
 		},
 		{
-			name:                 "Success - assign with missing config(null)",
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, `null`),
+			name:        "Success - assign with missing config(empty string)",
+			requestBody: fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, `""`),
+			clientFn: func() *automock.Client {
+				client := &automock.Client{}
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
+				return client
+			},
 			expectedBody:         bodyWithConfigPendingState,
 			expectedResponseCode: http.StatusOK,
 		},
 		{
-			name:                 "Success - assign with missing config(empty string)",
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, `""`),
+			name:        "Success - assign with missing config(when configuration object is missing)",
+			requestBody: fmt.Sprintf(bodyFormatterWithoutConfiguration, platform, assignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID),
+			clientFn: func() *automock.Client {
+				client := &automock.Client{}
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
+				return client
+			},
 			expectedBody:         bodyWithConfigPendingState,
 			expectedResponseCode: http.StatusOK,
 		},
 		{
-			name:                 "Success - assign with missing config(when configuration object is missing)",
-			requestBody:          fmt.Sprintf(bodyFormatterWithoutConfiguration, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID),
-			expectedBody:         bodyWithConfigPendingState,
-			expectedResponseCode: http.StatusOK,
-		},
-		{
-			name: "Success - assign for application with no bundles",
+			name:        "Success - assign for application with no bundles",
+			requestBody: fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, basicCredentials),
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return([]*graphql.BundleExt{}, nil).Once()
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
 				return client
 			},
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
 			expectedBody:         bodyWithReadyState,
 			expectedResponseCode: http.StatusOK,
 		},
@@ -165,9 +195,10 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundles, nil).Once()
 				client.On("CreateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, createBasicInputs[0]).Return(nil).Once()
 				client.On("CreateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, createBasicInputs[1]).Return(nil).Once()
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
 				return client
 			},
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, basicCredentials),
 			expectedBody:         bodyWithReadyState,
 			expectedResponseCode: http.StatusOK,
 		},
@@ -178,9 +209,10 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundles, nil).Once()
 				client.On("CreateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, createOauthInputs[0]).Return(nil).Once()
 				client.On("CreateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, createOauthInputs[1]).Return(nil).Once()
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
 				return client
 			},
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, oauthCredentials),
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, oauthCredentials),
 			expectedBody:         bodyWithReadyState,
 			expectedResponseCode: http.StatusOK,
 		},
@@ -191,9 +223,10 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundlesWithAuths, nil).Once()
 				client.On("UpdateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, updateBasicInputs[0]).Return(nil).Once()
 				client.On("UpdateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, updateBasicInputs[1]).Return(nil).Once()
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
 				return client
 			},
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, basicCredentials),
 			expectedBody:         bodyWithReadyState,
 			expectedResponseCode: http.StatusOK,
 		},
@@ -204,9 +237,10 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundlesWithAuths, nil).Once()
 				client.On("UpdateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, updateOauthInputs[0]).Return(nil).Once()
 				client.On("UpdateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, updateOauthInputs[1]).Return(nil).Once()
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
 				return client
 			},
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, oauthCredentials),
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, oauthCredentials),
 			expectedBody:         bodyWithReadyState,
 			expectedResponseCode: http.StatusOK,
 		},
@@ -215,9 +249,10 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return([]*graphql.BundleExt{}, nil).Once()
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
 				return client
 			},
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, unassignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, unassignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, basicCredentials),
 			expectedBody:         bodyWithReadyState,
 			expectedResponseCode: http.StatusOK,
 		},
@@ -228,9 +263,10 @@ func Test_HandlerFunc(t *testing.T) {
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundlesWithAuths, nil).Once()
 				client.On("DeleteBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, deleteInputs[0]).Return(nil).Once()
 				client.On("DeleteBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, deleteInputs[1]).Return(nil).Once()
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
 				return client
 			},
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, unassignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, unassignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, basicCredentials),
 			expectedBody:         bodyWithReadyState,
 			expectedResponseCode: http.StatusOK,
 		},
@@ -239,9 +275,10 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundles, nil).Once()
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
 				return client
 			},
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, unassignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, unassignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, basicCredentials),
 			expectedBody:         bodyWithReadyState,
 			expectedResponseCode: http.StatusOK,
 		},
@@ -252,7 +289,23 @@ func Test_HandlerFunc(t *testing.T) {
 		},
 		{
 			name:                 "Error - body can't be validated",
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, "", receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, "", receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, basicCredentials),
+			expectedResponseCode: http.StatusBadRequest,
+		},
+		{
+			name:                 "Error - body does not contains owner tenants",
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, []string{}, receiverTenantID, assignedTenantID, `{}`),
+			expectedBody:         "Receiver tenant owner tenant must be provided",
+			expectedResponseCode: http.StatusBadRequest,
+		},
+		{
+			name: "Error - while getting tenant by internal id",
+			clientFn: func() *automock.Client {
+				client := &automock.Client{}
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, testErr).Once()
+				return client
+			},
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, basicCredentials),
 			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
@@ -260,9 +313,10 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(nil, testErr).Once()
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
 				return client
 			},
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, basicCredentials),
 			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
@@ -271,9 +325,10 @@ func Test_HandlerFunc(t *testing.T) {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundles, nil).Once()
 				client.On("CreateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, createBasicInputs[0]).Return(testErr).Once()
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
 				return client
 			},
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, basicCredentials),
 			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
@@ -281,10 +336,11 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundles, nil).Once()
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
 				client.On("CreateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, createOauthInputs[0]).Return(testErr).Once()
 				return client
 			},
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, oauthCredentials),
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, oauthCredentials),
 			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
@@ -292,10 +348,11 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundlesWithAuths, nil).Once()
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
 				client.On("UpdateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, updateBasicInputs[0]).Return(testErr).Once()
 				return client
 			},
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, basicCredentials),
 			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
@@ -303,20 +360,22 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundlesWithAuths, nil).Once()
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
 				client.On("UpdateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, updateOauthInputs[0]).Return(testErr).Once()
 				return client
 			},
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, oauthCredentials),
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, oauthCredentials),
 			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
 			name: "Error - unassign can't get application bundles",
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(nil, testErr).Once()
 				return client
 			},
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, unassignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, unassignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, basicCredentials),
 			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
@@ -324,10 +383,11 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundlesWithAuths, nil).Once()
+				client.On("TenantByInternalIDQuery", mock.Anything, receiverOwnerTenantID).Return(receiverOwnerTenant, nil).Once()
 				client.On("DeleteBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, deleteInputs[0]).Return(testErr).Once()
 				return client
 			},
-			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, unassignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
+			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, unassignOperation, receiverOwnerTenantIDs, receiverTenantID, assignedTenantID, basicCredentials),
 			expectedResponseCode: http.StatusBadRequest,
 		},
 	}
@@ -355,10 +415,8 @@ func Test_HandlerFunc(t *testing.T) {
 			require.NoError(t, err)
 
 			//THEN
-			if testCase.expectedResponseCode == http.StatusOK {
-				require.Equal(t, testCase.expectedBody, string(body), string(body))
-			}
 			require.Equal(t, testCase.expectedResponseCode, resp.StatusCode, string(body))
+			require.Contains(t, string(body), testCase.expectedBody, string(body))
 		})
 	}
 }
