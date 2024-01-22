@@ -1155,7 +1155,7 @@ func triggerSync(t *testing.T, tenantID string) {
 		Timeout:   time.Duration(1) * time.Minute,
 	}
 
-	jsonBody := fmt.Sprintf(`{"tenant":"not used at the moment %s"}`, tenantID)
+	jsonBody := fmt.Sprintf(`{"tenantID":"%s"}`, tenantID)
 	sfReq, err := http.NewRequest(http.MethodPost, cfg.SystemFetcherURL+"/sync", bytes.NewBuffer([]byte(jsonBody)))
 	require.NoError(t, err)
 	sfReq.Header.Add(tenantHeader, tenant.TestTenants.GetDefaultTenantID())
