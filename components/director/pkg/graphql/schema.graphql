@@ -1303,6 +1303,7 @@ type Formation {
 	id: ID!
 	name: String!
 	formationTemplateId: ID!
+	tenantID: ID!
 	"""
 	Formation lifecycle notifications state
 	"""
@@ -1759,6 +1760,7 @@ type Query {
 	- [query formations](examples/query-formations/query-formations.graphql)
 	"""
 	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
+	formationsForParticipant(participantId: String!): [Formation!]! @hasScopes(path: "graphql.query.formationsForParticipant")
 	formationConstraints: [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
 	"""
 	**Examples**

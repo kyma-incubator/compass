@@ -214,6 +214,36 @@ func TestRepository_ListByFormationNames(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestRepository_ListByIDsGlobal(t *testing.T) {
+	suite := testdb.RepoListTestSuite{
+		Name:       "List Formations by IDs globally",
+		MethodName: "ListByIDsGlobal",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name, state, error FROM public.formations WHERE id IN ($1)`),
+				Args:     []driver.Value{formationModel.ID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, TntInternalID, FormationTemplateID, testFormationName, testFormationState, testFormationEmptyError)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       formation.NewRepository,
+		ExpectedModelEntities:     []interface{}{formationModel},
+		ExpectedDBEntities:        []interface{}{formationEntity},
+		MethodArgs:                []interface{}{[]string{formationModel.ID}},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func TestRepository_Update(t *testing.T) {
 	updateStmt := regexp.QuoteMeta(`UPDATE public.formations SET name = ?, state = ?, error = ? WHERE id = ? AND tenant_id = ?`)
 	suite := testdb.RepoUpdateTestSuite{

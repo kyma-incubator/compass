@@ -379,6 +379,7 @@ type ComplexityRoot struct {
 		Name                 func(childComplexity int) int
 		State                func(childComplexity int) int
 		Status               func(childComplexity int) int
+		TenantID             func(childComplexity int) int
 	}
 
 	FormationAssignment struct {
@@ -688,6 +689,7 @@ type ComplexityRoot struct {
 		FormationTemplates                         func(childComplexity int, first *int, after *PageCursor) int
 		FormationTemplatesByName                   func(childComplexity int, name string, first *int, after *PageCursor) int
 		Formations                                 func(childComplexity int, first *int, after *PageCursor) int
+		FormationsForParticipant                   func(childComplexity int, participantID string) int
 		HealthChecks                               func(childComplexity int, types []HealthCheckType, origin *string, first *int, after *PageCursor) int
 		IntegrationSystem                          func(childComplexity int, id string) int
 		IntegrationSystems                         func(childComplexity int, first *int, after *PageCursor) int
@@ -1023,6 +1025,7 @@ type QueryResolver interface {
 	Formation(ctx context.Context, id string) (*Formation, error)
 	FormationByName(ctx context.Context, name string) (*Formation, error)
 	Formations(ctx context.Context, first *int, after *PageCursor) (*FormationPage, error)
+	FormationsForParticipant(ctx context.Context, participantID string) ([]*Formation, error)
 	FormationConstraints(ctx context.Context) ([]*FormationConstraint, error)
 	FormationConstraint(ctx context.Context, id string) (*FormationConstraint, error)
 	FormationConstraintsByFormationType(ctx context.Context, formationTemplateID string) ([]*FormationConstraint, error)
@@ -2591,6 +2594,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Formation.Status(childComplexity), true
+
+	case "Formation.tenantID":
+		if e.complexity.Formation.TenantID == nil {
+			break
+		}
+
+		return e.complexity.Formation.TenantID(childComplexity), true
 
 	case "FormationAssignment.configuration":
 		if e.complexity.FormationAssignment.Configuration == nil {
@@ -4790,6 +4800,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Formations(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
 
+	case "Query.formationsForParticipant":
+		if e.complexity.Query.FormationsForParticipant == nil {
+			break
+		}
+
+		args, err := ec.field_Query_formationsForParticipant_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.FormationsForParticipant(childComplexity, args["participantId"].(string)), true
+
 	case "Query.healthChecks":
 		if e.complexity.Query.HealthChecks == nil {
 			break
@@ -6884,6 +6906,7 @@ type Formation {
 	id: ID!
 	name: String!
 	formationTemplateId: ID!
+	tenantID: ID!
 	"""
 	Formation lifecycle notifications state
 	"""
@@ -7340,6 +7363,7 @@ type Query {
 	- [query formations](examples/query-formations/query-formations.graphql)
 	"""
 	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
+	formationsForParticipant(participantId: String!): [Formation!]! @hasScopes(path: "graphql.query.formations")
 	formationConstraints: [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
 	"""
 	**Examples**
@@ -10913,6 +10937,20 @@ func (ec *executionContext) field_Query_formation_args(ctx context.Context, rawA
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_formationsForParticipant_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["participantId"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["participantId"] = arg0
 	return args, nil
 }
 
@@ -18192,6 +18230,40 @@ func (ec *executionContext) _Formation_formationTemplateId(ctx context.Context, 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.FormationTemplateID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Formation_tenantID(ctx context.Context, field graphql.CollectedField, obj *Formation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Formation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TenantID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -30290,6 +30362,71 @@ func (ec *executionContext) _Query_formations(ctx context.Context, field graphql
 	return ec.marshalNFormationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationPage(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_formationsForParticipant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_formationsForParticipant_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().FormationsForParticipant(rctx, args["participantId"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.formations")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*Formation); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.Formation`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*Formation)
+	fc.Result = res
+	return ec.marshalNFormation2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_formationConstraints(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -38589,6 +38726,11 @@ func (ec *executionContext) _Formation(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "tenantID":
+			out.Values[i] = ec._Formation_tenantID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "state":
 			out.Values[i] = ec._Formation_state(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -40545,6 +40687,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_formations(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "formationsForParticipant":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_formationsForParticipant(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

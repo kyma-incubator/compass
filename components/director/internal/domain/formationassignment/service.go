@@ -39,6 +39,7 @@ type FormationAssignmentRepository interface {
 	ListByFormationIDsNoPaging(ctx context.Context, tenantID string, formationIDs []string) ([][]*model.FormationAssignment, error)
 	ListAllForObject(ctx context.Context, tenant, formationID, objectID string) ([]*model.FormationAssignment, error)
 	ListAllForObjectIDs(ctx context.Context, tenant, formationID string, objectIDs []string) ([]*model.FormationAssignment, error)
+	ListAllForObjectGlobal(ctx context.Context, objectID string) ([]*model.FormationAssignment, error)
 	ListForIDs(ctx context.Context, tenant string, ids []string) ([]*model.FormationAssignment, error)
 	Update(ctx context.Context, model *model.FormationAssignment) error
 	Delete(ctx context.Context, id, tenantID string) error
@@ -354,6 +355,11 @@ func (s *service) ListFormationAssignmentsForObjectIDs(ctx context.Context, form
 	}
 
 	return s.repo.ListAllForObjectIDs(ctx, tnt, formationID, objectIDs)
+}
+
+// ListAllForObjectGlobal retrieves all Formation Assignment objects that have the `objectID` as source or target across all tenants
+func (s *service) ListAllForObjectGlobal(ctx context.Context, objectID string) ([]*model.FormationAssignment, error) {
+	return s.repo.ListAllForObjectGlobal(ctx, objectID)
 }
 
 // Update updates a Formation Assignment matching ID `id` using `in`

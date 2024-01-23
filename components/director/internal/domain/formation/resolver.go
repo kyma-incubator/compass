@@ -25,6 +25,7 @@ type Service interface {
 	Get(ctx context.Context, id string) (*model.Formation, error)
 	GetFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error)
+	ListFormationsForParticipant(ctx context.Context, participantID string) ([]*model.Formation, error)
 	CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error)
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
@@ -49,6 +50,7 @@ type formationAssignmentService interface {
 	ListByFormationIDsNoPaging(ctx context.Context, formationIDs []string) ([][]*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
 	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
+	ListAllForObjectGlobal(ctx context.Context, objectID string) ([]*model.FormationAssignment, error)
 	ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error
 	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
 	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignmentInput, error)
@@ -179,6 +181,32 @@ func (r *Resolver) Formations(ctx context.Context, first *int, after *graphql.Pa
 	}, nil
 }
 
+// FormationsForParticipant returns all Formations `participantID` is part of
+func (r *Resolver) FormationsForParticipant(ctx context.Context, participantID string) ([]*graphql.Formation, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	formations, err := r.service.ListFormationsForParticipant(ctx, participantID)
+	if err != nil {
+		return nil, err
+	}
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	formationsGQL, err := r.conv.MultipleToGraphQL(formations)
+	if err != nil {
+		return nil, err
+	}
+
+	return formationsGQL, nil
+}
+
 // CreateFormation creates new formation for the caller tenant
 func (r *Resolver) CreateFormation(ctx context.Context, formationInput graphql.FormationInput) (*graphql.Formation, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
@@ -300,7 +328,7 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 
 // FormationAssignments retrieves a page of FormationAssignments for the specified Formation
 func (r *Resolver) FormationAssignments(ctx context.Context, obj *graphql.Formation, first *int, after *graphql.PageCursor) (*graphql.FormationAssignmentPage, error) {
-	param := dataloader.ParamFormationAssignment{ID: obj.ID, Ctx: ctx, First: first, After: after}
+	param := dataloader.ParamFormationAssignment{ID: obj.ID, Ctx: ctx, Tenant: obj.TenantID, First: first, After: after}
 	return dataloader.FormationFor(ctx).FormationAssignmentByID.Load(param)
 }
 
@@ -311,9 +339,14 @@ func (r *Resolver) FormationAssignmentsDataLoader(keys []dataloader.ParamFormati
 	}
 
 	ctx := keys[0].Ctx
-	formationIDs := make([]string, 0, len(keys))
+	formationIDsByTenant := make(map[string][]string, len(keys))
 	for _, key := range keys {
-		formationIDs = append(formationIDs, key.ID)
+		tnt := key.Tenant
+		_, ok := formationIDsByTenant[tnt]
+		if !ok {
+			formationIDsByTenant[tnt] = make([]string, 0, len(keys))
+		}
+		formationIDsByTenant[tnt] = append(formationIDsByTenant[tnt], key.ID)
 	}
 
 	var cursor string
@@ -333,30 +366,34 @@ func (r *Resolver) FormationAssignmentsDataLoader(keys []dataloader.ParamFormati
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	formationAssignmentPages, err := r.formationAssignmentSvc.ListByFormationIDs(ctx, formationIDs, *keys[0].First, cursor)
-	if err != nil {
-		return nil, []error{err}
-	}
+	gqlFormationAssignmentPages := make([]*graphql.FormationAssignmentPage, 0, len(keys))
 
-	gqlFormationAssignments := make([]*graphql.FormationAssignmentPage, 0, len(formationAssignmentPages))
-	for _, page := range formationAssignmentPages {
-		fas, err := r.formationAssignmentConv.MultipleToGraphQL(page.Data)
+	for formationTenant, formationIDs := range formationIDsByTenant {
+		ctxWithTenant := tenant.SaveToContext(ctx, formationTenant, "")
+		formationAssignmentPages, err := r.formationAssignmentSvc.ListByFormationIDs(ctxWithTenant, formationIDs, *keys[0].First, cursor)
 		if err != nil {
 			return nil, []error{err}
 		}
 
-		gqlFormationAssignments = append(gqlFormationAssignments, &graphql.FormationAssignmentPage{Data: fas, TotalCount: page.TotalCount, PageInfo: &graphql.PageInfo{
-			StartCursor: graphql.PageCursor(page.PageInfo.StartCursor),
-			EndCursor:   graphql.PageCursor(page.PageInfo.EndCursor),
-			HasNextPage: page.PageInfo.HasNextPage,
-		}})
+		for _, page := range formationAssignmentPages {
+			fas, err := r.formationAssignmentConv.MultipleToGraphQL(page.Data)
+			if err != nil {
+				return nil, []error{err}
+			}
+
+			gqlFormationAssignmentPages = append(gqlFormationAssignmentPages, &graphql.FormationAssignmentPage{Data: fas, TotalCount: page.TotalCount, PageInfo: &graphql.PageInfo{
+				StartCursor: graphql.PageCursor(page.PageInfo.StartCursor),
+				EndCursor:   graphql.PageCursor(page.PageInfo.EndCursor),
+				HasNextPage: page.PageInfo.HasNextPage,
+			}})
+		}
 	}
 
 	if err = tx.Commit(); err != nil {
 		return nil, []error{err}
 	}
 
-	return gqlFormationAssignments, nil
+	return gqlFormationAssignmentPages, nil
 }
 
 // FormationAssignment missing godoc
@@ -372,6 +409,7 @@ func (r *Resolver) FormationAssignment(ctx context.Context, obj *graphql.Formati
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
+	ctx = tenant.SaveToContext(ctx, obj.TenantID, "")
 
 	formationAssignment, err := r.formationAssignmentSvc.GetForFormation(ctx, id, obj.ID)
 	if err != nil {
@@ -390,7 +428,7 @@ func (r *Resolver) FormationAssignment(ctx context.Context, obj *graphql.Formati
 
 // Status retrieves a Status for the specified Formation
 func (r *Resolver) Status(ctx context.Context, obj *graphql.Formation) (*graphql.FormationStatus, error) {
-	param := dataloader.ParamFormationStatus{ID: obj.ID, State: obj.State, Message: obj.Error.Message, ErrorCode: obj.Error.ErrorCode, Ctx: ctx}
+	param := dataloader.ParamFormationStatus{ID: obj.ID, State: obj.State, Message: obj.Error.Message, ErrorCode: obj.Error.ErrorCode, Ctx: ctx, Tenant: obj.TenantID}
 	return dataloader.FormationStatusFor(ctx).FormationStatusByID.Load(param)
 }
 
@@ -401,9 +439,15 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 	}
 
 	ctx := keys[0].Ctx
-	formationIDs := make([]string, 0, len(keys))
+
+	formationIDsByTenant := make(map[string][]string, len(keys))
 	for _, key := range keys {
-		formationIDs = append(formationIDs, key.ID)
+		tnt := key.Tenant
+		_, ok := formationIDsByTenant[tnt]
+		if !ok {
+			formationIDsByTenant[tnt] = make([]string, 0, len(keys))
+		}
+		formationIDsByTenant[tnt] = append(formationIDsByTenant[tnt], key.ID)
 	}
 
 	tx, err := r.transact.Begin()
@@ -414,9 +458,14 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	formationAssignmentsPerFormation, err := r.formationAssignmentSvc.ListByFormationIDsNoPaging(ctx, formationIDs)
-	if err != nil {
-		return nil, []error{err}
+	formationAssignmentsPerFormation := make([][]*model.FormationAssignment, 0, len(keys))
+	for tnt, formationIDs := range formationIDsByTenant {
+		ctx = tenant.SaveToContext(ctx, tnt, "")
+		formationAssignmentsPerFormationForTenant, err := r.formationAssignmentSvc.ListByFormationIDsNoPaging(ctx, formationIDs)
+		if err != nil {
+			return nil, []error{err}
+		}
+		formationAssignmentsPerFormation = append(formationAssignmentsPerFormation, formationAssignmentsPerFormationForTenant...)
 	}
 
 	if err = tx.Commit(); err != nil {

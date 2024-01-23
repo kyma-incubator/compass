@@ -70,6 +70,7 @@ type FormationRepository interface {
 	GetByName(ctx context.Context, name, tenantID string) (*model.Formation, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.FormationPage, error)
+	ListByIDsGlobal(ctx context.Context, formationIDs []string) ([]*model.Formation, error)
 	Create(ctx context.Context, item *model.Formation) error
 	DeleteByName(ctx context.Context, tenantID, name string) error
 	Update(ctx context.Context, model *model.Formation) error
@@ -257,6 +258,30 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 	}
 
 	return s.formationRepository.List(ctx, formationTenant, pageSize, cursor)
+}
+
+// ListFormationsForParticipant returns all Formations that `participantID` is part of
+func (s *service) ListFormationsForParticipant(ctx context.Context, participantID string) ([]*model.Formation, error) {
+	assignments, err := s.formationAssignmentService.ListAllForObjectGlobal(ctx, participantID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing formations assignments for participant with ID %s", participantID)
+	}
+
+	if len(assignments) == 0 {
+		return nil, nil
+	}
+
+	uniqueFormationIDsMap := make(map[string]struct{}, len(assignments))
+	for _, assignment := range assignments {
+		uniqueFormationIDsMap[assignment.FormationID] = struct{}{}
+	}
+
+	uniqueFormationIDs := make([]string, 0, len(uniqueFormationIDsMap))
+	for formationID, _ := range uniqueFormationIDsMap {
+		uniqueFormationIDs = append(uniqueFormationIDs, formationID)
+	}
+
+	return s.formationRepository.ListByIDsGlobal(ctx, uniqueFormationIDs)
 }
 
 // Get returns the Formation by its id

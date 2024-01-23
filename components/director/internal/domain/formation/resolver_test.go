@@ -896,6 +896,120 @@ func TestFormations(t *testing.T) {
 	})
 }
 
+func TestFormationsForParticipant(t *testing.T) {
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	ctx := context.TODO()
+
+	modelFormations := []*model.Formation{&modelFormation}
+
+	graphqlFormations := []*graphql.Formation{&graphqlFormation}
+
+	testCases := []struct {
+		Name               string
+		TxFn               func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn          func() *automock.Service
+		ConverterFn        func() *automock.Converter
+		InputID            string
+		ExpectedFormations []*graphql.Formation
+		ExpectedError      error
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.Service {
+				service := &automock.Service{}
+				service.On("ListFormationsForParticipant", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
+				return service
+			},
+			ConverterFn: func() *automock.Converter {
+				conv := &automock.Converter{}
+				conv.On("MultipleToGraphQL", modelFormations).Return(graphqlFormations, nil).Once()
+				return conv
+			},
+			InputID:            ApplicationID,
+			ExpectedFormations: graphqlFormations,
+			ExpectedError:      nil,
+		},
+		{
+			Name: "Returns error when listing formations fails",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.Service {
+				service := &automock.Service{}
+				service.On("ListFormationsForParticipant", txtest.CtxWithDBMatcher(), ApplicationID).Return(nil, testErr).Once()
+				return service
+			},
+			ConverterFn:        unusedConverter,
+			InputID:            ApplicationID,
+			ExpectedFormations: nil,
+			ExpectedError:      testErr,
+		},
+		{
+			Name: "Returns error when converting formations to graphql fails",
+			TxFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.Service {
+				service := &automock.Service{}
+				service.On("ListFormationsForParticipant", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
+				return service
+			},
+			ConverterFn: func() *automock.Converter {
+				conv := &automock.Converter{}
+				conv.On("MultipleToGraphQL", modelFormations).Return(nil, testErr).Once()
+				return conv
+			},
+			InputID:            ApplicationID,
+			ExpectedFormations: nil,
+			ExpectedError:      testErr,
+		},
+		{
+			Name:               "Returns error when can't start transaction",
+			TxFn:               txGen.ThatFailsOnBegin,
+			ServiceFn:          unusedService,
+			ConverterFn:        unusedConverter,
+			InputID:            ApplicationID,
+			ExpectedFormations: nil,
+			ExpectedError:      testErr,
+		},
+		{
+			Name: "Returns error when can't commit transaction",
+			TxFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.Service {
+				service := &automock.Service{}
+				service.On("ListFormationsForParticipant", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
+				return service
+			},
+			ConverterFn:        unusedConverter,
+			InputID:            ApplicationID,
+			ExpectedFormations: nil,
+			ExpectedError:      testErr,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			persist, transact := testCase.TxFn()
+			service := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+
+			resolver := formation.NewResolver(transact, service, converter, nil, nil, nil)
+
+			// WHEN
+			f, err := resolver.FormationsForParticipant(ctx, testCase.InputID)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedFormations, f)
+
+			mock.AssertExpectationsForObjects(t, persist, service, converter)
+		})
+	}
+}
+
 func TestResolver_FormationAssignment(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()

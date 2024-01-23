@@ -74,6 +74,7 @@ const (
 
 	// Formation constants
 	testFormationName       = "test-formation-name"
+	testFormationName2      = "test-formation-name-2"
 	testFormationState      = string(model.InitialFormationState)
 	testFormationEmptyError = "{}"
 	secondTestFormationName = "second-formation"
@@ -108,12 +109,6 @@ var (
 	runtimeTypeDisplayName = str.Ptr("display name")
 
 	testErr = errors.New("Test error")
-
-	CustomerTenantContextPath = &webhook.CustomerTenantContext{
-		CustomerID: TntCustomerID,
-		AccountID:  nil,
-		Path:       str.Ptr(TntExternalID),
-	}
 
 	CustomerTenantContextAccount = fixCustomerTenantContext(TntCustomerID, TntExternalID)
 
@@ -854,6 +849,24 @@ var (
 	secondFormationStatusParams = dataloader.ParamFormationStatus{ID: FormationID + "2", State: string(model.InitialFormationState)}
 	thirdFormationStatusParams  = dataloader.ParamFormationStatus{ID: FormationID + "3", State: string(model.ReadyFormationState)}
 	fourthPageFormations        = dataloader.ParamFormationStatus{ID: FormationID + "4", State: string(model.ReadyFormationState)}
+
+	formationAssignments = []*model.FormationAssignment{
+		{ID: FormationAssignmentID, FormationID: FormationID},
+		{ID: FormationAssignmentID2, FormationID: FormationID2},
+	}
+
+	modelFormations = []*model.Formation{
+		&model.Formation{
+			ID:                  FormationID,
+			FormationTemplateID: FormationTemplateID,
+			Name:                testFormationName,
+		},
+		&model.Formation{
+			ID:                  FormationID2,
+			FormationTemplateID: FormationTemplateID,
+			Name:                testFormationName2,
+		},
+	}
 )
 
 func formationAssignmentsWithSourceAndTarget(objectID string, assignments []*model.FormationAssignment) []*model.FormationAssignment {

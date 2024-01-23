@@ -20,6 +20,7 @@ var (
 	tableColumns          = []string{"id", "tenant_id", "formation_template_id", "name", "state", "error"}
 	tenantColumn          = "tenant_id"
 	formationNameColumn   = "name"
+	idTableColumn         = "id"
 )
 
 // EntityConverter converts between the internal model and entity
@@ -36,6 +37,7 @@ type repository struct {
 	globalGetter    repo.SingleGetterGlobal
 	pageableQuerier repo.PageableQuerier
 	lister          repo.Lister
+	listerGlobal    repo.ListerGlobal
 	updater         repo.UpdaterGlobal
 	deleter         repo.Deleter
 	existQuerier    repo.ExistQuerier
@@ -50,6 +52,7 @@ func NewRepository(conv EntityConverter) *repository {
 		globalGetter:    repo.NewSingleGetterGlobal(resource.Formations, tableName, tableColumns),
 		pageableQuerier: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		lister:          repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		listerGlobal:    repo.NewListerGlobal(resource.Formations, tableName, tableColumns),
 		updater:         repo.NewUpdaterWithEmbeddedTenant(resource.Formations, tableName, updatableTableColumns, tenantColumn, idTableColumns),
 		deleter:         repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		existQuerier:    repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
@@ -123,6 +126,28 @@ func (r *repository) List(ctx context.Context, tenant string, pageSize int, curs
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
+}
+
+// ListByIDsGlobal returns all Formations with id in `formationIDs` globally
+func (r *repository) ListByIDsGlobal(ctx context.Context, formationIDs []string) ([]*model.Formation, error) {
+	if len(formationIDs) == 0 {
+		return nil, nil
+	}
+
+	var entityCollection EntityCollection
+	err := r.listerGlobal.ListGlobal(ctx, &entityCollection, repo.NewInConditionForStringValues(idTableColumn, formationIDs))
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Formation, 0, entityCollection.Len())
+	for _, entity := range entityCollection {
+		formationModel := r.conv.FromEntity(entity)
+
+		items = append(items, formationModel)
+	}
+
+	return items, nil
 }
 
 // ListByFormationNames returns all Formations with name in formationNames
