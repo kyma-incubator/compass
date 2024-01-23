@@ -596,6 +596,8 @@ global:
     port: 8080
     apiRootPath: "/instance-creator"
     apiTenantMappingsEndpoint: "/v1/tenantMappings/{tenant-id}"
+    subaccountQueryParam: "subaccount_id"
+    labelsQueryParam: "labelQuery"
     tenantInfo:
       requestTimeout: 30s
     authentication:

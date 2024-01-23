@@ -141,7 +141,7 @@ func TestClient_RetrieveResource(t *testing.T) {
 			},
 			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
 				resourceMatchParams := &resmock.ResourceMatchParameters{}
-				resourceMatchParams.On("Match", fixServiceKeys()).Return("", testError).Once()
+				resourceMatchParams.On("Match", fixServiceBindings()).Return("", testError).Once()
 				return resourceMatchParams
 			},
 			Config:              testConfig,
@@ -203,7 +203,7 @@ func TestClient_RetrieveResource(t *testing.T) {
 func TestClient_RetrieveResourceByID(t *testing.T) {
 	ctx := context.TODO()
 
-	respBody, err := json.Marshal(fixServiceKey())
+	respBody, err := json.Marshal(fixServiceBinding())
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -211,7 +211,7 @@ func TestClient_RetrieveResourceByID(t *testing.T) {
 		CallerProvider   func(t *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider
 		ResourceFn       func() *resmock.Resource
 		Config           config.Config
-		ExpectedResult   *types.ServiceKey
+		ExpectedResult   *types.ServiceBinding
 		ExpectedErrorMsg string
 	}{
 		{
@@ -225,7 +225,7 @@ func TestClient_RetrieveResourceByID(t *testing.T) {
 				return resource
 			},
 			Config:         testConfig,
-			ExpectedResult: fixServiceKey(),
+			ExpectedResult: fixServiceBinding(),
 		},
 		{
 			Name:           "Error when building URL",
@@ -301,17 +301,17 @@ func TestClient_RetrieveResourceByID(t *testing.T) {
 			defer callerProviderSvc.AssertExpectations(t)
 
 			testClient := client.NewClient(testCase.Config, callerProviderSvc)
-			serviceKey := &types.ServiceKey{ID: serviceKeyID}
+			serviceKey := &types.ServiceBinding{ID: serviceKeyID}
 
 			// WHEN
-			resultServiceKey, err := testClient.RetrieveResourceByID(ctx, region, subaccountID, serviceKey)
+			resultServiceBinding, err := testClient.RetrieveResourceByID(ctx, region, subaccountID, serviceKey)
 
 			// THEN
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
 			} else {
-				assert.Equal(t, testCase.ExpectedResult, resultServiceKey.(*types.ServiceKey))
+				assert.Equal(t, testCase.ExpectedResult, resultServiceBinding.(*types.ServiceBinding))
 				assert.NoError(t, err)
 			}
 		})
@@ -774,7 +774,7 @@ func TestClient_DeleteResource(t *testing.T) {
 func TestClient_DeleteMultipleResources(t *testing.T) {
 	ctx := context.TODO()
 
-	respBody, err := json.Marshal(fixServiceKeys())
+	respBody, err := json.Marshal(fixServiceBindings())
 	require.NoError(t, err)
 
 	opRespBody, err := json.Marshal(fixOperationStatusWithEmptyResourceID(types.OperationStateSucceeded))
@@ -807,7 +807,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			},
 			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
 				resourceMatchParams := &resmock.ResourceMatchParameters{}
-				resourceMatchParams.On("MatchMultiple", fixServiceKeys()).Return([]string{serviceKeyID}, nil).Once()
+				resourceMatchParams.On("MatchMultiple", fixServiceBindings()).Return([]string{serviceKeyID}, nil).Once()
 				return resourceMatchParams
 			},
 			Config: testConfig,
@@ -886,7 +886,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			},
 			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
 				resourceMatchParams := &resmock.ResourceMatchParameters{}
-				resourceMatchParams.On("MatchMultiple", fixServiceKeys()).Return([]string{serviceKeyID}, nil).Once()
+				resourceMatchParams.On("MatchMultiple", fixServiceBindings()).Return([]string{serviceKeyID}, nil).Once()
 				return resourceMatchParams
 			},
 			Config:           testConfig,
@@ -903,7 +903,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			},
 			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
 				resourceMatchParams := &resmock.ResourceMatchParameters{}
-				resourceMatchParams.On("MatchMultiple", fixServiceKeys()).Return([]string{serviceKeyID}, nil).Once()
+				resourceMatchParams.On("MatchMultiple", fixServiceBindings()).Return([]string{serviceKeyID}, nil).Once()
 				return resourceMatchParams
 			},
 			Config:           testConfig,
@@ -921,7 +921,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			},
 			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
 				resourceMatchParams := &resmock.ResourceMatchParameters{}
-				resourceMatchParams.On("MatchMultiple", fixServiceKeys()).Return([]string{serviceKeyID}, nil).Once()
+				resourceMatchParams.On("MatchMultiple", fixServiceBindings()).Return([]string{serviceKeyID}, nil).Once()
 				return resourceMatchParams
 			},
 			Config: testConfig,
@@ -937,7 +937,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			},
 			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
 				resourceMatchParams := &resmock.ResourceMatchParameters{}
-				resourceMatchParams.On("MatchMultiple", fixServiceKeys()).Return([]string{serviceKeyID}, nil).Once()
+				resourceMatchParams.On("MatchMultiple", fixServiceBindings()).Return([]string{serviceKeyID}, nil).Once()
 				return resourceMatchParams
 			},
 			Config: testConfig,
@@ -953,7 +953,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			},
 			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
 				resourceMatchParams := &resmock.ResourceMatchParameters{}
-				resourceMatchParams.On("MatchMultiple", fixServiceKeys()).Return([]string{serviceKeyID}, nil).Once()
+				resourceMatchParams.On("MatchMultiple", fixServiceBindings()).Return([]string{serviceKeyID}, nil).Once()
 				return resourceMatchParams
 			},
 			Config:           testConfig,
@@ -970,7 +970,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			},
 			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
 				resourceMatchParams := &resmock.ResourceMatchParameters{}
-				resourceMatchParams.On("MatchMultiple", fixServiceKeys()).Return([]string{serviceKeyID}, nil).Once()
+				resourceMatchParams.On("MatchMultiple", fixServiceBindings()).Return([]string{serviceKeyID}, nil).Once()
 				return resourceMatchParams
 			},
 			Config:           testConfig,
@@ -987,7 +987,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			},
 			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
 				resourceMatchParams := &resmock.ResourceMatchParameters{}
-				resourceMatchParams.On("MatchMultiple", fixServiceKeys()).Return([]string{serviceKeyID}, nil).Once()
+				resourceMatchParams.On("MatchMultiple", fixServiceBindings()).Return([]string{serviceKeyID}, nil).Once()
 				return resourceMatchParams
 			},
 			Config:           testConfig,
@@ -1004,7 +1004,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			},
 			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
 				resourceMatchParams := &resmock.ResourceMatchParameters{}
-				resourceMatchParams.On("MatchMultiple", fixServiceKeys()).Return([]string{serviceKeyID}, nil).Once()
+				resourceMatchParams.On("MatchMultiple", fixServiceBindings()).Return([]string{serviceKeyID}, nil).Once()
 				return resourceMatchParams
 			},
 			Config:           testConfig,
@@ -1021,7 +1021,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			},
 			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
 				resourceMatchParams := &resmock.ResourceMatchParameters{}
-				resourceMatchParams.On("MatchMultiple", fixServiceKeys()).Return([]string{serviceKeyID}, nil).Once()
+				resourceMatchParams.On("MatchMultiple", fixServiceBindings()).Return([]string{serviceKeyID}, nil).Once()
 				return resourceMatchParams
 			},
 			Config:           testConfig,
@@ -1038,7 +1038,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			testClient := client.NewClient(testCase.Config, callerProviderSvc)
 
 			// WHEN
-			err := testClient.DeleteMultipleResources(ctx, region, subaccountID, &types.ServiceKeys{}, &types.ServiceKeyMatchParameters{ServiceInstanceID: serviceInstanceID})
+			err := testClient.DeleteMultipleResources(ctx, region, subaccountID, &types.ServiceBindings{}, &types.ServiceBindingMatchParameters{ServiceInstanceID: serviceInstanceID})
 
 			// THEN
 			if testCase.ExpectedErrorMsg != "" {
@@ -1131,7 +1131,7 @@ func TestClient_DeleteMultipleResourcesByIDs(t *testing.T) {
 			testClient := client.NewClient(testCase.Config, callerProviderSvc)
 
 			// WHEN
-			err := testClient.DeleteMultipleResourcesByIDs(ctx, region, subaccountID, &types.ServiceKeys{}, fixServiceKeys().GetIDs())
+			err := testClient.DeleteMultipleResourcesByIDs(ctx, region, subaccountID, &types.ServiceBindings{}, fixServiceBindings().GetIDs())
 
 			// THEN
 			if testCase.ExpectedErrorMsg != "" {
@@ -1147,7 +1147,7 @@ func TestClient_DeleteMultipleResourcesByIDs(t *testing.T) {
 func TestClient_RetrieveRawResourceByID(t *testing.T) {
 	ctx := context.TODO()
 
-	respBody, err := json.Marshal(fixServiceKey())
+	respBody, err := json.Marshal(fixServiceBinding())
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -1169,7 +1169,7 @@ func TestClient_RetrieveRawResourceByID(t *testing.T) {
 				return resource
 			},
 			Config:         testConfig,
-			ExpectedResult: fixServiceKeyJson(),
+			ExpectedResult: fixServiceBindingJson(),
 		},
 		{
 			Name:           "Error when building URL",
@@ -1232,17 +1232,17 @@ func TestClient_RetrieveRawResourceByID(t *testing.T) {
 			defer callerProviderSvc.AssertExpectations(t)
 
 			testClient := client.NewClient(testCase.Config, callerProviderSvc)
-			serviceKey := &types.ServiceKey{ID: serviceKeyID}
+			serviceKey := &types.ServiceBinding{ID: serviceKeyID}
 
 			// WHEN
-			resultServiceKey, err := testClient.RetrieveRawResourceByID(ctx, region, subaccountID, serviceKey)
+			resultServiceBinding, err := testClient.RetrieveRawResourceByID(ctx, region, subaccountID, serviceKey)
 
 			// THEN
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
 			} else {
-				assert.JSONEq(t, string(testCase.ExpectedResult), string(resultServiceKey))
+				assert.JSONEq(t, string(testCase.ExpectedResult), string(resultServiceBinding))
 				assert.NoError(t, err)
 			}
 		})
@@ -1252,7 +1252,7 @@ func TestClient_RetrieveRawResourceByID(t *testing.T) {
 func TestClient_RetrieveMultipleResourcesIDsByLabels(t *testing.T) {
 	ctx := context.TODO()
 
-	respBody, err := json.Marshal(fixServiceKeys())
+	respBody, err := json.Marshal(fixServiceBindings())
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -1274,7 +1274,7 @@ func TestClient_RetrieveMultipleResourcesIDsByLabels(t *testing.T) {
 				return resources
 			},
 			Config:         testConfig,
-			ExpectedResult: fixServiceKeys().GetIDs(),
+			ExpectedResult: fixServiceBindings().GetIDs(),
 		},
 		{
 			Name:           "Error when building URL",
@@ -1348,7 +1348,7 @@ func TestClient_RetrieveMultipleResourcesIDsByLabels(t *testing.T) {
 
 			labels := map[string][]string{"label-key": {"label-val"}}
 
-			var resources resources.Resources = &types.ServiceKeys{}
+			var resources resources.Resources = &types.ServiceBindings{}
 
 			// WHEN
 			resultResourceIDs, err := testClient.RetrieveMultipleResourcesIDsByLabels(ctx, region, subaccountID, resources, labels)
@@ -1360,7 +1360,7 @@ func TestClient_RetrieveMultipleResourcesIDsByLabels(t *testing.T) {
 			} else {
 				assert.Equal(t, testCase.ExpectedResult, resultResourceIDs)
 				assert.NoError(t, err)
-				assert.NotNil(t, resources.(*types.ServiceKeys).Items)
+				assert.NotNil(t, resources.(*types.ServiceBindings).Items)
 			}
 		})
 	}
@@ -1396,11 +1396,11 @@ func TestClient_RetrieveMultipleResources(t *testing.T) {
 			},
 			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
 				resourceMatchParams := &resmock.ResourceMatchParameters{}
-				resourceMatchParams.On("MatchMultiple", mock.Anything).Return(fixServiceKeys().GetIDs(), nil).Once()
+				resourceMatchParams.On("MatchMultiple", mock.Anything).Return(fixServiceBindings().GetIDs(), nil).Once()
 				return resourceMatchParams
 			},
 			Config:         testConfig,
-			ExpectedResult: fixServiceKeys().GetIDs(),
+			ExpectedResult: fixServiceBindings().GetIDs(),
 		},
 		{
 			Name:           "Error when building URL",
@@ -1494,7 +1494,7 @@ func TestClient_RetrieveMultipleResources(t *testing.T) {
 				matchParams = testCase.ResourceMatchParamsFN()
 			}
 
-			var resources resources.Resources = &types.ServiceKeys{}
+			var resources resources.Resources = &types.ServiceBindings{}
 
 			// WHEN
 			resultResourceIDs, err := testClient.RetrieveMultipleResources(ctx, region, subaccountID, resources, matchParams)
@@ -1506,7 +1506,7 @@ func TestClient_RetrieveMultipleResources(t *testing.T) {
 			} else {
 				assert.Equal(t, testCase.ExpectedResult, resultResourceIDs)
 				assert.NoError(t, err)
-				assert.NotNil(t, resources.(*types.ServiceKeys).Items)
+				assert.NotNil(t, resources.(*types.ServiceBindings).Items)
 			}
 		})
 	}

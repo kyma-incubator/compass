@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/handler"
@@ -184,7 +185,7 @@ func Test_SubstituteGJSON(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			inputJSON := gjson.Parse(testCase.inputJSON)
 
-			result, err := handler.SubstituteGJSON(inputJSON, testCase.rootMap)
+			result, err := handler.SubstituteGJSON(context.TODO(), inputJSON, testCase.rootMap)
 
 			if testCase.expectedErrorMsg != "" {
 				assert.Error(t, err)

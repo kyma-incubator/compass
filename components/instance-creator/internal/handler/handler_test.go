@@ -26,16 +26,16 @@ import (
 )
 
 const (
-	assignOperation           = "assign"
-	unassignOperation         = "unassign"
-	inboundCommunicationKey   = "inboundCommunication"
-	serviceInstancesKey       = "serviceInstances"
-	serviceBindingKey         = "serviceBinding"
-	serviceInstanceServiceKey = "service"
-	serviceInstancePlanKey    = "plan"
-	configurationKey          = "configuration"
-	nameKey                   = "name"
-	assignmentIDKey           = "assignment_id"
+	assignOperation               = "assign"
+	unassignOperation             = "unassign"
+	inboundCommunicationKey       = "inboundCommunication"
+	serviceInstancesKey           = "serviceInstances"
+	serviceBindingKey             = "serviceBinding"
+	serviceInstanceServiceBinding = "service"
+	serviceInstancePlanKey        = "plan"
+	configurationKey              = "configuration"
+	nameKey                       = "name"
+	assignmentIDKey               = "assignment_id"
 )
 
 var (
@@ -1029,7 +1029,7 @@ func Test_HandlerFunc(t *testing.T) {
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("RetrieveMultipleResourcesIDsByLabels", mock.Anything, region, subaccount, mock.Anything, map[string][]string{assignmentIDKey: {assignmentID}}).Return(serviceInstancesIDs, nil).Once()
-				client.On("RetrieveMultipleResources", mock.Anything, region, subaccount, mock.Anything, &types.ServiceKeyMatchParameters{ServiceInstancesIDs: serviceInstancesIDs}).Return(nil, testErr).Once()
+				client.On("RetrieveMultipleResources", mock.Anything, region, subaccount, mock.Anything, &types.ServiceBindingMatchParameters{ServiceInstancesIDs: serviceInstancesIDs}).Return(nil, testErr).Once()
 				return client
 			},
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
@@ -1046,7 +1046,7 @@ func Test_HandlerFunc(t *testing.T) {
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("RetrieveMultipleResourcesIDsByLabels", mock.Anything, region, subaccount, mock.Anything, map[string][]string{assignmentIDKey: {assignmentID}}).Return(serviceInstancesIDs, nil).Once()
-				client.On("RetrieveMultipleResources", mock.Anything, region, subaccount, mock.Anything, &types.ServiceKeyMatchParameters{ServiceInstancesIDs: serviceInstancesIDs}).Return(serviceInstancesBindingsIDs, nil).Once()
+				client.On("RetrieveMultipleResources", mock.Anything, region, subaccount, mock.Anything, &types.ServiceBindingMatchParameters{ServiceInstancesIDs: serviceInstancesIDs}).Return(serviceInstancesBindingsIDs, nil).Once()
 				client.On("DeleteMultipleResourcesByIDs", mock.Anything, region, subaccount, mock.Anything, serviceInstancesBindingsIDs).Return(testErr).Once()
 				return client
 			},
@@ -1064,7 +1064,7 @@ func Test_HandlerFunc(t *testing.T) {
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("RetrieveMultipleResourcesIDsByLabels", mock.Anything, region, subaccount, mock.Anything, map[string][]string{assignmentIDKey: {assignmentID}}).Return(serviceInstancesIDs, nil).Once()
-				client.On("RetrieveMultipleResources", mock.Anything, region, subaccount, mock.Anything, &types.ServiceKeyMatchParameters{ServiceInstancesIDs: serviceInstancesIDs}).Return(serviceInstancesBindingsIDs, nil).Once()
+				client.On("RetrieveMultipleResources", mock.Anything, region, subaccount, mock.Anything, &types.ServiceBindingMatchParameters{ServiceInstancesIDs: serviceInstancesIDs}).Return(serviceInstancesBindingsIDs, nil).Once()
 				client.On("DeleteMultipleResourcesByIDs", mock.Anything, region, subaccount, mock.Anything, serviceInstancesBindingsIDs).Return(nil).Once()
 				client.On("DeleteMultipleResourcesByIDs", mock.Anything, region, subaccount, mock.Anything, serviceInstancesIDs).Return(testErr).Once()
 				return client
@@ -1083,7 +1083,7 @@ func Test_HandlerFunc(t *testing.T) {
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("RetrieveMultipleResourcesIDsByLabels", mock.Anything, region, subaccount, mock.Anything, map[string][]string{assignmentIDKey: {assignmentID}}).Return(serviceInstancesIDs, nil).Once()
-				client.On("RetrieveMultipleResources", mock.Anything, region, subaccount, mock.Anything, &types.ServiceKeyMatchParameters{ServiceInstancesIDs: serviceInstancesIDs}).Return(serviceInstancesBindingsIDs, nil).Once()
+				client.On("RetrieveMultipleResources", mock.Anything, region, subaccount, mock.Anything, &types.ServiceBindingMatchParameters{ServiceInstancesIDs: serviceInstancesIDs}).Return(serviceInstancesBindingsIDs, nil).Once()
 				client.On("DeleteMultipleResourcesByIDs", mock.Anything, region, subaccount, mock.Anything, serviceInstancesBindingsIDs).Return(nil).Once()
 				client.On("DeleteMultipleResourcesByIDs", mock.Anything, region, subaccount, mock.Anything, serviceInstancesIDs).Return(nil).Once()
 				return client
@@ -1147,7 +1147,7 @@ func Test_HandlerFunc(t *testing.T) {
 				substitutedGlobalServiceInstances := Configuration(substitutedAssignedTenantConfigurationWithGlobalInstancesWithJsonpaths).GetGlobalServiceInstances(inboundCommunicationKey).ToArray()
 				client.On("RetrieveMultipleResourcesIDsByLabels", mock.Anything, region, subaccount, mock.Anything, smLabelsThatHaveAssignmentID(assignmentID)).Return(serviceInstancesIDs, nil).Once()
 				// Delete All Instances and Bindings
-				client.On("RetrieveMultipleResources", mock.Anything, region, subaccount, mock.Anything, &types.ServiceKeyMatchParameters{ServiceInstancesIDs: serviceInstancesIDs}).Return(serviceInstancesBindingsIDs, nil).Once()
+				client.On("RetrieveMultipleResources", mock.Anything, region, subaccount, mock.Anything, &types.ServiceBindingMatchParameters{ServiceInstancesIDs: serviceInstancesIDs}).Return(serviceInstancesBindingsIDs, nil).Once()
 				client.On("DeleteMultipleResourcesByIDs", mock.Anything, region, subaccount, mock.Anything, serviceInstancesBindingsIDs).Return(nil).Once()
 				client.On("DeleteMultipleResourcesByIDs", mock.Anything, region, subaccount, mock.Anything, serviceInstancesIDs).Return(nil).Once()
 
@@ -1160,7 +1160,7 @@ func Test_HandlerFunc(t *testing.T) {
 
 				firstGlobalServiceInstanceBindingSubstituted := firstGlobalServiceInstanceSubstituted.GetServiceBinding()
 				client.On("CreateResource", mock.Anything, region, subaccount, serviceBindingReqBody(firstGlobalServiceInstanceBindingSubstituted.GetName(), serviceInstancesIDs[0], firstGlobalServiceInstanceBindingSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesBindingsIDs[0], nil).Once()
-				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceKey{ID: serviceInstancesBindingsIDs[0]}).Return(firstGlobalServiceInstanceBindingSubstituted.WithName(serviceInstanceBindingsNames[0]).ToJSONRawMessage(), nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceBinding{ID: serviceInstancesBindingsIDs[0]}).Return(firstGlobalServiceInstanceBindingSubstituted.WithName(serviceInstanceBindingsNames[0]).ToJSONRawMessage(), nil).Once()
 
 				// Second Instance
 				secondGlobalServiceInstanceSubstituted := substitutedGlobalServiceInstances[1]
@@ -1171,7 +1171,7 @@ func Test_HandlerFunc(t *testing.T) {
 
 				secondGlobalServiceInstanceBindingSubstituted := secondGlobalServiceInstanceSubstituted.GetServiceBinding()
 				client.On("CreateResource", mock.Anything, region, subaccount, serviceBindingReqBody(secondGlobalServiceInstanceBindingSubstituted.GetName(), serviceInstancesIDs[1], secondGlobalServiceInstanceBindingSubstituted.GetParameters()), mock.Anything).Return(serviceInstancesBindingsIDs[1], nil).Once()
-				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceKey{ID: serviceInstancesBindingsIDs[1]}).Return(secondGlobalServiceInstanceBindingSubstituted.WithName(serviceInstanceBindingsNames[1]).ToJSONRawMessage(), nil).Once()
+				client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceBinding{ID: serviceInstancesBindingsIDs[1]}).Return(secondGlobalServiceInstanceBindingSubstituted.WithName(serviceInstanceBindingsNames[1]).ToJSONRawMessage(), nil).Once()
 
 				return client
 			},
@@ -1378,10 +1378,10 @@ func serviceInstanceReqBody(name, planID, assignmentID, parameters string) inter
 }
 
 func serviceBindingReqBody(name, serviceInstanceID, parameters string) interface{} {
-	return mock.MatchedBy(func(actualReqBody *types.ServiceKeyReqBody) bool {
+	return mock.MatchedBy(func(actualReqBody *types.ServiceBindingReqBody) bool {
 		return (name == "" || name == actualReqBody.Name) &&
 			parameters == string(actualReqBody.Parameters) &&
-			serviceInstanceID == actualReqBody.ServiceKeyID
+			serviceInstanceID == actualReqBody.ServiceBindingID
 	})
 }
 
@@ -1430,7 +1430,7 @@ func (sis ServiceInstances) ToString() string {
 }
 
 func (si ServiceInstance) GetService() string {
-	return gjson.Get(string(si), serviceInstanceServiceKey).String()
+	return gjson.Get(string(si), serviceInstanceServiceBinding).String()
 }
 
 func (si ServiceInstance) GetPlan() string {
@@ -1502,7 +1502,7 @@ func mockSMClient(client *automock.Client, assignedTenantConfiguration string) {
 		// Service Binding
 		globalInstanceBinding := globalInstance.GetServiceBinding()
 		client.On("CreateResource", mock.Anything, region, subaccount, serviceBindingReqBody(globalInstanceBinding.GetName(), currentServiceInstanceID, globalInstanceBinding.GetParameters()), mock.Anything).Return(currentServiceBindingID, nil).Once()
-		client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceKey{ID: currentServiceBindingID}).Return(globalInstanceBinding.WithName(currentServiceInstanceBindingName).ToJSONRawMessage(), nil).Once()
+		client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceBinding{ID: currentServiceBindingID}).Return(globalInstanceBinding.WithName(currentServiceInstanceBindingName).ToJSONRawMessage(), nil).Once()
 	}
 
 	// Local Instances
@@ -1530,7 +1530,7 @@ func mockSMClient(client *automock.Client, assignedTenantConfiguration string) {
 			// Service Binding
 			localInstanceBinding := localInstance.GetServiceBinding()
 			client.On("CreateResource", mock.Anything, region, subaccount, serviceBindingReqBody(localInstanceBinding.GetName(), currentServiceInstanceID, localInstanceBinding.GetParameters()), mock.Anything).Return(currentServiceBindingID, nil).Once()
-			client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceKey{ID: currentServiceBindingID}).Return(localInstanceBinding.WithName(currentServiceInstanceBindingName).ToJSONRawMessage(), nil).Once()
+			client.On("RetrieveRawResourceByID", mock.Anything, region, subaccount, &types.ServiceBinding{ID: currentServiceBindingID}).Return(localInstanceBinding.WithName(currentServiceInstanceBindingName).ToJSONRawMessage(), nil).Once()
 		}
 	}
 }

@@ -25,6 +25,8 @@ const (
 	SubaccountKey = "subaccount_id"
 	// LocationHeaderKey is used in the async API calls
 	LocationHeaderKey = "Location"
+	// LabelsQueryKey is used as URL parameter for Service Manager label querying
+	LabelsQueryKey = "labelQuery"
 )
 
 // ExternalSvcCaller is used to call external services with given authentication
@@ -58,7 +60,7 @@ func NewClient(cfg config.Config, callerProvider ExternalSvcCallerProvider) *cli
 // Example call, delete after initial usage of the client:
 // RetrieveResource(ctx, region, sa, &types.ServiceOfferings{}, &types.ServiceOfferingMatchParameters{CatalogName: catalogName})
 func (c *client) RetrieveResource(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) (string, error) {
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resources.GetURLPath(), SubaccountKey, subaccountID)
+	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resources.GetURLPath(), SubaccountKey, subaccountID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building %s URL", resources.GetType())
 	}
@@ -91,7 +93,7 @@ func (c *client) RetrieveResource(ctx context.Context, region, subaccountID stri
 // RetrieveResourceByID(ctx , region, subaccountID, &types.ServiceKey{ID: serviceKeyID}, &types.ServiceKeyMatchParameters{})
 func (c *client) RetrieveResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource) (resources.Resource, error) {
 	resourcePath := resource.GetResourceURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourcePath, SubaccountKey, subaccountID)
+	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resourcePath, SubaccountKey, subaccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building %s URL", resource.GetResourceType())
 	}
@@ -116,11 +118,10 @@ func (c *client) RetrieveResourceByID(ctx context.Context, region, subaccountID 
 //
 // RetrieveResourceIDByLabels(ctx , region, subaccountID, &types.ServiceKey{ID: serviceKeyID}, &types.ServiceKeyMatchParameters{})
 func (c *client) RetrieveMultipleResourcesIDsByLabels(ctx context.Context, region, subaccountID string, resources resources.Resources, labels map[string][]string) ([]string, error) {
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resources.GetURLPath(), SubaccountKey, subaccountID)
+	strURL, err := buildURLWithLabels(c.cfg.RegionToInstanceConfig[region].SMURL, resources.GetURLPath(), SubaccountKey, subaccountID, LabelsQueryKey, labels)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while building %s URL", resources.GetType())
+		return nil, errors.Wrapf(err, "while building %s URL with labels", resources.GetType())
 	}
-	strURL += createLabelsQuery(labels)
 
 	log.C(ctx).Infof("Listing %s by labels: %v for subaccount with ID: %q", resources.GetType(), labels, subaccountID)
 	body, err := c.executeSyncRequest(ctx, strURL, region)
@@ -143,7 +144,7 @@ func (c *client) RetrieveMultipleResourcesIDsByLabels(ctx context.Context, regio
 // RetrieveRawResourceByID(ctx , region, subaccountID, &types.ServiceKey{ID: serviceKeyID}, &types.ServiceKeyMatchParameters{})
 func (c *client) RetrieveRawResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource) (json.RawMessage, error) {
 	resourcePath := resource.GetResourceURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourcePath, SubaccountKey, subaccountID)
+	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resourcePath, SubaccountKey, subaccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building %s URL", resource.GetResourceType())
 	}
@@ -168,7 +169,7 @@ func (c *client) CreateResource(ctx context.Context, region, subaccountID string
 		return "", errors.Errorf("failed to marshal %s body: %v", resource.GetResourceType(), err)
 	}
 
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resource.GetResourceURLPath(), SubaccountKey, subaccountID)
+	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resource.GetResourceURLPath(), SubaccountKey, subaccountID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building %s URL", resource.GetResourceType())
 	}
@@ -201,7 +202,7 @@ func (c *client) CreateResource(ctx context.Context, region, subaccountID string
 
 	if resp.StatusCode == http.StatusAccepted {
 		log.C(ctx).Infof("Handle asynchronous creation of %s...", resource.GetResourceType())
-		resourceID, err := c.executeAsyncRequest(ctx, resp, caller, subaccountID, true)
+		resourceID, err := c.executeAsyncRequest(ctx, resp, caller, region, subaccountID, true)
 		if err != nil {
 			return "", errors.Wrapf(err, "while handling asynchronous creation of %s in subaccount with ID: %q", resource.GetResourceType(), subaccountID)
 		}
@@ -232,7 +233,7 @@ func (c *client) CreateResource(ctx context.Context, region, subaccountID string
 // DeleteResource(ctx, region, subaccountID, &types.ServiceInstance{ID: id}, &types.ServiceInstanceMatchParameters{})
 func (c *client) DeleteResource(ctx context.Context, region, subaccountID string, resource resources.Resource) error {
 	resourcePath := resource.GetResourceURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourcePath, SubaccountKey, subaccountID)
+	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resourcePath, SubaccountKey, subaccountID)
 	if err != nil {
 		return errors.Wrapf(err, "while building %s URL", resource.GetResourceType())
 	}
@@ -265,7 +266,7 @@ func (c *client) DeleteResource(ctx context.Context, region, subaccountID string
 
 	if resp.StatusCode == http.StatusAccepted {
 		log.C(ctx).Infof("Handle asynchronous %s deletion...", resource.GetResourceType())
-		_, err := c.executeAsyncRequest(ctx, resp, caller, subaccountID, false)
+		_, err := c.executeAsyncRequest(ctx, resp, caller, region, subaccountID, false)
 		if err != nil {
 			return errors.Wrapf(err, "while deleting %s with ID: %q and subaccount: %q", resource.GetResourceType(), resource.GetResourceID(), subaccountID)
 		}
@@ -327,7 +328,7 @@ func (c *client) prepareResourceForDeletion(resourceType, resourceID string) (re
 	case types.ServiceInstancesType:
 		return &types.ServiceInstance{ID: resourceID}, nil
 	case types.ServiceBindingsType:
-		return &types.ServiceKey{ID: resourceID}, nil
+		return &types.ServiceBinding{ID: resourceID}, nil
 	default:
 		return nil, errors.New("unknown resource type")
 	}
@@ -345,6 +346,32 @@ func buildURL(baseURL, path, tenantKey, tenantValue string) (string, error) {
 	// Query params
 	params := url.Values{}
 	params.Add(tenantKey, tenantValue)
+	base.RawQuery = params.Encode()
+
+	return base.String(), nil
+}
+
+func buildURLWithLabels(baseURL, path, tenantKey, tenantValue, labelsKey string, labelsValue map[string][]string) (string, error) {
+	base, err := url.Parse(baseURL)
+	if err != nil {
+		return "", err
+	}
+
+	// Path params
+	base.Path += path
+
+	// Build labels query
+	operators := make([]string, 0, len(labelsValue))
+	for key, values := range labelsValue {
+		operators = append(operators, fmt.Sprintf("%s in ('%s')", key, strings.Join(values, "', '")))
+	}
+	labelsQuery := strings.Join(operators, " and ")
+
+	// Query params
+	params := url.Values{}
+	params.Add(tenantKey, tenantValue)
+	params.Add(labelsKey, labelsQuery)
+
 	base.RawQuery = params.Encode()
 
 	return base.String(), nil
@@ -385,13 +412,13 @@ func (c *client) executeSyncRequest(ctx context.Context, strURL, region string) 
 	return body, nil
 }
 
-func (c *client) executeAsyncRequest(ctx context.Context, resp *http.Response, caller ExternalSvcCaller, subaccountID string, isCreateRequest bool) (string, error) {
+func (c *client) executeAsyncRequest(ctx context.Context, resp *http.Response, caller ExternalSvcCaller, region, subaccountID string, isCreateRequest bool) (string, error) {
 	opStatusPath := resp.Header.Get(LocationHeaderKey)
 	if opStatusPath == "" {
 		return "", errors.Errorf("the operation status path from %s header should not be empty", LocationHeaderKey)
 	}
 
-	opURL, err := buildURL(c.cfg.InstanceSMURLPath, opStatusPath, SubaccountKey, subaccountID)
+	opURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, opStatusPath, SubaccountKey, subaccountID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building asynchronous operation URL")
 	}
@@ -452,7 +479,7 @@ func (c *client) executeAsyncRequest(ctx context.Context, resp *http.Response, c
 }
 
 func (c *client) RetrieveMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) ([]string, error) {
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resources.GetURLPath(), SubaccountKey, subaccountID)
+	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resources.GetURLPath(), SubaccountKey, subaccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building %s URL", resources.GetType())
 	}
@@ -476,19 +503,6 @@ func (c *client) RetrieveMultipleResources(ctx context.Context, region, subaccou
 	log.C(ctx).Infof("%d %s are found", len(resourceIDs), resources.GetType())
 
 	return resourceIDs, nil
-}
-
-func createLabelsQuery(labels map[string][]string) string {
-	labelsQuery := "?fieldQuery="
-
-	operators := make([]string, 0, len(labels))
-	for key, values := range labels {
-		operators = append(operators, fmt.Sprintf("%s in ('%s')", key, strings.Join(values, "', '")))
-	}
-
-	labelsQuery += strings.Join(operators, " and ")
-
-	return labelsQuery
 }
 
 func sendRequestWithRetry(ctx context.Context, caller ExternalSvcCaller, req *http.Request) (*http.Response, error) {

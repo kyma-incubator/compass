@@ -9,8 +9,8 @@ require (
 	github.com/google/uuid v1.3.1
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.5
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240115082908-c451916cd3c4
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240103071758-92efbd94b916
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240123081221-34fb1f6bc126
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240116150905-cdc03fbdf9fc
 	github.com/lib/pq v1.10.9
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
@@ -50,7 +50,7 @@ require (
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20240103071758-92efbd94b916 // indirect
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20240123081221-34fb1f6bc126 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
