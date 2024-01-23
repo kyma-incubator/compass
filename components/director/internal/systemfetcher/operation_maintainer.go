@@ -48,7 +48,7 @@ type SytemFetcherOperationMaintainer struct {
 
 // NewOperationMaintainer creates OperationMaintainer based on kind
 func NewOperationMaintainer(kind model.OperationType, transact persistence.Transactioner, opSvc OperationService, businessTenantMappingSvc BusinessTenantMappingService) OperationMaintainer {
-	if kind == model.OperationTypeSystemFetcherAggregation {
+	if kind == model.OperationTypeSystemFetching {
 		return &SytemFetcherOperationMaintainer{
 			transact:                 transact,
 			opSvc:                    opSvc,
@@ -109,7 +109,7 @@ func (om *SytemFetcherOperationMaintainer) buildNonExistingOperationInputs(ctx c
 		}
 	}
 
-	existingOperations, err := om.opSvc.ListAllByType(ctx, model.OperationTypeSystemFetcherAggregation)
+	existingOperations, err := om.opSvc.ListAllByType(ctx, model.OperationTypeSystemFetching)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -201,7 +201,7 @@ func (om *SytemFetcherOperationMaintainer) tenantToOperation(tenant *model.Busin
 func buildSystemFetcherOperationInput(data string) *model.OperationInput {
 	now := time.Now()
 	return &model.OperationInput{
-		OpType:    model.OperationTypeSystemFetcherAggregation,
+		OpType:    model.OperationTypeSystemFetching,
 		Status:    model.OperationStatusScheduled,
 		Data:      json.RawMessage(data),
 		Error:     nil,

@@ -199,7 +199,7 @@ func main() {
 	systemFetcherSvc, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, certCache, keyCache)
 	exitOnError(err, "Failed to initialize System Fetcher")
 
-	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeSystemFetcherAggregation, cfg.OperationsManagerConfig)
+	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeSystemFetching, cfg.OperationsManagerConfig)
 
 	onDemandChannel := make(chan string, 100)
 	handler := initHandler(ctx, operationsManager, businessTenantMappingSvc, transact, onDemandChannel, cfg)
@@ -215,7 +215,7 @@ func main() {
 		systemfetcherOperationProcessor := &systemfetcher.OperationsProcessor{
 			SystemFetcherSvc: systemFetcherSvc,
 		}
-		systemFetcherOperationMaintainer := systemfetcher.NewOperationMaintainer(model.OperationTypeSystemFetcherAggregation, transact, opSvc, businessTenantMappingSvc)
+		systemFetcherOperationMaintainer := systemfetcher.NewOperationMaintainer(model.OperationTypeSystemFetching, transact, opSvc, businessTenantMappingSvc)
 
 		for i := 0; i < cfg.ParallelOperationProcessors; i++ {
 			go func(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *systemfetcher.OperationsProcessor, executorIndex int) {
@@ -334,7 +334,6 @@ func initHandler(ctx context.Context, opMgr *operationsmanager.OperationsManager
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
 		cfg.AggregatorRootAPI+healthzEndpoint, cfg.AggregatorRootAPI+readyzEndpoint))
 
-	handler := systemfetcher.NewSystemFetcherAggregatorHTTPHandler(opMgr, businessTenantMappingSvc, transact, onDemandChannel)
 	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 
 	httpClient := &http.Client{
@@ -345,9 +344,13 @@ func initHandler(ctx context.Context, opMgr *operationsmanager.OperationsManager
 	}
 
 	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.SystemFetcherSyncScope)
+	logger.Infof("Registering sync endpoint...")
 	if cfg.SystemFetcher.OperationalMode == discoverSystemsOpMode {
+		logger.Infof("Sync endpoint is enabled.")
+		handler := systemfetcher.NewSystemFetcherAggregatorHTTPHandler(opMgr, businessTenantMappingSvc, transact, onDemandChannel)
 		apiRouter.HandleFunc(syncEndpoint, handler.ScheduleAggregationForSystemFetcherData).Methods(http.MethodPost)
 	} else {
+		logger.Infof("Sync endpoint is not enabled.")
 		apiRouter.HandleFunc(syncEndpoint, newNotSupportedHandler()).Methods(http.MethodPost)
 	}
 

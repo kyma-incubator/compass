@@ -25,8 +25,8 @@ type OperationType string
 const (
 	// OperationTypeOrdAggregation specifies open resource discovery operation type
 	OperationTypeOrdAggregation OperationType = "ORD_AGGREGATION"
-	// OperationTypeSystemFetcherAggregation specifies open resource discovery operation type
-	OperationTypeSystemFetcherAggregation OperationType = "SYSTEM_FETCHER_AGGREGATION"
+	// OperationTypeSystemFetching specifies system fetching operation type
+	OperationTypeSystemFetching OperationType = "SYSTEM_FETCHING"
 )
 
 // Operation represents an Operation

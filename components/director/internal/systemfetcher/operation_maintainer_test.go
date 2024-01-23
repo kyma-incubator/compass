@@ -63,7 +63,7 @@ func TestOperationMaintainer_Maintain(t *testing.T) {
 			},
 			OperationSvcFn: func() *automock.OperationService {
 				svc := &automock.OperationService{}
-				svc.On("ListAllByType", txtest.CtxWithDBMatcher(), model.OperationTypeSystemFetcherAggregation).Return([]*model.Operation{operation}, nil).Once()
+				svc.On("ListAllByType", txtest.CtxWithDBMatcher(), model.OperationTypeSystemFetching).Return([]*model.Operation{operation}, nil).Once()
 				svc.On("CreateMultiple", txtest.CtxWithDBMatcher(), mock.AnythingOfType("[]*model.OperationInput")).Run(func(args mock.Arguments) {
 					arg := args.Get(1)
 					res, ok := arg.([]*model.OperationInput)
@@ -123,7 +123,7 @@ func TestOperationMaintainer_Maintain(t *testing.T) {
 			},
 			OperationSvcFn: func() *automock.OperationService {
 				svc := &automock.OperationService{}
-				svc.On("ListAllByType", txtest.CtxWithDBMatcher(), model.OperationTypeSystemFetcherAggregation).Return(nil, testErr).Once()
+				svc.On("ListAllByType", txtest.CtxWithDBMatcher(), model.OperationTypeSystemFetching).Return(nil, testErr).Once()
 				return svc
 			},
 			BusinessTenantMappingSvcFn: func() *automock.BusinessTenantMappingService {
@@ -140,7 +140,7 @@ func TestOperationMaintainer_Maintain(t *testing.T) {
 			},
 			OperationSvcFn: func() *automock.OperationService {
 				svc := &automock.OperationService{}
-				svc.On("ListAllByType", txtest.CtxWithDBMatcher(), model.OperationTypeSystemFetcherAggregation).Return(operations, nil).Once()
+				svc.On("ListAllByType", txtest.CtxWithDBMatcher(), model.OperationTypeSystemFetching).Return(operations, nil).Once()
 				svc.On("CreateMultiple", txtest.CtxWithDBMatcher(), mock.Anything).Return(testErr).Once()
 				return svc
 			},
@@ -158,7 +158,7 @@ func TestOperationMaintainer_Maintain(t *testing.T) {
 			},
 			OperationSvcFn: func() *automock.OperationService {
 				svc := &automock.OperationService{}
-				svc.On("ListAllByType", txtest.CtxWithDBMatcher(), model.OperationTypeSystemFetcherAggregation).Return(operations, nil).Once()
+				svc.On("ListAllByType", txtest.CtxWithDBMatcher(), model.OperationTypeSystemFetching).Return(operations, nil).Once()
 				svc.On("CreateMultiple", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Once()
 				svc.On("DeleteMultiple", txtest.CtxWithDBMatcher(), mock.Anything).Return(testErr).Once()
 				return svc
@@ -179,7 +179,7 @@ func TestOperationMaintainer_Maintain(t *testing.T) {
 			opSvc := testCase.OperationSvcFn()
 			businessTenantMappingSvc := testCase.BusinessTenantMappingSvcFn()
 
-			opMaintainer := systemfetcher.NewOperationMaintainer(model.OperationTypeSystemFetcherAggregation, tx, opSvc, businessTenantMappingSvc)
+			opMaintainer := systemfetcher.NewOperationMaintainer(model.OperationTypeSystemFetching, tx, opSvc, businessTenantMappingSvc)
 
 			// WHEN
 			err := opMaintainer.Maintain(ctx)

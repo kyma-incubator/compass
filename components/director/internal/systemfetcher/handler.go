@@ -114,7 +114,7 @@ func (h *handler) ScheduleAggregationForSystemFetcherData(writer http.ResponseWr
 		}
 
 		newOperationInput := &model.OperationInput{
-			OpType:    model.OperationTypeSystemFetcherAggregation,
+			OpType:    model.OperationTypeSystemFetching,
 			Status:    model.OperationStatusScheduled,
 			Data:      json.RawMessage(rawData),
 			Priority:  int(operationsmanager.HighOperationPriority),
