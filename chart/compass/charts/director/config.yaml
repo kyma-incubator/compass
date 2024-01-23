@@ -30,6 +30,7 @@ graphql:
     formation: ["formation:read"]
     formationByName: ["formation:read"]
     formations: ["formation:read"]
+    formationsForParticipant: ["formation:global_read"]
     formationTemplate: [ "formation_template:read" ]
     formationTemplates: [ "formation_template:read" ]
     formationTemplatesByName: [ "formation_template:read" ]

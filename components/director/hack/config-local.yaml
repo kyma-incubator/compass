@@ -33,6 +33,7 @@ graphql:
     formation: ["formation:read"]
     formationByName: ["formation:read"]
     formations: ["formation:read"]
+    formationsForParticipant: ["formation:global_read"]
     formationConstraint: ["formation_constraint:read"]
     formationConstraints: ["formation_constraint:read"]
     formationConstraintsByFormationType: ["formation_constraint:read"]
@@ -242,6 +243,7 @@ clientCredentialsRegistrationScopes:
     - "certificate_subject_mapping:read"
     - "certificate_subject_mapping:write"
     - "formation.state:write"
+    - "formation:global_read"
 applicationHideSelectors:
   applicationHideSelectorKey:
     - "applicationHideSelectorValue"
