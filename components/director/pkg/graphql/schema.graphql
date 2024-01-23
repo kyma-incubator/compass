@@ -1303,7 +1303,7 @@ type Formation {
 	id: ID!
 	name: String!
 	formationTemplateId: ID!
-	tenantID: ID!
+	tenantID: ID!  @hasScopes(path: "graphql.field.formation.tenant_id")
 	"""
 	Formation lifecycle notifications state
 	"""

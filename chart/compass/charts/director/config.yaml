@@ -161,6 +161,8 @@ graphql:
       webhooks: ["formation_template.webhooks:read"]
     integration_system:
       auths: ["integration_system.auths:read"]
+    formation:
+      tenant_id: ["formation:global_read"]
 
   input:
     application:
