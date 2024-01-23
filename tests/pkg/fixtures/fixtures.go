@@ -183,6 +183,17 @@ func FixTenantRequest(externalID string) *gcli.Request {
 				}`, externalID, testctx.Tc.GQLFieldsProvider.ForTenant()))
 }
 
+func FixSetTenantLabelRequest(internalID, labelKey, labelValue string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation { setTenantLabel(
+				tenantID: "%s"
+				key: "%s"
+				value: "%s") {
+						%s
+					}
+				}`, internalID, labelKey, labelValue, testctx.Tc.GQLFieldsProvider.ForLabel()))
+}
+
 func FixWriteTenantsRequest(t require.TestingT, tenants []graphql.BusinessTenantMappingInput) *gcli.Request {
 	gqlizer := graphqlizer.Graphqlizer{}
 	in, err := gqlizer.WriteTenantsInputToGQL(tenants)

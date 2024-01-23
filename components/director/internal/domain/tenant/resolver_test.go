@@ -1189,6 +1189,117 @@ func TestResolver_Update(t *testing.T) {
 	}
 }
 
+func TestResolver_SetTenantLabel(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+	txGen := txtest.NewTransactionContextGenerator(testError)
+
+	tenantInternalID := "internal"
+	labelKey := "label_key"
+	labelKeyInvalid := "label-key"
+	labelValue := "label_value"
+	expectedLabelGQL := &graphql.Label{
+		Key:   labelKey,
+		Value: labelValue,
+	}
+
+	testCases := []struct {
+		Name           string
+		TxFn           func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		TenantSvcFn    func() *automock.BusinessTenantMappingService
+		IDInput        string
+		LabelKey       string
+		LabelValue     string
+		ExpectedError  error
+		ExpectedResult *graphql.Label
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantSvc := &automock.BusinessTenantMappingService{}
+				tenantSvc.On("UpsertLabel", txtest.CtxWithDBMatcher(), tenantInternalID, labelKey, labelValue).Return(nil).Once()
+				return tenantSvc
+			},
+			IDInput:        tenantInternalID,
+			LabelKey:       labelKey,
+			LabelValue:     labelValue,
+			ExpectedError:  nil,
+			ExpectedResult: expectedLabelGQL,
+		},
+		{
+			Name: "Fail on begin transaction",
+			TxFn: txGen.ThatFailsOnBegin,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				return &automock.BusinessTenantMappingService{}
+			},
+			IDInput:       tenantInternalID,
+			LabelKey:      labelKey,
+			LabelValue:    labelValue,
+			ExpectedError: testError,
+		},
+		{
+			Name: "Fail while upserting label",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantSvc := &automock.BusinessTenantMappingService{}
+				tenantSvc.On("UpsertLabel", txtest.CtxWithDBMatcher(), tenantInternalID, labelKey, labelValue).Return(testError).Once()
+				return tenantSvc
+			},
+			IDInput:       tenantInternalID,
+			LabelKey:      labelKey,
+			LabelValue:    labelValue,
+			ExpectedError: testError,
+		},
+		{
+			Name: "Fail when invalid label key",
+			TxFn: txGen.ThatDoesntStartTransaction,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				return &automock.BusinessTenantMappingService{}
+			},
+			IDInput:       tenantInternalID,
+			LabelKey:      labelKeyInvalid,
+			LabelValue:    labelValue,
+			ExpectedError: errors.New("must be in a valid format"),
+		},
+		{
+			Name: "Fail on commit transaction",
+			TxFn: txGen.ThatFailsOnCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantSvc := &automock.BusinessTenantMappingService{}
+				tenantSvc.On("UpsertLabel", txtest.CtxWithDBMatcher(), tenantInternalID, labelKey, labelValue).Return(nil).Once()
+				return tenantSvc
+			},
+			IDInput:       tenantInternalID,
+			LabelKey:      labelKey,
+			LabelValue:    labelValue,
+			ExpectedError: testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantSvc := testCase.TenantSvcFn()
+			persist, transact := testCase.TxFn()
+			resolver := tenant.NewResolver(transact, tenantSvc, nil, nil)
+
+			// WHEN
+			result, err := resolver.SetTenantLabel(ctx, testCase.IDInput, testCase.LabelKey, testCase.LabelValue)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, result)
+			}
+
+			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc)
+		})
+	}
+}
+
 func TestResolver_AddTenantAccess(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
