@@ -6920,7 +6920,7 @@ type Formation {
 	id: ID!
 	name: String!
 	formationTemplateId: ID!
-	tenantID: ID!
+	tenantID: ID!  @hasScopes(path: "graphql.field.formation.tenant_id")
 	"""
 	Formation lifecycle notifications state
 	"""
@@ -7377,7 +7377,7 @@ type Query {
 	- [query formations](examples/query-formations/query-formations.graphql)
 	"""
 	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
-	formationsForParticipant(participantId: String!): [Formation!]! @hasScopes(path: "graphql.query.formations")
+	formationsForParticipant(participantId: String!): [Formation!]! @hasScopes(path: "graphql.query.formationsForParticipant")
 	formationConstraints: [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
 	"""
 	**Examples**
@@ -18310,8 +18310,32 @@ func (ec *executionContext) _Formation_tenantID(ctx context.Context, field graph
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TenantID, nil
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.TenantID, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.formation.tenant_id")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -30500,7 +30524,7 @@ func (ec *executionContext) _Query_formationsForParticipant(ctx context.Context,
 			return ec.resolvers.Query().FormationsForParticipant(rctx, args["participantId"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.query.formations")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.formationsForParticipant")
 			if err != nil {
 				return nil, err
 			}
