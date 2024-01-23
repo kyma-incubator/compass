@@ -140,9 +140,9 @@ func (s *SystemFetcher) ProcessTenant(ctx context.Context, tenantID string) erro
 		return errors.Wrap(err, "failed while loading systems synchronization timestamps")
 	}
 
-	tenant, err := s.tenantService.GetTenantByID(ctx, tenantID)
+	tenant, err := s.getTenantByID(ctx, tenantID)
 	if err != nil {
-		return errors.Wrap(err, "failed while loading tenant synchronization timestamps")
+		return errors.Wrapf(err, "failed while loading tenant with ID %s", tenantID)
 	}
 
 	if tenant == nil {
@@ -233,6 +233,28 @@ func (s *SystemFetcher) loadSystemsSynchronizationTimestampsForTenant(ctx contex
 	return systemSynchronizationTimestamps, nil
 }
 
+func (s *SystemFetcher) getTenantByID(ctx context.Context, tenantID string) (*model.BusinessTenantMapping, error) {
+	tx, err := s.transaction.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to begin transaction")
+	}
+	defer s.transaction.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	tenant, err := s.tenantService.GetTenantByID(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to commit transaction")
+	}
+
+	return tenant, nil
+}
+
 // UpsertSystemsSyncTimestampsForTenant updates the synchronization timestamps of the systems for each tenant or creates new ones if they don't exist in the database
 func (s *SystemFetcher) UpsertSystemsSyncTimestampsForTenant(ctx context.Context, tenant string, timestamps map[string]SystemSynchronizationTimestamp) error {
 	tx, err := s.transaction.Begin()
@@ -243,7 +265,7 @@ func (s *SystemFetcher) UpsertSystemsSyncTimestampsForTenant(ctx context.Context
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	err = s.upsertSystemsSyncTimestampsForTenant(ctx, tenant, timestamps)
+	err = s.upsertSystemsSyncTimestampsForTenantInternal(ctx, tenant, timestamps)
 	if err != nil {
 		return errors.Wrapf(err, "failed to upsert systems sync timestamps for tenant %s", tenant)
 	}
@@ -256,7 +278,7 @@ func (s *SystemFetcher) UpsertSystemsSyncTimestampsForTenant(ctx context.Context
 	return nil
 }
 
-func (s *SystemFetcher) upsertSystemsSyncTimestampsForTenant(ctx context.Context, tenant string, timestamps map[string]SystemSynchronizationTimestamp) error {
+func (s *SystemFetcher) upsertSystemsSyncTimestampsForTenantInternal(ctx context.Context, tenant string, timestamps map[string]SystemSynchronizationTimestamp) error {
 	for productID, timestamp := range timestamps {
 		in := &model.SystemSynchronizationTimestamp{
 			ID:                timestamp.ID,
