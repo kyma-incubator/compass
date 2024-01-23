@@ -9,4 +9,5 @@ type TenantAccess struct {
 	ResourceType     resource.Type
 	ResourceID       string
 	Owner            bool
+	Source           string
 }

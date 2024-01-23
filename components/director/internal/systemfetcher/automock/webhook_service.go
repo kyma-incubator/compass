@@ -92,13 +92,12 @@ func (_m *WebhookService) Update(ctx context.Context, id string, in model.Webhoo
 	return r0
 }
 
-type mockConstructorTestingTNewWebhookService interface {
+// NewWebhookService creates a new instance of WebhookService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewWebhookService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewWebhookService creates a new instance of WebhookService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewWebhookService(t mockConstructorTestingTNewWebhookService) *WebhookService {
+}) *WebhookService {
 	mock := &WebhookService{}
 	mock.Mock.Test(t)
 
