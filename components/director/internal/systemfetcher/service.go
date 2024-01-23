@@ -132,6 +132,11 @@ type tenantSystems struct {
 	syncTimestamp time.Time
 }
 
+// SetTemplateRenreder replaces the current template renderer
+func (s *SystemFetcher) SetTemplateRenreder(templateRenderer templateRenderer) {
+	s.templateRenderer = templateRenderer
+}
+
 // ProcessTenant performs resync of systems for provided tenant
 func (s *SystemFetcher) ProcessTenant(ctx context.Context, tenantID string) error {
 	log.C(ctx).Infof("Processing systems for tenant %s", tenantID)

@@ -224,6 +224,11 @@ func main() {
 					case <-onDemandChannel:
 					default:
 					}
+					templateRenderer, err := reloadTemplates(ctx, cfg, transact)
+					if err != nil {
+						log.C(ctx).Errorf("Failed to reload templates by executor %d . Err: %v", executorIndex, err)
+					}
+					opProcessor.SystemFetcherSvc.SetTemplateRenreder(templateRenderer)
 
 					processedOperationID, err := claimAndProcessOperation(ctx, opManager, opProcessor)
 					if err != nil {
@@ -276,6 +281,61 @@ func exitOnError(err error, context string) {
 		wrappedError := errors.Wrap(err, context)
 		log.D().Fatal(wrappedError)
 	}
+}
+
+func reloadTemplates(ctx context.Context, cfg config, transact persistence.Transactioner) (*systemfetcher.Renderer, error) {
+	uidSvc := uid.NewService()
+	authConverter := auth.NewConverter()
+	webhookConverter := webhook.NewConverter(authConverter)
+	webhookRepo := webhook.NewRepository(webhookConverter)
+	versionConverter := version.NewConverter()
+	frConverter := fetchrequest.NewConverter(authConverter)
+	specConverter := spec.NewConverter(frConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	docConverter := document.NewConverter(frConverter)
+	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
+	labelConverter := label.NewConverter()
+	labelRepo := label.NewRepository(labelConverter)
+	labelDefConverter := labeldef.NewConverter()
+	labelDefRepo := labeldef.NewRepository(labelDefConverter)
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	applicationRepo := application.NewRepository(appConverter)
+	timeSvc := directortime.NewService()
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
+	intSysConverter := integrationsystem.NewConverter()
+	intSysRepo := integrationsystem.NewRepository(intSysConverter)
+	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
+	tenantConverter := tenant.NewConverter()
+	tenantRepo := tenant.NewRepository(tenantConverter)
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, map[string]interface{}{}, "")
+
+	dataLoader := systemfetcher.NewDataLoader(transact, cfg.SystemFetcher, appTemplateSvc, intSysSvc, webhookSvc)
+	if err := dataLoader.LoadData(ctx, os.ReadDir, os.ReadFile); err != nil {
+		return nil, errors.Wrapf(err, "while loading template data")
+	}
+
+	var placeholdersMapping []systemfetcher.PlaceholderMapping
+	err := json.Unmarshal([]byte(cfg.TemplateConfig.PlaceholderToSystemKeyMappings), &placeholdersMapping)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while unmarshaling placeholders mapping")
+	}
+
+	err = calculateTemplateMappings(ctx, cfg, transact, appTemplateSvc, placeholdersMapping)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while calculating application templates mappings")
+	}
+
+	templateRenderer, err := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter, cfg.TemplateConfig.OverrideApplicationInput, placeholdersMapping)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while creating template renderer")
+	}
+
+	return templateRenderer, nil
 }
 
 func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *systemfetcher.OperationsProcessor) (string, error) {
@@ -483,13 +543,11 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 
-	timeSvc := directortime.NewService()
 	uidSvc := uid.NewService()
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	tenantBusinessTypeSvc := tenantbusinesstype.NewService(tenantBusinessTypeRepo, uidSvc)
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName))
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
@@ -502,8 +560,6 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient, extSvcMtlsClient)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
-	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, map[string]interface{}{}, "")
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
 	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
 	certSubjectInputBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)
@@ -553,23 +609,9 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		Authenticator: pkgAuth.NewServiceAccountTokenAuthorizationProvider(),
 	}
 
-	dataLoader := systemfetcher.NewDataLoader(tx, cfg.SystemFetcher, appTemplateSvc, intSysSvc, webhookSvc)
-	if err := dataLoader.LoadData(ctx, os.ReadDir, os.ReadFile); err != nil {
-		return nil, err
-	}
-
-	var placeholdersMapping []systemfetcher.PlaceholderMapping
-	if err := json.Unmarshal([]byte(cfg.TemplateConfig.PlaceholderToSystemKeyMappings), &placeholdersMapping); err != nil {
-		return nil, errors.Wrapf(err, "while unmarshaling placeholders mapping")
-	}
-
-	if err := calculateTemplateMappings(ctx, cfg, tx, appTemplateSvc, placeholdersMapping); err != nil {
-		return nil, errors.Wrap(err, "failed while calculating application templates mappings")
-	}
-
-	templateRenderer, err := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter, cfg.TemplateConfig.OverrideApplicationInput, placeholdersMapping)
+	templateRenderer, err := reloadTemplates(ctx, cfg, tx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while creating template renderer")
+		return nil, errors.Wrapf(err, "while reload templates")
 	}
 
 	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsSyncSvc, tenantBusinessTypeSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
