@@ -6941,10 +6941,10 @@ type FormationAssignment {
 	id: ID!
 	source: ID!
 	sourceType: FormationAssignmentType!
-	sourceEntity: FormationParticipant!
+	sourceEntity: FormationParticipant
 	target: ID!
 	targetType: FormationAssignmentType!
-	targetEntity: FormationParticipant!
+	targetEntity: FormationParticipant
 	state: String!
 	value: String
 	configuration: String
@@ -18653,14 +18653,11 @@ func (ec *executionContext) _FormationAssignment_sourceEntity(ctx context.Contex
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(FormationParticipant)
 	fc.Result = res
-	return ec.marshalNFormationParticipant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationParticipant(ctx, field.Selections, res)
+	return ec.marshalOFormationParticipant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationParticipant(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationAssignment_target(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
@@ -18755,14 +18752,11 @@ func (ec *executionContext) _FormationAssignment_targetEntity(ctx context.Contex
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(FormationParticipant)
 	fc.Result = res
-	return ec.marshalNFormationParticipant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationParticipant(ctx, field.Selections, res)
+	return ec.marshalOFormationParticipant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationParticipant(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationAssignment_state(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
@@ -38954,9 +38948,6 @@ func (ec *executionContext) _FormationAssignment(ctx context.Context, sel ast.Se
 					}
 				}()
 				res = ec._FormationAssignment_sourceEntity(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "target":
@@ -38978,9 +38969,6 @@ func (ec *executionContext) _FormationAssignment(ctx context.Context, sel ast.Se
 					}
 				}()
 				res = ec._FormationAssignment_targetEntity(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "state":
@@ -43007,16 +42995,6 @@ func (ec *executionContext) marshalNFormationPage2ᚖgithubᚗcomᚋkymaᚑincub
 	return ec._FormationPage(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNFormationParticipant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationParticipant(ctx context.Context, sel ast.SelectionSet, v FormationParticipant) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._FormationParticipant(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNFormationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationStatus(ctx context.Context, sel ast.SelectionSet, v FormationStatus) graphql.Marshaler {
 	return ec._FormationStatus(ctx, sel, &v)
 }
@@ -45212,6 +45190,13 @@ func (ec *executionContext) marshalOFormationConstraint2ᚕᚖgithubᚗcomᚋkym
 
 func (ec *executionContext) marshalOFormationError2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationError(ctx context.Context, sel ast.SelectionSet, v FormationError) graphql.Marshaler {
 	return ec._FormationError(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOFormationParticipant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationParticipant(ctx context.Context, sel ast.SelectionSet, v FormationParticipant) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._FormationParticipant(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOFormationStatusError2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationStatusErrorᚄ(ctx context.Context, sel ast.SelectionSet, v []*FormationStatusError) graphql.Marshaler {
