@@ -668,9 +668,9 @@ func (r *queryResolver) Tenants(ctx context.Context, first *int, after *graphql.
 	return r.tenant.Tenants(ctx, first, after, searchTerm)
 }
 
-// RootTenant fetches the top parent external ID for a given external tenant
-func (r *queryResolver) RootTenant(ctx context.Context, externalTenant string) (*graphql.Tenant, error) {
-	return r.tenant.RootTenant(ctx, externalTenant)
+// RootTenants fetches the top parents external IDs for a given external tenant
+func (r *queryResolver) RootTenants(ctx context.Context, externalTenant string) ([]*graphql.Tenant, error) {
+	return r.tenant.RootTenants(ctx, externalTenant)
 }
 
 // AutomaticScenarioAssignmentForScenario missing godoc
@@ -1107,6 +1107,11 @@ func (r *mutationResolver) WriteTenant(ctx context.Context, in graphql.BusinessT
 // DeleteTenants deletes multiple tenants by external tenant id
 func (r *mutationResolver) DeleteTenants(ctx context.Context, in []string) (int, error) {
 	return r.tenant.Delete(ctx, in)
+}
+
+// SetTenantLabel sets a label to tenant
+func (r *mutationResolver) SetTenantLabel(ctx context.Context, tenantID string, key string, value interface{}) (*graphql.Label, error) {
+	return r.tenant.SetTenantLabel(ctx, tenantID, key, value)
 }
 
 // SubscribeTenant subscribes given tenant
