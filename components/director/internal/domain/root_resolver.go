@@ -1105,6 +1105,11 @@ func (r *mutationResolver) DeleteTenants(ctx context.Context, in []string) (int,
 	return r.tenant.Delete(ctx, in)
 }
 
+// SetTenantLabel sets a label to tenant
+func (r *mutationResolver) SetTenantLabel(ctx context.Context, tenantID string, key string, value interface{}) (*graphql.Label, error) {
+	return r.tenant.SetTenantLabel(ctx, tenantID, key, value)
+}
+
 // SubscribeTenant subscribes given tenant
 func (r *mutationResolver) SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionAppName string, subscriptionPayload string) (bool, error) {
 	return r.subscription.SubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionPayload)
