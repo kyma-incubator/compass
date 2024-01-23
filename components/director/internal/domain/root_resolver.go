@@ -1105,7 +1105,7 @@ func (r *mutationResolver) DeleteTenants(ctx context.Context, in []string) (int,
 	return r.tenant.Delete(ctx, in)
 }
 
-// SetTenantLabel missing godoc
+// SetTenantLabel sets a label to tenant
 func (r *mutationResolver) SetTenantLabel(ctx context.Context, tenantID string, key string, value interface{}) (*graphql.Label, error) {
 	return r.tenant.SetTenantLabel(ctx, tenantID, key, value)
 }

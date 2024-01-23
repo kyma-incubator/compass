@@ -348,7 +348,7 @@ func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTen
 	return r.conv.ToGraphQL(tenant), nil
 }
 
-// SetTenantLabel missing godoc
+// SetTenantLabel sets a label to tenant
 func (r *Resolver) SetTenantLabel(ctx context.Context, tenantID, key string, value interface{}) (*graphql.Label, error) {
 	gqlLabel := graphql.LabelInput{Key: key, Value: value}
 	if err := inputvalidation.Validate(&gqlLabel); err != nil {

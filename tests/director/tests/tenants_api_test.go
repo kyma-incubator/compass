@@ -736,7 +736,7 @@ func TestSetTenantLabel(t *testing.T) {
 	account := graphql.BusinessTenantMappingInput{
 		Name:           accountName,
 		ExternalTenant: accountExternalTenant,
-		Parent:         nil,
+		Parents:        []*string{},
 		Subdomain:      &accountSubdomain,
 		Region:         &region,
 		Type:           string(tenant.Account),
