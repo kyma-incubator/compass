@@ -543,7 +543,7 @@ func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[s
 }
 
 // UpsertLabel upserts label that is directly linked to the provided tenant
-func (s *labeledService) UpsertLabel(ctx context.Context, tenantID, key, value string) error {
+func (s *labeledService) UpsertLabel(ctx context.Context, tenantID, key string, value interface{}) error {
 	label := &model.LabelInput{
 		Key:        key,
 		Value:      value,
