@@ -37,7 +37,6 @@ const (
 	TestTarget              = "1c22035a-72e4-4a78-9025-bbcb1f87760b"
 	TestTargetType          = "runtimeContext"
 	TestStateInitial        = "INITIAL"
-	TestReadyState          = "READY"
 	TestWebhookID           = "eca98d44-aac0-4e44-898b-c394beab2e94"
 	TestReverseWebhookID    = "aecec253-b4d8-416a-be5c-a27677ee5157"
 	TntParentID             = "2d11035a-72e4-4a78-9025-bbcb1f87760b"
@@ -53,6 +52,7 @@ var (
 	TestErrorValueRawJSON         = json.RawMessage(`{"error":"error message"}`)
 	TestEmptyErrorValueRawJSON    = json.RawMessage(`\"\"`)
 	TestConfigValueStr            = "{\"configKey\":\"configValue\"}"
+	TestNewConfigValueStr         = "{\"newConfigKey\":\"newConfigValue\"}"
 	TestErrorValueStr             = "{\"error\":\"error message\"}"
 	defaultTime                   = time.Time{}
 
@@ -237,32 +237,6 @@ func fixFormationAssignmentModelInput(configValue json.RawMessage) *model.Format
 		State:       TestStateInitial,
 		Value:       configValue,
 		Error:       nil,
-	}
-}
-
-func fixFormationAssignmentModelInputWithError(errorValue json.RawMessage) *model.FormationAssignmentInput {
-	return &model.FormationAssignmentInput{
-		FormationID: TestFormationID,
-		Source:      TestSource,
-		SourceType:  TestSourceType,
-		Target:      TestTarget,
-		TargetType:  TestTargetType,
-		State:       TestStateInitial,
-		Value:       nil,
-		Error:       errorValue,
-	}
-}
-
-func fixFormationAssignmentModelInputWithConfigurationAndError(configValue, errorValue json.RawMessage) *model.FormationAssignmentInput {
-	return &model.FormationAssignmentInput{
-		FormationID: TestFormationID,
-		Source:      TestSource,
-		SourceType:  TestSourceType,
-		Target:      TestTarget,
-		TargetType:  TestTargetType,
-		State:       TestStateInitial,
-		Value:       configValue,
-		Error:       errorValue,
 	}
 }
 
@@ -907,7 +881,7 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 }
 
 func fixNotificationStatusReport() *statusreport.NotificationStatusReport {
-	return statusreport.NewNotificationStatusReport(TestConfigValueRawJSON, readyState, "")
+	return statusreport.NewNotificationStatusReport(TestConfigValueRawJSON, readyAssignmentState, "")
 }
 
 func fixNotificationStatusReportWithStateAndConfig(configuration json.RawMessage, state string) *statusreport.NotificationStatusReport {

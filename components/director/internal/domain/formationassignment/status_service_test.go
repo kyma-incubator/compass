@@ -29,10 +29,10 @@ var (
 	assignmentWithStateAndOldConfig       = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, TestSourceType, TestTargetType, string(model.ConfigPendingAssignmentState), assignmentConfigOld, nil)
 	assignmentWithConfigAndError          = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, TestSourceType, TestTargetType, string(model.DeleteErrorAssignmentState), assignmentConfig, assignmentError)
 	notificationStatusReport              = fixNotificationStatusReport()
-	statusReportWithConfig                = fixNotificationStatusReportWithStateAndConfig(assignmentConfig, readyState)
-	statusReportWithoutConfigAndError     = fixNotificationStatusReportWithStateAndConfig(nil, readyState)
-	statusReportWithConfigConsideredEmpty = fixNotificationStatusReportWithStateAndConfig(json.RawMessage("{}"), readyState)
-	statusReportWithError                 = fixNotificationStatusReportWithStateAndError(deleteErrorState, "error from report")
+	statusReportWithConfig                = fixNotificationStatusReportWithStateAndConfig(assignmentConfig, readyAssignmentState)
+	statusReportWithoutConfigAndError     = fixNotificationStatusReportWithStateAndConfig(nil, readyAssignmentState)
+	statusReportWithConfigConsideredEmpty = fixNotificationStatusReportWithStateAndConfig(json.RawMessage("{}"), readyAssignmentState)
+	statusReportWithError                 = fixNotificationStatusReportWithStateAndError(deleteErrorAssignmentState, "error from report")
 )
 
 func TestStatusService_UpdateWithConstraints(t *testing.T) {
