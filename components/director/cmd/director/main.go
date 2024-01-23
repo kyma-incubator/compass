@@ -213,6 +213,8 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, envPrefix)
 	exitOnError(err, "Error while loading app config")
 
+	label.GlobalSystemRoleLabelKey = cfg.ApplicationTemplateProductLabel
+
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
 	logger := log.C(ctx)
