@@ -855,7 +855,6 @@ var (
 	thirdFormationStatusParams  = dataloader.ParamFormationStatus{ID: FormationID + "3", State: string(model.ReadyFormationState)}
 	fourthPageFormations        = dataloader.ParamFormationStatus{ID: FormationID + "4", State: string(model.ReadyFormationState)}
 
-<<<<<<< HEAD
 	formationAssignments = []*model.FormationAssignment{
 		{ID: FormationAssignmentID, FormationID: FormationID},
 		{ID: FormationAssignmentID2, FormationID: FormationID2},
@@ -873,10 +872,8 @@ var (
 			Name:                testFormationName2,
 		},
 	}
-=======
 	customerParentTenantResponse   = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.Customer)}
 	costObjectParentTenantResponse = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.CostObject)}
->>>>>>> eabe5df7b99e1b4d7c963c3bbcf5d4019527baf3
 )
 
 func formationAssignmentsWithSourceAndTarget(objectID string, assignments []*model.FormationAssignment) []*model.FormationAssignment {
