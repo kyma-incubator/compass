@@ -416,9 +416,9 @@ func main() {
 	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
 
 	logger.Infof("Registering readiness endpoint...")
-	//schemaRepo := schema.NewRepository()
-	//ready := healthz.NewReady(transact, cfg.ReadyConfig, schemaRepo)
-	//mainRouter.HandleFunc(readyzEndpoint, healthz.NewReadinessHandler(ready))
+	// schemaRepo := schema.NewRepository()
+	// ready := healthz.NewReady(transact, cfg.ReadyConfig, schemaRepo)
+	// mainRouter.HandleFunc(readyzEndpoint, healthz.NewReadinessHandler(ready))
 	mainRouter.HandleFunc(readyzEndpoint, healthz.NewLivenessHandler())
 
 	logger.Infof("Registering liveness endpoint...")
@@ -428,7 +428,7 @@ func main() {
 	health, err := healthz.New(ctx, cfg.HealthConfig)
 	exitOnError(err, "Could not initialize health")
 	health.RegisterIndicator(healthz.NewIndicator(healthz.DBIndicatorName, healthz.NewDBIndicatorFunc(transact))).Start()
-	//mainRouter.HandleFunc(healthzEndpoint, healthz.NewHealthHandler(health))
+	// mainRouter.HandleFunc(healthzEndpoint, healthz.NewHealthHandler(health))
 	mainRouter.HandleFunc(healthzEndpoint, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "UP")
