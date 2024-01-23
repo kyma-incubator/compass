@@ -277,7 +277,7 @@ func (s *service) ListFormationsForParticipant(ctx context.Context, participantI
 	}
 
 	uniqueFormationIDs := make([]string, 0, len(uniqueFormationIDsMap))
-	for formationID, _ := range uniqueFormationIDsMap {
+	for formationID := range uniqueFormationIDsMap {
 		uniqueFormationIDs = append(uniqueFormationIDs, formationID)
 	}
 
