@@ -461,101 +461,63 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	modelAppTemplateInputWithSelRegLabels.ID = &testUUID
 	modelAppTemplateInputWithSelRegLabels.Labels = graphql.Labels{
 		apptmpltest.TestDistinguishLabel: "selfRegVal",
-		selfregmanager.RegionLabel:       "region",
+		selfregmanager.RegionLabel:       region,
 	}
 
-	modelGlobalAppTemplateInputWithProductLabels := fixModelAppTemplateInputWithRegionLabel(testName, appInputJSONWithRegionString, region)
+	modelGlobalAppTemplateInputWithProductLabels := fixGlobalModelAppTemplateInputWithProductLabel(testName, appInputJSONWithRegionString)
 	modelGlobalAppTemplateInputWithProductLabels.ID = &testUUID
-	modelGlobalAppTemplateInputWithProductLabels.Labels = graphql.Labels{
-		AppTemplateProductLabel: "role",
-	}
 
 	modelRegionalAppTemplateInputWithProductLabelsWithoutRegionPlaceholder := fixModelAppTemplateInput(testName, appInputJSONWithRegionString)
 	modelRegionalAppTemplateInputWithProductLabelsWithoutRegionPlaceholder.ID = &testUUID
 	modelRegionalAppTemplateInputWithProductLabelsWithoutRegionPlaceholder.Labels = graphql.Labels{
-		AppTemplateProductLabel:    "role",
-		selfregmanager.RegionLabel: "region",
+		AppTemplateProductLabel:    []interface{}{"role"},
+		selfregmanager.RegionLabel: region,
 	}
 
-	modelRegionalAppTemplateInputWithProductLabels := fixModelAppTemplateInputWithRegionLabel(testName, appInputJSONWithRegionString, region)
+	modelRegionalAppTemplateInputWithProductLabels := fixRegionalModelAppTemplateInputWithProductLabel(testName, appInputJSONWithRegionString, region)
 	modelRegionalAppTemplateInputWithProductLabels.ID = &testUUID
-	modelRegionalAppTemplateInputWithProductLabels.Labels = graphql.Labels{
-		AppTemplateProductLabel:    "role",
-		selfregmanager.RegionLabel: "region",
-	}
 
 	modelRegionalAppTemplateInputWithProductLabelsAndDifferentPlaceholders := fixModelAppTemplateInputWithRegionLabelAndDifferentPlaceholders(testName, appInputJSONWithRegionString, region)
 	modelRegionalAppTemplateInputWithProductLabelsAndDifferentPlaceholders.ID = &testUUID
-	modelRegionalAppTemplateInputWithProductLabelsAndDifferentPlaceholders.Labels = graphql.Labels{
-		AppTemplateProductLabel:    "role",
-		selfregmanager.RegionLabel: "region",
-	}
 
-	modelRegionalAppTemplateInputWithProductLabelsAndNoPlaceholders := fixModelAppTemplateInputWithRegionLabel(testName, appInputJSONWithRegionString, region)
+	modelRegionalAppTemplateInputWithProductLabelsAndNoPlaceholders := fixRegionalModelAppTemplateInputWithProductLabel(testName, appInputJSONWithRegionString, region)
 	modelRegionalAppTemplateInputWithProductLabelsAndNoPlaceholders.ID = &testUUID
-	modelRegionalAppTemplateInputWithProductLabelsAndNoPlaceholders.Labels = graphql.Labels{
-		AppTemplateProductLabel:    "role",
-		selfregmanager.RegionLabel: "region",
-	}
 	modelRegionalAppTemplateInputWithProductLabelsAndNoPlaceholders.Placeholders = []model.ApplicationTemplatePlaceholder{}
 
-	modelRegionalAppTemplateInputWithProductLabelsNoAppInputJSONRegion := fixModelAppTemplateInputWithRegionLabel(testName, appInputJSONStringNoRegionString, region)
+	modelRegionalAppTemplateInputWithProductLabelsNoAppInputJSONRegion := fixRegionalModelAppTemplateInputWithProductLabel(testName, appInputJSONStringNoRegionString, region)
 	modelRegionalAppTemplateInputWithProductLabelsNoAppInputJSONRegion.ID = &testUUID
-	modelRegionalAppTemplateInputWithProductLabelsNoAppInputJSONRegion.Labels = graphql.Labels{
-		AppTemplateProductLabel:    "role",
-		selfregmanager.RegionLabel: "region",
-	}
 
 	modelAppTemplateInputWithProductAndSelfRegLabels := fixModelAppTemplateInput(testName, appInputJSONString)
 	modelAppTemplateInputWithProductAndSelfRegLabels.ID = &testUUID
 	modelAppTemplateInputWithProductAndSelfRegLabels.Labels = graphql.Labels{
-		AppTemplateProductLabel:          "role",
-		selfregmanager.RegionLabel:       "region",
+		AppTemplateProductLabel:          []interface{}{"role"},
+		selfregmanager.RegionLabel:       region,
 		apptmpltest.TestDistinguishLabel: "selfRegVal",
 	}
 
 	gqlAppTemplateWithSelfRegLabels := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplateWithSelfRegLabels.Labels = graphql.Labels{
 		apptmpltest.TestDistinguishLabel: "selfRegVal",
-		selfregmanager.RegionLabel:       "region",
+		selfregmanager.RegionLabel:       region,
 	}
 	gqlAppTemplateInputWithSelfRegLabels := fixGQLAppTemplateInputWithPlaceholder(testName)
 	gqlAppTemplateInputWithSelfRegLabels.Labels = graphql.Labels{
 		apptmpltest.TestDistinguishLabel: "selfRegVal",
-		selfregmanager.RegionLabel:       "region",
+		selfregmanager.RegionLabel:       region,
 	}
-	gqlGlobalAppTemplateInputWithProductLabels := fixGQLAppTemplateInputWithRegionPlaceholder(testName)
-	gqlGlobalAppTemplateInputWithProductLabels.Labels = graphql.Labels{
-		AppTemplateProductLabel: "role",
-	}
+	gqlGlobalAppTemplateInputWithProductLabels := fixGlobalGQLAppTemplateInputWithProductLabel(testName)
 
-	gqlRegionalAppTemplateInputWithProductLabelsWithoutRegionPlaceholder := fixGQLAppTemplateInputWithPlaceholder(testName)
-	gqlRegionalAppTemplateInputWithProductLabelsWithoutRegionPlaceholder.Labels = graphql.Labels{
-		AppTemplateProductLabel:    "role",
-		selfregmanager.RegionLabel: "region",
-	}
-	gqlRegionalAppTemplateInputWithProductLabels := fixGQLAppTemplateInputWithRegionPlaceholder(testName)
-	gqlRegionalAppTemplateInputWithProductLabels.Labels = graphql.Labels{
-		AppTemplateProductLabel:    "role",
-		selfregmanager.RegionLabel: "region",
-	}
-	gqlAppTemplateInputWithDifferentPlaceholdersProductLabels := fixGQLAppTemplateInputWithDifferentRegionPlaceholder(testName)
-	gqlAppTemplateInputWithDifferentPlaceholdersProductLabels.Labels = graphql.Labels{
-		AppTemplateProductLabel:    "role",
-		selfregmanager.RegionLabel: "region",
-	}
-	gqlRegionalAppTemplateInputWithProductLabelsNoPlaceholders := fixGQLAppTemplateInputWithRegionPlaceholder(testName)
-	gqlRegionalAppTemplateInputWithProductLabelsNoPlaceholders.Labels = graphql.Labels{
-		AppTemplateProductLabel:    "role",
-		selfregmanager.RegionLabel: "region",
-	}
+	gqlRegionalAppTemplateInputWithProductLabelsWithoutRegionPlaceholder := fixRegionalGQLAppTemplateInputWithProductLabel(testName, region)
+	gqlRegionalAppTemplateInputWithProductLabelsWithoutRegionPlaceholder.Placeholders = fixGQLPlaceholderDefinitionInput()
+
+	gqlRegionalAppTemplateInputWithProductLabels := fixRegionalGQLAppTemplateInputWithProductLabel(testName, region)
+
+	gqlAppTemplateInputWithDifferentPlaceholdersProductLabels := fixRegionalGQLAppTemplateInputWithDifferentRegionPlaceholder(testName)
+
+	gqlRegionalAppTemplateInputWithProductLabelsNoPlaceholders := fixRegionalGQLAppTemplateInputWithProductLabel(testName, region)
 	gqlRegionalAppTemplateInputWithProductLabelsNoPlaceholders.Placeholders = []*graphql.PlaceholderDefinitionInput{}
 
-	gqlRegionalAppTemplateInputWithProductLabelsNoAppInputJSONRegion := fixGQLAppTemplateInputWithRegionPlaceholder(testName)
-	gqlRegionalAppTemplateInputWithProductLabelsNoAppInputJSONRegion.Labels = graphql.Labels{
-		AppTemplateProductLabel:    "role",
-		selfregmanager.RegionLabel: "region",
-	}
+	gqlRegionalAppTemplateInputWithProductLabelsNoAppInputJSONRegion := fixRegionalGQLAppTemplateInputWithProductLabel(testName, region)
 	gqlRegionalAppTemplateInputWithProductLabelsNoAppInputJSONRegion.ApplicationInput = &graphql.ApplicationJSONInput{
 		Name:   "foo",
 		Labels: map[string]interface{}{"otherKey": "{{region}}", "another": "{{test}}"},
@@ -596,22 +558,22 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	}
 
 	labelsContainingSelfRegistrationAndInvaidRegion := map[string]interface{}{apptmpltest.TestDistinguishLabel: "selfRegVal", RegionKey: 1}
-	labelsContainingSelfRegistration := map[string]interface{}{apptmpltest.TestDistinguishLabel: "selfRegVal", RegionKey: "region"}
+	labelsContainingSelfRegistration := map[string]interface{}{apptmpltest.TestDistinguishLabel: "selfRegVal", RegionKey: region}
 	labelsContainingSelfRegAndSubaccount := map[string]interface{}{
 		apptmpltest.TestDistinguishLabel:   "selfRegVal",
-		RegionKey:                          "region",
+		RegionKey:                          region,
 		scenarioassignment.SubaccountIDKey: testTenant,
 	}
 	distinguishLabel := map[string]interface{}{apptmpltest.TestDistinguishLabel: "selfRegVal"}
-	regionLabel := map[string]interface{}{RegionKey: "region"}
+	regionLabel := map[string]interface{}{RegionKey: region}
 
 	getAppTemplateFiltersForSelfReg := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(apptmpltest.TestDistinguishLabel, fmt.Sprintf("\"%s\"", "selfRegVal")),
-		labelfilter.NewForKeyWithQuery(selfregmanager.RegionLabel, fmt.Sprintf("\"%s\"", "region")),
+		labelfilter.NewForKeyWithQuery(selfregmanager.RegionLabel, fmt.Sprintf("\"%s\"", region)),
 	}
 
 	getAppTemplateFiltersForProduct := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(AppTemplateProductLabel, fmt.Sprintf("\"%s\"", "role")),
+		labelfilter.NewForKeyWithQuery(AppTemplateProductLabel, fmt.Sprintf(`$[*] ? (@ == "%s")`, "role")),
 	}
 
 	sameRegionLabelModel := &model.Label{
@@ -790,7 +752,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			LabelSvcFn:       UnusedLabelService,
 			Input:            gqlAppTemplateInputWithSelfRegLabels,
 			Ctx:              ctxWithCertConsumer,
-			ExpectedError:    errors.New("Cannot have more than one application template with labels \"test-distinguish-label\": \"selfRegVal\" and \"region\": \"region\""),
+			ExpectedError:    errors.New("Cannot have more than one application template with labels \"test-distinguish-label\": \"selfRegVal\" and \"region\": \"region-1\""),
 		},
 		{
 			Name: "Error when app template is regional and the region already exists for the given product labels",
@@ -818,7 +780,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			Ctx:           ctxWithCertConsumer,
 			Input:         gqlRegionalAppTemplateInputWithProductLabels,
-			ExpectedError: errors.New("Regional Application Template with systemRole label and region region already exists"),
+			ExpectedError: errors.New(`Regional Application Template with "systemRole" label and "region": "region-1" already exists`),
 		},
 		{
 			Name: "Error when app template is regional and the listing Application Templates fails",
@@ -846,7 +808,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			Ctx:           ctxWithCertConsumer,
 			Input:         gqlRegionalAppTemplateInputWithProductLabels,
-			ExpectedError: errors.New(`while getting Application Template for labels "systemRole": "role"`),
+			ExpectedError: errors.New(`while getting Application Template for labels "systemRole": ["role"]`),
 		},
 		{
 			Name: "Error when app template is regional and getting labels fails",
@@ -874,7 +836,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			Ctx:           ctxWithCertConsumer,
 			Input:         gqlRegionalAppTemplateInputWithProductLabels,
-			ExpectedError: errors.New("while getting region label for Application Template"),
+			ExpectedError: errors.New(`while getting "region" label for Application Template`),
 		},
 		{
 			Name: "Error when app template is regional and the region placeholder is different from the existing regional app templates",
@@ -902,7 +864,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			Ctx:           ctxWithCertConsumer,
 			Input:         gqlAppTemplateInputWithDifferentPlaceholdersProductLabels,
-			ExpectedError: errors.New("Regional Application Template input with systemRole label has a different region placeholder from the other Application Templates with the same label"),
+			ExpectedError: errors.New(`Regional Application Template input with "systemRole" label has a different "region" placeholder from the other Application Templates with the same label`),
 		},
 		{
 			Name: "Error when app template is regional but it does not have a region placeholder",
@@ -930,7 +892,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			Ctx:           ctxWithCertConsumer,
 			Input:         gqlRegionalAppTemplateInputWithProductLabelsNoPlaceholders,
-			ExpectedError: errors.New("region placeholder should be present for regional Application Templates"),
+			ExpectedError: errors.New(`"region" placeholder should be present for regional Application Templates`),
 		},
 		{
 			Name: "Error when app template is regional and the existing application template does not have a region placeholder",
@@ -958,7 +920,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			Ctx:           ctxWithCertConsumer,
 			Input:         gqlRegionalAppTemplateInputWithProductLabels,
-			ExpectedError: errors.New("region placeholder should be present for regional Application Templates"),
+			ExpectedError: errors.New(`"region" placeholder should be present for regional Application Templates`),
 		},
 		{
 			Name: "Error when app template is regional but does not have a region label in the Application Input JSON",
@@ -982,7 +944,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			LabelSvcFn:       UnusedLabelService,
 			Ctx:              ctxWithCertConsumer,
 			Input:            gqlRegionalAppTemplateInputWithProductLabelsNoAppInputJSONRegion,
-			ExpectedError:    errors.New("App Template with region label has a missing region label in the applicationInput"),
+			ExpectedError:    errors.New(`App Template with "region" label has a missing "region" label in the applicationInput`),
 		},
 		{
 			Name: "Error when a global Application Template already exists",
@@ -996,7 +958,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("InputFromGraphQL", *gqlGlobalAppTemplateInputWithProductLabels).Return(*modelGlobalAppTemplateInputWithProductLabels, nil).Once()
+				appTemplateConv.On("InputFromGraphQL", *gqlGlobalAppTemplateInputWithProductLabels).Return(*modelRegionalAppTemplateInputWithProductLabels, nil).Once()
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
@@ -1010,7 +972,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			Ctx:           ctxWithCertConsumer,
 			Input:         gqlGlobalAppTemplateInputWithProductLabels,
-			ExpectedError: errors.New("Application Template with systemRole label is global and already exists"),
+			ExpectedError: errors.New(`Application Template with "systemRole" label is global and already exists`),
 		},
 		{
 			Name: "Error when there are regional Application Templates but the new Application Template is global",
@@ -1038,7 +1000,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			Ctx:           ctxWithCertConsumer,
 			Input:         gqlGlobalAppTemplateInputWithProductLabels,
-			ExpectedError: errors.New("Application Template with systemRole label is regional. The Application Template should contain a region label"),
+			ExpectedError: errors.New(`Application Template with "systemRole" label is regional. The Application Template should contain a "region" label`),
 		},
 		{
 			Name: "Error when the new Application Template is regional but does not have a region placeholder",
@@ -1062,7 +1024,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			LabelSvcFn:       UnusedLabelService,
 			Ctx:              ctxWithCertConsumer,
 			Input:            gqlRegionalAppTemplateInputWithProductLabelsWithoutRegionPlaceholder,
-			ExpectedError:    errors.New("region placeholder should be present for regional Application Templates"),
+			ExpectedError:    errors.New(`"region" placeholder should be present for regional Application Templates`),
 		},
 		{
 			Name: "Error when checking if self registered app template already exists for the given labels",

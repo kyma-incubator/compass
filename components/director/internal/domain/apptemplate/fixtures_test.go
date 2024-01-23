@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -29,7 +31,7 @@ const (
 	testAppID          = "app-id"
 	testConsumerID     = "consumer-id"
 	testLabelInputKey  = "applicationType"
-	region             = "region"
+	region             = "region-1"
 
 	testWebhookID                               = "webhook-id-1"
 	testName                                    = "bar"
@@ -191,7 +193,7 @@ func fixModelAppTemplateInput(name string, appInputString string) *model.Applica
 	}
 }
 
-func fixModelAppTemplateInputWithRegionLabel(name, appInputString, region string) *model.ApplicationTemplateInput {
+func fixRegionalModelAppTemplateInputWithProductLabel(name, appInputString, region string) *model.ApplicationTemplateInput {
 	desc := testDescription
 
 	return &model.ApplicationTemplateInput{
@@ -200,38 +202,51 @@ func fixModelAppTemplateInputWithRegionLabel(name, appInputString, region string
 		ApplicationNamespace: str.Ptr("ns"),
 		ApplicationInputJSON: appInputString,
 		Placeholders:         fixModelPlaceholdersWithRegion(),
-		Labels:               map[string]interface{}{"test": "test", RegionKey: region},
-		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
+		Labels: map[string]interface{}{
+			"test":                  "test",
+			AppTemplateProductLabel: []interface{}{"role"},
+			RegionKey:               region,
+		},
+		AccessLevel: model.GlobalApplicationTemplateAccessLevel,
 	}
 }
 
-func fixModelAppTemplateInputWithRegionLabelAndDifferentPlaceholders(name, appInputString, region string) *model.ApplicationTemplateInput {
+func fixGlobalModelAppTemplateInputWithProductLabel(name, appInputString string) *model.ApplicationTemplateInput {
 	desc := testDescription
-	placeholderDesc := testDescription
-	placeholderJSONPath := testDifferentJSONPath
-	isOptional := false
+
 	return &model.ApplicationTemplateInput{
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
 		ApplicationInputJSON: appInputString,
-		Placeholders: []model.ApplicationTemplatePlaceholder{
-			{
-				Name:        "test",
-				Description: &placeholderDesc,
-				JSONPath:    &placeholderJSONPath,
-				Optional:    &isOptional,
-			},
-			{
-				Name:        "region",
-				Description: &placeholderDesc,
-				JSONPath:    &placeholderJSONPath,
-				Optional:    &isOptional,
-			},
-		},
-		Labels:      map[string]interface{}{"test": "test", "region": region},
-		AccessLevel: model.GlobalApplicationTemplateAccessLevel,
+		Placeholders:         fixModelPlaceholdersWithRegion(),
+		Labels:               map[string]interface{}{"test": "test", AppTemplateProductLabel: []interface{}{"role"}},
+		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
 	}
+}
+
+func fixModelAppTemplateInputWithRegionLabelAndDifferentPlaceholders(name, appInputString, region string) *model.ApplicationTemplateInput {
+	placeholderDesc := testDescription
+	placeholderJSONPath := testDifferentJSONPath
+	isOptional := false
+
+	input := fixRegionalModelAppTemplateInputWithProductLabel(name, appInputString, region)
+	input.Placeholders = []model.ApplicationTemplatePlaceholder{
+		{
+			Name:        "test",
+			Description: &placeholderDesc,
+			JSONPath:    &placeholderJSONPath,
+			Optional:    &isOptional,
+		},
+		{
+			Name:        "region",
+			Description: &placeholderDesc,
+			JSONPath:    &placeholderJSONPath,
+			Optional:    &isOptional,
+		},
+	}
+
+	return input
 }
 
 func fixModelAppTemplateInputWithOrdWebhook(name string, appInputString string) *model.ApplicationTemplateInput {
@@ -323,7 +338,47 @@ func fixGQLAppTemplateInputWithRegionPlaceholder(name string) *graphql.Applicati
 	}
 }
 
-func fixGQLAppTemplateInputWithDifferentRegionPlaceholder(name string) *graphql.ApplicationTemplateInput {
+func fixGlobalGQLAppTemplateInputWithProductLabel(name string) *graphql.ApplicationTemplateInput {
+	desc := testDescriptionWithPlaceholder
+
+	return &graphql.ApplicationTemplateInput{
+		Name:                 name,
+		Description:          &desc,
+		ApplicationNamespace: str.Ptr("ns"),
+		ApplicationInput: &graphql.ApplicationJSONInput{
+			Name:        "foo",
+			Description: &desc,
+		},
+		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
+		Labels: graphql.Labels{
+			AppTemplateProductLabel: []interface{}{"role"},
+		},
+	}
+}
+
+func fixRegionalGQLAppTemplateInputWithProductLabel(name, region string) *graphql.ApplicationTemplateInput {
+	desc := testDescriptionWithPlaceholder
+
+	return &graphql.ApplicationTemplateInput{
+		Name:                 name,
+		Description:          &desc,
+		ApplicationNamespace: str.Ptr("ns"),
+		ApplicationInput: &graphql.ApplicationJSONInput{
+			Name:        "foo",
+			Description: &desc,
+			Labels:      map[string]interface{}{RegionKey: "{{region}}"},
+		},
+		Placeholders: fixGQLPlaceholderDefinitionWithRegionInput(),
+		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
+		Labels: graphql.Labels{
+			AppTemplateProductLabel: []interface{}{"role"},
+			RegionKey:               region,
+		},
+	}
+}
+
+func fixRegionalGQLAppTemplateInputWithDifferentRegionPlaceholder(name string) *graphql.ApplicationTemplateInput {
 	desc := testDescriptionWithPlaceholder
 	placeholderDesc := testDescription
 	placeholderJSONPath := testDifferentJSONPath
@@ -351,6 +406,10 @@ func fixGQLAppTemplateInputWithDifferentRegionPlaceholder(name string) *graphql.
 				JSONPath:    &placeholderJSONPath,
 				Optional:    &isOptional,
 			},
+		},
+		Labels: graphql.Labels{
+			AppTemplateProductLabel:    []interface{}{"role"},
+			selfregmanager.RegionLabel: "region",
 		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 	}

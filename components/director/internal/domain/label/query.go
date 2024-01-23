@@ -26,6 +26,7 @@ const (
 	UnionSet                   SetCombination = "UNION"
 	scenariosLabelKey          string         = "SCENARIOS"
 	runtimeTypeLabelKey        string         = "runtimeType"
+	systemRoleLabelKey         string         = "cldSystemRole"
 	globalSubaccountIDLabelKey string         = "global_subaccount_id"
 	stmtPrefixFormat           string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL AND`
 	stmtPrefixGlobalFormat     string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL`
@@ -130,7 +131,7 @@ func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombin
 			// in SQL/JSON path format supported by PostgreSQL 12. Till it
 			// is not production ready, we need to transform the Query from
 			// SQL/JSON path to old JSON queries.
-			if strings.ToUpper(lblFilter.Key) == scenariosLabelKey || lblFilter.Key == runtimeTypeLabelKey {
+			if strings.ToUpper(lblFilter.Key) == scenariosLabelKey || lblFilter.Key == runtimeTypeLabelKey || lblFilter.Key == systemRoleLabelKey {
 				extractedValues, err := ExtractValueFromJSONPath(queryValue)
 				if err != nil {
 					return "", nil, errors.Wrap(err, "while extracting value from JSON path")

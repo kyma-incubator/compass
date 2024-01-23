@@ -798,7 +798,7 @@ func (r *Resolver) checkAppTemplateExistenceByProductLabel(ctx context.Context, 
 
 	if isRegionalAppTemplate {
 		if !hasRegionLabelInAppInputJSON {
-			return errors.Errorf("App Template with %s label has a missing %s label in the applicationInput", regionLabelKey, regionLabelKey)
+			return errors.Errorf("App Template with %q label has a missing %q label in the applicationInput", regionLabelKey, regionLabelKey)
 		}
 
 		if _, err := extractRegionPlaceholder(appTemplateInput.Placeholders); err != nil {
@@ -806,15 +806,26 @@ func (r *Resolver) checkAppTemplateExistenceByProductLabel(ctx context.Context, 
 		}
 	}
 
-	productLabelMsg := fmt.Sprintf("%q: %q", r.appTemplateProductLabel, productLabel)
-	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(r.appTemplateProductLabel, fmt.Sprintf("\"%s\"", productLabel)),
+	productLabelArr, ok := productLabel.([]interface{})
+	if !ok {
+		return errors.Errorf("could not parse %q label for application template", r.appTemplateProductLabel)
 	}
 
-	log.C(ctx).Infof("Getting application template for labels %s", productLabelMsg)
+	filters := make([]*labelfilter.LabelFilter, 0, len(productLabelArr))
+	for _, productLabelValue := range productLabelArr {
+		productLabelStr, _ := productLabelValue.(string)
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, productLabelStr)
+		filters = append(filters, labelfilter.NewForKeyWithQuery(r.appTemplateProductLabel, query))
+	}
+
+	log.C(ctx).Infof("Getting application template for labels %q: %q", r.appTemplateProductLabel, productLabel)
 	appTemplates, err := r.appTemplateSvc.ListByFilters(ctx, filters)
-	if err != nil && !apperrors.IsNotFoundError(err) {
-		return errors.Wrapf(err, "while getting Application Template for labels %s", productLabelMsg)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			log.C(ctx).Infof("There are no application templates for the filter. Proceeding.")
+			return nil
+		}
+		return errors.Wrapf(err, "while getting Application Template for labels %q: %q", r.appTemplateProductLabel, productLabel)
 	}
 
 	existingRegions := make([]string, 0)
@@ -824,7 +835,7 @@ func (r *Resolver) checkAppTemplateExistenceByProductLabel(ctx context.Context, 
 			if apperrors.IsNotFoundError(err) {
 				continue
 			}
-			return errors.Wrapf(err, "while getting %s label for Application Template", regionLabelKey)
+			return errors.Wrapf(err, "while getting %q label for Application Template", regionLabelKey)
 		}
 
 		existingRegions = append(existingRegions, regionLabel.Value.(string))
@@ -832,17 +843,17 @@ func (r *Resolver) checkAppTemplateExistenceByProductLabel(ctx context.Context, 
 
 	if len(appTemplates) > 0 {
 		if len(existingRegions) == 0 {
-			return errors.Errorf("Application Template with %s label is global and already exists", r.appTemplateProductLabel)
+			return errors.Errorf("Application Template with %q label is global and already exists", r.appTemplateProductLabel)
 		}
 
 		if len(existingRegions) > 0 && !isRegionalAppTemplate {
-			return errors.Errorf("Application Template with %s label is regional. The Application Template should contain a %s label", r.appTemplateProductLabel, regionLabelKey)
+			return errors.Errorf("Application Template with %q label is regional. The Application Template should contain a %q label", r.appTemplateProductLabel, regionLabelKey)
 		}
 
 		if isRegionalAppTemplate {
 			for _, existingRegion := range existingRegions {
 				if existingRegion == appTemplateRegion.(string) {
-					return errors.Errorf("Regional Application Template with %s label and %s %s already exists", r.appTemplateProductLabel, regionLabelKey, existingRegion)
+					return errors.Errorf("Regional Application Template with %q label and %q: %q already exists", r.appTemplateProductLabel, regionLabelKey, existingRegion)
 				}
 			}
 
@@ -852,7 +863,7 @@ func (r *Resolver) checkAppTemplateExistenceByProductLabel(ctx context.Context, 
 			}
 
 			if !isPlaceholderEqual {
-				return errors.Errorf("Regional Application Template input with %s label has a different %s placeholder from the other Application Templates with the same label", r.appTemplateProductLabel, regionLabelKey)
+				return errors.Errorf("Regional Application Template input with %q label has a different %q placeholder from the other Application Templates with the same label", r.appTemplateProductLabel, regionLabelKey)
 			}
 		}
 	}
@@ -941,7 +952,7 @@ func extractRegionPlaceholder(placeholders []model.ApplicationTemplatePlaceholde
 	}
 
 	if regionPlaceholder == "" {
-		return "", errors.Errorf("%s placeholder should be present for regional Application Templates", regionKey)
+		return "", errors.Errorf("%q placeholder should be present for regional Application Templates", regionKey)
 	}
 
 	return regionPlaceholder, nil
