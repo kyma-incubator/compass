@@ -70,7 +70,7 @@ func TestSyncSystems(t *testing.T) {
 		{
 			name: "Success with one tenant and one system",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(4)
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(5)
 				return mockedTx, transactioner
 			},
 			fixTestSystems: fixSingleTestSystems,
@@ -103,7 +103,7 @@ func TestSyncSystems(t *testing.T) {
 		{
 			name: "Success with one tenant and one system which has tbt and tbt does not exist in the db",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(4)
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(5)
 				return mockedTx, transactioner
 			},
 			fixTestSystems: func() []systemfetcher.System {
@@ -148,7 +148,7 @@ func TestSyncSystems(t *testing.T) {
 		{
 			name: "Success with one tenant and one system which has tbt and tbt exists in the db",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(4)
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(5)
 				return mockedTx, transactioner
 			},
 			fixTestSystems: func() []systemfetcher.System {
@@ -194,7 +194,7 @@ func TestSyncSystems(t *testing.T) {
 		{
 			name: "Success when in verification mode",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(4)
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(5)
 				return mockedTx, transactioner
 			},
 			fixTestSystems: fixSingleTestSystems,
@@ -228,7 +228,7 @@ func TestSyncSystems(t *testing.T) {
 		{
 			name: "Success with one tenant and one system that has already been in the database and will not have it's status condition changed",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(4)
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(5)
 				return mockedTx, transactioner
 			},
 			fixTestSystems: fixSingleTestSystems,
@@ -283,7 +283,7 @@ func TestSyncSystems(t *testing.T) {
 		{
 			name: "Success with one tenant and one system with null base url",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(4)
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(5)
 				return mockedTx, transactioner
 			},
 			fixTestSystems: func() []systemfetcher.System {
@@ -330,7 +330,7 @@ func TestSyncSystems(t *testing.T) {
 		{
 			name: "Success with one tenant and one system without template",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(4)
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(5)
 				return mockedTx, transactioner
 			},
 			fixTestSystems: fixSystems,
@@ -365,7 +365,7 @@ func TestSyncSystems(t *testing.T) {
 		{
 			name: "Success with one tenant and multiple systems",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(5)
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(6)
 				return mockedTx, transactioner
 			},
 			fixTestSystems: func() []systemfetcher.System {
@@ -419,12 +419,12 @@ func TestSyncSystems(t *testing.T) {
 			name: "Fail when listing all tenant business types",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				persistTx := &pAutomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(nil).Twice()
 
 				transact := &pAutomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("Begin").Return(persistTx, nil).Times(3)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Twice()
 
 				return persistTx, transact
 			},
@@ -461,12 +461,12 @@ func TestSyncSystems(t *testing.T) {
 			name: "Begin transaction fails when listing all tenant business types",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				persistTx := &pAutomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(nil).Twice()
 
 				transact := &pAutomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("Begin").Return(persistTx, nil).Twice()
 				transact.On("Begin").Return(persistTx, testErr).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
 
 				return persistTx, transact
 			},
@@ -501,12 +501,12 @@ func TestSyncSystems(t *testing.T) {
 			name: "Commit transaction fails when listing all tenant business types",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				persistTx := &pAutomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(nil).Twice()
 				persistTx.On("Commit").Return(testErr).Once()
 
 				transact := &pAutomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Twice()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("Begin").Return(persistTx, nil).Times(3)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 
 				return persistTx, transact
@@ -544,11 +544,11 @@ func TestSyncSystems(t *testing.T) {
 			name: "Fails when creating new tenant business type",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				persistTx := &pAutomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Twice()
+				persistTx.On("Commit").Return(nil).Times(3)
 
 				transact := &pAutomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(3)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+				transact.On("Begin").Return(persistTx, nil).Times(4)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(3)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 
 				return persistTx, transact
@@ -593,11 +593,11 @@ func TestSyncSystems(t *testing.T) {
 			name: "Fails when getting by id newly created tenant business type",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				persistTx := &pAutomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Twice()
+				persistTx.On("Commit").Return(nil).Times(3)
 
 				transact := &pAutomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(3)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+				transact.On("Begin").Return(persistTx, nil).Times(4)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(3)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 
 				return persistTx, transact
@@ -672,8 +672,18 @@ func TestSyncSystems(t *testing.T) {
 			expectedErr: testErr,
 		},
 		{
-			name:              "Fail when Tenant cannot be fetched",
-			mockTransactioner: txtest.NewTransactionContextGenerator(nil).ThatSucceeds,
+			name: "Fail when Tenant cannot be fetched",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				persistTx := &pAutomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &pAutomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+
+				return persistTx, transact
+			},
 			fixTestSystems: func() []systemfetcher.System {
 				systems := fixSystems()
 				systems[0].TemplateID = appTemplateID
@@ -702,8 +712,18 @@ func TestSyncSystems(t *testing.T) {
 			expectedErr: testErr,
 		},
 		{
-			name:              "Succeed when Tenant cannot be found",
-			mockTransactioner: txtest.NewTransactionContextGenerator(nil).ThatSucceeds,
+			name: "Succeed when Tenant cannot be found",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				persistTx := &pAutomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Twice()
+
+				transact := &pAutomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+				return persistTx, transact
+			},
 			fixTestSystems: func() []systemfetcher.System {
 				systems := fixSystems()
 				systems[0].TemplateID = appTemplateID
@@ -733,7 +753,7 @@ func TestSyncSystems(t *testing.T) {
 		{
 			name: "Fail when client fails to fetch systems",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsTwice()
 
 				return mockedTx, transactioner
 			},
@@ -770,9 +790,11 @@ func TestSyncSystems(t *testing.T) {
 				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(3)
 				persistTx := &pAutomock.PersistenceTx{}
 
-				transactioner.On("Begin").Return(persistTx, nil).Once()
+				transactioner.On("Begin").Return(persistTx, nil).Twice()
+				persistTx.On("Commit").Return(nil).Once()
 				persistTx.On("Commit").Return(testErr).Once()
 				transactioner.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				transactioner.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
 
 				return mockedTx, transactioner
 			},
@@ -809,9 +831,9 @@ func TestSyncSystems(t *testing.T) {
 				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(2)
 				persistTx := &pAutomock.PersistenceTx{}
 
-				transactioner.On("Begin").Return(persistTx, nil).Once()
-				persistTx.On("Commit").Return(nil).Once()
-				transactioner.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				transactioner.On("Begin").Return(persistTx, nil).Twice()
+				persistTx.On("Commit").Return(nil).Twice()
+				transactioner.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Twice()
 
 				return mockedTx, transactioner
 			},
@@ -852,9 +874,11 @@ func TestSyncSystems(t *testing.T) {
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(2)
 				persistTx := &pAutomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
 
-				transactioner.On("Begin").Return(persistTx, nil).Once()
+				transactioner.On("Begin").Return(persistTx, nil).Twice()
 				transactioner.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				transactioner.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
 
 				return mockedTx, transactioner
 			},
@@ -899,7 +923,7 @@ func TestSyncSystems(t *testing.T) {
 		{
 			name: "Do nothing if system is already being deleted",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(3)
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(4)
 				persistTx := &pAutomock.PersistenceTx{}
 
 				transactioner.On("Begin").Return(persistTx, nil).Twice()
@@ -969,7 +993,7 @@ func TestSyncSystems(t *testing.T) {
 		{
 			name: "Do nothing if system has already been deleted",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(3)
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(4)
 				persistTx := &pAutomock.PersistenceTx{}
 
 				transactioner.On("Begin").Return(persistTx, nil).Twice()
