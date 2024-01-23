@@ -1323,10 +1323,10 @@ type FormationAssignment {
 	id: ID!
 	source: ID!
 	sourceType: FormationAssignmentType!
-	sourceEntity: FormationParticipant!
+	sourceEntity: FormationParticipant
 	target: ID!
 	targetType: FormationAssignmentType!
-	targetEntity: FormationParticipant!
+	targetEntity: FormationParticipant
 	state: String!
 	value: String
 	configuration: String
