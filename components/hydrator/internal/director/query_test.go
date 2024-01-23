@@ -170,7 +170,7 @@ func TestTenantByExternalIDQuery(t *testing.T) {
 				internalID
 				name
 				type
-				parentID
+				parents
 				labels
 			}
 		}`
@@ -196,7 +196,7 @@ func TestTenantByInternalIDQuery(t *testing.T) {
 				internalID
 				name
 				type
-				parentID
+				parents
 				labels
 			}
 		}`

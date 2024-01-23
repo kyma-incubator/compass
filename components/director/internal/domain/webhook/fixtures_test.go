@@ -278,7 +278,7 @@ func newModelBusinessTenantMappingWithType(tenantType tenant.Type) *model.Busine
 		ID:             givenTenant(),
 		Name:           "name",
 		ExternalTenant: "external",
-		Parent:         givenParentTenant(),
+		Parents:        []string{givenParentTenant()},
 		Type:           tenantType,
 		Provider:       "test-provider",
 		Status:         tenant.Active,

@@ -770,6 +770,9 @@ func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID
 		if err := s.isValidApplicationType(ctx, tnt, objectID, formationTemplate); err != nil {
 			return errors.Wrapf(err, "while validating application type for application %q", objectID)
 		}
+		if err := s.isValidApplication(ctx, tnt, objectID); err != nil {
+			return errors.Wrapf(err, "while validating application with ID: %q", objectID)
+		}
 	case graphql.FormationObjectTypeRuntime:
 		if err := s.isValidRuntimeType(ctx, tnt, objectID, formationTemplate); err != nil {
 			return errors.Wrapf(err, "while validating runtime type")
@@ -1754,6 +1757,21 @@ func (s *service) isValidRuntimeType(ctx context.Context, tnt string, runtimeID 
 	}
 	if !isAllowed {
 		return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeType, formationTemplate.Name, formationTemplate.RuntimeTypes))
+	}
+	return nil
+}
+
+func (s *service) isValidApplication(ctx context.Context, tnt string, applicationID string) error {
+	application, err := s.applicationRepository.GetByID(ctx, tnt, applicationID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting application with ID %q", applicationID)
+	}
+
+	if application.DeletedAt != nil {
+		return apperrors.NewInvalidOperationError(fmt.Sprintf("application with ID %q is currently being deleted", applicationID))
+	}
+	if !application.Ready {
+		return apperrors.NewInvalidOperationError(fmt.Sprintf("application with ID %q is not ready", applicationID))
 	}
 	return nil
 }

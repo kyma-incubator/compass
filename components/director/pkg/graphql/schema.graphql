@@ -601,7 +601,7 @@ input BundleUpdateInput {
 input BusinessTenantMappingInput {
 	name: String!
 	externalTenant: String!
-	parent: String
+	parents: [String]
 	subdomain: String
 	region: String
 	type: String!
@@ -1575,7 +1575,7 @@ type Tenant {
 	internalID: ID!
 	name: String
 	type: String
-	parentID: ID
+	parents: [ID]
 	initialized: Boolean
 	labels(key: String): Labels
 	provider: String!
@@ -1726,7 +1726,7 @@ type Query {
 	tenantByExternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenants")
 	tenantByInternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenantByInternalID")
 	tenantByLowestOwnerForResource(id: ID!, resource: String!): String! @hasScopes(path: "graphql.query.tenantByLowestOwnerForResource")
-	rootTenant(externalTenant: String!): Tenant! @hasScopes(path: "graphql.query.rootTenant")
+	rootTenants(externalTenant: String!): [Tenant!] @hasScopes(path: "graphql.query.rootTenant")
 	"""
 	**Examples**
 	- [query automatic scenario assignment for scenario](examples/query-automatic-scenario-assignment-for-scenario/query-automatic-scenario-assignment-for-scenario.graphql)
@@ -2053,6 +2053,10 @@ type Mutation {
 	- [set application label](examples/set-application-label/set-application-label.graphql)
 	"""
 	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
+	"""
+	If a label with given key already exist, it will be replaced with provided value.
+	"""
+	setTenantLabel(tenantID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setTenantLabel")
 	"""
 	If Application does not exist or the label key is not found, it returns an error.
 	
