@@ -33,6 +33,7 @@ type PlaceholderMapping struct {
 	Optional        bool   `json:"optional"`
 }
 
+// Renderer ts the applicaiotn template renderer helper
 type Renderer struct {
 	appTemplateService applicationTemplateService
 	appConverter       applicationConverter
@@ -65,6 +66,7 @@ func NewTemplateRenderer(appTemplateService applicationTemplateService, appConve
 	}, nil
 }
 
+// ApplicationRegisterInputFromTemplate creates ApplicationRegisterInput from System
 func (r *Renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc System) (*model.ApplicationRegisterInput, error) {
 	appTemplate, err := r.appTemplateService.Get(ctx, sc.TemplateID)
 	if err != nil {
