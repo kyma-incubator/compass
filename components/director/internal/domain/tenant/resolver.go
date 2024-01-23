@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -35,6 +36,7 @@ type BusinessTenantMappingService interface {
 	DeleteTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
 	GetTenantAccessForResource(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) (*model.TenantAccess, error)
 	GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error)
+	UpsertLabel(ctx context.Context, tenantID, key string, value interface{}) error
 }
 
 // BusinessTenantMappingConverter is used to convert the internally used tenant representation model.BusinessTenantMapping
@@ -344,6 +346,35 @@ func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTen
 	}
 
 	return r.conv.ToGraphQL(tenant), nil
+}
+
+// SetTenantLabel sets a label to tenant
+func (r *Resolver) SetTenantLabel(ctx context.Context, tenantID, key string, value interface{}) (*graphql.Label, error) {
+	gqlLabel := graphql.LabelInput{Key: key, Value: value}
+	if err := inputvalidation.Validate(&gqlLabel); err != nil {
+		return nil, errors.Wrap(err, "validation error for type LabelInput")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err = r.srv.UpsertLabel(ctx, tenantID, key, value); err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return &graphql.Label{
+		Key:   key,
+		Value: value,
+	}, nil
 }
 
 func (r *Resolver) fetchTenant(ctx context.Context, tx persistence.PersistenceTx, externalID string) (persistence.PersistenceTx, error) {
