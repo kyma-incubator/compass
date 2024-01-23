@@ -302,6 +302,20 @@ func (_m *BusinessTenantMappingService) Update(ctx context.Context, id string, t
 	return r0
 }
 
+// UpsertLabel provides a mock function with given fields: ctx, tenantID, key, value
+func (_m *BusinessTenantMappingService) UpsertLabel(ctx context.Context, tenantID string, key string, value interface{}) error {
+	ret := _m.Called(ctx, tenantID, key, value)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, interface{}) error); ok {
+		r0 = rf(ctx, tenantID, key, value)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpsertMany provides a mock function with given fields: ctx, tenantInputs
 func (_m *BusinessTenantMappingService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error) {
 	_va := make([]interface{}, len(tenantInputs))

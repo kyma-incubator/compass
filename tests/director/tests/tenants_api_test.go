@@ -720,3 +720,64 @@ func TestTenantParentDeleteCostObjectParent(t *testing.T) {
 	require.NotEmpty(t, app.ID)
 	assertions.AssertApplication(t, in, app)
 }
+
+func TestSetTenantLabel(t *testing.T) {
+	testProvider := "e2e-test-provider"
+	testLicenseType := "LICENSETYPE"
+	region := "local"
+
+	accountExternalTenant := "account-external-tenant"
+	accountName := "account-name"
+	accountSubdomain := "account-subdomain"
+
+	labelKey := "label_key"
+	labelValue := "label_value"
+
+	account := graphql.BusinessTenantMappingInput{
+		Name:           accountName,
+		ExternalTenant: accountExternalTenant,
+		Parents:        []*string{},
+		Subdomain:      &accountSubdomain,
+		Region:         &region,
+		Type:           string(tenant.Account),
+		Provider:       testProvider,
+		LicenseType:    &testLicenseType,
+	}
+	err := fixtures.WriteTenant(t, ctx, directorInternalGQLClient, account)
+	assert.NoError(t, err)
+	defer func() {
+		err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, []graphql.BusinessTenantMappingInput{account})
+		assert.NoError(t, err)
+		log.D().Info("Successfully cleanup tenants")
+	}()
+
+	var actualAccountTenant graphql.Tenant
+	getTenant := fixtures.FixTenantRequest(accountExternalTenant)
+	t.Logf("Query tenant for external tenant: %q", accountExternalTenant)
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenant, &actualAccountTenant)
+	require.NoError(t, err)
+
+	// Set tenant Label
+	var res map[string]interface{}
+	setLabel := fixtures.FixSetTenantLabelRequest(actualAccountTenant.InternalID, labelKey, labelValue)
+	example.SaveExample(t, setLabel.Query(), "set tenant label")
+	t.Logf("Set tenant label on tenant with external id: %q", accountExternalTenant)
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, setLabel, &res)
+	require.NoError(t, err)
+
+	// Assert that the label is present
+	getTenant = fixtures.FixTenantRequest(accountExternalTenant)
+	t.Logf("Query tenant for external tenant: %q and validate that the label is present", accountExternalTenant)
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenant, &actualAccountTenant)
+	require.NoError(t, err)
+
+	val, ok := actualAccountTenant.Labels[labelKey]
+	require.True(t, ok)
+
+	value, ok := val.(string)
+	require.True(t, ok)
+	require.Equal(t, labelValue, value)
+}
