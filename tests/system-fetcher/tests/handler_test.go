@@ -123,7 +123,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
 
 	appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithSystemRoles(appTemplateName1, intSys.ID, []string{"val1"}))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithDefaultSystemRoles(appTemplateName1, intSys.ID))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
@@ -201,7 +201,7 @@ func TestSystemFetcherSuccessForCustomerTenant(t *testing.T) {
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
 
 	appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultCustomerTenantID(), fixApplicationTemplateWithSystemRoles(appTemplateName1, intSys.ID, []string{"val1"}))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultCustomerTenantID(), fixApplicationTemplateWithDefaultSystemRoles(appTemplateName1, intSys.ID))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultCustomerTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
@@ -303,7 +303,7 @@ func TestSystemFetcherSuccessWithMultipleLabelValues(t *testing.T) {
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
 
 	appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithSystemRoles(appTemplateName1, intSys.ID, []string{"val1", "val2"}))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithSystemRoles(appTemplateName1, intSys.ID, []interface{}{"val1", "val2"}))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
@@ -644,7 +644,7 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
 
 	appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithSystemRoles(appTemplateName1, intSys.ID, []string{"val1"}))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithDefaultSystemRoles(appTemplateName1, intSys.ID))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
@@ -743,13 +743,13 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
 
 	appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
-	template1, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixRegionalApplicationTemplateWithSystemRoles(appTemplateName1, intSys.ID, []string{"val1"}, region1))
+	template1, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixRegionalApplicationTemplateWithSystemRoles(appTemplateName1, intSys.ID, []interface{}{"val1"}, region1))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template1)
 	require.NoError(t, err)
 	require.NotEmpty(t, template1.ID)
 
 	appTemplateName2 := fixtures.CreateAppTemplateName("temp2")
-	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixRegionalApplicationTemplateWithSystemRoles(appTemplateName2, intSys.ID, []string{"val2"}, region2))
+	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixRegionalApplicationTemplateWithSystemRoles(appTemplateName2, intSys.ID, []interface{}{"val1"}, region2))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
 	require.NoError(t, err)
 	require.NotEmpty(t, template2.ID)
@@ -780,7 +780,7 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 				SystemNumber:          str.Ptr("2"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name2", appTemplateName1, intSys.ID, true, region2),
+			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, region2),
 		},
 	}
 
@@ -842,7 +842,7 @@ func TestSystemFetcherNotFetchMissingRegionForRegionalAppTemplates(t *testing.T)
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
 
 	appTemplateName := fixtures.CreateAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixRegionalApplicationTemplateWithSystemRoles(appTemplateName, intSys.ID, []string{"val1"}, region2))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixRegionalApplicationTemplateWithSystemRoles(appTemplateName, intSys.ID, []interface{}{"val1"}, region2))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
@@ -919,7 +919,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
 
 	appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithSystemRoles(appTemplateName1, intSys.ID, []string{"val1"}))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithDefaultSystemRoles(appTemplateName1, intSys.ID))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
@@ -1047,13 +1047,13 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
 
 	appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithSystemRoles(appTemplateName1, intSys.ID, []string{"val1"}))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithSystemRoles(appTemplateName1, intSys.ID, []interface{}{"val1"}))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
 	appTemplateName2 := fixtures.CreateAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplateWithSystemRoles(appTemplateName2, intSys.ID, []string{"val2"})
+	appTemplateInput2 := fixApplicationTemplateWithSystemRoles(appTemplateName2, intSys.ID, []interface{}{"val2"})
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
@@ -1233,7 +1233,7 @@ func TestSystemFetcherPreserveSystemStatusOnUpdate(t *testing.T) {
 
 	appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
 	t.Logf("Create Application Template with name %s", appTemplateName1)
-	appTemplateInput1 := fixApplicationTemplateWithSystemRoles(appTemplateName1, intSys.ID, []string{"val1"})
+	appTemplateInput1 := fixApplicationTemplateWithDefaultSystemRoles(appTemplateName1, intSys.ID)
 	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput1)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
@@ -1536,7 +1536,8 @@ func fixRegionalApplicationTemplate(name, intSystemID, region string) directorSc
 				Name: displayNamePlaceholder,
 			},
 			{
-				Name: regionLabelKey,
+				Name:     regionLabelKey,
+				JSONPath: str.Ptr("$.additionalAttributes.systemSCPLandscapeID"),
 			},
 		},
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
@@ -1545,7 +1546,17 @@ func fixRegionalApplicationTemplate(name, intSystemID, region string) directorSc
 	return appTemplateInput
 }
 
-func fixApplicationTemplateWithSystemRoles(name, intSystemID string, systemRoles []string) directorSchema.ApplicationTemplateInput {
+func fixApplicationTemplateWithDefaultSystemRoles(name, intSystemID string) directorSchema.ApplicationTemplateInput {
+	appTemplateInput := fixApplicationTemplate(name, intSystemID)
+
+	appTemplateInput.Labels = map[string]interface{}{
+		cfg.TemplateLabelFilter: []interface{}{"val1"},
+	}
+
+	return appTemplateInput
+}
+
+func fixApplicationTemplateWithSystemRoles(name, intSystemID string, systemRoles []interface{}) directorSchema.ApplicationTemplateInput {
 	appTemplateInput := fixApplicationTemplate(name, intSystemID)
 
 	appTemplateInput.Labels = map[string]interface{}{
@@ -1555,12 +1566,9 @@ func fixApplicationTemplateWithSystemRoles(name, intSystemID string, systemRoles
 	return appTemplateInput
 }
 
-func fixRegionalApplicationTemplateWithSystemRoles(name, intSystemID string, systemRoles []string, region string) directorSchema.ApplicationTemplateInput {
+func fixRegionalApplicationTemplateWithSystemRoles(name, intSystemID string, systemRoles []interface{}, region string) directorSchema.ApplicationTemplateInput {
 	appTemplateInput := fixRegionalApplicationTemplate(name, intSystemID, region)
-
-	appTemplateInput.Labels = map[string]interface{}{
-		cfg.TemplateLabelFilter: systemRoles,
-	}
+	appTemplateInput.Labels[cfg.TemplateLabelFilter] = systemRoles
 
 	return appTemplateInput
 }
