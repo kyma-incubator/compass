@@ -2,7 +2,6 @@ package aspecteventresource
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -120,9 +119,9 @@ func (c *converter) ToGraphQL(in *model.AspectEventResource) (*graphql.AspectEve
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
-			CreatedAt: timePtrToTimestampPtr(in.CreatedAt),
-			UpdatedAt: timePtrToTimestampPtr(in.UpdatedAt),
-			DeletedAt: timePtrToTimestampPtr(in.DeletedAt),
+			CreatedAt: graphql.TimePtrToGraphqlTimestampPtr(in.CreatedAt),
+			UpdatedAt: graphql.TimePtrToGraphqlTimestampPtr(in.UpdatedAt),
+			DeletedAt: graphql.TimePtrToGraphqlTimestampPtr(in.DeletedAt),
 			Error:     in.Error,
 		},
 	}, nil
@@ -145,13 +144,4 @@ func (c *converter) MultipleToGraphQL(in []*model.AspectEventResource) ([]*graph
 	}
 
 	return aspectEvents, nil
-}
-
-func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
-	if time == nil {
-		return nil
-	}
-
-	t := graphql.Timestamp(*time)
-	return &t
 }
