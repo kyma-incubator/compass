@@ -786,7 +786,7 @@ func (r *Resolver) checkProviderAppTemplateExistence(ctx context.Context, labels
 }
 
 func (r *Resolver) checkAppTemplateExistenceByProductLabel(ctx context.Context, labels map[string]interface{}, appTemplateInput model.ApplicationTemplateInput) error {
-	log.C(ctx).Infof("Checking Application Template existance by %q label", r.appTemplateProductLabel)
+	log.C(ctx).Infof("Checking Application Template existence by %q label", r.appTemplateProductLabel)
 
 	regionLabelKey := selfregmanager.RegionLabel
 	appTemplateRegion, isRegionalAppTemplate := labels[regionLabelKey]
@@ -870,7 +870,7 @@ func (r *Resolver) checkAppTemplateExistenceByProductLabel(ctx context.Context, 
 func (r *Resolver) checkAppTemplateExistenceByDistinguishLabel(ctx context.Context, labels map[string]interface{}) error {
 	selfRegisterDistinguishLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
 
-	log.C(ctx).Infof("Checking Application Template existance by %q label", selfRegisterDistinguishLabelKey)
+	log.C(ctx).Infof("Checking Application Template existence by %q label", selfRegisterDistinguishLabelKey)
 
 	regionLabelKey := selfregmanager.RegionLabel
 	appTemplateRegion, regionExists := labels[regionLabelKey]
