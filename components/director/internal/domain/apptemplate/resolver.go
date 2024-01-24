@@ -107,7 +107,7 @@ type WebhookConverter interface {
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
-// LabelService missing godoc
+// LabelService is responsible for Label operations
 //
 //go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelService interface {
@@ -786,10 +786,13 @@ func (r *Resolver) checkProviderAppTemplateExistence(ctx context.Context, labels
 }
 
 func (r *Resolver) checkAppTemplateExistenceByProductLabel(ctx context.Context, labels map[string]interface{}, appTemplateInput model.ApplicationTemplateInput) error {
+	log.C(ctx).Infof("Checking Application Template existance by %q label", r.appTemplateProductLabel)
+
 	regionLabelKey := selfregmanager.RegionLabel
 	appTemplateRegion, isRegionalAppTemplate := labels[regionLabelKey]
 	productLabel, productLabelExists := labels[r.appTemplateProductLabel]
 	if !productLabelExists {
+		log.C(ctx).Infof("%q label does not exist. Skipping the check.", r.appTemplateProductLabel)
 		return nil
 	}
 
@@ -811,15 +814,8 @@ func (r *Resolver) checkAppTemplateExistenceByProductLabel(ctx context.Context, 
 		return errors.Errorf("could not parse %q label for application template", r.appTemplateProductLabel)
 	}
 
-	filters := make([]*labelfilter.LabelFilter, 0, len(productLabelArr))
-	for _, productLabelValue := range productLabelArr {
-		productLabelStr, _ := productLabelValue.(string)
-		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, productLabelStr)
-		filters = append(filters, labelfilter.NewForKeyWithQuery(r.appTemplateProductLabel, query))
-	}
-
 	log.C(ctx).Infof("Getting application template for labels %q: %q", r.appTemplateProductLabel, productLabel)
-	appTemplates, err := r.appTemplateSvc.ListByFilters(ctx, filters)
+	appTemplates, err := r.appTemplateSvc.ListByFilters(ctx, r.buildProductLabelFilter(productLabelArr))
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			log.C(ctx).Infof("There are no application templates for the filter. Proceeding.")
@@ -873,10 +869,14 @@ func (r *Resolver) checkAppTemplateExistenceByProductLabel(ctx context.Context, 
 
 func (r *Resolver) checkAppTemplateExistenceByDistinguishLabel(ctx context.Context, labels map[string]interface{}) error {
 	selfRegisterDistinguishLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
+
+	log.C(ctx).Infof("Checking Application Template existance by %q label", selfRegisterDistinguishLabelKey)
+
 	regionLabelKey := selfregmanager.RegionLabel
 	appTemplateRegion, regionExists := labels[regionLabelKey]
 	appTemplateDistinguishLabel, exists := labels[selfRegisterDistinguishLabelKey]
 	if !exists {
+		log.C(ctx).Infof("%q label does not exist. Skipping the check.", selfRegisterDistinguishLabelKey)
 		return nil
 	}
 
@@ -907,6 +907,17 @@ func (r *Resolver) checkAppTemplateExistenceByDistinguishLabel(ctx context.Conte
 	}
 
 	return nil
+}
+
+func (r *Resolver) buildProductLabelFilter(productLabelArr []interface{}) []*labelfilter.LabelFilter {
+	filters := make([]*labelfilter.LabelFilter, 0, len(productLabelArr))
+	for _, productLabelValue := range productLabelArr {
+		productLabelStr, _ := productLabelValue.(string)
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, productLabelStr)
+		filters = append(filters, labelfilter.NewForKeyWithQuery(r.appTemplateProductLabel, query))
+	}
+
+	return filters
 }
 
 func (r *Resolver) isSelfRegFlow(labels map[string]interface{}) (bool, error) {

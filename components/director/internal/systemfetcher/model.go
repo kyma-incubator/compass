@@ -63,7 +63,7 @@ func (s *System) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// EnhanceWithTemplateID tries to find an Application Template ID for the system
+// EnhanceWithTemplateID tries to find an Application Template ID for the system and attach it to the object.
 func (s *System) EnhanceWithTemplateID() (System, error) {
 	for tmKey, tm := range ApplicationTemplates {
 		if !s.isMatchedBySystemRole(tmKey) {
@@ -83,17 +83,17 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 
 		regionLabel, ok := appInput.Labels[selfregmanager.RegionLabel]
 		if !ok {
-			return *s, errors.New("label is missing - more info...")
+			return *s, errors.Errorf("%q label should be present for regional app templates", selfregmanager.RegionLabel)
 		}
 
 		regionLabelStr, ok := regionLabel.(string)
 		if !ok {
-			return *s, errors.New("label is not a string missing - more info...")
+			return *s, errors.Errorf("%q label cannot be parsed to string", selfregmanager.RegionLabel)
 		}
 
 		foundTemplateMapping := getTemplateMappingBySystemRoleAndRegion(s.SystemPayload, regionLabelStr)
 		if foundTemplateMapping.AppTemplate == nil {
-			return *s, errors.New("no template mapping found. more info...")
+			return *s, errors.Errorf("cannot find an app template mapping for a system with payload: %+v", s.SystemPayload)
 		}
 
 		s.TemplateID = foundTemplateMapping.AppTemplate.ID
