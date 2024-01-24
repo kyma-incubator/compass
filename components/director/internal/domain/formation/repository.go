@@ -2,22 +2,22 @@ package formation
 
 import (
 	"context"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/pkg/errors"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/pkg/errors"
 )
 
 const tableName string = `public.formations`
 
 var (
-	updatableTableColumns = []string{"name", "state", "error"}
+	updatableTableColumns = []string{"name", "state", "error", "last_state_change_timestamp", "last_notification_sent_timestamp"}
 	idTableColumns        = []string{"id"}
-	tableColumns          = []string{"id", "tenant_id", "formation_template_id", "name", "state", "error"}
+	tableColumns          = []string{"id", "tenant_id", "formation_template_id", "name", "state", "error", "last_state_change_timestamp", "last_notification_sent_timestamp"}
 	tenantColumn          = "tenant_id"
 	formationNameColumn   = "name"
 )
@@ -147,8 +147,21 @@ func (r *repository) Update(ctx context.Context, model *model.Formation) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
-	log.C(ctx).Debugf("Updating formation with ID: %q and name: %q...", model.ID, model.Name)
-	return r.updater.UpdateSingleGlobal(ctx, r.conv.ToEntity(model))
+	newEntity := r.conv.ToEntity(model)
+
+	var retrievedEntity Entity
+	if err := r.globalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", model.ID)}, repo.NoOrderBy, &retrievedEntity); err != nil {
+		return err
+	}
+
+	if retrievedEntity.State != newEntity.State {
+		log.C(ctx).Debugf("State of formation with ID: %s was changed from: %s to: %s, updating the last state change timestamp", newEntity.ID, retrievedEntity.State, newEntity.State)
+		now := time.Now()
+		newEntity.LastStateChangeTimestamp = &now
+	}
+
+	log.C(ctx).Debugf("Updating formation with ID: %q and name: %q...", newEntity.ID, newEntity.Name)
+	return r.updater.UpdateSingleGlobal(ctx, newEntity)
 }
 
 // DeleteByName deletes a Formation with given name

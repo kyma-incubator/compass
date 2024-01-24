@@ -53,15 +53,17 @@ func (c *converter) ToGraphQL(in *model.FormationAssignment) (*graphql.Formation
 	state := in.GetNotificationState()
 
 	return &graphql.FormationAssignment{
-		ID:            in.ID,
-		Source:        in.Source,
-		SourceType:    graphql.FormationAssignmentType(in.SourceType),
-		Target:        in.Target,
-		TargetType:    graphql.FormationAssignmentType(in.TargetType),
-		State:         state,
-		Value:         value,
-		Configuration: configurationStrValue,
-		Error:         errorStrValue,
+		ID:                            in.ID,
+		Source:                        in.Source,
+		SourceType:                    graphql.FormationAssignmentType(in.SourceType),
+		Target:                        in.Target,
+		TargetType:                    graphql.FormationAssignmentType(in.TargetType),
+		State:                         state,
+		Value:                         value,
+		Configuration:                 configurationStrValue,
+		Error:                         errorStrValue,
+		LastStateChangeTimestamp:      graphql.TimePtrToGraphqlTimestampPtr(in.LastStateChangeTimestamp),
+		LastNotificationSentTimestamp: graphql.TimePtrToGraphqlTimestampPtr(in.LastNotificationSentTimestamp),
 	}, nil
 }
 
@@ -87,42 +89,6 @@ func (c *converter) MultipleToGraphQL(in []*model.FormationAssignment) ([]*graph
 	return formationAssignment, nil
 }
 
-// ToInput converts from internal model to internal model input
-func (c *converter) ToInput(assignment *model.FormationAssignment) *model.FormationAssignmentInput {
-	if assignment == nil {
-		return nil
-	}
-
-	return &model.FormationAssignmentInput{
-		FormationID: assignment.FormationID,
-		Source:      assignment.Source,
-		SourceType:  assignment.SourceType,
-		Target:      assignment.Target,
-		TargetType:  assignment.TargetType,
-		State:       assignment.State,
-		Value:       assignment.Value,
-		Error:       assignment.Error,
-	}
-}
-
-// FromInput converts from internal model input to internal model
-func (c *converter) FromInput(in *model.FormationAssignmentInput) *model.FormationAssignment {
-	if in == nil {
-		return nil
-	}
-
-	return &model.FormationAssignment{
-		FormationID: in.FormationID,
-		Source:      in.Source,
-		SourceType:  in.SourceType,
-		Target:      in.Target,
-		TargetType:  in.TargetType,
-		State:       in.State,
-		Value:       in.Value,
-		Error:       in.Error,
-	}
-}
-
 // ToEntity converts from internal model to entity
 func (c *converter) ToEntity(in *model.FormationAssignment) *Entity {
 	if in == nil {
@@ -130,16 +96,18 @@ func (c *converter) ToEntity(in *model.FormationAssignment) *Entity {
 	}
 
 	return &Entity{
-		ID:          in.ID,
-		FormationID: in.FormationID,
-		TenantID:    in.TenantID,
-		Source:      in.Source,
-		SourceType:  string(in.SourceType),
-		Target:      in.Target,
-		TargetType:  string(in.TargetType),
-		State:       in.State,
-		Value:       repo.NewNullableStringFromJSONRawMessage(in.Value),
-		Error:       repo.NewNullableStringFromJSONRawMessage(in.Error),
+		ID:                            in.ID,
+		FormationID:                   in.FormationID,
+		TenantID:                      in.TenantID,
+		Source:                        in.Source,
+		SourceType:                    string(in.SourceType),
+		Target:                        in.Target,
+		TargetType:                    string(in.TargetType),
+		State:                         in.State,
+		Value:                         repo.NewNullableStringFromJSONRawMessage(in.Value),
+		Error:                         repo.NewNullableStringFromJSONRawMessage(in.Error),
+		LastStateChangeTimestamp:      in.LastStateChangeTimestamp,
+		LastNotificationSentTimestamp: in.LastNotificationSentTimestamp,
 	}
 }
 
@@ -150,15 +118,17 @@ func (c *converter) FromEntity(e *Entity) *model.FormationAssignment {
 	}
 
 	return &model.FormationAssignment{
-		ID:          e.ID,
-		FormationID: e.FormationID,
-		TenantID:    e.TenantID,
-		Source:      e.Source,
-		SourceType:  model.FormationAssignmentType(e.SourceType),
-		Target:      e.Target,
-		TargetType:  model.FormationAssignmentType(e.TargetType),
-		State:       e.State,
-		Value:       repo.JSONRawMessageFromNullableString(e.Value),
-		Error:       repo.JSONRawMessageFromNullableString(e.Error),
+		ID:                            e.ID,
+		FormationID:                   e.FormationID,
+		TenantID:                      e.TenantID,
+		Source:                        e.Source,
+		SourceType:                    model.FormationAssignmentType(e.SourceType),
+		Target:                        e.Target,
+		TargetType:                    model.FormationAssignmentType(e.TargetType),
+		State:                         e.State,
+		Value:                         repo.JSONRawMessageFromNullableString(e.Value),
+		Error:                         repo.JSONRawMessageFromNullableString(e.Error),
+		LastStateChangeTimestamp:      e.LastStateChangeTimestamp,
+		LastNotificationSentTimestamp: e.LastNotificationSentTimestamp,
 	}
 }
