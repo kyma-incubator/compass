@@ -73,7 +73,7 @@ type EntityTypeInput struct {
 	Visibility          string          `json:"visibility"`
 	Links               json.RawMessage `json:"links,omitempty"`
 	PartOfProducts      json.RawMessage `json:"partOfProducts,omitempty"`
-	LastUpdate          *string         `json:"lastUpdate,omitempty"`
+	LastUpdate          *string         `json:"lastUpdate,omitempty" hash:"ignore"`
 	PolicyLevel         *string         `json:"policyLevel,omitempty"`
 	CustomPolicyLevel   *string         `json:"customPolicyLevel,omitempty"`
 	ReleaseStatus       string          `json:"releaseStatus"`

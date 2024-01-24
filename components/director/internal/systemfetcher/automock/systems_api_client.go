@@ -44,13 +44,12 @@ func (_m *SystemsAPIClient) FetchSystemsForTenant(ctx context.Context, tenant *m
 	return r0, r1
 }
 
-type mockConstructorTestingTNewSystemsAPIClient interface {
+// NewSystemsAPIClient creates a new instance of SystemsAPIClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSystemsAPIClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSystemsAPIClient creates a new instance of SystemsAPIClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSystemsAPIClient(t mockConstructorTestingTNewSystemsAPIClient) *SystemsAPIClient {
+}) *SystemsAPIClient {
 	mock := &SystemsAPIClient{}
 	mock.Mock.Test(t)
 

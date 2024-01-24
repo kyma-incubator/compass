@@ -108,7 +108,7 @@ type EventDefinitionInput struct {
 	EntityTypeMappings                      []*EntityTypeMappingInput     `json:"entityTypeMappings"`
 	DocumentationLabels                     json.RawMessage               `json:"documentationLabels"`
 	CorrelationIDs                          json.RawMessage               `json:"correlationIds,omitempty"`
-	LastUpdate                              *string                       `json:"lastUpdate"`
+	LastUpdate                              *string                       `json:"lastUpdate" hash:"ignore"`
 	DeprecationDate                         *string                       `json:"deprecationDate"`
 	Responsible                             *string                       `json:"responsible"`
 	*VersionInput                           `hash:"ignore"`

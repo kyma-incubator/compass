@@ -2,6 +2,9 @@ package processor
 
 import (
 	"context"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -107,12 +110,22 @@ func (ep *EntityTypeProcessor) resyncEntityType(ctx context.Context, resourceTyp
 	}
 
 	if !isEntityTypeFound {
+		currentTime := time.Now().Format(time.RFC3339)
+		entityType.LastUpdate = &currentTime
+
 		_, err := ep.entityTypeSvc.Create(ctx, resourceType, resourceID, packageID, entityType, entityTypeHash)
 		if err != nil {
 			return err
 		}
 	} else {
-		err := ep.entityTypeSvc.Update(ctx, resourceType, entityTypesFromDB[i].ID, packageID, entityType, entityTypeHash)
+		log.C(ctx).Infof("Calculate the newest lastUpdate time for Entity Type")
+		newestLastUpdateTime, err := NewestLastUpdateTimestamp(entityType.LastUpdate, entityTypesFromDB[i].LastUpdate, entityTypesFromDB[i].ResourceHash, entityTypeHash)
+		if err != nil {
+			return errors.Wrap(err, "error while calculating the newest lastUpdate time for Entity Type")
+		}
+
+		entityType.LastUpdate = newestLastUpdateTime
+		err = ep.entityTypeSvc.Update(ctx, resourceType, entityTypesFromDB[i].ID, packageID, entityType, entityTypeHash)
 		if err != nil {
 			return err
 		}

@@ -203,7 +203,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 		ID:             subaccountID,
 		Name:           "sa",
 		ExternalTenant: extSubaccountID,
-		Parent:         tnt,
+		Parents:        []string{tnt},
 		Type:           "subaccount",
 		Provider:       "test",
 		Status:         "Active",
@@ -212,7 +212,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 	subaccountInput := func() model.BusinessTenantMappingInput {
 		return model.BusinessTenantMappingInput{
 			ExternalTenant: extSubaccountID,
-			Parent:         tnt,
+			Parents:        []string{tnt},
 			Type:           "subaccount",
 			Provider:       "lazilyWhileRuntimeCreation",
 		}
@@ -325,7 +325,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccountAndIntSys, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
+				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccountAndIntSys, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parents: []string{tnt}}, nil).Once()
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
@@ -365,8 +365,8 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				subaccountInput := subaccountInput()
-				subaccountInput.Parent = subaccountID
-				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccountAndIntSys, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
+				subaccountInput.Parents = []string{subaccountID}
+				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccountAndIntSys, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parents: []string{tnt}}, nil).Once()
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
@@ -405,7 +405,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccountAndIntSys, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
+				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccountAndIntSys, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parents: []string{tnt}}, nil).Once()
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
@@ -519,7 +519,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			LabelServiceFn:      unusedLabelService,
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: "anotherParent"}, nil).Once()
+				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parents: []string{"anotherParent"}}, nil).Once()
 				return tenantSvc
 			},
 			UIDServiceFn:       rtmtest.UnusedUUIDService,
@@ -547,7 +547,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccountMatcher, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
+				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccountMatcher, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parents: []string{tnt}}, nil).Once()
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(nil, testErr).Once()
 				return tenantSvc
 			},
@@ -615,7 +615,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccountMatcher, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
+				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccountMatcher, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parents: []string{tnt}}, nil).Once()
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
@@ -652,7 +652,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccountAndIntSys, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
+				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccountAndIntSys, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parents: []string{tnt}}, nil).Once()
 				return tenantSvc
 			},
 			UIDServiceFn:       rtmtest.UnusedUUIDService,
@@ -733,7 +733,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccountMatcher, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
+				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccountMatcher, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parents: []string{tnt}}, nil).Once()
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},

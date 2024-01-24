@@ -501,6 +501,7 @@ func AssertTenants(t *testing.T, in []*graphql.Tenant, actual []*graphql.Tenant)
 			found = true
 
 			assert.Equal(t, inTnt.Name, actTnt.Name)
+			assert.Equal(t, inTnt.Type, actTnt.Type)
 		}
 		assert.True(t, found)
 	}
