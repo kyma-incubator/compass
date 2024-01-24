@@ -715,6 +715,10 @@ global:
         name: ""
         user: ""
         password: ""
+      instanceCreator:
+        name: ""
+        user: ""
+        password: ""
       host: "localhost"
       hostPort: "5432"
       sslMode: ""
