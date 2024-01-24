@@ -398,7 +398,7 @@ func main() {
 
 					select {
 					case operationID := <-onDemandChannel:
-						log.C(ctx).Infof("Opeartion %q send for processing through OnDemand channel to executor %d", operationID, executorIndex)
+						log.C(ctx).Infof("Operation %q send for processing through OnDemand channel to executor %d", operationID, executorIndex)
 					case <-time.After(cfg.OperationProcessorQuietPeriod):
 						log.C(ctx).Infof("Quiet period finished for executor %d", executorIndex)
 					}
