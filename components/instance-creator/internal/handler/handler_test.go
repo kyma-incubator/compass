@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -60,7 +59,7 @@ var (
 
 func Test_HandlerFunc(t *testing.T) {
 	url := "https://target-url.com"
-	apiPath := fmt.Sprintf("/")
+	apiPath := "/"
 	statusUrl := "localhost"
 
 	testErr := errors.New("test error")
@@ -1310,7 +1309,7 @@ func Test_HandlerFunc(t *testing.T) {
 			h.HandlerFunc(recorder, req)
 			resp := recorder.Result()
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			require.Equal(t, testCase.expectedResponseCode, resp.StatusCode, string(body))

@@ -221,7 +221,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 	gjson.Parse(assignedTenantInboundCommunication.Raw).ForEach(func(auth, assignedTenantAuth gjson.Result) bool {
 		currentPath := fmt.Sprintf("%s.%s", tenantmapping.FindKeyPath(gjson.ParseBytes(assignedTenantConfiguration).Value(), inboundCommunicationKey), auth)
 
-		if gjson.Get(assignedTenantAuth.Raw, serviceInstancesKey).Exists() == false {
+		if !gjson.Get(assignedTenantAuth.Raw, serviceInstancesKey).Exists() {
 			log.C(ctx).Debugf("Auth method %q doesn't have local service instances. Substituting its jsonpaths(if they exist) and proceeding with the next auth method...", auth)
 			assignedTenantAuth, err = SubstituteGJSON(ctx, gjson.GetBytes(assignedTenantConfiguration, currentPath), gjson.ParseBytes(assignedTenantConfiguration).Value())
 			if err != nil {
@@ -229,11 +229,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 			}
 
 			assignedTenantConfiguration, err = sjson.SetBytes(assignedTenantConfiguration, currentPath, assignedTenantAuth.Value())
-			if err != nil {
-				return false
-			}
-
-			return true
+			return err == nil
 		}
 
 		localServiceInstances := gjson.Get(assignedTenantAuth.Raw, serviceInstancesKey)
@@ -251,11 +247,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 		}
 
 		assignedTenantConfiguration, err = sjson.SetBytes(assignedTenantConfiguration, currentPath, assignedTenantAuth.Value())
-		if err != nil {
-			return false
-		}
-
-		return true
+		return err == nil
 	})
 	if err != nil {
 		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while creating service instances for auth methods"))
@@ -333,11 +325,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 	assignedTenantInboundCommunication = gjson.GetBytes(assignedTenantConfiguration, assignedTenantInboundCommunicationPath)
 	gjson.Parse(assignedTenantInboundCommunication.Raw).ForEach(func(auth, assignedTenantAuth gjson.Result) bool {
 		assignedTenantConfiguration, err = sjson.DeleteBytes(assignedTenantConfiguration, fmt.Sprintf("%s.%s.%s", assignedTenantInboundCommunicationPath, auth.Str, serviceInstancesKey))
-		if err != nil {
-			return false
-		}
-
-		return true
+		return err == nil
 	})
 	if err != nil {
 		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while deleting service instances for auth methods"))
