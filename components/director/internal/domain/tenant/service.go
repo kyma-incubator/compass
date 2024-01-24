@@ -553,6 +553,7 @@ func (s *labeledService) UpsertLabel(ctx context.Context, tenantID, key string, 
 	return s.labelUpsertSvc.UpsertLabel(ctx, tenantID, label)
 }
 
+// Exists checks if tenant with the provided internal ID exists in the Compass storage.
 func (s *service) Exists(ctx context.Context, id string) error {
 	exists, err := s.tenantMappingRepo.Exists(ctx, id)
 	if err != nil {
@@ -566,6 +567,7 @@ func (s *service) Exists(ctx context.Context, id string) error {
 	return nil
 }
 
+// ExistsByExternalTenant checks if tenant with the provided external ID exists in the Compass storage.
 func (s *service) ExistsByExternalTenant(ctx context.Context, externalTenant string) error {
 	exists, err := s.tenantMappingRepo.ExistsByExternalTenant(ctx, externalTenant)
 	if err != nil {

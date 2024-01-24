@@ -40,7 +40,7 @@ func NewRepository(conv EntityConverter) *repository {
 	}
 }
 
-// List returns all system sync timestamps from database
+// ListByTenant returns all system sync timestamps from database for a specified tenant
 func (r *repository) ListByTenant(ctx context.Context, tenant string) ([]*model.SystemSynchronizationTimestamp, error) {
 	var entityCollection EntityCollection
 

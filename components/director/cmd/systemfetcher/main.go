@@ -14,7 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/jwt"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
 
 	directortime "github.com/kyma-incubator/compass/components/director/pkg/time"
 
@@ -176,7 +175,7 @@ func main() {
 	businessTenantMappingSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 
 	opRepo := operation.NewRepository(operation.NewConverter())
-	opSvc := operation.NewService(opRepo, uuid.NewService())
+	opSvc := operation.NewService(opRepo, uidSvc)
 
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
@@ -213,7 +212,7 @@ func main() {
 	}()
 
 	if cfg.SystemFetcher.OperationalMode == discoverSystemsOpMode {
-		systemfetcherOperationProcessor := &systemfetcher.OperationsProcessor{
+		systemFetcherOperationProcessor := &systemfetcher.OperationsProcessor{
 			SystemFetcherSvc: systemFetcherSvc,
 		}
 		systemFetcherOperationMaintainer := systemfetcher.NewOperationMaintainer(model.OperationTypeSystemFetching, transact, opSvc, businessTenantMappingSvc)
@@ -231,7 +230,7 @@ func main() {
 					if err != nil {
 						log.C(ctx).Errorf("Failed to reload templates by executor %d . Err: %v", executorIndex, err)
 					}
-					opProcessor.SystemFetcherSvc.SetTemplateRenreder(templateRenderer)
+					opProcessor.SystemFetcherSvc.SetTemplateRenderer(templateRenderer)
 
 					processedOperationID, err := claimAndProcessOperation(ctx, opManager, opProcessor)
 					if err != nil {
@@ -251,7 +250,7 @@ func main() {
 						}
 					}
 				}
-			}(ctx, operationsManager, systemfetcherOperationProcessor, &mutex, i)
+			}(ctx, operationsManager, systemFetcherOperationProcessor, &mutex, i)
 		}
 
 		go func() {

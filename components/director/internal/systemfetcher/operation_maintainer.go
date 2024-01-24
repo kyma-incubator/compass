@@ -29,7 +29,7 @@ type OperationService interface {
 	ListAllByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error)
 }
 
-// BusinessTenantMappingService missing godoc
+// BusinessTenantMappingService responsible for the service-layer tenant operations
 //
 //go:generate mockery --name=BusinessTenantMappingService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BusinessTenantMappingService interface {
@@ -39,8 +39,8 @@ type BusinessTenantMappingService interface {
 	ExistsByExternalTenant(ctx context.Context, externalTenant string) error
 }
 
-// SytemFetcherOperationMaintainer consists of various resource services responsible for operations creation.
-type SytemFetcherOperationMaintainer struct {
+// SystemFetcherOperationMaintainer consists of various resource services responsible for operations creation.
+type SystemFetcherOperationMaintainer struct {
 	transact                 persistence.Transactioner
 	opSvc                    OperationService
 	businessTenantMappingSvc BusinessTenantMappingService
@@ -49,7 +49,7 @@ type SytemFetcherOperationMaintainer struct {
 // NewOperationMaintainer creates OperationMaintainer based on kind
 func NewOperationMaintainer(kind model.OperationType, transact persistence.Transactioner, opSvc OperationService, businessTenantMappingSvc BusinessTenantMappingService) OperationMaintainer {
 	if kind == model.OperationTypeSystemFetching {
-		return &SytemFetcherOperationMaintainer{
+		return &SystemFetcherOperationMaintainer{
 			transact:                 transact,
 			opSvc:                    opSvc,
 			businessTenantMappingSvc: businessTenantMappingSvc,
@@ -59,7 +59,7 @@ func NewOperationMaintainer(kind model.OperationType, transact persistence.Trans
 }
 
 // Maintain is responsible to create all missing and remove all obsolete operations
-func (om *SytemFetcherOperationMaintainer) Maintain(ctx context.Context) error {
+func (om *SystemFetcherOperationMaintainer) Maintain(ctx context.Context) error {
 	tx, err := om.transact.Begin()
 	if err != nil {
 		return err
@@ -88,7 +88,7 @@ func (om *SytemFetcherOperationMaintainer) Maintain(ctx context.Context) error {
 	return tx.Commit()
 }
 
-func (om *SytemFetcherOperationMaintainer) buildNonExistingOperationInputs(ctx context.Context) ([]*model.OperationInput, []*model.Operation, error) {
+func (om *SystemFetcherOperationMaintainer) buildNonExistingOperationInputs(ctx context.Context) ([]*model.OperationInput, []*model.Operation, error) {
 	tenants, err := om.listBusinessTenantMappings(ctx)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "while getting tenants")
@@ -100,7 +100,7 @@ func (om *SytemFetcherOperationMaintainer) buildNonExistingOperationInputs(ctx c
 		case tenantpkg.Customer, tenantpkg.Account:
 			op, err := om.tenantToOperation(tenant)
 			if err != nil {
-				return nil, nil, errors.Wrapf(err, "while creating operation from account tenant %q", tenant.ID)
+				return nil, nil, errors.Wrapf(err, "while creating operation from account or customer tenant %q", tenant.ID)
 			}
 			desiredStateOperations = append(desiredStateOperations, op)
 		default:
@@ -127,7 +127,7 @@ func (om *SytemFetcherOperationMaintainer) buildNonExistingOperationInputs(ctx c
 	return operationsToCreate, operationsToDelete, nil
 }
 
-func (om *SytemFetcherOperationMaintainer) getOperationsToCreate(desiredOperations []*model.OperationInput, existingOperations []*model.Operation) ([]*model.OperationInput, error) {
+func (om *SystemFetcherOperationMaintainer) getOperationsToCreate(desiredOperations []*model.OperationInput, existingOperations []*model.Operation) ([]*model.OperationInput, error) {
 	result := make([]*model.OperationInput, 0)
 	for _, currentDesiredOperation := range desiredOperations {
 		found := false
@@ -152,7 +152,7 @@ func (om *SytemFetcherOperationMaintainer) getOperationsToCreate(desiredOperatio
 	return result, nil
 }
 
-func (om *SytemFetcherOperationMaintainer) getOperationsToDelete(existingOperations []*model.Operation, desiredOperations []*model.OperationInput) ([]*model.Operation, error) {
+func (om *SystemFetcherOperationMaintainer) getOperationsToDelete(existingOperations []*model.Operation, desiredOperations []*model.OperationInput) ([]*model.Operation, error) {
 	result := make([]*model.Operation, 0)
 	for _, currentExistingOperation := range existingOperations {
 		found := false
@@ -177,7 +177,7 @@ func (om *SytemFetcherOperationMaintainer) getOperationsToDelete(existingOperati
 	return result, nil
 }
 
-func (om *SytemFetcherOperationMaintainer) listBusinessTenantMappings(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
+func (om *SystemFetcherOperationMaintainer) listBusinessTenantMappings(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	tenants, err := om.businessTenantMappingSvc.List(ctx)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("error while fetching tenants")
@@ -187,7 +187,7 @@ func (om *SytemFetcherOperationMaintainer) listBusinessTenantMappings(ctx contex
 	return tenants, nil
 }
 
-func (om *SytemFetcherOperationMaintainer) tenantToOperation(tenant *model.BusinessTenantMapping) (*model.OperationInput, error) {
+func (om *SystemFetcherOperationMaintainer) tenantToOperation(tenant *model.BusinessTenantMapping) (*model.OperationInput, error) {
 	opData := NewSystemFetcherOperationData(tenant.ID)
 	data, err := opData.GetData()
 	if err != nil {

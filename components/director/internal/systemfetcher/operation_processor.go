@@ -10,12 +10,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// SystemFetcherService missing godoc
+// SystemFetcherService responsible for the service-layer operations of system fetcher
 //
 //go:generate mockery --name=SystemFetcherService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemFetcherService interface {
 	ProcessTenant(ctx context.Context, tenantID string) error
-	SetTemplateRenreder(templateRenderer templateRenderer)
+	SetTemplateRenderer(templateRenderer templateRenderer)
 }
 
 // OperationsProcessor defines Open Resource Discovery operation processor

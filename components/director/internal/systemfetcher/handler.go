@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
-// OperationsManager missing godoc
+// OperationsManager provides methods for operations management
 //
 //go:generate mockery --name=OperationsManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OperationsManager interface {
@@ -23,7 +23,7 @@ type OperationsManager interface {
 	RescheduleOperation(ctx context.Context, operationID string) error
 }
 
-// AggregationResources holds ids of resources for ord data aggregation
+// AggregationResources holds id of tenant for systems fetching
 type AggregationResources struct {
 	TenantID string `json:"tenantID"`
 }
@@ -45,7 +45,7 @@ func NewSystemFetcherAggregatorHTTPHandler(opMgr OperationsManager, businessTena
 	}
 }
 
-// ScheduleAggregationForORDData validates the payload, checks if such an operation already exists.
+// ScheduleAggregationForSystemFetcherData validates the payload, checks if such an operation already exists.
 // If it does, it reschedules the existing operation; otherwise, it creates a new operation with high priority.
 func (h *handler) ScheduleAggregationForSystemFetcherData(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()

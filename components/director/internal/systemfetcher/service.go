@@ -3,7 +3,6 @@ package systemfetcher
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 
@@ -132,8 +131,8 @@ type tenantSystems struct {
 	syncTimestamp time.Time
 }
 
-// SetTemplateRenreder replaces the current template renderer
-func (s *SystemFetcher) SetTemplateRenreder(templateRenderer templateRenderer) {
+// SetTemplateRenderer replaces the current template renderer
+func (s *SystemFetcher) SetTemplateRenderer(templateRenderer templateRenderer) {
 	s.templateRenderer = templateRenderer
 }
 
@@ -158,7 +157,7 @@ func (s *SystemFetcher) ProcessTenant(ctx context.Context, tenantID string) erro
 
 	systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, tenant, systemSynchronizationTimestamps)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s of type %s", tenant.ExternalTenant, tenant.Type))
+		return errors.Wrapf(err, "failed to fetch systems for tenant %s of type %s", tenant.ExternalTenant, tenant.Type)
 	}
 
 	log.C(ctx).Infof("Found %d systems for tenant %s of type %s", len(systems), tenant.ExternalTenant, tenant.Type)
@@ -172,7 +171,7 @@ func (s *SystemFetcher) ProcessTenant(ctx context.Context, tenantID string) erro
 	}
 
 	if err := s.processSystemsForTenant(ctx, tenant, systems, tenantBusinessTypes); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to save systems for tenant %s", tenantID))
+		return errors.Wrapf(err, "failed to save systems for tenant %s", tenantID)
 	}
 
 	currentTime := time.Now()
@@ -198,10 +197,10 @@ func (s *SystemFetcher) ProcessTenant(ctx context.Context, tenantID string) erro
 	err = s.UpsertSystemsSyncTimestampsForTenant(ctx, tenantID, systemSynchronizationTimestamps)
 	if err != nil {
 		// Not a breaking case - exit without error.
-		log.C(ctx).Warnf(fmt.Sprintf("Failed to upsert timestamps for synced systems for tenant %s", tenantID))
+		log.C(ctx).Warnf("Failed to upsert timestamps for synced systems for tenant %s", tenantID)
 	}
 
-	log.C(ctx).Info(fmt.Sprintf("Successfully synced systems for tenant %s", tenantID))
+	log.C(ctx).Infof("Successfully synced systems for tenant %s", tenantID)
 	return nil
 }
 
@@ -385,7 +384,7 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 			}
 
 			if err = tx.Commit(); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("failed to commit applications for tenant %s", tenantMapping.ExternalTenant))
+				return errors.Wrapf(err, "failed to commit applications for tenant %s", tenantMapping.ExternalTenant)
 			}
 			return nil
 		}()
