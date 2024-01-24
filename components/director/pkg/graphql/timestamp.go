@@ -47,3 +47,13 @@ func (y Timestamp) MarshalJSON() ([]byte, error) {
 func (y *Timestamp) UnmarshalJSON(data []byte) error {
 	return (*time.Time)(y).UnmarshalJSON(data)
 }
+
+// TimePtrToGraphqlTimestampPtr converts time to graphql timestamp
+func TimePtrToGraphqlTimestampPtr(time *time.Time) *Timestamp {
+	if time == nil {
+		return nil
+	}
+
+	t := Timestamp(*time)
+	return &t
+}
