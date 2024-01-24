@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -216,15 +217,17 @@ func main() {
 			SystemFetcherSvc: systemFetcherSvc,
 		}
 		systemFetcherOperationMaintainer := systemfetcher.NewOperationMaintainer(model.OperationTypeSystemFetching, transact, opSvc, businessTenantMappingSvc)
-
+		var mutex sync.Mutex
 		for i := 0; i < cfg.ParallelOperationProcessors; i++ {
-			go func(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *systemfetcher.OperationsProcessor, executorIndex int) {
+			go func(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *systemfetcher.OperationsProcessor, mutex *sync.Mutex, executorIndex int) {
 				for {
 					select {
 					case <-onDemandChannel:
 					default:
 					}
+					mutex.Lock()
 					templateRenderer, err := reloadTemplates(ctx, cfg, transact)
+					mutex.Unlock()
 					if err != nil {
 						log.C(ctx).Errorf("Failed to reload templates by executor %d . Err: %v", executorIndex, err)
 					}
@@ -248,7 +251,7 @@ func main() {
 						}
 					}
 				}
-			}(ctx, operationsManager, systemfetcherOperationProcessor, i)
+			}(ctx, operationsManager, systemfetcherOperationProcessor, &mutex, i)
 		}
 
 		go func() {
