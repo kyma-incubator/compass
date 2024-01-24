@@ -72,13 +72,13 @@ spec:
                 - name: CERT_SVC_OAUTH_CLIENT_CERT
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
-                      key: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}
+                      name: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+                      key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.certKey }}
                 - name: CERT_SVC_OAUTH_CLIENT_KEY
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
-                      key: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}
+                      name: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+                      key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.keyKey }}
                 - name: SKIP_SSL_VALIDATION_FLAG
                   value: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.skipSSLValidationFlag }}
 
