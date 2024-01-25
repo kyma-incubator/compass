@@ -89,12 +89,7 @@ metadata:
   name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
-    app: {{ $.Chart.Name }}
-    release: {{ $.Release.Name }}
-    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
-    app.kubernetes.io/managed-by: {{ $.Release.Service }}
-    app.kubernetes.io/instance: {{ $.Release.Name }}
+    {{- include "director.labels" . | nindent 4 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -102,16 +97,15 @@ metadata:
   name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
-    app: {{ $.Chart.Name }}
-    release: {{ $.Release.Name }}
-    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
-    app.kubernetes.io/managed-by: {{ $.Release.Service }}
-    app.kubernetes.io/instance: {{ $.Release.Name }}
+    {{- include "director.labels" . | nindent 4 }}
 rules:
   - apiGroups: ["*"]
     resources: ["secrets"]
-    verbs: ["get", "create", "update", "patch"]
+    resourceNames: ["{{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorClientCertSecret.name }}"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -119,12 +113,7 @@ metadata:
   name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
-    app: {{ $.Chart.Name }}
-    release: {{ $.Release.Name }}
-    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
-    app.kubernetes.io/managed-by: {{ $.Release.Service }}
-    app.kubernetes.io/instance: {{ $.Release.Name }}
+    {{- include "director.labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
     name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.rotationCronjob.name }}
@@ -140,12 +129,7 @@ metadata:
   name: director-{{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
-    app: {{ $.Chart.Name }}
-    release: {{ $.Release.Name }}
-    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
-    app.kubernetes.io/managed-by: {{ $.Release.Service }}
-    app.kubernetes.io/instance: {{ $.Release.Name }}
+    {{- include "director.labels" . | nindent 4 }}
 rules:
   - apiGroups: ["*"]
     resources: ["secrets"]
