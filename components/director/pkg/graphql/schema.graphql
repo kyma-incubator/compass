@@ -1323,10 +1323,10 @@ type FormationAssignment {
 	id: ID!
 	source: ID!
 	sourceType: FormationAssignmentType!
-	sourceEntity: FormationParticipant!
+	sourceEntity: FormationParticipant
 	target: ID!
 	targetType: FormationAssignmentType!
-	targetEntity: FormationParticipant!
+	targetEntity: FormationParticipant
 	state: String!
 	value: String
 	configuration: String
@@ -2054,6 +2054,10 @@ type Mutation {
 	- [set application label](examples/set-application-label/set-application-label.graphql)
 	"""
 	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
+	"""
+	If a label with given key already exist, it will be replaced with provided value.
+	"""
+	setTenantLabel(tenantID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setTenantLabel")
 	"""
 	If Application does not exist or the label key is not found, it returns an error.
 	

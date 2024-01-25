@@ -75,7 +75,8 @@ const (
 
 	// Formation constants
 	testFormationName       = "test-formation-name"
-	testFormationState      = string(model.InitialFormationState)
+	initialFormationState   = string(model.InitialFormationState)
+	readyFormationState     = string(model.ReadyFormationState)
 	testFormationEmptyError = "{}"
 	secondTestFormationName = "second-formation"
 	TargetTenant            = "targetTenant" // used as "assigning tenant" in formation scenarios/flows
@@ -107,6 +108,7 @@ var (
 	externalTenantID       = uuid.New()
 	nilFormationModel      *model.Formation
 	runtimeTypeDisplayName = str.Ptr("display name")
+	defaultTime            = time.Time{}
 
 	emptyCtx = context.Background()
 	testErr  = errors.New("Test error")
@@ -953,10 +955,6 @@ func unusedWebhookRepository() *automock.WebhookRepository {
 	return &automock.WebhookRepository{}
 }
 
-func unusedAppTemplateRepository() *automock.ApplicationTemplateRepository {
-	return &automock.ApplicationTemplateRepository{}
-}
-
 func unusedWebhookConverter() *automock.WebhookConverter {
 	return &automock.WebhookConverter{}
 }
@@ -985,6 +983,10 @@ func unusedService() *automock.Service {
 	return &automock.Service{}
 }
 
+func unusedFormationAssignmentRepo() *automock.FormationAssignmentRepository {
+	return &automock.FormationAssignmentRepository{}
+}
+
 func unusedFormationRepo() *automock.FormationRepository {
 	return &automock.FormationRepository{}
 }
@@ -999,12 +1001,6 @@ func unusedFormationAssignmentService() *automock.FormationAssignmentService {
 
 func unusedFormationAssignmentNotificationService() *automock.FormationAssignmentNotificationsService {
 	return &automock.FormationAssignmentNotificationsService{}
-}
-
-func noActionNotificationsService() *automock.NotificationsService {
-	notificationSvc := &automock.NotificationsService{}
-	notificationSvc.On("GenerateFormationAssignmentNotifications", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
-	return notificationSvc
 }
 
 func unusedFormationTemplateRepo() *automock.FormationTemplateRepository {
@@ -1065,7 +1061,7 @@ func fixUUID() string {
 }
 
 func fixColumns() []string {
-	return []string{"id", "tenant_id", "formation_template_id", "name", "state", "error"}
+	return []string{"id", "tenant_id", "formation_template_id", "name", "state", "error", "last_state_change_timestamp", "last_notification_sent_timestamp"}
 }
 
 func fixScenariosLabelDefinition(tenantID string, schema interface{}) model.LabelDefinition {
@@ -1226,14 +1222,6 @@ func fixRuntimeWebhookGQLModel(webhookID, runtimeID string) *graphql.Webhook {
 	}
 }
 
-func fixRuntimeWebhookModel(webhookID, runtimeID string) *model.Webhook {
-	return &model.Webhook{
-		ID:       webhookID,
-		ObjectID: runtimeID,
-		Type:     model.WebhookTypeConfigurationChanged,
-	}
-}
-
 func fixApplicationWebhookGQLModel(webhookID, appID string) *graphql.Webhook {
 	return &graphql.Webhook{
 		ID:            webhookID,
@@ -1337,12 +1325,14 @@ func fixRuntimeContextModelWithRuntimeID(rtID string) *model.RuntimeContext {
 
 func fixFormationModel() *model.Formation {
 	return &model.Formation{
-		ID:                  FormationID,
-		TenantID:            TntInternalID,
-		FormationTemplateID: FormationTemplateID,
-		Name:                testFormationName,
-		State:               model.InitialFormationState,
-		Error:               json.RawMessage(testFormationEmptyError),
+		ID:                            FormationID,
+		TenantID:                      TntInternalID,
+		FormationTemplateID:           FormationTemplateID,
+		Name:                          testFormationName,
+		State:                         model.InitialFormationState,
+		Error:                         json.RawMessage(testFormationEmptyError),
+		LastStateChangeTimestamp:      &defaultTime,
+		LastNotificationSentTimestamp: &defaultTime,
 	}
 }
 
@@ -1386,21 +1376,25 @@ func fixFormationModelWithStateAndAssignmentError(t *testing.T, state model.Form
 
 func fixFormationEntity() *formation.Entity {
 	return &formation.Entity{
-		ID:                  FormationID,
-		TenantID:            TntInternalID,
-		FormationTemplateID: FormationTemplateID,
-		Name:                testFormationName,
-		State:               string(model.InitialFormationState),
-		Error:               repo.NewNullableStringFromJSONRawMessage(json.RawMessage("{}")),
+		ID:                            FormationID,
+		TenantID:                      TntInternalID,
+		FormationTemplateID:           FormationTemplateID,
+		Name:                          testFormationName,
+		State:                         initialFormationState,
+		Error:                         repo.NewNullableStringFromJSONRawMessage(json.RawMessage(testFormationEmptyError)),
+		LastStateChangeTimestamp:      &defaultTime,
+		LastNotificationSentTimestamp: &defaultTime,
 	}
 }
 
 func fixGqlFormation() *graphql.Formation {
 	return &graphql.Formation{
-		ID:                  FormationID,
-		Name:                testFormationName,
-		FormationTemplateID: FormationTemplateID,
-		State:               string(model.ReadyFormationState),
+		ID:                            FormationID,
+		Name:                          testFormationName,
+		FormationTemplateID:           FormationTemplateID,
+		State:                         string(model.InitialFormationState),
+		LastStateChangeTimestamp:      graphql.TimePtrToGraphqlTimestampPtr(&defaultTime),
+		LastNotificationSentTimestamp: graphql.TimePtrToGraphqlTimestampPtr(&defaultTime),
 	}
 }
 
@@ -1444,13 +1438,15 @@ func fixFormationAssignmentModel(state string, configValue json.RawMessage) *mod
 
 func fixFormationAssignmentModelWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationState) *model.FormationAssignment {
 	return &model.FormationAssignment{
-		ID:          id,
-		FormationID: formationID,
-		Source:      source,
-		SourceType:  sourceType,
-		Target:      target,
-		TargetType:  targetType,
-		State:       string(state),
+		ID:                            id,
+		FormationID:                   formationID,
+		Source:                        source,
+		SourceType:                    sourceType,
+		Target:                        target,
+		TargetType:                    targetType,
+		State:                         string(state),
+		LastStateChangeTimestamp:      &defaultTime,
+		LastNotificationSentTimestamp: &defaultTime,
 	}
 }
 
