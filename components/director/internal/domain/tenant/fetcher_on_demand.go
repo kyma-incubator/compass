@@ -3,6 +3,7 @@ package tenant
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -60,8 +61,14 @@ func (s *fetchOnDemandService) FetchOnDemand(ctx context.Context, tenant, parent
 	if err != nil {
 		return errors.Wrapf(err, "while calling tenant-on-demand API")
 	}
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse response body")
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("received status code %d when trying to fetch tenant with ID %s", resp.StatusCode, tenant)
+		return fmt.Errorf("received status code %d when trying to fetch tenant with ID %s, body: %s", resp.StatusCode, tenant, string(respBody))
 	}
 	return nil
 }
