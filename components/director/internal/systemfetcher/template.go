@@ -40,7 +40,8 @@ type PlaceholderMapping struct {
 	Optional        bool   `json:"optional"`
 }
 
-type renderer struct {
+// Renderer ts the applicaiotn template renderer helper
+type Renderer struct {
 	appTemplateService applicationTemplateService
 	appConverter       applicationConverter
 
@@ -50,7 +51,7 @@ type renderer struct {
 }
 
 // NewTemplateRenderer returns a new application input renderer by a given application template.
-func NewTemplateRenderer(appTemplateService applicationTemplateService, appConverter applicationConverter, appInputOverride string, mapping []PlaceholderMapping) (*renderer, error) {
+func NewTemplateRenderer(appTemplateService applicationTemplateService, appConverter applicationConverter, appInputOverride string, mapping []PlaceholderMapping) (*Renderer, error) {
 	if _, err := appConverter.CreateInputJSONToModel(context.Background(), appInputOverride); err != nil {
 		return nil, errors.Wrapf(err, "while converting override application input JSON into application input")
 	}
@@ -63,7 +64,7 @@ func NewTemplateRenderer(appTemplateService applicationTemplateService, appConve
 		})
 	}
 
-	return &renderer{
+	return &Renderer{
 		appTemplateService:   appTemplateService,
 		appConverter:         appConverter,
 		appInputOverride:     appInputOverride,
@@ -72,7 +73,8 @@ func NewTemplateRenderer(appTemplateService applicationTemplateService, appConve
 	}, nil
 }
 
-func (r *renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc System) (*model.ApplicationRegisterInput, error) {
+// ApplicationRegisterInputFromTemplate creates ApplicationRegisterInput from System
+func (r *Renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc System) (*model.ApplicationRegisterInput, error) {
 	appTemplate, err := r.appTemplateService.Get(ctx, sc.TemplateID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting application template with ID %s", sc.TemplateID)
@@ -116,7 +118,7 @@ func (r *renderer) GenerateAppRegisterInput(ctx context.Context, sc System, appT
 	return &appRegisterInput, nil
 }
 
-func (r *renderer) getTemplateInputs(systemPayload map[string]interface{}, appTemplate *model.ApplicationTemplate) (*model.ApplicationFromTemplateInputValues, error) {
+func (r *Renderer) getTemplateInputs(systemPayload map[string]interface{}, appTemplate *model.ApplicationTemplate) (*model.ApplicationFromTemplateInputValues, error) {
 	parser := jsonpath.New("parser")
 
 	placeholdersMappingInputValues := model.ApplicationFromTemplateInputValues{}
@@ -157,7 +159,7 @@ func (r *renderer) getTemplateInputs(systemPayload map[string]interface{}, appTe
 	return &inputValues, nil
 }
 
-func (r *renderer) mergedApplicationInput(originalAppInputJSON, overrideAppInputJSON string) (string, error) {
+func (r *Renderer) mergedApplicationInput(originalAppInputJSON, overrideAppInputJSON string) (string, error) {
 	var originalAppInput map[string]interface{}
 	var overrideAppInput map[string]interface{}
 

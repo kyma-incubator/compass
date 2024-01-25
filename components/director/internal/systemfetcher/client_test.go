@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"sync"
 	"testing"
 	"time"
 
@@ -56,6 +55,8 @@ var fourSystemsResp = `[{
 			"templateProp": "type1"
 		}]`
 
+var emptySystemSynchronizationTimestamps = map[string]systemfetcher.SystemSynchronizationTimestamp{}
+
 func TestFetchSystemsForTenant(t *testing.T) {
 	systemsJSON, err := json.Marshal(fixSystems())
 	require.NoError(t, err)
@@ -70,13 +71,12 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	tenantID := "tenantId1"
 	syncTimestampID := "timestampId1"
 
-	tenantModel := newModelBusinessTenantMapping(tenantID, "tenantName")
-	tenantCustomerModel := newModelBusinessTenantMapping(tenantID, "tenantName")
+	tenantModel := newModelBusinessTenantMapping(tenantID, testExternal, "tenantName")
+	tenantCustomerModel := newModelBusinessTenantMapping(tenantID, testExternal, "tenantName")
 	tenantCustomerModel.Type = tenant.Customer
 	systemfetcher.SystemSourceKey = sourceKey
 	systemfetcher.ApplicationTemplateLabelFilter = labelFilter
 
-	var mutex sync.Mutex
 	client := systemfetcher.NewClient(systemfetcher.APIConfig{
 		Endpoint:        url + "/fetch",
 		FilterCriteria:  "%s",
@@ -90,7 +90,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, &mutex)
+		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, emptySystemSynchronizationTimestamps)
 		require.NoError(t, err)
 		require.Len(t, systems, 1)
 		require.Equal(t, systems[0].TemplateID, "")
@@ -99,7 +99,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	t.Run("Success for customer", func(t *testing.T) {
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), tenantCustomerModel, &mutex)
+		systems, err := client.FetchSystemsForTenant(context.Background(), tenantCustomerModel, emptySystemSynchronizationTimestamps)
 		require.NoError(t, err)
 		require.Len(t, systems, 1)
 		require.Equal(t, systems[0].TemplateID, "")
@@ -141,7 +141,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, &mutex)
+		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, emptySystemSynchronizationTimestamps)
 		require.NoError(t, err)
 		require.Len(t, systems, 2)
 		require.Equal(t, systems[0].TemplateID, "type1")
@@ -193,13 +193,11 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, &mutex)
+		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, systemSynchronizationTimestamps)
 		require.NoError(t, err)
 		require.Len(t, systems, 2)
 		require.Equal(t, systems[0].TemplateID, "type1")
 		require.Equal(t, systems[1].TemplateID, "")
-
-		systemfetcher.SystemSynchronizationTimestamps = nil
 	})
 
 	t.Run("Success for more than one page", func(t *testing.T) {
@@ -234,7 +232,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 2
-		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, &mutex)
+		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, emptySystemSynchronizationTimestamps)
 		require.NoError(t, err)
 		require.Len(t, systems, 5)
 	})
@@ -312,7 +310,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, &mutex)
+		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, emptySystemSynchronizationTimestamps)
 		require.NoError(t, err)
 		require.Len(t, systems, 3)
 		require.Equal(t, systems[0].TemplateID, "type1")
@@ -328,7 +326,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		mock.callNumber = 0
 		mock.pageCount = 1
 		mock.statusCodeToReturn = http.StatusBadRequest
-		_, err := client.FetchSystemsForTenant(context.Background(), tenantModel, &mutex)
+		_, err := client.FetchSystemsForTenant(context.Background(), tenantModel, emptySystemSynchronizationTimestamps)
 		require.Contains(t, err.Error(), "unexpected status code")
 	})
 
@@ -337,7 +335,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		mock.pageCount = 1
 		mock.bodiesToReturn = [][]byte{[]byte("not a JSON")}
 		mock.statusCodeToReturn = http.StatusOK
-		_, err := client.FetchSystemsForTenant(context.Background(), tenantModel, &mutex)
+		_, err := client.FetchSystemsForTenant(context.Background(), tenantModel, emptySystemSynchronizationTimestamps)
 		require.Contains(t, err.Error(), "failed to unmarshal systems response")
 	})
 }
