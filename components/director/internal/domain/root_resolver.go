@@ -758,8 +758,8 @@ func (r *mutationResolver) UnassignFormation(ctx context.Context, objectID strin
 	return r.formation.UnassignFormation(ctx, objectID, objectType, formation)
 }
 
-func (r *mutationResolver) UnassignFormationApplicationGlobal(ctx context.Context, applicationID string, formationID string) (*graphql.Formation, error) {
-	return r.formation.UnassignFormationApplicationGlobal(ctx, applicationID, formationID)
+func (r *mutationResolver) UnassignFormationGlobal(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formationID string) (*graphql.Formation, error) {
+	return r.formation.UnassignFormationnGlobal(ctx, objectID, objectType, formationID)
 }
 
 func (r *mutationResolver) CreateFormation(ctx context.Context, formationInput graphql.FormationInput) (*graphql.Formation, error) {

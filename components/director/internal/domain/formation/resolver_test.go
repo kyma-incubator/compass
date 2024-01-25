@@ -534,7 +534,7 @@ func TestUnassignFormation(t *testing.T) {
 	}
 }
 
-func TestUnassignFormationApplicationGlobal(t *testing.T) {
+func TestUnassignFormationGlobal(t *testing.T) {
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	testCases := []struct {
@@ -625,7 +625,7 @@ func TestUnassignFormationApplicationGlobal(t *testing.T) {
 			resolver := formation.NewResolver(transact, service, converter, formationAssignmentSvc, nil, nil)
 
 			// WHEN
-			f, err := resolver.UnassignFormationApplicationGlobal(emptyCtx, ApplicationID, FormationID)
+			f, err := resolver.UnassignFormationnGlobal(emptyCtx, ApplicationID, graphql.FormationObjectTypeApplication, FormationID)
 
 			// THEN
 			if testCase.ExpectedError != nil {

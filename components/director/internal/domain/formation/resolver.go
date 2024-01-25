@@ -299,8 +299,8 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 	return r.conv.ToGraphQL(newFormation)
 }
 
-// UnassignFormationApplicationGlobal unassigns the application from the provided formation globally
-func (r *Resolver) UnassignFormationApplicationGlobal(ctx context.Context, applicationID, formationID string) (*graphql.Formation, error) {
+// UnassignFormationnGlobal unassigns the objectID from the provided formation globally
+func (r *Resolver) UnassignFormationnGlobal(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formationID string) (*graphql.Formation, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -316,7 +316,7 @@ func (r *Resolver) UnassignFormationApplicationGlobal(ctx context.Context, appli
 
 	ctx = tenant.SaveToContext(ctx, formation.TenantID, "")
 
-	newFormation, err := r.service.UnassignFormation(ctx, formation.TenantID, applicationID, graphql.FormationObjectTypeApplication, *formation)
+	newFormation, err := r.service.UnassignFormation(ctx, formation.TenantID, objectID, objectType, *formation)
 	if err != nil {
 		return nil, err
 	}

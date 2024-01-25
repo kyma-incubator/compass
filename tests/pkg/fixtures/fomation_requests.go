@@ -89,13 +89,13 @@ func FixUnassignFormationRequest(objID, objType, formationName string) *gcli.Req
 			}`, objID, objType, formationName, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
 }
 
-func FixUnassignFormationApplicationGlobalRequest(applicationID, formationID string) *gcli.Request {
+func FixUnassignFormationGlobalRequest(objID, objType, formationID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{
-			  result: unassignFormationApplicationGlobal(applicationID:"%s", formationID: "%s"){
+			  result: unassignFormationGlobal(objectID:"%s", objectType: %s, formation: "%s"){
 				%s
 			  }
-			}`, applicationID, formationID, testctx.Tc.GQLFieldsProvider.ForFormation())) // TODO: Change with ForFormationWithStatus()
+			}`, objID, objType, formationID, testctx.Tc.GQLFieldsProvider.ForFormation())) // TODO: Change with ForFormationWithStatus()
 }
 
 func FixResynchronizeFormationNotificationsRequest(formationID string) *gcli.Request {

@@ -2011,7 +2011,7 @@ type Mutation {
 	- [unassign tenant from formation](examples/unassign-formation/unassign-tenant-from-formation.graphql)
 	"""
 	unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unassignFormation")
-	unassignFormationApplicationGlobal(applicationID: ID!, formationID: ID!): Formation! @hasScopes(path: "graphql.mutation.unassignFormationApplicationGlobal")
+	unassignFormationGlobal(objectID: ID!, objectType: FormationObjectType!, formation: ID!): Formation! @hasScopes(path: "graphql.mutation.unassignFormationGlobal")
 	"""
 	**Examples**
 	- [create formation constraint](examples/create-formation-constraint/create-formation-constraint.graphql)
