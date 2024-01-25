@@ -90,7 +90,7 @@ func (r *Renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc 
 	return appRegisterInput, nil
 }
 
-func (r *renderer) GenerateAppRegisterInput(ctx context.Context, sc System, appTemplate *model.ApplicationTemplate, overridePlaceholders bool) (*model.ApplicationRegisterInput, error) {
+func (r *Renderer) GenerateAppRegisterInput(ctx context.Context, sc System, appTemplate *model.ApplicationTemplate, overridePlaceholders bool) (*model.ApplicationRegisterInput, error) {
 	inputValues, err := r.getTemplateInputs(sc.SystemPayload, appTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting template inputs for Application Template with name %s", appTemplate.Name)
@@ -181,7 +181,7 @@ func (r *Renderer) mergedApplicationInput(originalAppInputJSON, overrideAppInput
 	return string(merged), nil
 }
 
-func (r *renderer) extendPlaceholdersOverride(systemPayload map[string]interface{}, appTemplate *model.ApplicationTemplate, override bool) ([]model.ApplicationTemplatePlaceholder, error) {
+func (r *Renderer) extendPlaceholdersOverride(systemPayload map[string]interface{}, appTemplate *model.ApplicationTemplate, override bool) ([]model.ApplicationTemplatePlaceholder, error) {
 	parser := jsonpath.New("parser")
 
 	var appTemplatePlaceholdersOverride []model.ApplicationTemplatePlaceholder

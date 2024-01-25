@@ -169,12 +169,10 @@ func TestFetchSystemsForTenant(t *testing.T) {
 			},
 		}
 		systemfetcher.SortedTemplateMappingKeys = []systemfetcher.TemplateMappingKey{templateMappingKey}
-		systemfetcher.SystemSynchronizationTimestamps = map[string]map[string]systemfetcher.SystemSynchronizationTimestamp{
-			tenantID: {
-				"type1": {
-					ID:                syncTimestampID,
-					LastSyncTimestamp: time.Date(2023, 5, 2, 20, 30, 0, 0, time.UTC).UTC(),
-				},
+		systemSynchronizationTimestamps := map[string]systemfetcher.SystemSynchronizationTimestamp{
+			"type1": {
+				ID:                syncTimestampID,
+				LastSyncTimestamp: time.Date(2023, 5, 2, 20, 30, 0, 0, time.UTC).UTC(),
 			},
 		}
 
