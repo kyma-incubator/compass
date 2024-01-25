@@ -14,25 +14,25 @@ type SystemsSyncRepository struct {
 	mock.Mock
 }
 
-// List provides a mock function with given fields: ctx
-func (_m *SystemsSyncRepository) List(ctx context.Context) ([]*model.SystemSynchronizationTimestamp, error) {
-	ret := _m.Called(ctx)
+// ListByTenant provides a mock function with given fields: ctx, tenant
+func (_m *SystemsSyncRepository) ListByTenant(ctx context.Context, tenant string) ([]*model.SystemSynchronizationTimestamp, error) {
+	ret := _m.Called(ctx, tenant)
 
 	var r0 []*model.SystemSynchronizationTimestamp
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.SystemSynchronizationTimestamp, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.SystemSynchronizationTimestamp, error)); ok {
+		return rf(ctx, tenant)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) []*model.SystemSynchronizationTimestamp); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.SystemSynchronizationTimestamp); ok {
+		r0 = rf(ctx, tenant)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.SystemSynchronizationTimestamp)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, tenant)
 	} else {
 		r1 = ret.Error(1)
 	}
