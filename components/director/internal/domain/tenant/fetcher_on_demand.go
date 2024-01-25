@@ -62,9 +62,12 @@ func (s *fetchOnDemandService) FetchOnDemand(ctx context.Context, tenant, parent
 		return errors.Wrapf(err, "while calling tenant-on-demand API")
 	}
 
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse response body")
+	var respBody []byte
+	if resp.Body != nil {
+		respBody, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse response body")
+		}
 	}
 
 	if resp.StatusCode != http.StatusOK {
