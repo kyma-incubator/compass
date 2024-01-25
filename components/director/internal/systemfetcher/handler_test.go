@@ -102,6 +102,24 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 			ExpectedStatusCode: http.StatusOK,
 		},
 		{
+			Name:            "InternalServerError - when RescheduleOperation fails",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			OperationManagerFn: func() *automock.OperationsManager {
+				opManager := &automock.OperationsManager{}
+				opManager.On("FindOperationByData", mock.Anything, systemfetcher.NewSystemFetcherOperationData(tenantID)).Return(&model.Operation{ID: operationID}, nil).Once()
+				opManager.On("RescheduleOperation", mock.Anything, operationID).Return(testErr).Once()
+				return opManager
+			},
+			BusinessTenantMappingSvcFn: func() *automock.BusinessTenantMappingService {
+				return &automock.BusinessTenantMappingService{}
+			},
+			RequestBody: systemfetcher.AggregationResources{
+				TenantID: tenantID,
+			},
+			ExpectedStatusCode:  http.StatusInternalServerError,
+			ExpectedErrorOutput: "Scheduling Operation for System Fetcher data aggregation failed",
+		},
+		{
 			Name:            "InternalServerError - error while checking if operation exists",
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			OperationManagerFn: func() *automock.OperationsManager {

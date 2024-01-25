@@ -672,6 +672,46 @@ func TestSyncSystems(t *testing.T) {
 			expectedErr: testErr,
 		},
 		{
+			name: "Fail when Tmestamps for tenant cannot be fetched",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				persistTx := &pAutomock.PersistenceTx{}
+
+				transact := &pAutomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+				return persistTx, transact
+			},
+			fixTestSystems: func() []systemfetcher.System {
+				systems := fixSystems()
+				systems[0].TemplateID = appTemplateID
+				return systems
+			},
+			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
+				return fixAppsInputsWithTemplatesBySystems(t, systems)
+			},
+			setupTenantSvc: func() *automock.TenantService {
+				return &automock.TenantService{}
+			},
+			setupTbtSvc: func() *automock.TenantBusinessTypeService {
+				return &automock.TenantBusinessTypeService{}
+			},
+			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+				return &automock.TemplateRenderer{}
+			},
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
+				return &automock.SystemsService{}
+			},
+			setupSystemsSyncSvc: errListByTenantSystemsSyncSvc,
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
+				return &automock.SystemsAPIClient{}
+			},
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
+				return &automock.DirectorClient{}
+			},
+			expectedErr: testErr,
+		},
+		{
 			name: "Fail when Tenant cannot be fetched",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				persistTx := &pAutomock.PersistenceTx{}
@@ -815,7 +855,7 @@ func TestSyncSystems(t *testing.T) {
 				}, nil)
 				return systemSvc
 			},
-			setupSystemsSyncSvc: errTenantSystemsSyncSvc,
+			setupSystemsSyncSvc: errUpsertTenantSystemsSyncSvc,
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				sysAPIClient := &automock.SystemsAPIClient{}
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, testTenant, sfSystemSynchronizationTimestamps).Return(testSystems, nil).Once()
@@ -1253,7 +1293,12 @@ func okTenantSystemsSyncSvc() *automock.SystemsSyncService {
 	return syncMock
 }
 
-func errTenantSystemsSyncSvc() *automock.SystemsSyncService {
+func errListByTenantSystemsSyncSvc() *automock.SystemsSyncService {
+	syncMock := &automock.SystemsSyncService{}
+	syncMock.On("ListByTenant", mock.Anything, testTenantID).Return(nil, testErr)
+	return syncMock
+}
+func errUpsertTenantSystemsSyncSvc() *automock.SystemsSyncService {
 	syncMock := &automock.SystemsSyncService{}
 	syncMock.On("ListByTenant", mock.Anything, testTenantID).Return(modelSystemSynchronizationTimestamps, nil)
 	syncMock.On("Upsert", mock.Anything, mock.Anything).Return(testErr)
