@@ -36,6 +36,10 @@ global:
     secrets:
       extSvcCertSvcSecret:
         manage: true
+  instanceCreatorCertConfiguration:
+    secrets:
+      instanceCreatorSvcSecret:
+        manage: true
   externalServicesMock:
     auditlog:
       applyMockConfiguration: true

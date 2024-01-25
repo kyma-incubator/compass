@@ -1,0 +1,131 @@
+{{ if eq .Values.global.instanceCreatorCertConfiguration.preInstallJob.enabled true }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.preInstallJob.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "director.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: "pre-install"
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.preInstallJob.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+      {{- include "director.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: "pre-install"
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+rules:
+  - apiGroups: ["*"]
+    resources: ["secrets"]
+    verbs: ["get", "update", "patch"]
+    resourceNames: ["{{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorClientCertSecret.name }}"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.preInstallJob.name }}
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    helm.sh/hook: "pre-install"
+    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    {{- include "director.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.preInstallJob.name }}
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.preInstallJob.name }}
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.preInstallJob.name }}-job"
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    helm.sh/hook: "pre-install"
+    "helm.sh/hook-weight": "4"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+      {{- include "director.labels" . | nindent 4 }}
+spec:
+  template:
+    metadata:
+      name: "{{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.preInstallJob.name }}-job"
+      labels:
+        {{- include "director.labels" . | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.preInstallJob.name }}
+
+      containers:
+        - name: {{ .Values.global.instanceCreatorCertConfiguration.preInstallJob.name }}
+          image: bitnami/kubectl:1.22.4
+          command:
+            - /bin/bash
+            - -c
+            - |
+{{ .Files.Get "files/certificate_rotation.sh" | printf "%s" | indent 14 }}
+          env:
+            - name: EXT_NOT_EXTERNAL
+              value: 'false'
+            - name: CERT_SVC_CSR_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.name }}
+                  key: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.csrEndpointKey }}
+            - name: CERT_SVC_API_PATH
+              value: {{ .Values.global.instanceCreatorCertConfiguration.certSvcApiPath }}
+            - name: CERT_SUBJECT_PATTERN
+              value: {{ printf .Values.global.instanceCreatorCertConfiguration.subjectPattern .Values.global.instanceCreatorCertConfiguration.ouCertSubaccountID .Values.global.instanceCreatorCertConfiguration.locality .Values.global.instanceCreatorCertConfiguration.commonName }}
+            - name: EXPECTED_ISSUER_LOCALITY
+              value: {{ .Values.global.instanceCreatorCertConfiguration.issuerLocality }}
+            - name: CERT_VALIDITY
+              value: {{ .Values.global.instanceCreatorCertConfiguration.preInstallJob.certValidity | quote }}
+            - name: CLIENT_CERT_RETRY_ATTEMPTS
+              value: {{ .Values.global.instanceCreatorCertConfiguration.preInstallJob.clientCertRetryAttempts | quote }}
+            - name: CLIENT_CERT_SECRET_NAME
+              value: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorClientCertSecret.name }}
+            - name: CLIENT_CERT_CERT_KEY
+              value: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorClientCertSecret.certKey }}
+            - name: CLIENT_CERT_KEY_KEY
+              value: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorClientCertSecret.keyKey }}
+            - name: CERT_SVC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.name }}
+                  key: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.clientIdKey }}
+            - name: CERT_SVC_OAUTH_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.name }}
+                  key: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.oauthUrlKey }}
+            - name: CERT_SVC_TOKEN_PATH
+              value: {{ .Values.global.instanceCreatorCertConfiguration.tokenPath }}
+            - name: CERT_SVC_OAUTH_CLIENT_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+                  key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.clientCert }}
+            - name: CERT_SVC_OAUTH_CLIENT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+                  key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.clientKey }}
+            - name: SKIP_SSL_VALIDATION_FLAG
+              value: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorSvcSecret.skipSSLValidationFlag }}
+{{ end }}

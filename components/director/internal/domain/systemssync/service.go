@@ -12,7 +12,7 @@ import (
 //
 //go:generate mockery --name=SystemsSyncRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemsSyncRepository interface {
-	List(ctx context.Context) ([]*model.SystemSynchronizationTimestamp, error)
+	ListByTenant(ctx context.Context, tenant string) ([]*model.SystemSynchronizationTimestamp, error)
 	Upsert(ctx context.Context, in *model.SystemSynchronizationTimestamp) error
 }
 
@@ -27,11 +27,11 @@ func NewService(syncSystemsRepo SystemsSyncRepository) *service {
 	}
 }
 
-// List returns all synchronization timestamps of the systems
-func (s *service) List(ctx context.Context) ([]*model.SystemSynchronizationTimestamp, error) {
-	log.C(ctx).Infof("Listing systems sync timestamps for all tenants")
+// ListByTenant returns all synchronization timestamps of the systems
+func (s *service) ListByTenant(ctx context.Context, tenant string) ([]*model.SystemSynchronizationTimestamp, error) {
+	log.C(ctx).Infof("Listing systems sync timestamps for tenant %q", tenant)
 
-	syncTimestamps, err := s.syncSystemsRepo.List(ctx)
+	syncTimestamps, err := s.syncSystemsRepo.ListByTenant(ctx, tenant)
 	if err != nil {
 		return nil, errors.Wrap(err, "error while listing the sync timestamps")
 	}

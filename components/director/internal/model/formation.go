@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
@@ -41,12 +42,14 @@ const (
 
 // Formation missing godoc
 type Formation struct {
-	ID                  string
-	TenantID            string
-	FormationTemplateID string
-	Name                string
-	State               FormationState
-	Error               json.RawMessage
+	ID                            string
+	TenantID                      string
+	FormationTemplateID           string
+	Name                          string
+	State                         FormationState
+	Error                         json.RawMessage
+	LastStateChangeTimestamp      *time.Time
+	LastNotificationSentTimestamp *time.Time
 }
 
 // FormationPage contains Formation data with page info
@@ -54,4 +57,9 @@ type FormationPage struct {
 	Data       []*Formation
 	PageInfo   *pagination.Page
 	TotalCount int
+}
+
+// SetLastNotificationSentTimestamp updates the time when a formation notification was last sent.
+func (f *Formation) SetLastNotificationSentTimestamp(t time.Time) {
+	f.LastNotificationSentTimestamp = &t
 }
