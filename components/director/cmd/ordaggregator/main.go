@@ -354,16 +354,9 @@ func main() {
 
 	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeOrdAggregation, cfg.OperationsManagerConfig)
 
-	jwtHTTPClient := &http.Client{
-		Transport: httputilpkg.NewCorrelationIDTransport(httputilpkg.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-
 	onDemandChannel := make(chan string, 100)
 
-	handler := initHandler(ctx, jwtHTTPClient, operationsManager, appSvc, webhookSvc, cfg, transact, onDemandChannel)
+	handler := initHandler(ctx, operationsManager, appSvc, webhookSvc, cfg, transact, onDemandChannel)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
@@ -405,7 +398,7 @@ func main() {
 
 					select {
 					case operationID := <-onDemandChannel:
-						log.C(ctx).Infof("Opeartion %q send for processing through OnDemand channel to executor %d", operationID, executorIndex)
+						log.C(ctx).Infof("Operation %q send for processing through OnDemand channel to executor %d", operationID, executorIndex)
 					case <-time.After(cfg.OperationProcessorQuietPeriod):
 						log.C(ctx).Infof("Quiet period finished for executor %d", executorIndex)
 					}
@@ -589,7 +582,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operationsmanager.OperationsManager, appSvc ord.ApplicationService, webhookSvc webhook.WebhookService, cfg config, transact persistence.Transactioner, onDemandChannel chan string) http.Handler {
+func initHandler(ctx context.Context, opMgr *operationsmanager.OperationsManager, appSvc ord.ApplicationService, webhookSvc webhook.WebhookService, cfg config, transact persistence.Transactioner, onDemandChannel chan string) http.Handler {
 	const (
 		healthzEndpoint   = "/healthz"
 		readyzEndpoint    = "/readyz"
@@ -603,6 +596,14 @@ func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operations
 
 	handler := ord.NewORDAggregatorHTTPHandler(opMgr, appSvc, webhookSvc, transact, onDemandChannel)
 	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
+
+	httpClient := &http.Client{
+		Transport: httputilpkg.NewCorrelationIDTransport(httputilpkg.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
 	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.AggregatorSyncScope)
 	apiRouter.HandleFunc(aggregateEndpoint, handler.ScheduleAggregationForORDData).Methods(http.MethodPost)
 
