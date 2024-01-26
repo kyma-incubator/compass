@@ -843,6 +843,7 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 	require.NotEmpty(t, template2.ID)
 
 	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
+	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 2)
 
 	description1 := "name1"
 	description2 := "name2"
@@ -936,6 +937,7 @@ func TestSystemFetcherNotFetchMissingRegionForRegionalAppTemplates(t *testing.T)
 	require.NotEmpty(t, template.ID)
 
 	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
+	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 0)
 
 	expectedApps := []directorSchema.ApplicationExt{}
 
