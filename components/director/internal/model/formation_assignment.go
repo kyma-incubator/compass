@@ -34,8 +34,8 @@ type FormationAssignment struct {
 	State                         string                  `json:"state"`
 	Value                         json.RawMessage         `json:"value"`
 	Error                         json.RawMessage         `json:"error"`
-	LastStateChangeTimestamp      *time.Time
-	LastNotificationSentTimestamp *time.Time
+	LastStateChangeTimestamp      *time.Time              `json:"last_state_change_timestamp"`
+	LastNotificationSentTimestamp *time.Time              `json:"last_notification_sent_timestamp"`
 }
 
 // FormationAssignmentInput is an input for creating a new FormationAssignment
