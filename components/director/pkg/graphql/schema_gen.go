@@ -371,28 +371,32 @@ type ComplexityRoot struct {
 	}
 
 	Formation struct {
-		Error                func(childComplexity int) int
-		FormationAssignment  func(childComplexity int, id string) int
-		FormationAssignments func(childComplexity int, first *int, after *PageCursor) int
-		FormationTemplateID  func(childComplexity int) int
-		ID                   func(childComplexity int) int
-		Name                 func(childComplexity int) int
-		State                func(childComplexity int) int
-		Status               func(childComplexity int) int
+		Error                         func(childComplexity int) int
+		FormationAssignment           func(childComplexity int, id string) int
+		FormationAssignments          func(childComplexity int, first *int, after *PageCursor) int
+		FormationTemplateID           func(childComplexity int) int
+		ID                            func(childComplexity int) int
+		LastNotificationSentTimestamp func(childComplexity int) int
+		LastStateChangeTimestamp      func(childComplexity int) int
+		Name                          func(childComplexity int) int
+		State                         func(childComplexity int) int
+		Status                        func(childComplexity int) int
 	}
 
 	FormationAssignment struct {
-		Configuration func(childComplexity int) int
-		Error         func(childComplexity int) int
-		ID            func(childComplexity int) int
-		Source        func(childComplexity int) int
-		SourceEntity  func(childComplexity int) int
-		SourceType    func(childComplexity int) int
-		State         func(childComplexity int) int
-		Target        func(childComplexity int) int
-		TargetEntity  func(childComplexity int) int
-		TargetType    func(childComplexity int) int
-		Value         func(childComplexity int) int
+		Configuration                 func(childComplexity int) int
+		Error                         func(childComplexity int) int
+		ID                            func(childComplexity int) int
+		LastNotificationSentTimestamp func(childComplexity int) int
+		LastStateChangeTimestamp      func(childComplexity int) int
+		Source                        func(childComplexity int) int
+		SourceEntity                  func(childComplexity int) int
+		SourceType                    func(childComplexity int) int
+		State                         func(childComplexity int) int
+		Target                        func(childComplexity int) int
+		TargetEntity                  func(childComplexity int) int
+		TargetType                    func(childComplexity int) int
+		Value                         func(childComplexity int) int
 	}
 
 	FormationAssignmentPage struct {
@@ -2573,6 +2577,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Formation.ID(childComplexity), true
 
+	case "Formation.lastNotificationSentTimestamp":
+		if e.complexity.Formation.LastNotificationSentTimestamp == nil {
+			break
+		}
+
+		return e.complexity.Formation.LastNotificationSentTimestamp(childComplexity), true
+
+	case "Formation.lastStateChangeTimestamp":
+		if e.complexity.Formation.LastStateChangeTimestamp == nil {
+			break
+		}
+
+		return e.complexity.Formation.LastStateChangeTimestamp(childComplexity), true
+
 	case "Formation.name":
 		if e.complexity.Formation.Name == nil {
 			break
@@ -2614,6 +2632,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FormationAssignment.ID(childComplexity), true
+
+	case "FormationAssignment.lastNotificationSentTimestamp":
+		if e.complexity.FormationAssignment.LastNotificationSentTimestamp == nil {
+			break
+		}
+
+		return e.complexity.FormationAssignment.LastNotificationSentTimestamp(childComplexity), true
+
+	case "FormationAssignment.lastStateChangeTimestamp":
+		if e.complexity.FormationAssignment.LastStateChangeTimestamp == nil {
+			break
+		}
+
+		return e.complexity.FormationAssignment.LastStateChangeTimestamp(childComplexity), true
 
 	case "FormationAssignment.source":
 		if e.complexity.FormationAssignment.Source == nil {
@@ -6165,7 +6197,7 @@ input BundleInstanceAuthStatusInput {
 	- CredentialsProvided
 	- CredentialsNotProvided
 	- PendingDeletion
-	
+
 	**Validation**: required, if condition is FAILED
 	"""
 	reason: String!
@@ -6912,6 +6944,8 @@ type Formation {
 	Aggregated formation status
 	"""
 	status: FormationStatus!
+	lastStateChangeTimestamp: Timestamp
+	lastNotificationSentTimestamp: Timestamp
 }
 
 type FormationAssignment {
@@ -6926,6 +6960,8 @@ type FormationAssignment {
 	value: String
 	configuration: String
 	error: String
+	lastStateChangeTimestamp: Timestamp
+	lastNotificationSentTimestamp: Timestamp
 }
 
 type FormationAssignmentPage implements Pageable {
@@ -7243,7 +7279,7 @@ type Query {
 	eventsForApplication(appID: ID!, first: Int = 200, after: PageCursor): EventDefinitionPage @hasScopes(path: "graphql.query.eventsForApplication")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 10
-	
+
 	**Examples**
 	- [query applications with label filter](examples/query-applications/query-applications-with-label-filter.graphql)
 	- [query applications](examples/query-applications/query-applications.graphql)
@@ -7259,14 +7295,14 @@ type Query {
 	applicationByLocalTenantIDAndAppTemplateID(localTenantID: String!, applicationTemplateID: ID!): Application @hasScopes(path: "graphql.query.applicationByLocalTenantIDAndAppTemplateID")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-	
+
 	**Examples**
 	- [query applications for runtime](examples/query-applications-for-runtime/query-applications-for-runtime.graphql)
 	"""
 	applicationsForRuntime(runtimeID: ID!, first: Int = 200, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-	
+
 	**Examples**
 	- [query application templates](examples/query-application-templates/query-application-templates.graphql)
 	"""
@@ -7278,7 +7314,7 @@ type Query {
 	applicationTemplate(id: ID!): ApplicationTemplate @hasScopes(path: "graphql.query.applicationTemplate")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-	
+
 	**Examples**
 	- [query runtimes with label filter](examples/query-runtimes/query-runtimes-with-label-filter.graphql)
 	- [query runtimes with pagination](examples/query-runtimes/query-runtimes-with-pagination.graphql)
@@ -7302,7 +7338,7 @@ type Query {
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 200, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-	
+
 	**Examples**
 	- [query integration systems](examples/query-integration-systems/query-integration-systems.graphql)
 	"""
@@ -7643,7 +7679,7 @@ type Mutation {
 	updateLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
 	"""
 	If a label with given key already exist, it will be replaced with provided value.
-	
+
 	**Examples**
 	- [set application label](examples/set-application-label/set-application-label.graphql)
 	"""
@@ -7654,7 +7690,7 @@ type Mutation {
 	setTenantLabel(tenantID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setTenantLabel")
 	"""
 	If Application does not exist or the label key is not found, it returns an error.
-	
+
 	**Examples**
 	- [delete application label](examples/delete-application-label/delete-application-label.graphql)
 	"""
@@ -7671,9 +7707,9 @@ type Mutation {
 	deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.deleteDefaultEventingForApplication")
 	"""
 	When BundleInstanceAuth is not in pending state, the operation returns error.
-	
+
 	When used without error, the status of pending auth is set to success.
-	
+
 	**Examples**
 	- [set bundle instance auth](examples/set-bundle-instance-auth/set-bundle-instance-auth.graphql)
 	"""
@@ -7685,14 +7721,14 @@ type Mutation {
 	deleteBundleInstanceAuth(authID: ID!): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.deleteBundleInstanceAuth")
 	"""
 	When defaultInstanceAuth is set, it fires "createBundleInstanceAuth" mutation. Otherwise, the status of the BundleInstanceAuth is set to PENDING.
-	
+
 	**Examples**
 	- [request bundle instance auth creation](examples/request-bundle-instance-auth-creation/request-bundle-instance-auth-creation.graphql)
 	"""
 	requestBundleInstanceAuthCreation(bundleID: ID!, in: BundleInstanceAuthRequestInput! @validate): BundleInstanceAuth! @hasScenario(applicationProvider: "GetApplicationIDByBundle", idField: "bundleID") @hasScopes(path: "graphql.mutation.requestBundleInstanceAuthCreation")
 	"""
 	When defaultInstanceAuth is set, it fires "deleteBundleInstanceAuth" mutation. Otherwise, the status of the BundleInstanceAuth is set to UNUSED.
-	
+
 	**Examples**
 	- [request bundle instance auth deletion](examples/request-bundle-instance-auth-deletion/request-bundle-instance-auth-deletion.graphql)
 	"""
@@ -7771,7 +7807,6 @@ type Mutation {
 	"""
 	removeTenantAccess(tenantID: ID!, resourceID: ID!, resourceType: TenantAccessObjectType!): TenantAccess @hasScopes(path: "graphql.mutation.removeTenantAccess")
 }
-
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -18431,6 +18466,68 @@ func (ec *executionContext) _Formation_status(ctx context.Context, field graphql
 	return ec.marshalNFormationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationStatus(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Formation_lastStateChangeTimestamp(ctx context.Context, field graphql.CollectedField, obj *Formation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Formation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastStateChangeTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Formation_lastNotificationSentTimestamp(ctx context.Context, field graphql.CollectedField, obj *Formation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Formation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastNotificationSentTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _FormationAssignment_id(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -18788,6 +18885,68 @@ func (ec *executionContext) _FormationAssignment_error(ctx context.Context, fiel
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationAssignment_lastStateChangeTimestamp(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationAssignment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastStateChangeTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationAssignment_lastNotificationSentTimestamp(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationAssignment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastNotificationSentTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationAssignmentPage_data(ctx context.Context, field graphql.CollectedField, obj *FormationAssignmentPage) (ret graphql.Marshaler) {
@@ -38736,6 +38895,10 @@ func (ec *executionContext) _Formation(ctx context.Context, sel ast.SelectionSet
 				}
 				return res
 			})
+		case "lastStateChangeTimestamp":
+			out.Values[i] = ec._Formation_lastStateChangeTimestamp(ctx, field, obj)
+		case "lastNotificationSentTimestamp":
+			out.Values[i] = ec._Formation_lastNotificationSentTimestamp(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -38816,6 +38979,10 @@ func (ec *executionContext) _FormationAssignment(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._FormationAssignment_configuration(ctx, field, obj)
 		case "error":
 			out.Values[i] = ec._FormationAssignment_error(ctx, field, obj)
+		case "lastStateChangeTimestamp":
+			out.Values[i] = ec._FormationAssignment_lastStateChangeTimestamp(ctx, field, obj)
+		case "lastNotificationSentTimestamp":
+			out.Values[i] = ec._FormationAssignment_lastNotificationSentTimestamp(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

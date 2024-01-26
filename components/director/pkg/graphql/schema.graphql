@@ -1317,6 +1317,8 @@ type Formation {
 	Aggregated formation status
 	"""
 	status: FormationStatus!
+	lastStateChangeTimestamp: Timestamp
+	lastNotificationSentTimestamp: Timestamp
 }
 
 type FormationAssignment {
@@ -1331,6 +1333,8 @@ type FormationAssignment {
 	value: String
 	configuration: String
 	error: String
+	lastStateChangeTimestamp: Timestamp
+	lastNotificationSentTimestamp: Timestamp
 }
 
 type FormationAssignmentPage implements Pageable {
