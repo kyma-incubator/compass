@@ -17,7 +17,6 @@ type Config struct {
 	Log                          *log.Config
 	OAuthProvider                OAuthConfig
 	HTTPClient                   HTTPClient
-	ServiceManagerURL            string `envconfig:"APP_SM_SVC_URL"`
 	CertLoaderConfig             credloader.CertConfig
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }

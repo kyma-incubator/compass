@@ -42,7 +42,6 @@ type Handler struct {
 	cfg            *config.Config
 	caller         *external_caller.Caller
 	mtlsHTTPClient *http.Client
-	tenantID       string
 }
 
 func NewHandler(cfg *config.Config, caller *external_caller.Caller, mtlsHTTPClient *http.Client) *Handler {
@@ -78,12 +77,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		httputil.RespondWithError(ctx, w, http.StatusBadRequest, errors.New(""))
 		return
 	}
+
+	var tenantID string
 	if tm.ReceiverTenant.SubaccountID != "" {
 		log.C(ctx).Infof("Use subaccount ID from the request body as tenant")
-		h.tenantID = tm.ReceiverTenant.SubaccountID
+		tenantID = tm.ReceiverTenant.SubaccountID
 	} else {
 		log.C(ctx).Infof("Use application tennat ID/xsuaa tenant ID from the request body as tenant")
-		h.tenantID = tm.ReceiverTenant.ApplicationTenantID
+		tenantID = tm.ReceiverTenant.ApplicationTenantID
 	}
 
 	log.C(ctx).Infof(tm.String())
@@ -100,7 +101,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	formationID := tm.Context.FormationID
 
 	// only for live landscapes
-	h.adaptCredsBasedOnRegion(ctx, tm)
+	oauthCreds, smURL := h.adaptCredsBasedOnRegion(ctx, tm)
+	if oauthCreds == nil || smURL == "" {
+		err := errors.New("The service manager credentials cannot be empty")
+		log.C(ctx).Error(err)
+		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, err)
+		return
+	}
 
 	httputil.Respond(w, http.StatusAccepted)
 
@@ -158,7 +165,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		var serviceKeyIAS *types.ServiceKey
 		if tm.Context.Operation == UnassignOperation {
-			if err := h.handleUnassignOperation(ctx, svcInstanceNameProcurement, svcInstanceNameIAS); err != nil {
+			if err := h.handleUnassignOperation(ctx, svcInstanceNameProcurement, svcInstanceNameIAS, tenantID, smURL, oauthCreds); err != nil {
 				if isConcurrentOperation(err.Error()) {
 					log.C(ctx).Warnf("Concurrent operation error was received: %s. Returning without any further actions.", err.Error())
 					return
@@ -177,7 +184,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		} else {
-			serviceKeyIAS, err = h.handleAssignOperation(ctx, catalogNameProcurement, planNameProcurement, svcInstanceNameProcurement, catalogNameIAS, planNameIAS, svcInstanceNameIAS, inboundCert)
+			serviceKeyIAS, err = h.handleAssignOperation(ctx, catalogNameProcurement, planNameProcurement, svcInstanceNameProcurement, catalogNameIAS, planNameIAS, svcInstanceNameIAS, inboundCert, tenantID, smURL, oauthCreds)
 			if err != nil {
 				if strings.Contains(err.Error(), "Conflict") {
 					log.C(ctx).Warnf("Conflict error was received: %s.", err.Error())
@@ -203,7 +210,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		data, err := h.buildTemplateData(serviceKeyIAS.Credentials, tm)
+		data, err := h.buildTemplateData(serviceKeyIAS.Credentials, tm, tenantID)
 		if err != nil {
 			errMsg := errors.Wrapf(err, "An error occurred while building template data").Error()
 			log.C(ctx).Error(errMsg)
@@ -332,65 +339,101 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 }
 
-func (h *Handler) adaptCredsBasedOnRegion(ctx context.Context, tm types.TenantMapping) {
+func (h *Handler) adaptCredsBasedOnRegion(ctx context.Context, tm types.TenantMapping) (*auth.OAuthCredentials, string) {
 	if tm.ReceiverTenant.DeploymentRegion == "cf-eu11" {
 		clientID, found := os.LookupEnv("APP_SM_SVC_CLIENT_ID_EU11")
 		if !found {
 			log.C(ctx).Warnf("The client ID env for eu11 not found")
+			return nil, ""
 		}
 
 		clientSecret, found := os.LookupEnv("APP_SM_SVC_CLIENT_SECRET_EU11")
 		if !found {
 			log.C(ctx).Warnf("The client secret env for eu11 not found")
+			return nil, ""
 		}
 
 		oauthURL, found := os.LookupEnv("APP_SM_SVC_OAUTH_URL_EU11")
 		if !found {
 			log.C(ctx).Warnf("The client OAuth URL env for eu11 not found")
+			return nil, ""
 		}
-
-		h.caller.Credentials = &auth.OAuthCredentials{
-			ClientID:     clientID,
-			ClientSecret: clientSecret,
-			TokenURL:     oauthURL + h.cfg.OAuthProvider.OAuthTokenPath,
-		}
-		log.C(ctx).Infof("The credentials are adapted for the %q region", tm.ReceiverTenant.DeploymentRegion)
 
 		smURL, found := os.LookupEnv("APP_SM_SVC_URL_EU11")
 		if !found {
 			log.C(ctx).Warnf("The service manager URL for EU11 not found")
+			return nil, ""
 		}
-		h.cfg.ServiceManagerURL = smURL
+
+		log.C(ctx).Infof("The credentials are adapted for the %q region", tm.ReceiverTenant.DeploymentRegion)
+		return &auth.OAuthCredentials{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			TokenURL:     oauthURL + h.cfg.OAuthProvider.OAuthTokenPath,
+		}, smURL
 	} else if tm.ReceiverTenant.DeploymentRegion == "cf-us10" {
 		clientID, found := os.LookupEnv("APP_SM_SVC_CLIENT_ID_US10")
 		if !found {
 			log.C(ctx).Warnf("The client ID env for us10 not found")
+			return nil, ""
 		}
 
 		clientSecret, found := os.LookupEnv("APP_SM_SVC_CLIENT_SECRET_US10")
 		if !found {
 			log.C(ctx).Warnf("The client secret env for us10 not found")
+			return nil, ""
 		}
 
 		oauthURL, found := os.LookupEnv("APP_SM_SVC_OAUTH_URL_US10")
 		if !found {
 			log.C(ctx).Warnf("The client OAuth URL env for us10 not found")
+			return nil, ""
 		}
-
-		h.caller.Credentials = &auth.OAuthCredentials{
-			ClientID:     clientID,
-			ClientSecret: clientSecret,
-			TokenURL:     oauthURL + h.cfg.OAuthProvider.OAuthTokenPath,
-		}
-		log.C(ctx).Warnf("The credentials are adapted for the %q region", tm.ReceiverTenant.DeploymentRegion)
 
 		smURL, found := os.LookupEnv("APP_SM_SVC_URL_US10")
 		if !found {
 			log.C(ctx).Warnf("The service manager URL for US10 not found")
+			return nil, ""
 		}
-		h.cfg.ServiceManagerURL = smURL
+
+		log.C(ctx).Warnf("The credentials are adapted for the %q region", tm.ReceiverTenant.DeploymentRegion)
+		return &auth.OAuthCredentials{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			TokenURL:     oauthURL + h.cfg.OAuthProvider.OAuthTokenPath,
+		}, smURL
 	} else {
 		log.C(ctx).Infof("The deployment region is not cf-eu11 nor cf-us10 so the default credentials from eu10 will be used")
+		clientID, found := os.LookupEnv("APP_SM_SVC_CLIENT_ID")
+		if !found {
+			log.C(ctx).Warnf("The client ID env for eu10 not found")
+			return nil, ""
+		}
+
+		clientSecret, found := os.LookupEnv("APP_SM_SVC_CLIENT_SECRET")
+		if !found {
+			log.C(ctx).Warnf("The client secret env for eu10 not found")
+			return nil, ""
+		}
+
+		oauthURL, found := os.LookupEnv("APP_SM_SVC_OAUTH_URL")
+		if !found {
+			log.C(ctx).Warnf("The client OAuth URL env for eu10 not found")
+			return nil, ""
+		}
+
+		smURL, found := os.LookupEnv("APP_SM_SVC_URL")
+		if !found {
+			log.C(ctx).Warnf("The service manager URL for EU10 not found")
+			return nil, ""
+		}
+
+		log.C(ctx).Warnf("The credentials are adapted for the %q region", tm.ReceiverTenant.DeploymentRegion)
+		return &auth.OAuthCredentials{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			TokenURL:     oauthURL + h.cfg.OAuthProvider.OAuthTokenPath,
+		}, smURL
 	}
 }
 
@@ -454,52 +497,52 @@ func validate(tm types.TenantMapping) error {
 	return nil
 }
 
-func (h *Handler) handleAssignOperation(ctx context.Context, catalogNameProcurement, planNameProcurement, svcInstanceNameProcurement, catalogNameIAS, planNameIAS, svcInstanceNameIAS, cert string) (*types.ServiceKey, error) {
+func (h *Handler) handleAssignOperation(ctx context.Context, catalogNameProcurement, planNameProcurement, svcInstanceNameProcurement, catalogNameIAS, planNameIAS, svcInstanceNameIAS, cert, tenantID, smURL string, creds *auth.OAuthCredentials) (*types.ServiceKey, error) {
 	if cert == "" {
 		return nil, errors.New("The inbound certificate cannot be empty")
 	}
 
 	log.C(ctx).Info("Creating procurement service instance...")
 
-	offeringIDProcurement, err := h.retrieveServiceOffering(ctx, catalogNameProcurement)
+	offeringIDProcurement, err := h.retrieveServiceOffering(ctx, catalogNameProcurement, tenantID, smURL, creds)
 	if err != nil {
 		return nil, err
 	}
 
-	planIDProcurement, err := h.retrieveServicePlan(ctx, planNameProcurement, offeringIDProcurement)
+	planIDProcurement, err := h.retrieveServicePlan(ctx, planNameProcurement, offeringIDProcurement, tenantID, smURL, creds)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = h.createServiceInstance(ctx, svcInstanceNameProcurement, planIDProcurement, svcInstanceNameProcurement)
+	_, err = h.createServiceInstance(ctx, svcInstanceNameProcurement, planIDProcurement, svcInstanceNameProcurement, tenantID, smURL, creds)
 	if err != nil {
 		return nil, err
 	}
 
 	log.C(ctx).Info("Creating IAS service instance and key...")
 
-	offeringIDIAS, err := h.retrieveServiceOffering(ctx, catalogNameIAS)
+	offeringIDIAS, err := h.retrieveServiceOffering(ctx, catalogNameIAS, tenantID, smURL, creds)
 	if err != nil {
 		return nil, err
 	}
 
-	planIDIAS, err := h.retrieveServicePlan(ctx, planNameIAS, offeringIDIAS)
+	planIDIAS, err := h.retrieveServicePlan(ctx, planNameIAS, offeringIDIAS, tenantID, smURL, creds)
 	if err != nil {
 		return nil, err
 	}
 
-	svcInstanceIDIAS, err := h.createServiceInstance(ctx, svcInstanceNameIAS, planIDIAS, svcInstanceNameProcurement)
+	svcInstanceIDIAS, err := h.createServiceInstance(ctx, svcInstanceNameIAS, planIDIAS, svcInstanceNameProcurement, tenantID, smURL, creds)
 	if err != nil {
 		return nil, err
 	}
 
 	svcKeyNameIAS := svcInstanceNameIAS + "-key"
-	serviceKeyIDIAS, err := h.createServiceKey(ctx, svcKeyNameIAS, svcInstanceIDIAS, svcInstanceNameProcurement, cert)
+	serviceKeyIDIAS, err := h.createServiceKey(ctx, svcKeyNameIAS, svcInstanceIDIAS, svcInstanceNameProcurement, cert, tenantID, smURL, creds)
 	if err != nil {
 		return nil, err
 	}
 
-	serviceKeyIAS, err := h.retrieveServiceKeyByID(ctx, serviceKeyIDIAS)
+	serviceKeyIAS, err := h.retrieveServiceKeyByID(ctx, serviceKeyIDIAS, tenantID, smURL, creds)
 	if err != nil {
 		return nil, err
 	}
@@ -507,31 +550,31 @@ func (h *Handler) handleAssignOperation(ctx context.Context, catalogNameProcurem
 	return serviceKeyIAS, nil
 }
 
-func (h *Handler) handleUnassignOperation(ctx context.Context, svcInstanceNameProcurement, svcInstanceNameIAS string) error {
-	svcInstanceIDProcurement, err := h.retrieveServiceInstanceIDByName(ctx, svcInstanceNameProcurement)
+func (h *Handler) handleUnassignOperation(ctx context.Context, svcInstanceNameProcurement, svcInstanceNameIAS, tenantID, smURL string, creds *auth.OAuthCredentials) error {
+	svcInstanceIDProcurement, err := h.retrieveServiceInstanceIDByName(ctx, svcInstanceNameProcurement, tenantID, smURL, creds)
 	if err != nil {
 		return err
 	}
 
 	if svcInstanceIDProcurement != "" {
-		if err := h.deleteServiceKeys(ctx, svcInstanceIDProcurement, svcInstanceNameProcurement); err != nil {
+		if err := h.deleteServiceKeys(ctx, svcInstanceIDProcurement, svcInstanceNameProcurement, tenantID, smURL, creds); err != nil {
 			return err
 		}
-		if err := h.deleteServiceInstance(ctx, svcInstanceIDProcurement, svcInstanceNameProcurement); err != nil {
+		if err := h.deleteServiceInstance(ctx, svcInstanceIDProcurement, svcInstanceNameProcurement, tenantID, smURL, creds); err != nil {
 			return err
 		}
 	}
 
-	svcInstanceIDIAS, err := h.retrieveServiceInstanceIDByName(ctx, svcInstanceNameIAS)
+	svcInstanceIDIAS, err := h.retrieveServiceInstanceIDByName(ctx, svcInstanceNameIAS, tenantID, smURL, creds)
 	if err != nil {
 		return err
 	}
 
 	if svcInstanceIDIAS != "" {
-		if err := h.deleteServiceKeys(ctx, svcInstanceIDIAS, svcInstanceNameIAS); err != nil {
+		if err := h.deleteServiceKeys(ctx, svcInstanceIDIAS, svcInstanceNameIAS, tenantID, smURL, creds); err != nil {
 			return err
 		}
-		if err := h.deleteServiceInstance(ctx, svcInstanceIDIAS, svcInstanceNameIAS); err != nil {
+		if err := h.deleteServiceInstance(ctx, svcInstanceIDIAS, svcInstanceNameIAS, tenantID, smURL, creds); err != nil {
 			return err
 		}
 	}
@@ -539,8 +582,8 @@ func (h *Handler) handleUnassignOperation(ctx context.Context, svcInstanceNamePr
 	return nil
 }
 
-func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName string) (string, error) {
-	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceOfferingsPath, SubaccountKey, h.tenantID)
+func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName, tenantID, smURL string, creds *auth.OAuthCredentials) (string, error) {
+	strURL, err := buildURL(smURL, paths.ServiceOfferingsPath, SubaccountKey, tenantID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building service offerings URL")
 	}
@@ -548,6 +591,12 @@ func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName strin
 	req, err := http.NewRequest(http.MethodGet, strURL, nil)
 	if err != nil {
 		return "", err
+	}
+
+	h.caller.Credentials = &auth.OAuthCredentials{
+		ClientID:     creds.ClientID,
+		ClientSecret: creds.ClientSecret,
+		TokenURL:     creds.TokenURL,
 	}
 
 	log.C(ctx).Infof("Listing service offerings...")
@@ -591,8 +640,8 @@ func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName strin
 	return offeringID, nil
 }
 
-func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID string) (string, error) {
-	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServicePlansPath, SubaccountKey, h.tenantID)
+func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID, tenantID, smURL string, creds *auth.OAuthCredentials) (string, error) {
+	strURL, err := buildURL(smURL, paths.ServicePlansPath, SubaccountKey, tenantID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building service plans URL")
 	}
@@ -600,6 +649,12 @@ func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID 
 	req, err := http.NewRequest(http.MethodGet, strURL, nil)
 	if err != nil {
 		return "", err
+	}
+
+	h.caller.Credentials = &auth.OAuthCredentials{
+		ClientID:     creds.ClientID,
+		ClientSecret: creds.ClientSecret,
+		TokenURL:     creds.TokenURL,
 	}
 
 	log.C(ctx).Infof("Listing service plans...")
@@ -642,7 +697,7 @@ func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID 
 	return planID, nil
 }
 
-func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName, planID, serviceInstanceNameProcurement string) (string, error) {
+func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName, planID, serviceInstanceNameProcurement, tenantID, smURL string, creds *auth.OAuthCredentials) (string, error) {
 	iasInstanceParamsBytes, err := buildIASInstanceParameters(ctx, serviceInstanceName, serviceInstanceNameProcurement)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building IAS service instance parameters")
@@ -659,7 +714,7 @@ func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName
 		return "", errors.Errorf("Failed to marshal service instance body: %v", err)
 	}
 
-	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceInstancesPath, SubaccountKey, h.tenantID)
+	strURL, err := buildURL(smURL, paths.ServiceInstancesPath, SubaccountKey, tenantID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building service instances URL")
 	}
@@ -667,6 +722,12 @@ func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName
 	req, err := http.NewRequest(http.MethodPost, strURL, bytes.NewBuffer(siReqBodyBytes))
 	if err != nil {
 		return "", err
+	}
+
+	h.caller.Credentials = &auth.OAuthCredentials{
+		ClientID:     creds.ClientID,
+		ClientSecret: creds.ClientSecret,
+		TokenURL:     creds.TokenURL,
 	}
 
 	log.C(ctx).Infof("Creating service instance with name: %q from plan with ID: %q", serviceInstanceName, planID)
@@ -692,7 +753,7 @@ func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName
 			return "", errors.Errorf("The service instance operation status path from %s header should not be empty", LocationHeaderKey)
 		}
 
-		opURL, err := buildURL(h.cfg.ServiceManagerURL, opStatusPath, SubaccountKey, h.tenantID)
+		opURL, err := buildURL(smURL, opStatusPath, SubaccountKey, tenantID)
 		if err != nil {
 			return "", errors.Wrapf(err, "while building asynchronous service instance operation URL")
 		}
@@ -767,15 +828,15 @@ func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName
 	return serviceInstanceID, nil
 }
 
-func (h *Handler) deleteServiceKeys(ctx context.Context, serviceInstanceID, serviceInstanceName string) error {
-	svcKeyIDs, err := h.retrieveServiceKeysIDByInstanceID(ctx, serviceInstanceID, serviceInstanceName)
+func (h *Handler) deleteServiceKeys(ctx context.Context, serviceInstanceID, serviceInstanceName, tenantID, smURL string, creds *auth.OAuthCredentials) error {
+	svcKeyIDs, err := h.retrieveServiceKeysIDByInstanceID(ctx, serviceInstanceID, serviceInstanceName, tenantID, smURL, creds)
 	if err != nil {
 		return err
 	}
 
 	for _, keyID := range svcKeyIDs {
 		svcKeyPath := paths.ServiceBindingsPath + fmt.Sprintf("/%s", keyID)
-		strURL, err := buildURL(h.cfg.ServiceManagerURL, svcKeyPath, SubaccountKey, h.tenantID)
+		strURL, err := buildURL(smURL, svcKeyPath, SubaccountKey, tenantID)
 		if err != nil {
 			return errors.Wrapf(err, "while building service binding URL")
 		}
@@ -783,6 +844,12 @@ func (h *Handler) deleteServiceKeys(ctx context.Context, serviceInstanceID, serv
 		req, err := http.NewRequest(http.MethodDelete, strURL, nil)
 		if err != nil {
 			return err
+		}
+
+		h.caller.Credentials = &auth.OAuthCredentials{
+			ClientID:     creds.ClientID,
+			ClientSecret: creds.ClientSecret,
+			TokenURL:     creds.TokenURL,
 		}
 
 		log.C(ctx).Infof("Deleting service binding with ID: %q", keyID)
@@ -808,7 +875,7 @@ func (h *Handler) deleteServiceKeys(ctx context.Context, serviceInstanceID, serv
 				return errors.Errorf("The service binding operation status path from %s header should not be empty", LocationHeaderKey)
 			}
 
-			opURL, err := buildURL(h.cfg.ServiceManagerURL, opStatusPath, SubaccountKey, h.tenantID)
+			opURL, err := buildURL(smURL, opStatusPath, SubaccountKey, tenantID)
 			if err != nil {
 				return errors.Wrapf(err, "while building asynchronous service binding operation URL")
 			}
@@ -868,9 +935,9 @@ func (h *Handler) deleteServiceKeys(ctx context.Context, serviceInstanceID, serv
 	return nil
 }
 
-func (h *Handler) deleteServiceInstance(ctx context.Context, serviceInstanceID, serviceInstanceName string) error {
+func (h *Handler) deleteServiceInstance(ctx context.Context, serviceInstanceID, serviceInstanceName, tenantID, smURL string, creds *auth.OAuthCredentials) error {
 	svcInstancePath := paths.ServiceInstancesPath + fmt.Sprintf("/%s", serviceInstanceID)
-	strURL, err := buildURL(h.cfg.ServiceManagerURL, svcInstancePath, SubaccountKey, h.tenantID)
+	strURL, err := buildURL(smURL, svcInstancePath, SubaccountKey, tenantID)
 	if err != nil {
 		return errors.Wrapf(err, "while building service instances URL")
 	}
@@ -878,6 +945,12 @@ func (h *Handler) deleteServiceInstance(ctx context.Context, serviceInstanceID, 
 	req, err := http.NewRequest(http.MethodDelete, strURL, nil)
 	if err != nil {
 		return err
+	}
+
+	h.caller.Credentials = &auth.OAuthCredentials{
+		ClientID:     creds.ClientID,
+		ClientSecret: creds.ClientSecret,
+		TokenURL:     creds.TokenURL,
 	}
 
 	log.C(ctx).Infof("Deleting service instance with ID: %q and name: %q", serviceInstanceID, serviceInstanceName)
@@ -903,7 +976,7 @@ func (h *Handler) deleteServiceInstance(ctx context.Context, serviceInstanceID, 
 			return errors.Errorf("The service instance operation status path from %s header should not be empty", LocationHeaderKey)
 		}
 
-		opURL, err := buildURL(h.cfg.ServiceManagerURL, opStatusPath, SubaccountKey, h.tenantID)
+		opURL, err := buildURL(smURL, opStatusPath, SubaccountKey, tenantID)
 		if err != nil {
 			return errors.Wrapf(err, "while building asynchronous service instance operation URL")
 		}
@@ -962,8 +1035,8 @@ func (h *Handler) deleteServiceInstance(ctx context.Context, serviceInstanceID, 
 	return nil
 }
 
-func (h *Handler) retrieveServiceInstanceIDByName(ctx context.Context, serviceInstanceName string) (string, error) {
-	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceInstancesPath, SubaccountKey, h.tenantID)
+func (h *Handler) retrieveServiceInstanceIDByName(ctx context.Context, serviceInstanceName, tenantID, smURL string, creds *auth.OAuthCredentials) (string, error) {
+	strURL, err := buildURL(smURL, paths.ServiceInstancesPath, SubaccountKey, tenantID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building service instances URL")
 	}
@@ -971,6 +1044,12 @@ func (h *Handler) retrieveServiceInstanceIDByName(ctx context.Context, serviceIn
 	req, err := http.NewRequest(http.MethodGet, strURL, nil)
 	if err != nil {
 		return "", err
+	}
+
+	h.caller.Credentials = &auth.OAuthCredentials{
+		ClientID:     creds.ClientID,
+		ClientSecret: creds.ClientSecret,
+		TokenURL:     creds.TokenURL,
 	}
 
 	log.C(ctx).Info("Listing service instances...")
@@ -1015,9 +1094,9 @@ func (h *Handler) retrieveServiceInstanceIDByName(ctx context.Context, serviceIn
 }
 
 // todo:: double check
-func (h *Handler) retrieveServiceInstanceByID(ctx context.Context, serviceInstanceID string) (string, error) {
+func (h *Handler) retrieveServiceInstanceByID(ctx context.Context, serviceInstanceID, tenantID, smURL string, creds *auth.OAuthCredentials) (string, error) {
 	svcInstancePath := paths.ServiceInstancesPath + fmt.Sprintf("/%s", serviceInstanceID)
-	strURL, err := buildURL(h.cfg.ServiceManagerURL, svcInstancePath, SubaccountKey, h.tenantID)
+	strURL, err := buildURL(smURL, svcInstancePath, SubaccountKey, tenantID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building service instances URL")
 	}
@@ -1025,6 +1104,12 @@ func (h *Handler) retrieveServiceInstanceByID(ctx context.Context, serviceInstan
 	req, err := http.NewRequest(http.MethodGet, strURL, nil)
 	if err != nil {
 		return "", err
+	}
+
+	h.caller.Credentials = &auth.OAuthCredentials{
+		ClientID:     creds.ClientID,
+		ClientSecret: creds.ClientSecret,
+		TokenURL:     creds.TokenURL,
 	}
 
 	log.C(ctx).Infof("Getting service instance by ID: %q", serviceInstanceID)
@@ -1055,7 +1140,7 @@ func (h *Handler) retrieveServiceInstanceByID(ctx context.Context, serviceInstan
 	return instance.ID, nil
 }
 
-func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceInstanceID, serviceInstanceNameProcurement, cert string) (string, error) {
+func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceInstanceID, serviceInstanceNameProcurement, cert, tenantID, smURL string, creds *auth.OAuthCredentials) (string, error) {
 	iasKeyParamsBytes, err := buildIASKeyParameters(cert)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building IAS service key parameters")
@@ -1072,7 +1157,7 @@ func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceI
 		return "", errors.Errorf("Failed to marshal service key body: %v", err)
 	}
 
-	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceBindingsPath, SubaccountKey, h.tenantID)
+	strURL, err := buildURL(smURL, paths.ServiceBindingsPath, SubaccountKey, tenantID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building service bindings URL")
 	}
@@ -1081,6 +1166,12 @@ func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceI
 	req, err := http.NewRequest(http.MethodPost, strURL, bytes.NewBuffer(serviceKeyReqBodyBytes))
 	if err != nil {
 		return "", err
+	}
+
+	h.caller.Credentials = &auth.OAuthCredentials{
+		ClientID:     creds.ClientID,
+		ClientSecret: creds.ClientSecret,
+		TokenURL:     creds.TokenURL,
 	}
 
 	resp, err := h.caller.Call(req)
@@ -1105,7 +1196,7 @@ func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceI
 			return "", errors.Errorf("The service key operation status path from %s header should not be empty", LocationHeaderKey)
 		}
 
-		opURL, err := buildURL(h.cfg.ServiceManagerURL, opStatusPath, SubaccountKey, h.tenantID)
+		opURL, err := buildURL(smURL, opStatusPath, SubaccountKey, tenantID)
 		if err != nil {
 			return "", errors.Wrapf(err, "while building asynchronous service key operation URL")
 		}
@@ -1181,8 +1272,8 @@ func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceI
 }
 
 // todo:: consider removing retrieveServiceKeyByName
-func (h *Handler) retrieveServiceKeyByName(ctx context.Context, serviceKeyName string) (*types.ServiceKey, error) {
-	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceBindingsPath, SubaccountKey, h.tenantID)
+func (h *Handler) retrieveServiceKeyByName(ctx context.Context, serviceKeyName, tenantID, smURL string, creds *auth.OAuthCredentials) (*types.ServiceKey, error) {
+	strURL, err := buildURL(smURL, paths.ServiceBindingsPath, SubaccountKey, tenantID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building service binding URL")
 	}
@@ -1190,6 +1281,12 @@ func (h *Handler) retrieveServiceKeyByName(ctx context.Context, serviceKeyName s
 	req, err := http.NewRequest(http.MethodGet, strURL, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	h.caller.Credentials = &auth.OAuthCredentials{
+		ClientID:     creds.ClientID,
+		ClientSecret: creds.ClientSecret,
+		TokenURL:     creds.TokenURL,
 	}
 
 	log.C(ctx).Infof("Listing service bindings...")
@@ -1228,8 +1325,8 @@ func (h *Handler) retrieveServiceKeyByName(ctx context.Context, serviceKeyName s
 	return &serviceKey, nil
 }
 
-func (h *Handler) retrieveServiceKeysIDByInstanceID(ctx context.Context, serviceInstanceID, serviceInstanceName string) ([]string, error) {
-	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceBindingsPath, SubaccountKey, h.tenantID)
+func (h *Handler) retrieveServiceKeysIDByInstanceID(ctx context.Context, serviceInstanceID, serviceInstanceName, tenantID, smURL string, creds *auth.OAuthCredentials) ([]string, error) {
+	strURL, err := buildURL(smURL, paths.ServiceBindingsPath, SubaccountKey, tenantID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building service binding URL")
 	}
@@ -1237,6 +1334,12 @@ func (h *Handler) retrieveServiceKeysIDByInstanceID(ctx context.Context, service
 	req, err := http.NewRequest(http.MethodGet, strURL, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	h.caller.Credentials = &auth.OAuthCredentials{
+		ClientID:     creds.ClientID,
+		ClientSecret: creds.ClientSecret,
+		TokenURL:     creds.TokenURL,
 	}
 
 	log.C(ctx).Infof("Listing service bindings for instance with ID: %q and name: %q", serviceInstanceID, serviceInstanceName)
@@ -1274,9 +1377,9 @@ func (h *Handler) retrieveServiceKeysIDByInstanceID(ctx context.Context, service
 	return serviceKeysIDs, nil
 }
 
-func (h *Handler) retrieveServiceKeyByID(ctx context.Context, serviceKeyID string) (*types.ServiceKey, error) {
+func (h *Handler) retrieveServiceKeyByID(ctx context.Context, serviceKeyID, tenantID, smURL string, creds *auth.OAuthCredentials) (*types.ServiceKey, error) {
 	svcKeyPath := paths.ServiceBindingsPath + fmt.Sprintf("/%s", serviceKeyID)
-	strURL, err := buildURL(h.cfg.ServiceManagerURL, svcKeyPath, SubaccountKey, h.tenantID)
+	strURL, err := buildURL(smURL, svcKeyPath, SubaccountKey, tenantID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building service binding URL")
 	}
@@ -1284,6 +1387,12 @@ func (h *Handler) retrieveServiceKeyByID(ctx context.Context, serviceKeyID strin
 	req, err := http.NewRequest(http.MethodGet, strURL, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	h.caller.Credentials = &auth.OAuthCredentials{
+		ClientID:     creds.ClientID,
+		ClientSecret: creds.ClientSecret,
+		TokenURL:     creds.TokenURL,
 	}
 
 	log.C(ctx).Infof("Getting service key by ID: %q", serviceKeyID)
@@ -1369,7 +1478,7 @@ func buildURL(baseURL, path, tenantKey, tenantValue string) (string, error) {
 	return base.String(), nil
 }
 
-func (h *Handler) buildTemplateData(serviceKeyCredentials json.RawMessage, tmReqBody types.TenantMapping) (map[string]string, error) {
+func (h *Handler) buildTemplateData(serviceKeyCredentials json.RawMessage, tmReqBody types.TenantMapping, tenantID string) (map[string]string, error) {
 	appURL := tmReqBody.ReceiverTenant.ApplicationURL
 
 	svcKeyClientID, ok := gjson.Get(string(serviceKeyCredentials), "clientid").Value().(string)
@@ -1393,7 +1502,7 @@ func (h *Handler) buildTemplateData(serviceKeyCredentials json.RawMessage, tmReq
 		"TokenURL": svcKeyTokenURL,
 		"ClientID": svcKeyClientID,
 		//"ClientSecret": svcKeyClientSecret, // todo::: for plain OAuth creds
-		"SubaccountID": h.tenantID,
+		"SubaccountID": tenantID,
 	}
 
 	return data, nil
