@@ -171,6 +171,8 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 func (c *Client) buildFilter(systemSynchronizationTimestamps map[string]SystemSynchronizationTimestamp) map[string]string {
 	var filterBuilder FilterBuilder
 
+	usedSystemRoles := make(map[string]bool)
+
 	for _, key := range SortedTemplateMappingKeys {
 		templateMapping := ApplicationTemplates[key]
 
@@ -189,6 +191,12 @@ func (c *Client) buildFilter(systemSynchronizationTimestamps map[string]SystemSy
 			if !ok {
 				continue
 			}
+
+			if _, exists := usedSystemRoles[appTemplateLblStr]; exists {
+				continue
+			}
+
+			usedSystemRoles[appTemplateLblStr] = true
 
 			expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", appTemplateLblStr)
 

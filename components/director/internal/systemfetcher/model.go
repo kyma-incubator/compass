@@ -79,22 +79,18 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 			return *s, err
 		}
 
-		regionLabel, ok := appInput.Labels[selfregmanager.RegionLabel]
-		if !ok {
-			return *s, errors.Errorf("%q label should be present for regional app templates", selfregmanager.RegionLabel)
+		regionLabel, err := getLabelFromInput(appInput)
+		if err != nil {
+			return *s, err
 		}
 
-		regionLabelStr, ok := regionLabel.(string)
-		if !ok {
-			return *s, errors.Errorf("%q label cannot be parsed to string", selfregmanager.RegionLabel)
-		}
-
-		foundTemplateMapping := getTemplateMappingBySystemRoleAndRegion(s.SystemPayload, regionLabelStr)
+		foundTemplateMapping := getTemplateMappingBySystemRoleAndRegion(s.SystemPayload, regionLabel)
 		if foundTemplateMapping.AppTemplate == nil {
 			return *s, errors.Errorf("cannot find an app template mapping for a system with payload: %+v", s.SystemPayload)
 		}
 
 		s.TemplateID = foundTemplateMapping.AppTemplate.ID
+		break
 	}
 
 	return *s, nil
@@ -132,4 +128,18 @@ func getTemplateMappingBySystemRoleAndRegion(systemPayload map[string]interface{
 	}
 
 	return TemplateMapping{}
+}
+
+func getLabelFromInput(appInput *model.ApplicationRegisterInput) (string, error) {
+	regionLabel, ok := appInput.Labels[selfregmanager.RegionLabel]
+	if !ok {
+		return "", errors.Errorf("%q label should be present for regional app templates", selfregmanager.RegionLabel)
+	}
+
+	regionLabelStr, ok := regionLabel.(string)
+	if !ok {
+		return "", errors.Errorf("%q label cannot be parsed to string", selfregmanager.RegionLabel)
+	}
+
+	return regionLabelStr, nil
 }

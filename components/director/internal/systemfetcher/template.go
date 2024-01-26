@@ -30,6 +30,7 @@ type applicationConverter interface {
 //go:generate mockery --name=TemplateRenderer --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type TemplateRenderer interface {
 	GenerateAppRegisterInput(ctx context.Context, sc System, appTemplate *model.ApplicationTemplate, overridePlaceholders bool) (*model.ApplicationRegisterInput, error)
+	ApplicationRegisterInputFromTemplate(ctx context.Context, sc System) (*model.ApplicationRegisterInput, error)
 }
 
 // PlaceholderMapping is the mapping we have between a placeholder key we use in templates,
@@ -90,6 +91,7 @@ func (r *Renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc 
 	return appRegisterInput, nil
 }
 
+// GenerateAppRegisterInput creates a ApplicationRegisterInput based on an ApplicationTemplate
 func (r *Renderer) GenerateAppRegisterInput(ctx context.Context, sc System, appTemplate *model.ApplicationTemplate, overridePlaceholders bool) (*model.ApplicationRegisterInput, error) {
 	inputValues, err := r.getTemplateInputs(sc.SystemPayload, appTemplate)
 	if err != nil {

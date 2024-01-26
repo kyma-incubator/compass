@@ -8,6 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher/automock"
+	mockery "github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -145,6 +149,98 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, systems, 2)
 		require.Equal(t, systems[0].TemplateID, "type1")
+		require.Equal(t, systems[1].TemplateID, "")
+	})
+
+	t.Run("Success with regional template mappings", func(t *testing.T) {
+		mock.expectedFilterCriteria = "(key eq 'type1' and lastChangeDateTime gt '2023-05-02 20:30:00 +0000 UTC')"
+		templateMappingKey1 := systemfetcher.TemplateMappingKey{
+			Label:  "type1",
+			Region: "us10",
+		}
+		templateMappingKey2 := systemfetcher.TemplateMappingKey{
+			Label:  "type1",
+			Region: "us20",
+		}
+		appTemplate1 := &model.ApplicationTemplate{
+			ID: "id-1",
+		}
+		appTemplate2 := &model.ApplicationTemplate{
+			ID: "id-2",
+		}
+
+		appRegisterInput1 := &model.ApplicationRegisterInput{
+			Labels: map[string]interface{}{
+				selfregmanager.RegionLabel: "us10",
+			},
+		}
+		appRegisterInput2 := &model.ApplicationRegisterInput{
+			Labels: map[string]interface{}{
+				selfregmanager.RegionLabel: "us20",
+			},
+		}
+		renderer := &automock.TemplateRenderer{}
+		renderer.On("GenerateAppRegisterInput", mockery.Anything, mockery.Anything, appTemplate1, false).Return(appRegisterInput1, nil)
+		renderer.On("GenerateAppRegisterInput", mockery.Anything, mockery.Anything, appTemplate2, false).Return(appRegisterInput2, nil)
+
+		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
+			templateMappingKey1: {
+				AppTemplate: appTemplate1,
+				Labels: map[string]*model.Label{
+					labelFilter: {
+						Key:   labelFilter,
+						Value: []interface{}{"type1"},
+					},
+					selfregmanager.RegionLabel: {
+						Key:   selfregmanager.RegionLabel,
+						Value: templateMappingKey1.Region,
+					},
+				},
+				Renderer: renderer,
+			},
+			templateMappingKey2: {
+				AppTemplate: appTemplate2,
+				Labels: map[string]*model.Label{
+					labelFilter: {
+						Key:   labelFilter,
+						Value: []interface{}{"type1"},
+					},
+					selfregmanager.RegionLabel: {
+						Key:   selfregmanager.RegionLabel,
+						Value: templateMappingKey2.Region,
+					},
+				},
+				Renderer: renderer,
+			},
+		}
+		systemfetcher.SortedTemplateMappingKeys = []systemfetcher.TemplateMappingKey{templateMappingKey1, templateMappingKey2}
+
+		systemSynchronizationTimestamps := map[string]systemfetcher.SystemSynchronizationTimestamp{
+			"type1": {
+				ID:                syncTimestampID,
+				LastSyncTimestamp: time.Date(2023, 5, 2, 20, 30, 0, 0, time.UTC).UTC(),
+			},
+		}
+
+		mock.bodiesToReturn = [][]byte{[]byte(`[{
+			"displayName": "name1",
+			"productDescription": "description",
+			"baseUrl": "url",
+			"infrastructureProvider": "provider1",
+			"key": "type1"
+		}, {
+			"displayName": "name2",
+			"productDescription": "description",
+			"baseUrl": "url",
+			"infrastructureProvider": "provider1",
+			"key": "type2"
+		}]`)}
+		mock.callNumber = 0
+		mock.pageCount = 1
+		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, systemSynchronizationTimestamps)
+		require.NoError(t, err)
+		require.Len(t, systems, 2)
+		require.Equal(t, systems[0].TemplateID, "id-1")
 		require.Equal(t, systems[1].TemplateID, "")
 	})
 
