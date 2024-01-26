@@ -51,7 +51,6 @@ const (
 type Handler struct {
 	cfg            config.Config
 	mtlsHTTPClient *http.Client
-	tenantID       string
 	caller         *external_caller.Caller
 }
 
@@ -88,12 +87,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		httputil.RespondWithError(ctx, w, http.StatusBadRequest, errors.New(""))
 		return
 	}
+	var tenantID string
 	if tm.ReceiverTenant.SubaccountID != "" {
 		log.C(ctx).Infof("Use subaccount ID from the request body as tenant")
-		h.tenantID = tm.ReceiverTenant.SubaccountID
+		tenantID = tm.ReceiverTenant.SubaccountID
 	} else {
 		log.C(ctx).Infof("Use application tennat ID/xsuaa tenant ID from the request body as tenant")
-		h.tenantID = tm.ReceiverTenant.ApplicationTenantID
+		tenantID = tm.ReceiverTenant.ApplicationTenantID
 	}
 
 	log.C(ctx).Infof(tm.Print())
@@ -174,7 +174,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			if tm.Context.Operation == UnassignOperation {
 				log.C(ctx).Infof("Handle MDI 'read' instance for %s operation...", UnassignOperation)
-				mdiSvcInstanceID, err := h.retrieveServiceInstanceIDByName(ctx, mdiReadSvcInstanceName)
+				mdiSvcInstanceID, err := h.retrieveServiceInstanceIDByName(ctx, mdiReadSvcInstanceName, tenantID)
 				if err != nil {
 					log.C(ctx).Error(err)
 					reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
@@ -185,7 +185,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 
 				if mdiSvcInstanceID != "" {
-					if err := h.deleteServiceKeys(ctx, mdiSvcInstanceID, mdiReadSvcInstanceName); err != nil {
+					if err := h.deleteServiceKeys(ctx, mdiSvcInstanceID, mdiReadSvcInstanceName, tenantID); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting service key(s) for MDI 'read' instance: %s\"}", err.Error())
 						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
@@ -193,7 +193,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						}
 						return
 					}
-					if err := h.deleteServiceInstance(ctx, mdiSvcInstanceID, mdiReadSvcInstanceName); err != nil {
+					if err := h.deleteServiceInstance(ctx, mdiSvcInstanceID, mdiReadSvcInstanceName, tenantID); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting MDI 'read' instance: %s\"}", err.Error())
 						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
@@ -210,7 +210,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			log.C(ctx).Infof("Handle MDI 'read' instance for %s operation...", AssignOperation)
-			mdiOfferingID, err := h.retrieveServiceOffering(ctx, mdiCatalogName)
+			mdiOfferingID, err := h.retrieveServiceOffering(ctx, mdiCatalogName, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
@@ -220,7 +220,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			mdiPlanID, err := h.retrieveServicePlan(ctx, mdiPlanName, mdiOfferingID)
+			mdiPlanID, err := h.retrieveServicePlan(ctx, mdiPlanName, mdiOfferingID, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service plans: %s\"}", err.Error())
@@ -231,7 +231,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			mdiReadInstanceParams := `{"application":"ariba","businessSystemId":"MDCS","enableTenantDeletion":true}`
-			svcInstanceIDMDI, err := h.createServiceInstance(ctx, mdiReadSvcInstanceName, mdiPlanID, mdiReadInstanceParams)
+			svcInstanceIDMDI, err := h.createServiceInstance(ctx, mdiReadSvcInstanceName, mdiPlanID, mdiReadInstanceParams, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating MDI 'read' service instance: %s\"}", err.Error())
@@ -244,7 +244,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			mdiReadSvcKeyName := mdiReadSvcInstanceName + "-key"
 			mdiReadSvcKeyName = truncateString(ctx, mdiReadSvcKeyName, serviceBindingMaxLengthName)
 
-			mdiServiceKeyID, err := h.createServiceKey(ctx, mdiReadSvcKeyName, "", svcInstanceIDMDI, mdiReadSvcInstanceName)
+			mdiServiceKeyID, err := h.createServiceKey(ctx, mdiReadSvcKeyName, "", svcInstanceIDMDI, mdiReadSvcInstanceName, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating MDI 'read' service key: %s\"}", err.Error())
@@ -254,7 +254,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			mdiReadServiceKey, err := h.retrieveServiceKeyByID(ctx, mdiServiceKeyID)
+			mdiReadServiceKey, err := h.retrieveServiceKeyByID(ctx, mdiServiceKeyID, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving MDI 'read' service key: %s\"}", err.Error())
@@ -317,7 +317,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			if tm.Context.Operation == UnassignOperation {
 				log.C(ctx).Infof("Handle MDI 'write' instance for %s operation...", UnassignOperation)
-				svcInstanceIDMDI, err := h.retrieveServiceInstanceIDByName(ctx, mdiWriteSvcInstance)
+				svcInstanceIDMDI, err := h.retrieveServiceInstanceIDByName(ctx, mdiWriteSvcInstance, tenantID)
 				if err != nil {
 					log.C(ctx).Error(err)
 					reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
@@ -328,7 +328,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 
 				if svcInstanceIDMDI != "" {
-					if err := h.deleteServiceKeys(ctx, svcInstanceIDMDI, mdiWriteSvcInstance); err != nil {
+					if err := h.deleteServiceKeys(ctx, svcInstanceIDMDI, mdiWriteSvcInstance, tenantID); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting service key(s) for MDI 'write' instance: %s\"}", err.Error())
 						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
@@ -336,7 +336,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						}
 						return
 					}
-					if err := h.deleteServiceInstance(ctx, svcInstanceIDMDI, mdiWriteSvcInstance); err != nil {
+					if err := h.deleteServiceInstance(ctx, svcInstanceIDMDI, mdiWriteSvcInstance, tenantID); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting MDI 'write' instance: %s\"}", err.Error())
 						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
@@ -384,7 +384,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			offeringIDMDI, err := h.retrieveServiceOffering(ctx, mdiCatalogName)
+			offeringIDMDI, err := h.retrieveServiceOffering(ctx, mdiCatalogName, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
@@ -394,7 +394,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			mdiPlanID, err := h.retrieveServicePlan(ctx, mdiPlanName, offeringIDMDI)
+			mdiPlanID, err := h.retrieveServicePlan(ctx, mdiPlanName, offeringIDMDI, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service plans: %s\"}", err.Error())
@@ -405,7 +405,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			mdiWriteInstanceParams := fmt.Sprintf(`{"application":"s4","businessSystemId":"%s","enableTenantDeletion":true,"writePermissions":[{"entityType":"sap.odm.businesspartner.BusinessPartnerRelationship"},{"entityType":"sap.odm.businesspartner.BusinessPartner"},{"entityType":"sap.odm.businesspartner.ContactPersonRelationship"},{"entityType":"sap.odm.finance.costobject.ProjectControllingObject"},{"entityType":"sap.odm.finance.costobject.CostCenter"}]}`, businessSystemID)
-			mdiSvcInstanceID, err := h.createServiceInstance(ctx, mdiWriteSvcInstance, mdiPlanID, mdiWriteInstanceParams)
+			mdiSvcInstanceID, err := h.createServiceInstance(ctx, mdiWriteSvcInstance, mdiPlanID, mdiWriteInstanceParams, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating MDI 'write' service instance: %s\"}", err.Error())
@@ -418,7 +418,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			mdiWriteSvcKeyName := mdiWriteSvcInstance + "-key"
 			mdiWriteSvcKeyName = truncateString(ctx, mdiWriteSvcKeyName, serviceBindingMaxLengthName)
 
-			mdiWriteServiceKeyID, err := h.createServiceKey(ctx, mdiWriteSvcKeyName, "", mdiSvcInstanceID, mdiWriteSvcInstance)
+			mdiWriteServiceKeyID, err := h.createServiceKey(ctx, mdiWriteSvcKeyName, "", mdiSvcInstanceID, mdiWriteSvcInstance, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating MDI 'write' service key: %s\"}", err.Error())
@@ -428,7 +428,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			mdiWriteServiceKey, err := h.retrieveServiceKeyByID(ctx, mdiWriteServiceKeyID)
+			mdiWriteServiceKey, err := h.retrieveServiceKeyByID(ctx, mdiWriteServiceKeyID, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving MDI 'write' service key: %s\"}", err.Error())
@@ -509,7 +509,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			if tm.Context.Operation == UnassignOperation {
 				log.C(ctx).Info("Handle subscription billing instance deletion...")
-				billingSvcInstanceID, err := h.retrieveServiceInstanceIDByName(ctx, billingSvcInstanceName)
+				billingSvcInstanceID, err := h.retrieveServiceInstanceIDByName(ctx, billingSvcInstanceName, tenantID)
 				if err != nil {
 					log.C(ctx).Error(err)
 					reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
@@ -520,7 +520,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 
 				if billingSvcInstanceID != "" {
-					if err := h.deleteServiceKeys(ctx, billingSvcInstanceID, billingSvcInstanceName); err != nil {
+					if err := h.deleteServiceKeys(ctx, billingSvcInstanceID, billingSvcInstanceName, tenantID); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting service key(s) for subscription billing instance: %s\"}", err.Error())
 						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
@@ -528,7 +528,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						}
 						return
 					}
-					if err := h.deleteServiceInstance(ctx, billingSvcInstanceID, billingSvcInstanceName); err != nil {
+					if err := h.deleteServiceInstance(ctx, billingSvcInstanceID, billingSvcInstanceName, tenantID); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting subscription billing instance: %s\"}", err.Error())
 						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
@@ -545,7 +545,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			log.C(ctx).Info("Handle subscription billing instance creation...")
-			billingOfferingID, err := h.retrieveServiceOffering(ctx, billingCatalogName)
+			billingOfferingID, err := h.retrieveServiceOffering(ctx, billingCatalogName, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
@@ -555,7 +555,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			billingPlanID, err := h.retrieveServicePlan(ctx, billingPlanName, billingOfferingID)
+			billingPlanID, err := h.retrieveServicePlan(ctx, billingPlanName, billingOfferingID, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service plans: %s\"}", err.Error())
@@ -565,7 +565,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			billingSvcInstanceID, err := h.createServiceInstance(ctx, billingSvcInstanceName, billingPlanID, "")
+			billingSvcInstanceID, err := h.createServiceInstance(ctx, billingSvcInstanceName, billingPlanID, "", tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating subscription billing service instance: %s\"}", err.Error())
@@ -589,7 +589,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			billingSvcKeyName = truncateString(ctx, billingSvcKeyName, serviceBindingMaxLengthName)
 			billingSvcKeyParams := fmt.Sprintf("{\"xsuaa\":{\"credential-type\":\"x509\",\"x509\":{\"certificate\":\"%s\",\"certificate-pinning\":false}}}", inboundCert)
 
-			billingServiceKeyID, err := h.createServiceKey(ctx, billingSvcKeyName, billingSvcKeyParams, billingSvcInstanceID, billingSvcInstanceName)
+			billingServiceKeyID, err := h.createServiceKey(ctx, billingSvcKeyName, billingSvcKeyParams, billingSvcInstanceID, billingSvcInstanceName, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating subscription billing service key: %s\"}", err.Error())
@@ -599,7 +599,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			billingServiceKey, err := h.retrieveServiceKeyByID(ctx, billingServiceKeyID)
+			billingServiceKey, err := h.retrieveServiceKeyByID(ctx, billingServiceKeyID, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving MDI 'write' service key: %s\"}", err.Error())
@@ -728,8 +728,8 @@ func validate(tm types.TenantMapping) error {
 	return nil
 }
 
-func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName string) (string, error) {
-	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, paths.ServiceOfferingsPath, SubaccountKey, h.tenantID)
+func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName, tenantID string) (string, error) {
+	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, paths.ServiceOfferingsPath, SubaccountKey, tenantID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building service offerings URL")
 	}
@@ -780,8 +780,8 @@ func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName strin
 	return offeringID, nil
 }
 
-func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID string) (string, error) {
-	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, paths.ServicePlansPath, SubaccountKey, h.tenantID)
+func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID, tenantID string) (string, error) {
+	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, paths.ServicePlansPath, SubaccountKey, tenantID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building service plans URL")
 	}
@@ -831,7 +831,7 @@ func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID 
 	return planID, nil
 }
 
-func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName, planID, parameters string) (string, error) {
+func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName, planID, parameters, tenantID string) (string, error) {
 	siReqBody := &types.ServiceInstanceReqBody{
 		Name:          serviceInstanceName,
 		ServicePlanId: planID,
@@ -843,7 +843,7 @@ func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName
 		return "", errors.Errorf("Failed to marshal service instance body: %v", err)
 	}
 
-	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, paths.ServiceInstancesPath, SubaccountKey, h.tenantID)
+	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, paths.ServiceInstancesPath, SubaccountKey, tenantID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building service instances URL")
 	}
@@ -876,7 +876,7 @@ func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName
 			return "", errors.Errorf("The service instance operation status path from %s header should not be empty", LocationHeaderKey)
 		}
 
-		opURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, opStatusPath, SubaccountKey, h.tenantID)
+		opURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, opStatusPath, SubaccountKey, tenantID)
 		if err != nil {
 			return "", errors.Wrapf(err, "while building asynchronous service instance operation URL")
 		}
@@ -951,15 +951,15 @@ func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName
 	return serviceInstanceID, nil
 }
 
-func (h *Handler) deleteServiceKeys(ctx context.Context, serviceInstanceID, serviceInstanceName string) error {
-	svcKeyIDs, err := h.retrieveServiceKeyIDsByInstanceID(ctx, serviceInstanceID, serviceInstanceName)
+func (h *Handler) deleteServiceKeys(ctx context.Context, serviceInstanceID, serviceInstanceName, tenantID string) error {
+	svcKeyIDs, err := h.retrieveServiceKeyIDsByInstanceID(ctx, serviceInstanceID, serviceInstanceName, tenantID)
 	if err != nil {
 		return err
 	}
 
 	for _, keyID := range svcKeyIDs {
 		svcKeyPath := paths.ServiceBindingsPath + fmt.Sprintf("/%s", keyID)
-		strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, svcKeyPath, SubaccountKey, h.tenantID)
+		strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, svcKeyPath, SubaccountKey, tenantID)
 		if err != nil {
 			return errors.Wrapf(err, "while building service binding URL")
 		}
@@ -992,7 +992,7 @@ func (h *Handler) deleteServiceKeys(ctx context.Context, serviceInstanceID, serv
 				return errors.Errorf("The service binding operation status path from %s header should not be empty", LocationHeaderKey)
 			}
 
-			opURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, opStatusPath, SubaccountKey, h.tenantID)
+			opURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, opStatusPath, SubaccountKey, tenantID)
 			if err != nil {
 				return errors.Wrapf(err, "while building asynchronous service binding operation URL")
 			}
@@ -1052,9 +1052,9 @@ func (h *Handler) deleteServiceKeys(ctx context.Context, serviceInstanceID, serv
 	return nil
 }
 
-func (h *Handler) deleteServiceInstance(ctx context.Context, serviceInstanceID, serviceInstanceName string) error {
+func (h *Handler) deleteServiceInstance(ctx context.Context, serviceInstanceID, serviceInstanceName, tenantID string) error {
 	svcInstancePath := paths.ServiceInstancesPath + fmt.Sprintf("/%s", serviceInstanceID)
-	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, svcInstancePath, SubaccountKey, h.tenantID)
+	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, svcInstancePath, SubaccountKey, tenantID)
 	if err != nil {
 		return errors.Wrapf(err, "while building service instances URL")
 	}
@@ -1087,7 +1087,7 @@ func (h *Handler) deleteServiceInstance(ctx context.Context, serviceInstanceID, 
 			return errors.Errorf("The service instance operation status path from %s header should not be empty", LocationHeaderKey)
 		}
 
-		opURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, opStatusPath, SubaccountKey, h.tenantID)
+		opURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, opStatusPath, SubaccountKey, tenantID)
 		if err != nil {
 			return errors.Wrapf(err, "while building asynchronous service instance operation URL")
 		}
@@ -1146,8 +1146,8 @@ func (h *Handler) deleteServiceInstance(ctx context.Context, serviceInstanceID, 
 	return nil
 }
 
-func (h *Handler) retrieveServiceInstanceIDByName(ctx context.Context, serviceInstanceName string) (string, error) {
-	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, paths.ServiceInstancesPath, SubaccountKey, h.tenantID)
+func (h *Handler) retrieveServiceInstanceIDByName(ctx context.Context, serviceInstanceName, tenantID string) (string, error) {
+	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, paths.ServiceInstancesPath, SubaccountKey, tenantID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building service instances URL")
 	}
@@ -1198,7 +1198,7 @@ func (h *Handler) retrieveServiceInstanceIDByName(ctx context.Context, serviceIn
 	return instanceID, nil
 }
 
-func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceKeyParams, serviceInstanceID, serviceInstanceName string) (string, error) {
+func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceKeyParams, serviceInstanceID, serviceInstanceName, tenantID string) (string, error) {
 	serviceKeyReqBody := &types.ServiceKeyReqBody{}
 	if strings.Contains(serviceInstanceName, billingCatalogName) {
 		serviceKeyReqBody = &types.ServiceKeyReqBody{
@@ -1218,7 +1218,7 @@ func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceK
 		return "", errors.Errorf("Failed to marshal service key body: %v", err)
 	}
 
-	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, paths.ServiceBindingsPath, SubaccountKey, h.tenantID)
+	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, paths.ServiceBindingsPath, SubaccountKey, tenantID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building service bindings URL")
 	}
@@ -1251,7 +1251,7 @@ func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceK
 			return "", errors.Errorf("The service key operation status path from %s header should not be empty", LocationHeaderKey)
 		}
 
-		opURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, opStatusPath, SubaccountKey, h.tenantID)
+		opURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, opStatusPath, SubaccountKey, tenantID)
 		if err != nil {
 			return "", errors.Wrapf(err, "while building asynchronous service key operation URL")
 		}
@@ -1326,8 +1326,8 @@ func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceK
 	return serviceKeyID, nil
 }
 
-func (h *Handler) retrieveServiceKeyIDsByInstanceID(ctx context.Context, serviceInstanceID, serviceInstanceName string) ([]string, error) {
-	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, paths.ServiceBindingsPath, SubaccountKey, h.tenantID)
+func (h *Handler) retrieveServiceKeyIDsByInstanceID(ctx context.Context, serviceInstanceID, serviceInstanceName, tenantID string) ([]string, error) {
+	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, paths.ServiceBindingsPath, SubaccountKey, tenantID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building service binding URL")
 	}
@@ -1372,9 +1372,9 @@ func (h *Handler) retrieveServiceKeyIDsByInstanceID(ctx context.Context, service
 	return serviceKeysIDs, nil
 }
 
-func (h *Handler) retrieveServiceKeyByID(ctx context.Context, serviceKeyID string) (*types.ServiceKey, error) {
+func (h *Handler) retrieveServiceKeyByID(ctx context.Context, serviceKeyID, tenantID string) (*types.ServiceKey, error) {
 	svcKeyPath := paths.ServiceBindingsPath + fmt.Sprintf("/%s", serviceKeyID)
-	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, svcKeyPath, SubaccountKey, h.tenantID)
+	strURL, err := buildURL(h.cfg.ServiceManagerCfg.URL, svcKeyPath, SubaccountKey, tenantID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building service binding URL")
 	}
