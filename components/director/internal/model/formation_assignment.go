@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"strings"
+	"time"
 	"unsafe"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -23,16 +24,18 @@ const (
 
 // FormationAssignment represent structure for FormationAssignment
 type FormationAssignment struct {
-	ID          string                  `json:"id"`
-	FormationID string                  `json:"formation_id"`
-	TenantID    string                  `json:"tenant_id"`
-	Source      string                  `json:"source"`
-	SourceType  FormationAssignmentType `json:"source_type"`
-	Target      string                  `json:"target"`
-	TargetType  FormationAssignmentType `json:"target_type"`
-	State       string                  `json:"state"`
-	Value       json.RawMessage         `json:"value"`
-	Error       json.RawMessage         `json:"error"`
+	ID                            string                  `json:"id"`
+	FormationID                   string                  `json:"formation_id"`
+	TenantID                      string                  `json:"tenant_id"`
+	Source                        string                  `json:"source"`
+	SourceType                    FormationAssignmentType `json:"source_type"`
+	Target                        string                  `json:"target"`
+	TargetType                    FormationAssignmentType `json:"target_type"`
+	State                         string                  `json:"state"`
+	Value                         json.RawMessage         `json:"value"`
+	Error                         json.RawMessage         `json:"error"`
+	LastStateChangeTimestamp      *time.Time
+	LastNotificationSentTimestamp *time.Time
 }
 
 // FormationAssignmentInput is an input for creating a new FormationAssignment
@@ -121,57 +124,59 @@ func (i *FormationAssignmentInput) ToModel(id, tenantID string) *FormationAssign
 }
 
 // Clone clones the formation assignment
-func (f *FormationAssignment) Clone() *FormationAssignment {
+func (fa *FormationAssignment) Clone() *FormationAssignment {
 	return &FormationAssignment{
-		ID:          f.ID,
-		FormationID: f.FormationID,
-		TenantID:    f.TenantID,
-		Source:      f.Source,
-		SourceType:  f.SourceType,
-		Target:      f.Target,
-		TargetType:  f.TargetType,
-		State:       f.State,
-		Value:       f.Value,
-		Error:       f.Error,
+		ID:                            fa.ID,
+		FormationID:                   fa.FormationID,
+		TenantID:                      fa.TenantID,
+		Source:                        fa.Source,
+		SourceType:                    fa.SourceType,
+		Target:                        fa.Target,
+		TargetType:                    fa.TargetType,
+		State:                         fa.State,
+		Value:                         fa.Value,
+		Error:                         fa.Error,
+		LastStateChangeTimestamp:      fa.LastStateChangeTimestamp,
+		LastNotificationSentTimestamp: fa.LastNotificationSentTimestamp,
 	}
 }
 
 // IsInErrorState returns if the formation assignment is in error state
-func (f *FormationAssignment) IsInErrorState() bool {
-	state := f.State
+func (fa *FormationAssignment) IsInErrorState() bool {
+	state := fa.State
 	return state == string(CreateErrorAssignmentState) ||
 		strings.HasSuffix(state, string(DeleteErrorAssignmentState))
 }
 
 // IsInProgressState returns if the formation assignment is in progress state
-func (f *FormationAssignment) IsInProgressState() bool {
-	return f.isInProgressAssignState() || f.isInProgressUnassignState()
+func (fa *FormationAssignment) IsInProgressState() bool {
+	return fa.isInProgressAssignState() || fa.isInProgressUnassignState()
 }
 
 // IsInRegularUnassignState returns if the formation assignment is in regular unassign stage
-func (f *FormationAssignment) IsInRegularUnassignState() bool {
+func (fa *FormationAssignment) IsInRegularUnassignState() bool {
 	unassignOperationStates := []string{string(DeletingAssignmentState),
 		string(DeleteErrorAssignmentState)}
-	return str.ValueIn(f.State, unassignOperationStates)
+	return str.ValueIn(fa.State, unassignOperationStates)
 }
 
 // SetStateToDeleting sets the state to deleting and returns if the formation assignment is updated
-func (f *FormationAssignment) SetStateToDeleting() bool {
-	if f.isInProgressUnassignState() {
+func (fa *FormationAssignment) SetStateToDeleting() bool {
+	if fa.isInProgressUnassignState() {
 		return false
 	}
-	if strings.HasSuffix(f.State, string(DeleteErrorAssignmentState)) {
-		f.State = strings.Replace(f.State, string(DeleteErrorAssignmentState), string(DeletingAssignmentState), 1)
+	if strings.HasSuffix(fa.State, string(DeleteErrorAssignmentState)) {
+		fa.State = strings.Replace(fa.State, string(DeleteErrorAssignmentState), string(DeletingAssignmentState), 1)
 		return true
 	}
-	f.State = string(DeletingAssignmentState)
+	fa.State = string(DeletingAssignmentState)
 	return true
 }
 
 // GetOperation returns the formation operation that is determined based on the state of the assignment
-func (f *FormationAssignment) GetOperation() FormationOperation {
+func (fa *FormationAssignment) GetOperation() FormationOperation {
 	operation := AssignFormation
-	if strings.HasSuffix(f.State, string(DeleteErrorAssignmentState)) || strings.HasSuffix(f.State, string(DeletingAssignmentState)) {
+	if strings.HasSuffix(fa.State, string(DeleteErrorAssignmentState)) || strings.HasSuffix(fa.State, string(DeletingAssignmentState)) {
 		operation = UnassignFormation
 	}
 	return operation
@@ -179,27 +184,32 @@ func (f *FormationAssignment) GetOperation() FormationOperation {
 
 // GetNotificationState returns the assignment state that is to be sent for notifications
 // and is exposed to the GraphQL layer
-func (f *FormationAssignment) GetNotificationState() string {
-	state := f.State
+func (fa *FormationAssignment) GetNotificationState() string {
+	state := fa.State
 	if strings.HasSuffix(state, string(DeleteErrorAssignmentState)) {
 		state = string(DeleteErrorAssignmentState)
-	} else if f.isInProgressUnassignState() {
+	} else if fa.isInProgressUnassignState() {
 		state = string(DeletingAssignmentState)
 	}
 	return state
 }
 
-func (f *FormationAssignment) isInProgressAssignState() bool {
-	return f.State == string(InitialAssignmentState) ||
-		f.State == string(ConfigPendingAssignmentState)
+func (fa *FormationAssignment) isInProgressAssignState() bool {
+	return fa.State == string(InitialAssignmentState) ||
+		fa.State == string(ConfigPendingAssignmentState)
 }
 
-func (f *FormationAssignment) isInProgressUnassignState() bool {
-	return strings.HasSuffix(f.State, string(DeletingAssignmentState))
+func (fa *FormationAssignment) isInProgressUnassignState() bool {
+	return strings.HasSuffix(fa.State, string(DeletingAssignmentState))
 }
 
 // GetAddress returns the memory address of the FormationAssignment in form of an uninterpreted type(integer number)
 // Currently, it's used in some formation constraints input templates, so we could propagate the memory address to the formation constraints operators and later on to modify/update it.
-func (f *FormationAssignment) GetAddress() uintptr {
-	return uintptr(unsafe.Pointer(f))
+func (fa *FormationAssignment) GetAddress() uintptr {
+	return uintptr(unsafe.Pointer(fa))
+}
+
+// SetLastNotificationSentTimestamp updates the time when a formation notification was last sent.
+func (fa *FormationAssignment) SetLastNotificationSentTimestamp(t time.Time) {
+	fa.LastNotificationSentTimestamp = &t
 }

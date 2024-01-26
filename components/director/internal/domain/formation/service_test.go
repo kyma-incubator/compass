@@ -2762,6 +2762,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 		},
 	}
+
 	var formationAssignmentPairs = make([]*formationassignment.AssignmentMappingPairWithOperation, 0, len(formationAssignments))
 	for i := range formationAssignments {
 		formationAssignmentPairs = append(formationAssignmentPairs, fixFormationAssignmentPairWithNoReverseAssignment(notificationsForAssignments[i], formationAssignments[i]))
@@ -3905,50 +3906,62 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			if testCase.TxFn != nil {
 				persist, transact = testCase.TxFn()
 			}
+
 			labelService := unusedLabelService()
 			if testCase.LabelServiceFn != nil {
 				labelService = testCase.LabelServiceFn()
 			}
+
 			runtimeContextRepo := unusedRuntimeContextRepo()
 			if testCase.RuntimeContextRepoFn != nil {
 				runtimeContextRepo = testCase.RuntimeContextRepoFn()
 			}
+
 			formationRepo := unusedFormationRepo()
 			if testCase.FormationRepositoryFn != nil {
 				formationRepo = testCase.FormationRepositoryFn()
 			}
+
 			formationTemplateRepo := unusedFormationTemplateRepo()
 			if testCase.FormationTemplateRepositoryFn != nil {
 				formationTemplateRepo = testCase.FormationTemplateRepositoryFn()
 			}
+
 			labelRepo := unusedLabelRepo()
 			if testCase.LabelRepoFn != nil {
 				labelRepo = testCase.LabelRepoFn()
 			}
+
 			notificationsSvc := unusedNotificationsService()
 			if testCase.NotificationServiceFN != nil {
 				notificationsSvc = testCase.NotificationServiceFN()
 			}
+
 			formationAssignmentSvc := unusedFormationAssignmentService()
 			if testCase.FormationAssignmentServiceFn != nil {
 				formationAssignmentSvc = testCase.FormationAssignmentServiceFn()
 			}
+
 			formationAssignmentNotificationService := unusedFormationAssignmentNotificationService()
 			if testCase.FormationAssignmentNotificationServiceFN != nil {
 				formationAssignmentNotificationService = testCase.FormationAssignmentNotificationServiceFN()
 			}
+
 			webhookRepo := unusedWebhookRepository()
 			if testCase.WebhookRepoFn != nil {
 				webhookRepo = testCase.WebhookRepoFn()
 			}
+
 			labelDefRepo := unusedLabelDefRepository()
 			if testCase.LabelDefRepositoryFn != nil {
 				labelDefRepo = testCase.LabelDefRepositoryFn()
 			}
+
 			labelDefSvc := unusedLabelDefService()
 			if testCase.LabelDefServiceFn != nil {
 				labelDefSvc = testCase.LabelDefServiceFn()
 			}
+
 			statusService := &automock.StatusService{}
 			if testCase.StatusServiceFn != nil {
 				statusService = testCase.StatusServiceFn()
@@ -3979,6 +3992,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			mock.AssertExpectationsForObjects(t, persist, transact, labelService, runtimeContextRepo, formationRepo, labelRepo, notificationsSvc, formationAssignmentSvc, formationAssignmentNotificationService, formationTemplateRepo, webhookRepo, statusService)
 		})
 	}
+
 	t.Run("returns error when empty tenant", func(t *testing.T) {
 		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 		_, err := svc.ResynchronizeFormationNotifications(context.TODO(), FormationID, false)

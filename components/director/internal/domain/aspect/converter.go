@@ -2,7 +2,6 @@ package aspect
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -108,9 +107,9 @@ func (c *converter) ToGraphQL(in *model.Aspect, aspectEventResources []*model.As
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
-			CreatedAt: timePtrToTimestampPtr(in.CreatedAt),
-			UpdatedAt: timePtrToTimestampPtr(in.UpdatedAt),
-			DeletedAt: timePtrToTimestampPtr(in.DeletedAt),
+			CreatedAt: graphql.TimePtrToGraphqlTimestampPtr(in.CreatedAt),
+			UpdatedAt: graphql.TimePtrToGraphqlTimestampPtr(in.UpdatedAt),
+			DeletedAt: graphql.TimePtrToGraphqlTimestampPtr(in.DeletedAt),
 			Error:     in.Error,
 		},
 	}, nil
@@ -176,15 +175,6 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.AspectInput) ([]*mode
 	}
 
 	return inputs, nil
-}
-
-func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
-	if time == nil {
-		return nil
-	}
-
-	t := graphql.Timestamp(*time)
-	return &t
 }
 
 func getMandatory(inputMandatory *bool) *bool {

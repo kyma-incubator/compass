@@ -491,8 +491,6 @@ func validatePackageInput(pkg *model.PackageInput, docPolicyLevel *string) error
 	return validation.ValidateStruct(pkg,
 		validation.Field(&pkg.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
 		validation.Field(&pkg.Title, titleRules(docPolicyLevel, pkg.PolicyLevel)...),
-		validation.Field(&pkg.ShortDescription, shortDescriptionRules(docPolicyLevel, pkg.PolicyLevel, pkg.Title)...),
-		validation.Field(&pkg.Description, descriptionRules(docPolicyLevel, pkg.PolicyLevel, &pkg.ShortDescription)...),
 		validation.Field(&pkg.SupportInfo, validation.NilOrNotEmpty),
 		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(common.SemVerRegex))),
 		validation.Field(&pkg.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelCustom, PolicyLevelNone), validation.When(pkg.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
@@ -597,8 +595,10 @@ func validateDescriptionDoesNotContainShortDescription(shortDescription *string)
 	}
 }
 
-func validatePackageInputWithSuppressedErrors(pkg *model.PackageInput, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
+func validatePackageInputWithSuppressedErrors(pkg *model.PackageInput, docPolicyLevel *string, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
 	return validation.ValidateStruct(pkg,
+		validation.Field(&pkg.ShortDescription, shortDescriptionRules(docPolicyLevel, pkg.PolicyLevel, pkg.Title)...),
+		validation.Field(&pkg.Description, descriptionRules(docPolicyLevel, pkg.PolicyLevel, &pkg.ShortDescription)...),
 		validation.Field(&pkg.Version, validation.By(func(value interface{}) error {
 			return validatePackageVersionInput(value, *pkg, packagesFromDB, resourceHashes)
 		})))
@@ -766,8 +766,12 @@ func validateEventInputWithSuppressedErrors(event *model.EventDefinitionInput, e
 		})))
 }
 
-func validateEntityTypeInputWithSuppressedErrors(entityType *model.EntityTypeInput, entityTypesFromDB map[string]*model.EntityType, entityTypeHashes map[string]uint64) error {
+func validateEntityTypeInputWithSuppressedErrors(entityType *model.EntityTypeInput, docPolicyLevel *string, entityTypesFromDB map[string]*model.EntityType, entityTypeHashes map[string]uint64) error {
 	return validation.ValidateStruct(entityType,
+		validation.Field(&entityType.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, entityType.PolicyLevel, entityType.Title)...),
+		validation.Field(&entityType.Description, validation.NilOrNotEmpty,
+			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap) && entityType.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(entityType.ShortDescription)), validation.Length(MinDescriptionLength, MaxDescriptionLengthEntityType)),
+			validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&entityType.VersionInput.Value, validation.By(func(value interface{}) error {
 			return validateEntityTypeVersionInput(value, *entityType, entityTypesFromDB, entityTypeHashes)
 		})))
@@ -780,10 +784,6 @@ func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *
 		validation.Field(&entityType.CorrelationIDs, correlationIdsRules()...),
 		validation.Field(&entityType.Level, validation.Required, validation.Length(MinLevelLength, MaxLevelLength)),
 		validation.Field(&entityType.Title, titleRules(docPolicyLevel, entityType.PolicyLevel)...),
-		validation.Field(&entityType.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, entityType.PolicyLevel, entityType.Title)...),
-		validation.Field(&entityType.Description, validation.NilOrNotEmpty,
-			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap) && entityType.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(entityType.ShortDescription)), validation.Length(MinDescriptionLength, MaxDescriptionLengthEntityType)),
-			validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&entityType.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(common.SemVerRegex))),
 		validation.Field(&entityType.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&entityType.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
@@ -812,12 +812,10 @@ func validateCapabilityInput(capability *model.CapabilityInput, docPolicyLevel *
 	return validation.ValidateStruct(capability,
 		validation.Field(&capability.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
 		validation.Field(&capability.Name, titleRules(docPolicyLevel, nil)...),
-		validation.Field(&capability.Description, optionalDescriptionRules(docPolicyLevel, capability.ShortDescription)...),
 		validation.Field(&capability.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(CapabilityOrdIDRegex))),
 		validation.Field(&capability.Type, validation.Required, validation.In(CapabilityTypeCustom, CapabilityTypeMDICapabilityV1), validation.When(capability.CustomType != nil, validation.In(CapabilityTypeCustom))),
 		validation.Field(&capability.CustomType, validation.When(capability.Type != CapabilityTypeCustom, validation.Empty), validation.Match(regexp.MustCompile(CapabilityCustomTypeRegex))),
 		validation.Field(&capability.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
-		validation.Field(&capability.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, nil, capability.Name)...),
 		validation.Field(&capability.Tags, tagsRules()...),
 		validation.Field(&capability.RelatedEntityTypes, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EntityTypeOrdIDRegex))
@@ -837,8 +835,10 @@ func validateCapabilityInput(capability *model.CapabilityInput, docPolicyLevel *
 }
 
 // fields with validation errors will lead to persisting of the Capability resource
-func validateCapabilityInputWithSuppressedErrors(capability *model.CapabilityInput, capabilitiesFromDB map[string]*model.Capability, capabilityHashes map[string]uint64) error {
+func validateCapabilityInputWithSuppressedErrors(capability *model.CapabilityInput, docPolicyLevel *string, capabilitiesFromDB map[string]*model.Capability, capabilityHashes map[string]uint64) error {
 	return validation.ValidateStruct(capability,
+		validation.Field(&capability.Description, optionalDescriptionRules(docPolicyLevel, capability.ShortDescription)...),
+		validation.Field(&capability.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, nil, capability.Name)...),
 		validation.Field(&capability.VersionInput.Value, validation.By(func(value interface{}) error {
 			return validateCapabilityVersionInput(value, *capability, capabilitiesFromDB, capabilityHashes)
 		})))
@@ -850,8 +850,6 @@ func validateIntegrationDependencyInput(integrationDependency *model.Integration
 		validation.Field(&integrationDependency.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
 		validation.Field(&integrationDependency.CorrelationIDs, correlationIdsRules()...),
 		validation.Field(&integrationDependency.Title, titleRules(docPolicyLevel, nil)...),
-		validation.Field(&integrationDependency.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, nil, integrationDependency.Title)...),
-		validation.Field(&integrationDependency.Description, optionalDescriptionRules(docPolicyLevel, integrationDependency.ShortDescription)...),
 		validation.Field(&integrationDependency.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
 		validation.Field(&integrationDependency.LastUpdate, validation.When(integrationDependency.LastUpdate != nil, validation.By(isValidDate))),
 		validation.Field(&integrationDependency.Visibility, validation.Required, validation.In(IntegrationDependencyVisibilityPublic, IntegrationDependencyVisibilityInternal, IntegrationDependencyVisibilityPrivate)),
@@ -874,8 +872,10 @@ func validateIntegrationDependencyInput(integrationDependency *model.Integration
 }
 
 // fields with validation errors will lead to persisting of the IntegrationDependency resource
-func validateIntegrationDependencyInputWithSuppressedErrors(integrationDependency *model.IntegrationDependencyInput, integrationDependenciesFromDB map[string]*model.IntegrationDependency, integrationDependencyHashes map[string]uint64) error {
+func validateIntegrationDependencyInputWithSuppressedErrors(integrationDependency *model.IntegrationDependencyInput, docPolicyLevel *string, integrationDependenciesFromDB map[string]*model.IntegrationDependency, integrationDependencyHashes map[string]uint64) error {
 	return validation.ValidateStruct(integrationDependency,
+		validation.Field(&integrationDependency.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, nil, integrationDependency.Title)...),
+		validation.Field(&integrationDependency.Description, optionalDescriptionRules(docPolicyLevel, integrationDependency.ShortDescription)...),
 		validation.Field(&integrationDependency.VersionInput.Value, validation.By(func(value interface{}) error {
 			return validateIntegrationDependencyVersionInput(value, *integrationDependency, integrationDependenciesFromDB, integrationDependencyHashes)
 		})))
@@ -887,8 +887,6 @@ func validateDataProductInput(dataProduct *model.DataProductInput, docPolicyLeve
 		validation.Field(&dataProduct.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
 		validation.Field(&dataProduct.CorrelationIDs, correlationIdsRules()...),
 		validation.Field(&dataProduct.Title, titleRules(docPolicyLevel, dataProduct.PolicyLevel)...),
-		validation.Field(&dataProduct.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, dataProduct.PolicyLevel, dataProduct.Title)...),
-		validation.Field(&dataProduct.Description, optionalDescriptionRules(docPolicyLevel, dataProduct.ShortDescription)...),
 		validation.Field(&dataProduct.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
 		validation.Field(&dataProduct.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(common.SemVerRegex))),
 		validation.Field(&dataProduct.LastUpdate, validation.When(dataProduct.LastUpdate != nil, validation.By(isValidDate))),
@@ -923,8 +921,10 @@ func validateDataProductInput(dataProduct *model.DataProductInput, docPolicyLeve
 }
 
 // fields with validation errors will lead to persisting of the DataProduct resource
-func validateDataProductInputWithSuppressedErrors(dataProduct *model.DataProductInput, dataProductsFromDB map[string]*model.DataProduct, dataProductHashes map[string]uint64) error {
+func validateDataProductInputWithSuppressedErrors(dataProduct *model.DataProductInput, docPolicyLevel *string, dataProductsFromDB map[string]*model.DataProduct, dataProductHashes map[string]uint64) error {
 	return validation.ValidateStruct(dataProduct,
+		validation.Field(&dataProduct.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, dataProduct.PolicyLevel, dataProduct.Title)...),
+		validation.Field(&dataProduct.Description, optionalDescriptionRules(docPolicyLevel, dataProduct.ShortDescription)...),
 		validation.Field(&dataProduct.VersionInput.Value, validation.By(func(value interface{}) error {
 			return validateDataProductVersionInput(value, *dataProduct, dataProductsFromDB, dataProductHashes)
 		})))
@@ -1228,9 +1228,10 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 	apiProtocol := str.PtrStrToStr(api.APIProtocol)
 	resourceDefinitions := api.ResourceDefinitions
 
-	isResourceDefinitionMandatory := !(policyLevel == PolicyLevelSap && apiVisibility == APIVisibilityPrivate)
+	isResourceDefinitionMandatory := policyLevel != PolicyLevelSap || apiVisibility != APIVisibilityPrivate
+	isResourceDefinitionMandatory = isResourceDefinitionMandatory && apiProtocol != APIProtocolDeltaSharing
 	if len(resourceDefinitions) == 0 && isResourceDefinitionMandatory {
-		return errors.New("when api resource visibility is public or internal, resource definitions must be provided")
+		return errors.New("when api resource visibility is public or internal or api protocol is not delta-sharing, resource definitions must be provided")
 	}
 
 	if len(resourceDefinitions) == 0 && !isResourceDefinitionMandatory {
