@@ -373,7 +373,7 @@ func (r *Resolver) FormationAssignmentsDataLoader(keys []dataloader.ParamFormati
 
 	gqlFormationAssignmentPages := make([]*graphql.FormationAssignmentPage, 0, len(keys))
 
-	formationIdToFormationAssignments := make(map[string]*model.FormationAssignmentPage, len(keys))
+	formationIDToFormationAssignments := make(map[string]*model.FormationAssignmentPage, len(keys))
 	for formationTenant, tenantFormationIDs := range formationIDsByTenant {
 		ctxWithTenant := tenant.SaveToContext(ctx, formationTenant, "")
 		formationAssignmentPages, err := r.formationAssignmentSvc.ListByFormationIDs(ctxWithTenant, tenantFormationIDs, *keys[0].First, cursor) // ListByFormationIDs underneath will map the FAs to the input tenantFormationIDs
@@ -382,12 +382,12 @@ func (r *Resolver) FormationAssignmentsDataLoader(keys []dataloader.ParamFormati
 		}
 
 		for i, formationID := range tenantFormationIDs {
-			formationIdToFormationAssignments[formationID] = formationAssignmentPages[i] // map the FAs to the formationID of the given tenant; we rely on the index because of the ListByFormationIDs ordering
+			formationIDToFormationAssignments[formationID] = formationAssignmentPages[i] // map the FAs to the formationID of the given tenant; we rely on the index because of the ListByFormationIDs ordering
 		}
 	}
 
 	for _, formationID := range formationIDs { // loop the initial order of the formations
-		page := formationIdToFormationAssignments[formationID] // get the FAs for the given formation regardless of the tenant
+		page := formationIDToFormationAssignments[formationID] // get the FAs for the given formation regardless of the tenant
 		fas, err := r.formationAssignmentConv.MultipleToGraphQL(page.Data)
 		if err != nil {
 			return nil, []error{err}
@@ -398,7 +398,6 @@ func (r *Resolver) FormationAssignmentsDataLoader(keys []dataloader.ParamFormati
 			EndCursor:   graphql.PageCursor(page.PageInfo.EndCursor),
 			HasNextPage: page.PageInfo.HasNextPage,
 		}})
-
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -474,7 +473,7 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	formationIdToFormationAssignments := make(map[string][]*model.FormationAssignment, len(formationIDs))
+	formationIDToFormationAssignments := make(map[string][]*model.FormationAssignment, len(formationIDs))
 	for formationTenant, tenantFormationIDs := range formationIDsByTenant {
 		ctxWithTenant := tenant.SaveToContext(ctx, formationTenant, "")
 		formationAssignmentsPerFormationForTenant, err := r.formationAssignmentSvc.ListByFormationIDsNoPaging(ctxWithTenant, tenantFormationIDs)
@@ -483,7 +482,7 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 		}
 
 		for i, formationID := range tenantFormationIDs {
-			formationIdToFormationAssignments[formationID] = formationAssignmentsPerFormationForTenant[i] // map the FAs to the formationID of the given tenant; we rely on the index because of the ListByFormationIDs ordering
+			formationIDToFormationAssignments[formationID] = formationAssignmentsPerFormationForTenant[i] // map the FAs to the formationID of the given tenant; we rely on the index because of the ListByFormationIDs ordering
 		}
 	}
 
@@ -493,7 +492,7 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 
 	gqlFormationStatuses := make([]*graphql.FormationStatus, 0, len(formationIDs))
 	for i, formationID := range formationIDs {
-		formationAssignments := formationIdToFormationAssignments[formationID]
+		formationAssignments := formationIDToFormationAssignments[formationID]
 
 		var condition graphql.FormationStatusCondition
 		var formationStatusErrors []*graphql.FormationStatusError

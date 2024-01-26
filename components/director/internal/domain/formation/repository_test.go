@@ -224,11 +224,11 @@ func TestRepository_ListByIDsGlobal(t *testing.T) {
 		MethodName: "ListByIDsGlobal",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name, state, error FROM public.formations WHERE id IN ($1)`),
+				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name, state, error, last_state_change_timestamp, last_notification_sent_timestamp  FROM public.formations WHERE id IN ($1)`),
 				Args:     []driver.Value{formationModel.ID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, TntInternalID, FormationTemplateID, testFormationName, initialFormationState, testFormationEmptyError)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, TntInternalID, FormationTemplateID, testFormationName, initialFormationState, testFormationEmptyError, &defaultTime, &defaultTime)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}

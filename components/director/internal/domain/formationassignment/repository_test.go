@@ -426,11 +426,11 @@ func TestRepository_ListAllForObjectGlobal(t *testing.T) {
 		MethodName: "ListAllForObjectGlobal",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE (source = $1 OR target = $2)`),
-				Args:     []driver.Value{TestSource, TestTarget},
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE (source = $1 OR target = $2)`),
+				Args:     []driver.Value{TestSource, TestSource},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}

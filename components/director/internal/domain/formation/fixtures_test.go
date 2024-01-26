@@ -1401,6 +1401,7 @@ func fixFormationEntity() *formation.Entity {
 func fixGqlFormation() *graphql.Formation {
 	return &graphql.Formation{
 		ID:                            FormationID,
+		TenantID:                      TntInternalID,
 		Name:                          testFormationName,
 		FormationTemplateID:           FormationTemplateID,
 		State:                         string(model.InitialFormationState),
