@@ -1088,9 +1088,12 @@ global:
     name: "system-fetcher"
     port: 3000
     prefix: /system-fetcher
+    syncEndpoint: /sync
     job:
       schedulePeriod: 60m
       isSchedulable: true
+    client:
+      timeout: "30s"
     lease:
       lockname: systemfetcherlease
     authentication:

@@ -23,8 +23,8 @@ type OperationsManager interface {
 	RescheduleOperation(ctx context.Context, operationID string) error
 }
 
-// AggregationResources holds id of tenant for systems fetching
-type AggregationResources struct {
+// AggregationResource holds id of tenant for systems fetching
+type AggregationResource struct {
 	TenantID string `json:"tenantID"`
 }
 
@@ -50,7 +50,7 @@ func NewSystemFetcherAggregatorHTTPHandler(opMgr OperationsManager, businessTena
 func (h *handler) ScheduleAggregationForSystemFetcherData(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	payload := AggregationResources{}
+	payload := AggregationResource{}
 	if err := json.NewDecoder(request.Body).Decode(&payload); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to parse request body")
 		http.Error(writer, "Invalid request body", http.StatusBadRequest)

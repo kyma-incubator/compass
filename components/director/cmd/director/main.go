@@ -9,7 +9,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
+	ordapiclient "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
+	sfapiclient "github.com/kyma-incubator/compass/components/director/internal/systemfetcher/apiclient"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
 
@@ -189,7 +190,8 @@ type config struct {
 
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 
-	OrdAggregatorClientConfig apiclient.OrdAggregatorClientConfig
+	OrdAggregatorClientConfig     ordapiclient.OrdAggregatorClientConfig
+	SystemFetcherSyncClientConfig sfapiclient.SystemFetcherSyncClientConfig
 
 	ORDWebhookMappings       string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
 	TenantMappingConfigPath  string `envconfig:"APP_TENANT_MAPPING_CONFIG_PATH"`
@@ -315,6 +317,7 @@ func main() {
 		cfg.ApplicationTemplateProductLabel,
 		cfg.DestinationCreatorConfig,
 		cfg.OrdAggregatorClientConfig,
+		cfg.SystemFetcherSyncClientConfig,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 
@@ -653,7 +656,7 @@ func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Tra
 	scheduler, err := buildScheduler(ctx, cfg)
 	exitOnError(err, "Error while creating operations scheduler")
 
-	ordClient := apiclient.NewORDClient(cfg.OrdAggregatorClientConfig)
+	ordClient := ordapiclient.NewORDClient(cfg.OrdAggregatorClientConfig)
 
 	return operation.NewDirective(transact, webhookService(tenantMappingConfig, cfg.TenantMappingCallbackURL).ListAllApplicationWebhooks, resourceFetcherFunc, appUpdaterFunc(appRepo), tenant.LoadFromContext, scheduler, ordClient.Aggregate).HandleOperation
 }

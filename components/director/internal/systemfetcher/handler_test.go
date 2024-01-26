@@ -35,7 +35,7 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 		TransactionerFn            func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		OperationManagerFn         func() *automock.OperationsManager
 		BusinessTenantMappingSvcFn func() *automock.BusinessTenantMappingService
-		RequestBody                systemfetcher.AggregationResources
+		RequestBody                systemfetcher.AggregationResource
 		ExpectedErrorOutput        string
 		ExpectedStatusCode         int
 	}{
@@ -51,7 +51,7 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 			BusinessTenantMappingSvcFn: func() *automock.BusinessTenantMappingService {
 				return &automock.BusinessTenantMappingService{}
 			},
-			RequestBody: systemfetcher.AggregationResources{
+			RequestBody: systemfetcher.AggregationResource{
 				TenantID: tenantID,
 			},
 			ExpectedStatusCode: http.StatusOK,
@@ -70,7 +70,7 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 				businessTenantMappingSvc.On("Exists", txtest.CtxWithDBMatcher(), tenantID).Return(nil).Once()
 				return businessTenantMappingSvc
 			},
-			RequestBody: systemfetcher.AggregationResources{
+			RequestBody: systemfetcher.AggregationResource{
 				TenantID: tenantID,
 			},
 			ExpectedStatusCode: http.StatusOK,
@@ -96,7 +96,7 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 				businessTenantMappingSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), globalAccountID).Return(tenantID, nil).Once()
 				return businessTenantMappingSvc
 			},
-			RequestBody: systemfetcher.AggregationResources{
+			RequestBody: systemfetcher.AggregationResource{
 				TenantID: globalAccountID,
 			},
 			ExpectedStatusCode: http.StatusOK,
@@ -113,7 +113,7 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 			BusinessTenantMappingSvcFn: func() *automock.BusinessTenantMappingService {
 				return &automock.BusinessTenantMappingService{}
 			},
-			RequestBody: systemfetcher.AggregationResources{
+			RequestBody: systemfetcher.AggregationResource{
 				TenantID: tenantID,
 			},
 			ExpectedStatusCode:  http.StatusInternalServerError,
@@ -130,7 +130,7 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 			BusinessTenantMappingSvcFn: func() *automock.BusinessTenantMappingService {
 				return &automock.BusinessTenantMappingService{}
 			},
-			RequestBody: systemfetcher.AggregationResources{
+			RequestBody: systemfetcher.AggregationResource{
 				TenantID: tenantID,
 			},
 			ExpectedStatusCode:  http.StatusInternalServerError,
@@ -155,7 +155,7 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 				businessTenantMappingSvc.On("ExistsByExternalTenant", txtest.CtxWithDBMatcher(), globalAccountID).Return(apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				return businessTenantMappingSvc
 			},
-			RequestBody: systemfetcher.AggregationResources{
+			RequestBody: systemfetcher.AggregationResource{
 				TenantID: globalAccountID,
 			},
 			ExpectedStatusCode:  http.StatusNotFound,
@@ -180,7 +180,7 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 				businessTenantMappingSvc.On("ExistsByExternalTenant", txtest.CtxWithDBMatcher(), globalAccountID).Return(testErr).Once()
 				return businessTenantMappingSvc
 			},
-			RequestBody: systemfetcher.AggregationResources{
+			RequestBody: systemfetcher.AggregationResource{
 				TenantID: globalAccountID,
 			},
 			ExpectedStatusCode:  http.StatusInternalServerError,
@@ -206,7 +206,7 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 				businessTenantMappingSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), globalAccountID).Return("", testErr).Once()
 				return businessTenantMappingSvc
 			},
-			RequestBody: systemfetcher.AggregationResources{
+			RequestBody: systemfetcher.AggregationResource{
 				TenantID: globalAccountID,
 			},
 			ExpectedStatusCode:  http.StatusInternalServerError,
@@ -225,7 +225,7 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 				businessTenantMappingSvc.On("Exists", txtest.CtxWithDBMatcher(), globalAccountID).Return(testErr).Once()
 				return businessTenantMappingSvc
 			},
-			RequestBody: systemfetcher.AggregationResources{
+			RequestBody: systemfetcher.AggregationResource{
 				TenantID: globalAccountID,
 			},
 			ExpectedStatusCode:  http.StatusInternalServerError,
@@ -245,7 +245,7 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 				businessTenantMappingSvc.On("Exists", txtest.CtxWithDBMatcher(), tenantID).Return(nil).Once()
 				return businessTenantMappingSvc
 			},
-			RequestBody: systemfetcher.AggregationResources{
+			RequestBody: systemfetcher.AggregationResource{
 				TenantID: tenantID,
 			},
 			ExpectedStatusCode:  http.StatusInternalServerError,
@@ -260,7 +260,7 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 			BusinessTenantMappingSvcFn: func() *automock.BusinessTenantMappingService {
 				return &automock.BusinessTenantMappingService{}
 			},
-			RequestBody: systemfetcher.AggregationResources{
+			RequestBody: systemfetcher.AggregationResource{
 				TenantID: "",
 			},
 			ExpectedStatusCode:  http.StatusBadRequest,
