@@ -197,21 +197,21 @@ func (_m *Service) List(ctx context.Context, pageSize int, cursor string) (*mode
 	return r0, r1
 }
 
-// ListFormationsForParticipant provides a mock function with given fields: ctx, participantID
-func (_m *Service) ListFormationsForParticipant(ctx context.Context, participantID string) ([]*model.Formation, error) {
-	ret := _m.Called(ctx, participantID)
+// ListFormationsForObject provides a mock function with given fields: ctx, objectID
+func (_m *Service) ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error) {
+	ret := _m.Called(ctx, objectID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ListFormationsForParticipant")
+		panic("no return value specified for ListFormationsForObject")
 	}
 
 	var r0 []*model.Formation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Formation, error)); ok {
-		return rf(ctx, participantID)
+		return rf(ctx, objectID)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Formation); ok {
-		r0 = rf(ctx, participantID)
+		r0 = rf(ctx, objectID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.Formation)
@@ -219,7 +219,7 @@ func (_m *Service) ListFormationsForParticipant(ctx context.Context, participant
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, participantID)
+		r1 = rf(ctx, objectID)
 	} else {
 		r1 = ret.Error(1)
 	}

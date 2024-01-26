@@ -2,6 +2,7 @@ package asserters
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"testing"
 
 	gql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -45,9 +46,10 @@ func (a *FormationVisibilityAsserter) WithParticipantID(participantID string) *F
 func (a *FormationVisibilityAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
 	// Get the formations for participant globally
 	var gotFormations []*gql.FormationExt
-	getFormationReq := fixtures.FixGetFormationsForParticipantRequest(a.participantID)
-	err := testctx.Tc.RunOperationWithoutTenant(ctx, a.certSecuredGraphQLClient, getFormationReq, &gotFormations)
+	getFormationsForObjectGlobalReq := fixtures.FixGetFormationsForObjectRequest(a.participantID)
+	err := testctx.Tc.RunOperationWithoutTenant(ctx, a.certSecuredGraphQLClient, getFormationsForObjectGlobalReq, &gotFormations)
 	require.NoError(t, err)
+	example.SaveExample(t, getFormationsForObjectGlobalReq.Query(), "list formations for object global")
 
 	require.Len(t, gotFormations, len(a.formationExpectations))
 

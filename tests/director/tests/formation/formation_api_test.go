@@ -127,12 +127,12 @@ func TestListFormations(t *testing.T) {
 	})
 }
 
-func TestListFormationsForParticipantGlobal(t *testing.T) {
+func TestListFormationsForObjectGlobal(t *testing.T) {
 	ctx := context.Background()
 	tnt := tenant.TestTenants.GetDefaultTenantID()
 	otherTnt := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
 
-	formationTemplateName := "list-formations-for-participant-global"
+	formationTemplateName := "e2e-test-list-formations-for-object-global"
 
 	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, "landscape_resource_operator", -1)
 

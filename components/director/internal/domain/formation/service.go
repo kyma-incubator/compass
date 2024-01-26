@@ -260,11 +260,11 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 	return s.formationRepository.List(ctx, formationTenant, pageSize, cursor)
 }
 
-// ListFormationsForParticipant returns all Formations that `participantID` is part of
-func (s *service) ListFormationsForParticipant(ctx context.Context, participantID string) ([]*model.Formation, error) {
-	assignments, err := s.formationAssignmentService.ListAllForObjectGlobal(ctx, participantID)
+// ListFormationsForObject returns all Formations that `objectID` is part of
+func (s *service) ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error) {
+	assignments, err := s.formationAssignmentService.ListAllForObjectGlobal(ctx, objectID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while listing formations assignments for participant with ID %s", participantID)
+		return nil, errors.Wrapf(err, "while listing formations assignments for participant with ID %s", objectID)
 	}
 
 	if len(assignments) == 0 {

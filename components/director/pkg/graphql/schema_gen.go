@@ -690,7 +690,7 @@ type ComplexityRoot struct {
 		FormationTemplates                         func(childComplexity int, first *int, after *PageCursor) int
 		FormationTemplatesByName                   func(childComplexity int, name string, first *int, after *PageCursor) int
 		Formations                                 func(childComplexity int, first *int, after *PageCursor) int
-		FormationsForParticipant                   func(childComplexity int, participantID string) int
+		FormationsForObject                        func(childComplexity int, objectID string) int
 		HealthChecks                               func(childComplexity int, types []HealthCheckType, origin *string, first *int, after *PageCursor) int
 		IntegrationSystem                          func(childComplexity int, id string) int
 		IntegrationSystems                         func(childComplexity int, first *int, after *PageCursor) int
@@ -1027,7 +1027,7 @@ type QueryResolver interface {
 	Formation(ctx context.Context, id string) (*Formation, error)
 	FormationByName(ctx context.Context, name string) (*Formation, error)
 	Formations(ctx context.Context, first *int, after *PageCursor) (*FormationPage, error)
-	FormationsForParticipant(ctx context.Context, participantID string) ([]*Formation, error)
+	FormationsForObject(ctx context.Context, objectID string) ([]*Formation, error)
 	FormationConstraints(ctx context.Context) ([]*FormationConstraint, error)
 	FormationConstraint(ctx context.Context, id string) (*FormationConstraint, error)
 	FormationConstraintsByFormationType(ctx context.Context, formationTemplateID string) ([]*FormationConstraint, error)
@@ -4814,17 +4814,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Formations(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
 
-	case "Query.formationsForParticipant":
-		if e.complexity.Query.FormationsForParticipant == nil {
+	case "Query.formationsForObject":
+		if e.complexity.Query.FormationsForObject == nil {
 			break
 		}
 
-		args, err := ec.field_Query_formationsForParticipant_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_formationsForObject_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.FormationsForParticipant(childComplexity, args["participantId"].(string)), true
+		return e.complexity.Query.FormationsForObject(childComplexity, args["objectID"].(string)), true
 
 	case "Query.healthChecks":
 		if e.complexity.Query.HealthChecks == nil {
@@ -7377,7 +7377,7 @@ type Query {
 	- [query formations](examples/query-formations/query-formations.graphql)
 	"""
 	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
-	formationsForParticipant(participantId: String!): [Formation!]! @hasScopes(path: "graphql.query.formationsForParticipant")
+	formationsForObject(objectID: String!): [Formation!]! @hasScopes(path: "graphql.query.formationsForObject")
 	formationConstraints: [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
 	"""
 	**Examples**
@@ -10988,17 +10988,17 @@ func (ec *executionContext) field_Query_formation_args(ctx context.Context, rawA
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_formationsForParticipant_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_formationsForObject_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["participantId"]; ok {
+	if tmp, ok := rawArgs["objectID"]; ok {
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["participantId"] = arg0
+	args["objectID"] = arg0
 	return args, nil
 }
 
@@ -30490,7 +30490,7 @@ func (ec *executionContext) _Query_formations(ctx context.Context, field graphql
 	return ec.marshalNFormationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationPage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_formationsForParticipant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_formationsForObject(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -30506,7 +30506,7 @@ func (ec *executionContext) _Query_formationsForParticipant(ctx context.Context,
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_formationsForParticipant_args(ctx, rawArgs)
+	args, err := ec.field_Query_formationsForObject_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -30515,10 +30515,10 @@ func (ec *executionContext) _Query_formationsForParticipant(ctx context.Context,
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().FormationsForParticipant(rctx, args["participantId"].(string))
+			return ec.resolvers.Query().FormationsForObject(rctx, args["objectID"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.query.formationsForParticipant")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.formationsForObject")
 			if err != nil {
 				return nil, err
 			}
@@ -40816,7 +40816,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "formationsForParticipant":
+		case "formationsForObject":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -40824,7 +40824,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_formationsForParticipant(ctx, field)
+				res = ec._Query_formationsForObject(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

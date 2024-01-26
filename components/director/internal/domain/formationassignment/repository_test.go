@@ -426,7 +426,7 @@ func TestRepository_ListAllForObjectGlobal(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error FROM public.formation_assignments WHERE (source = $1 OR target = $2)`),
-				Args:     []driver.Value{TestSource, TestSource},
+				Args:     []driver.Value{TestSource, TestTarget},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr)}

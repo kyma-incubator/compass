@@ -896,7 +896,7 @@ func TestFormations(t *testing.T) {
 	})
 }
 
-func TestFormationsForParticipant(t *testing.T) {
+func TestFormationsForObject(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	ctx := context.TODO()
@@ -919,7 +919,7 @@ func TestFormationsForParticipant(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.Service {
 				service := &automock.Service{}
-				service.On("ListFormationsForParticipant", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
+				service.On("ListFormationsForObject", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
 				return service
 			},
 			ConverterFn: func() *automock.Converter {
@@ -936,7 +936,7 @@ func TestFormationsForParticipant(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.Service {
 				service := &automock.Service{}
-				service.On("ListFormationsForParticipant", txtest.CtxWithDBMatcher(), ApplicationID).Return(nil, testErr).Once()
+				service.On("ListFormationsForObject", txtest.CtxWithDBMatcher(), ApplicationID).Return(nil, testErr).Once()
 				return service
 			},
 			ConverterFn:        unusedConverter,
@@ -949,7 +949,7 @@ func TestFormationsForParticipant(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.Service {
 				service := &automock.Service{}
-				service.On("ListFormationsForParticipant", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
+				service.On("ListFormationsForObject", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
 				return service
 			},
 			ConverterFn: func() *automock.Converter {
@@ -975,7 +975,7 @@ func TestFormationsForParticipant(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.Service {
 				service := &automock.Service{}
-				service.On("ListFormationsForParticipant", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
+				service.On("ListFormationsForObject", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
 				return service
 			},
 			ConverterFn:        unusedConverter,
@@ -994,7 +994,7 @@ func TestFormationsForParticipant(t *testing.T) {
 			resolver := formation.NewResolver(transact, service, converter, nil, nil, nil)
 
 			// WHEN
-			f, err := resolver.FormationsForParticipant(ctx, testCase.InputID)
+			f, err := resolver.FormationsForObject(ctx, testCase.InputID)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -1350,7 +1350,7 @@ func TestResolver_Status(t *testing.T) {
 
 	fasUnmarshallable := []*model.FormationAssignment{fixFormationAssignmentModelWithSuffix(string(model.DeleteErrorAssignmentState), nil, json.RawMessage(`unmarshallable structure`), "-4")}
 
-	faPagesWithUnmarshallableError := [][]*model.FormationAssignment{fasUnmarshallable}
+	faPagesWithUnmarshallableError := [][]*model.FormationAssignment{fasUnmarshallable, fasReady, fasInProgress, fasError}
 
 	// Formation Assignments GraphQL fixtures
 

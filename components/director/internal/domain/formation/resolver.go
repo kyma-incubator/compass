@@ -25,7 +25,7 @@ type Service interface {
 	Get(ctx context.Context, id string) (*model.Formation, error)
 	GetFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error)
-	ListFormationsForParticipant(ctx context.Context, participantID string) ([]*model.Formation, error)
+	ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error)
 	CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error)
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
@@ -181,8 +181,8 @@ func (r *Resolver) Formations(ctx context.Context, first *int, after *graphql.Pa
 	}, nil
 }
 
-// FormationsForParticipant returns all Formations `participantID` is part of
-func (r *Resolver) FormationsForParticipant(ctx context.Context, participantID string) ([]*graphql.Formation, error) {
+// FormationsForObject returns all Formations `objectID` is part of
+func (r *Resolver) FormationsForObject(ctx context.Context, objectID string) ([]*graphql.Formation, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -191,7 +191,7 @@ func (r *Resolver) FormationsForParticipant(ctx context.Context, participantID s
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	formations, err := r.service.ListFormationsForParticipant(ctx, participantID)
+	formations, err := r.service.ListFormationsForObject(ctx, objectID)
 	if err != nil {
 		return nil, err
 	}
@@ -333,14 +333,19 @@ func (r *Resolver) FormationAssignments(ctx context.Context, obj *graphql.Format
 }
 
 // FormationAssignmentsDataLoader retrieves a page of FormationAssignments for each Formation ID in the keys argument
+// The sub-resolver is referred from tenant scoped resolvers but in some cases it can be referred in non tenant scoped resolver(e.g. formationsForObject)
+// In order to work correctly in both cases the formations from the keys are processed grouped by tenant. After the processing the correct order of the
+// assignment pages(same as the order of the formations from the keys) must be ensured as the dataloaders depend on the order of the results when resolving the sub-resolvers
 func (r *Resolver) FormationAssignmentsDataLoader(keys []dataloader.ParamFormationAssignment) ([]*graphql.FormationAssignmentPage, []error) {
 	if len(keys) == 0 {
 		return nil, []error{apperrors.NewInternalError("No Formations found")}
 	}
 
 	ctx := keys[0].Ctx
+	formationIDs := make([]string, 0, len(keys)) // save the order of the formations
 	formationIDsByTenant := make(map[string][]string, len(keys))
 	for _, key := range keys {
+		formationIDs = append(formationIDs, key.ID)
 		tnt := key.Tenant
 		_, ok := formationIDsByTenant[tnt]
 		if !ok {
@@ -368,25 +373,32 @@ func (r *Resolver) FormationAssignmentsDataLoader(keys []dataloader.ParamFormati
 
 	gqlFormationAssignmentPages := make([]*graphql.FormationAssignmentPage, 0, len(keys))
 
-	for formationTenant, formationIDs := range formationIDsByTenant {
+	formationIdToFormationAssignments := make(map[string]*model.FormationAssignmentPage, len(keys))
+	for formationTenant, tenantFormationIDs := range formationIDsByTenant {
 		ctxWithTenant := tenant.SaveToContext(ctx, formationTenant, "")
-		formationAssignmentPages, err := r.formationAssignmentSvc.ListByFormationIDs(ctxWithTenant, formationIDs, *keys[0].First, cursor)
+		formationAssignmentPages, err := r.formationAssignmentSvc.ListByFormationIDs(ctxWithTenant, tenantFormationIDs, *keys[0].First, cursor) // ListByFormationIDs underneath will map the FAs to the input tenantFormationIDs
 		if err != nil {
 			return nil, []error{err}
 		}
 
-		for _, page := range formationAssignmentPages {
-			fas, err := r.formationAssignmentConv.MultipleToGraphQL(page.Data)
-			if err != nil {
-				return nil, []error{err}
-			}
-
-			gqlFormationAssignmentPages = append(gqlFormationAssignmentPages, &graphql.FormationAssignmentPage{Data: fas, TotalCount: page.TotalCount, PageInfo: &graphql.PageInfo{
-				StartCursor: graphql.PageCursor(page.PageInfo.StartCursor),
-				EndCursor:   graphql.PageCursor(page.PageInfo.EndCursor),
-				HasNextPage: page.PageInfo.HasNextPage,
-			}})
+		for i, formationID := range tenantFormationIDs {
+			formationIdToFormationAssignments[formationID] = formationAssignmentPages[i] // map the FAs to the formationID of the given tenant; we rely on the index because of the ListByFormationIDs ordering
 		}
+	}
+
+	for _, formationID := range formationIDs { // loop the initial order of the formations
+		page := formationIdToFormationAssignments[formationID] // get the FAs for the given formation regardless of the tenant
+		fas, err := r.formationAssignmentConv.MultipleToGraphQL(page.Data)
+		if err != nil {
+			return nil, []error{err}
+		}
+
+		gqlFormationAssignmentPages = append(gqlFormationAssignmentPages, &graphql.FormationAssignmentPage{Data: fas, TotalCount: page.TotalCount, PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(page.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(page.PageInfo.EndCursor),
+			HasNextPage: page.PageInfo.HasNextPage,
+		}})
+
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -433,15 +445,19 @@ func (r *Resolver) Status(ctx context.Context, obj *graphql.Formation) (*graphql
 }
 
 // StatusDataLoader retrieves a Status for each Formation ID in the keys argument
+// The sub-resolver is referred from tenant scoped resolvers but in some cases it can be referred in non tenant scoped resolver(e.g. formationsForObject)
+// In order to work correctly in both cases the formations from the keys are processed grouped by tenant. After the processing the correct order of the
+// statuses(same as the order of the formations from the keys) must be ensured as the dataloaders depend on the order of the results when resolving the sub-resolvers
 func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*graphql.FormationStatus, []error) {
 	if len(keys) == 0 {
 		return nil, []error{apperrors.NewInternalError("No Formations found")}
 	}
 
 	ctx := keys[0].Ctx
-
+	formationIDs := make([]string, 0, len(keys)) // save the order of the formations
 	formationIDsByTenant := make(map[string][]string, len(keys))
 	for _, key := range keys {
+		formationIDs = append(formationIDs, key.ID)
 		tnt := key.Tenant
 		_, ok := formationIDsByTenant[tnt]
 		if !ok {
@@ -458,23 +474,26 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	formationAssignmentsPerFormation := make([][]*model.FormationAssignment, 0, len(keys))
-	for tnt, formationIDs := range formationIDsByTenant {
-		ctx = tenant.SaveToContext(ctx, tnt, "")
-		formationAssignmentsPerFormationForTenant, err := r.formationAssignmentSvc.ListByFormationIDsNoPaging(ctx, formationIDs)
+	formationIdToFormationAssignments := make(map[string][]*model.FormationAssignment, len(formationIDs))
+	for formationTenant, tenantFormationIDs := range formationIDsByTenant {
+		ctxWithTenant := tenant.SaveToContext(ctx, formationTenant, "")
+		formationAssignmentsPerFormationForTenant, err := r.formationAssignmentSvc.ListByFormationIDsNoPaging(ctxWithTenant, tenantFormationIDs)
 		if err != nil {
 			return nil, []error{err}
 		}
-		formationAssignmentsPerFormation = append(formationAssignmentsPerFormation, formationAssignmentsPerFormationForTenant...)
+
+		for i, formationID := range tenantFormationIDs {
+			formationIdToFormationAssignments[formationID] = formationAssignmentsPerFormationForTenant[i] // map the FAs to the formationID of the given tenant; we rely on the index because of the ListByFormationIDs ordering
+		}
 	}
 
 	if err = tx.Commit(); err != nil {
 		return nil, []error{err}
 	}
 
-	gqlFormationStatuses := make([]*graphql.FormationStatus, 0, len(formationAssignmentsPerFormation))
-	for i := 0; i < len(keys); i++ {
-		formationAssignments := formationAssignmentsPerFormation[i]
+	gqlFormationStatuses := make([]*graphql.FormationStatus, 0, len(formationIDs))
+	for i, formationID := range formationIDs {
+		formationAssignments := formationIdToFormationAssignments[formationID]
 
 		var condition graphql.FormationStatusCondition
 		var formationStatusErrors []*graphql.FormationStatusError

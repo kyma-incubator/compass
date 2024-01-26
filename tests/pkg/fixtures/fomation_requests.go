@@ -8,17 +8,17 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
-func FixGetFormationsForParticipantRequest(participantID string) *gcli.Request {
+func FixGetFormationsForObjectRequest(objectID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query{
-				  result: formationsForParticipant(participantId: "%s"){
+				  result: formationsForObject(objectID: "%s"){
 					%s
 					formationAssignments(first:%d, after:"") {
 						%s
 					}
 					status {%s}
 				  }
-				}`, participantID, testctx.Tc.GQLFieldsProvider.ForFormation(), 200, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForFormationAssignment()), testctx.Tc.GQLFieldsProvider.ForFormationStatus()))
+				}`, objectID, testctx.Tc.GQLFieldsProvider.ForFormation(), 200, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForFormationAssignment()), testctx.Tc.GQLFieldsProvider.ForFormationStatus()))
 }
 
 func FixGetFormationRequest(formationID string) *gcli.Request {

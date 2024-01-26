@@ -174,7 +174,7 @@ func TestServiceGet(t *testing.T) {
 	}
 }
 
-func TestService_ListFormationsForParticipant(t *testing.T) {
+func TestService_ListFormationsForObject(t *testing.T) {
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -194,7 +194,9 @@ func TestService_ListFormationsForParticipant(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("ListByIDsGlobal", ctx, []string{FormationID, FormationID2}).Return(modelFormations, nil).Once()
+				repo.On("ListByIDsGlobal", ctx, mock.MatchedBy(func(formationIDs []string) bool {
+					return assert.ElementsMatch(t, formationIDs, []string{FormationID, FormationID2})
+				})).Return(modelFormations, nil).Once()
 				return repo
 			},
 			Input:              ApplicationID,
@@ -219,7 +221,9 @@ func TestService_ListFormationsForParticipant(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("ListByIDsGlobal", ctx, []string{FormationID, FormationID2}).Return(nil, testErr).Once()
+				repo.On("ListByIDsGlobal", ctx, mock.MatchedBy(func(formationIDs []string) bool {
+					return assert.ElementsMatch(t, formationIDs, []string{FormationID, FormationID2})
+				})).Return(nil, testErr).Once()
 				return repo
 			},
 			Input:              ApplicationID,
@@ -252,7 +256,7 @@ func TestService_ListFormationsForParticipant(t *testing.T) {
 			svc := formation.NewService(nil, nil, nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, formationAssignmentService, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 			// WHEN
-			actual, err := svc.ListFormationsForParticipant(ctx, testCase.Input)
+			actual, err := svc.ListFormationsForObject(ctx, testCase.Input)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {

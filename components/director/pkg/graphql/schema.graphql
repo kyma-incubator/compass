@@ -1760,7 +1760,7 @@ type Query {
 	- [query formations](examples/query-formations/query-formations.graphql)
 	"""
 	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
-	formationsForParticipant(participantId: String!): [Formation!]! @hasScopes(path: "graphql.query.formationsForParticipant")
+	formationsForObject(objectID: String!): [Formation!]! @hasScopes(path: "graphql.query.formationsForObject")
 	formationConstraints: [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
 	"""
 	**Examples**

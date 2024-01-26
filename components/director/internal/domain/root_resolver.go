@@ -510,8 +510,8 @@ func (r *queryResolver) Formations(ctx context.Context, first *int, after *graph
 	return r.formation.Formations(ctx, first, after)
 }
 
-func (r *queryResolver) FormationsForParticipant(ctx context.Context, participantID string) ([]*graphql.Formation, error) {
-	return r.formation.FormationsForParticipant(ctx, participantID)
+func (r *queryResolver) FormationsForObject(ctx context.Context, objectID string) ([]*graphql.Formation, error) {
+	return r.formation.FormationsForObject(ctx, objectID)
 }
 
 func (r *queryResolver) FormationTemplate(ctx context.Context, id string) (*graphql.FormationTemplate, error) {

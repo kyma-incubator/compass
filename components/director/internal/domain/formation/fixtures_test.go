@@ -861,12 +861,12 @@ var (
 	}
 
 	modelFormations = []*model.Formation{
-		&model.Formation{
+		{
 			ID:                  FormationID,
 			FormationTemplateID: FormationTemplateID,
 			Name:                testFormationName,
 		},
-		&model.Formation{
+		{
 			ID:                  FormationID2,
 			FormationTemplateID: FormationTemplateID,
 			Name:                testFormationName2,
