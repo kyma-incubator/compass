@@ -8,6 +8,11 @@ gateway:
       authMode: "oauth-mtls"
       enabled: true
 global:
+  kubernetes:
+    # Enable ClusterRoleBinding needed for local installation but unsafe on GKE
+    # It allows anonymous users to retrieve the JWKS of the K8S server used to create SA tokens
+    # Whenever this is running on GKE, there is a JWKS URL given by Google and is unneeded and unsafe
+    local: true
   isForTesting: true
   auditlog:
     skipSSLValidation: true
@@ -35,6 +40,10 @@ global:
   extSvcCertConfiguration:
     secrets:
       extSvcCertSvcSecret:
+        manage: true
+  instanceCreatorCertConfiguration:
+    secrets:
+      instanceCreatorSvcSecret:
         manage: true
   externalServicesMock:
     auditlog:

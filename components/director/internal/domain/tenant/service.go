@@ -540,7 +540,7 @@ func (s *service) DeleteMany(ctx context.Context, externalTenantIDs []string) er
 // That excludes labels of other resource types in the context of the given tenant, for example labels of an application in the given tenant - those labels are not returned.
 func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error) {
 	log.C(ctx).Infof("getting labels for tenant with ID %s", tenantID)
-	if err := s.ensureTenantExists(ctx, tenantID); err != nil {
+	if err := s.Exists(ctx, tenantID); err != nil {
 		return nil, err
 	}
 
@@ -563,7 +563,8 @@ func (s *labeledService) UpsertLabel(ctx context.Context, tenantID, key string, 
 	return s.labelUpsertSvc.UpsertLabel(ctx, tenantID, label)
 }
 
-func (s *service) ensureTenantExists(ctx context.Context, id string) error {
+// Exists checks if tenant with the provided internal ID exists in the Compass storage.
+func (s *service) Exists(ctx context.Context, id string) error {
 	exists, err := s.tenantMappingRepo.Exists(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "while checking if tenant with ID %s exists", id)
@@ -571,6 +572,20 @@ func (s *service) ensureTenantExists(ctx context.Context, id string) error {
 
 	if !exists {
 		return apperrors.NewNotFoundError(resource.Tenant, id)
+	}
+
+	return nil
+}
+
+// ExistsByExternalTenant checks if tenant with the provided external ID exists in the Compass storage.
+func (s *service) ExistsByExternalTenant(ctx context.Context, externalTenant string) error {
+	exists, err := s.tenantMappingRepo.ExistsByExternalTenant(ctx, externalTenant)
+	if err != nil {
+		return errors.Wrapf(err, "while checking if tenant with External Tenant %s exists", externalTenant)
+	}
+
+	if !exists {
+		return apperrors.NewNotFoundError(resource.Tenant, externalTenant)
 	}
 
 	return nil

@@ -8,8 +8,6 @@ import (
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 
-	sync "sync"
-
 	systemfetcher "github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 )
 
@@ -18,25 +16,25 @@ type SystemsAPIClient struct {
 	mock.Mock
 }
 
-// FetchSystemsForTenant provides a mock function with given fields: ctx, tenant, mutex
-func (_m *SystemsAPIClient) FetchSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, mutex *sync.Mutex) ([]systemfetcher.System, error) {
-	ret := _m.Called(ctx, tenant, mutex)
+// FetchSystemsForTenant provides a mock function with given fields: ctx, tenant, systemSynchronizationTimestamps
+func (_m *SystemsAPIClient) FetchSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, systemSynchronizationTimestamps map[string]systemfetcher.SystemSynchronizationTimestamp) ([]systemfetcher.System, error) {
+	ret := _m.Called(ctx, tenant, systemSynchronizationTimestamps)
 
 	var r0 []systemfetcher.System
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.BusinessTenantMapping, *sync.Mutex) ([]systemfetcher.System, error)); ok {
-		return rf(ctx, tenant, mutex)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.BusinessTenantMapping, map[string]systemfetcher.SystemSynchronizationTimestamp) ([]systemfetcher.System, error)); ok {
+		return rf(ctx, tenant, systemSynchronizationTimestamps)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *model.BusinessTenantMapping, *sync.Mutex) []systemfetcher.System); ok {
-		r0 = rf(ctx, tenant, mutex)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.BusinessTenantMapping, map[string]systemfetcher.SystemSynchronizationTimestamp) []systemfetcher.System); ok {
+		r0 = rf(ctx, tenant, systemSynchronizationTimestamps)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]systemfetcher.System)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *model.BusinessTenantMapping, *sync.Mutex) error); ok {
-		r1 = rf(ctx, tenant, mutex)
+	if rf, ok := ret.Get(1).(func(context.Context, *model.BusinessTenantMapping, map[string]systemfetcher.SystemSynchronizationTimestamp) error); ok {
+		r1 = rf(ctx, tenant, systemSynchronizationTimestamps)
 	} else {
 		r1 = ret.Error(1)
 	}

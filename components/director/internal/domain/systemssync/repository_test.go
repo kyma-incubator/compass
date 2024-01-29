@@ -14,12 +14,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRepository_List(t *testing.T) {
+func TestRepository_ListByTenant(t *testing.T) {
 	systemsSyncEntity := fixSystemsSyncEntity(syncID, syncTenantID, syncProductID, lastSyncTime)
 	systemsSyncModel := fixSystemsSyncModel(syncID, syncTenantID, syncProductID, lastSyncTime)
 
 	suite := testdb.RepoListTestSuite{
-		Name: "List all systems synchronization timestamps",
+		Name: "List all systems synchronization timestamps for tenant",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, product_id, last_sync_timestamp FROM public.systems_sync_timestamps`),
@@ -40,7 +40,8 @@ func TestRepository_List(t *testing.T) {
 		RepoConstructorFunc:       systemssync.NewRepository,
 		ExpectedDBEntities:        []interface{}{systemsSyncEntity},
 		ExpectedModelEntities:     []interface{}{systemsSyncModel},
-		MethodName:                "List",
+		MethodArgs:                []interface{}{syncTenantID},
+		MethodName:                "ListByTenant",
 		DisableConverterErrorTest: true,
 	}
 

@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestService_List(t *testing.T) {
+func TestService_ListByTenant(t *testing.T) {
 	ctx := context.TODO()
 
 	syncTimestamps := []*model.SystemSynchronizationTimestamp{
@@ -32,7 +32,7 @@ func TestService_List(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.SystemsSyncRepository {
 				repo := &automock.SystemsSyncRepository{}
-				repo.On("List", ctx).Return(syncTimestamps, nil).Once()
+				repo.On("ListByTenant", ctx, "tenant1").Return(syncTimestamps, nil).Once()
 				return repo
 			},
 			ExpectedResult: syncTimestamps,
@@ -42,7 +42,7 @@ func TestService_List(t *testing.T) {
 			Name: "Error when listing systems sync timestamps",
 			RepositoryFn: func() *automock.SystemsSyncRepository {
 				repo := &automock.SystemsSyncRepository{}
-				repo.On("List", ctx).Return(nil, testError).Once()
+				repo.On("ListByTenant", ctx, "tenant1").Return(nil, testError).Once()
 				return repo
 			},
 			ExpectedResult: nil,
@@ -57,7 +57,7 @@ func TestService_List(t *testing.T) {
 			svc := systemssync.NewService(repo)
 
 			// WHEN
-			result, err := svc.List(ctx)
+			result, err := svc.ListByTenant(ctx, "tenant1")
 
 			// THEN
 			if testCase.ExpectedErr != nil {
