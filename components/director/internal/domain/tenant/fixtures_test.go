@@ -374,7 +374,7 @@ func fixDeleteTenantAccessesQuery() string {
                                            act.id   AS obj_id,
                                            pp.depth,
                                            COUNT(1) AS access_records_count
-                                    FROM `) + `(.+)` + regexp.QuoteMeta( `act
+                                    FROM `) + `(.+)` + regexp.QuoteMeta(`act
                                              JOIN parents pp ON act.tenant_id = pp.id
                                     WHERE act.id IN ($3)
                                     GROUP BY pp.id, pp.depth, act.id),
@@ -400,7 +400,7 @@ func fixDeleteTenantAccessesQuery() string {
                  AND par2.tenant_id IS NULL
                  AND par3.tenant_id IS NULL)
 DELETE
-FROM `) + `(.+)` + regexp.QuoteMeta( `act
+FROM `) + `(.+)` + regexp.QuoteMeta(`act
 WHERE act.id IN ($4)
   AND EXISTS (SELECT id
               FROM parents
