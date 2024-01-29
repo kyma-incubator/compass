@@ -40,6 +40,7 @@ type repository struct {
 	unionLister           repo.UnionLister
 	lister                repo.Lister
 	conditionLister       repo.ConditionTreeLister
+	conditionListerGlobal repo.ConditionTreeListerGlobal
 	updaterGlobal         repo.UpdaterGlobal
 	deleter               repo.Deleter
 	deleteConditionTree   repo.DeleterConditionTree
@@ -58,6 +59,7 @@ func NewRepository(conv EntityConverter) *repository {
 		lister:                repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		conditionLister:       repo.NewConditionTreeListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		updaterGlobal:         repo.NewUpdaterWithEmbeddedTenant(resource.FormationAssignment, tableName, updatableTableColumns, tenantColumn, idTableColumns),
+		conditionListerGlobal: repo.NewConditionTreeListerGlobal(tableName, tableColumns),
 		deleter:               repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		deleteConditionTree:   repo.NewDeleterConditionTreeWithEmbeddedTenant(tableName, tenantColumn),
 		existQuerier:          repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
@@ -283,6 +285,21 @@ func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, 
 		})...))
 
 	if err := r.conditionLister.ListConditionTree(ctx, resource.FormationAssignment, tenant, &entities, conditions); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
+}
+
+// ListAllForObjectGlobal retrieves all FormationAssignment objects that have objectID as `target` or `source` from the database across all tenants
+func (r *repository) ListAllForObjectGlobal(ctx context.Context, objectID string) ([]*model.FormationAssignment, error) {
+	var entities EntityCollection
+	conditions := repo.Or(repo.ConditionTreesFromConditions([]repo.Condition{
+		repo.NewEqualCondition("source", objectID),
+		repo.NewEqualCondition("target", objectID),
+	})...)
+
+	if err := r.conditionListerGlobal.ListConditionTreeGlobal(ctx, resource.FormationAssignment, &entities, conditions); err != nil {
 		return nil, err
 	}
 
