@@ -33,6 +33,7 @@ graphql:
     formation: ["formation:read"]
     formationByName: ["formation:read"]
     formations: ["formation:read"]
+    formationsForObject: ["formation:global_read"]
     formationConstraint: ["formation_constraint:read"]
     formationConstraints: ["formation_constraint:read"]
     formationConstraintsByFormationType: ["formation_constraint:read"]
@@ -154,6 +155,8 @@ graphql:
       webhooks: ["formation_template.webhooks:read"]
     integration_system:
       auths: ["integration_system.auths:read"]
+    formation:
+      tenant_id: ["formation:global_read"]
 
   input:
     application:
@@ -243,6 +246,7 @@ clientCredentialsRegistrationScopes:
     - "certificate_subject_mapping:read"
     - "certificate_subject_mapping:write"
     - "formation.state:write"
+    - "formation:global_read"
 applicationHideSelectors:
   applicationHideSelectorKey:
     - "applicationHideSelectorValue"

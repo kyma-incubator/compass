@@ -19,6 +19,10 @@ type LabelDefRepository struct {
 func (_m *LabelDefRepository) GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
 	ret := _m.Called(ctx, tenant, key)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByKey")
+	}
+
 	var r0 *model.LabelDefinition
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.LabelDefinition, error)); ok {
@@ -44,6 +48,10 @@ func (_m *LabelDefRepository) GetByKey(ctx context.Context, tenant string, key s
 // UpdateWithVersion provides a mock function with given fields: ctx, def
 func (_m *LabelDefRepository) UpdateWithVersion(ctx context.Context, def model.LabelDefinition) error {
 	ret := _m.Called(ctx, def)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateWithVersion")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, model.LabelDefinition) error); ok {

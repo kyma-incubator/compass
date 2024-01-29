@@ -5,6 +5,7 @@ mutation {
   ) {
     id
     name
+    description
     constraintType
     targetOperation
     operator
@@ -12,5 +13,7 @@ mutation {
     resourceSubtype
     inputTemplate
     constraintScope
+    priority
+    createdAt
   }
 }
