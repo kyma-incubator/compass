@@ -108,7 +108,7 @@ func FixUnassignFormationGlobalRequest(objID, objType, formationID string) *gcli
 			  result: unassignFormationGlobal(objectID:"%s", objectType: %s, formation: "%s"){
 				%s
 			  }
-			}`, objID, objType, formationID, testctx.Tc.GQLFieldsProvider.ForFormation())) // TODO: Change with ForFormationWithStatus()
+			}`, objID, objType, formationID, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
 }
 
 func FixResynchronizeFormationNotificationsRequest(formationID string) *gcli.Request {
