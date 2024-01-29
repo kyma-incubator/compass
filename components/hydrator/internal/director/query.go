@@ -132,7 +132,7 @@ func TenantByExternalIDQuery(tenantID string) string {
 			internalID
 			name
 			type
-			parentID
+			parents
 			labels
 		}
 	}`, tenantID)
@@ -145,7 +145,7 @@ func TenantByInternalIDQuery(tenantID string) string {
 			internalID
 			name
 			type
-			parentID
+			parents
 			labels
 		}
 	}`, tenantID)
@@ -153,12 +153,12 @@ func TenantByInternalIDQuery(tenantID string) string {
 
 func GetRootTenantByExternalIDQuery(tenantID string) string {
 	return fmt.Sprintf(`query {
-		result: rootTenant(externalTenant: "%s") {
+		result: rootTenants(externalTenant: "%s") {
 			id
 			internalID
 			name
 			type
-			parentID
+			parents
 			labels
 		}
 	}`, tenantID)

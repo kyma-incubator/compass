@@ -225,6 +225,7 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 		TenantID:   consumerInternalTenant,
 		ResourceID: runtime.ID,
 		Owner:      false,
+		Source:     consumerInternalTenant,
 	}); err != nil {
 		return false, err
 	}

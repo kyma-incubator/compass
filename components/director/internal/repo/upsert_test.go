@@ -137,7 +137,7 @@ func TestUpsertGlobal(t *testing.T) {
 func TestUpsert(t *testing.T) {
 	expectedQuery := regexp.QuoteMeta(`INSERT INTO apps ( id, name, description ) VALUES ( $1, $2, $3 ) ON CONFLICT ( id ) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description WHERE (apps.id IN (SELECT id FROM tenant_applications WHERE tenant_id = $4 AND owner = true)) RETURNING id;`)
 
-	expectedTenantAccessQuery := regexp.QuoteMeta(fmt.Sprintf("WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO %s ( %s, %s, %s ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)", "tenant_applications", repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn))
+	expectedTenantAccessQuery := regexp.QuoteMeta(fmt.Sprintf("WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST(? AS uuid) AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id=? UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) INSERT INTO %s ( %s, %s, %s, %s ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object' OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')) ) ON CONFLICT ( tenant_id, id, source ) DO NOTHING", "tenant_applications", repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn, repo.M2MSourceColumn))
 
 	sut := repo.NewUpserter(appTableName, []string{"id", "name", "description"}, []string{"id"}, []string{"name", "description"})
 
@@ -154,7 +154,7 @@ func TestUpsert(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).
 			WithArgs(appID, appName, appDescription, tenant).WillReturnRows(rows)
 		mock.ExpectExec(expectedTenantAccessQuery).
-			WithArgs(tenant, appID, true).WillReturnResult(sqlmock.NewResult(1, 1))
+			WithArgs(tenant, tenant, appID, true).WillReturnResult(sqlmock.NewResult(1, 1))
 		// WHEN
 		_, err := sut.Upsert(ctx, resourceType, tenant, fixApp)
 		// THEN
@@ -185,7 +185,7 @@ func TestUpsert(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).
 			WithArgs(appID, appName, appDescription, tenant).WillReturnRows(rows)
 		mock.ExpectExec(expectedTenantAccessQuery).
-			WithArgs(tenant, appID, true).WillReturnError(someError())
+			WithArgs(tenant, tenant, appID, true).WillReturnError(someError())
 		// WHEN
 		_, err := sut.Upsert(ctx, resourceType, tenant, fixApp)
 		// THEN

@@ -3,6 +3,7 @@ package formation
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -18,7 +19,7 @@ import (
 //go:generate mockery --exported --name=tenantRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantRepository interface {
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-	GetCustomerIDParentRecursively(ctx context.Context, tenant string) (string, error)
+	GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error)
 }
 
 //go:generate mockery --exported --name=webhookClient --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -38,6 +39,13 @@ type notificationsGenerator interface {
 	GenerateFormationLifecycleNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateName, formationTemplateID string, formationOperation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationNotificationRequest, error)
 }
 
+// FormationAssignmentRepository represents the Formation Assignment repository layer
+//
+//go:generate mockery --name=FormationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationAssignmentRepository interface {
+	Update(ctx context.Context, model *model.FormationAssignment) error
+}
+
 var emptyFormationAssignment = &webhookdir.FormationAssignment{}
 
 type notificationsService struct {
@@ -47,6 +55,8 @@ type notificationsService struct {
 	constraintEngine            constraintEngine
 	webhookConverter            webhookConverter
 	formationTemplateRepository FormationTemplateRepository
+	formationAssignmentRepo     FormationAssignmentRepository
+	formationRepo               FormationRepository
 }
 
 // NewNotificationService creates notifications service for formation assignment and unassignment
@@ -57,6 +67,9 @@ func NewNotificationService(
 	constraintEngine constraintEngine,
 	webhookConverter webhookConverter,
 	formationTemplateRepository FormationTemplateRepository,
+	formationAssignmentRepo FormationAssignmentRepository,
+	formationRepo FormationRepository,
+
 ) *notificationsService {
 	return &notificationsService{
 		tenantRepository:            tenantRepository,
@@ -65,6 +78,8 @@ func NewNotificationService(
 		constraintEngine:            constraintEngine,
 		webhookConverter:            webhookConverter,
 		formationTemplateRepository: formationTemplateRepository,
+		formationAssignmentRepo:     formationAssignmentRepo,
+		formationRepo:               formationRepo,
 	}
 }
 
@@ -144,9 +159,16 @@ func (ns *notificationsService) SendNotification(ctx context.Context, webhookNot
 
 	resp, err := ns.webhookClient.Do(ctx, webhookNotificationReq)
 	if err != nil && resp != nil && resp.Error != nil && *resp.Error != "" {
+		if err := ns.updateLastNotificationSentTimestamp(ctx, webhookNotificationReq); err != nil {
+			return nil, err
+		}
 		return resp, nil
 	} else if err != nil {
 		return resp, err
+	}
+
+	if err := ns.updateLastNotificationSentTimestamp(ctx, webhookNotificationReq); err != nil {
+		return nil, err
 	}
 
 	joinPointDetails.Location = formationconstraint.PostSendNotification
@@ -205,14 +227,47 @@ func (ns *notificationsService) extractCustomerTenantContext(ctx context.Context
 		path = &tenantObject.ExternalTenant
 	}
 
-	customerID, err := ns.tenantRepository.GetCustomerIDParentRecursively(ctx, internalTenantID)
+	tenantParents, err := ns.tenantRepository.GetParentsRecursivelyByExternalTenant(ctx, tenantObject.ExternalTenant)
 	if err != nil {
 		return nil, err
 	}
 
+	var customerID string
+	var costObjectID string
+	for _, parent := range tenantParents {
+		if parent.Type == tenant.Customer {
+			customerID = parent.ExternalTenant
+		} else if parent.Type == tenant.CostObject {
+			costObjectID = parent.ExternalTenant
+		}
+	}
+
 	return &webhookdir.CustomerTenantContext{
-		CustomerID: customerID,
-		AccountID:  accountID,
-		Path:       path,
+		CustomerID:   customerID,
+		CostObjectID: costObjectID,
+		AccountID:    accountID,
+		Path:         path,
 	}, nil
+}
+
+func (ns *notificationsService) updateLastNotificationSentTimestamp(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) error {
+	f := webhookNotificationReq.GetFormation()
+	fa := webhookNotificationReq.GetFormationAssignment()
+	if fa == nil && f != nil {
+		log.C(ctx).Infof("Updating the last notification sent timestamp for formation with ID: %s", f.ID)
+		f.SetLastNotificationSentTimestamp(time.Now())
+		if updateErr := ns.formationRepo.Update(ctx, f); updateErr != nil {
+			return errors.Wrapf(updateErr, "while updating last notification sent timestamp for formation with ID: %s", f.ID)
+		}
+	}
+
+	if fa != nil {
+		log.C(ctx).Infof("Updating the last notification sent timestamp for formation assignment with ID: %s", fa.ID)
+		fa.SetLastNotificationSentTimestamp(time.Now())
+		if updateErr := ns.formationAssignmentRepo.Update(ctx, fa); updateErr != nil {
+			return errors.Wrapf(updateErr, "while updating last notification sent timestamp for formation assignment with ID: %s", fa.ID)
+		}
+	}
+
+	return nil
 }

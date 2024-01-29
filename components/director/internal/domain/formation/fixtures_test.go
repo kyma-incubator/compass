@@ -67,6 +67,7 @@ const (
 	Webhook4ID = "43fa5d0b-b037-478d-919a-2f0431feedd4"
 
 	TntParentID                      = "ede0241d-caa1-4ee4-b8bf-f733e180fbf9"
+	TntParentIDExternal              = "934fe388-982d-11ee-b9d1-0242ac120002"
 	WebhookForRuntimeContextID       = "5202f196-46d7-4d1e-be50-434dd9fcd157"
 	AppTenantMappingWebhookIDForApp1 = "b91e7d97-65ed-4b72-a225-4a3b484c27e1"
 	AppTenantMappingWebhookIDForApp2 = "df7e9387-7bdf-46bb-b0c2-de5ec9a40a21"
@@ -74,7 +75,8 @@ const (
 
 	// Formation constants
 	testFormationName       = "test-formation-name"
-	testFormationState      = string(model.InitialFormationState)
+	initialFormationState   = string(model.InitialFormationState)
+	readyFormationState     = string(model.ReadyFormationState)
 	testFormationEmptyError = "{}"
 	secondTestFormationName = "second-formation"
 	TargetTenant            = "targetTenant" // used as "assigning tenant" in formation scenarios/flows
@@ -106,16 +108,9 @@ var (
 	externalTenantID       = uuid.New()
 	nilFormationModel      *model.Formation
 	runtimeTypeDisplayName = str.Ptr("display name")
+	defaultTime            = time.Time{}
 
 	testErr = errors.New("Test error")
-
-	CustomerTenantContextPath = &webhook.CustomerTenantContext{
-		CustomerID: TntCustomerID,
-		AccountID:  nil,
-		Path:       str.Ptr(TntExternalID),
-	}
-
-	CustomerTenantContextAccount = fixCustomerTenantContext(TntCustomerID, TntExternalID)
 
 	formationModelWithoutError = fixFormationModelWithoutError()
 	modelFormation             = model.Formation{
@@ -583,7 +578,7 @@ var (
 	formationNotificationSyncCreateRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
-			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
+			Object:        fixFormationLifecycleInput(model.CreateFormation, TntParentIDExternal, TntExternalID),
 			CorrelationID: "",
 		},
 		Operation:     model.CreateFormation,
@@ -595,14 +590,14 @@ var (
 	formationNotificationSyncDeleteRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
-			Object:        fixFormationLifecycleInput(model.DeleteFormation, TntCustomerID, TntExternalID),
+			Object:        fixFormationLifecycleInput(model.DeleteFormation, TntParentIDExternal, TntExternalID),
 			CorrelationID: "",
 		},
 	}
 	formationNotificationAsyncCreateRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModelAsync(FormationLifecycleWebhookID, FormationTemplateID),
-			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
+			Object:        fixFormationLifecycleInput(model.CreateFormation, TntParentIDExternal, TntExternalID),
 			CorrelationID: "",
 		},
 		Operation:     model.CreateFormation,
@@ -613,7 +608,7 @@ var (
 	formationNotificationAsyncDeleteRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModelAsync(FormationLifecycleWebhookID, FormationTemplateID),
-			Object:        fixFormationLifecycleInput(model.DeleteFormation, TntCustomerID, TntExternalID),
+			Object:        fixFormationLifecycleInput(model.DeleteFormation, TntParentIDExternal, TntExternalID),
 			CorrelationID: "",
 		},
 		Operation:     model.DeleteFormation,
@@ -833,20 +828,26 @@ var (
 		FormationType:         testFormationTemplateName,
 		FormationTemplateID:   FormationTemplateID,
 		TenantID:              TntInternalID,
-		CustomerTenantContext: CustomerTenantContextAccount,
+		CustomerTenantContext: customerTenantContext,
 	}
 
 	gaTenantObject = fixModelBusinessTenantMappingWithType(tnt.Account)
 	rgTenantObject = fixModelBusinessTenantMappingWithType(tnt.ResourceGroup)
 
 	customerTenantContext = &webhook.CustomerTenantContext{
-		CustomerID: TntParentID,
+		CustomerID: TntParentIDExternal,
 		AccountID:  str.Ptr(gaTenantObject.ExternalTenant),
 		Path:       nil,
 	}
 
+	customerTenantContextWithCostObject = &webhook.CustomerTenantContext{
+		CostObjectID: TntParentIDExternal,
+		AccountID:    str.Ptr(gaTenantObject.ExternalTenant),
+		Path:         nil,
+	}
+
 	rgCustomerTenantContext = &webhook.CustomerTenantContext{
-		CustomerID: TntParentID,
+		CustomerID: TntParentIDExternal,
 		AccountID:  nil,
 		Path:       str.Ptr(gaTenantObject.ExternalTenant),
 	}
@@ -854,6 +855,9 @@ var (
 	secondFormationStatusParams = dataloader.ParamFormationStatus{ID: FormationID + "2", State: string(model.InitialFormationState)}
 	thirdFormationStatusParams  = dataloader.ParamFormationStatus{ID: FormationID + "3", State: string(model.ReadyFormationState)}
 	fourthPageFormations        = dataloader.ParamFormationStatus{ID: FormationID + "4", State: string(model.ReadyFormationState)}
+
+	customerParentTenantResponse   = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.Customer)}
+	costObjectParentTenantResponse = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.CostObject)}
 )
 
 func formationAssignmentsWithSourceAndTarget(objectID string, assignments []*model.FormationAssignment) []*model.FormationAssignment {
@@ -923,16 +927,25 @@ func expectEmptySliceApplicationRepo() *automock.ApplicationRepository {
 	return appRepo
 }
 
+func expectEmptySliceApplicationAndReadyApplicationRepo() *automock.ApplicationRepository {
+	appRepo := &automock.ApplicationRepository{}
+	app := &model.Application{
+		BaseEntity: &model.BaseEntity{
+			DeletedAt: nil,
+			Ready:     true,
+		},
+	}
+	appRepo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(app, nil).Once()
+	appRepo.On("ListAllByIDs", mock.Anything, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+	return appRepo
+}
+
 func unusedApplicationRepo() *automock.ApplicationRepository {
 	return &automock.ApplicationRepository{}
 }
 
 func unusedWebhookRepository() *automock.WebhookRepository {
 	return &automock.WebhookRepository{}
-}
-
-func unusedAppTemplateRepository() *automock.ApplicationTemplateRepository {
-	return &automock.ApplicationTemplateRepository{}
 }
 
 func unusedWebhookConverter() *automock.WebhookConverter {
@@ -963,6 +976,10 @@ func unusedService() *automock.Service {
 	return &automock.Service{}
 }
 
+func unusedFormationAssignmentRepo() *automock.FormationAssignmentRepository {
+	return &automock.FormationAssignmentRepository{}
+}
+
 func unusedFormationRepo() *automock.FormationRepository {
 	return &automock.FormationRepository{}
 }
@@ -977,12 +994,6 @@ func unusedFormationAssignmentService() *automock.FormationAssignmentService {
 
 func unusedFormationAssignmentNotificationService() *automock.FormationAssignmentNotificationsService {
 	return &automock.FormationAssignmentNotificationsService{}
-}
-
-func noActionNotificationsService() *automock.NotificationsService {
-	notificationSvc := &automock.NotificationsService{}
-	notificationSvc.On("GenerateFormationAssignmentNotifications", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
-	return notificationSvc
 }
 
 func unusedFormationTemplateRepo() *automock.FormationTemplateRepository {
@@ -1043,7 +1054,7 @@ func fixUUID() string {
 }
 
 func fixColumns() []string {
-	return []string{"id", "tenant_id", "formation_template_id", "name", "state", "error"}
+	return []string{"id", "tenant_id", "formation_template_id", "name", "state", "error", "last_state_change_timestamp", "last_notification_sent_timestamp"}
 }
 
 func fixScenariosLabelDefinition(tenantID string, schema interface{}) model.LabelDefinition {
@@ -1117,7 +1128,19 @@ func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapp
 		ID:             TntInternalID,
 		Name:           "test-name",
 		ExternalTenant: TntExternalID,
-		Parent:         TntCustomerID,
+		Parents:        []string{TntCustomerID},
+		Type:           t,
+		Provider:       testProvider,
+		Status:         tnt.Active,
+	}
+}
+
+func fixParentTenant(id, externalID string, t tnt.Type) *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             id,
+		Name:           "test-name",
+		ExternalTenant: externalID,
+		Parents:        []string{},
 		Type:           t,
 		Provider:       testProvider,
 		Status:         tnt.Active,
@@ -1189,14 +1212,6 @@ func fixRuntimeWebhookGQLModel(webhookID, runtimeID string) *graphql.Webhook {
 		ID:        webhookID,
 		RuntimeID: str.Ptr(runtimeID),
 		Type:      graphql.WebhookTypeConfigurationChanged,
-	}
-}
-
-func fixRuntimeWebhookModel(webhookID, runtimeID string) *model.Webhook {
-	return &model.Webhook{
-		ID:       webhookID,
-		ObjectID: runtimeID,
-		Type:     model.WebhookTypeConfigurationChanged,
 	}
 }
 
@@ -1303,12 +1318,14 @@ func fixRuntimeContextModelWithRuntimeID(rtID string) *model.RuntimeContext {
 
 func fixFormationModel() *model.Formation {
 	return &model.Formation{
-		ID:                  FormationID,
-		TenantID:            TntInternalID,
-		FormationTemplateID: FormationTemplateID,
-		Name:                testFormationName,
-		State:               model.InitialFormationState,
-		Error:               json.RawMessage(testFormationEmptyError),
+		ID:                            FormationID,
+		TenantID:                      TntInternalID,
+		FormationTemplateID:           FormationTemplateID,
+		Name:                          testFormationName,
+		State:                         model.InitialFormationState,
+		Error:                         json.RawMessage(testFormationEmptyError),
+		LastStateChangeTimestamp:      &defaultTime,
+		LastNotificationSentTimestamp: &defaultTime,
 	}
 }
 
@@ -1352,21 +1369,25 @@ func fixFormationModelWithStateAndAssignmentError(t *testing.T, state model.Form
 
 func fixFormationEntity() *formation.Entity {
 	return &formation.Entity{
-		ID:                  FormationID,
-		TenantID:            TntInternalID,
-		FormationTemplateID: FormationTemplateID,
-		Name:                testFormationName,
-		State:               string(model.InitialFormationState),
-		Error:               repo.NewNullableStringFromJSONRawMessage(json.RawMessage("{}")),
+		ID:                            FormationID,
+		TenantID:                      TntInternalID,
+		FormationTemplateID:           FormationTemplateID,
+		Name:                          testFormationName,
+		State:                         initialFormationState,
+		Error:                         repo.NewNullableStringFromJSONRawMessage(json.RawMessage(testFormationEmptyError)),
+		LastStateChangeTimestamp:      &defaultTime,
+		LastNotificationSentTimestamp: &defaultTime,
 	}
 }
 
 func fixGqlFormation() *graphql.Formation {
 	return &graphql.Formation{
-		ID:                  FormationID,
-		Name:                testFormationName,
-		FormationTemplateID: FormationTemplateID,
-		State:               string(model.ReadyFormationState),
+		ID:                            FormationID,
+		Name:                          testFormationName,
+		FormationTemplateID:           FormationTemplateID,
+		State:                         string(model.InitialFormationState),
+		LastStateChangeTimestamp:      graphql.TimePtrToGraphqlTimestampPtr(&defaultTime),
+		LastNotificationSentTimestamp: graphql.TimePtrToGraphqlTimestampPtr(&defaultTime),
 	}
 }
 
@@ -1410,13 +1431,15 @@ func fixFormationAssignmentModel(state string, configValue json.RawMessage) *mod
 
 func fixFormationAssignmentModelWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationState) *model.FormationAssignment {
 	return &model.FormationAssignment{
-		ID:          id,
-		FormationID: formationID,
-		Source:      source,
-		SourceType:  sourceType,
-		Target:      target,
-		TargetType:  targetType,
-		State:       string(state),
+		ID:                            id,
+		FormationID:                   formationID,
+		Source:                        source,
+		SourceType:                    sourceType,
+		Target:                        target,
+		TargetType:                    targetType,
+		State:                         string(state),
+		LastStateChangeTimestamp:      &defaultTime,
+		LastNotificationSentTimestamp: &defaultTime,
 	}
 }
 

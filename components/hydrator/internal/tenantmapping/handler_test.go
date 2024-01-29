@@ -1910,7 +1910,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper.JWTAuthFlow), mock.Anything)
 
 		directorClient := &automock.DirectorClient{}
-		directorClient.On("GetRootTenantByExternalID", mock.Anything, substituteExternalTenantID).Return(&graphql.Tenant{
+		directorClient.On("GetTenantByExternalID", mock.Anything, substituteExternalTenantID).Return(&graphql.Tenant{
 			ID:         rootExternalTenantID,
 			InternalID: rootInternalTenantID,
 		}, nil).Once()
@@ -1976,7 +1976,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper.JWTAuthFlow), mock.Anything)
 
 		directorClient := &automock.DirectorClient{}
-		directorClient.On("GetRootTenantByExternalID", mock.Anything, substituteExternalTenantID).Return(nil, errors.New("testError")).Once()
+		directorClient.On("GetTenantByExternalID", mock.Anything, substituteExternalTenantID).Return(nil, errors.New("testError")).Once()
 
 		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders, clientInstrumenter, directorClient, tenantSubstitutionLabelKey)
 		handler.ServeHTTP(w, req)
@@ -2098,7 +2098,7 @@ func TestHandler(t *testing.T) {
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
 		directorClient := &automock.DirectorClient{}
-		directorClient.On("GetRootTenantByExternalID", mock.Anything, substituteExternalTenantID).Return(&graphql.Tenant{
+		directorClient.On("GetTenantByExternalID", mock.Anything, substituteExternalTenantID).Return(&graphql.Tenant{
 			ID:         rootExternalTenantID,
 			InternalID: rootInternalTenantID,
 		}, nil).Once()

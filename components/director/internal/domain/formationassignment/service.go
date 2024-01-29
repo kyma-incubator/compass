@@ -75,7 +75,7 @@ type webhookConverter interface {
 //go:generate mockery --exported --name=tenantRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantRepository interface {
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-	GetCustomerIDParentRecursively(ctx context.Context, tenant string) (string, error)
+	GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error)
 }
 
 // Used for testing
@@ -609,14 +609,16 @@ func (s *service) ProcessFormationAssignmentPair(ctx context.Context, mappingPai
 }
 
 func (s *service) processFormationAssignmentsWithReverseNotification(ctx context.Context, mappingPair *AssignmentMappingPairWithOperation, depth int, isReverseProcessed *bool) error {
-	fa := mappingPair.AssignmentReqMapping.FormationAssignment
-	log.C(ctx).Infof("Processing formation assignment with ID: %q for formation with ID: %q with Source: %q of Type: %q and Target: %q of Type: %q and State %q", fa.ID, fa.FormationID, fa.Source, fa.SourceType, fa.Target, fa.TargetType, fa.State)
 	assignmentReqMappingClone := mappingPair.AssignmentReqMapping.Clone()
 	var reverseAssignmentReqMappingClone *FormationAssignmentRequestMapping
 	if mappingPair.ReverseAssignmentReqMapping != nil {
 		reverseAssignmentReqMappingClone = mappingPair.ReverseAssignmentReqMapping.Clone()
 	}
 	assignment := assignmentReqMappingClone.FormationAssignment
+
+	if assignment != nil {
+		log.C(ctx).Infof("Processing formation assignment with ID: %q for formation with ID: %q with Source: %q of Type: %q and Target: %q of Type: %q and State %q", assignment.ID, assignment.FormationID, assignment.Source, assignment.SourceType, assignment.Target, assignment.TargetType, assignment.State)
+	}
 
 	if assignment.State == string(model.ReadyAssignmentState) {
 		log.C(ctx).Infof("The formation assignment with ID: %q is in %q state. No notifications will be sent for it.", assignment.ID, assignment.State)
@@ -1023,16 +1025,18 @@ func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestM
 	var formationAssignment *model.FormationAssignment
 	if f.FormationAssignment != nil {
 		formationAssignment = &model.FormationAssignment{
-			ID:          f.FormationAssignment.ID,
-			FormationID: f.FormationAssignment.FormationID,
-			TenantID:    f.FormationAssignment.TenantID,
-			Source:      f.FormationAssignment.Source,
-			SourceType:  f.FormationAssignment.SourceType,
-			Target:      f.FormationAssignment.Target,
-			TargetType:  f.FormationAssignment.TargetType,
-			State:       f.FormationAssignment.State,
-			Value:       f.FormationAssignment.Value,
-			Error:       f.FormationAssignment.Error,
+			ID:                            f.FormationAssignment.ID,
+			FormationID:                   f.FormationAssignment.FormationID,
+			TenantID:                      f.FormationAssignment.TenantID,
+			Source:                        f.FormationAssignment.Source,
+			SourceType:                    f.FormationAssignment.SourceType,
+			Target:                        f.FormationAssignment.Target,
+			TargetType:                    f.FormationAssignment.TargetType,
+			State:                         f.FormationAssignment.State,
+			Value:                         f.FormationAssignment.Value,
+			Error:                         f.FormationAssignment.Error,
+			LastStateChangeTimestamp:      f.FormationAssignment.LastStateChangeTimestamp,
+			LastNotificationSentTimestamp: f.FormationAssignment.LastNotificationSentTimestamp,
 		}
 	}
 

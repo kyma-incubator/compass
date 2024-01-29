@@ -21,9 +21,9 @@ import (
 type BusinessTenantMappingService interface {
 	CreateTenantAccessForResource(ctx context.Context, tenantAccess *model.TenantAccess) error
 	ListByParentAndType(ctx context.Context, parentID string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
-	GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error)
+	ListByIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
+	GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error)
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // ApplicationService is responsible for the service-layer application operations.
@@ -92,23 +92,46 @@ func (d *directive) SynchronizeApplicationTenancy(ctx context.Context, _ interfa
 	return resp, nil
 }
 
-func (d *directive) createTenantAccessForOrgApplications(ctx context.Context, newTenantParentID, receivingAccessTnt string) error {
-	orgTenants, err := d.tenantService.ListByParentAndType(ctx, newTenantParentID, tenantpkg.Organization)
+func (d *directive) createTenantAccessForOrgApplications(ctx context.Context, newTenantParentIDs []string, receivingAccessTnt string) error {
+	parentTenants, err := d.tenantService.ListByIDs(ctx, newTenantParentIDs)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while listing tenants by parent with ID %s and %s: %v", newTenantParentID, tenantpkg.Organization, err)
-		return apperrors.NewInternalError("An error occurred while listing tenants by parent with ID %s and %s: %v", newTenantParentID, tenantpkg.Organization, err)
+		return err
 	}
 
-	for _, orgTenant := range orgTenants {
-		ctx = tenant.SaveToContext(ctx, orgTenant.ID, orgTenant.ExternalTenant)
+	var childType tenantpkg.Type
+	var parent *model.BusinessTenantMapping
+	for _, parentTenant := range parentTenants {
+		if parentTenant.Type == tenantpkg.Customer {
+			childType = tenantpkg.Organization
+			parent = parentTenant
+			break
+		}
+		if parentTenant.Type == tenantpkg.CostObject {
+			childType = tenantpkg.Folder
+			parent = parentTenant
+			break
+		}
+	}
+	if parent == nil {
+		return apperrors.NewInternalError("Unexpected error. The parent tenant must be Customer or CostObject.")
+	}
+
+	childTenants, err := d.tenantService.ListByParentAndType(ctx, parent.ID, childType)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while listing tenants by parent with ID %s and %s: %v", parent.ID, childType, err)
+		return apperrors.NewInternalError("An error occurred while listing tenants by parent with ID %s and %s: %v", parent.ID, childType, err)
+	}
+
+	for _, childTenant := range childTenants {
+		ctx = tenant.SaveToContext(ctx, childTenant.ID, childTenant.ExternalTenant)
 		tenantApps, err := d.appService.ListAll(ctx)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while listing applications for tenant %s: %v", orgTenant.ID, err)
-			return apperrors.NewInternalError("An error occurred while listing applications for tenant %s: %v", orgTenant.ID, err)
+			log.C(ctx).WithError(err).Errorf("An error occurred while listing applications for tenant %s: %v", childTenant.ID, err)
+			return apperrors.NewInternalError("An error occurred while listing applications for tenant %s: %v", childTenant.ID, err)
 		}
 
 		for _, app := range tenantApps {
-			if err := d.tenantService.CreateTenantAccessForResource(ctx, &model.TenantAccess{InternalTenantID: receivingAccessTnt, ResourceType: resource.Application, ResourceID: app.ID, Owner: false}); err != nil {
+			if err := d.tenantService.CreateTenantAccessForResource(ctx, &model.TenantAccess{InternalTenantID: receivingAccessTnt, ResourceType: resource.Application, ResourceID: app.ID, Owner: false, Source: parent.ID}); err != nil {
 				log.C(ctx).WithError(err).Errorf("An error occurred while creating tenant access: %v", err)
 				return apperrors.NewInternalError("An error occurred while creating tenant access: %v", err)
 			}
@@ -120,25 +143,30 @@ func (d *directive) createTenantAccessForOrgApplications(ctx context.Context, ne
 
 func (d *directive) createTenantAccessForNewApplication(ctx context.Context, tntFromContext *model.BusinessTenantMapping, appID string) error {
 	var err error
-	parentTntID := tntFromContext.ID
+	var parentType tenantpkg.Type
+	var parentTntID string
 
-	if tntFromContext.Type != tenantpkg.Customer {
-		parentExternalID, err := d.tenantService.GetCustomerIDParentRecursively(ctx, tntFromContext.ID)
+	if tntFromContext.Type != tenantpkg.Customer && tntFromContext.Type != tenantpkg.CostObject {
+		parents, err := d.tenantService.GetParentsRecursivelyByExternalTenant(ctx, tntFromContext.ExternalTenant)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant %s customer parent", tntFromContext.ID)
-			return errors.Wrapf(err, "while getting customer parent for tenant: %s", tntFromContext.ID)
+			log.C(ctx).WithError(err).Errorf("An error occurred while getting parents for tenant %s", tntFromContext.ID)
+			return errors.Wrapf(err, "while getting parents for tenant: %s", tntFromContext.ID)
 		}
 
-		parent, err := d.tenantService.GetTenantByExternalID(ctx, parentExternalID)
-		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while getting parent model by external ID %s", parentExternalID)
-			return errors.Wrapf(err, "while getting parent: %s", tntFromContext.ID)
+		for _, parent := range parents {
+			if parent.Type == tenantpkg.Customer || parent.Type == tenantpkg.CostObject {
+				parentTntID = parent.ID
+				parentType = parent.Type
+				break
+			}
 		}
-
-		parentTntID = parent.ID
 	}
 
-	log.C(ctx).Debugf("Found parent: %s for tenant with ID %s", parentTntID, tntFromContext.ID)
+	if parentTntID == "" {
+		return nil
+	}
+
+	log.C(ctx).Debugf("Found parent: %s with type %s for tenant with ID %s", parentTntID, parentType, tntFromContext.ID)
 
 	tenants, err := d.tenantService.ListByParentAndType(ctx, parentTntID, tenantpkg.Account)
 	if err != nil {
@@ -146,9 +174,9 @@ func (d *directive) createTenantAccessForNewApplication(ctx context.Context, tnt
 		return errors.Wrapf(err, "while listing tenants by parent %s and type %s", parentTntID, tenantpkg.Account)
 	}
 
-	for _, tenant := range tenants {
-		if err := d.tenantService.CreateTenantAccessForResource(ctx, &model.TenantAccess{InternalTenantID: tenant.ID, ResourceType: resource.Application, ResourceID: appID, Owner: true}); err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while creating tenant access for tenant %s and application %s", tenant.ID, appID)
+	for _, tnt := range tenants {
+		if err := d.tenantService.CreateTenantAccessForResource(ctx, &model.TenantAccess{InternalTenantID: tnt.ID, ResourceType: resource.Application, ResourceID: appID, Owner: true, Source: parentTntID}); err != nil {
+			log.C(ctx).WithError(err).Errorf("An error occurred while creating tenant access for tenant %s and application %s", tnt.ID, appID)
 			return errors.Wrap(err, "while creating tenant access")
 		}
 	}
@@ -163,7 +191,7 @@ func (d *directive) getTenantAndValidateTenantAccessEligibility(ctx context.Cont
 		return nil, err
 	}
 
-	if tntModel.Type != tenantpkg.Account || tntModel.Parent == "" {
+	if tntModel.Type != tenantpkg.Account || len(tntModel.Parents) == 0 {
 		log.C(ctx).Debugf("Tenant with ID %s is not Account type or does not have a parent. Skipping tenant access creation.", tntModel.ID)
 		return nil, nil
 	}
@@ -181,7 +209,7 @@ func (d *directive) processSingleTenant(ctx context.Context, tenantID string) er
 		return nil
 	}
 
-	return d.createTenantAccessForOrgApplications(ctx, tntModel.Parent, tntModel.ID)
+	return d.createTenantAccessForOrgApplications(ctx, tntModel.Parents, tntModel.ID)
 }
 
 func (d *directive) handleNewSingleTenantCreation(ctx context.Context, resp interface{}) error {

@@ -21,7 +21,7 @@ func TestDirector_WriteTenants(t *testing.T) {
 		{
 			Name:           "0283bc56-406b-11ec-9356-0242ac130003",
 			ExternalTenant: "123",
-			Parent:         str.Ptr(""),
+			Parents:        []*string{str.Ptr("")},
 			Subdomain:      str.Ptr("subdomain1"),
 			Region:         str.Ptr("region1"),
 			Type:           "account",
@@ -30,14 +30,14 @@ func TestDirector_WriteTenants(t *testing.T) {
 		{
 			Name:           "109534be-406b-11ec-9356-0242ac130003",
 			ExternalTenant: "456",
-			Parent:         str.Ptr(""),
+			Parents:        []*string{str.Ptr("")},
 			Subdomain:      str.Ptr("subdomain2"),
 			Region:         str.Ptr("region2"),
 			Type:           "type2",
 			Provider:       "account",
 		},
 	}
-	expectedQuery := "mutation { writeTenants(in:[{name: \"0283bc56-406b-11ec-9356-0242ac130003\",externalTenant: \"123\",parent: \"\", region:\"region1\", subdomain: \"subdomain1\",type:\"account\",provider: \"provider1\"},{name: \"109534be-406b-11ec-9356-0242ac130003\",externalTenant: \"456\",parent: \"\", region:\"region2\", subdomain: \"subdomain2\",type:\"type2\",provider: \"account\"}])}"
+	expectedQuery := "mutation { writeTenants(in:[{name: \"0283bc56-406b-11ec-9356-0242ac130003\",externalTenant: \"123\",parents: [ \"\" ], region:\"region1\", subdomain: \"subdomain1\",type:\"account\",provider: \"provider1\"},{name: \"109534be-406b-11ec-9356-0242ac130003\",externalTenant: \"456\",parents: [ \"\" ], region:\"region2\", subdomain: \"subdomain2\",type:\"type2\",provider: \"account\"}])}"
 	testErr := errors.New("Test error")
 
 	testCases := []struct {
@@ -96,7 +96,7 @@ func TestDirector_DeleteTenants(t *testing.T) {
 		{
 			Name:           "0283bc56-406b-11ec-9356-0242ac130003",
 			ExternalTenant: "123",
-			Parent:         str.Ptr(""),
+			Parents:        []*string{},
 			Subdomain:      str.Ptr("subdomain1"),
 			Region:         str.Ptr("region1"),
 			Type:           "account",
@@ -105,7 +105,7 @@ func TestDirector_DeleteTenants(t *testing.T) {
 		{
 			Name:           "109534be-406b-11ec-9356-0242ac130003",
 			ExternalTenant: "456",
-			Parent:         str.Ptr(""),
+			Parents:        []*string{},
 			Subdomain:      str.Ptr("subdomain2"),
 			Region:         str.Ptr("region2"),
 			Type:           "type2",
@@ -171,7 +171,7 @@ func TestDirector_UpdateTenant(t *testing.T) {
 	tenantInput := graphql.BusinessTenantMappingInput{
 		Name:           "0283bc56-406b-11ec-9356-0242ac130003",
 		ExternalTenant: "123",
-		Parent:         str.Ptr(""),
+		Parents:        []*string{str.Ptr("")},
 		Subdomain:      str.Ptr("subdomain1"),
 		Region:         str.Ptr("region1"),
 		Type:           "account",
@@ -180,7 +180,7 @@ func TestDirector_UpdateTenant(t *testing.T) {
 	expectedQuery := `mutation { updateTenant(id: "id1", in:{
 		name: "0283bc56-406b-11ec-9356-0242ac130003",
 		externalTenant: "123",
-		parent: "",
+		parents: [""],
 		region: "region1",
 		subdomain: "subdomain1",
 		type: "account",
@@ -191,7 +191,7 @@ func TestDirector_UpdateTenant(t *testing.T) {
 		name
 		initialized
 		labels
-		parentID
+		parents
 		type
 	}}`
 	testErr := errors.New("Test error")

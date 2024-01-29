@@ -88,7 +88,7 @@ func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 		HeaderTemplate:        in.HeaderTemplate,
 		OutputTemplate:        in.OutputTemplate,
 		StatusTemplate:        in.StatusTemplate,
-		CreatedAt:             timePtrToTimestampPtr(in.CreatedAt),
+		CreatedAt:             graphql.TimePtrToGraphqlTimestampPtr(in.CreatedAt),
 	}, nil
 }
 
@@ -381,13 +381,4 @@ func (c *converter) objectReferenceFromEntity(in Entity) (string, model.WebhookR
 	}
 
 	return "", "", fmt.Errorf("incorrect Object Reference ID and its type for Entity with ID '%s'", in.ID)
-}
-
-func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
-	if time == nil {
-		return nil
-	}
-
-	t := graphql.Timestamp(*time)
-	return &t
 }

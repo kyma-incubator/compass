@@ -3,6 +3,7 @@ package formationassignment_test
 import (
 	"database/sql"
 	"encoding/json"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
@@ -36,20 +37,24 @@ const (
 	TestTarget              = "1c22035a-72e4-4a78-9025-bbcb1f87760b"
 	TestTargetType          = "runtimeContext"
 	TestStateInitial        = "INITIAL"
-	TestReadyState          = "READY"
 	TestWebhookID           = "eca98d44-aac0-4e44-898b-c394beab2e94"
 	TestReverseWebhookID    = "aecec253-b4d8-416a-be5c-a27677ee5157"
 	TntParentID             = "2d11035a-72e4-4a78-9025-bbcb1f87760b"
+	TntParentIDExternal     = "934fe388-982d-11ee-b9d1-0242ac120002"
+	testProvider            = "Compass"
 )
 
 var (
+	fixColumns = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value", "error", "last_state_change_timestamp", "last_notification_sent_timestamp"}
+
 	TestConfigValueRawJSON        = json.RawMessage(`{"configKey":"configValue"}`)
 	TestInvalidConfigValueRawJSON = json.RawMessage(`{invalid}`)
 	TestErrorValueRawJSON         = json.RawMessage(`{"error":"error message"}`)
 	TestEmptyErrorValueRawJSON    = json.RawMessage(`\"\"`)
 	TestConfigValueStr            = "{\"configKey\":\"configValue\"}"
+	TestNewConfigValueStr         = "{\"newConfigKey\":\"newConfigValue\"}"
 	TestErrorValueStr             = "{\"error\":\"error message\"}"
-	fixColumns                    = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value", "error"}
+	defaultTime                   = time.Time{}
 
 	nilFormationAssignmentModel *model.FormationAssignment
 
@@ -57,8 +62,10 @@ var (
 	faModelWithConfigAndError  = fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON)
 	faEntityWithConfigAndError = fixFormationAssignmentEntityWithConfigurationAndError(TestConfigValueStr, TestErrorValueStr)
 
-	appSubtype = "app-subtype"
-	rtmSubtype = "rtm-subtype"
+	appSubtype                     = "app-subtype"
+	rtmSubtype                     = "rtm-subtype"
+	customerParentTenantResponse   = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.Customer)}
+	costObjectParentTenantResponse = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.CostObject)}
 )
 
 func fixFormationAssignmentGQLModel(configValue *string) *graphql.FormationAssignment {
@@ -91,15 +98,17 @@ func fixFormationAssignmentGQLModelWithError(errorValue *string) *graphql.Format
 
 func fixFormationAssignmentGQLModelWithConfigAndError(configValue, errorValue *string) *graphql.FormationAssignment {
 	return &graphql.FormationAssignment{
-		ID:            TestID,
-		Source:        TestSource,
-		SourceType:    TestSourceType,
-		Target:        TestTarget,
-		TargetType:    TestTargetType,
-		State:         TestStateInitial,
-		Value:         errorValue,
-		Error:         errorValue,
-		Configuration: configValue,
+		ID:                            TestID,
+		Source:                        TestSource,
+		SourceType:                    TestSourceType,
+		Target:                        TestTarget,
+		TargetType:                    TestTargetType,
+		State:                         TestStateInitial,
+		Value:                         errorValue,
+		Error:                         errorValue,
+		Configuration:                 configValue,
+		LastStateChangeTimestamp:      graphql.TimePtrToGraphqlTimestampPtr(&defaultTime),
+		LastNotificationSentTimestamp: graphql.TimePtrToGraphqlTimestampPtr(&defaultTime),
 	}
 }
 
@@ -146,16 +155,18 @@ func fixFormationAssignmentModelWithError(errorValue json.RawMessage) *model.For
 
 func fixFormationAssignmentModelWithConfigAndError(configValue, errorValue json.RawMessage) *model.FormationAssignment {
 	return &model.FormationAssignment{
-		ID:          TestID,
-		FormationID: TestFormationID,
-		TenantID:    TestTenantID,
-		Source:      TestSource,
-		SourceType:  TestSourceType,
-		Target:      TestTarget,
-		TargetType:  TestTargetType,
-		State:       TestStateInitial,
-		Value:       configValue,
-		Error:       errorValue,
+		ID:                            TestID,
+		FormationID:                   TestFormationID,
+		TenantID:                      TestTenantID,
+		Source:                        TestSource,
+		SourceType:                    TestSourceType,
+		Target:                        TestTarget,
+		TargetType:                    TestTargetType,
+		State:                         TestStateInitial,
+		Value:                         configValue,
+		Error:                         errorValue,
+		LastStateChangeTimestamp:      &defaultTime,
+		LastNotificationSentTimestamp: &defaultTime,
 	}
 }
 
@@ -229,32 +240,6 @@ func fixFormationAssignmentModelInput(configValue json.RawMessage) *model.Format
 	}
 }
 
-func fixFormationAssignmentModelInputWithError(errorValue json.RawMessage) *model.FormationAssignmentInput {
-	return &model.FormationAssignmentInput{
-		FormationID: TestFormationID,
-		Source:      TestSource,
-		SourceType:  TestSourceType,
-		Target:      TestTarget,
-		TargetType:  TestTargetType,
-		State:       TestStateInitial,
-		Value:       nil,
-		Error:       errorValue,
-	}
-}
-
-func fixFormationAssignmentModelInputWithConfigurationAndError(configValue, errorValue json.RawMessage) *model.FormationAssignmentInput {
-	return &model.FormationAssignmentInput{
-		FormationID: TestFormationID,
-		Source:      TestSource,
-		SourceType:  TestSourceType,
-		Target:      TestTarget,
-		TargetType:  TestTargetType,
-		State:       TestStateInitial,
-		Value:       configValue,
-		Error:       errorValue,
-	}
-}
-
 func fixFormationAssignmentEntity(configValue string) *formationassignment.Entity {
 	return &formationassignment.Entity{
 		ID:          TestID,
@@ -287,16 +272,18 @@ func fixFormationAssignmentEntityWithError(errorValue string) *formationassignme
 
 func fixFormationAssignmentEntityWithConfigurationAndError(configValue, errorValue string) *formationassignment.Entity {
 	return &formationassignment.Entity{
-		ID:          TestID,
-		FormationID: TestFormationID,
-		TenantID:    TestTenantID,
-		Source:      TestSource,
-		SourceType:  TestSourceType,
-		Target:      TestTarget,
-		TargetType:  TestTargetType,
-		State:       TestStateInitial,
-		Value:       repo.NewValidNullableString(configValue),
-		Error:       repo.NewValidNullableString(errorValue),
+		ID:                            TestID,
+		FormationID:                   TestFormationID,
+		TenantID:                      TestTenantID,
+		Source:                        TestSource,
+		SourceType:                    TestSourceType,
+		Target:                        TestTarget,
+		TargetType:                    TestTargetType,
+		State:                         TestStateInitial,
+		Value:                         repo.NewValidNullableString(configValue),
+		Error:                         repo.NewValidNullableString(errorValue),
+		LastStateChangeTimestamp:      &defaultTime,
+		LastNotificationSentTimestamp: &defaultTime,
 	}
 }
 
@@ -348,7 +335,7 @@ func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapp
 		ID:             TestTenantID,
 		Name:           "test-name",
 		ExternalTenant: TestTenantID,
-		Parent:         TntParentID,
+		Parents:        []string{TntParentID},
 		Type:           t,
 		Provider:       "Compass",
 		Status:         tnt.Active,
@@ -894,7 +881,7 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 }
 
 func fixNotificationStatusReport() *statusreport.NotificationStatusReport {
-	return statusreport.NewNotificationStatusReport(TestConfigValueRawJSON, readyState, "")
+	return statusreport.NewNotificationStatusReport(TestConfigValueRawJSON, readyAssignmentState, "")
 }
 
 func fixNotificationStatusReportWithStateAndConfig(configuration json.RawMessage, state string) *statusreport.NotificationStatusReport {
@@ -903,4 +890,16 @@ func fixNotificationStatusReportWithStateAndConfig(configuration json.RawMessage
 
 func fixNotificationStatusReportWithStateAndError(state, errorMessage string) *statusreport.NotificationStatusReport {
 	return statusreport.NewNotificationStatusReport(nil, state, errorMessage)
+}
+
+func fixParentTenant(id, externalID string, t tnt.Type) *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             id,
+		Name:           "test-name",
+		ExternalTenant: externalID,
+		Parents:        []string{},
+		Type:           t,
+		Provider:       testProvider,
+		Status:         tnt.Active,
+	}
 }

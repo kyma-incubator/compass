@@ -47,7 +47,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -80,11 +80,48 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
+			Name: "success with costObject",
+			TenantRepoFn: func() *automock.TenantRepository {
+				repo := &automock.TenantRepository{}
+				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(costObjectParentTenantResponse, nil)
+				return repo
+			},
+			NotificationsGenerator: func() *automock.NotificationsGenerator {
+				generator := &automock.NotificationsGenerator{}
+
+				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned", ctx, TntInternalID, RuntimeID, inputFormation, model.AssignFormation, customerTenantContextWithCostObject).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
+						applicationNotificationWithAppTemplate,
+						applicationNotificationWithoutAppTemplate,
+					}, nil).Once()
+
+				generator.On("GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned", ctx, TntInternalID, RuntimeID, inputFormation, model.AssignFormation, customerTenantContextWithCostObject).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
+						runtimeNotificationWithAppTemplate,
+						runtimeNotificationWithoutAppTemplate,
+					}, nil).Once()
+
+				return generator
+			},
+			ObjectType:     graphql.FormationObjectTypeRuntime,
+			OperationType:  model.AssignFormation,
+			ObjectID:       RuntimeID,
+			InputFormation: inputFormation,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
+				runtimeNotificationWithAppTemplate,
+				runtimeNotificationWithoutAppTemplate,
+				applicationNotificationWithAppTemplate,
+				applicationNotificationWithoutAppTemplate,
+			},
+			ExpectedErrMessage: "",
+		},
+		{
 			Name: "success for runtime when customer tenant context is resource group",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(rgTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -121,7 +158,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -148,7 +185,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -170,7 +207,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -207,7 +244,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -234,7 +271,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -256,7 +293,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -301,7 +338,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -334,7 +371,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -361,7 +398,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
@@ -382,7 +419,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return("", testErr)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(nil, testErr)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -409,7 +446,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, inputFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, inputFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeTenant,
@@ -433,7 +470,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				notificationsGenerator = testCase.NotificationsGenerator()
 			}
 
-			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationsGenerator, nil, nil, nil)
+			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationsGenerator, nil, nil, nil, nil, nil)
 
 			// WHEN
 			actual, err := notificationSvc.GenerateFormationAssignmentNotifications(ctx, TntInternalID, testCase.ObjectID, testCase.InputFormation, testCase.OperationType, testCase.ObjectType)
@@ -469,12 +506,12 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 			tenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("Get", ctx, TntInternalID).Return(gaTenantObject, nil).Once()
-				tenantRepo.On("GetCustomerIDParentRecursively", ctx, TntInternalID).Return(TntCustomerID, nil).Once()
+				tenantRepo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return tenantRepo
 			},
 			notificationsGeneratorFn: func() *automock.NotificationsGenerator {
 				notificationGenerator := &automock.NotificationsGenerator{}
-				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, CustomerTenantContextAccount).Return(formationNotificationSyncCreateRequests, nil).Once()
+				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, customerTenantContext).Return(formationNotificationSyncCreateRequests, nil).Once()
 				return notificationGenerator
 			},
 			expectedFormationNotificationReqs: formationNotificationSyncCreateRequests,
@@ -493,12 +530,12 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 			tenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("Get", ctx, TntInternalID).Return(gaTenantObject, nil).Once()
-				tenantRepo.On("GetCustomerIDParentRecursively", ctx, TntInternalID).Return(TntCustomerID, nil).Once()
+				tenantRepo.On("GetParentsRecursivelyByExternalTenant", ctx, gaTenantObject.ExternalTenant).Return(customerParentTenantResponse, nil)
 				return tenantRepo
 			},
 			notificationsGeneratorFn: func() *automock.NotificationsGenerator {
 				notificationGenerator := &automock.NotificationsGenerator{}
-				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, CustomerTenantContextAccount).Return(nil, testErr).Once()
+				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, customerTenantContext).Return(nil, testErr).Once()
 				return notificationGenerator
 			},
 			expectedErrMsg: testErr.Error(),
@@ -519,7 +556,7 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 
 			defer mock.AssertExpectationsForObjects(t, tenantRepo, notificationGenerator)
 
-			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationGenerator, nil, nil, nil)
+			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationGenerator, nil, nil, nil, nil, nil)
 
 			formationNotificationReqs, err := notificationSvc.GenerateFormationNotifications(ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation)
 
@@ -544,7 +581,10 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 	fa := fixFormationAssignmentModelWithParameters("id1", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialFormationState)
 	reverseFa := fixFormationAssignmentModelWithParameters("id2", FormationID, ApplicationID, RuntimeID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, model.InitialFormationState)
 
-	templateInput := &webhook.FormationConfigurationChangeInput{
+	formationLifecycleTemplateInput := fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID)
+	formationLifecycleGQLWebhook := fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync)
+
+	formationConfigurationChangeTemplateInput := &webhook.FormationConfigurationChangeInput{
 		Operation:   model.AssignFormation,
 		FormationID: FormationID,
 		ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
@@ -562,26 +602,35 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 		ReverseAssignment:     emptyFormationAssignment,
 	}
 
-	preJoinPointDetails := &formationconstraint.SendNotificationOperationDetails{
+	preSendNotificationJoinPointDetailsForAssignment := &formationconstraint.SendNotificationOperationDetails{
 		ResourceType:               model.ApplicationResourceType,
 		ResourceSubtype:            subtype,
 		Location:                   formationconstraint.PreSendNotification,
 		Operation:                  model.AssignFormation,
 		Webhook:                    fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
-		CorrelationID:              "",
-		TemplateInput:              templateInput,
+		TemplateInput:              formationConfigurationChangeTemplateInput,
 		FormationAssignment:        fa,
 		ReverseFormationAssignment: reverseFa,
 		Formation:                  formationModel,
 	}
-	postJoinPointDetails := &formationconstraint.SendNotificationOperationDetails{
+
+	preSendNotificationJoinPointDetailsForFormation := &formationconstraint.SendNotificationOperationDetails{
+		ResourceType:    model.FormationResourceType,
+		ResourceSubtype: testFormationTemplateName,
+		Location:        formationconstraint.PreSendNotification,
+		Operation:       model.CreateFormation,
+		Webhook:         formationLifecycleGQLWebhook,
+		TemplateInput:   formationLifecycleTemplateInput,
+		Formation:       formationModel,
+	}
+
+	postSendNotificationJoinPointDetailsForAssignment := &formationconstraint.SendNotificationOperationDetails{
 		ResourceType:               model.ApplicationResourceType,
 		ResourceSubtype:            subtype,
 		Location:                   formationconstraint.PostSendNotification,
 		Operation:                  model.AssignFormation,
 		Webhook:                    fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
-		CorrelationID:              "",
-		TemplateInput:              templateInput,
+		TemplateInput:              formationConfigurationChangeTemplateInput,
 		FormationAssignment:        fa,
 		ReverseFormationAssignment: reverseFa,
 		Formation:                  formationModel,
@@ -589,9 +638,8 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 
 	faRequestExt := &webhookclient.FormationAssignmentNotificationRequestExt{
 		FormationAssignmentNotificationRequest: &webhookclient.FormationAssignmentNotificationRequest{
-			Webhook:       fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
-			Object:        templateInput,
-			CorrelationID: "",
+			Webhook: fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+			Object:  formationConfigurationChangeTemplateInput,
 		},
 		Operation:                  model.AssignFormation,
 		FormationAssignment:        fa,
@@ -600,13 +648,25 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 		TargetSubtype:              subtype,
 	}
 
+	formationRequestExt := &webhookclient.FormationNotificationRequest{
+		Request: &webhookclient.Request{
+			Webhook: formationLifecycleGQLWebhook,
+			Object:  formationLifecycleTemplateInput,
+		},
+		Operation:     model.CreateFormation,
+		Formation:     formationModel,
+		FormationType: testFormationTemplateName,
+	}
+
 	testCases := []struct {
-		Name               string
-		WebhookClientFN    func() *automock.WebhookClient
-		ConstraintEngine   func() *automock.ConstraintEngine
-		WebhookConverter   func() *automock.WebhookConverter
-		InputRequest       *webhookclient.FormationAssignmentNotificationRequestExt
-		ExpectedErrMessage string
+		Name                    string
+		WebhookClientFN         func() *automock.WebhookClient
+		ConstraintEngine        func() *automock.ConstraintEngine
+		WebhookConverter        func() *automock.WebhookConverter
+		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
+		FormationRepo           func() *automock.FormationRepository
+		WebhookRequest          webhookclient.WebhookExtRequest
+		ExpectedErrMessage      string
 	}{
 		{
 			Name: "success when webhook client call doesn't return error",
@@ -617,11 +677,16 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 			},
 			ConstraintEngine: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preJoinPointDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, formationconstraint.PostSendNotification, postJoinPointDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preSendNotificationJoinPointDetailsForAssignment, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PostSendNotification, postSendNotificationJoinPointDetailsForAssignment, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
-			InputRequest: faRequestExt,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				faRepo := &automock.FormationAssignmentRepository{}
+				faRepo.On("Update", ctx, fa).Return(nil).Once()
+				return faRepo
+			},
+			WebhookRequest: faRequestExt,
 		},
 		{
 			Name: "fail when webhook client call fails",
@@ -632,10 +697,50 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 			},
 			ConstraintEngine: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preJoinPointDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preSendNotificationJoinPointDetailsForAssignment, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
-			InputRequest:       faRequestExt,
+			WebhookRequest:     faRequestExt,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Error when updating formation assignment last notification sent timestamp fail",
+			WebhookClientFN: func() *automock.WebhookClient {
+				client := &automock.WebhookClient{}
+				client.On("Do", ctx, faRequestExt).Return(nil, nil)
+				return client
+			},
+			ConstraintEngine: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preSendNotificationJoinPointDetailsForAssignment, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				faRepo := &automock.FormationAssignmentRepository{}
+				faRepo.On("Update", ctx, fa).Return(testErr).Once()
+				return faRepo
+			},
+			WebhookRequest:     faRequestExt,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Error when updating formation last notification sent timestamp fail",
+			WebhookClientFN: func() *automock.WebhookClient {
+				client := &automock.WebhookClient{}
+				client.On("Do", ctx, formationRequestExt).Return(nil, nil)
+				return client
+			},
+			ConstraintEngine: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preSendNotificationJoinPointDetailsForFormation, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			FormationRepo: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("Update", ctx, formationModel).Return(testErr).Once()
+				return formationRepo
+			},
+			WebhookRequest:     formationRequestExt,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -647,21 +752,26 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 			},
 			ConstraintEngine: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preJoinPointDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, formationconstraint.PostSendNotification, postJoinPointDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preSendNotificationJoinPointDetailsForAssignment, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PostSendNotification, postSendNotificationJoinPointDetailsForAssignment, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
-			InputRequest:       faRequestExt,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				faRepo := &automock.FormationAssignmentRepository{}
+				faRepo.On("Update", ctx, fa).Return(nil).Once()
+				return faRepo
+			},
+			WebhookRequest:     faRequestExt,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "fail when enforcing PRE constraints returns error",
 			ConstraintEngine: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preJoinPointDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preSendNotificationJoinPointDetailsForAssignment, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
-			InputRequest:       faRequestExt,
+			WebhookRequest:     faRequestExt,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -672,19 +782,29 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 			if testCase.WebhookClientFN != nil {
 				webhookClient = testCase.WebhookClientFN()
 			}
-			constraintEngine := &automock.ConstraintEngine{}
+			constraintEngine := unusedConstraintEngine()
 			if testCase.ConstraintEngine != nil {
 				constraintEngine = testCase.ConstraintEngine()
 			}
-			webhookConverter := &automock.WebhookConverter{}
+			webhookConverter := unusedWebhookConverter()
 			if testCase.WebhookConverter != nil {
 				webhookConverter = testCase.WebhookConverter()
 			}
 
-			notificationSvc := formation.NewNotificationService(nil, webhookClient, nil, constraintEngine, webhookConverter, nil)
+			formationAssignmentRepo := unusedFormationAssignmentRepo()
+			if testCase.FormationAssignmentRepo != nil {
+				formationAssignmentRepo = testCase.FormationAssignmentRepo()
+			}
+
+			formationRepo := unusedFormationRepo()
+			if testCase.FormationRepo != nil {
+				formationRepo = testCase.FormationRepo()
+			}
+
+			notificationSvc := formation.NewNotificationService(nil, webhookClient, nil, constraintEngine, webhookConverter, nil, formationAssignmentRepo, formationRepo)
 
 			// WHEN
-			_, err := notificationSvc.SendNotification(ctx, testCase.InputRequest)
+			_, err := notificationSvc.SendNotification(ctx, testCase.WebhookRequest)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -693,7 +813,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
-			mock.AssertExpectationsForObjects(t, webhookClient, constraintEngine, webhookConverter)
+			mock.AssertExpectationsForObjects(t, webhookClient, constraintEngine, webhookConverter, formationAssignmentRepo, formationRepo)
 		})
 	}
 }
