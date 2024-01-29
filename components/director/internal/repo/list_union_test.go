@@ -67,6 +67,7 @@ func TestUnionList(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest AppCollection
 
+		repo.DeleteTenantAccessRecursively(ctx, "tenant_applications", "tntID", []string{"res1", "res2"}, "")
 		counts, err := sut.List(ctx, resourceType, tenantID, []string{appID, appID2}, "id", 10, "", repo.OrderByParams{repo.NewAscOrderBy("id")}, &dest, repo.NewEqualCondition("name", appName))
 		require.NoError(t, err)
 		assert.Equal(t, 1, len(counts))

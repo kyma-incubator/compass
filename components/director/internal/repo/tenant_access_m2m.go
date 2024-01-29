@@ -41,18 +41,68 @@ const (
 			ON CONFLICT ( tenant_id, id, source ) DO NOTHING`
 
 	// RecursiveDeleteTenantAccessCTEQuery is a recursive SQL query that deletes tenant accesses based on given conditions for a tenant and all its parents.
-	RecursiveDeleteTenantAccessCTEQuery = `WITH RECURSIVE parents AS
-                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST(? AS uuid) AS child_id
-                    FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
-                    WHERE id = ?
-                    UNION ALL
-                    SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
-                    FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
-                                                     INNER JOIN parents p on p.parent_id = t2.id)
-			DELETE FROM %s WHERE %s AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)`
+	RecursiveDeleteTenantAccessCTEQuery = `WITH RECURSIVE
+    parents AS
+        (SELECT t1.id,
+                t1.type,
+                tp1.parent_id,
+                0                                                    AS depth,
+                CAST( ? AS uuid) AS child_id
+         FROM business_tenant_mappings t1
+                  LEFT JOIN tenant_parents tp1 ON t1.id = tp1.tenant_id
+         WHERE id = ?
+         UNION ALL
+         SELECT t2.id, t2.type, tp2.parent_id, p.depth + 1, p.id AS child_id
+         FROM business_tenant_mappings t2
+                  LEFT JOIN tenant_parents tp2 ON t2.id = tp2.tenant_id
+                  INNER JOIN parents p ON p.parent_id = t2.id),
+    parent_access_records_count AS (SELECT pp.id    AS tenant_id,
+                                           act.id   AS obj_id,
+                                           pp.depth,
+                                           COUNT(1) AS access_records_count
+                                    FROM %s act
+                                             JOIN parents pp ON act.tenant_id = pp.id
+                                    WHERE act.%s
+                                    GROUP BY pp.id, pp.depth, act.id),
+    anchor AS (SELECT par.*
+               FROM parent_access_records_count par
+                        LEFT JOIN
+                    parent_access_records_count par2 ON par.obj_id = par2.obj_id
+                        AND par.depth > par2.depth AND par2.access_records_count > 1
+               WHERE par.access_records_count > 1
+                 AND par2.tenant_id IS NULL
+
+               UNION ALL
+
+               SELECT par.*
+               FROM parent_access_records_count par
+                        LEFT JOIN
+                    parent_access_records_count par2 ON par.obj_id = par2.obj_id
+                        AND par.depth > par2.depth AND par2.access_records_count > 1
+                        LEFT JOIN
+                    parent_access_records_count par3 ON par.obj_id = par3.obj_id
+                        AND par.depth < par3.depth
+               WHERE par.access_records_count = 1
+                 AND par2.tenant_id IS NULL
+                 AND par3.tenant_id IS NULL)
+DELETE
+FROM %s act
+WHERE act.%s
+  AND EXISTS (SELECT id
+              FROM parents
+              WHERE tenant_id = parents.id
+                AND source = parents.child_id
+                AND parents.depth <= ALL (SELECT a.depth FROM anchor a WHERE a.obj_id = act.id));`
+
+	// DeleteDirectiveAccess is a query that deletes all the tenant accesses that have come from the directive.
+	DeleteDirectiveAccess = `DELETE
+FROM %s a
+WHERE %s
+  AND %s
+  AND NOT EXISTS (SELECT 1 FROM tenant_applications ta WHERE ta.tenant_id = a.source AND ta.id = a.id);`
 
 	// DeleteTenantAccessGrantedByParentQuery is a delete SQL query that deletes tenant accesses based on given tenant id and source.
-	DeleteTenantAccessGrantedByParentQuery = `DELETE FROM %s WHERE tenant_id = ? AND source = ?`
+	DeleteTenantAccessGrantedByParentQuery = `DELETE FROM %s WHERE tenant_id = ? AND SOURCE = ?`
 )
 
 // M2MColumns are the column names of the tenant access tables / views.
@@ -149,9 +199,43 @@ func DeleteTenantAccessRecursively(ctx context.Context, m2mTable string, tenant 
 	inCond := NewInConditionForStringValues(M2MResourceIDColumn, resourceIDs)
 	if inArgs, ok := inCond.GetQueryArgs(); ok {
 		args = append(args, inArgs...)
+		args = append(args, inArgs...) //the same condition is used in the main delete query and in the generation of one of the CTEs
 	}
 
-	deleteTenantAccessStmt := fmt.Sprintf(RecursiveDeleteTenantAccessCTEQuery, m2mTable, inCond.GetQueryPart())
+	deleteTenantAccessStmt := fmt.Sprintf(RecursiveDeleteTenantAccessCTEQuery, m2mTable, inCond.GetQueryPart(), m2mTable, inCond.GetQueryPart())
+	deleteTenantAccessStmt = sqlx.Rebind(sqlx.DOLLAR, deleteTenantAccessStmt)
+
+	log.C(ctx).Debugf("Executing DB query: %s", deleteTenantAccessStmt)
+	_, err = persist.ExecContext(ctx, deleteTenantAccessStmt, args...)
+
+	return persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Delete, "while deleting tenant access record from '%s' table", m2mTable)
+}
+
+// DeleteTenantAccessFromDirective deletes all the accesses to the provided resource IDs created from the directive for which the root tenant no longer has access record
+func DeleteTenantAccessFromDirective(ctx context.Context, m2mTable string, resourceIDs, rootTenantIDs []string) error {
+	log.C(ctx).Infof("Deleting tenant access records for %s with source in %s where the source no longer has access to the object", resourceIDs, rootTenantIDs)
+	if len(resourceIDs) == 0 {
+		return errors.New("resourceIDs cannot be empty")
+	}
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return err
+	}
+
+	args := make([]interface{}, 0, len(resourceIDs)+len(rootTenantIDs))
+
+	inCondForResourceIDs := NewInConditionForStringValues(M2MResourceIDColumn, resourceIDs)
+	if inArgs, ok := inCondForResourceIDs.GetQueryArgs(); ok {
+		args = append(args, inArgs...)
+	}
+
+	inCondForRootTenantsIDs := NewInConditionForStringValues(M2MSourceColumn, rootTenantIDs)
+	if inArgs, ok := inCondForRootTenantsIDs.GetQueryArgs(); ok {
+		args = append(args, inArgs...)
+	}
+
+	deleteTenantAccessStmt := fmt.Sprintf(DeleteDirectiveAccess, m2mTable, inCondForResourceIDs.GetQueryPart(), inCondForRootTenantsIDs.GetQueryPart())
 	deleteTenantAccessStmt = sqlx.Rebind(sqlx.DOLLAR, deleteTenantAccessStmt)
 
 	log.C(ctx).Debugf("Executing DB query: %s", deleteTenantAccessStmt)
