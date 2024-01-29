@@ -355,34 +355,6 @@ func unusedFetcherService() *automock.Fetcher {
 }
 
 func fixDeleteTenantAccessesQuery() string {
-	return regexp.QuoteMeta(`WITH RECURSIVE parents AS
-                  (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST($1 AS uuid) AS child_id
-                   FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
-                   WHERE id = $2
-                   UNION ALL
-                   SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
-                   FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
-                                                    INNER JOIN parents p on p.parent_id = t2.id)
-			DELETE FROM `) + `(.+)` + regexp.QuoteMeta(` WHERE id IN ($3) AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)
-`)
-}
-
-func fixInsertTenantAccessesQuery() string {
-	return regexp.QuoteMeta(`WITH RECURSIVE parents AS
-                  (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST(? AS uuid) AS child_id
-                   FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
-                   WHERE id=?
-                   UNION ALL
-                   SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
-                   FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
-                                                    INNER JOIN parents p on p.parent_id = t2.id)
-			INSERT INTO `) + `(.+)` + regexp.QuoteMeta(` ( tenant_id, id, owner, source )  (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object'
-                                                                                                                OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object'))
-					)
-			ON CONFLICT ( tenant_id, id, source ) DO NOTHING`)
-}
-
-func fixDeleteTenantAccessRecursively() string {
 	return regexp.QuoteMeta(`WITH RECURSIVE
     parents AS
         (SELECT t1.id,
@@ -402,7 +374,7 @@ func fixDeleteTenantAccessRecursively() string {
                                            act.id   AS obj_id,
                                            pp.depth,
                                            COUNT(1) AS access_records_count
-                                    FROM tenant_applications act
+                                    FROM `) + `(.+)` + regexp.QuoteMeta( `act
                                              JOIN parents pp ON act.tenant_id = pp.id
                                     WHERE act.id IN ($3)
                                     GROUP BY pp.id, pp.depth, act.id),
@@ -428,7 +400,7 @@ func fixDeleteTenantAccessRecursively() string {
                  AND par2.tenant_id IS NULL
                  AND par3.tenant_id IS NULL)
 DELETE
-FROM tenant_applications act
+FROM `) + `(.+)` + regexp.QuoteMeta( `act
 WHERE act.id IN ($4)
   AND EXISTS (SELECT id
               FROM parents
@@ -437,9 +409,24 @@ WHERE act.id IN ($4)
                 AND parents.depth <= ALL (SELECT a.depth FROM anchor a WHERE a.obj_id = act.id));`)
 }
 
+func fixInsertTenantAccessesQuery() string {
+	return regexp.QuoteMeta(`WITH RECURSIVE parents AS
+                  (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST(? AS uuid) AS child_id
+                   FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
+                   WHERE id=?
+                   UNION ALL
+                   SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
+                   FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
+                                                    INNER JOIN parents p on p.parent_id = t2.id)
+			INSERT INTO `) + `(.+)` + regexp.QuoteMeta(` ( tenant_id, id, owner, source )  (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object'
+                                                                                                                OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object'))
+					)
+			ON CONFLICT ( tenant_id, id, source ) DO NOTHING`)
+}
+
 func fixDeleteTenantAccessesFromDirective() string {
 	return regexp.QuoteMeta(`
-DELETE FROM tenant_applications a 
+DELETE FROM  `) + `(.+)` + regexp.QuoteMeta(` a 
 WHERE id IN ($1) AND source IN ($2, $3) AND NOT EXISTS
 		(SELECT 1 FROM tenant_applications ta WHERE ta.tenant_id = a.source AND ta.id = a.id);
 `)

@@ -102,7 +102,7 @@ WHERE %s
   AND NOT EXISTS (SELECT 1 FROM tenant_applications ta WHERE ta.tenant_id = a.source AND ta.id = a.id);`
 
 	// DeleteTenantAccessGrantedByParentQuery is a delete SQL query that deletes tenant accesses based on given tenant id and source.
-	DeleteTenantAccessGrantedByParentQuery = `DELETE FROM %s WHERE tenant_id = ? AND SOURCE = ?`
+	DeleteTenantAccessGrantedByParentQuery = `DELETE FROM %s WHERE tenant_id = ? AND source = ?`
 )
 
 // M2MColumns are the column names of the tenant access tables / views.
@@ -199,7 +199,7 @@ func DeleteTenantAccessRecursively(ctx context.Context, m2mTable string, tenant 
 	inCond := NewInConditionForStringValues(M2MResourceIDColumn, resourceIDs)
 	if inArgs, ok := inCond.GetQueryArgs(); ok {
 		args = append(args, inArgs...)
-		args = append(args, inArgs...) //the same condition is used in the main delete query and in the generation of one of the CTEs
+		args = append(args, inArgs...) // the same condition is used in the main delete query and in the generation of one of the CTEs
 	}
 
 	deleteTenantAccessStmt := fmt.Sprintf(RecursiveDeleteTenantAccessCTEQuery, m2mTable, inCond.GetQueryPart(), m2mTable, inCond.GetQueryPart())

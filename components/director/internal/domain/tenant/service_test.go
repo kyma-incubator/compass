@@ -1617,7 +1617,7 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 			},
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
 				db, dbMock := testdb.MockDatabase(t)
-				dbMock.ExpectExec(fixDeleteTenantAccessRecursively()).
+				dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
 					WithArgs(testInternal, testInternal, testID, testID).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 				dbMock.ExpectExec(fixDeleteTenantAccessesFromDirective()).
@@ -1641,7 +1641,7 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 			},
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
 				db, dbMock := testdb.MockDatabase(t)
-				dbMock.ExpectExec(fixDeleteTenantAccessRecursively()).
+				dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
 					WithArgs(testInternal, testInternal, testID, testID).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 				dbMock.ExpectExec(fixDeleteTenantAccessesFromDirective()).
@@ -1666,7 +1666,7 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 			},
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
 				db, dbMock := testdb.MockDatabase(t)
-				dbMock.ExpectExec(fixDeleteTenantAccessRecursively()).
+				dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
 					WithArgs(testInternal, testInternal, testID, testID).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 				return db, dbMock
@@ -1683,7 +1683,7 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 			},
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
 				db, dbMock := testdb.MockDatabase(t)
-				dbMock.ExpectExec(fixDeleteTenantAccessRecursively()).
+				dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
 					WithArgs(testInternal, testInternal, testID, testID).
 					WillReturnError(testError)
 				return db, dbMock
