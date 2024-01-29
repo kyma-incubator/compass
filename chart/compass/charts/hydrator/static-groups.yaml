@@ -43,6 +43,7 @@
     - "tenant_access:write"
     - "bundle_instance_auth:write"
     - "formation:global_write"
+    - "formation:global_read"
 {{- end -}}
 {{ range $name := regexSplit "," .Values.operatorGroupNames -1 }}
 - groupname: "{{ trim $name }}"

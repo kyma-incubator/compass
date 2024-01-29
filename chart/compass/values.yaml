@@ -207,7 +207,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3593"
+      version: "PR-3589"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
@@ -541,7 +541,7 @@ global:
     port: 3000
     prefix: /hydrators
     certSubjectMappingResyncInterval: "3s"
-    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount", "global", "organization", "folder", "resource-group", "cost-object"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}, {"consumer_type": "Instance Creator", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=47b4575a-f102-414a-8398-2d973ad65f3a, CN=instance-creator"}, {"consumer_type": "Instance Creator", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=instance-creator"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount", "global", "organization", "folder", "resource-group", "cost-object"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}, {"consumer_type": "Instance Creator", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=47b4575a-f102-414a-8398-2d973ad65f3a, CN=instance-creator"}, {"consumer_type": "Instance Creator", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=instance-creator"}, {"consumer_type":  "Landscape Resource Operator", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=47b4575a-f102-414a-8398-2d973ad65f3a, CN=landscape_resource_operator"}]'
     certificateDataHeader: "Certificate-Data"
     consumerClaimsKeys:
       clientIDKey: "client_id"
@@ -683,6 +683,11 @@ global:
           - "x-vcap-request-id"
           - "x-broker-api-request-identity"
   kubernetes:
+    # Enable ClusterRoleBinding needed for local installation but unsafe on GKE
+    # It allows anonymous users to retrieve the JWKS of the K8S server used to create SA tokens
+    # Whenever this is running on GKE, there is a JWKS URL given by Google and is unneeded and unsafe
+    # Overriden to true in local compass overrides
+    local: false
     serviceAccountTokenIssuer: https://kubernetes.default.svc.cluster.local
     serviceAccountTokenJWKS: https://kubernetes.default.svc.cluster.local/openid/v1/jwks
   ingress:
@@ -1085,7 +1090,6 @@ global:
     maintainOperationsJobInterval: 60m
     operationProcessorsQuietPeriod: 5s
   systemFetcher:
-    syncGlobalAccountTenants: true
     name: "system-fetcher"
     port: 3000
     prefix: /system-fetcher
@@ -1099,11 +1103,6 @@ global:
     manageSecrets: true
     # enableSystemDeletion - whether systems in deleted state should be deleted from director database
     enableSystemDeletion: true
-    # fetchParallelism - shows how many http calls will be made in parallel to fetch systems
-    fetchParallellism: 30
-    # queueSize - shows how many system fetches (individual requests may fetch more than 1 system)
-    # can be put in the queue for processing before blocking. It is best for the queue to be about 2 times bigger than the parallellism
-    queueSize: 100
     # fetchRequestTimeout - shows the timeout to wait for oauth token and for fetching systems (in one request) separately
     fetchRequestTimeout: "30s"
     # directorRequestTimeout - graphql requests timeout to director
@@ -1143,6 +1142,14 @@ global:
       sizeParam: "$top"
       skipParam: "$skip"
     containerName: "system-fetcher"
+    parallelOperationProcessors: 10
+    priorityQueueLimit: 10
+    rescheduleJobInterval: 24h
+    reschedulePeriod: 168h
+    rescheduleHangedJobInterval: 1h
+    rescheduleHangedPeriod: 1h
+    maintainOperationsJobInterval: 60m
+    operationProcessorsQuietPeriod: 5s
   tenantFetchers:
     job1:
       enabled: false
@@ -1482,6 +1489,7 @@ global:
         - "formation:read"
         - "formation:write"
         - "formation:global_write"
+        - "formation:global_read"
       instance_creator:
         - "application_template:read"
         - "formation:read"
@@ -1591,6 +1599,7 @@ global:
         - "tenant_access:write"
         - "bundle_instance_auth:write"
         - "formation:global_write"
+        - "formation:global_read"
       default:
         - "runtime:read"
         - "runtime:write"

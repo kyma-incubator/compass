@@ -377,7 +377,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, pkg := range doc.Packages {
-			if err := validatePackageInputWithSuppressedErrors(pkg, resourcesFromDB.Packages, resourceHashes); err != nil {
+			if err := validatePackageInputWithSuppressedErrors(pkg, doc.PolicyLevel, resourcesFromDB.Packages, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating package with ord id %q", pkg.OrdID))
 			}
 			if err := validatePackageInput(pkg, doc.PolicyLevel); err != nil {
@@ -453,7 +453,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, entityType := range doc.EntityTypes {
-			if err := validateEntityTypeInputWithSuppressedErrors(entityType, resourcesFromDB.EntityTypes, resourceHashes); err != nil {
+			if err := validateEntityTypeInputWithSuppressedErrors(entityType, doc.PolicyLevel, resourcesFromDB.EntityTypes, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating entity type with ord id %q", entityType.OrdID))
 			}
 			if err := validateEntityTypeInput(entityType, doc.PolicyLevel); err != nil {
@@ -470,7 +470,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, capability := range doc.Capabilities {
-			if err := validateCapabilityInputWithSuppressedErrors(capability, resourcesFromDB.Capabilities, resourceHashes); err != nil {
+			if err := validateCapabilityInputWithSuppressedErrors(capability, doc.PolicyLevel, resourcesFromDB.Capabilities, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating capability with ord id %q", stringPtrToString(capability.OrdID)))
 			}
 			if err := validateCapabilityInput(capability, doc.PolicyLevel); err != nil {
@@ -487,7 +487,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, integrationDependency := range doc.IntegrationDependencies {
-			if err := validateIntegrationDependencyInputWithSuppressedErrors(integrationDependency, resourcesFromDB.IntegrationDependencies, resourceHashes); err != nil {
+			if err := validateIntegrationDependencyInputWithSuppressedErrors(integrationDependency, doc.PolicyLevel, resourcesFromDB.IntegrationDependencies, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating integration dependency with ord id %q", stringPtrToString(integrationDependency.OrdID)))
 			}
 			if err := validateIntegrationDependencyInput(integrationDependency, doc.PolicyLevel); err != nil {
@@ -504,7 +504,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, dataProduct := range doc.DataProducts {
-			if err := validateDataProductInputWithSuppressedErrors(dataProduct, resourcesFromDB.DataProducts, resourceHashes); err != nil {
+			if err := validateDataProductInputWithSuppressedErrors(dataProduct, doc.PolicyLevel, resourcesFromDB.DataProducts, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating data product with ord id %q", stringPtrToString(dataProduct.OrdID)))
 			}
 			if err := validateDataProductInput(dataProduct, doc.PolicyLevel); err != nil {
@@ -867,6 +867,9 @@ func mergeORDLabels(labels1, labels2 json.RawMessage) (json.RawMessage, error) {
 
 // mergeJSONArraysOfStrings merges arr2 in arr1
 func mergeJSONArraysOfStrings(arr1, arr2 json.RawMessage) (json.RawMessage, error) {
+	if len(arr1) == 0 {
+		return arr2, nil
+	}
 	if len(arr2) == 0 {
 		return arr1, nil
 	}
