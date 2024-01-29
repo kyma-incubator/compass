@@ -867,6 +867,9 @@ func mergeORDLabels(labels1, labels2 json.RawMessage) (json.RawMessage, error) {
 
 // mergeJSONArraysOfStrings merges arr2 in arr1
 func mergeJSONArraysOfStrings(arr1, arr2 json.RawMessage) (json.RawMessage, error) {
+	if len(arr1) == 0 {
+		return arr2, nil
+	}
 	if len(arr2) == 0 {
 		return arr1, nil
 	}
