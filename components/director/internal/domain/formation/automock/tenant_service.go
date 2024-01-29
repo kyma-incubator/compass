@@ -19,6 +19,10 @@ type TenantService struct {
 func (_m *TenantService) GetInternalTenant(ctx context.Context, externalTenant string) (string, error) {
 	ret := _m.Called(ctx, externalTenant)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetInternalTenant")
+	}
+
 	var r0 string
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
@@ -42,6 +46,10 @@ func (_m *TenantService) GetInternalTenant(ctx context.Context, externalTenant s
 // GetTenantByExternalID provides a mock function with given fields: ctx, id
 func (_m *TenantService) GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTenantByExternalID")
+	}
 
 	var r0 *model.BusinessTenantMapping
 	var r1 error
@@ -68,6 +76,10 @@ func (_m *TenantService) GetTenantByExternalID(ctx context.Context, id string) (
 // GetTenantByID provides a mock function with given fields: ctx, id
 func (_m *TenantService) GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTenantByID")
+	}
 
 	var r0 *model.BusinessTenantMapping
 	var r1 error

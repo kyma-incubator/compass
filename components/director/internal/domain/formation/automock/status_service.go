@@ -21,6 +21,10 @@ type StatusService struct {
 func (_m *StatusService) SetFormationToErrorStateWithConstraints(ctx context.Context, _a1 *model.Formation, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationState, operation model.FormationOperation) error {
 	ret := _m.Called(ctx, _a1, errorMessage, errorCode, state, operation)
 
+	if len(ret) == 0 {
+		panic("no return value specified for SetFormationToErrorStateWithConstraints")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.Formation, string, formationassignment.AssignmentErrorCode, model.FormationState, model.FormationOperation) error); ok {
 		r0 = rf(ctx, _a1, errorMessage, errorCode, state, operation)
@@ -34,6 +38,10 @@ func (_m *StatusService) SetFormationToErrorStateWithConstraints(ctx context.Con
 // UpdateWithConstraints provides a mock function with given fields: ctx, _a1, operation
 func (_m *StatusService) UpdateWithConstraints(ctx context.Context, _a1 *model.Formation, operation model.FormationOperation) error {
 	ret := _m.Called(ctx, _a1, operation)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateWithConstraints")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.Formation, model.FormationOperation) error); ok {

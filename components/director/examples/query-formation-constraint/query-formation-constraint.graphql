@@ -3,6 +3,7 @@ query {
   result: formationConstraint(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
     id
     name
+    description
     constraintType
     targetOperation
     operator
@@ -10,5 +11,7 @@ query {
     resourceSubtype
     inputTemplate
     constraintScope
+    priority
+    createdAt
   }
 }
