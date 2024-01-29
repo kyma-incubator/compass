@@ -52,7 +52,7 @@ const ordDocument = `{
          "ordId":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
          "vendor":"sap:vendor:SAP:",
          "title":"PACKAGE 1 TITLE",
-         "shortDescription":"short desc",
+         "shortDescription":"PACKAGE 1 TITLE desc",
          "description":"lorem ipsum dolor set",
          "version":"1.1.2",
          "packageLinks":[

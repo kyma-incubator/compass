@@ -18,7 +18,7 @@ const (
 	testProvider = "Compass"
 )
 
-func newModelBusinessTenantMapping(id, name string) *model.BusinessTenantMapping {
+func newModelBusinessTenantMapping(id, externalTenant, name string) *model.BusinessTenantMapping {
 	return &model.BusinessTenantMapping{
 		ID:             id,
 		Name:           name,
