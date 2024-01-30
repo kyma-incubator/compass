@@ -270,7 +270,17 @@ func (s *service) DeleteTenantAccessForResourceRecursively(ctx context.Context, 
 		return errors.Wrapf(err, "while deleting tenant acccess for resource type %q with ID %q for tenant %q", string(resourceType), ta.ResourceID, ta.TenantID)
 	}
 
-	return nil
+	rootTenants, err := s.tenantMappingRepo.GetParentsRecursivelyByExternalTenant(ctx, tenantAccess.ExternalTenantID)
+	if err != nil {
+		return err
+	}
+
+	rootTenantIDs := make([]string, 0, len(rootTenants))
+	for _, rootTenant := range rootTenants {
+		rootTenantIDs = append(rootTenantIDs, rootTenant.ID)
+	}
+
+	return repo.DeleteTenantAccessFromDirective(ctx, m2mTable, []string{tenantAccess.ResourceID}, rootTenantIDs)
 }
 
 // GetTenantAccessForResource gets a tenant access record for the specified resource
