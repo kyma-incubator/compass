@@ -8,6 +8,8 @@ query {
     runtimeTypeDisplayName
     runtimeArtifactKind
     leadingProductIDs
+    supportsReset
+    discoveryConsumers
     webhooks {
       id
       applicationID
@@ -81,6 +83,7 @@ query {
     formationConstraints {
       id
       name
+      description
       constraintType
       targetOperation
       operator
@@ -88,6 +91,8 @@ query {
       resourceSubtype
       inputTemplate
       constraintScope
+      priority
+      createdAt
     }
   }
 }
