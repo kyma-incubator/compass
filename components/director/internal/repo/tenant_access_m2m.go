@@ -213,6 +213,11 @@ func DeleteTenantAccessRecursively(ctx context.Context, m2mTable string, tenant 
 
 // DeleteTenantAccessFromDirective deletes all the accesses to the provided resource IDs created from the directive for which the root tenant no longer has access record
 func DeleteTenantAccessFromDirective(ctx context.Context, m2mTable string, resourceIDs, rootTenantIDs []string) error {
+	if len(rootTenantIDs) == 0 {
+		log.C(ctx).Info("There are no root tenants, nothing to delete")
+		return nil
+	}
+
 	log.C(ctx).Infof("Deleting tenant access records for %s with source in %s where the source no longer has access to the object", resourceIDs, rootTenantIDs)
 	if len(resourceIDs) == 0 {
 		return errors.New("resourceIDs cannot be empty")

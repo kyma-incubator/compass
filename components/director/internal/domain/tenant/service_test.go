@@ -1628,6 +1628,27 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 			Input: tenantAccessModel,
 		},
 		{
+			Name: "Success when removing tenant access for tenant without parents",
+			ConverterFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessToEntity", tenantAccessModel).Return(tenantAccessEntity).Once()
+				return conv
+			},
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				repo := &automock.TenantMappingRepository{}
+				repo.On("GetParentsRecursivelyByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(nil, nil)
+				return repo
+			},
+			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
+				db, dbMock := testdb.MockDatabase(t)
+				dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
+					WithArgs(testInternal, testInternal, testID, testID).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				return db, dbMock
+			},
+			Input: tenantAccessModel,
+		},
+		{
 			Name: "Error while deleting tenant access from directive",
 			ConverterFn: func() *automock.BusinessTenantMappingConverter {
 				conv := &automock.BusinessTenantMappingConverter{}
