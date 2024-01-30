@@ -100,32 +100,33 @@ func (at AssignedTenant) Validate() error {
 // Validate validates the request Body
 func (b Body) Validate() error {
 	return validation.ValidateStruct(&b,
-		validation.Field(&b.Context, validation.By(func(value interface{}) error {
-			return b.Context.Validate()
-		})),
-		validation.Field(&b.ReceiverTenant, validation.By(func(value interface{}) error {
+		validation.Field(&b.ReceiverTenant, validation.By(func(interface{}) error {
 			return b.ReceiverTenant.Validate()
 		})),
-		validation.Field(&b.AssignedTenant, validation.By(func(value interface{}) error {
+		validation.Field(&b.AssignedTenant, validation.By(func(interface{}) error {
 			return b.AssignedTenant.Validate()
 		})),
-		validation.Field(&b.Context, validation.When(b.Context.Operation == assignOperation,
-			validation.By(func(value interface{}) error {
-				assignedTenantConfiguration := gjson.ParseBytes(b.AssignedTenant.Configuration)
-				assignedTenantInboundCommunicationPath := FindKeyPath(assignedTenantConfiguration.Value(), inboundCommunicationKey)
-				if assignedTenantInboundCommunicationPath == "" {
-					return errors.New("AssignedTenant inbound communication is missing in the configuration")
-				}
-
-				receiverTenantConfiguration := gjson.ParseBytes(b.ReceiverTenant.Configuration)
-				receiverTenantOutboundCommunicationPath := FindKeyPath(receiverTenantConfiguration.Value(), outboundCommunicationKey)
-				if receiverTenantOutboundCommunicationPath != "" && strings.TrimSuffix(receiverTenantOutboundCommunicationPath, outboundCommunicationKey) != strings.TrimSuffix(assignedTenantInboundCommunicationPath, inboundCommunicationKey) {
-					return errors.New("ReceiverTenant outbound communication should be in the same place as the assigned tenant inbound communication")
-				}
-
-				return nil
+		validation.Field(&b.Context,
+			validation.By(func(interface{}) error {
+				return b.Context.Validate()
 			}),
-		)),
+			validation.When(b.Context.Operation == assignOperation,
+				validation.By(func(value interface{}) error {
+					assignedTenantConfiguration := gjson.ParseBytes(b.AssignedTenant.Configuration)
+					assignedTenantInboundCommunicationPath := FindKeyPath(assignedTenantConfiguration.Value(), inboundCommunicationKey)
+					if assignedTenantInboundCommunicationPath == "" {
+						return errors.New("AssignedTenant inbound communication is missing in the configuration")
+					}
+
+					receiverTenantConfiguration := gjson.ParseBytes(b.ReceiverTenant.Configuration)
+					receiverTenantOutboundCommunicationPath := FindKeyPath(receiverTenantConfiguration.Value(), outboundCommunicationKey)
+					if receiverTenantOutboundCommunicationPath != "" && strings.TrimSuffix(receiverTenantOutboundCommunicationPath, outboundCommunicationKey) != strings.TrimSuffix(assignedTenantInboundCommunicationPath, inboundCommunicationKey) {
+						return errors.New("ReceiverTenant outbound communication should be in the same place as the assigned tenant inbound communication")
+					}
+
+					return nil
+				}),
+			)),
 	)
 }
 

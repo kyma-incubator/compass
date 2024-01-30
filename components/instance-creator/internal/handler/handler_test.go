@@ -911,7 +911,7 @@ func Test_HandlerFunc(t *testing.T) {
 			requestBody: emptyJSON,
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Context's Formation ID should be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasBody("Context FormationID must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -931,7 +931,7 @@ func Test_HandlerFunc(t *testing.T) {
 			requestBody: fmt.Sprintf(reqBodyFormatter, `{"operation": "assign"}`, emptyJSON, emptyJSON),
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Context's Formation ID should be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasBody("Context FormationID must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -941,7 +941,7 @@ func Test_HandlerFunc(t *testing.T) {
 			requestBody: fmt.Sprintf(reqBodyFormatter, `{"uclFormationId": "formation-id", "operation": ""}`, emptyJSON, emptyJSON),
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Context's Operation is invalid")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasBody("Context Operation must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -951,7 +951,7 @@ func Test_HandlerFunc(t *testing.T) {
 			requestBody: fmt.Sprintf(reqBodyFormatter, `{"uclFormationId": "formation-id", "operation": "wrong-operation"}`, emptyJSON, emptyJSON),
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Context's Operation is invalid")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasBody(`Context Operation must be \"assign\" or \"unassign\"`)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -961,7 +961,7 @@ func Test_HandlerFunc(t *testing.T) {
 			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, emptyJSON, emptyJSON),
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Assigned Tenant Assignment ID should be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasBody("AssignedTenant AssignmentID must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -971,7 +971,7 @@ func Test_HandlerFunc(t *testing.T) {
 			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, emptyJSON, fmt.Sprintf(assignedTenantFormatter, assignmentID, emptyJSON)),
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Receiver Tenant Region should be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasBody("ReceiverTenant Region must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -981,7 +981,7 @@ func Test_HandlerFunc(t *testing.T) {
 			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, `{"deploymentRegion": "region"}`, fmt.Sprintf(assignedTenantFormatter, assignmentID, emptyJSON)),
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Receiver Tenant Subaccount ID should be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasBody("ReceiverTenant SubaccountID must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -991,7 +991,7 @@ func Test_HandlerFunc(t *testing.T) {
 			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, assignmentID, emptyJSON)),
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Assigned tenant inbound communication is missing in the configuration")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasBody("AssignedTenant inbound communication is missing in the configuration")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
@@ -1001,7 +1001,7 @@ func Test_HandlerFunc(t *testing.T) {
 			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, `{"credentials": {"another-field":{"credentials": {"outboundCommunication":{}}}}}`), fmt.Sprintf(assignedTenantFormatter, assignmentID, `{"credentials": {"inboundCommunication":{}}}`)),
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody(`Receiver tenant outbound communication should be in the same place as the assigned tenant inbound communication`)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
+				client.On("Do", requestThatHasBody(`ReceiverTenant outbound communication should be in the same place as the assigned tenant inbound communication`)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
 				return client
 			},
 			expectedResponseCode: http.StatusAccepted,
