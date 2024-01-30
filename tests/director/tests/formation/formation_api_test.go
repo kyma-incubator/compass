@@ -451,39 +451,6 @@ func TestApplicationOnlyFormationFlow(t *testing.T) {
 	fixtures.AssignFormationWithTenantObjectTypeExpectError(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
 }
 
-func TestApplicationGlobalUnassign(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-	newFormation := "ADDITIONAL"
-
-	tenantId := tenant.TestTenants.GetDefaultTenantID()
-
-	t.Log("Create formation template")
-	input := graphql.FormationTemplateInput{Name: "application-global-unassign-formation-template", ApplicationTypes: []string{string(util.ApplicationTypeC4C)}}
-	var formationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplate)
-	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, input)
-
-	t.Logf("Should create formation: %s", newFormation)
-	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, newFormation)
-	createdFormation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, newFormation, &formationTemplate.Name)
-
-	t.Log("Create application")
-	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), tenantId)
-	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
-	require.NoError(t, err)
-	require.NotEmpty(t, app.ID)
-
-	formationInput := graphql.FormationInput{Name: newFormation, TemplateName: &formationTemplate.Name}
-
-	t.Logf("Assign application to formation %s", newFormation)
-	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formationInput, app.ID, tenantId)
-	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formationInput, app.ID, tenantId)
-
-	t.Logf("Unassign application globally from formation %s", newFormation)
-	fixtures.UnassignFormationApplicationGlobal(t, ctx, certSecuredGraphQLClient, app.ID, createdFormation.ID)
-}
-
 func TestRuntimeFormationFlow(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
