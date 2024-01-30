@@ -160,7 +160,11 @@ func fixConfig() config.Config {
 
 func fixConfigWithInvalidURL() config.Config {
 	return config.Config{
-		InstanceSMURLPath: invalidURL,
+		RegionToInstanceConfig: map[string]config.InstanceConfig{
+			region: {
+				SMURL: invalidURL,
+			},
+		},
 	}
 }
 
@@ -185,18 +189,23 @@ func fixServiceOfferingsWithNoMatchingCatalogName() types.ServiceOfferings {
 	}
 }
 
-func fixServiceKey() *types.ServiceKey {
-	return &types.ServiceKey{
+func fixServiceBinding() *types.ServiceBinding {
+	return &types.ServiceBinding{
 		ID:                serviceKeyID,
 		ServiceInstanceID: serviceInstanceID,
 		Credentials:       json.RawMessage("{}"),
 	}
 }
 
-func fixServiceKeys() *types.ServiceKeys {
-	return &types.ServiceKeys{
+func fixServiceBindingJson() json.RawMessage {
+	marshalledServiceBinding, _ := json.Marshal(fixServiceBinding())
+	return marshalledServiceBinding
+}
+
+func fixServiceBindings() *types.ServiceBindings {
+	return &types.ServiceBindings{
 		NumItems: 1,
-		Items:    []*types.ServiceKey{fixServiceKey()},
+		Items:    []*types.ServiceBinding{fixServiceBinding()},
 	}
 }
 
