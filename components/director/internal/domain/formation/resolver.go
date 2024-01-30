@@ -327,8 +327,8 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 	return r.conv.ToGraphQL(newFormation)
 }
 
-// UnassignFormationnGlobal unassigns the objectID from the provided formation globally
-func (r *Resolver) UnassignFormationnGlobal(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formationID string) (*graphql.Formation, error) {
+// UnassignFormationGlobal unassigns the objectID from the provided formation globally
+func (r *Resolver) UnassignFormationGlobal(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formationID string) (*graphql.Formation, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err

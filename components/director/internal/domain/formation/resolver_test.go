@@ -625,7 +625,7 @@ func TestUnassignFormationGlobal(t *testing.T) {
 			resolver := formation.NewResolver(transact, service, converter, formationAssignmentSvc, nil, nil)
 
 			// WHEN
-			f, err := resolver.UnassignFormationnGlobal(emptyCtx, ApplicationID, graphql.FormationObjectTypeApplication, FormationID)
+			f, err := resolver.UnassignFormationGlobal(emptyCtx, ApplicationID, graphql.FormationObjectTypeApplication, FormationID)
 
 			// THEN
 			if testCase.ExpectedError != nil {
