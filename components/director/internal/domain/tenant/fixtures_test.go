@@ -52,7 +52,17 @@ var (
 	tenantAccessTestTableColumns  = []string{"tenant_id", "id", "owner", "source"}
 	testTenantParentsTableColumns = []string{"tenant_id", "parent_id"}
 	testRootParents               = []*model.BusinessTenantMapping{{ID: testParentID}, {ID: testParentID2}}
-	tenantAccessInput             = graphql.TenantAccessInput{
+	tenantGAModel                 = &model.BusinessTenantMapping{
+		ID:             testInternal,
+		ExternalTenant: testExternal,
+		Type:           tenant.Account,
+	}
+	tenantFolderModel = &model.BusinessTenantMapping{
+		ID:             testInternal,
+		ExternalTenant: testExternal,
+		Type:           tenant.Folder,
+	}
+	tenantAccessInput = graphql.TenantAccessInput{
 		TenantID:     testExternal,
 		ResourceType: graphql.TenantAccessObjectTypeApplication,
 		ResourceID:   testID,
@@ -428,6 +438,6 @@ func fixDeleteTenantAccessesFromDirective() string {
 	return regexp.QuoteMeta(`
 DELETE FROM  `) + `(.+)` + regexp.QuoteMeta(` a 
 WHERE id IN ($1) AND source IN ($2, $3) AND NOT EXISTS
-		(SELECT 1 FROM tenant_applications ta WHERE ta.tenant_id = a.source AND ta.id = a.id);
+		(SELECT 1 FROM `) + `(.+)` + regexp.QuoteMeta(` ta WHERE ta.tenant_id = a.source AND ta.id = a.id);
 `)
 }

@@ -99,7 +99,7 @@ WHERE act.%s
 FROM %s a
 WHERE %s
   AND %s
-  AND NOT EXISTS (SELECT 1 FROM tenant_applications ta WHERE ta.tenant_id = a.source AND ta.id = a.id);`
+  AND NOT EXISTS (SELECT 1 FROM %s ta WHERE ta.tenant_id = a.source AND ta.id = a.id);`
 
 	// DeleteTenantAccessGrantedByParentQuery is a delete SQL query that deletes tenant accesses based on given tenant id and source.
 	DeleteTenantAccessGrantedByParentQuery = `DELETE FROM %s WHERE tenant_id = ? AND source = ?`
@@ -213,6 +213,11 @@ func DeleteTenantAccessRecursively(ctx context.Context, m2mTable string, tenant 
 
 // DeleteTenantAccessFromDirective deletes all the accesses to the provided resource IDs created from the directive for which the root tenant no longer has access record
 func DeleteTenantAccessFromDirective(ctx context.Context, m2mTable string, resourceIDs, rootTenantIDs []string) error {
+	if len(rootTenantIDs) == 0 {
+		log.C(ctx).Info("There are no root tenants, nothing to delete")
+		return nil
+	}
+
 	log.C(ctx).Infof("Deleting tenant access records for %s with source in %s where the source no longer has access to the object", resourceIDs, rootTenantIDs)
 	if len(resourceIDs) == 0 {
 		return errors.New("resourceIDs cannot be empty")
@@ -235,7 +240,7 @@ func DeleteTenantAccessFromDirective(ctx context.Context, m2mTable string, resou
 		args = append(args, inArgs...)
 	}
 
-	deleteTenantAccessStmt := fmt.Sprintf(DeleteDirectiveAccess, m2mTable, inCondForResourceIDs.GetQueryPart(), inCondForRootTenantsIDs.GetQueryPart())
+	deleteTenantAccessStmt := fmt.Sprintf(DeleteDirectiveAccess, m2mTable, inCondForResourceIDs.GetQueryPart(), inCondForRootTenantsIDs.GetQueryPart(), m2mTable)
 	deleteTenantAccessStmt = sqlx.Rebind(sqlx.DOLLAR, deleteTenantAccessStmt)
 
 	log.C(ctx).Debugf("Executing DB query: %s", deleteTenantAccessStmt)
