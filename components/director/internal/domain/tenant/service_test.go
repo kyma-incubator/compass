@@ -1612,7 +1612,8 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 			},
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				repo := &automock.TenantMappingRepository{}
-				repo.On("GetParentsRecursivelyByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(testRootParents, nil)
+				repo.On("GetByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(tenantFolderModel, nil).Once()
+				repo.On("GetParentsRecursivelyByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(testRootParents, nil).Once()
 				return repo
 			},
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
@@ -1636,7 +1637,29 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 			},
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				repo := &automock.TenantMappingRepository{}
-				repo.On("GetParentsRecursivelyByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(nil, nil)
+				repo.On("GetByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(tenantFolderModel, nil).Once()
+				repo.On("GetParentsRecursivelyByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(nil, nil).Once()
+				return repo
+			},
+			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
+				db, dbMock := testdb.MockDatabase(t)
+				dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
+					WithArgs(testInternal, testInternal, testID, testID).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				return db, dbMock
+			},
+			Input: tenantAccessModel,
+		},
+		{
+			Name: "Success when tenant is not from atom - no directive tenant access records",
+			ConverterFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessToEntity", tenantAccessModel).Return(tenantAccessEntity).Once()
+				return conv
+			},
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				repo := &automock.TenantMappingRepository{}
+				repo.On("GetByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(tenantGAModel, nil).Once()
 				return repo
 			},
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
@@ -1657,7 +1680,8 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 			},
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				repo := &automock.TenantMappingRepository{}
-				repo.On("GetParentsRecursivelyByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(testRootParents, nil)
+				repo.On("GetByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(tenantFolderModel, nil).Once()
+				repo.On("GetParentsRecursivelyByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(testRootParents, nil).Once()
 				return repo
 			},
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
@@ -1682,7 +1706,8 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 			},
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				repo := &automock.TenantMappingRepository{}
-				repo.On("GetParentsRecursivelyByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(nil, testError)
+				repo.On("GetByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(tenantFolderModel, nil).Once()
+				repo.On("GetParentsRecursivelyByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(nil, testError).Once()
 				return repo
 			},
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
