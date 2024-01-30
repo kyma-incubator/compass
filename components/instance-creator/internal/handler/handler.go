@@ -7,12 +7,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/tidwall/gjson"
-	"github.com/tidwall/sjson"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/google/uuid"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 
 	"github.com/PaesslerAG/jsonpath"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -195,7 +196,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 		return
 	}
 
-	assignedTenantInboundCommunication := reqBody.GetAssignedTenantInboundCommunication()
+	assignedTenantInboundCommunication := reqBody.GetTenantCommunication(tenantmapping.AssignedTenantType, inboundCommunicationKey)
 	assignedTenantConfiguration := reqBody.AssignedTenant.Configuration
 
 	serviceInstancesPath := tenantmapping.FindKeyPath(assignedTenantInboundCommunication.Value(), serviceInstancesKey)
@@ -255,7 +256,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 	}
 
 	receiverTenantConfiguration := reqBody.ReceiverTenant.Configuration
-	receiverTenantInboundCommunication := reqBody.GetReceiverTenantInboundCommunication()
+	receiverTenantInboundCommunication := reqBody.GetTenantCommunication(tenantmapping.ReceiverTenantType, inboundCommunicationKey)
 	if receiverTenantInboundCommunication.Exists() {
 		log.C(ctx).Debugf("Removing service instance details(if they exist) from receiver tenant inbound communication...")
 		inboundCommunicationPath := tenantmapping.FindKeyPath(gjson.ParseBytes(receiverTenantConfiguration).Value(), inboundCommunicationKey)

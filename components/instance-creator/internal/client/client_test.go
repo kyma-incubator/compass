@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/mock"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
 
@@ -1038,7 +1039,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			testClient := client.NewClient(testCase.Config, callerProviderSvc)
 
 			// WHEN
-			err := testClient.DeleteMultipleResources(ctx, region, subaccountID, &types.ServiceBindings{}, &types.ServiceBindingMatchParameters{ServiceInstanceID: serviceInstanceID})
+			err := testClient.DeleteMultipleResources(ctx, region, subaccountID, &types.ServiceBindings{}, &types.ServiceBindingMatchParameters{ServiceInstancesIDs: []string{serviceInstanceID}})
 
 			// THEN
 			if testCase.ExpectedErrorMsg != "" {

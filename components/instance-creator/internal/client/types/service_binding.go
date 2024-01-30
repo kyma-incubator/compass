@@ -83,7 +83,6 @@ func (sbs *ServiceBindings) GetIDs() []string {
 
 // ServiceBindingMatchParameters holds all the necessary fields that are used when matching ServiceBindings
 type ServiceBindingMatchParameters struct {
-	ServiceInstanceID   string
 	ServiceInstancesIDs []string
 }
 
@@ -99,22 +98,15 @@ func (sbp *ServiceBindingMatchParameters) MatchMultiple(resources resources.Reso
 		return nil, errors.New("while type asserting Resources to ServiceBindings")
 	}
 	serviceBindingIDs := make([]string, 0, serviceBindings.NumItems)
-	if sbp.ServiceInstanceID != "" {
-		for _, sb := range serviceBindings.Items {
-			if sb.ServiceInstanceID == sbp.ServiceInstanceID {
-				serviceBindingIDs = append(serviceBindingIDs, sb.ID)
-			}
-		}
+
+	serviceBindingsMap := make(map[string][]string, len(sbp.ServiceInstancesIDs))
+	for _, serviceBinding := range serviceBindings.Items {
+		serviceBindingsMap[serviceBinding.ServiceInstanceID] = append(serviceBindingsMap[serviceBinding.ServiceInstanceID], serviceBinding.ID)
 	}
-	if len(sbp.ServiceInstancesIDs) > 0 {
-		// Add all service bindings for all sbp.serviceInstancesIDs
-		for _, serviceInstanceID := range sbp.ServiceInstancesIDs {
-			for _, sb := range serviceBindings.Items {
-				if sb.ServiceInstanceID == serviceInstanceID {
-					serviceBindingIDs = append(serviceBindingIDs, sb.ID)
-				}
-			}
-		}
+
+	for _, serviceInstanceID := range sbp.ServiceInstancesIDs {
+		serviceBindingIDs = append(serviceBindingIDs, serviceBindingsMap[serviceInstanceID]...)
 	}
+
 	return serviceBindingIDs, nil
 }

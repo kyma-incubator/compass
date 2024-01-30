@@ -57,8 +57,6 @@ func NewClient(cfg config.Config, callerProvider ExternalSvcCallerProvider) *cli
 }
 
 // RetrieveResource retrieves a given resource from SM by some criteria
-// Example call, delete after initial usage of the client:
-// RetrieveResource(ctx, region, sa, &types.ServiceOfferings{}, &types.ServiceOfferingMatchParameters{CatalogName: catalogName})
 func (c *client) RetrieveResource(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) (string, error) {
 	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resources.GetURLPath(), SubaccountKey, subaccountID)
 	if err != nil {
@@ -88,9 +86,6 @@ func (c *client) RetrieveResource(ctx context.Context, region, subaccountID stri
 }
 
 // RetrieveResourceByID retrieves a given resource from SM by its ID
-// Example call, delete after initial usage of the client:
-//
-// RetrieveResourceByID(ctx , region, subaccountID, &types.ServiceKey{ID: serviceKeyID}, &types.ServiceKeyMatchParameters{})
 func (c *client) RetrieveResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource) (resources.Resource, error) {
 	resourcePath := resource.GetResourceURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
 	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resourcePath, SubaccountKey, subaccountID)
@@ -114,9 +109,6 @@ func (c *client) RetrieveResourceByID(ctx context.Context, region, subaccountID 
 }
 
 // RetrieveMultipleResourcesIDsByLabels retrieves resources IDs from SM by labels
-// Example call, delete after initial usage of the client:
-//
-// RetrieveResourceIDByLabels(ctx , region, subaccountID, &types.ServiceKey{ID: serviceKeyID}, &types.ServiceKeyMatchParameters{})
 func (c *client) RetrieveMultipleResourcesIDsByLabels(ctx context.Context, region, subaccountID string, resources resources.Resources, labels map[string][]string) ([]string, error) {
 	strURL, err := buildURLWithLabels(c.cfg.RegionToInstanceConfig[region].SMURL, resources.GetURLPath(), SubaccountKey, subaccountID, LabelsQueryKey, labels)
 	if err != nil {
@@ -139,9 +131,6 @@ func (c *client) RetrieveMultipleResourcesIDsByLabels(ctx context.Context, regio
 }
 
 // RetrieveRawResourceByID retrieves a given resource from SM by its ID and returns the raw json body response
-// Example call, delete after initial usage of the client:
-//
-// RetrieveRawResourceByID(ctx , region, subaccountID, &types.ServiceKey{ID: serviceKeyID}, &types.ServiceKeyMatchParameters{})
 func (c *client) RetrieveRawResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource) (json.RawMessage, error) {
 	resourcePath := resource.GetResourceURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
 	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resourcePath, SubaccountKey, subaccountID)
@@ -160,9 +149,6 @@ func (c *client) RetrieveRawResourceByID(ctx context.Context, region, subaccount
 }
 
 // CreateResource creates a given resource in SM
-// Example call, delete after initial usage of the client:
-//
-// CreateResource(ctx, region, subaccountID, &types.ServiceInstanceReqBody{Name: name, ServicePlanID: id, Parameters: params}, &types.ServiceInstance{})
 func (c *client) CreateResource(ctx context.Context, region, subaccountID string, resourceReqBody resources.ResourceRequestBody, resource resources.Resource) (string, error) {
 	resourceReqBodyBytes, err := json.Marshal(resourceReqBody)
 	if err != nil {
@@ -228,9 +214,6 @@ func (c *client) CreateResource(ctx context.Context, region, subaccountID string
 }
 
 // DeleteResource deletes a given resource from SM by its ID
-// Example call, delete after initial usage of the client:
-//
-// DeleteResource(ctx, region, subaccountID, &types.ServiceInstance{ID: id}, &types.ServiceInstanceMatchParameters{})
 func (c *client) DeleteResource(ctx context.Context, region, subaccountID string, resource resources.Resource) error {
 	resourcePath := resource.GetResourceURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
 	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resourcePath, SubaccountKey, subaccountID)
@@ -279,9 +262,6 @@ func (c *client) DeleteResource(ctx context.Context, region, subaccountID string
 }
 
 // DeleteMultipleResources deletes multiple resources from SM by some criteria
-// Example call, delete after initial usage of the client:
-//
-// DeleteMultipleResources(ctx, region, subaccountID, &types.ServiceKeys{}, &types.ServiceKeyMatchParameters{ServiceInstanceID: id})
 func (c *client) DeleteMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) error {
 	resourceIDs, err := c.RetrieveMultipleResources(ctx, region, subaccountID, resources, resourceMatchParams)
 	if err != nil {
@@ -302,9 +282,6 @@ func (c *client) DeleteMultipleResources(ctx context.Context, region, subaccount
 }
 
 // DeleteMultipleResourcesByIDs deletes multiple resources from SM by IDs
-// Example call, delete after initial usage of the client:
-//
-// DeleteMultipleResourcesByIDs(ctx, region, subaccountID, &types.ServiceKeys{}, []string{"resource-id"})
 func (c *client) DeleteMultipleResourcesByIDs(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceIDs []string) error {
 	for _, resourceID := range resourceIDs {
 		resource, err := c.prepareResourceForDeletion(resources.GetType(), resourceID)

@@ -5,56 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
-
-// Contract
-// {
-//  "state": "CONFIG_PENDING",
-//  "configuration": {
-//    "credentials": {
-//      "inboundCommunication": {
-//        "oauth2mtls": {
-//          "tokenServiceUrl": "$.serviceInstances[1].serviceKey.url",
-//          "clientId": "$.serviceInstances[1].serviceKey.clientid",
-//          "certificate": "-----BEGIN CERTIFICATE----- certFromS4 -----END CERTIFICATE-----",
-//          "correlationIds": ["SAP_COM_0545"],
-//          "serviceInstances": [
-//            {
-//              "service": "procurement-service-test",
-//              "plan": "apiaccess",
-//              "configuration": {},
-//              "serviceKey": {
-//                "configuration": {}
-//              }
-//            },
-//            {
-//              "service": "identity",
-//              "plan": "application",
-//              "configuration": {
-//                "consumed-services": [
-//                  {
-//                    "service-instance-name": "$.serviceInstances[0].name"
-//                  }
-//                ],
-//                "xsuaa-cross-consumption": true
-//              },
-//              "serviceKey": {
-//                "configuration": {
-//                  "credential-type": "X509_PROVIDED",
-//                  "certificate": "-----BEGIN CERTIFICATE----- certFromS4 -----END CERTIFICATE-----"
-//                }
-//              }
-//            }
-//          ]
-//        }
-//      }
-//    }
-//  }
-//}
 
 const (
 	assignOperation   = "assign"
@@ -62,6 +18,13 @@ const (
 
 	inboundCommunicationKey  = "inboundCommunication"
 	outboundCommunicationKey = "outboundCommunication"
+)
+
+type TenantType int
+
+const (
+	AssignedTenantType TenantType = iota
+	ReceiverTenantType
 )
 
 // Context is a structure used to JSON decode the context in the Body
@@ -90,114 +53,84 @@ type Body struct {
 	AssignedTenant AssignedTenant `json:"assignedTenant"`
 }
 
-// GetAssignedTenantInboundCommunication returns the Body assigned tenant inbound communication
-func (b Body) GetAssignedTenantInboundCommunication() gjson.Result {
-	assignedTenantConfiguration := gjson.ParseBytes(b.AssignedTenant.Configuration)
+// GetTenantCommunication returns the Body tenant(Receiver or Assigned) communication(inbound or outbound)
+func (b Body) GetTenantCommunication(tenantType TenantType, communicationType string) gjson.Result {
+	var tenantConfiguration gjson.Result
 
-	assignedTenantInboundCommunicationPath := FindKeyPath(assignedTenantConfiguration.Value(), inboundCommunicationKey)
-	if assignedTenantInboundCommunicationPath == "" {
+	switch tenantType {
+	case AssignedTenantType:
+		tenantConfiguration = gjson.ParseBytes(b.AssignedTenant.Configuration)
+	case ReceiverTenantType:
+		tenantConfiguration = gjson.ParseBytes(b.ReceiverTenant.Configuration)
+	default:
 		return gjson.Result{}
 	}
 
-	assignedTenantInboundCommunication := gjson.GetBytes(b.AssignedTenant.Configuration, assignedTenantInboundCommunicationPath)
-	if !assignedTenantInboundCommunication.Exists() {
+	communicationPath := FindKeyPath(tenantConfiguration.Value(), communicationType)
+	if communicationPath == "" {
 		return gjson.Result{}
 	}
 
-	return assignedTenantInboundCommunication
+	return tenantConfiguration.Get(communicationPath)
 }
 
-// GetReceiverTenantOutboundCommunication returns the Body receiver tenant outbound communication
-func (b Body) GetReceiverTenantOutboundCommunication() gjson.Result {
-	receiverTenantConfiguration := gjson.ParseBytes(b.ReceiverTenant.Configuration)
-
-	receiverTenantOutboundCommunicationPath := FindKeyPath(receiverTenantConfiguration.Value(), outboundCommunicationKey)
-	if receiverTenantOutboundCommunicationPath == "" {
-		return gjson.Result{}
-	}
-
-	receiverTenantOutboundCommunication := gjson.GetBytes(b.ReceiverTenant.Configuration, receiverTenantOutboundCommunicationPath)
-	if !receiverTenantOutboundCommunication.Exists() {
-		return gjson.Result{}
-	}
-
-	return receiverTenantOutboundCommunication
+// Validate validates the Body's Context
+func (c Context) Validate() error {
+	return validation.ValidateStruct(&c,
+		validation.Field(&c.FormationID, validation.Required.Error("Context FormationID must be provided")),
+		validation.Field(&c.Operation, validation.Required.Error("Context Operation must be provided"), validation.In(assignOperation, unassignOperation).Error(fmt.Sprintf("Context Operation must be %q or %q", assignOperation, unassignOperation))),
+	)
 }
 
-// GetReceiverTenantInboundCommunication returns the Body receiver tenant inbound communication
-func (b Body) GetReceiverTenantInboundCommunication() gjson.Result {
-	receiverTenantConfiguration := gjson.ParseBytes(b.ReceiverTenant.Configuration)
-
-	receiverTenantInboundCommunicationPath := FindKeyPath(receiverTenantConfiguration.Value(), inboundCommunicationKey)
-	if receiverTenantInboundCommunicationPath == "" {
-		return gjson.Result{}
-	}
-
-	receiverTenantInboundCommunication := gjson.GetBytes(b.ReceiverTenant.Configuration, receiverTenantInboundCommunicationPath)
-	if !receiverTenantInboundCommunication.Exists() {
-		return gjson.Result{}
-	}
-
-	return receiverTenantInboundCommunication
+// Validate validates the Body's ReceiverTenant
+func (rt ReceiverTenant) Validate() error {
+	return validation.ValidateStruct(&rt,
+		validation.Field(&rt.Region, validation.Required.Error("ReceiverTenant Region must be provided")),
+		validation.Field(&rt.SubaccountID, validation.Required.Error("ReceiverTenant SubaccountID must be provided")),
+	)
 }
 
-func (b *Body) SetReceiverTenantAuth(authKey string, authValue map[string]interface{}) error {
-	receiverTenantConfiguration := gjson.ParseBytes(b.ReceiverTenant.Configuration)
-
-	receiverTenantOutboundCommunicationPath := FindKeyPath(receiverTenantConfiguration.Value(), outboundCommunicationKey)
-	if receiverTenantOutboundCommunicationPath == "" {
-		return errors.New("Receiver tenant inbound communication is missing in the configuration")
-	}
-
-	newReceiverTenantConfiguration, err := sjson.SetBytes(b.ReceiverTenant.Configuration, fmt.Sprintf("%s.%s", receiverTenantOutboundCommunicationPath, authKey), authValue)
-	if err != nil {
-		return errors.Wrapf(err, "while setting receiver tenant %q auth key in outbound communication", authKey)
-	}
-	b.ReceiverTenant.Configuration = newReceiverTenantConfiguration
-	return nil
+// Validate validates the Body's AssignedTenant
+func (at AssignedTenant) Validate() error {
+	return validation.ValidateStruct(&at,
+		validation.Field(&at.AssignmentID, validation.Required.Error("AssignedTenant AssignmentID must be provided")),
+	)
 }
 
 // Validate validates the request Body
 func (b Body) Validate() error {
-	if b.Context.FormationID == "" {
-		return apperrors.NewInvalidDataError("Context's Formation ID should be provided")
-	}
+	return validation.ValidateStruct(&b,
+		validation.Field(&b.Context, validation.By(func(value interface{}) error {
+			return b.Context.Validate()
+		})),
+		validation.Field(&b.ReceiverTenant, validation.By(func(value interface{}) error {
+			return b.ReceiverTenant.Validate()
+		})),
+		validation.Field(&b.AssignedTenant, validation.By(func(value interface{}) error {
+			return b.AssignedTenant.Validate()
+		})),
+		validation.Field(&b.Context, validation.When(b.Context.Operation == assignOperation,
+			validation.By(func(value interface{}) error {
+				assignedTenantConfiguration := gjson.ParseBytes(b.AssignedTenant.Configuration)
+				assignedTenantInboundCommunicationPath := FindKeyPath(assignedTenantConfiguration.Value(), inboundCommunicationKey)
+				if assignedTenantInboundCommunicationPath == "" {
+					return errors.New("AssignedTenant inbound communication is missing in the configuration")
+				}
 
-	if b.Context.Operation == "" || (b.Context.Operation != assignOperation && b.Context.Operation != unassignOperation) {
-		return apperrors.NewInvalidDataError("Context's Operation is invalid, expected %q or %q, got: %q", assignOperation, unassignOperation, b.Context.Operation)
-	}
+				receiverTenantConfiguration := gjson.ParseBytes(b.ReceiverTenant.Configuration)
+				receiverTenantOutboundCommunicationPath := FindKeyPath(receiverTenantConfiguration.Value(), outboundCommunicationKey)
+				if receiverTenantOutboundCommunicationPath != "" && strings.TrimSuffix(receiverTenantOutboundCommunicationPath, outboundCommunicationKey) != strings.TrimSuffix(assignedTenantInboundCommunicationPath, inboundCommunicationKey) {
+					return errors.New("ReceiverTenant outbound communication should be in the same place as the assigned tenant inbound communication")
+				}
 
-	if b.AssignedTenant.AssignmentID == "" {
-		return apperrors.NewInvalidDataError("Assigned Tenant Assignment ID should be provided")
-	}
-
-	if b.ReceiverTenant.Region == "" {
-		return apperrors.NewInvalidDataError("Receiver Tenant Region should be provided")
-	}
-
-	if b.ReceiverTenant.SubaccountID == "" {
-		return apperrors.NewInvalidDataError("Receiver Tenant Subaccount ID should be provided")
-	}
-
-	if b.Context.Operation == assignOperation {
-		assignedTenantConfiguration := gjson.ParseBytes(b.AssignedTenant.Configuration)
-		assignedTenantInboundCommunicationPath := FindKeyPath(assignedTenantConfiguration.Value(), inboundCommunicationKey)
-		if assignedTenantInboundCommunicationPath == "" {
-			return apperrors.NewInvalidDataError("Assigned tenant inbound communication is missing in the configuration")
-		}
-
-		receiverTenantConfiguration := gjson.ParseBytes(b.ReceiverTenant.Configuration)
-		receiverTenantOutboundCommunicationPath := FindKeyPath(receiverTenantConfiguration.Value(), outboundCommunicationKey)
-		if receiverTenantOutboundCommunicationPath != "" && strings.TrimSuffix(receiverTenantOutboundCommunicationPath, outboundCommunicationKey) != strings.TrimSuffix(assignedTenantInboundCommunicationPath, inboundCommunicationKey) {
-			return errors.New("Receiver tenant outbound communication should be in the same place as the assigned tenant inbound communication")
-		}
-	}
-
-	return nil
+				return nil
+			}),
+		)),
+	)
 }
 
 func (b *Body) AddReceiverTenantOutboundCommunicationIfMissing() error {
-	if outboundCommunication := b.GetReceiverTenantOutboundCommunication(); !outboundCommunication.Exists() {
+	if outboundCommunication := b.GetTenantCommunication(ReceiverTenantType, outboundCommunicationKey); !outboundCommunication.Exists() {
 		if err := b.addReceiverTenantOutboundCommunication(); err != nil {
 			return errors.Wrap(err, "while creating receiver tenant outbound communication")
 		}
@@ -210,7 +143,7 @@ func (b *Body) addReceiverTenantOutboundCommunication() error {
 
 	assignedTenantInboundCommunicationPath := FindKeyPath(assignedTenantConfiguration.Value(), inboundCommunicationKey)
 
-	newConfiguration, err := sjson.SetBytes(b.ReceiverTenant.Configuration, strings.Replace(assignedTenantInboundCommunicationPath, inboundCommunicationKey, outboundCommunicationKey, 1), "{}")
+	newConfiguration, err := sjson.SetBytes(b.ReceiverTenant.Configuration, strings.Replace(assignedTenantInboundCommunicationPath, inboundCommunicationKey, outboundCommunicationKey, 1), map[string]string{})
 	if err != nil {
 		return err
 	}
