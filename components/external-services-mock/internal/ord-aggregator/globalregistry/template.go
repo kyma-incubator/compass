@@ -94,6 +94,18 @@ const ordDocument = `{
       "shortDescription": "SAP Transactional Banking for SAP S/4HANA is an open core banking platform, which is based on an architecture that ensures real-time processing and continuous availability.",
       "vendor": "sap:vendor:SAP:",
       "parent": "sap:product:SAPS4HANA:"
+    },
+    {
+      "ordId": "sap:product:SAPLandscapeManagementCloud:",
+      "title": "SAP Landscape Management Cloud",
+      "shortDescription": "Manage operations and scalability for SAP solutions on cloud infrastructure providers with SAP Landscape Management Cloud.",
+      "vendor": "sap:vendor:SAP:"
+    },
+    {
+      "ordId": "sap:product:SAPS4HANAPrivateCloud:",
+      "title": "SAP S/4HANA Cloud Private Edition",
+      "shortDescription": "The next generation digital core designed to help you run simple in a digital economy. It provides the industry-specific capabilities and cloud benefits that your business needs.",
+      "vendor": "sap:vendor:SAP:"
     }
   ],
    "vendors":[
