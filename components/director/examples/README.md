@@ -114,6 +114,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [unassign runtime context from formation](./unassign-formation/unassign-runtime-context-from-formation.graphql)
 - [unassign runtime from formation](./unassign-formation/unassign-runtime-from-formation.graphql)
 - [unassign tenant from formation](./unassign-formation/unassign-tenant-from-formation.graphql)
+- [unassign application from formation global](./unassign-formation-global/unassign-application-from-formation-global.graphql)
 - [unpair application](./unpair-application/unpair-application.graphql)
 - [unregister application](./unregister-application/unregister-application.graphql)
 - [unregister integration system](./unregister-integration-system/unregister-integration-system.graphql)

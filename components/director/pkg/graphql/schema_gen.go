@@ -7644,6 +7644,10 @@ type Mutation {
 	- [unassign tenant from formation](examples/unassign-formation/unassign-tenant-from-formation.graphql)
 	"""
 	unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unassignFormation")
+	"""
+	**Examples**
+	- [unassign application from formation global](examples/unassign-formation-global/unassign-application-from-formation-global.graphql)
+	"""
 	unassignFormationGlobal(objectID: ID!, objectType: FormationObjectType!, formation: ID!): Formation! @hasScopes(path: "graphql.mutation.unassignFormationGlobal")
 	"""
 	**Examples**
