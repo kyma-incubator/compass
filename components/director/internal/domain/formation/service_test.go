@@ -174,6 +174,105 @@ func TestServiceGet(t *testing.T) {
 	}
 }
 
+func TestService_ListFormationsForObject(t *testing.T) {
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name                     string
+		FormationAssignmentSvcFn func() *automock.FormationAssignmentService
+		FormationRepoFn          func() *automock.FormationRepository
+		Input                    string
+		ExpectedFormations       []*model.Formation
+		ExpectedErrMessage       string
+	}{
+		{
+			Name: "Success",
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("ListAllForObjectGlobal", ctx, ApplicationID).Return(formationAssignments, nil).Once()
+				return svc
+			},
+			FormationRepoFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("ListByIDsGlobal", ctx, mock.MatchedBy(func(formationIDs []string) bool {
+					return assert.ElementsMatch(t, formationIDs, []string{FormationID, FormationID2})
+				})).Return(modelFormations, nil).Once()
+				return repo
+			},
+			Input:              ApplicationID,
+			ExpectedFormations: modelFormations,
+		},
+		{
+			Name: "Success when no assignments are returned",
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("ListAllForObjectGlobal", ctx, ApplicationID).Return(nil, nil).Once()
+				return svc
+			},
+			Input:              ApplicationID,
+			ExpectedFormations: nil,
+		},
+		{
+			Name: "Error when listing formations",
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("ListAllForObjectGlobal", ctx, ApplicationID).Return(formationAssignments, nil).Once()
+				return svc
+			},
+			FormationRepoFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("ListByIDsGlobal", ctx, mock.MatchedBy(func(formationIDs []string) bool {
+					return assert.ElementsMatch(t, formationIDs, []string{FormationID, FormationID2})
+				})).Return(nil, testErr).Once()
+				return repo
+			},
+			Input:              ApplicationID,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Error when listing formation assignments",
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("ListAllForObjectGlobal", ctx, ApplicationID).Return(nil, testErr).Once()
+				return svc
+			},
+			Input:              ApplicationID,
+			ExpectedErrMessage: fmt.Sprintf("while listing formations assignments for participant with ID %s", ApplicationID),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			formationAssignmentService := &automock.FormationAssignmentService{}
+			if testCase.FormationAssignmentSvcFn != nil {
+				formationAssignmentService = testCase.FormationAssignmentSvcFn()
+			}
+			formationRepo := &automock.FormationRepository{}
+			if testCase.FormationRepoFn != nil {
+				formationRepo = testCase.FormationRepoFn()
+			}
+
+			svc := formation.NewService(nil, nil, nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, formationAssignmentService, nil, nil, nil, nil, nil, runtimeType, applicationType)
+
+			// WHEN
+			actual, err := svc.ListFormationsForObject(ctx, testCase.Input)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedFormations, actual)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+				require.Nil(t, actual)
+			}
+
+			mock.AssertExpectationsForObjects(t, formationRepo, formationAssignmentService)
+		})
+	}
+}
+
 func TestService_GetFormationByName(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
