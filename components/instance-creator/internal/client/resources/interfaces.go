@@ -7,6 +7,7 @@ type Resource interface {
 	GetResourceID() string
 	GetResourceType() string
 	GetResourceURLPath() string
+	GetResourceName() string
 }
 
 // Resources provides common capabilities for all the SM resources that are used by the SM client
@@ -15,6 +16,7 @@ type Resource interface {
 type Resources interface {
 	GetType() string
 	GetURLPath() string
+	GetIDs() []string
 }
 
 // ResourceMatchParameters holds all specific parameters needed for matching resources and provides the specific URL Path of each one

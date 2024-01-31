@@ -261,6 +261,12 @@ spec:
                 value: {{ .Values.global.tests.destination.instanceID | quote }}
               - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
                 value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
+              - name: APP_SERVICE_MANAGER_PATH
+                value: {{ .Values.global.instanceCreator.apiRootPath }}{{ .Values.global.instanceCreator.apiTenantMappingsEndpoint }}
+              - name: APP_SERVICE_MANAGER_SUBACCOUNT_QUERY_PARAM
+                value: {{ .Values.global.instanceCreator.subaccountQueryParam }}
+              - name: APP_SERVICE_MANAGER_LABELS_QUERY_PARAM
+                value: {{ .Values.global.instanceCreator.labelsQueryParam }}
               - name: APP_PROVIDER_DESTINATION_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
