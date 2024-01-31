@@ -19,6 +19,10 @@ type FormationTemplateRepository struct {
 func (_m *FormationTemplateRepository) Get(ctx context.Context, id string) (*model.FormationTemplate, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
 	var r0 *model.FormationTemplate
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.FormationTemplate, error)); ok {
@@ -44,6 +48,10 @@ func (_m *FormationTemplateRepository) Get(ctx context.Context, id string) (*mod
 // GetByNameAndTenant provides a mock function with given fields: ctx, templateName, tenantID
 func (_m *FormationTemplateRepository) GetByNameAndTenant(ctx context.Context, templateName string, tenantID string) (*model.FormationTemplate, error) {
 	ret := _m.Called(ctx, templateName, tenantID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByNameAndTenant")
+	}
 
 	var r0 *model.FormationTemplate
 	var r1 error

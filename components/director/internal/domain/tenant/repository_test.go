@@ -2171,7 +2171,7 @@ func TestPgRepository_Update(t *testing.T) {
 						WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
 
 					dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
-						WithArgs(testID, testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
+						WithArgs(testID, testParentID, tenantAccesses[0].ResourceID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 					dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM `)+`(.+)`+regexp.QuoteMeta(` WHERE tenant_id = $1 AND source = $2`)).
 						WithArgs(testID, testParentID).
@@ -2253,7 +2253,7 @@ func TestPgRepository_Update(t *testing.T) {
 					WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
 
 				dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
-					WithArgs(testID, testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
+					WithArgs(testID, testParentID, tenantAccesses[0].ResourceID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 				dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM `)+`(.+)`+regexp.QuoteMeta(` WHERE tenant_id = $1 AND source = $2`)).
 					WithArgs(testID, testParentID).WillReturnError(testError)

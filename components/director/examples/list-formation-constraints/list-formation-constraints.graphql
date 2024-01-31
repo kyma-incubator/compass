@@ -4,6 +4,7 @@ query {
     					
 			id
 			name
+            description
 			constraintType
 			targetOperation
 			operator
@@ -11,6 +12,8 @@ query {
 			resourceSubtype
 			inputTemplate
 			constraintScope
+            priority
+            createdAt
 	
 					}
 				}

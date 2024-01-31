@@ -75,6 +75,7 @@ const (
 
 	// Formation constants
 	testFormationName       = "test-formation-name"
+	testFormationName2      = "test-formation-name-2"
 	initialFormationState   = string(model.InitialFormationState)
 	readyFormationState     = string(model.ReadyFormationState)
 	testFormationEmptyError = "{}"
@@ -110,13 +111,20 @@ var (
 	runtimeTypeDisplayName = str.Ptr("display name")
 	defaultTime            = time.Time{}
 
-	testErr = errors.New("Test error")
+	emptyCtx = context.Background()
+	testErr  = errors.New("Test error")
 
 	formationModelWithoutError = fixFormationModelWithoutError()
 	modelFormation             = model.Formation{
 		ID:                  FormationID,
 		FormationTemplateID: FormationTemplateID,
 		Name:                testFormationName,
+	}
+	modelFormationWithTenant = model.Formation{
+		ID:                  FormationID,
+		FormationTemplateID: FormationTemplateID,
+		Name:                testFormationName,
+		TenantID:            TntInternalID,
 	}
 	graphqlFormation = graphql.Formation{
 		ID:                  FormationID,
@@ -856,6 +864,23 @@ var (
 	thirdFormationStatusParams  = dataloader.ParamFormationStatus{ID: FormationID + "3", State: string(model.ReadyFormationState)}
 	fourthPageFormations        = dataloader.ParamFormationStatus{ID: FormationID + "4", State: string(model.ReadyFormationState)}
 
+	formationAssignments = []*model.FormationAssignment{
+		{ID: FormationAssignmentID, FormationID: FormationID},
+		{ID: FormationAssignmentID2, FormationID: FormationID2},
+	}
+
+	modelFormations = []*model.Formation{
+		{
+			ID:                  FormationID,
+			FormationTemplateID: FormationTemplateID,
+			Name:                testFormationName,
+		},
+		{
+			ID:                  FormationID2,
+			FormationTemplateID: FormationTemplateID,
+			Name:                testFormationName2,
+		},
+	}
 	customerParentTenantResponse   = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.Customer)}
 	costObjectParentTenantResponse = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.CostObject)}
 )
@@ -1383,6 +1408,7 @@ func fixFormationEntity() *formation.Entity {
 func fixGqlFormation() *graphql.Formation {
 	return &graphql.Formation{
 		ID:                            FormationID,
+		TenantID:                      TntInternalID,
 		Name:                          testFormationName,
 		FormationTemplateID:           FormationTemplateID,
 		State:                         string(model.InitialFormationState),

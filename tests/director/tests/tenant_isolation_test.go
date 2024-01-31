@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -221,17 +222,152 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 func TestTenantAccess(t *testing.T) {
 	ctx := context.Background()
 
-	actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "e2e-tenant-access", tenant.TestTenants.GetDefaultTenantID())
-	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+	testProvider := "e2e-test-provider"
+	testLicenseType := "LICENSETYPE"
+
+	customerExternalTenant := "customer-external-tenant"
+	customerName := "customer-name"
+	customerSubdomain := "customer-subdomain"
+
+	orgExternalTenant := "org-external-tenant"
+	orgName := "org-name"
+	orgSubdomain := "org-subdomain"
+
+	folder1ExternalTenant := "folder-1-external-tenant"
+	folder1Name := "folder-1-name"
+	folder1Subdomain := "folder-1-subdomain"
+
+	folder2ExternalTenant := "folder-2-external-tenant"
+	folder2Name := "folder-2-name"
+	folder2Subdomain := "folder-2-subdomain"
+
+	folder3ExternalTenant := "folder-3-external-tenant"
+	folder3Name := "folder-3-name"
+	folder3Subdomain := "folder-3-subdomain"
+
+	resourceGroup1ExternalTenant := "resource-group-1-external-tenant"
+	resourceGroup1Name := "resource-group-1-name"
+	resourceGroup1Subdomain := "resource-group-1-subdomain"
+
+	resourceGroup2ExternalTenant := "resource-group-2-external-tenant"
+	resourceGroup2Name := "resource-2-group-name"
+	resourceGroup2Subdomain := "resource-2-group-subdomain"
+
+	region := "local"
+
+	tenants := []graphql.BusinessTenantMappingInput{
+		{
+			Name:           customerName,
+			ExternalTenant: customerExternalTenant,
+			Parents:        []*string{},
+			Subdomain:      &customerSubdomain,
+			Region:         &region,
+			Type:           string(tenant.Customer),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           orgName,
+			ExternalTenant: orgExternalTenant,
+			Parents:        []*string{&customerExternalTenant},
+			Subdomain:      &orgSubdomain,
+			Region:         &region,
+			Type:           string(tenant.Folder),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           folder1Name,
+			ExternalTenant: folder1ExternalTenant,
+			Parents:        []*string{&orgExternalTenant},
+			Subdomain:      &folder1Subdomain,
+			Region:         &region,
+			Type:           string(tenant.Folder),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           folder2Name,
+			ExternalTenant: folder2ExternalTenant,
+			Parents:        []*string{&folder1ExternalTenant},
+			Subdomain:      &folder2Subdomain,
+			Region:         &region,
+			Type:           string(tenant.Folder),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           folder3Name,
+			ExternalTenant: folder3ExternalTenant,
+			Parents:        []*string{&folder1ExternalTenant},
+			Subdomain:      &folder3Subdomain,
+			Region:         &region,
+			Type:           string(tenant.Folder),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           resourceGroup1Name,
+			ExternalTenant: resourceGroup1ExternalTenant,
+			Parents:        []*string{&folder2ExternalTenant},
+			Subdomain:      &resourceGroup1Subdomain,
+			Region:         &region,
+			Type:           string(tenant.ResourceGroup),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           resourceGroup2Name,
+			ExternalTenant: resourceGroup2ExternalTenant,
+			Parents:        []*string{&folder3ExternalTenant},
+			Subdomain:      &resourceGroup2Subdomain,
+			Region:         &region,
+			Type:           string(tenant.ResourceGroup),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+	}
+	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
+	assert.NoError(t, err)
+	defer func() { // cleanup tenants
+		err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenants)
+		assert.NoError(t, err)
+		log.D().Info("Successfully cleanup tenants")
+	}()
+
+	actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "e2e-tenant-access", resourceGroup1ExternalTenant)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, resourceGroup1ExternalTenant, &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 
-	customTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
-	anotherTenantsApps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customTenant)
-	assert.Empty(t, anotherTenantsApps.Data)
+	folder3Apps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, folder3ExternalTenant)
+	assert.Empty(t,folder3Apps.Data)
+
+	resourceGroup2Apps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, resourceGroup2ExternalTenant)
+	assert.Empty(t,  resourceGroup2Apps.Data)
+
+	resourceGroup1Apps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, resourceGroup1ExternalTenant)
+	require.Len(t, resourceGroup1Apps.Data, 1)
+	require.Equal(t, resourceGroup1Apps.Data[0].ID, actualApp.ID)
+
+	folder2Apps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, folder2ExternalTenant)
+	require.Len(t, folder2Apps.Data, 1)
+	require.Equal(t, folder2Apps.Data[0].ID, actualApp.ID)
+
+	folder1Apps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, folder1ExternalTenant)
+	require.Len(t, folder1Apps.Data, 1)
+	require.Equal(t, folder1Apps.Data[0].ID, actualApp.ID)
+
+	orgApps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, orgExternalTenant)
+	require.Len(t, orgApps.Data, 1)
+	require.Equal(t, orgApps.Data[0].ID, actualApp.ID)
+
+	customerApps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customerExternalTenant)
+	require.Len(t, customerApps.Data, 1)
+	require.Equal(t, customerApps.Data[0].ID, actualApp.ID)
 
 	in := graphql.TenantAccessInput{
-		TenantID:     customTenant,
+		TenantID:     resourceGroup2ExternalTenant,
 		ResourceType: graphql.TenantAccessObjectTypeApplication,
 		ResourceID:   actualApp.ID,
 		Owner:        true,
@@ -247,18 +383,65 @@ func TestTenantAccess(t *testing.T) {
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, addTenantAccessRequest, tenantAccess)
 	require.NoError(t, err)
 
-	anotherTenantsApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customTenant)
-	require.Len(t, anotherTenantsApps.Data, 1)
-	require.Equal(t, anotherTenantsApps.Data[0].ID, actualApp.ID)
+	folder3Apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, folder3ExternalTenant)
+	require.Len(t, folder3Apps.Data, 1)
+	require.Equal(t, folder3Apps.Data[0].ID, actualApp.ID)
 
-	removeTenantAccessRequest := fixtures.FixRemoveTenantAccessRequest(customTenant, actualApp.ID, graphql.TenantAccessObjectTypeApplication)
+	resourceGroup2Apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, resourceGroup2ExternalTenant)
+	require.Len(t, resourceGroup2Apps.Data, 1)
+	require.Equal(t, resourceGroup2Apps.Data[0].ID, actualApp.ID)
+
+	resourceGroup1Apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, resourceGroup1ExternalTenant)
+	require.Len(t, resourceGroup1Apps.Data, 1)
+	require.Equal(t, resourceGroup1Apps.Data[0].ID, actualApp.ID)
+
+	folder2Apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, folder2ExternalTenant)
+	require.Len(t, folder2Apps.Data, 1)
+	require.Equal(t, folder2Apps.Data[0].ID, actualApp.ID)
+
+	folder1Apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, folder1ExternalTenant)
+	require.Len(t, folder1Apps.Data, 1)
+	require.Equal(t, folder1Apps.Data[0].ID, actualApp.ID)
+
+	orgApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, orgExternalTenant)
+	require.Len(t, orgApps.Data, 1)
+	require.Equal(t, orgApps.Data[0].ID, actualApp.ID)
+
+	customerApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customerExternalTenant)
+	require.Len(t, customerApps.Data, 1)
+	require.Equal(t, customerApps.Data[0].ID, actualApp.ID)
+
+	removeTenantAccessRequest := fixtures.FixRemoveTenantAccessRequest(resourceGroup2ExternalTenant, actualApp.ID, graphql.TenantAccessObjectTypeApplication)
 	example.SaveExample(t, removeTenantAccessRequest.Query(), "remove tenant access")
 
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, removeTenantAccessRequest, tenantAccess)
 	require.NoError(t, err)
 
-	anotherTenantsApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customTenant)
-	assert.Empty(t, anotherTenantsApps.Data)
+	folder3Apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, folder3ExternalTenant)
+	assert.Empty(t,folder3Apps.Data)
+
+	resourceGroup2Apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, resourceGroup2ExternalTenant)
+	assert.Empty(t,  resourceGroup2Apps.Data)
+
+	resourceGroup1Apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, resourceGroup1ExternalTenant)
+	require.Len(t, resourceGroup1Apps.Data, 1)
+	require.Equal(t, resourceGroup1Apps.Data[0].ID, actualApp.ID)
+
+	folder2Apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, folder2ExternalTenant)
+	require.Len(t, folder2Apps.Data, 1)
+	require.Equal(t, folder2Apps.Data[0].ID, actualApp.ID)
+
+	folder1Apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, folder1ExternalTenant)
+	require.Len(t, folder1Apps.Data, 1)
+	require.Equal(t, folder1Apps.Data[0].ID, actualApp.ID)
+
+	orgApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, orgExternalTenant)
+	require.Len(t, orgApps.Data, 1)
+	require.Equal(t, orgApps.Data[0].ID, actualApp.ID)
+
+	customerApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customerExternalTenant)
+	require.Len(t, customerApps.Data, 1)
+	require.Equal(t, customerApps.Data[0].ID, actualApp.ID)
 }
 
 func TestSubstituteCaller(t *testing.T) {
