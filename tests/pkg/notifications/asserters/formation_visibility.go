@@ -2,8 +2,9 @@ package asserters
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 
 	gql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"

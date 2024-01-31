@@ -253,7 +253,7 @@ func (d *directive) handleNewApplicationCreation(ctx context.Context, resp inter
 
 	log.C(ctx).Debugf("Found a matching tenant in the database: %s", tntModel.ID)
 
-	if !isAtomTenant(tntModel.Type) {
+	if !tenant.IsAtomTenant(tntModel.Type) {
 		log.C(ctx).Infof("Tenant type is %s. Will not continue with tanancy synchronization", tntModel.Type)
 		return nil
 	}
@@ -265,12 +265,4 @@ func (d *directive) handleNewApplicationCreation(ctx context.Context, resp inter
 	}
 
 	return d.createTenantAccessForNewApplication(ctx, tntModel, entity.GetID())
-}
-
-func isAtomTenant(tenantType tenantpkg.Type) bool {
-	if tenantType == tenantpkg.ResourceGroup || tenantType == tenantpkg.Folder || tenantType == tenantpkg.Organization {
-		return true
-	}
-
-	return false
 }

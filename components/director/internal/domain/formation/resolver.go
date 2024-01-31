@@ -25,6 +25,7 @@ type Service interface {
 	Get(ctx context.Context, id string) (*model.Formation, error)
 	GetFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error)
+	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
 	ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error)
 	CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error)
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
@@ -315,6 +316,35 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	newFormation, err := r.service.UnassignFormation(ctx, tnt, objectID, objectType, r.conv.FromGraphQL(formation))
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
+	}
+
+	return r.conv.ToGraphQL(newFormation)
+}
+
+// UnassignFormationGlobal unassigns the objectID from the provided formation globally
+func (r *Resolver) UnassignFormationGlobal(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formationID string) (*graphql.Formation, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	formation, err := r.service.GetGlobalByID(ctx, formationID)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx = tenant.SaveToContext(ctx, formation.TenantID, "")
+
+	newFormation, err := r.service.UnassignFormation(ctx, formation.TenantID, objectID, objectType, *formation)
 	if err != nil {
 		return nil, err
 	}

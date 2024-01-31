@@ -186,8 +186,8 @@ global:
       version: "PR-3573"
       name: compass-kyma-adapter
     instance_creator:
-      dir: prod/incubator/
-      version: "v20240112-68df17f1"
+      dir: dev/incubator/
+      version: "PR-3597"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
@@ -220,7 +220,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3597"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -228,7 +228,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3618"
+      version: "PR-3591"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -598,6 +598,9 @@ global:
   instanceCreator:
     port: 8080
     apiRootPath: "/instance-creator"
+    apiTenantMappingsEndpoint: "/v1/tenantMappings/{tenant-id}"
+    subaccountQueryParam: "subaccount_id"
+    labelsQueryParam: "labelQuery"
     tenantInfo:
       requestTimeout: 30s
     authentication:
@@ -714,6 +717,10 @@ global:
         user: ""
         password: ""
       iasAdapter:
+        name: ""
+        user: ""
+        password: ""
+      instanceCreator:
         name: ""
         user: ""
         password: ""
@@ -1488,6 +1495,7 @@ global:
         - "tenant_access:write"
         - "formation:read"
         - "formation:write"
+        - "formation:global_write"
         - "formation:global_read"
       instance_creator:
         - "application_template:read"
@@ -1597,6 +1605,7 @@ global:
         - "formation.state:write"
         - "tenant_access:write"
         - "bundle_instance_auth:write"
+        - "formation:global_write"
         - "formation:global_read"
       default:
         - "runtime:read"

@@ -5,14 +5,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
-
+	"github.com/avast/retry-go/v4"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/types"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/config"
 	"github.com/pkg/errors"
@@ -23,6 +25,8 @@ const (
 	SubaccountKey = "subaccount_id"
 	// LocationHeaderKey is used in the async API calls
 	LocationHeaderKey = "Location"
+	// LabelsQueryKey is used as URL parameter for Service Manager label querying
+	LabelsQueryKey = "labelQuery"
 )
 
 // ExternalSvcCaller is used to call external services with given authentication
@@ -53,10 +57,8 @@ func NewClient(cfg config.Config, callerProvider ExternalSvcCallerProvider) *cli
 }
 
 // RetrieveResource retrieves a given resource from SM by some criteria
-// Example call, delete after initial usage of the client:
-// RetrieveResource(ctx, region, sa, &types.ServiceOfferings{}, &types.ServiceOfferingMatchParameters{CatalogName: catalogName})
 func (c *client) RetrieveResource(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) (string, error) {
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resources.GetURLPath(), SubaccountKey, subaccountID)
+	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resources.GetURLPath(), SubaccountKey, subaccountID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building %s URL", resources.GetType())
 	}
@@ -84,12 +86,9 @@ func (c *client) RetrieveResource(ctx context.Context, region, subaccountID stri
 }
 
 // RetrieveResourceByID retrieves a given resource from SM by its ID
-// Example call, delete after initial usage of the client:
-//
-// RetrieveResourceByID(ctx , region, subaccountID, &types.ServiceKey{ID: serviceKeyID}, &types.ServiceKeyMatchParameters{})
 func (c *client) RetrieveResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource) (resources.Resource, error) {
 	resourcePath := resource.GetResourceURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourcePath, SubaccountKey, subaccountID)
+	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resourcePath, SubaccountKey, subaccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building %s URL", resource.GetResourceType())
 	}
@@ -109,17 +108,54 @@ func (c *client) RetrieveResourceByID(ctx context.Context, region, subaccountID 
 	return resource, nil
 }
 
+// RetrieveMultipleResourcesIDsByLabels retrieves resources IDs from SM by labels
+func (c *client) RetrieveMultipleResourcesIDsByLabels(ctx context.Context, region, subaccountID string, resources resources.Resources, labels map[string][]string) ([]string, error) {
+	strURL, err := buildURLWithLabels(c.cfg.RegionToInstanceConfig[region].SMURL, resources.GetURLPath(), SubaccountKey, subaccountID, LabelsQueryKey, labels)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while building %s URL with labels", resources.GetType())
+	}
+
+	log.C(ctx).Infof("Listing %s by labels: %v for subaccount with ID: %q", resources.GetType(), labels, subaccountID)
+	body, err := c.executeSyncRequest(ctx, strURL, region)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while executing request for listing %s for subaccount with ID: %q", resources.GetType(), subaccountID)
+	}
+	log.C(ctx).Infof("Successfully got %s by labels: %v for subaccount with ID: %q", resources.GetType(), labels, subaccountID)
+
+	err = json.Unmarshal(body, &resources)
+	if err != nil {
+		return nil, errors.Errorf("failed to unmarshal %s: %v", resources.GetType(), err)
+	}
+
+	return resources.GetIDs(), nil
+}
+
+// RetrieveRawResourceByID retrieves a given resource from SM by its ID and returns the raw json body response
+func (c *client) RetrieveRawResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource) (json.RawMessage, error) {
+	resourcePath := resource.GetResourceURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
+	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resourcePath, SubaccountKey, subaccountID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while building %s URL", resource.GetResourceType())
+	}
+
+	log.C(ctx).Infof("Getting %s by ID: %s for subaccount with ID: %q", resource.GetResourceType(), resource.GetResourceID(), subaccountID)
+	body, err := c.executeSyncRequest(ctx, strURL, region)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while executing request for getting %s for subaccount with ID: %q", resource.GetResourceType(), subaccountID)
+	}
+	log.C(ctx).Infof("Successfully got %s by ID: %s for subaccount with ID: %q", resource.GetResourceType(), resource.GetResourceID(), subaccountID)
+
+	return body, nil
+}
+
 // CreateResource creates a given resource in SM
-// Example call, delete after initial usage of the client:
-//
-// CreateResource(ctx, region, subaccountID, &types.ServiceInstanceReqBody{Name: name, ServicePlanID: id, Parameters: params}, &types.ServiceInstance{})
 func (c *client) CreateResource(ctx context.Context, region, subaccountID string, resourceReqBody resources.ResourceRequestBody, resource resources.Resource) (string, error) {
 	resourceReqBodyBytes, err := json.Marshal(resourceReqBody)
 	if err != nil {
 		return "", errors.Errorf("failed to marshal %s body: %v", resource.GetResourceType(), err)
 	}
 
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resource.GetResourceURLPath(), SubaccountKey, subaccountID)
+	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resource.GetResourceURLPath(), SubaccountKey, subaccountID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building %s URL", resource.GetResourceType())
 	}
@@ -152,7 +188,7 @@ func (c *client) CreateResource(ctx context.Context, region, subaccountID string
 
 	if resp.StatusCode == http.StatusAccepted {
 		log.C(ctx).Infof("Handle asynchronous creation of %s...", resource.GetResourceType())
-		resourceID, err := c.executeAsyncRequest(ctx, resp, caller, subaccountID, true)
+		resourceID, err := c.executeAsyncRequest(ctx, resp, caller, region, subaccountID, true)
 		if err != nil {
 			return "", errors.Wrapf(err, "while handling asynchronous creation of %s in subaccount with ID: %q", resource.GetResourceType(), subaccountID)
 		}
@@ -178,12 +214,9 @@ func (c *client) CreateResource(ctx context.Context, region, subaccountID string
 }
 
 // DeleteResource deletes a given resource from SM by its ID
-// Example call, delete after initial usage of the client:
-//
-// DeleteResource(ctx, region, subaccountID, &types.ServiceInstance{ID: id}, &types.ServiceInstanceMatchParameters{})
 func (c *client) DeleteResource(ctx context.Context, region, subaccountID string, resource resources.Resource) error {
 	resourcePath := resource.GetResourceURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourcePath, SubaccountKey, subaccountID)
+	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resourcePath, SubaccountKey, subaccountID)
 	if err != nil {
 		return errors.Wrapf(err, "while building %s URL", resource.GetResourceType())
 	}
@@ -216,7 +249,7 @@ func (c *client) DeleteResource(ctx context.Context, region, subaccountID string
 
 	if resp.StatusCode == http.StatusAccepted {
 		log.C(ctx).Infof("Handle asynchronous %s deletion...", resource.GetResourceType())
-		_, err := c.executeAsyncRequest(ctx, resp, caller, subaccountID, false)
+		_, err := c.executeAsyncRequest(ctx, resp, caller, region, subaccountID, false)
 		if err != nil {
 			return errors.Wrapf(err, "while deleting %s with ID: %q and subaccount: %q", resource.GetResourceType(), resource.GetResourceID(), subaccountID)
 		}
@@ -229,15 +262,27 @@ func (c *client) DeleteResource(ctx context.Context, region, subaccountID string
 }
 
 // DeleteMultipleResources deletes multiple resources from SM by some criteria
-// Example call, delete after initial usage of the client:
-//
-// DeleteMultipleResources(ctx, region, subaccountID, &types.ServiceKeys{}, &types.ServiceKeyMatchParameters{ServiceInstanceID: id})
 func (c *client) DeleteMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) error {
-	resourceIDs, err := c.retrieveMultipleResources(ctx, region, subaccountID, resources, resourceMatchParams)
+	resourceIDs, err := c.RetrieveMultipleResources(ctx, region, subaccountID, resources, resourceMatchParams)
 	if err != nil {
 		return err
 	}
 
+	for _, resourceID := range resourceIDs {
+		resource, err := c.prepareResourceForDeletion(resources.GetType(), resourceID)
+		if err != nil {
+			return err
+		}
+		err = c.DeleteResource(ctx, region, subaccountID, resource)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DeleteMultipleResourcesByIDs deletes multiple resources from SM by IDs
+func (c *client) DeleteMultipleResourcesByIDs(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceIDs []string) error {
 	for _, resourceID := range resourceIDs {
 		resource, err := c.prepareResourceForDeletion(resources.GetType(), resourceID)
 		if err != nil {
@@ -260,7 +305,7 @@ func (c *client) prepareResourceForDeletion(resourceType, resourceID string) (re
 	case types.ServiceInstancesType:
 		return &types.ServiceInstance{ID: resourceID}, nil
 	case types.ServiceBindingsType:
-		return &types.ServiceKey{ID: resourceID}, nil
+		return &types.ServiceBinding{ID: resourceID}, nil
 	default:
 		return nil, errors.New("unknown resource type")
 	}
@@ -283,6 +328,32 @@ func buildURL(baseURL, path, tenantKey, tenantValue string) (string, error) {
 	return base.String(), nil
 }
 
+func buildURLWithLabels(baseURL, path, tenantKey, tenantValue, labelsKey string, labelsValue map[string][]string) (string, error) {
+	base, err := url.Parse(baseURL)
+	if err != nil {
+		return "", err
+	}
+
+	// Path params
+	base.Path += path
+
+	// Build labels query
+	operators := make([]string, 0, len(labelsValue))
+	for key, values := range labelsValue {
+		operators = append(operators, fmt.Sprintf("%s in ('%s')", key, strings.Join(values, "', '")))
+	}
+	labelsQuery := strings.Join(operators, " and ")
+
+	// Query params
+	params := url.Values{}
+	params.Add(tenantKey, tenantValue)
+	params.Add(labelsKey, labelsQuery)
+
+	base.RawQuery = params.Encode()
+
+	return base.String(), nil
+}
+
 func closeResponseBody(ctx context.Context, resp *http.Response) {
 	if err := resp.Body.Close(); err != nil {
 		log.C(ctx).Errorf("An error has occurred while closing response body: %v", err)
@@ -300,7 +371,7 @@ func (c *client) executeSyncRequest(ctx context.Context, strURL, region string) 
 		return nil, errors.Wrapf(err, "while getting caller for region: %s", region)
 	}
 
-	resp, err := caller.Call(req)
+	resp, err := sendRequestWithRetry(ctx, caller, req)
 	if err != nil {
 		return nil, err
 	}
@@ -318,13 +389,13 @@ func (c *client) executeSyncRequest(ctx context.Context, strURL, region string) 
 	return body, nil
 }
 
-func (c *client) executeAsyncRequest(ctx context.Context, resp *http.Response, caller ExternalSvcCaller, subaccountID string, isCreateRequest bool) (string, error) {
+func (c *client) executeAsyncRequest(ctx context.Context, resp *http.Response, caller ExternalSvcCaller, region, subaccountID string, isCreateRequest bool) (string, error) {
 	opStatusPath := resp.Header.Get(LocationHeaderKey)
 	if opStatusPath == "" {
 		return "", errors.Errorf("the operation status path from %s header should not be empty", LocationHeaderKey)
 	}
 
-	opURL, err := buildURL(c.cfg.InstanceSMURLPath, opStatusPath, SubaccountKey, subaccountID)
+	opURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, opStatusPath, SubaccountKey, subaccountID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building asynchronous operation URL")
 	}
@@ -340,7 +411,7 @@ func (c *client) executeAsyncRequest(ctx context.Context, resp *http.Response, c
 		select {
 		case <-ticker.C:
 			log.C(ctx).Info("Getting asynchronous operation status for object")
-			opResp, err := caller.Call(opReq)
+			opResp, err := sendRequestWithRetry(ctx, caller, opReq)
 			if err != nil {
 				return "", err
 			}
@@ -384,8 +455,8 @@ func (c *client) executeAsyncRequest(ctx context.Context, resp *http.Response, c
 	}
 }
 
-func (c *client) retrieveMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) ([]string, error) {
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resources.GetURLPath(), SubaccountKey, subaccountID)
+func (c *client) RetrieveMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) ([]string, error) {
+	strURL, err := buildURL(c.cfg.RegionToInstanceConfig[region].SMURL, resources.GetURLPath(), SubaccountKey, subaccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building %s URL", resources.GetType())
 	}
@@ -409,4 +480,36 @@ func (c *client) retrieveMultipleResources(ctx context.Context, region, subaccou
 	log.C(ctx).Infof("%d %s are found", len(resourceIDs), resources.GetType())
 
 	return resourceIDs, nil
+}
+
+func sendRequestWithRetry(ctx context.Context, caller ExternalSvcCaller, req *http.Request) (*http.Response, error) {
+	var response *http.Response
+	err := retry.Do(func() error {
+		res, err := caller.Call(req)
+		if err != nil {
+			return errors.Wrap(err, "failed to execute HTTP request")
+		}
+
+		if err == nil && res.StatusCode < http.StatusInternalServerError {
+			response = res
+			return nil
+		}
+
+		defer closeResponseBody(ctx, res)
+		body, err := io.ReadAll(res.Body)
+
+		if err != nil {
+			return errors.Wrap(err, "failed to read response body")
+		}
+		return errors.Errorf("request failed with status code %d, error message: %v", res.StatusCode, string(body))
+	},
+		retry.Attempts(3),
+		retry.Delay(time.Second),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "connection reset by peer")
+		}))
+
+	return response, err
 }

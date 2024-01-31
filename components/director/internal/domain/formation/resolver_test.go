@@ -534,6 +534,113 @@ func TestUnassignFormation(t *testing.T) {
 	}
 }
 
+func TestUnassignFormationGlobal(t *testing.T) {
+	testErr := errors.New("test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+	testCases := []struct {
+		Name                     string
+		TxFn                     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn                func() *automock.Service
+		ConverterFn              func() *automock.Converter
+		FormationAssignmentSvcFn func() *automock.FormationAssignmentService
+		ExpectedFormation        *graphql.Formation
+		ExpectedError            error
+	}{
+		{
+			Name: "successfully unassigned formation",
+			TxFn: txGen.ThatSucceeds,
+			ConverterFn: func() *automock.Converter {
+				conv := &automock.Converter{}
+				conv.On("ToGraphQL", &modelFormationWithTenant).Return(&graphqlFormation, nil)
+				return conv
+			},
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("GetGlobalByID", mock.Anything, FormationID).Return(&modelFormationWithTenant, nil)
+				svc.On("UnassignFormation", mock.Anything, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, modelFormationWithTenant).Return(&modelFormationWithTenant, nil)
+				return svc
+			},
+			ExpectedFormation: &graphqlFormation,
+		},
+		{
+			Name:          "fails when transaction fails to open",
+			TxFn:          txGen.ThatFailsOnBegin,
+			ConverterFn:   unusedConverter,
+			ServiceFn:     unusedService,
+			ExpectedError: testErr,
+		},
+		{
+			Name:          "returns error when can not start db transaction",
+			TxFn:          txGen.ThatFailsOnBegin,
+			ConverterFn:   unusedConverter,
+			ServiceFn:     unusedService,
+			ExpectedError: testErr,
+		}, {
+			Name:        "returns error when commit fails",
+			TxFn:        txGen.ThatFailsOnCommit,
+			ConverterFn: unusedConverter,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("GetGlobalByID", mock.Anything, FormationID).Return(&modelFormationWithTenant, nil)
+				svc.On("UnassignFormation", mock.Anything, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, modelFormationWithTenant).Return(&modelFormationWithTenant, nil)
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:        "returns error when unassign formation fails",
+			TxFn:        txGen.ThatDoesntExpectCommit,
+			ConverterFn: unusedConverter,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("GetGlobalByID", mock.Anything, FormationID).Return(&modelFormationWithTenant, nil)
+				svc.On("UnassignFormation", mock.Anything, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, modelFormationWithTenant).Return(nil, testErr)
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:        "returns error when get formation fails",
+			TxFn:        txGen.ThatDoesntExpectCommit,
+			ConverterFn: unusedConverter,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("GetGlobalByID", mock.Anything, FormationID).Return(nil, testErr)
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			persist, transact := testCase.TxFn()
+			service := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+			formationAssignmentSvc := &automock.FormationAssignmentService{}
+			if testCase.FormationAssignmentSvcFn != nil {
+				formationAssignmentSvc = testCase.FormationAssignmentSvcFn()
+			}
+
+			resolver := formation.NewResolver(transact, service, converter, formationAssignmentSvc, nil, nil)
+
+			// WHEN
+			f, err := resolver.UnassignFormationGlobal(emptyCtx, ApplicationID, graphql.FormationObjectTypeApplication, FormationID)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedFormation, f)
+
+			mock.AssertExpectationsForObjects(t, persist, service, converter, formationAssignmentSvc)
+		})
+	}
+}
+
 func TestFormation(t *testing.T) {
 	testErr := errors.New("test error")
 

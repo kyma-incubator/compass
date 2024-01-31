@@ -4,6 +4,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 
@@ -20,15 +23,16 @@ type TenantInfo struct {
 
 // Config contains necessary configurations for the instance-creator to operate
 type Config struct {
-	APIRootPath            string        `envconfig:"APP_API_ROOT_PATH,default=/instance-creator"`
-	Address                string        `envconfig:"APP_ADDRESS,default=localhost:8080"`
-	SkipSSLValidation      bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
-	JWKSEndpoint           string        `envconfig:"APP_JWKS_ENDPOINT,default=file://hack/default-jwks.json"`
-	ServerTimeout          time.Duration `envconfig:"APP_SERVER_TIMEOUT,default=110s"`
-	ClientTimeout          time.Duration `envconfig:"APP_CLIENT_TIMEOUT,default=105s"`
-	AuthorizationHeaderKey string        `envconfig:"APP_AUTHORIZATION_HEADER_KEY,default=Authorization"`
-	AllowJWTSigningNone    bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
-	SMInstancesSecretPath  string        `envconfig:"APP_SM_INSTANCES_SECRET_PATH"`
+	APIRootPath               string        `envconfig:"APP_API_ROOT_PATH,default=/instance-creator"`
+	APITenantMappingsEndpoint string        `envconfig:"API_TENANT_MAPPINGS_ENDPOINT,default=/v1/tenantMappings/{tenant-id}"`
+	Address                   string        `envconfig:"APP_ADDRESS,default=localhost:8080"`
+	SkipSSLValidation         bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
+	JWKSEndpoint              string        `envconfig:"APP_JWKS_ENDPOINT,default=file://hack/default-jwks.json"`
+	ServerTimeout             time.Duration `envconfig:"APP_SERVER_TIMEOUT,default=110s"`
+	ClientTimeout             time.Duration `envconfig:"APP_CLIENT_TIMEOUT,default=105s"`
+	AuthorizationHeaderKey    string        `envconfig:"APP_AUTHORIZATION_HEADER_KEY,default=Authorization"`
+	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
+	SMInstancesSecretPath     string        `envconfig:"APP_SM_INSTANCES_SECRET_PATH"`
 
 	InstanceClientIDPath         string                    `envconfig:"APP_SM_INSTANCE_CLIENT_ID_PATH"`
 	InstanceSMURLPath            string                    `envconfig:"APP_SM_INSTANCE_SM_URL_PATH"`
@@ -41,11 +45,15 @@ type Config struct {
 	RegionToInstanceConfig       map[string]InstanceConfig `envconfig:"-"`
 	SMClientTimeout              time.Duration             `envconfig:"APP_SM_CLIENT_TIMEOUT,default=30s"`
 
+	CertLoaderConfig credloader.CertConfig
+
 	Ticker  time.Duration `envconfig:"APP_SM_ASYNC_API_TICKER,default=3s"`
 	Timeout time.Duration `envconfig:"APP_SM_ASYNC_API_TIMEOUT,default=30s"`
 
 	Log        log.Config
 	TenantInfo TenantInfo
+
+	Database persistence.DatabaseConfig
 }
 
 // InstanceConfig is a service instance config

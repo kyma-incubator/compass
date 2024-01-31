@@ -16,78 +16,97 @@ const (
 	ServiceBindingType = "service binding"
 )
 
-// ServiceKeyReqBody is the request body when a Service Key is being created
-type ServiceKeyReqBody struct {
-	Name         string          `json:"name"`
-	ServiceKeyID string          `json:"service_instance_id"`
-	Parameters   json.RawMessage `json:"parameters,omitempty"` // TODO:: differs from service to service. Most probably the necessary data will be provided as arbitrary json in the TN notification body?
+// ServiceBindingReqBody is the request body when a Service Bjd] dj g is being created
+type ServiceBindingReqBody struct {
+	Name             string          `json:"name"`
+	ServiceBindingID string          `json:"service_instance_id"`
+	Parameters       json.RawMessage `json:"parameters,omitempty"`
 }
 
-// GetResourceName gets the ServiceKey name from the request body
-func (rb *ServiceKeyReqBody) GetResourceName() string {
+// GetResourceName gets the ServiceBinding name from the request body
+func (rb *ServiceBindingReqBody) GetResourceName() string {
 	return rb.Name
 }
 
-// ServiceKey represents a Service Key
-type ServiceKey struct {
+// ServiceBinding represents a Service Binding
+type ServiceBinding struct {
 	ID                string          `json:"id"`
 	Name              string          `json:"name"`
 	ServiceInstanceID string          `json:"service_instance_id"`
 	Credentials       json.RawMessage `json:"credentials"`
 }
 
-// GetResourceID gets the ServiceKey ID
-func (s *ServiceKey) GetResourceID() string {
+// GetResourceID gets the ServiceBinding ID
+func (s *ServiceBinding) GetResourceID() string {
 	return s.ID
 }
 
-// GetResourceType gets the return type of the ServiceKey
-func (s *ServiceKey) GetResourceType() string {
+// GetResourceType gets the return type of the ServiceBinding
+func (s *ServiceBinding) GetResourceType() string {
 	return ServiceBindingType
 }
 
-// GetResourceURLPath gets the ServiceKey URL Path
-func (s *ServiceKey) GetResourceURLPath() string {
+// GetResourceURLPath gets the ServiceBinding URL Path
+func (s *ServiceBinding) GetResourceURLPath() string {
 	return paths.ServiceBindingsPath
 }
 
-// ServiceKeys represents a collection of Service Key
-type ServiceKeys struct {
-	NumItems int           `json:"num_items"`
-	Items    []*ServiceKey `json:"items"`
+// GetResourceName gets the ServiceBinding Name
+func (s *ServiceBinding) GetResourceName() string {
+	return s.Name
 }
 
-// GetType gets the type of the ServiceKeys
-func (sk *ServiceKeys) GetType() string {
+// ServiceBindings represents a collection of Service Binding
+type ServiceBindings struct {
+	NumItems int               `json:"num_items"`
+	Items    []*ServiceBinding `json:"items"`
+}
+
+// GetType gets the type of the ServiceBindings
+func (sbs *ServiceBindings) GetType() string {
 	return ServiceBindingsType
 }
 
-// GetURLPath gets the URL Path of the ServiceKey
-func (sk *ServiceKeys) GetURLPath() string {
+// GetURLPath gets the URL Path of the ServiceBinding
+func (sbs *ServiceBindings) GetURLPath() string {
 	return paths.ServiceBindingsPath
 }
 
-// ServiceKeyMatchParameters holds all the necessary fields that are used when matching ServiceKeys
-type ServiceKeyMatchParameters struct {
-	ServiceInstanceID string
+// GetIDs gets the IDs of all ServiceBindings
+func (sbs *ServiceBindings) GetIDs() []string {
+	ids := make([]string, 0, sbs.NumItems)
+	for _, sb := range sbs.Items {
+		ids = append(ids, sb.ID)
+	}
+	return ids
 }
 
-// Match matches a ServiceKey based on some criteria
-func (skp *ServiceKeyMatchParameters) Match(resources resources.Resources) (string, error) {
+// ServiceBindingMatchParameters holds all the necessary fields that are used when matching ServiceBindings
+type ServiceBindingMatchParameters struct {
+	ServiceInstancesIDs []string
+}
+
+// Match matches a ServiceBinding based on some criteria
+func (sbp *ServiceBindingMatchParameters) Match(resources resources.Resources) (string, error) {
 	return "", nil // implement me when needed
 }
 
-// MatchMultiple matches several ServiceKeys based on some criteria
-func (skp *ServiceKeyMatchParameters) MatchMultiple(resources resources.Resources) ([]string, error) {
-	serviceKeys, ok := resources.(*ServiceKeys)
+// MatchMultiple matches several ServiceBindings based on some criteria
+func (sbp *ServiceBindingMatchParameters) MatchMultiple(resources resources.Resources) ([]string, error) {
+	serviceBindings, ok := resources.(*ServiceBindings)
 	if !ok {
-		return nil, errors.New("while type asserting Resources to ServiceKeys")
+		return nil, errors.New("while type asserting Resources to ServiceBindings")
 	}
-	serviceKeyIDs := make([]string, 0, serviceKeys.NumItems)
-	for _, sk := range serviceKeys.Items {
-		if sk.ServiceInstanceID == skp.ServiceInstanceID {
-			serviceKeyIDs = append(serviceKeyIDs, sk.ID)
-		}
+	serviceBindingIDs := make([]string, 0, serviceBindings.NumItems)
+
+	serviceBindingsMap := make(map[string][]string, len(sbp.ServiceInstancesIDs))
+	for _, serviceBinding := range serviceBindings.Items {
+		serviceBindingsMap[serviceBinding.ServiceInstanceID] = append(serviceBindingsMap[serviceBinding.ServiceInstanceID], serviceBinding.ID)
 	}
-	return serviceKeyIDs, nil
+
+	for _, serviceInstanceID := range sbp.ServiceInstancesIDs {
+		serviceBindingIDs = append(serviceBindingIDs, serviceBindingsMap[serviceInstanceID]...)
+	}
+
+	return serviceBindingIDs, nil
 }
