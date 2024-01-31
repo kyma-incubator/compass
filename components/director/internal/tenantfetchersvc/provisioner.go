@@ -2,9 +2,6 @@ package tenantfetchersvc
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -78,8 +75,6 @@ func NewTenantProvisioner(directorClient DirectorGraphQLClient, tenantConverter 
 func (p *provisioner) ProvisionTenants(ctx context.Context, request *TenantSubscriptionRequest) error {
 	tenantsToCreateGQL := p.converter.MultipleInputToGraphQLInput(p.tenantsFromRequest(*request))
 
-	empJSON, _ := json.MarshalIndent(tenantsToCreateGQL, "", "  ")
-	fmt.Printf("ALEX 1 \n %s\n", string(empJSON))
 	return p.gqlClient.WriteTenants(ctx, tenantsToCreateGQL)
 }
 

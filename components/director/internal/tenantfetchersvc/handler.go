@@ -225,9 +225,6 @@ func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *h
 		return
 	}
 
-	empJSON, err := json.MarshalIndent(subscriptionRequest, "", "  ")
-	fmt.Printf("ALEX 0 \n %s\n", string(empJSON))
-
 	mainTenantID := subscriptionRequest.MainTenantID()
 	if err := subscriptionFunc(ctx, subscriptionRequest); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to apply subscription change for tenant %s: %v", mainTenantID, err)
