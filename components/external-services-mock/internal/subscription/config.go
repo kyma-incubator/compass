@@ -26,6 +26,7 @@ type Config struct {
 	TestConsumerAccountID                   string
 	TestConsumerSubaccountID                string `envconfig:"APP_TENANT_CONFIG_TEST_CONSUMER_SUBACCOUNT_ID"`
 	TestConsumerTenantID                    string
+	TestCostObjectID                        string `json:"APP_TENANT_CONFIG_TEST_COST_OBJECT_ID"`
 	TestConsumerAccountIDTenantHierarchy    string
 	TestConsumerSubaccountIDTenantHierarchy string
 	PropagatedProviderSubaccountHeader      string
