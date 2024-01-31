@@ -2,6 +2,7 @@ package tenantfetchersvc
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
