@@ -1303,6 +1303,7 @@ type Formation {
 	id: ID!
 	name: String!
 	formationTemplateId: ID!
+	tenantID: ID! @hasScopes(path: "graphql.field.formation.tenant_id")
 	"""
 	Formation lifecycle notifications state
 	"""
@@ -1763,6 +1764,7 @@ type Query {
 	- [query formations](examples/query-formations/query-formations.graphql)
 	"""
 	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
+	formationsForObject(objectID: String!): [Formation!]! @hasScopes(path: "graphql.query.formationsForObject")
 	formationConstraints: [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
 	"""
 	**Examples**
@@ -2015,6 +2017,11 @@ type Mutation {
 	- [unassign tenant from formation](examples/unassign-formation/unassign-tenant-from-formation.graphql)
 	"""
 	unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unassignFormation")
+	"""
+	**Examples**
+	- [unassign application from formation global](examples/unassign-formation-global/unassign-application-from-formation-global.graphql)
+	"""
+	unassignFormationGlobal(objectID: ID!, objectType: FormationObjectType!, formation: ID!): Formation! @hasScopes(path: "graphql.mutation.unassignFormationGlobal")
 	"""
 	**Examples**
 	- [create formation constraint](examples/create-formation-constraint/create-formation-constraint.graphql)

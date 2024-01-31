@@ -7,4 +7,5 @@ data:
   init-director-db.sql: |
     CREATE DATABASE {{ .Values.global.database.embedded.director.name }};
     CREATE DATABASE {{ .Values.global.database.embedded.ias_adapter.name }};
+    CREATE DATABASE {{ .Values.global.database.embedded.instance_creator.name }};
     CREATE DATABASE {{ .Values.global.database.embedded.hydra.name }};

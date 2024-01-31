@@ -19,6 +19,7 @@ mutation {
     runtimeArtifactKind
     leadingProductIDs
     supportsReset
+    discoveryConsumers
     webhooks {
       id
       applicationID

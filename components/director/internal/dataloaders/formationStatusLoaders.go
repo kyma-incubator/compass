@@ -24,6 +24,7 @@ type ParamFormationStatus struct {
 	Message   string
 	ErrorCode int
 	Ctx       context.Context
+	Tenant    string
 }
 
 // HandlerFormationStatus missing godoc
