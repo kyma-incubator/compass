@@ -121,6 +121,8 @@ spec:
                 value: {{.Values.global.tenantFetcher.tenantProvider.providerSubaccountIdProperty }}
               - name: APP_TENANT_PROVIDER_CONSUMER_TENANT_ID_PROPERTY
                 value: {{.Values.global.tenantFetcher.tenantProvider.consumerTenantIdProperty }}
+              - name: APP_TENANT_PROVIDER_COST_OBJECT_ID_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.costObjectIdProperty }}
               - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
                 value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
               - name: APP_TENANT_PROVIDER_SUBSCRIPTION_ID_PROPERTY

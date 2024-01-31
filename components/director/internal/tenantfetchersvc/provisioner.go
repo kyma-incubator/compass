@@ -2,6 +2,8 @@ package tenantfetchersvc
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -36,6 +38,7 @@ type TenantSubscriptionRequest struct {
 	AccountTenantID             string
 	SubaccountTenantID          string
 	CustomerTenantID            string
+	CostObjectTenantID          string
 	Subdomain                   string
 	Region                      string
 	SubscriptionProviderID      string
@@ -74,24 +77,35 @@ func NewTenantProvisioner(directorClient DirectorGraphQLClient, tenantConverter 
 // ProvisionTenants provisions tenants according to their type
 func (p *provisioner) ProvisionTenants(ctx context.Context, request *TenantSubscriptionRequest) error {
 	tenantsToCreateGQL := p.converter.MultipleInputToGraphQLInput(p.tenantsFromRequest(*request))
+
+	empJSON, _ := json.MarshalIndent(tenantsToCreateGQL, "", "  ")
+	fmt.Printf("ALEX 1 \n %s\n", string(empJSON))
 	return p.gqlClient.WriteTenants(ctx, tenantsToCreateGQL)
 }
 
 func (p *provisioner) tenantsFromRequest(request TenantSubscriptionRequest) []model.BusinessTenantMappingInput {
-	tenants := make([]model.BusinessTenantMappingInput, 0, 3)
+	tenants := make([]model.BusinessTenantMappingInput, 0, 4)
 	customerID := request.CustomerTenantID
 	accountID := request.AccountTenantID
+	costObjectID := request.CostObjectTenantID
+
 	var licenseType *string
 
 	if len(request.SubscriptionLcenseType) > 0 {
 		licenseType = &request.SubscriptionLcenseType
 	}
 
-	if len(request.CustomerTenantID) > 0 {
-		tenants = append(tenants, p.newCustomerTenant(request.CustomerTenantID, licenseType))
+	if len(customerID) > 0 {
+		tenants = append(tenants, p.newCustomerTenant(customerID, licenseType))
 	}
 
-	accountTenant := p.newAccountTenant(request.AccountTenantID, []string{customerID}, request.Subdomain, request.Region, licenseType)
+	accountParent := []string{customerID}
+	if len(costObjectID) > 0 {
+		tenants = append(tenants, p.newCostObjectTenant(costObjectID, licenseType))
+		accountParent = []string{costObjectID}
+	}
+
+	accountTenant := p.newAccountTenant(request.AccountTenantID, accountParent, request.Subdomain, request.Region, licenseType)
 	if len(request.SubaccountTenantID) > 0 { // This means that the request is for Subaccount provisioning, therefore the subdomain and the region are for the subaccount and not for the GA
 		accountTenant.Subdomain = ""
 		accountTenant.Region = ""
@@ -114,6 +128,10 @@ func (p *provisioner) newAccountTenant(tenantID string, parents []string, subdom
 
 func (p *provisioner) newSubaccountTenant(tenantID string, parents []string, subdomain, region string, licenseType *string) model.BusinessTenantMappingInput {
 	return p.newTenant(tenantID, parents, subdomain, region, p.tenantProvider, licenseType, tenantEntity.Subaccount)
+}
+
+func (p *provisioner) newCostObjectTenant(tenantID string, licenseType *string) model.BusinessTenantMappingInput {
+	return p.newTenant(tenantID, []string{}, "", "", p.tenantProvider, licenseType, tenantEntity.CostObject)
 }
 
 func (p *provisioner) newTenant(tenantID string, parents []string, subdomain, region, provider string, licenseType *string, tenantType tenantEntity.Type) model.BusinessTenantMappingInput {
