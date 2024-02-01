@@ -414,6 +414,7 @@ func (r *Resolver) syncSystemsForTenants(ctx context.Context, tenantIDs []string
 
 // AddTenantAccess adds a tenant access record for tenantID about resourceID
 func (r *Resolver) AddTenantAccess(ctx context.Context, in graphql.TenantAccessInput) (*graphql.TenantAccess, error) {
+	log.C(ctx).Infof("Adding access for tenant %s to resource with ID %s of type %s and access level %t", in.TenantID, in.ResourceID, in.ResourceType, in.Owner)
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -452,12 +453,13 @@ func (r *Resolver) AddTenantAccess(ctx context.Context, in graphql.TenantAccessI
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
-
+	log.C(ctx).Infof("Successfully added access for tenant %s to resource with ID %s of type %s and access level %t", in.TenantID, in.ResourceID, in.ResourceType, in.Owner)
 	return output, nil
 }
 
 // RemoveTenantAccess removes the tenant access record for tenantID about resourceID
 func (r *Resolver) RemoveTenantAccess(ctx context.Context, tenantID, resourceID string, resourceType graphql.TenantAccessObjectType) (*graphql.TenantAccess, error) {
+	log.C(ctx).Infof("Removing access for tenant %s to resource with ID %s of type %s", tenantID, resourceID, resourceType)
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -498,6 +500,8 @@ func (r *Resolver) RemoveTenantAccess(ctx context.Context, tenantID, resourceID 
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
+
+	log.C(ctx).Infof("Successfully removed access for tenant %s to resource with ID %s of type %s", tenantID, resourceID, resourceType)
 
 	return output, nil
 }
