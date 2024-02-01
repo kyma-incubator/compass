@@ -110,6 +110,10 @@ func CreateTenantRequest(t *testing.T, tenants Tenant, tenantProperties TenantID
 		body, err = sjson.Set(body, tenantProperties.SubscriptionProviderAppNameProperty, tenants.SubscriptionProviderAppName)
 		require.NoError(t, err)
 	}
+	if len(tenants.CostObjectID) > 0 {
+		body, err = sjson.Set(body, tenantProperties.CostObjectIDProperty, tenants.CostObjectID)
+		require.NoError(t, err)
+	}
 
 	request, err := http.NewRequest(httpMethod, tenantFetcherUrl, bytes.NewBuffer([]byte(body)))
 	require.NoError(t, err)
