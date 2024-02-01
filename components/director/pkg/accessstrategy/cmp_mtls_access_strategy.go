@@ -8,8 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
@@ -60,11 +58,7 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 	}
 
 	tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
-
-	client := &http.Client{
-		Timeout:   baseClient.Timeout,
-		Transport: tr,
-	}
+	baseClient.Transport = tr
 
 	req, err := http.NewRequest("GET", documentURL, nil)
 	if err != nil {
@@ -90,15 +84,5 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		req.Header.Set(tenantHeader, tnt)
 	}
 
-	resp, err := client.Do(req)
-	if err != nil || resp.StatusCode >= http.StatusBadRequest {
-		if len(clientCerts) != 2 {
-			return nil, errors.Errorf("There must be exactly 2 certificates in the cert cache. Actual number of certificates: %d", len(clientCerts))
-		}
-		log.C(ctx).Infof("Failed to execute request %q with initial mtls certificate. Will retry with backup certificate...", req.URL.String())
-		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.extSvcClientCertSecretName]}
-		client.Transport = tr
-		return client.Do(req)
-	}
-	return resp, err
+	return baseClient.Do(req)
 }
