@@ -62,12 +62,11 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 				return nil, errors.New("unsupported transport type")
 			}
 		}
-
-		globalTr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
 	} else {
 		log.C(ctx).Infof("Will reuse global transport for request %q", documentURL)
 	}
 
+	globalTr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
 	client := &http.Client{
 		Timeout:   baseClient.Timeout,
 		Transport: globalTr,
