@@ -8,6 +8,19 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
+func FixGetFormationsForObjectRequest(objectID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query{
+				  result: formationsForObject(objectID: "%s"){
+					%s
+					formationAssignments(first:%d, after:"") {
+						%s
+					}
+					status {%s}
+				  }
+				}`, objectID, testctx.Tc.GQLFieldsProvider.ForFormation(), 200, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForFormationAssignment()), testctx.Tc.GQLFieldsProvider.ForFormationStatus()))
+}
+
 func FixGetFormationRequest(formationID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query{
@@ -87,6 +100,19 @@ func FixUnassignFormationRequest(objID, objType, formationName string) *gcli.Req
 				%s
 			  }
 			}`, objID, objType, formationName, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
+}
+
+func FixUnassignFormationGlobalRequest(objID, objType, formationID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation{
+			result: unassignFormationGlobal(objectID:"%s", objectType: %s, formation: "%s"){
+					%s
+					formationAssignments(first:%d, after:"") {
+						%s
+					}
+					status {%s}
+				}
+			}`, objID, objType, formationID, testctx.Tc.GQLFieldsProvider.ForFormation(), 200, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForFormationAssignment()), testctx.Tc.GQLFieldsProvider.ForFormationStatus()))
 }
 
 func FixResynchronizeFormationNotificationsRequest(formationID string) *gcli.Request {

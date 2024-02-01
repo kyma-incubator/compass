@@ -19,10 +19,11 @@ type FormationAssignmentLoaders struct {
 
 // ParamFormationAssignment missing godoc
 type ParamFormationAssignment struct {
-	ID    string
-	First *int
-	After *graphql.PageCursor
-	Ctx   context.Context
+	ID     string
+	First  *int
+	After  *graphql.PageCursor
+	Ctx    context.Context
+	Tenant string
 }
 
 // HandlerFormationAssignment missing godoc

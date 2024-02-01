@@ -45,6 +45,7 @@ func (c *converter) ToGraphQL(i *model.Formation) (*graphql.Formation, error) {
 		ID:                            i.ID,
 		Name:                          i.Name,
 		FormationTemplateID:           i.FormationTemplateID,
+		TenantID:                      i.TenantID,
 		State:                         string(i.State),
 		Error:                         formationErr,
 		LastStateChangeTimestamp:      graphql.TimePtrToGraphqlTimestampPtr(i.LastStateChangeTimestamp),
