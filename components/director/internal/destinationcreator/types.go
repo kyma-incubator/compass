@@ -14,6 +14,7 @@ var (
 	certificateSAMLAssertionDestinationPrefix       = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeSAMLAssertion)
 	certificateSAMLBearerAssertionDestinationPrefix = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeSAMLBearerAssertion)
 	certificateClientCertificateDestinationPrefix   = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeClientCertificate)
+	certificateOAuth2MTLSDestinationPrefix          = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeOAuth2MTLS)
 )
 
 // Validator validates destination creator request body
@@ -72,6 +73,16 @@ type OAuth2ClientCredsDestinationRequestBody struct {
 	ClientID            string `json:"clientId"`
 	ClientSecret        string `json:"clientSecret"`
 	TokenServiceURLType string `json:"tokenServiceURLType,omitempty"`
+}
+
+// OAuth2MTLSDestinationRequestBody todo
+type OAuth2MTLSDestinationRequestBody struct {
+	BaseDestinationRequestBody
+	TokenServiceURL     string `json:"tokenServiceURL"`
+	ClientID            string `json:"clientId"`
+	ClientSecret        string `json:"clientSecret"`
+	TokenServiceURLType string `json:"tokenServiceURLType,omitempty"`
+	KeyStoreLocation string `json:"keyStoreLocation"`
 }
 
 // CertificateRequestBody contains the necessary fields for the destination creator certificate request body
@@ -143,6 +154,22 @@ func (b *OAuth2ClientCredsDestinationRequestBody) Validate() error {
 		validation.Field(&b.ClientSecret, validation.Required),
 		validation.Field(&b.TokenServiceURL, validation.Required),
 		validation.Field(&b.TokenServiceURLType, validation.In(string(destinationcreatorpkg.DedicatedTokenServiceURLType), string(destinationcreatorpkg.CommonTokenServiceURLType))),
+	)
+}
+
+// Validate validates that the AuthTypeBasic request body contains the required fields, and they are valid
+func (b *OAuth2MTLSDestinationRequestBody) Validate() error {
+	return validation.ValidateStruct(b,
+		validation.Field(&b.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
+		validation.Field(&b.URL, validation.Required),
+		validation.Field(&b.Type, validation.In(destinationcreatorpkg.TypeHTTP, destinationcreatorpkg.TypeRFC, destinationcreatorpkg.TypeLDAP, destinationcreatorpkg.TypeMAIL)),
+		validation.Field(&b.ProxyType, validation.In(destinationcreatorpkg.ProxyTypeInternet, destinationcreatorpkg.ProxyTypeOnPremise, destinationcreatorpkg.ProxyTypePrivateLink)),
+		validation.Field(&b.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeOAuth2ClientCredentials)),
+		validation.Field(&b.ClientID, validation.Required),
+		validation.Field(&b.ClientSecret, validation.Required),
+		validation.Field(&b.TokenServiceURL, validation.Required),
+		validation.Field(&b.TokenServiceURLType, validation.In(string(destinationcreatorpkg.DedicatedTokenServiceURLType), string(destinationcreatorpkg.CommonTokenServiceURLType))),
+		validation.Field(&b.KeyStoreLocation, validation.Required),
 	)
 }
 
