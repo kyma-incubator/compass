@@ -263,9 +263,21 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplate)
 	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 
-	t.Logf("Assert there are no formation constraints for the formation template")
+	// List all constraints and extract the global ones, so we can assert them later
+	t.Log("List all formation constraints")
+	queryRequest := fixtures.FixQueryFormationConstraintsRequest()
+	var allFormationConstraints []*graphql.FormationConstraint
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryRequest, &allFormationConstraints))
+	var globalFormationConstraints []graphql.FormationConstraint
+	for _, fc := range allFormationConstraints {
+		if fc.ConstraintScope == "GLOBAL" {
+			globalFormationConstraints = append(globalFormationConstraints, *fc)
+		}
+	}
+
+	t.Logf("Assert there are no formation constraints for the formation template except the global ones")
 	constraintsForFormationTemplate := fixtures.ListFormationConstraintsForFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate.ID)
-	require.Len(t, constraintsForFormationTemplate, 0)
+	require.Len(t, constraintsForFormationTemplate, len(globalFormationConstraints))
 
 	secondFormationTemplateName := "second-formation-template-name"
 	secondFormationTemplateInput := fixtures.FixFormationTemplateInput(secondFormationTemplateName)
@@ -288,18 +300,6 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint)
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
 	require.NotEmpty(t, constraint.ID)
-
-	// List all constraints and extract the global ones, so we can assert them later
-	t.Log("List all formation constraints")
-	queryRequest := fixtures.FixQueryFormationConstraintsRequest()
-	var allFormationConstraints []*graphql.FormationConstraint
-	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryRequest, &allFormationConstraints))
-	var globalFormationConstraints []graphql.FormationConstraint
-	for _, fc := range allFormationConstraints {
-		if fc.ConstraintScope == "GLOBAL" {
-			globalFormationConstraints = append(globalFormationConstraints, *fc)
-		}
-	}
 
 	// Assert no constraints attached
 	t.Logf("Get formation template with name %q and id %q, and assert there are no constraints attached to it", formationTemplate.Name, formationTemplate.ID)
