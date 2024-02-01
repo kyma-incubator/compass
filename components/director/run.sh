@@ -87,8 +87,7 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 POSTGRES_CONTAINER="test-postgres"
-# Using v12 because the DB Dump file headers are not compatible with Postgres v11.
-POSTGRES_VERSION="12"
+POSTGRES_VERSION="15"
 
 DB_USER="postgres"
 DB_PWD="pgsql@12345"
