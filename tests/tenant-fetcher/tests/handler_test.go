@@ -21,11 +21,12 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/utils/strings/slices"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"k8s.io/utils/strings/slices"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 

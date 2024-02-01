@@ -39,6 +39,7 @@ type DirectorConfig struct {
 	DestinationConsumerSubdomain                       string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
 	DestinationConsumerSubdomainMtls                   string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS"`
 	TestDestinationInstanceID                          string `envconfig:"APP_TEST_DESTINATION_INSTANCE_ID"`
+	TestCostObjectID                                   string
 	TestProviderAccountID                              string
 	TestProviderSubaccountID                           string
 	TestConsumerAccountID                              string
