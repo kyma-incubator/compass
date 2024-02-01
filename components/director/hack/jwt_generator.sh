@@ -15,7 +15,7 @@ function get_token(){
 }
 
 POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-"test-postgres"}"
-POSTGRES_VERSION="${POSTGRES_VERSION:-"11"}"
+POSTGRES_VERSION="${POSTGRES_VERSION:-"15"}"
 DB_USER="${DB_USER:-"postgres"}"
 DB_PWD="${DB_PWD:-"pgsql@12345"}"
 DB_NAME="${DB_NAME:-"compass"}"
