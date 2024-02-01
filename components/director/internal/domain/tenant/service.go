@@ -270,6 +270,25 @@ func (s *service) DeleteTenantAccessForResourceRecursively(ctx context.Context, 
 		return errors.Wrapf(err, "while deleting tenant acccess for resource type %q with ID %q for tenant %q", string(resourceType), ta.ResourceID, ta.TenantID)
 	}
 
+	btm, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenantAccess.ExternalTenantID)
+	if err != nil {
+		return err
+	}
+
+	if IsAtomTenant(btm.Type) {
+		rootTenants, err := s.tenantMappingRepo.GetParentsRecursivelyByExternalTenant(ctx, tenantAccess.ExternalTenantID)
+		if err != nil {
+			return err
+		}
+
+		rootTenantIDs := make([]string, 0, len(rootTenants))
+		for _, rootTenant := range rootTenants {
+			rootTenantIDs = append(rootTenantIDs, rootTenant.ID)
+		}
+
+		return repo.DeleteTenantAccessFromDirective(ctx, m2mTable, []string{tenantAccess.ResourceID}, rootTenantIDs)
+	}
+
 	return nil
 }
 
@@ -530,7 +549,7 @@ func (s *service) DeleteMany(ctx context.Context, externalTenantIDs []string) er
 // That excludes labels of other resource types in the context of the given tenant, for example labels of an application in the given tenant - those labels are not returned.
 func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error) {
 	log.C(ctx).Infof("getting labels for tenant with ID %s", tenantID)
-	if err := s.ensureTenantExists(ctx, tenantID); err != nil {
+	if err := s.Exists(ctx, tenantID); err != nil {
 		return nil, err
 	}
 
@@ -553,7 +572,8 @@ func (s *labeledService) UpsertLabel(ctx context.Context, tenantID, key string, 
 	return s.labelUpsertSvc.UpsertLabel(ctx, tenantID, label)
 }
 
-func (s *service) ensureTenantExists(ctx context.Context, id string) error {
+// Exists checks if tenant with the provided internal ID exists in the Compass storage.
+func (s *service) Exists(ctx context.Context, id string) error {
 	exists, err := s.tenantMappingRepo.Exists(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "while checking if tenant with ID %s exists", id)
@@ -561,6 +581,20 @@ func (s *service) ensureTenantExists(ctx context.Context, id string) error {
 
 	if !exists {
 		return apperrors.NewNotFoundError(resource.Tenant, id)
+	}
+
+	return nil
+}
+
+// ExistsByExternalTenant checks if tenant with the provided external ID exists in the Compass storage.
+func (s *service) ExistsByExternalTenant(ctx context.Context, externalTenant string) error {
+	exists, err := s.tenantMappingRepo.ExistsByExternalTenant(ctx, externalTenant)
+	if err != nil {
+		return errors.Wrapf(err, "while checking if tenant with External Tenant %s exists", externalTenant)
+	}
+
+	if !exists {
+		return apperrors.NewNotFoundError(resource.Tenant, externalTenant)
 	}
 
 	return nil
@@ -598,4 +632,13 @@ func MoveBeforeIfShould(tenants []model.BusinessTenantMapping, parentTenantID, c
 		newTenants = append(newTenants, tenants[i])
 	}
 	return newTenants, true
+}
+
+// IsAtomTenant checks whether the tenant comes from atom
+func IsAtomTenant(tenantType tenantpkg.Type) bool {
+	if tenantType == tenantpkg.ResourceGroup || tenantType == tenantpkg.Folder || tenantType == tenantpkg.Organization {
+		return true
+	}
+
+	return false
 }

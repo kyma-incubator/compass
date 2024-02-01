@@ -76,6 +76,7 @@ type TenantProviderConfig struct {
 	ProviderSubaccountIDProperty        string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY,default=providerSubaccountIdProperty"`
 	ConsumerTenantIDProperty            string `envconfig:"APP_TENANT_PROVIDER_CONSUMER_TENANT_ID_PROPERTY,default=consumerTenantIdProperty"`
 	SubscriptionProviderAppNameProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY,default=subscriptionProviderAppNameProperty"`
+	CostObjectIDProperty                string `envconfig:"APP_TENANT_PROVIDER_COST_OBJECT_ID_PROPERTY,default=costObjectProperty"`
 }
 
 // Dependency contains the xsappname to be used in the dependencies callback
@@ -245,6 +246,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		h.config.ProviderSubaccountIDProperty:        true,
 		h.config.ConsumerTenantIDProperty:            true,
 		h.config.SubscriptionProviderAppNameProperty: true,
+		h.config.CostObjectIDProperty:                false,
 	})
 	if err != nil {
 		return nil, err
@@ -254,6 +256,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		AccountTenantID:             properties[h.config.TenantIDProperty],
 		SubaccountTenantID:          properties[h.config.SubaccountTenantIDProperty],
 		CustomerTenantID:            properties[h.config.CustomerIDProperty],
+		CostObjectTenantID:          properties[h.config.CostObjectIDProperty],
 		SubscriptionLcenseType:      properties[h.config.LicenseTypeProperty],
 		Subdomain:                   properties[h.config.SubdomainProperty],
 		SubscriptionProviderID:      properties[h.config.SubscriptionProviderIDProperty],

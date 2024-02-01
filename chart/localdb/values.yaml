@@ -7,6 +7,8 @@ global:
         name: "postgres"
       ias_adapter:
         name: "postgres2"
+      instance_creator:
+        name: "postgres3"
       directorDBName: "postgres"
       # Database create on initial deployment; used by `install-ory.sh
       hydra:

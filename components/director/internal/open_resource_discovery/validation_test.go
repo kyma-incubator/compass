@@ -3016,6 +3016,18 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			},
 			ExpectedToBeValid: true,
 		}, {
+			Name: "Valid missing `resourceDefinitions` field for API when `policyLevel` is sap, `visibility` is private and apiProtocol is `delta-sharing`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions = nil
+				doc.APIResources[0].APIProtocol = str.Ptr("delta-sharing")
+				doc.APIResources[0].Visibility = str.Ptr(ord.APIVisibilityPrivate)
+				doc.APIResources[0].PolicyLevel = str.Ptr(policyLevel)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
 			Name: "Missing field `type` of `resourceDefinitions` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()

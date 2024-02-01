@@ -14,7 +14,6 @@ type formationConstraintRepository interface {
 	Create(ctx context.Context, item *model.FormationConstraint) error
 	Get(ctx context.Context, id string) (*model.FormationConstraint, error)
 	ListAll(ctx context.Context) ([]*model.FormationConstraint, error)
-	ListByIDs(ctx context.Context, formationConstraintIDs []string) ([]*model.FormationConstraint, error)
 	Delete(ctx context.Context, id string) error
 	Update(ctx context.Context, model *model.FormationConstraint) error
 	ListMatchingFormationConstraints(ctx context.Context, formationConstraintIDs []string, location formationconstraint.JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error)
@@ -94,7 +93,7 @@ func (s *service) ListByFormationTemplateID(ctx context.Context, formationTempla
 		formationConstraintIDs = append(formationConstraintIDs, cr.ConstraintID)
 	}
 
-	formationConstraints, err := s.repo.ListByIDs(ctx, formationConstraintIDs)
+	formationConstraints, err := s.repo.ListByIDsAndGlobal(ctx, formationConstraintIDs)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing Formation Constraints for FormationTemplate with ID: %s", formationTemplateID)
 	}

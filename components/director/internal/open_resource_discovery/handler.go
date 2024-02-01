@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
-// OperationsManager missing godoc
+// OperationsManager provides methods for operations management
 //
 //go:generate mockery --name=OperationsManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OperationsManager interface {
