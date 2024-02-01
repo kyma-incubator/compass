@@ -45,6 +45,7 @@ type Tenant struct {
 	TenantID                    string
 	SubaccountID                string
 	CustomerID                  string
+	CostObjectID                string
 	Subdomain                   string
 	SubscriptionProviderID      string
 	SubscriptionLicenseType     *string
@@ -57,6 +58,7 @@ type TenantIDProperties struct {
 	TenantIDProperty                    string
 	SubaccountTenantIDProperty          string
 	CustomerIDProperty                  string
+	CostObjectIDProperty                string
 	SubdomainProperty                   string
 	SubscriptionProviderIDProperty      string
 	SubscriptionLicenseTypeProperty     string
