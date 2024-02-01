@@ -236,7 +236,7 @@ func TestService_ListByFormationTemplateID(t *testing.T) {
 			Context: ctx,
 			FormationConstraintRepository: func() *automock.FormationConstraintRepository {
 				repo := &automock.FormationConstraintRepository{}
-				repo.On("ListByIDs", ctx, []string{testID}).Return([]*model.FormationConstraint{formationConstraintModel}, nil).Once()
+				repo.On("ListByIDsAndGlobal", ctx, []string{testID}).Return([]*model.FormationConstraint{formationConstraintModel}, nil).Once()
 				return repo
 			},
 			FormationConstraintReferenceRepository: func() *automock.FormationTemplateConstraintReferenceRepository {
@@ -252,7 +252,7 @@ func TestService_ListByFormationTemplateID(t *testing.T) {
 			Context: ctx,
 			FormationConstraintRepository: func() *automock.FormationConstraintRepository {
 				repo := &automock.FormationConstraintRepository{}
-				repo.On("ListByIDs", ctx, []string{testID}).Return(nil, testErr).Once()
+				repo.On("ListByIDsAndGlobal", ctx, []string{testID}).Return(nil, testErr).Once()
 				return repo
 			},
 			FormationConstraintReferenceRepository: func() *automock.FormationTemplateConstraintReferenceRepository {

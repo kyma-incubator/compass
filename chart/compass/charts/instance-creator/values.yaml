@@ -19,5 +19,9 @@ deployment:
   securityContext: # Set on container level
     runAsUser: 2000
     allowPrivilegeEscalation: false
+  resourcesCloudsqlProxy: {}
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
+  dbPool:
+    maxOpenConnections: 30
+    maxIdleConnections: 2

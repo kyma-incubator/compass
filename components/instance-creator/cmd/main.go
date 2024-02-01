@@ -6,6 +6,10 @@ import (
 	"os"
 	"time"
 
+	httputildirector "github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/persistence"
+
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/paths"
 
@@ -50,6 +54,13 @@ func main() {
 	err = cfg.PrepareConfiguration()
 	exitOnError(err, "Failed to prepare configuration with regional credentials")
 
+	advisoryLocker, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "Error while closing the connection to the database")
+	}()
+
 	fetchJWKSClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
@@ -70,9 +81,13 @@ func main() {
 	creator.Use(tenantValidationMiddleware.Handler())
 
 	smClient := client.NewClient(cfg, client.NewCallerProvider())
-	c := handler.NewHandler(smClient)
+	certCache, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	exitOnError(err, "failed to initialize certificate loader")
 
-	creator.HandleFunc("/", c.HandlerFunc)
+	mtlsHTTPClient := httputildirector.PrepareMTLSClientWithSSLValidation(cfg.ClientTimeout, certCache, cfg.SkipSSLValidation, cfg.ExternalClientCertSecretName)
+	c := handler.NewHandler(smClient, mtlsHTTPClient, advisoryLocker)
+
+	creator.HandleFunc(cfg.APITenantMappingsEndpoint, c.HandlerFunc).Methods(http.MethodPatch)
 	mainRouter.HandleFunc(paths.HealthzEndpoint, healthz.NewHTTPHandler())
 
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
