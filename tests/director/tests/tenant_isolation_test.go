@@ -2,6 +2,8 @@ package tests
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
@@ -15,7 +17,6 @@ import (
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestTenantIsolation(t *testing.T) {
@@ -341,10 +342,10 @@ func TestTenantAccess(t *testing.T) {
 	require.NotEmpty(t, actualApp.ID)
 
 	folder3Apps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, folder3ExternalTenant)
-	assert.Empty(t,folder3Apps.Data)
+	assert.Empty(t, folder3Apps.Data)
 
 	resourceGroup2Apps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, resourceGroup2ExternalTenant)
-	assert.Empty(t,  resourceGroup2Apps.Data)
+	assert.Empty(t, resourceGroup2Apps.Data)
 
 	resourceGroup1Apps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, resourceGroup1ExternalTenant)
 	require.Len(t, resourceGroup1Apps.Data, 1)
@@ -418,10 +419,10 @@ func TestTenantAccess(t *testing.T) {
 	require.NoError(t, err)
 
 	folder3Apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, folder3ExternalTenant)
-	assert.Empty(t,folder3Apps.Data)
+	assert.Empty(t, folder3Apps.Data)
 
 	resourceGroup2Apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, resourceGroup2ExternalTenant)
-	assert.Empty(t,  resourceGroup2Apps.Data)
+	assert.Empty(t, resourceGroup2Apps.Data)
 
 	resourceGroup1Apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, resourceGroup1ExternalTenant)
 	require.Len(t, resourceGroup1Apps.Data, 1)
