@@ -111,13 +111,20 @@ var (
 	runtimeTypeDisplayName = str.Ptr("display name")
 	defaultTime            = time.Time{}
 
-	testErr = errors.New("Test error")
+	emptyCtx = context.Background()
+	testErr  = errors.New("Test error")
 
 	formationModelWithoutError = fixFormationModelWithoutError()
 	modelFormation             = model.Formation{
 		ID:                  FormationID,
 		FormationTemplateID: FormationTemplateID,
 		Name:                testFormationName,
+	}
+	modelFormationWithTenant = model.Formation{
+		ID:                  FormationID,
+		FormationTemplateID: FormationTemplateID,
+		Name:                testFormationName,
+		TenantID:            TntInternalID,
 	}
 	graphqlFormation = graphql.Formation{
 		ID:                  FormationID,

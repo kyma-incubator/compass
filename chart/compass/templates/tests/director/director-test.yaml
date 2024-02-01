@@ -160,6 +160,8 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_COST_OBJECT_ID
+              value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
@@ -522,6 +524,8 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_COST_OBJECT_ID
+              value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
@@ -884,6 +888,8 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_COST_OBJECT_ID
+              value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
@@ -1246,6 +1252,8 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_COST_OBJECT_ID
+              value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
@@ -1608,6 +1616,8 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_COST_OBJECT_ID
+              value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID

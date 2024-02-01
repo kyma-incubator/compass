@@ -171,7 +171,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3622"
+      version: "PR-3624"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -207,7 +207,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3589"
+      version: "PR-3592"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
@@ -228,7 +228,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3618"
+      version: "PR-3624"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -916,6 +916,7 @@ global:
     tenantProvider:
       tenantIdProperty: "tenantId"
       customerIdProperty: "customerId"
+      costObjectIdProperty: "costObjectId"
       subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
       licenseTypeProperty: "licenseType"
@@ -1359,6 +1360,7 @@ global:
         providerSubaccountID: "47b4575a-f102-414a-8398-2d973ad65f3a" # TestProviderSubaccount from our testing tenants
         consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
         consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
+        costObjectID: "de235c0e-9cb0-4f39-9fd5-d558ec6850bb" # randomly chosen
         consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
         providerSubaccountIDRegion2: "731b7bc4-5472-41d2-a447-e4c0f45de739" # TestProviderSubaccountRegion2 from our testing tenants
         consumerAccountIDTenantHierarchy: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants; more info in 'TestFormationNotificationsTenantHierarchy'
@@ -1495,6 +1497,7 @@ global:
         - "tenant_access:write"
         - "formation:read"
         - "formation:write"
+        - "formation:global_write"
         - "formation:global_read"
       instance_creator:
         - "application_template:read"
@@ -1604,6 +1607,7 @@ global:
         - "formation.state:write"
         - "tenant_access:write"
         - "bundle_instance_auth:write"
+        - "formation:global_write"
         - "formation:global_read"
       default:
         - "runtime:read"
