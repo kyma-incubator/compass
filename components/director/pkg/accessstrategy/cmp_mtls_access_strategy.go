@@ -41,6 +41,7 @@ func NewCMPmTLSAccessStrategyExecutor(certCache credloader.CertCache, tenantProv
 }
 
 var globalTr *http.Transport
+var mutex sync.Mutex
 
 // Execute performs the access strategy's specific execution logic
 func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, tnt string, additionalHeaders *sync.Map) (*http.Response, error) {
@@ -48,30 +49,30 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 	if clientCerts == nil {
 		return nil, errors.New("did not find client certificate in the cache")
 	}
-
-	tr := globalTr
-	if tr == nil {
+	mutex.Lock()
+	if globalTr == nil {
 		log.C(ctx).Infof("Missing global transport - will construct new one for request %q", documentURL)
 		if baseClient.Transport != nil {
 			switch v := baseClient.Transport.(type) {
 			case *http.Transport:
-				tr = v.Clone()
+				globalTr = v.Clone()
 			case HTTPRoundTripper:
-				tr = v.GetTransport().Clone()
+				globalTr = v.GetTransport().Clone()
 			default:
 				return nil, errors.New("unsupported transport type")
 			}
 		}
 
-		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
+		globalTr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
 	} else {
 		log.C(ctx).Infof("Will reuse global transport for request %q", documentURL)
 	}
 
 	client := &http.Client{
 		Timeout:   baseClient.Timeout,
-		Transport: tr,
+		Transport: globalTr,
 	}
+	mutex.Unlock()
 
 	req, err := http.NewRequest("GET", documentURL, nil)
 	if err != nil {
