@@ -175,7 +175,7 @@ global:
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3606"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
@@ -183,11 +183,11 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3610"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3597"
+      version: "PR-3608"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
@@ -220,7 +220,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3624"
+      version: "PR-3607"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
