@@ -118,6 +118,19 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
 		})
 
+		t.Run("Application is created successfully with a new cost object tenant that has access to the application", func(t *testing.T) {
+			//GIVEN
+			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
+
+			// WHEN
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
+			subscription.CreateSubscription(t, conf.SubscriptionConfig, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true, conf.SubscriptionConfig.StandardFlow)
+
+			// THEN
+			appPageExt := fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, conf.TestCostObjectID)
+			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
+		})
+
 		t.Run("Application subscriptions label value is increased when two subscriptions are made", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)

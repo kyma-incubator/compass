@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -79,7 +80,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -416,9 +416,10 @@ func main() {
 	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
 
 	logger.Infof("Registering readiness endpoint...")
-	schemaRepo := schema.NewRepository()
-	ready := healthz.NewReady(transact, cfg.ReadyConfig, schemaRepo)
-	mainRouter.HandleFunc(readyzEndpoint, healthz.NewReadinessHandler(ready))
+	// schemaRepo := schema.NewRepository()
+	// ready := healthz.NewReady(transact, cfg.ReadyConfig, schemaRepo)
+	// mainRouter.HandleFunc(readyzEndpoint, healthz.NewReadinessHandler(ready))
+	mainRouter.HandleFunc(readyzEndpoint, healthz.NewLivenessHandler())
 
 	logger.Infof("Registering liveness endpoint...")
 	mainRouter.HandleFunc(livezEndpoint, healthz.NewLivenessHandler())
@@ -427,7 +428,11 @@ func main() {
 	health, err := healthz.New(ctx, cfg.HealthConfig)
 	exitOnError(err, "Could not initialize health")
 	health.RegisterIndicator(healthz.NewIndicator(healthz.DBIndicatorName, healthz.NewDBIndicatorFunc(transact))).Start()
-	mainRouter.HandleFunc(healthzEndpoint, healthz.NewHealthHandler(health))
+	// mainRouter.HandleFunc(healthzEndpoint, healthz.NewHealthHandler(health))
+	mainRouter.HandleFunc(healthzEndpoint, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "UP")
+	})
 
 	logger.Infof("Registering info endpoint...")
 	mainRouter.HandleFunc(cfg.InfoConfig.APIEndpoint, info.NewInfoHandler(ctx, cfg.InfoConfig, certCache))

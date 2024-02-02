@@ -22,7 +22,7 @@ IMG_NAME="compass-schema-migrator"
 CONTAINER_REGISTRY_KEY="containerRegistry"
 NETWORK="migration-test-network"
 POSTGRES_CONTAINER="test-postgres"
-POSTGRES_VERSION="12"
+POSTGRES_VERSION="15"
 
 CONTAINER_REGISTRY=$(grep $CONTAINER_REGISTRY_KEY $CHART_FILE -A 1 -m 1 | tail -n 1 | tr -d ' ' | cut -d':' -f 2)
 IMAGE_VERSION=$(grep $IMG_NAME $CHART_FILE -B 1 | head -n 1 | cut -d'"' -f2)

@@ -20,7 +20,7 @@ spec:
         shareProcessNamespace: true
         containers:
           - name: dbdump
-            image: bitnami/postgresql:12.14.0-debian-11-r11
+            image: bitnami/postgresql:15.5.0-debian-11-r19
             imagePullPolicy: IfNotPresent
             securityContext:
               allowPrivilegeEscalation: false
