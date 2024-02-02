@@ -1,7 +1,6 @@
 package accessstrategy
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -46,10 +45,6 @@ var mutex sync.Mutex
 
 // Execute performs the access strategy's specific execution logic
 func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, tnt string, additionalHeaders *sync.Map) (*http.Response, error) {
-	clientCerts := as.certCache.Get()
-	if clientCerts == nil {
-		return nil, errors.New("did not find client certificate in the cache")
-	}
 	mutex.Lock()
 	if globalTr == nil {
 		log.C(ctx).Infof("Missing global transport - will construct new one for request %q", documentURL)
@@ -65,32 +60,13 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 				return nil, errors.New("unsupported transport type")
 			}
 		}
+		globalTr.TLSClientConfig.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
+			return as.certCache.Get()[as.externalClientCertSecretName], nil
+		}
 	} else {
 		log.C(ctx).Infof("Will reuse global transport for request %q", documentURL)
 	}
 
-	if len(globalTr.TLSClientConfig.Certificates) != 0 {
-		latestCert := clientCerts[as.externalClientCertSecretName].Certificate
-		existingCert := globalTr.TLSClientConfig.Certificates[0].Certificate
-
-		hasCertBeenRotated := false
-		if len(latestCert) == len(existingCert) {
-			for i := range latestCert {
-				if !bytes.Equal(latestCert[i], existingCert[i]) {
-					log.C(ctx).Infof("Client certificate has been rotated (bytes mismatch), will rotate it in the global transport for request: %s", documentURL)
-					hasCertBeenRotated = true
-					break
-				}
-			}
-		} else {
-			log.C(ctx).Infof("Client certificate has been rotated (length mismatch), will rotate it in the global transport for request: %s", documentURL)
-			hasCertBeenRotated = true
-		}
-
-		if hasCertBeenRotated {
-			globalTr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
-		}
-	}
 	client := &http.Client{
 		Timeout:   baseClient.Timeout,
 		Transport: globalTr,
