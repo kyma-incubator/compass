@@ -2,14 +2,10 @@ package accessstrategy
 
 import (
 	"context"
-	"crypto/tls"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 )
@@ -40,39 +36,8 @@ func NewCMPmTLSAccessStrategyExecutor(certCache credloader.CertCache, tenantProv
 	}
 }
 
-var globalTr *http.Transport
-var mutex sync.Mutex
-
 // Execute performs the access strategy's specific execution logic
 func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, tnt string, additionalHeaders *sync.Map) (*http.Response, error) {
-	mutex.Lock()
-	if globalTr == nil {
-		log.C(ctx).Infof("Missing global transport - will construct new one for request %q", documentURL)
-		if baseClient.Transport != nil {
-			switch v := baseClient.Transport.(type) {
-			case *http.Transport:
-				log.C(ctx).Infof("Missing global transport - will clone *http.Transport for request %q", documentURL)
-				globalTr = v.Clone()
-			case HTTPRoundTripper:
-				log.C(ctx).Infof("Missing global transport - will clone HTTPRoundTripper for request %q", documentURL)
-				globalTr = v.GetTransport().Clone()
-			default:
-				return nil, errors.New("unsupported transport type")
-			}
-		}
-		globalTr.TLSClientConfig.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
-			return as.certCache.Get()[as.externalClientCertSecretName], nil
-		}
-	} else {
-		log.C(ctx).Infof("Will reuse global transport for request %q", documentURL)
-	}
-
-	client := &http.Client{
-		Timeout:   baseClient.Timeout,
-		Transport: globalTr,
-	}
-	mutex.Unlock()
-
 	req, err := http.NewRequest("GET", documentURL, nil)
 	if err != nil {
 		return nil, err
@@ -97,7 +62,7 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		req.Header.Set(tenantHeader, tnt)
 	}
 
-	resp, err := client.Do(req)
+	resp, err := baseClient.Do(req)
 	//if err != nil || resp.StatusCode >= http.StatusBadRequest {
 	//	if len(clientCerts) != 2 {
 	//		return nil, errors.Errorf("There must be exactly 2 certificates in the cert cache. Actual number of certificates: %d", len(clientCerts))

@@ -201,6 +201,9 @@ func main() {
 			IdleConnTimeout:     cfg.IdleConnectionTimeout,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
+				GetClientCertificate: func(info *tls.CertificateRequestInfo) (*tls.Certificate, error) {
+					return certCache.Get()[cfg.ExternalClientCertSecretName], nil
+				},
 			},
 		},
 	}
@@ -368,8 +371,8 @@ func main() {
 	}()
 
 	clientConfig := ord.NewClientConfig(cfg.MaxParallelDocumentsPerApplication, cfg.ClientRetryDelay, cfg.ClientRetryAttempts)
-	ordClientWithTenantExecutor := newORDClientWithTenantExecutor(cfg, clientConfig, certCache)
-	ordClientWithoutTenantExecutor := newORDClientWithoutTenantExecutor(cfg, clientConfig, certCache)
+	ordClientWithTenantExecutor := newORDClientWithTenantExecutor(cfg, httpClient, clientConfig, certCache)
+	ordClientWithoutTenantExecutor := newORDClientWithoutTenantExecutor(cfg, httpClient, clientConfig, certCache)
 
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
@@ -433,42 +436,12 @@ func main() {
 	runMainSrv()
 }
 
-func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache credloader.CertCache) *ord.ORDDocumentsClient {
-	httpClient := &http.Client{
-		Timeout: cfg.ClientTimeout,
-		Transport: &http.Transport{
-			DialContext: (&net.Dialer{
-				Timeout:   15 * time.Second,
-				KeepAlive: 15 * time.Second,
-			}).DialContext,
-			MaxConnsPerHost:     cfg.ClientMaxConnectionsPerHost,
-			MaxIdleConnsPerHost: cfg.ClientMaxIdlConnectionsPerHost,
-			MaxIdleConns:        cfg.ClientMaxIdlConnectionsPerHost,
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: cfg.SkipSSLValidation,
-			},
-		},
-	}
+func newORDClientWithTenantExecutor(cfg config, httpClient *http.Client, clientConfig ord.ClientConfig, certCache credloader.CertCache) *ord.ORDDocumentsClient {
 	accessStrategyExecutorProviderWithTenant := accessstrategy.NewExecutorProviderWithTenant(certCache, ctxTenantProvider, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
 	return ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithTenant)
 }
 
-func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache credloader.CertCache) *ord.ORDDocumentsClient {
-	httpClient := &http.Client{
-		Timeout: cfg.ClientTimeout,
-		Transport: &http.Transport{
-			DialContext: (&net.Dialer{
-				Timeout:   15 * time.Second,
-				KeepAlive: 15 * time.Second,
-			}).DialContext,
-			MaxConnsPerHost:     cfg.ClientMaxConnectionsPerHost,
-			MaxIdleConnsPerHost: cfg.ClientMaxIdlConnectionsPerHost,
-			MaxIdleConns:        cfg.ClientMaxIdlConnectionsPerHost,
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: cfg.SkipSSLValidation,
-			},
-		},
-	}
+func newORDClientWithoutTenantExecutor(cfg config, httpClient *http.Client, clientConfig ord.ClientConfig, certCache credloader.CertCache) *ord.ORDDocumentsClient {
 	accessStrategyExecutorProviderWithoutTenant := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
 	return ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithoutTenant)
 }
