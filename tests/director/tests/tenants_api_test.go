@@ -2,6 +2,8 @@ package tests
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -11,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/strings/slices"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 

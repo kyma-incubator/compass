@@ -12,13 +12,19 @@ import (
 )
 
 type AssignAppToFormationOperation struct {
-	applicationID string
-	tenantID      string
-	asserters     []asserters.Asserter
+	applicationID           string
+	tenantID                string
+	formationNameContextKey string
+	asserters               []asserters.Asserter
 }
 
 func NewAssignAppToFormationOperation(applicationID string, tenantID string) *AssignAppToFormationOperation {
-	return &AssignAppToFormationOperation{applicationID: applicationID, tenantID: tenantID}
+	return &AssignAppToFormationOperation{applicationID: applicationID, tenantID: tenantID, formationNameContextKey: context_keys.FormationNameKey}
+}
+
+func (o *AssignAppToFormationOperation) WithFormationNameContextKey(formationNAmeContextKey string) *AssignAppToFormationOperation {
+	o.formationNameContextKey = formationNAmeContextKey
+	return o
 }
 
 func (o *AssignAppToFormationOperation) WithAsserters(asserters ...asserters.Asserter) *AssignAppToFormationOperation {
@@ -29,7 +35,7 @@ func (o *AssignAppToFormationOperation) WithAsserters(asserters ...asserters.Ass
 }
 
 func (o *AssignAppToFormationOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	formationName := ctx.Value(context_keys.FormationNameKey).(string)
+	formationName := ctx.Value(o.formationNameContextKey).(string)
 	fixtures.AssignFormationWithApplicationObjectType(t, ctx, gqlClient, graphql.FormationInput{Name: formationName}, o.applicationID, o.tenantID)
 	for _, asserter := range o.asserters {
 		asserter.AssertExpectations(t, ctx)
@@ -37,7 +43,7 @@ func (o *AssignAppToFormationOperation) Execute(t *testing.T, ctx context.Contex
 }
 
 func (o *AssignAppToFormationOperation) Cleanup(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	formationName := ctx.Value(context_keys.FormationNameKey).(string)
+	formationName := ctx.Value(o.formationNameContextKey).(string)
 	fixtures.UnassignFormationWithApplicationObjectType(t, ctx, gqlClient, graphql.FormationInput{Name: formationName}, o.applicationID, o.tenantID)
 }
 

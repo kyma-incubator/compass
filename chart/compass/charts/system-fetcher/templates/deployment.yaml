@@ -70,12 +70,6 @@ spec:
               value: "{{ .Values.global.systemFetcher.enableSystemDeletion }}"
             - name: APP_OPERATIONAL_MODE
               value: {{ .Values.global.systemFetcher.operationalMode }}
-            - name: APP_SYNC_GLOBAL_ACCOUNTS
-              value: "{{ .Values.global.systemFetcher.syncGlobalAccountTenants }}"
-            - name: APP_SYSTEM_INFORMATION_PARALLELLISM
-              value: "{{ .Values.global.systemFetcher.fetchParallellism }}"
-            - name: APP_SYSTEM_INFORMATION_QUEUE_SIZE
-              value: "{{ .Values.global.systemFetcher.queueSize }}"
             - name: APP_SYSTEM_INFORMATION_FETCH_TIMEOUT
               value: {{ .Values.global.systemFetcher.fetchRequestTimeout | quote }}
             - name: APP_SYSTEM_INFORMATION_ENDPOINT
@@ -198,6 +192,22 @@ spec:
               value: "{{ .Values.global.systemFetcher.prefix }}"
             - name: APP_JWKS_ENDPOINT
               value: "{{ .Values.global.systemFetcher.authentication.jwksEndpoint }}"
+            - name: APP_OPERATIONS_MANAGER_PRIORITY_QUEUE_LIMIT
+              value: "{{ .Values.global.systemFetcher.priorityQueueLimit }}"
+            - name: APP_OPERATIONS_MANAGER_RESCHEDULE_JOB_INTERVAL
+              value: "{{ .Values.global.systemFetcher.rescheduleJobInterval }}"
+            - name: APP_OPERATIONS_MANAGER_RESCHEDULE_PERIOD
+              value: "{{ .Values.global.systemFetcher.reschedulePeriod }}"
+            - name: APP_OPERATIONS_MANAGER_RESCHEDULE_HANGED_JOB_INTERVAL
+              value: "{{ .Values.global.systemFetcher.rescheduleHangedJobInterval }}"
+            - name: APP_OPERATIONS_MANAGER_RESCHEDULE_HANGED_PERIOD
+              value: "{{ .Values.global.systemFetcher.rescheduleHangedPeriod }}"
+            - name: APP_MAINTAIN_OPERATIONS_JOB_INTERVAL
+              value: "{{ .Values.global.systemFetcher.maintainOperationsJobInterval }}"
+            - name: APP_OPERATION_PROCESSORS_QUIET_PERIOD
+              value: "{{ .Values.global.systemFetcher.operationProcessorsQuietPeriod }}"
+            - name: APP_PARALLEL_OPERATION_PROCESSORS
+              value: "{{ .Values.global.systemFetcher.parallelOperationProcessors }}"
           command:
             - "/bin/sh"
           args:

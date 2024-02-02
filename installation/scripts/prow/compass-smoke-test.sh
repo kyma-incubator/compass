@@ -4,7 +4,7 @@
 # Following script installs necessary tooling, build and starts Director and Ord service, then runs the following smoke tests scenario:
 # - Crafts a local token
 # - Registers single application in Director using the register-application-with-bundles.graphql template
-# - Fetches applications and verify that the application was successfuly registered
+# - Fetches applications and verify that the application was successfully registered
 # - Fetches ORD service systems with all expands, and verify app info that is returned is the expected one
 
 set -o errexit
@@ -186,7 +186,7 @@ echo "Compass smoke test - start!"
 
 echo "Create Formation 'test-scenario'..."
 COMPASS_GQL_URL="${COMPASS_URL}/graphql"
-CREATE_FORMATION_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/create-formation/create-formation.graphql"
+CREATE_FORMATION_FILE_LOCATION="${COMPASS_DIR}/tests/smoke-test/create-formation.graphql"
 CREATE_FORMATION_RESULT="$(execute_gql_query_from_file "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${CREATE_FORMATION_FILE_LOCATION}")"
 echo "Result from formation creation request:"
 echo "---------------------------------"
@@ -194,7 +194,7 @@ echo "${CREATE_FORMATION_RESULT}"
 echo "---------------------------------"
 
 echo "Register application ..."
-REG_APP_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/register-application/register-application-with-bundles.graphql"
+REG_APP_FILE_LOCATION="${COMPASS_DIR}/tests/smoke-test/register-application-with-bundles.graphql"
 CREATE_APP_IN_COMPASS_RESULT="$(execute_gql_query_from_file "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${REG_APP_FILE_LOCATION}")"
 
 echo "Result from app creation request:"
@@ -223,7 +223,7 @@ CRT_BUNDLE_1_EVENT_DEFS_COUNT=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq -r 
 CRT_BUNDLE_1_EVENT_DEF_0_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq -r '.data.result.bundles.data[1].eventDefinitions.data[0].id')
 CRT_BUNDLE_1_EVENT_DEF_1_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq -r '.data.result.bundles.data[1].eventDefinitions.data[1].id')
 
-GET_APPS_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/query-applications/query-applications.graphql"
+GET_APPS_FILE_LOCATION="${COMPASS_DIR}/tests/smoke-test/query-applications.graphql"
 GET_APPS_FROM_COMPASS_RESULT="$(execute_gql_query_from_file "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${GET_APPS_FILE_LOCATION}")"
 
 echo "Result from get apps request:"

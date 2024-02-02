@@ -19,6 +19,10 @@ type LabelService struct {
 func (_m *LabelService) CreateLabel(ctx context.Context, tenant string, id string, labelInput *model.LabelInput) error {
 	ret := _m.Called(ctx, tenant, id, labelInput)
 
+	if len(ret) == 0 {
+		panic("no return value specified for CreateLabel")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.LabelInput) error); ok {
 		r0 = rf(ctx, tenant, id, labelInput)
@@ -32,6 +36,10 @@ func (_m *LabelService) CreateLabel(ctx context.Context, tenant string, id strin
 // GetLabel provides a mock function with given fields: ctx, tenant, labelInput
 func (_m *LabelService) GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error) {
 	ret := _m.Called(ctx, tenant, labelInput)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLabel")
+	}
 
 	var r0 *model.Label
 	var r1 error
@@ -58,6 +66,10 @@ func (_m *LabelService) GetLabel(ctx context.Context, tenant string, labelInput 
 // UpdateLabel provides a mock function with given fields: ctx, tenant, id, labelInput
 func (_m *LabelService) UpdateLabel(ctx context.Context, tenant string, id string, labelInput *model.LabelInput) error {
 	ret := _m.Called(ctx, tenant, id, labelInput)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateLabel")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.LabelInput) error); ok {

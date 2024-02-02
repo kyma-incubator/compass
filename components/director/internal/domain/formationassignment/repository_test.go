@@ -420,6 +420,36 @@ func TestRepository_ListAllForObject(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestRepository_ListAllForObjectGlobal(t *testing.T) {
+	suite := testdb.RepoListTestSuite{
+		Name:       "List All Formations Assignments for object globally",
+		MethodName: "ListAllForObjectGlobal",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE (source = $1 OR target = $2)`),
+				Args:     []driver.Value{TestSource, TestSource},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		ExpectedModelEntities:     []interface{}{faModelWithConfigAndError},
+		ExpectedDBEntities:        []interface{}{faEntityWithConfigAndError},
+		RepoConstructorFunc:       formationassignment.NewRepository,
+		MethodArgs:                []interface{}{TestSource},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func TestRepository_DeleteAssignmentsForObjectID(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name:       "DeleteAssignmentsForObjectID Formations Assignments",

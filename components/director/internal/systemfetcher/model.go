@@ -20,8 +20,6 @@ var (
 	SelectFilter []string
 	// SystemSourceKey represents a key for filtering systems
 	SystemSourceKey string
-	// SystemSynchronizationTimestamps represents the systems last synchronization timestamps for each tenant
-	SystemSynchronizationTimestamps map[string]map[string]SystemSynchronizationTimestamp
 )
 
 // TemplateMapping holds data for Application Templates and their Labels

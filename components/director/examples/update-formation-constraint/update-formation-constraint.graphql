@@ -4,10 +4,13 @@ mutation {
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
     in: {
       inputTemplate: "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\",\"key\": \"value\"}"
+      description: "description"
+      priority: 7
     }
   ) {
     id
     name
+    description
     constraintType
     targetOperation
     operator
@@ -15,5 +18,7 @@ mutation {
     resourceSubtype
     inputTemplate
     constraintScope
+    priority
+    createdAt
   }
 }
