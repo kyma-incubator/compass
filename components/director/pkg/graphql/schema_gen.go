@@ -371,29 +371,33 @@ type ComplexityRoot struct {
 	}
 
 	Formation struct {
-		Error                func(childComplexity int) int
-		FormationAssignment  func(childComplexity int, id string) int
-		FormationAssignments func(childComplexity int, first *int, after *PageCursor) int
-		FormationTemplateID  func(childComplexity int) int
-		ID                   func(childComplexity int) int
-		Name                 func(childComplexity int) int
-		State                func(childComplexity int) int
-		Status               func(childComplexity int) int
-		TenantID             func(childComplexity int) int
+		Error                         func(childComplexity int) int
+		FormationAssignment           func(childComplexity int, id string) int
+		FormationAssignments          func(childComplexity int, first *int, after *PageCursor) int
+		FormationTemplateID           func(childComplexity int) int
+		ID                            func(childComplexity int) int
+		LastNotificationSentTimestamp func(childComplexity int) int
+		LastStateChangeTimestamp      func(childComplexity int) int
+		Name                          func(childComplexity int) int
+		State                         func(childComplexity int) int
+		Status                        func(childComplexity int) int
+		TenantID                      func(childComplexity int) int
 	}
 
 	FormationAssignment struct {
-		Configuration func(childComplexity int) int
-		Error         func(childComplexity int) int
-		ID            func(childComplexity int) int
-		Source        func(childComplexity int) int
-		SourceEntity  func(childComplexity int) int
-		SourceType    func(childComplexity int) int
-		State         func(childComplexity int) int
-		Target        func(childComplexity int) int
-		TargetEntity  func(childComplexity int) int
-		TargetType    func(childComplexity int) int
-		Value         func(childComplexity int) int
+		Configuration                 func(childComplexity int) int
+		Error                         func(childComplexity int) int
+		ID                            func(childComplexity int) int
+		LastNotificationSentTimestamp func(childComplexity int) int
+		LastStateChangeTimestamp      func(childComplexity int) int
+		Source                        func(childComplexity int) int
+		SourceEntity                  func(childComplexity int) int
+		SourceType                    func(childComplexity int) int
+		State                         func(childComplexity int) int
+		Target                        func(childComplexity int) int
+		TargetEntity                  func(childComplexity int) int
+		TargetType                    func(childComplexity int) int
+		Value                         func(childComplexity int) int
 	}
 
 	FormationAssignmentPage struct {
@@ -2578,6 +2582,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Formation.ID(childComplexity), true
 
+	case "Formation.lastNotificationSentTimestamp":
+		if e.complexity.Formation.LastNotificationSentTimestamp == nil {
+			break
+		}
+
+		return e.complexity.Formation.LastNotificationSentTimestamp(childComplexity), true
+
+	case "Formation.lastStateChangeTimestamp":
+		if e.complexity.Formation.LastStateChangeTimestamp == nil {
+			break
+		}
+
+		return e.complexity.Formation.LastStateChangeTimestamp(childComplexity), true
+
 	case "Formation.name":
 		if e.complexity.Formation.Name == nil {
 			break
@@ -2626,6 +2644,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FormationAssignment.ID(childComplexity), true
+
+	case "FormationAssignment.lastNotificationSentTimestamp":
+		if e.complexity.FormationAssignment.LastNotificationSentTimestamp == nil {
+			break
+		}
+
+		return e.complexity.FormationAssignment.LastNotificationSentTimestamp(childComplexity), true
+
+	case "FormationAssignment.lastStateChangeTimestamp":
+		if e.complexity.FormationAssignment.LastStateChangeTimestamp == nil {
+			break
+		}
+
+		return e.complexity.FormationAssignment.LastStateChangeTimestamp(childComplexity), true
 
 	case "FormationAssignment.source":
 		if e.complexity.FormationAssignment.Source == nil {
@@ -6949,6 +6981,8 @@ type Formation {
 	Aggregated formation status
 	"""
 	status: FormationStatus!
+	lastStateChangeTimestamp: Timestamp
+	lastNotificationSentTimestamp: Timestamp
 }
 
 type FormationAssignment {
@@ -6963,6 +6997,8 @@ type FormationAssignment {
 	value: String
 	configuration: String
 	error: String
+	lastStateChangeTimestamp: Timestamp
+	lastNotificationSentTimestamp: Timestamp
 }
 
 type FormationAssignmentPage implements Pageable {
@@ -18576,6 +18612,68 @@ func (ec *executionContext) _Formation_status(ctx context.Context, field graphql
 	return ec.marshalNFormationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationStatus(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Formation_lastStateChangeTimestamp(ctx context.Context, field graphql.CollectedField, obj *Formation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Formation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastStateChangeTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Formation_lastNotificationSentTimestamp(ctx context.Context, field graphql.CollectedField, obj *Formation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Formation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastNotificationSentTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _FormationAssignment_id(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -18933,6 +19031,68 @@ func (ec *executionContext) _FormationAssignment_error(ctx context.Context, fiel
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationAssignment_lastStateChangeTimestamp(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationAssignment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastStateChangeTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationAssignment_lastNotificationSentTimestamp(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationAssignment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastNotificationSentTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationAssignmentPage_data(ctx context.Context, field graphql.CollectedField, obj *FormationAssignmentPage) (ret graphql.Marshaler) {
@@ -39016,6 +39176,10 @@ func (ec *executionContext) _Formation(ctx context.Context, sel ast.SelectionSet
 				}
 				return res
 			})
+		case "lastStateChangeTimestamp":
+			out.Values[i] = ec._Formation_lastStateChangeTimestamp(ctx, field, obj)
+		case "lastNotificationSentTimestamp":
+			out.Values[i] = ec._Formation_lastNotificationSentTimestamp(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -39096,6 +39260,10 @@ func (ec *executionContext) _FormationAssignment(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._FormationAssignment_configuration(ctx, field, obj)
 		case "error":
 			out.Values[i] = ec._FormationAssignment_error(ctx, field, obj)
+		case "lastStateChangeTimestamp":
+			out.Values[i] = ec._FormationAssignment_lastStateChangeTimestamp(ctx, field, obj)
+		case "lastNotificationSentTimestamp":
+			out.Values[i] = ec._FormationAssignment_lastNotificationSentTimestamp(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
