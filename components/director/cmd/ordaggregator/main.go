@@ -112,6 +112,7 @@ type config struct {
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 
 	ClientTimeout                  time.Duration `envconfig:"default=120s"`
+	IdleConnectionTimeout          time.Duration `envconfig:"APP_IDLE_CONNECTION_TIMEOUT,default=5m"`
 	ClientMaxConnectionsPerHost    int           `envconfig:"APP_CLIENT_MAX_CONNECTIONS_PER_HOST,default=1000"`
 	ClientMaxIdlConnectionsPerHost int           `envconfig:"APP_CLIENT_MAX_IDLE_CONNECTIONS_PER_HOST,default=1000"`
 	ClientRetryAttempts            uint          `envconfig:"default=5"`
@@ -197,6 +198,7 @@ func main() {
 			MaxConnsPerHost:     cfg.ClientMaxConnectionsPerHost,
 			MaxIdleConnsPerHost: cfg.ClientMaxIdlConnectionsPerHost,
 			MaxIdleConns:        cfg.ClientMaxIdlConnectionsPerHost,
+			IdleConnTimeout:     cfg.IdleConnectionTimeout,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},

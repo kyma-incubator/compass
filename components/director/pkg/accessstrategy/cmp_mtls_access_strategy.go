@@ -1,6 +1,7 @@
 package accessstrategy
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -55,8 +56,10 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		if baseClient.Transport != nil {
 			switch v := baseClient.Transport.(type) {
 			case *http.Transport:
+				log.C(ctx).Infof("Missing global transport - will clone *http.Transport for request %q", documentURL)
 				globalTr = v.Clone()
 			case HTTPRoundTripper:
+				log.C(ctx).Infof("Missing global transport - will clone HTTPRoundTripper for request %q", documentURL)
 				globalTr = v.GetTransport().Clone()
 			default:
 				return nil, errors.New("unsupported transport type")
@@ -66,7 +69,28 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		log.C(ctx).Infof("Will reuse global transport for request %q", documentURL)
 	}
 
-	globalTr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
+	if len(globalTr.TLSClientConfig.Certificates) != 0 {
+		latestCert := clientCerts[as.externalClientCertSecretName].Certificate
+		existingCert := globalTr.TLSClientConfig.Certificates[0].Certificate
+
+		hasCertBeenRotated := false
+		if len(latestCert) == len(existingCert) {
+			for i := range latestCert {
+				if !bytes.Equal(latestCert[i], existingCert[i]) {
+					log.C(ctx).Infof("Client certificate has been rotated (bytes mismatch), will rotate it in the global transport for request: %s", documentURL)
+					hasCertBeenRotated = true
+					break
+				}
+			}
+		} else {
+			log.C(ctx).Infof("Client certificate has been rotated (length mismatch), will rotate it in the global transport for request: %s", documentURL)
+			hasCertBeenRotated = true
+		}
+
+		if hasCertBeenRotated {
+			globalTr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
+		}
+	}
 	client := &http.Client{
 		Timeout:   baseClient.Timeout,
 		Transport: globalTr,
