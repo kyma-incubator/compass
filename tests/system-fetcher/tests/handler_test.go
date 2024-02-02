@@ -32,6 +32,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
+	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -252,6 +253,82 @@ func TestSystemFetcherSuccessForCustomerTenant(t *testing.T) {
 	req := fixtures.FixGetApplicationBySystemNumberRequest("1")
 	var appResp directorSchema.ApplicationExt
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultCustomerTenantID(), req, &appResp)
+	require.NoError(t, err)
+	require.Equal(t, "name1", appResp.Name)
+
+	require.ElementsMatch(t, expectedApps, actualApps)
+}
+
+func TestSystemFetcherOnNewGASuccess(t *testing.T) {
+	// Add system in Mock
+	// Create Tenant in director
+	// Wait for system to be fetched
+	// Check if system is fetched
+	ctx := context.TODO()
+	mockSystems := []byte(fmt.Sprintf(defaultMockSystems, cfg.SystemInformationSourceKey))
+	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
+	defer cleanupMockSystems(t)
+
+	gaExternalTenantIDs := []string{"ga1"}
+	gaNames := []string{"ga1"}
+	subdomains := []string{"ga1"}
+	subaccountExternalTenants := []string{"sub1"}
+	region := "local"
+	testProvider := "e2e-test-provider"
+	testLicenseType := "LICENSETYPE"
+
+	tenants := []directorSchema.BusinessTenantMappingInput{
+		{
+			Name:           gaNames[0],
+			ExternalTenant: gaExternalTenantIDs[0],
+			Parents:        []*string{},
+			Subdomain:      &subdomains[0],
+			Region:         &region,
+			Type:           string(tenant.Account),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+	}
+
+	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
+	assert.NoError(t, err)
+	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(gaExternalTenantIDs, subaccountExternalTenants...))
+
+	var tenant *directorSchema.Tenant
+	require.Eventually(t, func() bool {
+		tenant, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, gaExternalTenantIDs[0])
+		if tenant == nil {
+			t.Logf("Waiting for global account %s to be read", gaExternalTenantIDs[0])
+			return false
+		}
+		assert.NoError(t, err)
+		return true
+	}, time.Minute*3, time.Second*5, "Waiting for tenants retrieval.")
+
+	waitForApplicationsToBeProcessed(ctx, t, tenant.ID, 1)
+
+	description1 := "name1"
+	baseUrl := "http://mainurl.com"
+	expectedApps := []directorSchema.ApplicationExt{
+		{
+			Application: directorSchema.Application{
+				Name:         "name1",
+				Description:  &description1,
+				BaseURL:      &baseUrl,
+				SystemNumber: str.Ptr("1"),
+			},
+			Labels: applicationLabels("name1", "", "", true, "cf-eu10"),
+		},
+	}
+
+	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.ID)
+	for _, app := range resp.Data {
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.ID, app)
+	}
+
+	req := fixtures.FixGetApplicationBySystemNumberRequest("1")
+	var appResp directorSchema.ApplicationExt
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.ID, req, &appResp)
 	require.NoError(t, err)
 	require.Equal(t, "name1", appResp.Name)
 
@@ -1485,4 +1562,14 @@ func fixApplicationTemplateWithoutWebhooksWithSystemRole(name, intSystemID strin
 	}
 
 	return appTemplateInput
+}
+
+func cleanupTenants(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantExternalIDs []string) {
+	var tenantsToDelete []directorSchema.BusinessTenantMappingInput
+	for _, tenantExternalID := range tenantExternalIDs {
+		tenantsToDelete = append(tenantsToDelete, directorSchema.BusinessTenantMappingInput{ExternalTenant: tenantExternalID})
+	}
+	err := fixtures.DeleteTenants(t, ctx, gqlClient, tenantsToDelete)
+	assert.NoError(t, err)
+	log.D().Info("Successfully cleanup tenants")
 }

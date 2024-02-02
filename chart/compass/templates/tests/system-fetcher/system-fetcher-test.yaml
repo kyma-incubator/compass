@@ -71,6 +71,8 @@ spec:
               value: {{ .Values.global.systemFetcher.systemSourceKey }}
             - name: TEMPLATE_LABEL_FILTER
               value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
+            - name: INTERNAL_DIRECTOR_URL
+              value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
       restartPolicy: Never
 ---
 apiVersion: v1
