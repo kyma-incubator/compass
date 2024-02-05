@@ -89,6 +89,20 @@ const (
 		"additionalAttributes": {}
 	}]`
 
+	singleMockSystem = `[{
+		"systemNumber": "1",
+		"displayName": "name1",
+		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
+		"type": "type1",
+		"%s": "val1",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {"mainUrl":"http://mainurl.com"},
+		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10"}
+	}]`
+
 	nameLabelKey           = "displayName"
 	namePlaceholder        = "name"
 	displayNamePlaceholder = "display-name"
@@ -260,9 +274,9 @@ func TestSystemFetcherSuccessForCustomerTenant(t *testing.T) {
 }
 
 func TestSystemFetcherOnNewGASuccess(t *testing.T) {
-	gaExternalID := "44dfe415-4847-4feb-8580-ecb07958347d"
+	gaExternalID := tenant.TestTenants.GetIDByName(t, tenant.TestSystemFetcherOnNewGAName)
 	ctx := context.TODO()
-	mockSystems := []byte(fmt.Sprintf(defaultMockSystems, cfg.SystemInformationSourceKey))
+	mockSystems := []byte(fmt.Sprintf(singleMockSystem, cfg.SystemInformationSourceKey))
 	setMockSystems(t, mockSystems, gaExternalID)
 	defer cleanupMockSystems(t)
 

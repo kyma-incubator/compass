@@ -83,6 +83,8 @@ spec:
                 value: "{{ (index .Values.global.tenants 10).id }}"
               - name: APP_TRUSTED_TENANT
                 value: "{{ (index .Values.global.tenants 26).id }}"
+              - name: APP_TRUSTED_NEW_GA
+                value: "{{ (index .Values.global.tenants 40).id }}"
               - name: APP_ON_DEMAND_TENANT
                 value: {{ .Values.global.tests.tenantFetcher.missingTenantOnDemandID }}
               - name: APP_CA_CERT
