@@ -531,7 +531,28 @@ const (
 	"eventData": {
 		"guid": "%s",
 		"displayName": "%s",
+		"subdomain": "%s",
+		"licenseType": "%s"
+	},
+	"type": "GlobalAccount"
+}`
+	mockGlobalAccountWithCustomerEventPattern = `
+{
+	"eventData": {
+		"guid": "%s",
+		"displayName": "%s",
 		"customerId": "%s",
+		"subdomain": "%s",
+		"licenseType": "%s"
+	},
+	"type": "GlobalAccount"
+}`
+	mockGlobalAccountWithCostObjectEventPattern = `
+{
+	"eventData": {
+		"guid": "%s",
+		"displayName": "%s",
+		"costObjectId": "%s",
 		"subdomain": "%s",
 		"licenseType": "%s"
 	},
@@ -559,43 +580,134 @@ const (
 
 func TestGlobalAccounts(t *testing.T) {
 	ctx := context.TODO()
-
 	externalTenantIDs := []string{"guid1", "guid2"}
 	names := []string{"name1", "name2"}
-	customerIDs := []string{"customerID1", "customerID2"}
 	subdomains := []string{"subdomain1", "subdomain2"}
 
-	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(externalTenantIDs, customerIDs...))
+	t.Run("Having customer parents", func(t *testing.T) {
+		customerIDs := []string{"customerID1", "customerID2"}
 
-	createEvent1 := genMockGlobalAccountEvent(externalTenantIDs[0], names[0], customerIDs[0], subdomains[0], testLicenseType)
-	createEvent2 := genMockGlobalAccountEvent(externalTenantIDs[1], names[1], customerIDs[1], subdomains[1], testLicenseType)
-	setMockTenantEvents(t, genMockPage(strings.Join([]string{createEvent1, createEvent2}, ","), 2), globalAccountCreateSubPath)
-	defer cleanupMockEvents(t, globalAccountCreateSubPath)
+		defer cleanupTenants(t, ctx, directorInternalGQLClient, append(externalTenantIDs, customerIDs...))
 
-	deleteEvent1 := genMockGlobalAccountEvent(externalTenantIDs[0], names[0], customerIDs[0], subdomains[0], testLicenseType)
-	setMockTenantEvents(t, genMockPage(deleteEvent1, 1), globalAccountDeleteSubPath)
-	defer cleanupMockEvents(t, globalAccountDeleteSubPath)
+		createEvent1 := genMockGlobalAccountWithCustomerEvent(externalTenantIDs[0], names[0], customerIDs[0], subdomains[0], testLicenseType)
+		createEvent2 := genMockGlobalAccountWithCustomerEvent(externalTenantIDs[1], names[1], customerIDs[1], subdomains[1], testLicenseType)
+		setMockTenantEvents(t, genMockPage(strings.Join([]string{createEvent1, createEvent2}, ","), 2), globalAccountCreateSubPath)
+		defer cleanupMockEvents(t, globalAccountCreateSubPath)
 
-	require.Eventually(t, func() bool {
-		tenant1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[0])
-		if tenant1 != nil {
-			t.Logf("Waiting for tenant %s to be deleted", externalTenantIDs[0])
-			return false
-		}
-		assert.Error(t, err)
-		assert.Nil(t, tenant1)
+		deleteEvent1 := genMockGlobalAccountWithCustomerEvent(externalTenantIDs[0], names[0], customerIDs[0], subdomains[0], testLicenseType)
+		setMockTenantEvents(t, genMockPage(deleteEvent1, 1), globalAccountDeleteSubPath)
+		defer cleanupMockEvents(t, globalAccountDeleteSubPath)
 
-		tenant2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[1])
-		if tenant2 == nil {
-			t.Logf("Waiting for tenant %s to be read", externalTenantIDs[1])
-			return false
-		}
-		assert.NoError(t, err)
-		assert.Equal(t, names[1], *tenant2.Name)
+		require.Eventually(t, func() bool {
+			tenant1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[0])
+			if tenant1 != nil {
+				t.Logf("Waiting for tenant %s to be deleted", externalTenantIDs[0])
+				return false
+			}
+			assert.Error(t, err)
+			assert.Nil(t, tenant1)
 
-		t.Log("TestGlobalAccounts checks are successful")
-		return true
-	}, timeout, checkInterval, "Waiting for tenants retrieval.")
+			tenant2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[1])
+			if tenant2 == nil {
+				t.Logf("Waiting for tenant %s to be read", externalTenantIDs[1])
+				return false
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, names[1], *tenant2.Name)
+
+			t.Log("TestGlobalAccounts checks are successful")
+			return true
+		}, timeout, checkInterval, "Waiting for tenants retrieval.")
+	})
+
+	t.Run("Having cost object parents", func(t *testing.T) {
+		costObjectIDs := []string{"costObj1", "costObj2"}
+
+		defer cleanupTenants(t, ctx, directorInternalGQLClient, append(externalTenantIDs, costObjectIDs...))
+
+		createEvent1 := genMockGlobalAccountWithCostObjectEvent(externalTenantIDs[0], names[0], costObjectIDs[0], subdomains[0], testLicenseType)
+		createEvent2 := genMockGlobalAccountWithCostObjectEvent(externalTenantIDs[1], names[1], costObjectIDs[1], subdomains[1], testLicenseType)
+		setMockTenantEvents(t, genMockPage(strings.Join([]string{createEvent1, createEvent2}, ","), 2), globalAccountCreateSubPath)
+		defer cleanupMockEvents(t, globalAccountCreateSubPath)
+
+		deleteEvent1 := genMockGlobalAccountWithCostObjectEvent(externalTenantIDs[0], names[0], costObjectIDs[0], subdomains[0], testLicenseType)
+		setMockTenantEvents(t, genMockPage(deleteEvent1, 1), globalAccountDeleteSubPath)
+		defer cleanupMockEvents(t, globalAccountDeleteSubPath)
+
+		require.Eventually(t, func() bool {
+			tenant1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[0])
+			if tenant1 != nil {
+				t.Logf("Waiting for tenant %s to be deleted", externalTenantIDs[0])
+				return false
+			}
+			assert.Error(t, err)
+			assert.Nil(t, tenant1)
+
+			tenant2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[1])
+			if tenant2 == nil {
+				t.Logf("Waiting for tenant %s to be read", externalTenantIDs[1])
+				return false
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, names[1], *tenant2.Name)
+
+			costObject, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, costObjectIDs[1])
+			if costObject == nil {
+				t.Logf("Waiting for tenant %s to be read", costObjectIDs[1])
+				return false
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tenant2.Parents, []string{costObject.InternalID})
+
+			t.Log("TestGlobalAccounts checks are successful")
+			return true
+		}, timeout, checkInterval, "Waiting for tenants retrieval.")
+	})
+
+	t.Run("Having cost object parents brownfield", func(t *testing.T) {
+		costObjectIDs := []string{"costObj1"}
+
+		defer cleanupTenants(t, ctx, directorInternalGQLClient, append(externalTenantIDs, costObjectIDs...))
+
+		createEvent1 := genMockGlobalAccountEvent(externalTenantIDs[0], names[0], subdomains[0], testLicenseType)
+		setMockTenantEvents(t, genMockPage(strings.Join([]string{createEvent1}, ","), 1), globalAccountCreateSubPath)
+		defer cleanupMockEvents(t, globalAccountCreateSubPath)
+
+		require.Eventually(t, func() bool {
+			account, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[0])
+			if account == nil {
+				t.Logf("Waiting for tenant %s to be created", externalTenantIDs[0])
+				return false
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, names[0], *account.Name)
+			assert.Empty(t, account.Parents)
+
+			t.Logf("Account tenant %s is inserted", externalTenantIDs[0])
+			return true
+		}, timeout, checkInterval, "Waiting for tenants retrieval.")
+
+		createEvent2 := genMockGlobalAccountWithCostObjectEvent(externalTenantIDs[0], names[0], costObjectIDs[0], subdomains[0], testLicenseType)
+		setMockTenantEvents(t, genMockPage(strings.Join([]string{createEvent2}, ","), 1), globalAccountCreateSubPath)
+		defer cleanupMockEvents(t, globalAccountCreateSubPath)
+
+		require.Eventually(t, func() bool {
+			costObject, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, costObjectIDs[0])
+			if costObject == nil {
+				t.Logf("Waiting for tenant %s to be created", costObjectIDs[0])
+				return false
+			}
+			assert.NoError(t, err)
+			assert.NotNil(t, costObject)
+
+			account, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[0])
+			assert.NoError(t, err)
+			assert.Equal(t, account.Parents, []string{costObject.InternalID})
+
+			t.Logf("Cost Object tenant %s is inserted", costObjectIDs[0])
+			return true
+		}, timeout, checkInterval, "Waiting for tenants retrieval.")
+	})
 }
 
 func TestMoveSubaccounts(t *testing.T) {
@@ -994,8 +1106,16 @@ func TestGetSubaccountOnDemandIfMissing(t *testing.T) {
 	t.Log("TestGetSubaccountOnDemandIfMissing checks are successful")
 }
 
-func genMockGlobalAccountEvent(guid, displayName, customerID, subdomain, licenseType string) string {
-	return fmt.Sprintf(mockGlobalAccountEventPattern, guid, displayName, customerID, subdomain, licenseType)
+func genMockGlobalAccountWithCustomerEvent(guid, displayName, customerID, subdomain, licenseType string) string {
+	return fmt.Sprintf(mockGlobalAccountWithCustomerEventPattern, guid, displayName, customerID, subdomain, licenseType)
+}
+
+func genMockGlobalAccountWithCostObjectEvent(guid, displayName, costObjectID, subdomain, licenseType string) string {
+	return fmt.Sprintf(mockGlobalAccountWithCustomerEventPattern, guid, displayName, costObjectID, subdomain, licenseType)
+}
+
+func genMockGlobalAccountEvent(guid, displayName, subdomain, licenseType string) string {
+	return fmt.Sprintf(mockGlobalAccountEventPattern, guid, displayName, subdomain, licenseType)
 }
 
 func genMockSubaccountMoveEvent(guid, displayName, subdomain, licenseType, directoryParentGUID, parentGuid, sourceGlobalAccountGuid, targetGlobalAccountGuid, region, customerID string) string {
