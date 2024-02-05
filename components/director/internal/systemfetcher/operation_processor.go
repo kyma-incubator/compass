@@ -15,7 +15,7 @@ import (
 //go:generate mockery --name=SystemFetcherService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemFetcherService interface {
 	ProcessTenant(ctx context.Context, tenantID string) error
-	SetTemplateRenderer(templateRenderer templateRenderer)
+	SetTemplateRenderer(templateRenderer TemplateRenderer)
 }
 
 // OperationsProcessor defines Open Resource Discovery operation processor
