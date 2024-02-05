@@ -257,7 +257,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createGlobalApplicationTemplateRequest1, &globalOutput1)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantID, globalOutput1)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), `Application Template with "systemRole" label is regional. The Application Template should contain a "region" label`)
+		require.Contains(t, err.Error(), `Existing application template with "systemRole" label is regional. The input application template should contain a "region" label`)
 
 		// Create Global and then Regional
 		productLabelValue2 := []interface{}{"productLabelValue2"}
