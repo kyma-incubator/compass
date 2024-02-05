@@ -152,6 +152,18 @@ type securityConfig struct {
 	AggregatorSyncScope string        `envconfig:"APP_ORD_AGGREGATOR_SYNC_SCOPE,default=ord_aggregator:sync"`
 }
 
+type CustomTransport struct {
+	transport http.Transport
+	semaphore chan struct{}
+}
+
+func (t *CustomTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	t.semaphore <- struct{}{}        // Acquire semaphore before making a request
+	defer func() { <-t.semaphore }() // Release semaphore after the request is done
+
+	return t.transport.RoundTrip(req)
+}
+
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -188,24 +200,28 @@ func main() {
 	certCache, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
+	semaphore := make(chan struct{}, cfg.ClientMaxConnectionsPerHost)
+
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
-		Transport: &http.Transport{
-			DialContext: (&net.Dialer{
-				Timeout:   15 * time.Second,
-				KeepAlive: 15 * time.Second,
-			}).DialContext,
-			MaxConnsPerHost:     cfg.ClientMaxConnectionsPerHost,
-			MaxIdleConnsPerHost: cfg.ClientMaxIdlConnectionsPerHost,
-			MaxIdleConns:        cfg.ClientMaxIdlConnectionsPerHost,
-			IdleConnTimeout:     cfg.IdleConnectionTimeout,
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: cfg.SkipSSLValidation,
-				GetClientCertificate: func(info *tls.CertificateRequestInfo) (*tls.Certificate, error) {
-					return certCache.Get()[cfg.ExternalClientCertSecretName], nil
+		Transport: &CustomTransport{
+			semaphore: semaphore,
+			transport: http.Transport{
+				DialContext: (&net.Dialer{
+					Timeout:   15 * time.Second,
+					KeepAlive: 15 * time.Second,
+				}).DialContext,
+				MaxConnsPerHost:     cfg.ClientMaxConnectionsPerHost,
+				MaxIdleConnsPerHost: cfg.ClientMaxIdlConnectionsPerHost,
+				MaxIdleConns:        cfg.ClientMaxIdlConnectionsPerHost,
+				IdleConnTimeout:     cfg.IdleConnectionTimeout,
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: cfg.SkipSSLValidation,
+					GetClientCertificate: func(info *tls.CertificateRequestInfo) (*tls.Certificate, error) {
+						return certCache.Get()[cfg.ExternalClientCertSecretName], nil
+					},
 				},
-			},
-		},
+			}},
 	}
 
 	securedHTTPClient := httputil.PrepareHTTPClientWithSSLValidation(cfg.ClientTimeout, cfg.SkipSSLValidation)
