@@ -240,8 +240,8 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, systemSynchronizationTimestamps)
 		require.NoError(t, err)
 		require.Len(t, systems, 2)
-		require.Equal(t, systems[0].TemplateID, "id-1")
-		require.Equal(t, systems[1].TemplateID, "")
+		require.Equal(t, "id-1", systems[0].TemplateID)
+		require.Equal(t, "", systems[1].TemplateID)
 	})
 
 	t.Run("Success with template mappings and SystemSynchronizationTimestamps exist", func(t *testing.T) {

@@ -1000,7 +1000,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			Ctx:           ctxWithCertConsumer,
 			Input:         gqlGlobalAppTemplateInputWithProductLabels,
-			ExpectedError: errors.New(`Application Template with "systemRole" label is regional. The Application Template should contain a "region" label`),
+			ExpectedError: errors.New(`Existing application template with "systemRole" label is regional. The input application template should contain a "region" label`),
 		},
 		{
 			Name: "Error when the new Application Template is regional but does not have a region placeholder",

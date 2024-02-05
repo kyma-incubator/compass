@@ -757,9 +757,6 @@ func calculateSortedTemplateMappingKeys() {
 	}
 
 	sort.Slice(templateMappingKeys, func(i, j int) bool {
-		if templateMappingKeys[i].Label != templateMappingKeys[j].Label {
-			return templateMappingKeys[i].Label < templateMappingKeys[j].Label
-		}
 		return templateMappingKeys[i].Label < templateMappingKeys[j].Label
 	})
 

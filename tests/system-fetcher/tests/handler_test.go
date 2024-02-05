@@ -836,7 +836,7 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, template1.ID)
 
-	appTemplateName2 := fixtures.CreateAppTemplateName("temp2")
+	appTemplateName2 := fixtures.CreateAppTemplateName("temp1")
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixRegionalApplicationTemplateWithSystemRoles(appTemplateName2, intSys.ID, []interface{}{"val1"}, region2))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
 	require.NoError(t, err)

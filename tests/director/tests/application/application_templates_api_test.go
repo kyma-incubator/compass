@@ -118,7 +118,9 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		ctx := context.Background()
 
 		productLabelValue := []interface{}{"productLabelValue"}
-		appTemplateName1 := fixtures.CreateAppTemplateName("app-template-name-product-1")
+		appTemplateName := "app-template-name-product-1"
+
+		appTemplateName1 := fixtures.CreateAppTemplateName(appTemplateName)
 		appTemplateInput1 := fixtures.FixRegionalApplicationTemplate(appTemplateName1, region1, regionPlaceholderJSONPath1)
 		appTemplateInput1.Labels[conf.ApplicationTemplateProductLabel] = productLabelValue
 		appTemplate1, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput1)
@@ -127,7 +129,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		createApplicationTemplateRequest1 := fixtures.FixCreateApplicationTemplateRequest(appTemplate1)
 		output1 := graphql.ApplicationTemplate{}
 
-		appTemplateName2 := fixtures.CreateAppTemplateName("app-template-name-product-2")
+		appTemplateName2 := fixtures.CreateAppTemplateName(appTemplateName)
 		appTemplateInput2 := fixtures.FixRegionalApplicationTemplate(appTemplateName2, region2, regionPlaceholderJSONPath1)
 		appTemplateInput2.Labels[conf.ApplicationTemplateProductLabel] = productLabelValue
 		appTemplate2, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput2)
@@ -148,8 +150,10 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		require.Equal(t, output1.Labels[conf.ApplicationTemplateProductLabel], productLabelValue)
-		require.Equal(t, output2.Labels[conf.ApplicationTemplateProductLabel], productLabelValue)
+		require.Equal(t, productLabelValue, output1.Labels[conf.ApplicationTemplateProductLabel])
+		require.Equal(t, region1, output1.Labels[tenantfetcher.RegionKey])
+		require.Equal(t, productLabelValue, output1.Labels[conf.ApplicationTemplateProductLabel])
+		require.Equal(t, region2, output2.Labels[tenantfetcher.RegionKey])
 		require.NotEmpty(t, output1.ID)
 		require.NotEmpty(t, output2.ID)
 	})

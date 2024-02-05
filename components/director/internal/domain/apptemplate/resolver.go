@@ -843,7 +843,7 @@ func (r *Resolver) checkAppTemplateExistenceByProductLabel(ctx context.Context, 
 		}
 
 		if len(existingRegions) > 0 && !isRegionalAppTemplate {
-			return errors.Errorf("Application Template with %q label is regional. The Application Template should contain a %q label", r.appTemplateProductLabel, regionLabelKey)
+			return errors.Errorf("Existing application template with %q label is regional. The input application template should contain a %q label", r.appTemplateProductLabel, regionLabelKey)
 		}
 
 		if isRegionalAppTemplate {

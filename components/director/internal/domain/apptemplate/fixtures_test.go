@@ -194,21 +194,10 @@ func fixModelAppTemplateInput(name string, appInputString string) *model.Applica
 }
 
 func fixRegionalModelAppTemplateInputWithProductLabel(name, appInputString, region string) *model.ApplicationTemplateInput {
-	desc := testDescription
+	appTemplateInput := fixGlobalModelAppTemplateInputWithProductLabel(name, appInputString)
+	appTemplateInput.Labels[RegionKey] = region
 
-	return &model.ApplicationTemplateInput{
-		Name:                 name,
-		Description:          &desc,
-		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInputJSON: appInputString,
-		Placeholders:         fixModelPlaceholdersWithRegion(),
-		Labels: map[string]interface{}{
-			"test":                  "test",
-			AppTemplateProductLabel: []interface{}{"role"},
-			RegionKey:               region,
-		},
-		AccessLevel: model.GlobalApplicationTemplateAccessLevel,
-	}
+	return appTemplateInput
 }
 
 func fixGlobalModelAppTemplateInputWithProductLabel(name, appInputString string) *model.ApplicationTemplateInput {
