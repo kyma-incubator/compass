@@ -43,16 +43,16 @@ type Config struct {
 type Handler struct {
 	c Config
 
-	serviceInstancesMap map[string]ServiceInstancesMock // subaccount to instances
-	serviceBindingsMap  map[string]ServiceBindingsMock  // subaccount to bindings
+	ServiceInstancesMap map[string]ServiceInstancesMock // subaccount to instances
+	ServiceBindingsMap  map[string]ServiceBindingsMock  // subaccount to bindings
 }
 
 func NewServiceManagerHandler(c Config) *Handler {
 	return &Handler{
 		c: c,
 
-		serviceInstancesMap: make(map[string]ServiceInstancesMock),
-		serviceBindingsMap:  make(map[string]ServiceBindingsMock),
+		ServiceInstancesMap: make(map[string]ServiceInstancesMock),
+		ServiceBindingsMap:  make(map[string]ServiceBindingsMock),
 	}
 }
 
@@ -71,20 +71,20 @@ func (h *Handler) HandleServiceOfferingsList(writer http.ResponseWriter, r *http
 	subaccount := r.URL.Query().Get(h.c.SubaccountQueryParam)
 	if len(subaccount) == 0 {
 		log.C(ctx).Error("Failed to get subaccount from query")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to get subaccount from query", http.StatusInternalServerError)
 		return
 	}
 
 	offeringsJSON, err := json.Marshal(serviceOfferingsMock)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to marshal service offerings")
-		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to marshal service offerings", http.StatusInternalServerError)
 		return
 	}
 
 	if _, err = writer.Write(offeringsJSON); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to write service offerings")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to write service offerings", http.StatusInternalServerError)
 		return
 	}
 }
@@ -104,20 +104,20 @@ func (h *Handler) HandleServicePlansList(writer http.ResponseWriter, r *http.Req
 	subaccount := r.URL.Query().Get(h.c.SubaccountQueryParam)
 	if len(subaccount) == 0 {
 		log.C(ctx).Error("Failed to get subaccount from query")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to get subaccount from query", http.StatusInternalServerError)
 		return
 	}
 
 	plansJSON, err := json.Marshal(servicePlansMock)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to marshal service plans")
-		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to marshal service plans", http.StatusInternalServerError)
 		return
 	}
 
 	if _, err = writer.Write(plansJSON); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to write service plans")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to write service plans", http.StatusInternalServerError)
 		return
 	}
 }
@@ -137,7 +137,7 @@ func (h *Handler) HandleServiceInstancesList(writer http.ResponseWriter, r *http
 	subaccount := r.URL.Query().Get(h.c.SubaccountQueryParam)
 	if len(subaccount) == 0 {
 		log.C(ctx).Error("Failed to get subaccount from query")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to get subaccount from query", http.StatusInternalServerError)
 		return
 	}
 
@@ -145,9 +145,9 @@ func (h *Handler) HandleServiceInstancesList(writer http.ResponseWriter, r *http
 
 	labels := r.URL.Query().Get(h.c.LabelsQueryParam)
 	if len(labels) == 0 {
-		instances = h.serviceInstancesMap[subaccount]
+		instances = h.ServiceInstancesMap[subaccount]
 	} else {
-		for _, instance := range h.serviceInstancesMap[subaccount].Items {
+		for _, instance := range h.ServiceInstancesMap[subaccount].Items {
 			if labelsAreEqual(instance, labels) {
 				instances.Items = append(instances.Items, instance)
 				instances.NumItems++
@@ -163,7 +163,7 @@ func (h *Handler) HandleServiceInstancesList(writer http.ResponseWriter, r *http
 
 	if _, err = writer.Write(instancesJSON); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to write service instances")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to write service instances", http.StatusInternalServerError)
 		return
 	}
 }
@@ -187,34 +187,36 @@ func (h *Handler) HandleServiceInstanceGet(writer http.ResponseWriter, r *http.R
 	subaccount := r.URL.Query().Get(h.c.SubaccountQueryParam)
 	if len(subaccount) == 0 {
 		log.C(ctx).Error("Failed to get subaccount from query")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to get subaccount from query", http.StatusInternalServerError)
 		return
 	}
 
-	instances := ServiceInstancesMock{}
+	instance := ServiceInstanceMock{}
 
 	labels := r.URL.Query().Get(h.c.LabelsQueryParam)
-	if len(labels) == 0 {
-		instances = h.serviceInstancesMap[subaccount]
-	} else {
-		for _, instance := range h.serviceInstancesMap[subaccount].Items {
-			if instance.ID == serviceInstanceID && labelsAreEqual(instance, labels) {
-				instances.Items = append(instances.Items, instance)
-				instances.NumItems++
-			}
+
+	for _, i := range h.ServiceInstancesMap[subaccount].Items {
+		if i.ID == serviceInstanceID && labelsAreEqual(i, labels) {
+			instance = *i
 		}
 	}
 
-	instancesJSON, err := json.Marshal(instances)
-	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to marshal service instances")
-		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+	if instance.ID == "" {
+		log.C(ctx).Error("Service instance not found")
+		http.Error(writer, "Service instance not found", http.StatusNotFound)
 		return
 	}
 
-	if _, err = writer.Write(instancesJSON); err != nil {
+	instanceJSON, err := json.Marshal(instance)
+	if err != nil {
+		log.C(ctx).WithError(err).Error("Failed to marshal service instances")
+		http.Error(writer, "Failed to marshal service instances", http.StatusInternalServerError)
+		return
+	}
+
+	if _, err = writer.Write(instanceJSON); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to write service instances")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to write service instances", http.StatusInternalServerError)
 		return
 	}
 }
@@ -232,7 +234,7 @@ func (h *Handler) HandleServiceInstanceCreate(writer http.ResponseWriter, r *htt
 	subaccount := r.URL.Query().Get(h.c.SubaccountQueryParam)
 	if len(subaccount) == 0 {
 		log.C(ctx).Error("Failed to get subaccount from query")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to get subaccount from query", http.StatusInternalServerError)
 		return
 	}
 
@@ -248,22 +250,22 @@ func (h *Handler) HandleServiceInstanceCreate(writer http.ResponseWriter, r *htt
 		return
 	}
 
-	subaccountInstancesMock := h.serviceInstancesMap[subaccount]
+	subaccountInstancesMock := h.ServiceInstancesMap[subaccount]
 	instance.ID = uuid.NewString()
 	subaccountInstancesMock.Items = append(subaccountInstancesMock.Items, &instance)
 	subaccountInstancesMock.NumItems++
-	h.serviceInstancesMap[subaccount] = subaccountInstancesMock
+	h.ServiceInstancesMap[subaccount] = subaccountInstancesMock
 
 	instanceJSON, err := json.Marshal(instance)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to marshal service instance")
-		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to marshal service instance", http.StatusInternalServerError)
 		return
 	}
 
 	if _, err = writer.Write(instanceJSON); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to write service instance")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to write service instance", http.StatusInternalServerError)
 		return
 	}
 }
@@ -287,20 +289,27 @@ func (h *Handler) HandleServiceInstanceDelete(writer http.ResponseWriter, r *htt
 	subaccount := r.URL.Query().Get(h.c.SubaccountQueryParam)
 	if len(subaccount) == 0 {
 		log.C(ctx).Error("Failed to get subaccount from query")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to get subaccount from query", http.StatusInternalServerError)
 		return
 	}
 
-	subaccountInstancesMock := h.serviceInstancesMap[subaccount]
+	subaccountInstancesMock, found := h.ServiceInstancesMap[subaccount], false
 
 	for i, instance := range subaccountInstancesMock.Items {
 		if instance.ID == serviceInstanceID {
 			subaccountInstancesMock.Items = append(subaccountInstancesMock.Items[:i], subaccountInstancesMock.Items[i+1:]...)
 			subaccountInstancesMock.NumItems--
+			found = true
 		}
 	}
 
-	h.serviceInstancesMap[subaccount] = subaccountInstancesMock
+	if !found {
+		log.C(ctx).Error("Service binding not found")
+		http.Error(writer, "Service binding not found", http.StatusNotFound)
+		return
+	}
+
+	h.ServiceInstancesMap[subaccount] = subaccountInstancesMock
 
 	httputils.Respond(writer, http.StatusOK)
 }
@@ -320,22 +329,22 @@ func (h *Handler) HandleServiceBindingsList(writer http.ResponseWriter, r *http.
 	subaccount := r.URL.Query().Get(h.c.SubaccountQueryParam)
 	if len(subaccount) == 0 {
 		log.C(ctx).Error("Failed to get subaccount from query")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to get subaccount from query", http.StatusInternalServerError)
 		return
 	}
 
-	bindings := h.serviceBindingsMap[subaccount]
+	bindings := h.ServiceBindingsMap[subaccount]
 
 	bindingsJSON, err := json.Marshal(bindings)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to marshal service bindings")
-		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to marshal service bindings", http.StatusInternalServerError)
 		return
 	}
 
 	if _, err = writer.Write(bindingsJSON); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to write service bindings")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to write service bindings", http.StatusInternalServerError)
 		return
 	}
 }
@@ -350,7 +359,8 @@ func (h *Handler) HandleServiceBindingGet(writer http.ResponseWriter, r *http.Re
 		return
 	}
 
-	serviceBindingID := mux.Vars(r)[ServiceBindingIDPath]
+	vars := mux.Vars(r)
+	serviceBindingID := vars[ServiceBindingIDPath]
 	if len(serviceBindingID) == 0 {
 		http.Error(writer, "Failed to get service binding id from url", http.StatusInternalServerError)
 		return
@@ -359,28 +369,33 @@ func (h *Handler) HandleServiceBindingGet(writer http.ResponseWriter, r *http.Re
 	subaccount := r.URL.Query().Get(h.c.SubaccountQueryParam)
 	if len(subaccount) == 0 {
 		log.C(ctx).Error("Failed to get subaccount from query")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to get subaccount from query", http.StatusInternalServerError)
 		return
 	}
 
-	bindings := ServiceBindingsMock{}
-	for _, binding := range h.serviceBindingsMap[subaccount].Items {
-		if binding.ID == serviceBindingID {
-			bindings.Items = append(bindings.Items, binding)
-			bindings.NumItems++
+	binding := ServiceBindingMock{}
+	for _, b := range h.ServiceBindingsMap[subaccount].Items {
+		if b.ID == serviceBindingID {
+			binding = *b
 		}
 	}
 
-	bindingsJSON, err := json.Marshal(bindings)
-	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to marshal service bindings")
-		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+	if binding.ID == "" {
+		log.C(ctx).Error("Service binding not found")
+		http.Error(writer, "Service binding not found", http.StatusNotFound)
 		return
 	}
 
-	if _, err = writer.Write(bindingsJSON); err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to write service bindings")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+	bindingJSON, err := json.Marshal(binding)
+	if err != nil {
+		log.C(ctx).WithError(err).Error("Failed to marshal service binding")
+		http.Error(writer, "Failed to marshal service binding", http.StatusInternalServerError)
+		return
+	}
+
+	if _, err = writer.Write(bindingJSON); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to write service binding")
+		http.Error(writer, "Failed to write service binding", http.StatusInternalServerError)
 		return
 	}
 }
@@ -398,7 +413,7 @@ func (h *Handler) HandleServiceBindingCreate(writer http.ResponseWriter, r *http
 	subaccount := r.URL.Query().Get(h.c.SubaccountQueryParam)
 	if len(subaccount) == 0 {
 		log.C(ctx).Error("Failed to get subaccount from query")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to get subaccount from query", http.StatusInternalServerError)
 		return
 	}
 
@@ -414,22 +429,22 @@ func (h *Handler) HandleServiceBindingCreate(writer http.ResponseWriter, r *http
 		return
 	}
 
-	subaccountBindingsMock := h.serviceBindingsMap[subaccount]
+	subaccountBindingsMock := h.ServiceBindingsMap[subaccount]
 	binding.ID = uuid.NewString()
 	subaccountBindingsMock.Items = append(subaccountBindingsMock.Items, &binding)
 	subaccountBindingsMock.NumItems++
-	h.serviceBindingsMap[subaccount] = subaccountBindingsMock
+	h.ServiceBindingsMap[subaccount] = subaccountBindingsMock
 
 	bindingJSON, err := json.Marshal(binding)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to marshal service binding")
-		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to marshal service binding", http.StatusInternalServerError)
 		return
 	}
 
 	if _, err = writer.Write(bindingJSON); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to write service binding")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to write service binding", http.StatusInternalServerError)
 		return
 	}
 }
@@ -453,20 +468,27 @@ func (h *Handler) HandleServiceBindingDelete(writer http.ResponseWriter, r *http
 	subaccount := r.URL.Query().Get(h.c.SubaccountQueryParam)
 	if len(subaccount) == 0 {
 		log.C(ctx).Error("Failed to get subaccount from query")
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(writer, "Failed to get subaccount from query", http.StatusInternalServerError)
 		return
 	}
 
-	subaccountBindingsMock := h.serviceBindingsMap[subaccount]
+	subaccountBindingsMock, found := h.ServiceBindingsMap[subaccount], false
 
 	for i, binding := range subaccountBindingsMock.Items {
 		if binding.ID == serviceBindingID {
 			subaccountBindingsMock.Items = append(subaccountBindingsMock.Items[:i], subaccountBindingsMock.Items[i+1:]...)
 			subaccountBindingsMock.NumItems--
+			found = true
 		}
 	}
 
-	h.serviceBindingsMap[subaccount] = subaccountBindingsMock
+	if !found {
+		log.C(ctx).Error("Service binding not found")
+		http.Error(writer, "Service binding not found", http.StatusNotFound)
+		return
+	}
+
+	h.ServiceBindingsMap[subaccount] = subaccountBindingsMock
 
 	httputils.Respond(writer, http.StatusOK)
 }
@@ -574,6 +596,10 @@ func validateAuthorization(ctx context.Context, r *http.Request) error {
 }
 
 func labelsAreEqual(instance *ServiceInstanceMock, labels string) bool {
+	if len(labels) == 0 {
+		return true
+	}
+
 	marshalledInstanceLabels, err := json.Marshal(instance.Labels)
 	if err != nil {
 		return false
