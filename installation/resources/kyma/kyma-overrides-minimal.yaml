@@ -30,17 +30,17 @@ istio:
     images:
       istio_proxyv2:
         name: "proxyv2"
-        version: "1.15.3-distroless"
+        version: "1.16.2-distroless"
         directory: "istio"
         containerRegistryPath: "docker.io"
       istio_pilot:
         name: "pilot"
-        version: "1.15.3-distroless"
+        version: "1.16.2-distroless"
         directory: "istio"
         containerRegistryPath: "docker.io"
       istio_install-cni:
         name: "install-cni"
-        version: "1.15.3-distroless"
+        version: "1.16.2-distroless"
         directory: "istio"
         containerRegistryPath: "docker.io"
 
@@ -116,7 +116,7 @@ monitoring:
   alertmanager:
     alertmanagerSpec:
       podMetadata:
-        annotations:
+        labels:
           sidecar.istio.io/inject: "true"
       resources:
         limits:
@@ -168,7 +168,7 @@ monitoring:
           memory: 1Gi
   prometheusOperator:
     configReloaderMemory: 256Mi
-    podAnnotations:
+    podLabels:
       sidecar.istio.io/inject: "true"
   prometheus-node-exporter:
     prometheus:
@@ -181,7 +181,7 @@ monitoring:
           keyFile: /etc/prometheus/secrets/istio.default/key.pem
           insecureSkipVerify: true
   kube-state-metrics:
-    podAnnotations:
+    customLabels:
       sidecar.istio.io/inject: "true"
     prometheus:
       monitor:

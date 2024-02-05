@@ -45,6 +45,7 @@ type Tenant struct {
 	TenantID                    string
 	SubaccountID                string
 	CustomerID                  string
+	CostObjectID                string
 	Subdomain                   string
 	SubscriptionProviderID      string
 	SubscriptionLicenseType     *string
@@ -57,6 +58,7 @@ type TenantIDProperties struct {
 	TenantIDProperty                    string
 	SubaccountTenantIDProperty          string
 	CustomerIDProperty                  string
+	CostObjectIDProperty                string
 	SubdomainProperty                   string
 	SubscriptionProviderIDProperty      string
 	SubscriptionLicenseTypeProperty     string
@@ -106,6 +108,10 @@ func CreateTenantRequest(t *testing.T, tenants Tenant, tenantProperties TenantID
 	}
 	if len(tenants.SubscriptionProviderAppName) > 0 {
 		body, err = sjson.Set(body, tenantProperties.SubscriptionProviderAppNameProperty, tenants.SubscriptionProviderAppName)
+		require.NoError(t, err)
+	}
+	if len(tenants.CostObjectID) > 0 {
+		body, err = sjson.Set(body, tenantProperties.CostObjectIDProperty, tenants.CostObjectID)
 		require.NoError(t, err)
 	}
 
