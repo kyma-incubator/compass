@@ -1139,7 +1139,7 @@ func genMockGlobalAccountWithCustomerEvent(guid, displayName, customerID, subdom
 }
 
 func genMockGlobalAccountWithCostObjectEvent(guid, displayName, costObjectID, subdomain, licenseType string) string {
-	return fmt.Sprintf(mockGlobalAccountWithCustomerEventPattern, guid, displayName, costObjectID, subdomain, licenseType)
+	return fmt.Sprintf(mockGlobalAccountWithCostObjectEventPattern, guid, displayName, costObjectID, subdomain, licenseType)
 }
 
 func genMockGlobalAccountEvent(guid, displayName, subdomain, licenseType string) string {
