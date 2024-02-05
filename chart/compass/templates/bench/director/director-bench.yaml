@@ -16,10 +16,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-bench-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-director-bench-app
     {{ if eq .Values.global.portieris.isEnabled true }}

@@ -15,10 +15,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-director
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -379,10 +379,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-director
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -743,10 +743,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-director
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -1107,10 +1107,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-director
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -1471,10 +1471,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-director
     {{ if eq .Values.global.portieris.isEnabled true }}

@@ -183,7 +183,7 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3610"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
@@ -191,7 +191,7 @@ global:
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3577"
+      version: "PR-3609"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
@@ -228,7 +228,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3624"
+      version: "PR-3630"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
