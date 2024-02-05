@@ -127,7 +127,7 @@ function createCluster() {
   gcp::provision_k8s_cluster \
         -c "$COMMON_NAME" \
         -p "$CLOUDSDK_CORE_PROJECT" \
-        -v "1.25.10" \
+        -v "1.25.16" \
         -i "cos_containerd" \
         -C "stable" \
         -j "$JOB_NAME" \
@@ -162,7 +162,7 @@ function installHelm() {
 }
 
 function installKymaCLI() {
-  KYMA_CLI_VERSION="2.9.3"
+  KYMA_CLI_VERSION="2.11.2"
   log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
 
   PREV_WD=$(pwd)

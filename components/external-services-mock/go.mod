@@ -10,10 +10,10 @@ require (
 	github.com/google/uuid v1.3.1
 	github.com/gorilla/mux v1.8.0
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
-	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
+	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/iter v1.0.2 // indirect
-	github.com/lestrrat-go/jwx v1.2.26
+	github.com/lestrrat-go/jwx v1.2.28
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/onrik/logrus v0.11.0 // indirect
 	github.com/pkg/errors v0.9.1
@@ -31,8 +31,8 @@ require (
 
 require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240123081221-34fb1f6bc126
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20240123081221-34fb1f6bc126
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240124080603-b438fb12a9cb
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20240124080603-b438fb12a9cb
 	github.com/tidwall/sjson v1.2.5
 	k8s.io/apimachinery v0.26.9
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448

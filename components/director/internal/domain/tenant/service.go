@@ -270,6 +270,25 @@ func (s *service) DeleteTenantAccessForResourceRecursively(ctx context.Context, 
 		return errors.Wrapf(err, "while deleting tenant acccess for resource type %q with ID %q for tenant %q", string(resourceType), ta.ResourceID, ta.TenantID)
 	}
 
+	btm, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenantAccess.ExternalTenantID)
+	if err != nil {
+		return err
+	}
+
+	if IsAtomTenant(btm.Type) {
+		rootTenants, err := s.tenantMappingRepo.GetParentsRecursivelyByExternalTenant(ctx, tenantAccess.ExternalTenantID)
+		if err != nil {
+			return err
+		}
+
+		rootTenantIDs := make([]string, 0, len(rootTenants))
+		for _, rootTenant := range rootTenants {
+			rootTenantIDs = append(rootTenantIDs, rootTenant.ID)
+		}
+
+		return repo.DeleteTenantAccessFromDirective(ctx, m2mTable, []string{tenantAccess.ResourceID}, rootTenantIDs)
+	}
+
 	return nil
 }
 
@@ -613,4 +632,13 @@ func MoveBeforeIfShould(tenants []model.BusinessTenantMapping, parentTenantID, c
 		newTenants = append(newTenants, tenants[i])
 	}
 	return newTenants, true
+}
+
+// IsAtomTenant checks whether the tenant comes from atom
+func IsAtomTenant(tenantType tenantpkg.Type) bool {
+	if tenantType == tenantpkg.ResourceGroup || tenantType == tenantpkg.Folder || tenantType == tenantpkg.Organization {
+		return true
+	}
+
+	return false
 }

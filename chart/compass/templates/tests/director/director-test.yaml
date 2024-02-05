@@ -15,10 +15,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-director
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -160,6 +160,8 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_COST_OBJECT_ID
+              value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
@@ -377,10 +379,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-director
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -522,6 +524,8 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_COST_OBJECT_ID
+              value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
@@ -739,10 +743,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-director
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -884,6 +888,8 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_COST_OBJECT_ID
+              value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
@@ -1101,10 +1107,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-director
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -1246,6 +1252,8 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_COST_OBJECT_ID
+              value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
@@ -1463,10 +1471,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-director
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -1608,6 +1616,8 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_COST_OBJECT_ID
+              value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID

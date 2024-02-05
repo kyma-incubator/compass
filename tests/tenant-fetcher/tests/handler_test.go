@@ -21,11 +21,12 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/utils/strings/slices"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"k8s.io/utils/strings/slices"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
@@ -71,6 +72,33 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			require.NoError(t, err)
 			assertTenant(t, tenant, providedTenant.TenantID, providedTenant.Subdomain, providedTenant.SubscriptionLicenseType)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
+		})
+
+		t.Run("Success with cost object tenant", func(t *testing.T) {
+			// GIVEN
+			providedTenant := tenantfetcher.Tenant{
+				TenantID:                    uuid.New().String(),
+				Subdomain:                   tenantfetcher.DefaultSubdomain,
+				SubscriptionProviderID:      uuid.New().String(),
+				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+				ConsumerTenantID:            uuid.New().String(),
+				CostObjectID:                uuid.New().String(),
+				SubscriptionLicenseType:     &testLicenseType,
+				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
+			}
+
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusOK)
+
+			// THEN
+			tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.TenantID)
+			require.NoError(t, err)
+			assertTenant(t, tenant, providedTenant.TenantID, providedTenant.Subdomain, providedTenant.SubscriptionLicenseType)
+			require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
+
+			costObjectTenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.CostObjectID)
+			require.NoError(t, err)
+			require.Equal(t, tenant.Parents, []string{costObjectTenant.InternalID})
 		})
 	})
 
@@ -481,6 +509,7 @@ func makeTenantRequestExpectStatusCode(t *testing.T, providedTenant tenantfetche
 		TenantIDProperty:                    config.TenantIDProperty,
 		SubaccountTenantIDProperty:          config.SubaccountTenantIDProperty,
 		CustomerIDProperty:                  config.CustomerIDProperty,
+		CostObjectIDProperty:                config.CostObjectIDProperty,
 		SubdomainProperty:                   config.SubdomainProperty,
 		SubscriptionProviderIDProperty:      config.SubscriptionProviderIDProperty,
 		SubscriptionLicenseTypeProperty:     config.SubscriptionLicenseTypeProperty,

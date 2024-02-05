@@ -256,6 +256,13 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		}
 	}
 
+	if len(h.tenantConfig.TestCostObjectID) > 0 {
+		body, err = sjson.Set(body, h.providerConfig.CostObjectIDProperty, h.tenantConfig.TestCostObjectID)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+		}
+	}
+
 	if subscriptionFlow == h.tenantConfig.IndirectDependencyFlow {
 		// When indirect dependency flow the subscribed application is IndirectDependency SAAS app.
 		// Participants in the scenario : Indirect dependency SAAS app <- Direct dependency SAAS app <- CMP

@@ -510,6 +510,10 @@ func (r *queryResolver) Formations(ctx context.Context, first *int, after *graph
 	return r.formation.Formations(ctx, first, after)
 }
 
+func (r *queryResolver) FormationsForObject(ctx context.Context, objectID string) ([]*graphql.Formation, error) {
+	return r.formation.FormationsForObject(ctx, objectID)
+}
+
 func (r *queryResolver) FormationTemplate(ctx context.Context, id string) (*graphql.FormationTemplate, error) {
 	return r.formationTemplate.FormationTemplate(ctx, id)
 }
@@ -756,6 +760,10 @@ func (r *mutationResolver) AssignFormation(ctx context.Context, objectID string,
 
 func (r *mutationResolver) UnassignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput) (*graphql.Formation, error) {
 	return r.formation.UnassignFormation(ctx, objectID, objectType, formation)
+}
+
+func (r *mutationResolver) UnassignFormationGlobal(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formationID string) (*graphql.Formation, error) {
+	return r.formation.UnassignFormationGlobal(ctx, objectID, objectType, formationID)
 }
 
 func (r *mutationResolver) CreateFormation(ctx context.Context, formationInput graphql.FormationInput) (*graphql.Formation, error) {

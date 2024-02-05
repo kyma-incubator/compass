@@ -37,12 +37,12 @@ func UpdateTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Clien
 	return response.Result, nil
 }
 
-func AddTenantAccess(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, applicationID string) {
+func AddTenantAccessForResource(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, resourceID string, resourceType graphql.TenantAccessObjectType, isOwner bool) {
 	in := graphql.TenantAccessInput{
 		TenantID:     tenantID,
-		ResourceType: graphql.TenantAccessObjectTypeApplication,
-		ResourceID:   applicationID,
-		Owner:        true,
+		ResourceType: resourceType,
+		ResourceID:   resourceID,
+		Owner:        isOwner,
 	}
 
 	tenantAccessInputString, err := testctx.Tc.Graphqlizer.TenantAccessInputToGQL(in)

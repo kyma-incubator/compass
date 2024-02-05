@@ -18,9 +18,10 @@ const (
 
 // ServiceInstanceReqBody is the request body when a Service Instance is being created
 type ServiceInstanceReqBody struct {
-	Name          string          `json:"name"`
-	ServicePlanID string          `json:"service_plan_id"`
-	Parameters    json.RawMessage `json:"parameters,omitempty"` // TODO:: differs from service to service. Most probably the necessary data will be provided as arbitrary json in the TM notification body?
+	Name          string              `json:"name"`
+	ServicePlanID string              `json:"service_plan_id"`
+	Parameters    json.RawMessage     `json:"parameters,omitempty"`
+	Labels        map[string][]string `json:"labels,omitempty"`
 }
 
 // GetResourceName gets the ServiceInstance name from the request body
@@ -51,6 +52,11 @@ func (s *ServiceInstance) GetResourceURLPath() string {
 	return paths.ServiceInstancesPath
 }
 
+// GetResourceName gets the Service
+func (s *ServiceInstance) GetResourceName() string {
+	return s.Name
+}
+
 // ServiceInstances represents a collection of Service Instance
 type ServiceInstances struct {
 	NumItems int                `json:"num_items"`
@@ -65,6 +71,15 @@ func (si *ServiceInstances) GetType() string {
 // GetURLPath gets the URL Path of the ServiceInstance
 func (si *ServiceInstances) GetURLPath() string {
 	return paths.ServiceInstancesPath
+}
+
+// GetIDs gets the IDs of all ServiceInstances
+func (sis *ServiceInstances) GetIDs() []string {
+	ids := make([]string, 0, sis.NumItems)
+	for _, si := range sis.Items {
+		ids = append(ids, si.ID)
+	}
+	return ids
 }
 
 // ServiceInstanceMatchParameters holds all the necessary fields that are used when matching ServiceInstances

@@ -15,10 +15,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-tenant-fetcher-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-tenant-fetcher
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -43,6 +43,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
             - name: APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
+            - name: APP_TENANT_PROVIDER_COST_OBJECT_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.costObjectIdProperty }}
             - name: APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.subaccountTenantIdProperty }}
             - name: APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY

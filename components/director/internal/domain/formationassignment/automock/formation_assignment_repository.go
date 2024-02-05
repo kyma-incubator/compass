@@ -397,6 +397,36 @@ func (_m *FormationAssignmentRepository) ListAllForObject(ctx context.Context, t
 	return r0, r1
 }
 
+// ListAllForObjectGlobal provides a mock function with given fields: ctx, objectID
+func (_m *FormationAssignmentRepository) ListAllForObjectGlobal(ctx context.Context, objectID string) ([]*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, objectID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListAllForObjectGlobal")
+	}
+
+	var r0 []*model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.FormationAssignment, error)); ok {
+		return rf(ctx, objectID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.FormationAssignment); ok {
+		r0 = rf(ctx, objectID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.FormationAssignment)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, objectID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListAllForObjectIDs provides a mock function with given fields: ctx, tenant, formationID, objectIDs
 func (_m *FormationAssignmentRepository) ListAllForObjectIDs(ctx context.Context, tenant string, formationID string, objectIDs []string) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, tenant, formationID, objectIDs)
