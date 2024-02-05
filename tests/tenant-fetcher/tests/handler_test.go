@@ -580,7 +580,7 @@ const (
 	"eventData": {
 		"guid": "%s",
 		"displayName": "%s",
-		"costObjectId": "%s",
+		"costObject": "%s",
 		"subdomain": "%s",
 		"licenseType": "%s"
 	},
