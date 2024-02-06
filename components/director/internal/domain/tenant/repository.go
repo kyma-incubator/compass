@@ -34,8 +34,8 @@ const (
 	labelDefinitionsTableName      string = `public.label_definitions`
 	labelDefinitionsTenantIDColumn string = `tenant_id`
 
-	maxParameterChunkSize int = 50000 // max parameters size in PostgreSQL is 65535
-	getTenantsByParentAndType = `SELECT %s from %s join %s on %s = %s where %s = ? and %s = ?`
+	maxParameterChunkSize     int = 50000 // max parameters size in PostgreSQL is 65535
+	getTenantsByParentAndType     = `SELECT %s from %s join %s on %s = %s where %s = ? and %s = ?`
 )
 
 var (
@@ -667,7 +667,9 @@ func (r *pgRepository) ListByParentAndType(ctx context.Context, parentID string,
 
 	log.C(ctx).Debugf("Executing DB query: %s", deleteTenantAccessStmt)
 
-	err = persist.SelectContext(ctx, &entityCollection, deleteTenantAccessStmt, parentID, tenantType)
+	if err = persist.SelectContext(ctx, &entityCollection, deleteTenantAccessStmt, parentID, tenantType); err != nil {
+		return nil, errors.Wrapf(err, "while listing tenants of type %s with parent ID %s", tenantType, parentID)
+	}
 
 	return r.enrichManyWithParents(ctx, entityCollection)
 }
