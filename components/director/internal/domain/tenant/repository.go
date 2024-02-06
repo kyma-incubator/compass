@@ -35,6 +35,7 @@ const (
 	labelDefinitionsTenantIDColumn string = `tenant_id`
 
 	maxParameterChunkSize int = 50000 // max parameters size in PostgreSQL is 65535
+	getTenantsByParentAndType = `SELECT %s from %s join %s on %s = %s where %s = ? and %s = ?`
 )
 
 var (
@@ -644,20 +645,30 @@ func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx conte
 
 // ListByParentAndType list tenants by parent ID and tenant.Type
 func (r *pgRepository) ListByParentAndType(ctx context.Context, parentID string, tenantType tenant.Type) ([]*model.BusinessTenantMapping, error) {
-	tenantIDs, err := r.tenantParentRepo.ListByParent(ctx, parentID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "wlile listing tenant parent records for parent with id %s", parentID)
-	}
-
-	conditions := repo.Conditions{
-		repo.NewInConditionForStringValues(idColumn, tenantIDs),
-		repo.NewEqualCondition(typeColumn, tenantType),
-	}
-
 	var entityCollection tenant.EntityCollection
-	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
-		return nil, errors.Wrapf(err, "while listing tenants of type %s with ids %v", tenantType, tenantIDs)
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, err
 	}
+
+	resultColumns := make([]string, 0, len(insertColumns))
+	for _, column := range insertColumns {
+		resultColumns = append(resultColumns, prefixWithTableName(tableName, column))
+	}
+
+	tenantTypeColumn := prefixWithTableName(tableName, typeColumn)
+	tenantsTableIDColumn := prefixWithTableName(tableName, idColumn)
+	parentsTableTenantIDColumn := prefixWithTableName(tenantparentmapping.TenantParentsTable, tenantparentmapping.TenantIDColumn)
+	parentsTableParentIDColumn := prefixWithTableName(tenantparentmapping.TenantParentsTable, tenantparentmapping.ParentIDColumn)
+
+	deleteTenantAccessStmt := fmt.Sprintf(getTenantsByParentAndType, strings.Join(resultColumns, ", "), tableName, tenantparentmapping.TenantParentsTable, tenantsTableIDColumn, parentsTableTenantIDColumn, parentsTableParentIDColumn, tenantTypeColumn)
+	deleteTenantAccessStmt = sqlx.Rebind(sqlx.DOLLAR, deleteTenantAccessStmt)
+
+	log.C(ctx).Debugf("Executing DB query: %s", deleteTenantAccessStmt)
+	//SELECT %s.* from %s join %s on %s = %s where %s = ? and %s = ?
+
+	err = persist.SelectContext(ctx, &entityCollection, deleteTenantAccessStmt, parentID, tenantType)
 
 	return r.enrichManyWithParents(ctx, entityCollection)
 }
@@ -737,4 +748,8 @@ func (r *pgRepository) enrichManyWithParents(ctx context.Context, entityCollecti
 		}
 	}
 	return btms, nil
+}
+
+func prefixWithTableName(tableName, columnName string) string {
+	return tableName + "." + columnName
 }

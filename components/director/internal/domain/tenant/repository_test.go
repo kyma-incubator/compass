@@ -1307,11 +1307,6 @@ func TestPgRepository_ListByParentAndType(t *testing.T) {
 			DBFN: func(t *testing.T) (*sqlx.DB, testdb.DBMock) {
 				db, dbMock := testdb.MockDatabase(t)
 
-				tenantByParentRowsToReturn := fixSQLTenantParentsRows([]sqlTenantParentsRow{
-					{tenantID: testID, parentID: testParentID},
-					{tenantID: testID2, parentID: testParentID},
-				})
-
 				rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{
 					{sqlRow: sqlRow{id: testID, name: "name1", externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: boolToPtr(true)},
 					{sqlRow: sqlRow{id: testID2, name: "name2", externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: boolToPtr(true)},
@@ -1326,12 +1321,8 @@ func TestPgRepository_ListByParentAndType(t *testing.T) {
 					{tenantID: testID, parentID: testParentID},
 				})
 
-				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE parent_id = $1`)).
-					WithArgs(testParentID).
-					WillReturnRows(tenantByParentRowsToReturn)
-
-				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE id IN ($1, $2) AND type = $3`)).
-					WithArgs(testID, testID2, tenantEntity.Account).
+				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT public.business_tenant_mappings.id, public.business_tenant_mappings.external_name, public.business_tenant_mappings.external_tenant, public.business_tenant_mappings.type, public.business_tenant_mappings.provider_name, public.business_tenant_mappings.status from public.business_tenant_mappings join tenant_parents on public.business_tenant_mappings.id = tenant_parents.tenant_id where tenant_parents.parent_id = $1 and public.business_tenant_mappings.type = $2`)).
+					WithArgs(testParentID, tenantEntity.Account).
 					WillReturnRows(rowsToReturn)
 
 				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
