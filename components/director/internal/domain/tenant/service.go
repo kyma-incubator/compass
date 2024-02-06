@@ -2,6 +2,9 @@ package tenant
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -23,7 +26,9 @@ const (
 	// LicenseTypeLabelKey is the key of the tenant label for licensetype.
 	LicenseTypeLabelKey = "licensetype"
 	// CustomerIDLabelKey is the key of the SAP-managed customer subaccounts
-	CustomerIDLabelKey = "customerId"
+	CustomerIDLabelKey     = "customerId"
+	CostObjectIDLabelKey   = "costObjectId"
+	CostObjectTypeLabelKey = "costObjectType"
 )
 
 // TenantMappingRepository is responsible for the repo-layer tenant operations.
@@ -423,7 +428,7 @@ func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.Bus
 		customerID = id
 	}
 
-	tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, customerID, upsertFunc)
+	tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, customerID, str.PtrStrToStr(tenantInput.AdditionalFields), upsertFunc)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
 	}
@@ -439,6 +444,7 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 
 	subdomains, regions := tenantLocality(tenantInputs)
 	customerIDs := tenantCustomerIDs(tenantInputs)
+	additionalFieldMappings := tenantAdditionalFields(tenantInputs)
 
 	tenantIDs := make([]string, 0, len(tenants))
 
@@ -446,6 +452,7 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 		subdomain := ""
 		region := ""
 		customerID := ""
+		additionalFields := ""
 		if s, ok := subdomains[tenant.ExternalTenant]; ok {
 			subdomain = s
 		}
@@ -455,8 +462,11 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 		if id, ok := customerIDs[tenant.ExternalTenant]; ok {
 			customerID = id
 		}
+		if mappings, ok := additionalFieldMappings[tenant.ExternalTenant]; ok {
+			additionalFields = mappings
+		}
 
-		tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, customerID, upsertFunc)
+		tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, customerID, additionalFields, upsertFunc)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
 		}
@@ -479,22 +489,27 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 	return tenantIDs, nil
 }
 
-func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region, customerID string, action func(context.Context, model.BusinessTenantMapping) (string, error)) (string, error) {
+func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region, customerID, additionalFields string, action func(context.Context, model.BusinessTenantMapping) (string, error)) (string, error) {
 	internalID, err := action(ctx, tenant)
 	if err != nil {
 		return "", err
 	}
 
-	return internalID, s.upsertLabels(ctx, internalID, subdomain, region, str.PtrStrToStr(tenant.LicenseType), customerID)
+	return internalID, s.upsertLabels(ctx, internalID, subdomain, region, str.PtrStrToStr(tenant.LicenseType), customerID, additionalFields)
 }
 
-func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region, licenseType, customerID string) error {
+func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region, licenseType, customerID string, additionalFields string) error {
 	labelKeyValueMappings := map[string]string{
-		SubdomainLabelKey:   subdomain,
-		RegionLabelKey:      region,
-		LicenseTypeLabelKey: licenseType,
-		CustomerIDLabelKey:  customerID,
+		SubdomainLabelKey:      subdomain,
+		RegionLabelKey:         region,
+		LicenseTypeLabelKey:    licenseType,
+		CustomerIDLabelKey:     customerID,
+		CostObjectIDLabelKey:   gjson.Get(additionalFields, CostObjectIDLabelKey).String(),
+		CostObjectTypeLabelKey: gjson.Get(additionalFields, CostObjectTypeLabelKey).String(),
 	}
+
+	fmt.Println(additionalFields)
+	fmt.Println(gjson.Get(additionalFields, "costObjectType").String())
 
 	for labelKey, labelValue := range labelKeyValueMappings {
 		if len(labelValue) > 0 {
@@ -531,6 +546,17 @@ func tenantCustomerIDs(tenants []model.BusinessTenantMappingInput) map[string]st
 	}
 
 	return customerIDs
+}
+
+func tenantAdditionalFields(tenants []model.BusinessTenantMappingInput) map[string]string {
+	additionalFields := make(map[string]string)
+	for _, t := range tenants {
+		if t.CustomerID != nil {
+			additionalFields[t.ExternalTenant] = str.PtrStrToStr(t.AdditionalFields)
+		}
+	}
+
+	return additionalFields
 }
 
 // DeleteMany removes all tenants with the provided external tenant ids from the Compass storage.

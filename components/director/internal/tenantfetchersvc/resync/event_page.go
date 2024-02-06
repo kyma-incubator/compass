@@ -3,7 +3,10 @@ package resync
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"regexp"
+
+	directortenant "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -203,11 +206,26 @@ func (ep EventsPage) eventDataToTenant(ctx context.Context, eventType EventsType
 			return []*model.BusinessTenantMappingInput{globalAccount}, nil
 		}
 
-		costObject := constructCostObjectTenant(jsonPayload, licenseTypeValue, ep)
+		costObjectIDResult := gjson.Get(jsonPayload, ep.FieldMapping.CostObjectIDField).String()
+		costObject := constructCostObjectTenant(jsonPayload, costObjectIDResult, licenseTypeValue, ep)
 		return []*model.BusinessTenantMappingInput{globalAccount, costObject}, nil
 	} else {
-		tnt, err := constructSubaccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, licenseTypeValue, ep)
-		return []*model.BusinessTenantMappingInput{tnt}, err
+		subaccount, err := constructSubaccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, licenseTypeValue, ep)
+		if err != nil {
+			return nil, err
+		}
+
+		if !gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectIDField).Exists() {
+			return []*model.BusinessTenantMappingInput{subaccount}, nil
+		}
+
+		subaccount.AdditionalFields = str.Ptr(fmt.Sprintf(`{"%s": "%s"}`, directortenant.CostObjectIDLabelKey, gjson.Get(jsonPayload, ep.FieldMapping.SubaccountIDField).String()))
+
+		costObjectIDResult := gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectIDField).String()
+		costObject := constructCostObjectTenant(jsonPayload, costObjectIDResult, licenseTypeValue, ep)
+		costObject.AdditionalFields = str.Ptr(fmt.Sprintf(`{"%s": "%s"}`, directortenant.CostObjectTypeLabelKey, gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectTypeField).String()))
+
+		return []*model.BusinessTenantMappingInput{subaccount, costObject}, err
 	}
 }
 
@@ -240,12 +258,11 @@ func constructGlobalAccountTenant(ctx context.Context, jsonPayload, name, subdom
 	}
 }
 
-func constructCostObjectTenant(jsonPayload string, licenseType *string, ep EventsPage) *model.BusinessTenantMappingInput {
-	costObjectIDResult := gjson.Get(jsonPayload, ep.FieldMapping.CostObjectIDField).String()
+func constructCostObjectTenant(jsonPayload, costObjectID string, licenseType *string, ep EventsPage) *model.BusinessTenantMappingInput {
 
 	return &model.BusinessTenantMappingInput{
-		Name:           costObjectIDResult,
-		ExternalTenant: costObjectIDResult,
+		Name:           costObjectID,
+		ExternalTenant: costObjectID,
 		Parents:        []string{},
 		Subdomain:      "",
 		Region:         "",

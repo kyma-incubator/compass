@@ -370,15 +370,16 @@ type BundleUpdateInput struct {
 }
 
 type BusinessTenantMappingInput struct {
-	Name           string    `json:"name"`
-	ExternalTenant string    `json:"externalTenant"`
-	Parents        []*string `json:"parents"`
-	Subdomain      *string   `json:"subdomain"`
-	Region         *string   `json:"region"`
-	Type           string    `json:"type"`
-	Provider       string    `json:"provider"`
-	LicenseType    *string   `json:"licenseType"`
-	CustomerID     *string   `json:"customerId"`
+	Name             string    `json:"name"`
+	ExternalTenant   string    `json:"externalTenant"`
+	Parents          []*string `json:"parents"`
+	Subdomain        *string   `json:"subdomain"`
+	Region           *string   `json:"region"`
+	Type             string    `json:"type"`
+	Provider         string    `json:"provider"`
+	LicenseType      *string   `json:"licenseType"`
+	CustomerID       *string   `json:"customerId"`
+	AdditionalFields *JSON     `json:"additionalFields"`
 }
 
 type CSRFTokenCredentialRequestAuth struct {
