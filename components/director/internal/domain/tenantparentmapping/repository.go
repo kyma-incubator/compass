@@ -11,8 +11,11 @@ import (
 )
 
 const (
+	// TenantParentsTable the name of the table containing parency relations
 	TenantParentsTable = "tenant_parents"
+	// TenantIDColumn the column containing the tenant ID
 	TenantIDColumn = "tenant_id"
+	// ParentIDColumn the column containing the parent ID
 	ParentIDColumn = "parent_id"
 )
 

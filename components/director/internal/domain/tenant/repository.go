@@ -666,7 +666,6 @@ func (r *pgRepository) ListByParentAndType(ctx context.Context, parentID string,
 	deleteTenantAccessStmt = sqlx.Rebind(sqlx.DOLLAR, deleteTenantAccessStmt)
 
 	log.C(ctx).Debugf("Executing DB query: %s", deleteTenantAccessStmt)
-	//SELECT %s.* from %s join %s on %s = %s where %s = ? and %s = ?
 
 	err = persist.SelectContext(ctx, &entityCollection, deleteTenantAccessStmt, parentID, tenantType)
 
