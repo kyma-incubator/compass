@@ -207,7 +207,7 @@ func (ep EventsPage) eventDataToTenant(ctx context.Context, eventType EventsType
 		}
 
 		costObjectIDResult := gjson.Get(jsonPayload, ep.FieldMapping.CostObjectIDField).String()
-		costObject := constructCostObjectTenant(jsonPayload, costObjectIDResult, licenseTypeValue, ep)
+		costObject := constructCostObjectTenant(costObjectIDResult, licenseTypeValue, ep)
 		return []*model.BusinessTenantMappingInput{globalAccount, costObject}, nil
 	} else {
 		subaccount, err := constructSubaccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, licenseTypeValue, ep)
@@ -219,10 +219,10 @@ func (ep EventsPage) eventDataToTenant(ctx context.Context, eventType EventsType
 			return []*model.BusinessTenantMappingInput{subaccount}, nil
 		}
 
-		subaccount.AdditionalFields = str.Ptr(fmt.Sprintf(`{"%s": "%s"}`, directortenant.CostObjectIDLabelKey, gjson.Get(jsonPayload, ep.FieldMapping.SubaccountIDField).String()))
+		subaccount.AdditionalFields = str.Ptr(fmt.Sprintf(`{"%s": "%s"}`, directortenant.CostObjectIDLabelKey, gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectIDField).String()))
 
 		costObjectIDResult := gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectIDField).String()
-		costObject := constructCostObjectTenant(jsonPayload, costObjectIDResult, licenseTypeValue, ep)
+		costObject := constructCostObjectTenant(costObjectIDResult, licenseTypeValue, ep)
 		costObject.AdditionalFields = str.Ptr(fmt.Sprintf(`{"%s": "%s"}`, directortenant.CostObjectTypeLabelKey, gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectTypeField).String()))
 
 		return []*model.BusinessTenantMappingInput{subaccount, costObject}, err
@@ -258,7 +258,7 @@ func constructGlobalAccountTenant(ctx context.Context, jsonPayload, name, subdom
 	}
 }
 
-func constructCostObjectTenant(jsonPayload, costObjectID string, licenseType *string, ep EventsPage) *model.BusinessTenantMappingInput {
+func constructCostObjectTenant(costObjectID string, licenseType *string, ep EventsPage) *model.BusinessTenantMappingInput {
 
 	return &model.BusinessTenantMappingInput{
 		Name:           costObjectID,

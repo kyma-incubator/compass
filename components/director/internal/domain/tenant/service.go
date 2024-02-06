@@ -551,7 +551,7 @@ func tenantCustomerIDs(tenants []model.BusinessTenantMappingInput) map[string]st
 func tenantAdditionalFields(tenants []model.BusinessTenantMappingInput) map[string]string {
 	additionalFields := make(map[string]string)
 	for _, t := range tenants {
-		if t.CustomerID != nil {
+		if t.AdditionalFields != nil {
 			additionalFields[t.ExternalTenant] = str.PtrStrToStr(t.AdditionalFields)
 		}
 	}

@@ -1083,7 +1083,6 @@ func TestCreateSubaccountsWithCostObject(t *testing.T) {
 
 	subaccountNames := []string{"sub1"}
 	subaccountExternalTenants := []string{"sub1"}
-	subaccountRegion := "test"
 	subaccountParent := "ga1"
 	subaccountSubdomain := "sub1"
 	directoryParentGUID := "test-id"
@@ -1099,16 +1098,6 @@ func TestCreateSubaccountsWithCostObject(t *testing.T) {
 			Subdomain:      &subdomain1,
 			Region:         &region,
 			Type:           string(tenant.Account),
-			Provider:       provider,
-			LicenseType:    &testLicenseType,
-		},
-		{
-			Name:           subaccountNames[0],
-			ExternalTenant: subaccountExternalTenants[0],
-			Parents:        []*string{&subaccountParent},
-			Subdomain:      &subaccountSubdomain,
-			Region:         &subaccountRegion,
-			Type:           string(tenant.Subaccount),
 			Provider:       provider,
 			LicenseType:    &testLicenseType,
 		},
