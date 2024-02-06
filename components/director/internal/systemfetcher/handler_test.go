@@ -268,7 +268,7 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 			ExpectedErrorOutput: "Loading Business Tenant Mapping for System Fetcher data aggregation failed",
 		},
 		{
-			Name:            "InternalServerError - loading business tenant mapping fails, due to nil business tenant mapping responce",
+			Name:            "InternalServerError - loading business tenant mapping fails, due to nil business tenant mapping response",
 			TransactionerFn: txGen.ThatSucceedsTwice,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
