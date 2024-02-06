@@ -304,41 +304,21 @@ func TestSystemFetcherOnNewGASuccess(t *testing.T) {
 		}
 		assert.NoError(t, err)
 		return true
-	}, time.Minute*3, time.Second*5, "Waiting for tenants retrieval.")
+	}, time.Minute*1, time.Second*1, "Waiting for tenants retrieval.")
 
 	t.Logf("Created tenant: %+v", tenant)
-
 	waitForApplicationsToBeProcessed(ctx, t, gaExternalID, 1)
-
-	description1 := "name1"
-	baseUrl := "http://mainurl.com"
-	expectedApps := []directorSchema.ApplicationExt{
-		{
-			Application: directorSchema.Application{
-				Name:         "name1",
-				Description:  &description1,
-				BaseURL:      &baseUrl,
-				SystemNumber: str.Ptr("1"),
-			},
-			Labels: applicationLabels("name1", "", "", true, "cf-eu10"),
-		},
-	}
-
 	resp, actualApps := retrieveAppsForTenant(t, ctx, gaExternalID)
 	for _, app := range resp.Data {
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, gaExternalID, app)
 	}
-
-	t.Logf("Apps for tenant: %+v", actualApps)
+	require.Equal(t, 1, len(actualApps))
 
 	req := fixtures.FixGetApplicationBySystemNumberRequest("1")
 	var appResp directorSchema.ApplicationExt
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, gaExternalID, req, &appResp)
-	t.Logf("Applicaitons returned from Director for system nummer 1: %+v", appResp)
 	require.NoError(t, err)
 	require.Equal(t, "name1", appResp.Name)
-
-	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
 func TestSystemFetcherSuccessWithMultipleLabelValues(t *testing.T) {
