@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 )
 
@@ -32,6 +33,8 @@ const (
 
 	ServiceBindingIDPath  = "serviceBindingID"
 	ServiceInstanceIDPath = "serviceInstanceID"
+
+	labelsPattern = `([a-zA-Z0-9_-]+) in \(\s*'([^']+)'(?:,\s*'([^']+)')*\s*\)`
 )
 
 type Config struct {
@@ -141,19 +144,26 @@ func (h *Handler) HandleServiceInstancesList(writer http.ResponseWriter, r *http
 		return
 	}
 
-	instances := ServiceInstancesMock{}
+	labels := map[string][]string{}
+	labelsQuery := r.URL.Query().Get(h.c.LabelsQueryParam)
+	if len(labelsQuery) != 0 {
+		regularExp := regexp.MustCompile(labelsPattern)
 
-	labels := r.URL.Query().Get(h.c.LabelsQueryParam)
-	if len(labels) == 0 {
-		instances = h.ServiceInstancesMap[subaccount]
-	} else {
-		for _, instance := range h.ServiceInstancesMap[subaccount].Items {
-			if labelsAreEqual(instance, labels) {
-				instances.Items = append(instances.Items, instance)
-				instances.NumItems++
-			}
+		matches := regularExp.FindAllStringSubmatch(labelsQuery, -1)
+
+		for _, match := range matches {
+			labels[match[1]] = []string{match[2]}
 		}
 	}
+
+	instances := ServiceInstancesMock{}
+	for _, instance := range h.ServiceInstancesMap[subaccount].Items {
+		if labelsAreEqual(instance, labels) {
+			instances.Items = append(instances.Items, instance)
+			instances.NumItems++
+		}
+	}
+
 	instancesJSON, err := json.Marshal(instances)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to marshal service instances")
@@ -193,10 +203,8 @@ func (h *Handler) HandleServiceInstanceGet(writer http.ResponseWriter, r *http.R
 
 	instance := ServiceInstanceMock{}
 
-	labels := r.URL.Query().Get(h.c.LabelsQueryParam)
-
 	for _, i := range h.ServiceInstancesMap[subaccount].Items {
-		if i.ID == serviceInstanceID && labelsAreEqual(i, labels) {
+		if i.ID == serviceInstanceID {
 			instance = *i
 		}
 	}
@@ -304,8 +312,8 @@ func (h *Handler) HandleServiceInstanceDelete(writer http.ResponseWriter, r *htt
 	}
 
 	if !found {
-		log.C(ctx).Error("Service binding not found")
-		http.Error(writer, "Service binding not found", http.StatusNotFound)
+		log.C(ctx).Error("Service instance not found")
+		http.Error(writer, "Service instance not found", http.StatusNotFound)
 		return
 	}
 
@@ -595,7 +603,7 @@ func validateAuthorization(ctx context.Context, r *http.Request) error {
 	return nil
 }
 
-func labelsAreEqual(instance *ServiceInstanceMock, labels string) bool {
+func labelsAreEqual(instance *ServiceInstanceMock, labels map[string][]string) bool {
 	if len(labels) == 0 {
 		return true
 	}
@@ -605,5 +613,10 @@ func labelsAreEqual(instance *ServiceInstanceMock, labels string) bool {
 		return false
 	}
 
-	return string(marshalledInstanceLabels) == labels
+	marshalledLabels, err := json.Marshal(labels)
+	if err != nil {
+		return false
+	}
+
+	return string(marshalledInstanceLabels) == string(marshalledLabels)
 }

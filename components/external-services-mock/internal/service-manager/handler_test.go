@@ -9,10 +9,11 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
 
-var (
+const (
 	url                  = "https://target-url.com"
 	path                 = "/instance-creator/v1/tenantMappings/{tenant-id}"
 	subaccountQueryParam = "subaccount_id"
@@ -20,6 +21,14 @@ var (
 
 	subaccount = "subaccount"
 	token      = "Bearer 123"
+)
+
+var (
+	instanceIDs = []string{"instance-id-1", "instance-id-2"}
+	bindingIDs  = []string{"binding-id-1", "binding-id-2"}
+	names       = []string{"name-1", "name-2"}
+	plans       = []string{"plan-1", "plan-2"}
+	platforms   = []string{"platform-1", "platform-2"}
 )
 
 // Service Offerings Tests
@@ -208,22 +217,22 @@ func TestHandler_ServiceBindingsList(t *testing.T) {
 					NumItems: 2,
 					Items: []*ServiceBindingMock{
 						{
-							ID:                "id-1",
-							Name:              "name-1",
-							ServiceInstanceID: "instance-id-1",
+							ID:                bindingIDs[0],
+							Name:              names[0],
+							ServiceInstanceID: instanceIDs[0],
 							Credentials:       []byte(`"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"`),
 						},
 						{
-							ID:                "id-2",
-							Name:              "name-2",
-							ServiceInstanceID: "instance-id-2",
+							ID:                bindingIDs[1],
+							Name:              names[1],
+							ServiceInstanceID: instanceIDs[1],
 							Credentials:       []byte(`"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"`),
 						},
 					},
 				},
 			},
 			ExpectedResponseCode:    http.StatusOK,
-			ExpectedServiceBindings: `{"num_items":2,"items":[{"id":"id-1","name":"name-1","service_instance_id":"instance-id-1","credentials":"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"},{"id":"id-2","name":"name-2","service_instance_id":"instance-id-2","credentials":"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"}]}`,
+			ExpectedServiceBindings: `{"num_items":2,"items":[{"id":"binding-id-1","name":"name-1","service_instance_id":"instance-id-1","credentials":"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"},{"id":"binding-id-2","name":"name-2","service_instance_id":"instance-id-2","credentials":"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"}]}`,
 		},
 		{
 			Name:                    "Success - without service bindings",
@@ -301,7 +310,7 @@ func TestHandler_ServiceBindingsList(t *testing.T) {
 func TestHandler_ServiceBindingsGet(t *testing.T) {
 	serviceBindingsPath := fmt.Sprintf("/v1/service_bindings")
 
-	testServiceBindingID := "id-1"
+	testServiceBindingID := bindingIDs[0]
 
 	testCases := []struct {
 		Name                       string
@@ -324,21 +333,21 @@ func TestHandler_ServiceBindingsGet(t *testing.T) {
 					Items: []*ServiceBindingMock{
 						{
 							ID:                testServiceBindingID,
-							Name:              "name-1",
-							ServiceInstanceID: "instance-id-1",
+							Name:              names[0],
+							ServiceInstanceID: instanceIDs[0],
 							Credentials:       []byte(`"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"`),
 						},
 						{
-							ID:                "id-2",
-							Name:              "name-2",
-							ServiceInstanceID: "instance-id-2",
+							ID:                bindingIDs[1],
+							Name:              names[1],
+							ServiceInstanceID: instanceIDs[1],
 							Credentials:       []byte(`"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"`),
 						},
 					},
 				},
 			},
 			ExpectedResponseCode:   http.StatusOK,
-			ExpectedServiceBinding: `{"id":"id-1","name":"name-1","service_instance_id":"instance-id-1","credentials":"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"}`,
+			ExpectedServiceBinding: `{"id":"binding-id-1","name":"name-1","service_instance_id":"instance-id-1","credentials":"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"}`,
 		},
 		{
 			Name:                 "Error - service binding not found",
@@ -428,7 +437,7 @@ func TestHandler_ServiceBindingsGet(t *testing.T) {
 func TestHandler_ServiceBindingsDelete(t *testing.T) {
 	serviceBindingsPath := fmt.Sprintf("/v1/service_bindings")
 
-	testServiceBindingID := "id-1"
+	testServiceBindingID := bindingIDs[0]
 
 	testCases := []struct {
 		Name                        string
@@ -451,14 +460,14 @@ func TestHandler_ServiceBindingsDelete(t *testing.T) {
 					Items: []*ServiceBindingMock{
 						{
 							ID:                testServiceBindingID,
-							Name:              "name-1",
-							ServiceInstanceID: "instance-id-1",
+							Name:              names[0],
+							ServiceInstanceID: instanceIDs[0],
 							Credentials:       []byte(`"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"`),
 						},
 						{
-							ID:                "id-2",
-							Name:              "name-2",
-							ServiceInstanceID: "instance-id-2",
+							ID:                bindingIDs[1],
+							Name:              names[1],
+							ServiceInstanceID: instanceIDs[1],
 							Credentials:       []byte(`"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"`),
 						},
 					},
@@ -470,9 +479,9 @@ func TestHandler_ServiceBindingsDelete(t *testing.T) {
 					NumItems: 1,
 					Items: []*ServiceBindingMock{
 						{
-							ID:                "id-2",
-							Name:              "name-2",
-							ServiceInstanceID: "instance-id-2",
+							ID:                bindingIDs[1],
+							Name:              names[1],
+							ServiceInstanceID: instanceIDs[1],
 							Credentials:       []byte(`"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"`),
 						},
 					},
@@ -567,7 +576,7 @@ func TestHandler_ServiceBindingsDelete(t *testing.T) {
 func TestHandler_ServiceBindingsCreate(t *testing.T) {
 	serviceBindingsPath := fmt.Sprintf("/v1/service_bindings")
 
-	testServiceBindingID := "id-1"
+	testServiceBindingID := bindingIDs[0]
 
 	testCases := []struct {
 		Name                       string
@@ -590,8 +599,8 @@ func TestHandler_ServiceBindingsCreate(t *testing.T) {
 					Items: []*ServiceBindingMock{
 						{
 							ID:                testServiceBindingID,
-							Name:              "name-1",
-							ServiceInstanceID: "instance-id-1",
+							Name:              names[0],
+							ServiceInstanceID: instanceIDs[0],
 							Credentials:       []byte(`"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"`),
 						},
 					},
@@ -599,9 +608,9 @@ func TestHandler_ServiceBindingsCreate(t *testing.T) {
 			},
 			ExpectedResponseCode: http.StatusOK,
 			ExpectedNewServiceBinding: ServiceBindingMock{
-				ID:                "id-2",
-				Name:              "name-2",
-				ServiceInstanceID: "instance-id-2",
+				ID:                bindingIDs[1],
+				Name:              names[1],
+				ServiceInstanceID: instanceIDs[1],
 				Credentials:       []byte(`"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"`),
 			},
 		},
@@ -686,6 +695,7 @@ func TestHandler_ServiceInstancesList(t *testing.T) {
 	testCases := []struct {
 		Name                        string
 		Subaccount                  string
+		LabelsQuery                 string
 		AuthorizationToken          string
 		ExistingServiceInstancesMap map[string]ServiceInstancesMock
 		ExpectedServiceInstances    string
@@ -702,16 +712,16 @@ func TestHandler_ServiceInstancesList(t *testing.T) {
 					Items: []*ServiceInstanceMock{
 						{
 							ID:            "123",
-							Name:          "name-1",
-							ServicePlanID: "plan-1",
-							PlatformID:    "platform-1",
+							Name:          names[0],
+							ServicePlanID: plans[0],
+							PlatformID:    platforms[0],
 							Labels:        map[string][]string{"label-key-1": {"label-val-1", "label-val-2"}},
 						},
 						{
 							ID:            "456",
-							Name:          "name-2",
-							ServicePlanID: "plan-2",
-							PlatformID:    "platform-2",
+							Name:          names[1],
+							ServicePlanID: plans[1],
+							PlatformID:    platforms[1],
 							Labels:        map[string][]string{"label-key-1": {"label-val-1", "label-val-2"}},
 						},
 					},
@@ -719,6 +729,64 @@ func TestHandler_ServiceInstancesList(t *testing.T) {
 			},
 			ExpectedResponseCode:     http.StatusOK,
 			ExpectedServiceInstances: `{"num_items":2,"items":[{"id":"123","name":"name-1","service_plan_id":"plan-1","platform_id":"platform-1","labels":{"label-key-1":["label-val-1","label-val-2"]}},{"id":"456","name":"name-2","service_plan_id":"plan-2","platform_id":"platform-2","labels":{"label-key-1":["label-val-1","label-val-2"]}}]}`,
+		},
+		{
+			Name:               "Success - list with labels query",
+			Subaccount:         subaccount,
+			LabelsQuery:        `label-key-1 in ('label-val-1')`,
+			AuthorizationToken: token,
+			ExistingServiceInstancesMap: map[string]ServiceInstancesMock{
+				subaccount: {
+					NumItems: 2,
+					Items: []*ServiceInstanceMock{
+						{
+							ID:            "123",
+							Name:          names[0],
+							ServicePlanID: plans[0],
+							PlatformID:    platforms[0],
+							Labels:        map[string][]string{"label-key-1": {"label-val-1"}},
+						},
+						{
+							ID:            "456",
+							Name:          names[1],
+							ServicePlanID: plans[1],
+							PlatformID:    platforms[1],
+							Labels:        map[string][]string{"label-key-1": {"label-val-3", "label-val-2"}},
+						},
+					},
+				},
+			},
+			ExpectedResponseCode:     http.StatusOK,
+			ExpectedServiceInstances: `{"num_items":1,"items":[{"id":"123","name":"name-1","service_plan_id":"plan-1","platform_id":"platform-1","labels":{"label-key-1":["label-val-1"]}}]}`,
+		},
+		{
+			Name:               "Success - list with complex labels query",
+			Subaccount:         subaccount,
+			LabelsQuery:        `label-key-1 in ('label-val-1') and label-key-2 in ('label-val-2')`,
+			AuthorizationToken: token,
+			ExistingServiceInstancesMap: map[string]ServiceInstancesMock{
+				subaccount: {
+					NumItems: 2,
+					Items: []*ServiceInstanceMock{
+						{
+							ID:            "123",
+							Name:          names[0],
+							ServicePlanID: plans[0],
+							PlatformID:    platforms[0],
+							Labels:        map[string][]string{"label-key-1": {"label-val-1"}, "label-key-2": {"label-val-2"}},
+						},
+						{
+							ID:            "456",
+							Name:          names[1],
+							ServicePlanID: plans[1],
+							PlatformID:    platforms[1],
+							Labels:        map[string][]string{"label-key-1": {"label-val-1"}},
+						},
+					},
+				},
+			},
+			ExpectedResponseCode:     http.StatusOK,
+			ExpectedServiceInstances: `{"num_items":1,"items":[{"id":"123","name":"name-1","service_plan_id":"plan-1","platform_id":"platform-1","labels":{"label-key-1":["label-val-1"],"label-key-2":["label-val-2"]}}]}`,
 		},
 		{
 			Name:                     "Success - without instances",
@@ -756,6 +824,9 @@ func TestHandler_ServiceInstancesList(t *testing.T) {
 
 			values := req.URL.Query()
 			values.Add(subaccountQueryParam, testCase.Subaccount)
+			if testCase.LabelsQuery != "" {
+				values.Add(labelsQueryParam, testCase.LabelsQuery)
+			}
 			req.URL.RawQuery = values.Encode()
 
 			if testCase.AuthorizationToken != "" {
@@ -796,7 +867,7 @@ func TestHandler_ServiceInstancesList(t *testing.T) {
 func TestHandler_ServiceInstancesGet(t *testing.T) {
 	serviceInstancesPath := fmt.Sprintf("/v1/service_instances")
 
-	testServiceInstanceID := "id-1"
+	testServiceInstanceID := instanceIDs[0]
 
 	testCases := []struct {
 		Name                        string
@@ -820,49 +891,21 @@ func TestHandler_ServiceInstancesGet(t *testing.T) {
 					Items: []*ServiceInstanceMock{
 						{
 							ID:            testServiceInstanceID,
-							Name:          "name-1",
-							ServicePlanID: "plan-1",
-							PlatformID:    "platform-1",
+							Name:          names[0],
+							ServicePlanID: plans[0],
+							PlatformID:    platforms[0],
 						},
 						{
-							ID:            "id-2",
-							Name:          "name-2",
-							ServicePlanID: "plan-2",
-							PlatformID:    "platform-2",
+							ID:            instanceIDs[1],
+							Name:          names[1],
+							ServicePlanID: plans[1],
+							PlatformID:    platforms[1],
 						},
 					},
 				},
 			},
 			ExpectedResponseCode:    http.StatusOK,
-			ExpectedServiceInstance: `{"id":"id-1","name":"name-1","service_plan_id":"plan-1","platform_id":"platform-1"}`,
-		},
-		{
-			Name:               "Success - with label filtering",
-			Subaccount:         subaccount,
-			ServiceInstanceID:  testServiceInstanceID,
-			AuthorizationToken: token,
-			ExistingServiceInstancesMap: map[string]ServiceInstancesMock{
-				subaccount: {
-					NumItems: 2,
-					Items: []*ServiceInstanceMock{
-						{
-							ID:            testServiceInstanceID,
-							Name:          "name-1",
-							ServicePlanID: "plan-1",
-							PlatformID:    "platform-1",
-							Labels:        map[string][]string{},
-						},
-						{
-							ID:            "id-2",
-							Name:          "name-2",
-							ServicePlanID: "plan-2",
-							PlatformID:    "platform-2",
-						},
-					},
-				},
-			},
-			ExpectedResponseCode:    http.StatusOK,
-			ExpectedServiceInstance: `{"id":"id-1","name":"name-1","service_plan_id":"plan-1","platform_id":"platform-1"}`,
+			ExpectedServiceInstance: `{"id":"instance-id-1","name":"name-1","service_plan_id":"plan-1","platform_id":"platform-1"}`,
 		},
 		{
 			Name:                 "Error - service instance not found",
@@ -953,66 +996,66 @@ func TestHandler_ServiceInstancesGet(t *testing.T) {
 }
 
 func TestHandler_ServiceInstancesDelete(t *testing.T) {
-	serviceBindingsPath := fmt.Sprintf("/v1/service_instances")
+	serviceInstancesPath := fmt.Sprintf("/v1/service_instances")
 
-	testServiceBindingID := "id-1"
+	testServiceInstanceID := instanceIDs[0]
 
 	testCases := []struct {
-		Name                        string
-		Subaccount                  string
-		ServiceBindingID            string
-		AuthorizationToken          string
-		ExistingServiceBindingsMap  map[string]ServiceBindingsMock
-		ExpectedServiceBindingsLeft map[string]ServiceBindingsMock
-		ExpectedErrorMessage        string
-		ExpectedResponseCode        int
+		Name                         string
+		Subaccount                   string
+		ServiceInstanceID            string
+		AuthorizationToken           string
+		ExistingServiceInstancesMap  map[string]ServiceInstancesMock
+		ExpectedServiceInstancesLeft map[string]ServiceInstancesMock
+		ExpectedErrorMessage         string
+		ExpectedResponseCode         int
 	}{
 		{
 			Name:               "Success",
 			Subaccount:         subaccount,
-			ServiceBindingID:   testServiceBindingID,
+			ServiceInstanceID:  testServiceInstanceID,
 			AuthorizationToken: token,
-			ExistingServiceBindingsMap: map[string]ServiceBindingsMock{
+			ExistingServiceInstancesMap: map[string]ServiceInstancesMock{
 				subaccount: {
 					NumItems: 2,
-					Items: []*ServiceBindingMock{
+					Items: []*ServiceInstanceMock{
 						{
-							ID:                testServiceBindingID,
-							Name:              "name-1",
-							ServiceInstanceID: "instance-id-1",
-							Credentials:       []byte(`"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"`),
+							ID:            testServiceInstanceID,
+							Name:          names[0],
+							ServicePlanID: plans[0],
+							PlatformID:    platforms[0],
 						},
 						{
-							ID:                "id-2",
-							Name:              "name-2",
-							ServiceInstanceID: "instance-id-2",
-							Credentials:       []byte(`"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"`),
+							ID:            instanceIDs[1],
+							Name:          names[1],
+							ServicePlanID: plans[1],
+							PlatformID:    platforms[1],
 						},
 					},
 				},
 			},
 			ExpectedResponseCode: http.StatusOK,
-			ExpectedServiceBindingsLeft: map[string]ServiceBindingsMock{
+			ExpectedServiceInstancesLeft: map[string]ServiceInstancesMock{
 				subaccount: {
 					NumItems: 1,
-					Items: []*ServiceBindingMock{
+					Items: []*ServiceInstanceMock{
 						{
-							ID:                "id-2",
-							Name:              "name-2",
-							ServiceInstanceID: "instance-id-2",
-							Credentials:       []byte(`"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"`),
+							ID:            instanceIDs[1],
+							Name:          names[1],
+							ServicePlanID: plans[1],
+							PlatformID:    platforms[1],
 						},
 					},
 				},
 			},
 		},
 		{
-			Name:                 "Error - service binding not found",
+			Name:                 "Error - service instance not found",
 			Subaccount:           subaccount,
-			ServiceBindingID:     testServiceBindingID,
+			ServiceInstanceID:    testServiceInstanceID,
 			AuthorizationToken:   token,
 			ExpectedResponseCode: http.StatusNotFound,
-			ExpectedErrorMessage: "Service binding not found",
+			ExpectedErrorMessage: "Service instance not found",
 		},
 		{
 			Name:                 "Error when authorization value is empty",
@@ -1027,16 +1070,16 @@ func TestHandler_ServiceInstancesDelete(t *testing.T) {
 			ExpectedErrorMessage: "The token value cannot be empty",
 		},
 		{
-			Name:                 "Error - service binding id not found in url vars",
+			Name:                 "Error - service instance id not found in url vars",
 			Subaccount:           subaccount,
 			AuthorizationToken:   token,
 			ExpectedResponseCode: http.StatusInternalServerError,
-			ExpectedErrorMessage: "Failed to get service binding id from url",
+			ExpectedErrorMessage: "Failed to get service instance id from url",
 		},
 		{
 			Name:                 "Error when subaccount is empty",
 			Subaccount:           "",
-			ServiceBindingID:     testServiceBindingID,
+			ServiceInstanceID:    testServiceInstanceID,
 			AuthorizationToken:   token,
 			ExpectedResponseCode: http.StatusInternalServerError,
 			ExpectedErrorMessage: "Failed to get subaccount from query",
@@ -1046,7 +1089,7 @@ func TestHandler_ServiceInstancesDelete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
-			req, err := http.NewRequest(http.MethodPost, url+serviceBindingsPath, bytes.NewBuffer([]byte{}))
+			req, err := http.NewRequest(http.MethodPost, url+serviceInstancesPath, bytes.NewBuffer([]byte{}))
 			require.NoError(t, err)
 
 			values := req.URL.Query()
@@ -1057,8 +1100,8 @@ func TestHandler_ServiceInstancesDelete(t *testing.T) {
 				req.Header.Add(httphelpers.AuthorizationHeaderKey, testCase.AuthorizationToken)
 			}
 
-			if testCase.ServiceBindingID != "" {
-				req = mux.SetURLVars(req, map[string]string{ServiceBindingIDPath: testCase.ServiceBindingID})
+			if testCase.ServiceInstanceID != "" {
+				req = mux.SetURLVars(req, map[string]string{ServiceInstanceIDPath: testCase.ServiceInstanceID})
 			}
 
 			config := Config{
@@ -1068,13 +1111,13 @@ func TestHandler_ServiceInstancesDelete(t *testing.T) {
 			}
 
 			h := NewServiceManagerHandler(config)
-			if len(testCase.ExistingServiceBindingsMap) != 0 {
-				h.ServiceBindingsMap = testCase.ExistingServiceBindingsMap
+			if len(testCase.ExistingServiceInstancesMap) != 0 {
+				h.ServiceInstancesMap = testCase.ExistingServiceInstancesMap
 			}
 			r := httptest.NewRecorder()
 
 			// WHEN
-			h.HandleServiceBindingDelete(r, req)
+			h.HandleServiceInstanceDelete(r, req)
 			resp := r.Result()
 
 			body, err := io.ReadAll(resp.Body)
@@ -1085,51 +1128,53 @@ func TestHandler_ServiceInstancesDelete(t *testing.T) {
 			if testCase.ExpectedErrorMessage != "" {
 				require.Contains(t, string(body), testCase.ExpectedErrorMessage)
 			} else {
-				require.Equal(t, testCase.ExpectedServiceBindingsLeft, h.ServiceBindingsMap)
+				require.Equal(t, testCase.ExpectedServiceInstancesLeft, h.ServiceInstancesMap)
 			}
 		})
 	}
 }
 
 func TestHandler_ServiceInstancesCreate(t *testing.T) {
-	serviceBindingsPath := fmt.Sprintf("/v1/service_instances")
+	serviceInstancesPath := fmt.Sprintf("/v1/service_instances")
 
-	testServiceBindingID := "id-1"
+	testServiceInstanceID := instanceIDs[0]
 
 	testCases := []struct {
-		Name                       string
-		Subaccount                 string
-		RequestBody                string
-		AuthorizationToken         string
-		ExistingServiceBindingsMap map[string]ServiceBindingsMock
-		ExpectedNewServiceBinding  ServiceBindingMock
-		ExpectedErrorMessage       string
-		ExpectedResponseCode       int
+		Name                        string
+		Subaccount                  string
+		RequestBody                 string
+		AuthorizationToken          string
+		ExistingServiceInstancesMap map[string]ServiceInstancesMock
+		ExpectedNewServiceInstance  ServiceInstanceMock
+		ExpectedErrorMessage        string
+		ExpectedResponseCode        int
 	}{
 		{
 			Name:               "Success",
 			Subaccount:         subaccount,
-			RequestBody:        `{"name": "name-2", "service_instance_id": "instance-id-2", "credentials": "-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"}`,
+			RequestBody:        `{"id": "instance-id-2", "name": "name-2", "service_plan_id": "plan-2", "platform_id": "platform-2", "labels":{"key2":["val2"]}}`,
 			AuthorizationToken: token,
-			ExistingServiceBindingsMap: map[string]ServiceBindingsMock{
+			ExistingServiceInstancesMap: map[string]ServiceInstancesMock{
 				subaccount: {
 					NumItems: 1,
-					Items: []*ServiceBindingMock{
+					Items: []*ServiceInstanceMock{
 						{
-							ID:                testServiceBindingID,
-							Name:              "name-1",
-							ServiceInstanceID: "instance-id-1",
-							Credentials:       []byte(`"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"`),
+							ID:            testServiceInstanceID,
+							Name:          names[0],
+							ServicePlanID: plans[0],
+							PlatformID:    platforms[0],
+							Labels:        map[string][]string{"key1": {"val1"}},
 						},
 					},
 				},
 			},
 			ExpectedResponseCode: http.StatusOK,
-			ExpectedNewServiceBinding: ServiceBindingMock{
-				ID:                "id-2",
-				Name:              "name-2",
-				ServiceInstanceID: "instance-id-2",
-				Credentials:       []byte(`"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"`),
+			ExpectedNewServiceInstance: ServiceInstanceMock{
+				ID:            instanceIDs[1],
+				Name:          names[1],
+				ServicePlanID: plans[1],
+				PlatformID:    platforms[1],
+				Labels:        map[string][]string{"key2": {"val2"}},
 			},
 		},
 		{
@@ -1156,7 +1201,7 @@ func TestHandler_ServiceInstancesCreate(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
-			req, err := http.NewRequest(http.MethodPost, url+serviceBindingsPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
+			req, err := http.NewRequest(http.MethodPost, url+serviceInstancesPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
 
 			values := req.URL.Query()
@@ -1174,13 +1219,13 @@ func TestHandler_ServiceInstancesCreate(t *testing.T) {
 			}
 
 			h := NewServiceManagerHandler(config)
-			if len(testCase.ExistingServiceBindingsMap) != 0 {
-				h.ServiceBindingsMap = testCase.ExistingServiceBindingsMap
+			if len(testCase.ExistingServiceInstancesMap) != 0 {
+				h.ServiceInstancesMap = testCase.ExistingServiceInstancesMap
 			}
 			r := httptest.NewRecorder()
 
 			// WHEN
-			h.HandleServiceBindingCreate(r, req)
+			h.HandleServiceInstanceCreate(r, req)
 			resp := r.Result()
 
 			body, err := io.ReadAll(resp.Body)
@@ -1192,11 +1237,12 @@ func TestHandler_ServiceInstancesCreate(t *testing.T) {
 				require.Contains(t, string(body), testCase.ExpectedErrorMessage)
 			} else {
 				found := false
-				for _, binding := range h.ServiceBindingsMap[subaccount].Items {
-					if binding.ServiceInstanceID == testCase.ExpectedNewServiceBinding.ServiceInstanceID {
-						require.Equal(t, testCase.ExpectedNewServiceBinding.ServiceInstanceID, binding.ServiceInstanceID)
-						require.Equal(t, testCase.ExpectedNewServiceBinding.Name, binding.Name)
-						require.Equal(t, testCase.ExpectedNewServiceBinding.Credentials, binding.Credentials)
+				for _, instance := range h.ServiceInstancesMap[subaccount].Items {
+					if instance.Name == testCase.ExpectedNewServiceInstance.Name {
+						require.Equal(t, testCase.ExpectedNewServiceInstance.Name, instance.Name)
+						require.Equal(t, testCase.ExpectedNewServiceInstance.ServicePlanID, instance.ServicePlanID)
+						require.Equal(t, testCase.ExpectedNewServiceInstance.PlatformID, instance.PlatformID)
+						reflect.DeepEqual(testCase.ExpectedNewServiceInstance.Labels, instance.Labels)
 						found = true
 					}
 				}
