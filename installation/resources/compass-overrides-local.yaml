@@ -159,6 +159,8 @@ global:
           entityTypeField: "type"
           idField: "guid"
           costObjectIDField: "costObject"
+          subaccountCostObjectIDField: "costObjectId"
+          subaccountCostObjectTypeField: "costObjectType"
           nameField: "displayName"
           tenantEventsField: "events"
           totalPagesField: "totalPages"

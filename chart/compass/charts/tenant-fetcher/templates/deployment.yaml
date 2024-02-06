@@ -218,9 +218,9 @@ spec:
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_COST_OBJECT_ID
               value: {{ $config.api.fieldMapping.costObjectIDField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_SUBACCOUNT_COST_OBJECT_ID
-              value: {{ $config.api.fieldMapping.costObjectIDField }}
+              value: {{ $config.api.fieldMapping.subaccountCostObjectIDField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_SUBACCOUNT_COST_OBJECT_TYPE
-              value: {{ $config.api.fieldMapping.costObjectIDField }}
+              value: {{ $config.api.fieldMapping.subaccountCostObjectTypeField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_SUBDOMAIN
               value: {{ default "subdomain" $config.api.fieldMapping.subdomainField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_REGION
@@ -285,9 +285,9 @@ spec:
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_COST_OBJECT_ID
               value: {{ $config.regionalConfig.fieldMapping.costObjectIDField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_SUBACCOUNT_COST_OBJECT_ID
-              value: {{ $config.api.fieldMapping.costObjectIDField }}
+              value: {{ $config.api.fieldMapping.subaccountCostObjectIDField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_SUBACCOUNT_COST_OBJECT_TYPE
-              value: {{ $config.api.fieldMapping.costObjectIDField }}
+              value: {{ $config.api.fieldMapping.subaccountCostObjectTypeField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_SUBDOMAIN
               value: {{ default "subdomain" $config.regionalConfig.fieldMapping.subdomainField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_REGION
