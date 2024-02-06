@@ -32,6 +32,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
+	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -86,6 +87,20 @@ const (
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {}
+	}]`
+
+	singleMockSystem = `[{
+		"systemNumber": "1",
+		"displayName": "name1",
+		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
+		"type": "type1",
+		"%s": "val1",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {"mainUrl":"http://mainurl.com"},
+		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10"}
 	}]`
 
 	nameLabelKey           = "displayName"
@@ -256,6 +271,54 @@ func TestSystemFetcherSuccessForCustomerTenant(t *testing.T) {
 	require.Equal(t, "name1", appResp.Name)
 
 	require.ElementsMatch(t, expectedApps, actualApps)
+}
+
+func TestSystemFetcherOnNewGASuccess(t *testing.T) {
+	gaExternalID := tenant.TestTenants.GetIDByName(t, tenant.TestSystemFetcherOnNewGAName)
+	ctx := context.TODO()
+	mockSystems := []byte(fmt.Sprintf(singleMockSystem, cfg.SystemInformationSourceKey))
+	setMockSystems(t, mockSystems, gaExternalID)
+	defer cleanupMockSystems(t)
+
+	tenantInput := directorSchema.BusinessTenantMappingInput{
+		Name:           "ga1",
+		ExternalTenant: gaExternalID,
+		Parents:        []*string{},
+		Subdomain:      str.Ptr("ga1"),
+		Region:         str.Ptr("cf-eu10"),
+		Type:           string(tenant.Account),
+		Provider:       "e2e-test-provider",
+		LicenseType:    str.Ptr("LICENSETYPE"),
+	}
+
+	err := fixtures.WriteTenant(t, ctx, directorInternalGQLClient, tenantInput)
+	assert.NoError(t, err)
+	defer cleanupTenant(t, ctx, directorInternalGQLClient, gaExternalID)
+
+	var tenant *directorSchema.Tenant
+	require.Eventually(t, func() bool {
+		tenant, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, gaExternalID)
+		if tenant == nil {
+			t.Logf("Waiting for global account %s to be read", gaExternalID)
+			return false
+		}
+		assert.NoError(t, err)
+		return true
+	}, time.Minute*1, time.Second*1, "Waiting for tenants retrieval.")
+
+	t.Logf("Created tenant: %+v", tenant)
+	waitForApplicationsToBeProcessed(ctx, t, gaExternalID, 1)
+	resp, actualApps := retrieveAppsForTenant(t, ctx, gaExternalID)
+	for _, app := range resp.Data {
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, gaExternalID, app)
+	}
+	require.Equal(t, 1, len(actualApps))
+
+	req := fixtures.FixGetApplicationBySystemNumberRequest("1")
+	var appResp directorSchema.ApplicationExt
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, gaExternalID, req, &appResp)
+	require.NoError(t, err)
+	require.Equal(t, "name1", appResp.Name)
 }
 
 func TestSystemFetcherSuccessWithMultipleLabelValues(t *testing.T) {
@@ -1419,7 +1482,7 @@ func triggerSync(t *testing.T, tenantID string) {
 	jsonBody := fmt.Sprintf(`{"tenantID":"%s"}`, tenantID)
 	sfReq, err := http.NewRequest(http.MethodPost, cfg.SystemFetcherURL+"/sync", bytes.NewBuffer([]byte(jsonBody)))
 	require.NoError(t, err)
-	sfReq.Header.Add(tenantHeader, tenant.TestTenants.GetDefaultTenantID())
+	sfReq.Header.Add(tenantHeader, tenantID)
 	sfResp, err := systemFetcherClient.Do(sfReq)
 	defer func() {
 		if err := sfResp.Body.Close(); err != nil {
@@ -1709,4 +1772,15 @@ func fixApplicationTemplateWithoutWebhooksWithSystemRole(name, intSystemID strin
 	}
 
 	return appTemplateInput
+}
+
+func cleanupTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantExternalID string) {
+	tenantsToDelete := []directorSchema.BusinessTenantMappingInput{
+		{
+			ExternalTenant: tenantExternalID,
+		},
+	}
+	err := fixtures.DeleteTenants(t, ctx, gqlClient, tenantsToDelete)
+	assert.NoError(t, err)
+	log.D().Info("Successfully cleanup tenants")
 }
