@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/pkg/errors"
 )
@@ -46,6 +48,7 @@ func (c *SystemFetcherClient) SetHTTPClient(client *http.Client) {
 
 // Sync call to system fetcher on dmand API
 func (c *SystemFetcherClient) Sync(ctx context.Context, tenantID string) error {
+	log.C(ctx).Debugf("Call to sync systems API with TenantID %q started", tenantID)
 	syncData := aggregationResource{
 		TenantID: tenantID,
 	}
@@ -60,11 +63,13 @@ func (c *SystemFetcherClient) Sync(ctx context.Context, tenantID string) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
+	log.C(ctx).Debugf("Executing remote request to sync systems API with TenantID %q", tenantID)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "while executing request to system fetcher")
 	}
 
+	log.C(ctx).Debugf("Remote request to sync systems API with TenantID %q completed with status code %d", tenantID, resp.StatusCode)
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusNotAcceptable {
 			return errors.Errorf("on-demand system sync is disabled - returned status code %d while calling sync API with TenantID %q", resp.StatusCode, tenantID)
@@ -72,5 +77,6 @@ func (c *SystemFetcherClient) Sync(ctx context.Context, tenantID string) error {
 		return errors.Errorf("received unexpected status code %d while calling sync API with TenantID %q", resp.StatusCode, tenantID)
 	}
 
+	log.C(ctx).Debugf("Call to sync systems API with TenantID %q completed", tenantID)
 	return nil
 }

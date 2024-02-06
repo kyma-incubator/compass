@@ -401,8 +401,9 @@ func (r *Resolver) fetchTenant(ctx context.Context, tx persistence.PersistenceTx
 }
 
 func (r *Resolver) syncSystemsForTenant(ctx context.Context, tenantID string) {
+	log.C(ctx).Infof("Calling sync systems API with TenantID %q", tenantID)
 	if err := r.systemFetcherClient.Sync(ctx, tenantID); err != nil {
-		log.C(ctx).WithError(err).Errorf("Error while calling sync API with TenantID %q", tenantID)
+		log.C(ctx).WithError(err).Errorf("Error while calling sync systems API with TenantID %q", tenantID)
 	}
 }
 
