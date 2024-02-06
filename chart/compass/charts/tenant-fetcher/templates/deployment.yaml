@@ -278,8 +278,8 @@ spec:
               value: {{ $config.regionalConfig.fieldMapping.idField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_CUSTOMER_ID
               value: {{ $config.regionalConfig.fieldMapping.customerIdField }}
-            - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_COST_OBJECT_ID
-              value: {{ $config.regionalConfig.fieldMapping.costObjectIDField }}
+            - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_COST_OBJECT_ID
+              value: {{ default "costObject" $config.regionalConfig.fieldMapping.costObjectIDField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_SUBDOMAIN
               value: {{ default "subdomain" $config.regionalConfig.fieldMapping.subdomainField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_REGION
