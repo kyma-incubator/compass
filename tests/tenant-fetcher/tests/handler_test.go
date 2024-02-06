@@ -46,8 +46,10 @@ import (
 )
 
 var (
-	testLicenseType    = "LICENSETYPE"
-	customerIDLabelKey = "customerId"
+	testLicenseType        = "LICENSETYPE"
+	customerIDLabelKey     = "customerId"
+	costObjectTypeLabelKey = "costObjectType"
+	costObjectIdLabelKey   = "costObjectId"
 )
 
 func TestRegionalOnboardingHandler(t *testing.T) {
@@ -604,6 +606,24 @@ const (
 	"globalAccountGUID": "%s",
 	"type": "Subaccount"
 }`
+	mockSubaccountWithCostObjectEventPattern = `
+{
+	"eventData": {
+		"guid": "%s",
+		"displayName": "%s",
+		"subdomain": "%s",
+		"licenseType": "%s",
+		"parentGuid": "%s",
+		"region": "%s",
+		"costObjectId": "%s",
+		"costObjectType": "%s",
+		"labels": {
+			"customerId": ["%s"]
+		}
+	},
+	"globalAccountGUID": "%s",
+	"type": "Subaccount"
+}`
 )
 
 func TestGlobalAccounts(t *testing.T) {
@@ -1048,6 +1068,98 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
 
+func TestCreateSubaccountsWithCostObject(t *testing.T) {
+	ctx := context.TODO()
+
+	gaName := "ga1"
+	gaExternalTenant := "ga1"
+	subdomain1 := "ga1"
+	region := "local"
+	customerIDs := []string{"0022b8c3-bfda-47b4-8d1b-4c717b9940a3"}
+	customerIDsTrimmed := []string{"0022b8c3-bfda-47b4-8d1b-4c717b9940a3"}
+
+	subaccountNames := []string{"sub1"}
+	subaccountExternalTenants := []string{"sub1"}
+	subaccountRegion := "test"
+	subaccountParent := "ga1"
+	subaccountSubdomain := "sub1"
+	directoryParentGUID := "test-id"
+	costObjectId := "a0361a89-f0b0-4f6a-9f32-dd5492477d15"
+	costObjectType := "random-type"
+
+	provider := "test"
+	tenants := []graphql.BusinessTenantMappingInput{
+		{
+			Name:           gaName,
+			ExternalTenant: gaExternalTenant,
+			Parents:        []*string{},
+			Subdomain:      &subdomain1,
+			Region:         &region,
+			Type:           string(tenant.Account),
+			Provider:       provider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           subaccountNames[0],
+			ExternalTenant: subaccountExternalTenants[0],
+			Parents:        []*string{&subaccountParent},
+			Subdomain:      &subaccountSubdomain,
+			Region:         &subaccountRegion,
+			Type:           string(tenant.Subaccount),
+			Provider:       provider,
+			LicenseType:    &testLicenseType,
+		},
+	}
+	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
+	require.NoError(t, err)
+
+	// cleanup global account and subaccounts
+	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(subaccountExternalTenants, gaExternalTenant))
+
+	createEvent := genMockSubaccountWithCostObjectEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, costObjectId, costObjectType, subaccountCreateSubPath, customerIDs[0])
+	setMockTenantEvents(t, genMockPage(createEvent, 1), subaccountCreateSubPath)
+	defer cleanupMockEvents(t, subaccountCreateSubPath)
+
+	require.Eventually(t, func() bool {
+		subaccount, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
+		if subaccount == nil {
+			t.Logf("Waiting for subaccount %s to be created", subaccountExternalTenants[0])
+			return false
+		}
+		assert.NoError(t, err)
+		assert.Equal(t, subaccountNames[0], *subaccount.Name)
+
+		customerIDLabel, exists := subaccount.Labels[customerIDLabelKey]
+		assert.True(t, exists)
+		assert.Equal(t, customerIDsTrimmed[0], customerIDLabel)
+
+		actualCostObjectId, exists := subaccount.Labels[costObjectIdLabelKey]
+		assert.True(t, exists)
+		assert.Equal(t, costObjectId, actualCostObjectId)
+
+		parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountParent)
+		if parent == nil {
+			return false
+		}
+		assert.NoError(t, err)
+		assert.True(t, slices.Contains(subaccount.Parents, parent.InternalID))
+
+		costObjectTenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, costObjectId)
+		if costObjectTenant == nil {
+			t.Logf("Waiting for cost object tenant %s to be created", costObjectId)
+			return false
+		}
+		assert.NoError(t, err)
+
+		actualCostObjectType, exists := costObjectTenant.Labels[costObjectTypeLabelKey]
+		assert.True(t, exists)
+		assert.Equal(t, costObjectType, actualCostObjectType)
+
+		t.Log("TestCreateSubaccountsWithCostObject checks are successful")
+		return true
+	}, timeout, checkInterval, "Waiting for tenants retrieval.")
+}
+
 func TestMoveMissingSubaccounts(t *testing.T) {
 	ctx := context.TODO()
 
@@ -1148,6 +1260,10 @@ func genMockGlobalAccountEvent(guid, displayName, subdomain, licenseType string)
 
 func genMockSubaccountMoveEvent(guid, displayName, subdomain, licenseType, directoryParentGUID, parentGuid, sourceGlobalAccountGuid, targetGlobalAccountGuid, region, customerID string) string {
 	return fmt.Sprintf(mockSubaccountEventPattern, guid, displayName, subdomain, licenseType, directoryParentGUID, sourceGlobalAccountGuid, targetGlobalAccountGuid, region, customerID, parentGuid)
+}
+
+func genMockSubaccountWithCostObjectEvent(guid, displayName, subdomain, licenseType, directoryParentGUID, parentGuid, region, costObjectId, costObjectType, customerID string) string {
+	return fmt.Sprintf(mockSubaccountWithCostObjectEventPattern, guid, displayName, subdomain, licenseType, directoryParentGUID, region, costObjectId, costObjectType, customerID, parentGuid)
 }
 
 func genMockPage(events string, numEvents int) string {
