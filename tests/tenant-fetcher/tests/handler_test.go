@@ -806,7 +806,10 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 
 	var runtime1 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, defaultTenantID, &runtime1)
-	runtime1 = registerRuntime(t, ctx, runtimeNames[0], subaccount1.InternalID)
+	input := graphql.RuntimeRegisterInput{
+		Name: runtimeNames[0],
+	}
+	runtime1 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccount1.ID, input, config.GatewayOauth)
 
 	// Add the subaccount to formation
 	scenarioName := "testMoveSubaccountScenario"
