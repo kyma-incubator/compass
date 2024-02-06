@@ -171,7 +171,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3587"
+      version: "PR-3631"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -1202,6 +1202,7 @@ global:
           idField: "id"
           nameField: "name"
           customerIdField: "customerId"
+          costObjectIDField: "costObject"
           subdomainField: "subdomain"
           licenseTypeField: "licenseType"
           discriminatorField: ""
@@ -1229,6 +1230,7 @@ global:
           idField: "guid"
           nameField: "displayName"
           customerIdField: "customerId"
+          costObjectIDField: "costObject"
           subdomainField: "subdomain"
           licenseTypeField: "licenseType"
           discriminatorField: ""
