@@ -876,6 +876,7 @@ func configForTenantType(tenantType tenant.Type) resync.JobConfig {
 			GlobalAccountGUIDField: "globalAccountGUID",
 			SubaccountIDField:      "subaccountId",
 			CustomerIDField:        "customerId",
+			CostObjectIDField:      "costObject",
 			SubdomainField:         "subdomain",
 			DetailsField:           "eventData",
 			EntityIDField:          "entityId",

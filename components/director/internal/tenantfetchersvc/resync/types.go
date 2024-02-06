@@ -10,6 +10,7 @@ type TenantFieldMapping struct {
 	SubaccountIDField      string `envconfig:"MAPPING_FIELD_SUBACCOUNT_ID" default:"subaccountId"`
 	CustomerIDField        string `envconfig:"MAPPING_FIELD_CUSTOMER_ID" default:"customerId"`
 	SubdomainField         string `envconfig:"MAPPING_FIELD_SUBDOMAIN" default:"subdomain"`
+	CostObjectIDField      string `envconfig:"MAPPING_FIELD_COST_OBJECT_ID" default:"costObject"`
 	DetailsField           string `envconfig:"MAPPING_FIELD_DETAILS" default:"details"`
 	LabelsField            string `envconfig:"MAPPING_FIELD_LABELS" default:"labels"`
 

@@ -46,15 +46,17 @@ func (ep EventsPage) GetMovedSubaccounts(ctx context.Context) []model.MovedSubac
 // GetTenantMappings parses the data from the page payload to BusinessTenantMappingInput
 func (ep EventsPage) GetTenantMappings(ctx context.Context, eventsType EventsType) []model.BusinessTenantMappingInput {
 	eds := ep.getEventsDetails(ctx)
-	tenants := make([]model.BusinessTenantMappingInput, 0, len(eds))
+	tenants := make([]model.BusinessTenantMappingInput, 0)
 	for _, detail := range eds {
-		mapping, err := ep.eventDataToTenant(ctx, eventsType, detail)
+		mappings, err := ep.eventDataToTenant(ctx, eventsType, detail)
 		if err != nil {
 			log.C(ctx).Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(detail))
 			continue
 		}
 
-		tenants = append(tenants, *mapping)
+		for _, mapping := range mappings {
+			tenants = append(tenants, *mapping)
+		}
 	}
 
 	return tenants
@@ -150,7 +152,7 @@ func (ep EventsPage) eventDataToMovedSubaccount(ctx context.Context, eventData [
 	}, nil
 }
 
-func (ep EventsPage) eventDataToTenant(ctx context.Context, eventType EventsType, eventData []byte) (*model.BusinessTenantMappingInput, error) {
+func (ep EventsPage) eventDataToTenant(ctx context.Context, eventType EventsType, eventData []byte) ([]*model.BusinessTenantMappingInput, error) {
 	jsonPayload := string(eventData)
 	if !gjson.Valid(jsonPayload) {
 		return nil, errors.Errorf("invalid json Payload")
@@ -195,20 +197,37 @@ func (ep EventsPage) eventDataToTenant(ctx context.Context, eventType EventsType
 
 	globalAccountRegex := regexp.MustCompile(GlobalAccountRegex)
 	if globalAccountRegex.MatchString(entityType.String()) {
-		return constructGlobalAccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, licenseTypeValue, ep), nil
+		globalAccount := constructGlobalAccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, licenseTypeValue, ep)
+
+		if !gjson.Get(jsonPayload, ep.FieldMapping.CostObjectIDField).Exists() {
+			return []*model.BusinessTenantMappingInput{globalAccount}, nil
+		}
+
+		costObject := constructCostObjectTenant(jsonPayload, licenseTypeValue, ep)
+		return []*model.BusinessTenantMappingInput{globalAccount, costObject}, nil
 	} else {
-		return constructSubaccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, licenseTypeValue, ep)
+		tnt, err := constructSubaccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, licenseTypeValue, ep)
+		return []*model.BusinessTenantMappingInput{tnt}, err
 	}
 }
 
 func constructGlobalAccountTenant(ctx context.Context, jsonPayload, name, subdomain, externalTenant string, licenseType *string, ep EventsPage) *model.BusinessTenantMappingInput {
 	parents := make([]string, 0)
 	customerIDResult := gjson.Get(jsonPayload, ep.FieldMapping.CustomerIDField)
+	costObjectIDResult := gjson.Get(jsonPayload, ep.FieldMapping.CostObjectIDField)
+
 	if !customerIDResult.Exists() {
 		log.C(ctx).Warnf("Missig or invalid format of field: %s for tenant with id: %s", ep.FieldMapping.CustomerIDField, externalTenant)
 	} else {
 		parents = append(parents, customerIDResult.String())
 	}
+
+	if !costObjectIDResult.Exists() {
+		log.C(ctx).Warnf("Missig or invalid format of field: %s for tenant with id: %s", ep.FieldMapping.CostObjectIDField, externalTenant)
+	} else {
+		parents = append(parents, costObjectIDResult.String())
+	}
+
 	return &model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: externalTenant,
@@ -216,6 +235,21 @@ func constructGlobalAccountTenant(ctx context.Context, jsonPayload, name, subdom
 		Subdomain:      subdomain,
 		Region:         "",
 		Type:           tenant.TypeToStr(tenant.Account),
+		Provider:       ep.ProviderName,
+		LicenseType:    licenseType,
+	}
+}
+
+func constructCostObjectTenant(jsonPayload string, licenseType *string, ep EventsPage) *model.BusinessTenantMappingInput {
+	costObjectIDResult := gjson.Get(jsonPayload, ep.FieldMapping.CostObjectIDField).String()
+
+	return &model.BusinessTenantMappingInput{
+		Name:           costObjectIDResult,
+		ExternalTenant: costObjectIDResult,
+		Parents:        []string{},
+		Subdomain:      "",
+		Region:         "",
+		Type:           tenant.TypeToStr(tenant.CostObject),
 		Provider:       ep.ProviderName,
 		LicenseType:    licenseType,
 	}
