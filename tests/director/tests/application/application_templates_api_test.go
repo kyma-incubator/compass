@@ -193,7 +193,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		require.Contains(t, err.Error(), `Regional Application Template input with "systemRole" label has a different "region" placeholder from the other Application Templates with the same label`)
+		require.Contains(t, err.Error(), fmt.Sprintf(`Regional Application Template input with "%s" label has a different "region" placeholder from the other Application Templates with the same label`, conf.ApplicationTemplateProductLabel))
 
 	})
 
@@ -257,7 +257,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createGlobalApplicationTemplateRequest1, &globalOutput1)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantID, globalOutput1)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), `Existing application template with "systemRole" label is regional. The input application template should contain a "region" label`)
+		require.Contains(t, err.Error(), fmt.Sprintf(`Existing application template with "%s" label is regional. The input application template should contain a "region" label`, conf.ApplicationTemplateProductLabel))
 
 		// Create Global and then Regional
 		productLabelValue2 := []interface{}{"productLabelValue2"}
