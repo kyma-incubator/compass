@@ -652,22 +652,11 @@ func (r *pgRepository) ListByParentAndType(ctx context.Context, parentID string,
 		return nil, err
 	}
 
-	resultColumns := make([]string, 0, len(insertColumns))
-	for _, column := range insertColumns {
-		resultColumns = append(resultColumns, prefixWithTableName(tableName, column))
-	}
+	getTenantsByParentAndTypeStmt := buildTenantsByParentAndTypeQuery()
 
-	tenantTypeColumn := prefixWithTableName(tableName, typeColumn)
-	tenantsTableIDColumn := prefixWithTableName(tableName, idColumn)
-	parentsTableTenantIDColumn := prefixWithTableName(tenantparentmapping.TenantParentsTable, tenantparentmapping.TenantIDColumn)
-	parentsTableParentIDColumn := prefixWithTableName(tenantparentmapping.TenantParentsTable, tenantparentmapping.ParentIDColumn)
+	log.C(ctx).Debugf("Executing DB query: %s", getTenantsByParentAndTypeStmt)
 
-	deleteTenantAccessStmt := fmt.Sprintf(getTenantsByParentAndType, strings.Join(resultColumns, ", "), tableName, tenantparentmapping.TenantParentsTable, tenantsTableIDColumn, parentsTableTenantIDColumn, parentsTableParentIDColumn, tenantTypeColumn)
-	deleteTenantAccessStmt = sqlx.Rebind(sqlx.DOLLAR, deleteTenantAccessStmt)
-
-	log.C(ctx).Debugf("Executing DB query: %s", deleteTenantAccessStmt)
-
-	if err = persist.SelectContext(ctx, &entityCollection, deleteTenantAccessStmt, parentID, tenantType); err != nil {
+	if err = persist.SelectContext(ctx, &entityCollection, getTenantsByParentAndTypeStmt, parentID, tenantType); err != nil {
 		return nil, errors.Wrapf(err, "while listing tenants of type %s with parent ID %s", tenantType, parentID)
 	}
 
@@ -749,6 +738,22 @@ func (r *pgRepository) enrichManyWithParents(ctx context.Context, entityCollecti
 		}
 	}
 	return btms, nil
+}
+
+func buildTenantsByParentAndTypeQuery() string {
+	resultColumns := make([]string, 0, len(insertColumns))
+	for _, column := range insertColumns {
+		resultColumns = append(resultColumns, prefixWithTableName(tableName, column))
+	}
+
+	tenantTypeColumn := prefixWithTableName(tableName, typeColumn)
+	tenantsTableIDColumn := prefixWithTableName(tableName, idColumn)
+	parentsTableTenantIDColumn := prefixWithTableName(tenantparentmapping.TenantParentsTable, tenantparentmapping.TenantIDColumn)
+	parentsTableParentIDColumn := prefixWithTableName(tenantparentmapping.TenantParentsTable, tenantparentmapping.ParentIDColumn)
+
+	getTenantsByParentAndTypeStmt := fmt.Sprintf(getTenantsByParentAndType, strings.Join(resultColumns, ", "), tableName, tenantparentmapping.TenantParentsTable, tenantsTableIDColumn, parentsTableTenantIDColumn, parentsTableParentIDColumn, tenantTypeColumn)
+	getTenantsByParentAndTypeStmt = sqlx.Rebind(sqlx.DOLLAR, getTenantsByParentAndTypeStmt)
+	return getTenantsByParentAndTypeStmt
 }
 
 func prefixWithTableName(tableName, columnName string) string {
