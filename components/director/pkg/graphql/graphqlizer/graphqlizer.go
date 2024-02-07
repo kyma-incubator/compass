@@ -992,6 +992,9 @@ func (g *Graphqlizer) WriteTenantsInputToGQL(in []graphql.BusinessTenantMappingI
 				{{- if $tenant.CustomerID }}
 				customerId: {{ quote $tenant.CustomerID }},
 				{{- end }}
+				{{- if $tenant.AdditionalFields }}
+				additionalFields: {{ quote $tenant.AdditionalFields }},
+				{{- end }}
 				type: {{ quote $tenant.Type }},
 				provider: {{ quote $tenant.Provider }}
 			}
