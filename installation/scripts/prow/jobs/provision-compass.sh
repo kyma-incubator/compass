@@ -48,7 +48,7 @@ cp yq "$HOME/bin/yq" && cp yq "/usr/local/bin/yq"
 log::info "Successfully installed yq version: $YQ_VERSION"
 
 # Install Kyma to be later used in run.sh
-KYMA_CLI_VERSION="2.9.3"
+KYMA_CLI_VERSION="2.11.2"
 log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
 
 curl -Lo kyma.tar.gz "https://github.com/kyma-project/cli/releases/download/${KYMA_CLI_VERSION}/kyma_Linux_x86_64.tar.gz" \

@@ -17,6 +17,9 @@ import (
 // SetCombination type defines possible result set combination for querying
 type SetCombination string
 
+// GlobalSystemRoleLabelKey is a global variable containing the name of the system role label
+var GlobalSystemRoleLabelKey string
+
 const (
 	// IntersectSet missing godoc
 	IntersectSet SetCombination = "INTERSECT"
@@ -130,7 +133,7 @@ func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombin
 			// in SQL/JSON path format supported by PostgreSQL 12. Till it
 			// is not production ready, we need to transform the Query from
 			// SQL/JSON path to old JSON queries.
-			if strings.ToUpper(lblFilter.Key) == scenariosLabelKey || lblFilter.Key == runtimeTypeLabelKey {
+			if strings.ToUpper(lblFilter.Key) == scenariosLabelKey || lblFilter.Key == runtimeTypeLabelKey || lblFilter.Key == GlobalSystemRoleLabelKey {
 				extractedValues, err := ExtractValueFromJSONPath(queryValue)
 				if err != nil {
 					return "", nil, errors.Wrap(err, "while extracting value from JSON path")

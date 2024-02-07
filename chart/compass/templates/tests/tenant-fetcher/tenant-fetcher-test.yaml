@@ -15,10 +15,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-tenant-fetcher-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-tenant-fetcher
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -89,6 +89,8 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: APP_GATEWAY_OAUTH
+              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_EXTERNAL_CLIENT_CERT_KEY

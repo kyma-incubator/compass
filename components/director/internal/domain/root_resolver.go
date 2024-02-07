@@ -12,7 +12,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationdependency"
 	ordpackage "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
+	ordapiclient "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
+	sfapiclient "github.com/kyma-incubator/compass/components/director/internal/systemfetcher/apiclient"
 
 	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination"
@@ -141,7 +142,8 @@ func NewRootResolver(
 	callbackURL string,
 	appTemplateProductLabel string,
 	destinationCreatorConfig *destinationcreator.Config,
-	ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig,
+	ordAggregatorClientConfig ordapiclient.OrdAggregatorClientConfig,
+	systemFetcherClientConfig sfapiclient.SystemFetcherSyncClientConfig,
 ) (*RootResolver, error) {
 	timeService := time.NewService()
 
@@ -296,7 +298,7 @@ func NewRootResolver(
 	return &RootResolver{
 		appNameNormalizer:     appNameNormalizer,
 		app:                   application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, specSvc, apiSvc, eventAPISvc, integrationDependencySvc, integrationDependencyConv, aspectSvc, aspectEventResourceSvc, apiConverter, eventAPIConverter, appTemplateSvc, appTemplateConverter, tenantBusinessTypeSvc, tenantBusinessTypeConverter, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
-		appTemplate:           apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, selfRegisterManager, uidSvc, certSubjectMappingSvc, appTemplateProductLabel, ordAggregatorClientConfig),
+		appTemplate:           apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, labelSvc, selfRegisterManager, uidSvc, certSubjectMappingSvc, appTemplateProductLabel, ordAggregatorClientConfig),
 		api:                   api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter, appSvc),
 		eventAPI:              eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
 		eventing:              eventing.NewResolver(transact, eventingSvc, appSvc),
@@ -314,7 +316,7 @@ func NewRootResolver(
 		oAuth20:               oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
 		intSys:                integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:                viewer.NewViewerResolver(),
-		tenant:                tenant.NewResolver(transact, tenantSvc, tenantConverter, tenantOnDemandSvc),
+		tenant:                tenant.NewResolver(transact, tenantSvc, tenantConverter, tenantOnDemandSvc, systemFetcherClientConfig),
 		mpBundle:              bundleutil.NewResolver(transact, bundleSvc, bundleInstanceAuthSvc, bundleReferenceSvc, apiSvc, eventAPISvc, docSvc, bundleConverter, bundleInstanceAuthConv, apiConverter, eventAPIConverter, docConverter, specSvc, appSvc),
 		bundleInstanceAuth:    bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
 		scenarioAssignment:    scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv, tenantSvc),
