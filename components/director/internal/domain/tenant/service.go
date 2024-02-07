@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/tidwall/gjson"
@@ -445,6 +446,12 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 	subdomains, regions := tenantLocality(tenantInputs)
 	customerIDs := tenantCustomerIDs(tenantInputs)
 	additionalFieldMappings := tenantAdditionalFields(tenantInputs)
+
+	empJSON1, err := json.MarshalIndent(additionalFieldMappings, "", "  ")
+	if err != nil {
+		fmt.Println("err", err)
+	}
+	fmt.Printf("additionalFieldMappings 3\n %s\n", string(empJSON1))
 
 	tenantIDs := make([]string, 0, len(tenants))
 
