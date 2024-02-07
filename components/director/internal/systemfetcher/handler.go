@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
@@ -23,8 +24,8 @@ type OperationsManager interface {
 	RescheduleOperation(ctx context.Context, operationID string) error
 }
 
-// AggregationResources holds id of tenant for systems fetching
-type AggregationResources struct {
+// AggregationResource holds id of tenant for systems fetching
+type AggregationResource struct {
 	TenantID string `json:"tenantID"`
 }
 
@@ -50,15 +51,15 @@ func NewSystemFetcherAggregatorHTTPHandler(opMgr OperationsManager, businessTena
 func (h *handler) ScheduleAggregationForSystemFetcherData(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	payload := AggregationResources{}
+	payload := AggregationResource{}
 	if err := json.NewDecoder(request.Body).Decode(&payload); err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to parse request body")
+		log.C(ctx).WithError(err).Error("Failed to parse request body")
 		http.Error(writer, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	if payload.TenantID == "" {
-		log.C(ctx).Errorf("Invalid data provided for System Fetcher aggregation")
+		log.C(ctx).Error("Invalid data provided for System Fetcher aggregation")
 		http.Error(writer, "Invalid payload, Tenant ID is not provided.", http.StatusBadRequest)
 		return
 	}
@@ -67,7 +68,7 @@ func (h *handler) ScheduleAggregationForSystemFetcherData(writer http.ResponseWr
 	operation, err := h.opMgr.FindOperationByData(ctx, NewSystemFetcherOperationData(payload.TenantID))
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
-			log.C(ctx).WithError(err).Errorf("Loading Operation for System Fetcher data aggregation failed")
+			log.C(ctx).WithError(err).Error("Loading Operation for System Fetcher data aggregation failed")
 			http.Error(writer, "Loading Operation for System Fetcher data aggregation failed", http.StatusInternalServerError)
 			return
 		}
@@ -104,11 +105,28 @@ func (h *handler) ScheduleAggregationForSystemFetcherData(writer http.ResponseWr
 			}
 		}
 
+		businessTenantMapping, err := h.getBusinessTenantMappingByID(ctx, businessTenantMappingID)
+		if err != nil || businessTenantMapping == nil {
+			if err != nil {
+				log.C(ctx).WithError(err).Error("Loading Business Tenant Mapping for System Fetcher data aggregation failed")
+			} else {
+				log.C(ctx).Error("Loading Business Tenant Mapping for System Fetcher data aggregation failed")
+			}
+			http.Error(writer, "Loading Business Tenant Mapping for System Fetcher data aggregation failed", http.StatusInternalServerError)
+			return
+		}
+
+		if businessTenantMapping.Type != tenant.Account && businessTenantMapping.Type != tenant.Customer {
+			log.C(ctx).Infof("Tenant with ID %q is of type %q - operations are created only for tenants of type Account and Customer.", businessTenantMapping.ID, businessTenantMapping.Type)
+			writer.WriteHeader(http.StatusOK)
+			return
+		}
+
 		now := time.Now()
 		data := NewSystemFetcherOperationData(businessTenantMappingID)
 		rawData, err := data.GetData()
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("Preparing Operation for System Fetcher data aggregation failed")
+			log.C(ctx).WithError(err).Error("Preparing Operation for System Fetcher data aggregation failed")
 			http.Error(writer, "Preparing Operation for System Fetcher data aggregation failed", http.StatusInternalServerError)
 			return
 		}
@@ -123,7 +141,7 @@ func (h *handler) ScheduleAggregationForSystemFetcherData(writer http.ResponseWr
 
 		opID, err := h.opMgr.CreateOperation(ctx, newOperationInput)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("Creating Operation for System Fetcher data aggregation failed")
+			log.C(ctx).WithError(err).Error("Creating Operation for System Fetcher data aggregation failed")
 			http.Error(writer, "Creating Operation for System Fetcher data aggregation failed", http.StatusInternalServerError)
 			return
 		}
@@ -187,4 +205,18 @@ func (h *handler) getBusinessTenantMappingByExternalTenant(ctx context.Context, 
 		return "", err
 	}
 	return businessTenantMappingID, tx.Commit()
+}
+
+func (h *handler) getBusinessTenantMappingByID(ctx context.Context, tenantID string) (*model.BusinessTenantMapping, error) {
+	tx, err := h.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer h.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+	businessTenantMapping, err := h.businessTenantMappingSvc.GetTenantByID(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	return businessTenantMapping, tx.Commit()
 }

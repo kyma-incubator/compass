@@ -53,6 +53,7 @@ const (
 	TestTenantSubstitutionSubaccount                           = "Test Tenant Substitution Subaccount"
 	TestTenantSubstitutionAccount2                             = "Test Tenant Substitution Account 2"
 	TestTenantSubstitutionSubaccount2                          = "Test Tenant Substitution Subaccount 2"
+	TestSystemFetcherOnNewGAName                               = "TestSystemFetcherOnNewGA"
 )
 
 type Tenant struct {
@@ -310,7 +311,13 @@ func (mgr *TestTenantsManager) Init() {
 			Status:         Active,
 			Parent:         TestTenantSubstitutionAccount2,
 		},
-	}
+		TestSystemFetcherOnNewGAName: {
+			Name:           TestSystemFetcherOnNewGAName,
+			ExternalTenant: "44dfe415-4847-4feb-8580-ecb07958347d",
+			ProviderName:   testProvider,
+			Type:           Account,
+			Status:         Active,
+		}}
 }
 
 func (mgr TestTenantsManager) GetIDByName(t require.TestingT, name string) string {

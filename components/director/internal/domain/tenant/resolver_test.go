@@ -11,6 +11,7 @@ import (
 
 	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
+	sfapiclient "github.com/kyma-incubator/compass/components/director/internal/systemfetcher/apiclient"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -144,7 +145,7 @@ func TestResolver_Tenants(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.Tenants(ctx, testCase.first, &gqlAfter, &searchTerm)
@@ -320,7 +321,7 @@ func TestResolver_Tenant(t *testing.T) {
 
 			defer mock.AssertExpectationsForObjects(t, transact, tenantSvc, tenantConv, fetcherSvc, persistencesTx[0], persistencesTx[1])
 
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, fetcherSvc)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, fetcherSvc, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.Tenant(ctx, testCase.IDInput)
@@ -434,7 +435,7 @@ func TestResolver_TenantByID(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.TenantByID(ctx, testCase.InternalIDInput)
@@ -521,7 +522,7 @@ func TestResolver_TenantByLowestOwnerForResource(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			tenantID, err := resolver.TenantByLowestOwnerForResource(ctx, resourceTypeStr, objectID)
@@ -569,7 +570,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 		result, err := resolver.Labels(ctx, testTenant, nil)
 		assert.NoError(t, err)
@@ -586,7 +587,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 		labels, err := resolver.Labels(ctx, testTenant, nil)
 		assert.NoError(t, err)
@@ -599,7 +600,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 		_, err := resolver.Labels(ctx, nil, nil)
 		assert.Error(t, err)
@@ -612,7 +613,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 		result, err := resolver.Labels(ctx, testTenant, nil)
 		assert.Error(t, err)
@@ -626,7 +627,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 		_, err := resolver.Labels(ctx, testTenant, nil)
 		assert.Error(t, err)
@@ -640,7 +641,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 		_, err := resolver.Labels(ctx, testTenant, nil)
 		assert.Error(t, err)
@@ -779,7 +780,7 @@ func TestResolver_Write(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.Write(ctx, testCase.TenantsInput)
@@ -905,7 +906,7 @@ func TestResolver_WriteSingle(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.WriteSingle(ctx, testCase.TenantsInput)
@@ -995,7 +996,7 @@ func TestResolver_Delete(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.Delete(ctx, testCase.TenantsInput)
@@ -1170,7 +1171,7 @@ func TestResolver_Update(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.Update(ctx, testCase.IDInput, testCase.TenantInput)
@@ -1281,7 +1282,7 @@ func TestResolver_SetTenantLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, nil, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, nil, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.SetTenantLabel(ctx, testCase.IDInput, testCase.LabelKey, testCase.LabelValue)
@@ -1452,7 +1453,7 @@ func TestResolver_AddTenantAccess(t *testing.T) {
 				tenantConv = testCase.TenantConvFn()
 			}
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.AddTenantAccess(ctx, testCase.Input)
@@ -1617,7 +1618,7 @@ func TestResolver_RemoveTenantAccess(t *testing.T) {
 				tenantConv = testCase.TenantConvFn()
 			}
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.RemoveTenantAccess(ctx, testCase.Input.TenantID, testCase.Input.ResourceID, testCase.Input.ResourceType)
@@ -1702,7 +1703,7 @@ func TestResolver_RootTenants(t *testing.T) {
 				tenantConverter = testCase.TenantConverterFn()
 			}
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConverter, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConverter, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.RootTenants(ctx, externalTenant)
