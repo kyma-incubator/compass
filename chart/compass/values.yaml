@@ -147,6 +147,9 @@ global:
     - name: TestIsolatedAccount
       id: ded8eca9-12b9-4076-9458-9deabff87bd8
       type: account
+    - name: TestSystemFetcherOnNewGA
+      id: 44dfe415-4847-4feb-8580-ecb07958347d
+      type: account
   tenantsLabels:
     - tenantID: 818005d6-9264-4abb-af4c-29c754630a7d # TestTenantSubstitutionSubaccount
       key: customerId
@@ -220,7 +223,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3587"
+      version: "PR-3614"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -1101,9 +1104,12 @@ global:
     name: "system-fetcher"
     port: 3000
     prefix: /system-fetcher
+    syncEndpoint: /sync
     job:
       schedulePeriod: 60m
       isSchedulable: true
+    client:
+      timeout: "30s"
     lease:
       lockname: systemfetcherlease
     authentication:

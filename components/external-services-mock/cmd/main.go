@@ -6,11 +6,12 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"fmt"
-	service_manager "github.com/kyma-incubator/compass/components/external-services-mock/internal/service-manager"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	service_manager "github.com/kyma-incubator/compass/components/external-services-mock/internal/service-manager"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/header"
 	panicrecovery "github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
@@ -80,6 +81,7 @@ type config struct {
 	DefaultTenant             string `envconfig:"APP_DEFAULT_TENANT"`
 	DefaultCustomerTenant     string `envconfig:"APP_DEFAULT_CUSTOMER_TENANT"`
 	TrustedTenant             string `envconfig:"APP_TRUSTED_TENANT"`
+	TrustedNewGA              string `envconfig:"APP_TRUSTED_NEW_GA"`
 	OnDemandTenant            string `envconfig:"APP_ON_DEMAND_TENANT"`
 
 	KeyLoaderConfig credloader.KeysConfig
@@ -289,12 +291,12 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 	systemsRouter.Use(oauthMiddlewareMultiple([]MiddlewareArgs{
 		{
 			key:            &key.PublicKey,
-			validateClaims: getClaimsValidator([]string{cfg.DefaultTenant, cfg.TrustedTenant}),
+			validateClaims: getClaimsValidator([]string{cfg.DefaultTenant, cfg.TrustedTenant, cfg.TrustedNewGA}),
 			ClaimGetter:    func() jwt.Claims { return &oauth.Claims{} },
 		},
 		{
 			key:            keyCache.Get()[cfg.KeyLoaderConfig.KeysSecretName].PublicKey,
-			validateClaims: getClaimsValidator([]string{cfg.DefaultCustomerTenant, cfg.TrustedTenant}),
+			validateClaims: getClaimsValidator([]string{cfg.DefaultCustomerTenant, cfg.TrustedTenant, cfg.TrustedNewGA}),
 			ClaimGetter:    func() jwt.Claims { return &modelJwt.Claims{} },
 		},
 	}))
