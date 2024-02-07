@@ -20,6 +20,10 @@ type FormationAssignmentNotificationService struct {
 func (_m *FormationAssignmentNotificationService) GenerateFormationAssignmentPair(ctx context.Context, fa *model.FormationAssignment, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*formationassignment.AssignmentMappingPairWithOperation, error) {
 	ret := _m.Called(ctx, fa, reverseFA, operation)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GenerateFormationAssignmentPair")
+	}
+
 	var r0 *formationassignment.AssignmentMappingPairWithOperation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, *model.FormationAssignment, model.FormationOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)); ok {

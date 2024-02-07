@@ -15,6 +15,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// reqBodyNameRegex is a regex defined by the destination creator API specifying what destination names are allowed
+var reqBodyNameRegex = "[a-zA-Z0-9_-]{1,64}"
+
 // RetrieveFormationAssignmentPointer converts the provided memory address in form of an integer back to the model.FormationAssignment pointer structure
 // It's important the provided memory address to stores information about model.FormationAssignment entity, otherwise the result could be very abnormal
 func RetrieveFormationAssignmentPointer(ctx context.Context, joinPointDetailsAssignmentMemoryAddress uintptr) (*model.FormationAssignment, error) {
@@ -67,4 +70,13 @@ func RetrieveNotificationStatusReportPointer(ctx context.Context, notificationSt
 	notificationStatusReport := (*statusreport.NotificationStatusReport)(unsafe.Pointer(notificationStatusReportMemoryAddress))
 
 	return notificationStatusReport, nil
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }

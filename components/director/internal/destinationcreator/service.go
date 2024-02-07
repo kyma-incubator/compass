@@ -107,42 +107,36 @@ func NewService(
 	}
 }
 
-// CreateDesignTimeDestinations is responsible to create so-called design time(destinationcreator.AuthTypeNoAuth) destination resource in the DB as well as in the remote destination service
-func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) error {
-	subaccountID := destinationDetails.SubaccountID
+// CreateDesignTimeDestinations is responsible to create so-called design time destination resource in the DB as well as in the remote destination service
+func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.DestinationRaw, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) error {
+	subaccountID := destinationDetails.GetSubaccountID()
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
-	destinationName := destinationDetails.Name
+	destinationName := destinationDetails.GetName()
 	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
 		EntityName:   destinationName,
 		Region:       region,
 		SubaccountID: subaccountID,
-		InstanceID:   destinationDetails.InstanceID,
+		InstanceID:   destinationDetails.GetInstanceID(),
 	}, false)
 	if err != nil {
 		return errors.Wrapf(err, "while building destination URL")
 	}
 
-	destReqBody := &NoAuthDestinationRequestBody{
-		BaseDestinationRequestBody: BaseDestinationRequestBody{
-			Name:                 destinationName,
-			URL:                  destinationDetails.URL,
-			Type:                 destinationcreatorpkg.Type(destinationDetails.Type),
-			ProxyType:            destinationcreatorpkg.ProxyType(destinationDetails.ProxyType),
-			AuthenticationType:   destinationcreatorpkg.AuthType(destinationDetails.Authentication),
-			AdditionalProperties: destinationDetails.AdditionalProperties,
-		},
+	stripInternalFields, err := destinationDetails.StripInternalFields()
+	if err != nil {
+		return err
 	}
 
-	if err := destReqBody.Validate(); err != nil {
+	if err := stripInternalFields.Validate(); err != nil {
 		return errors.Wrapf(err, "while validating no authentication destination request body")
 	}
 
 	log.C(ctx).Infof("Creating design time destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
-	_, statusCode, err := s.executeCreateRequest(ctx, strURL, destReqBody, destinationName)
+	_, statusCode, err := s.executeCreateRequest(ctx, strURL, stripInternalFields.Destination, destinationName)
 	if err != nil {
 		return errors.Wrapf(err, "while creating design time destination with name: %q in the destination service", destinationName)
 	}
@@ -154,7 +148,7 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
-		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment, skipSubaccountValidation); err != nil {
+		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.GetInstanceID(), formationAssignment, skipSubaccountValidation); err != nil {
 			return errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
 		}
 
