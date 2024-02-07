@@ -29,19 +29,19 @@ func (_m *TenantCreator) CreateTenants(ctx context.Context, eventsTenants []mode
 }
 
 // FetchTenant provides a mock function with given fields: ctx, externalTenantID
-func (_m *TenantCreator) FetchTenant(ctx context.Context, externalTenantID string) (*model.BusinessTenantMappingInput, error) {
+func (_m *TenantCreator) FetchTenant(ctx context.Context, externalTenantID string) ([]model.BusinessTenantMappingInput, error) {
 	ret := _m.Called(ctx, externalTenantID)
 
-	var r0 *model.BusinessTenantMappingInput
+	var r0 []model.BusinessTenantMappingInput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMappingInput, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]model.BusinessTenantMappingInput, error)); ok {
 		return rf(ctx, externalTenantID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMappingInput); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) []model.BusinessTenantMappingInput); ok {
 		r0 = rf(ctx, externalTenantID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.BusinessTenantMappingInput)
+			r0 = ret.Get(0).([]model.BusinessTenantMappingInput)
 		}
 	}
 
@@ -80,12 +80,13 @@ func (_m *TenantCreator) TenantsToCreate(ctx context.Context, region string, fro
 	return r0, r1
 }
 
-// NewTenantCreator creates a new instance of TenantCreator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewTenantCreator(t interface {
+type mockConstructorTestingTNewTenantCreator interface {
 	mock.TestingT
 	Cleanup(func())
-}) *TenantCreator {
+}
+
+// NewTenantCreator creates a new instance of TenantCreator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewTenantCreator(t mockConstructorTestingTNewTenantCreator) *TenantCreator {
 	mock := &TenantCreator{}
 	mock.Mock.Test(t)
 

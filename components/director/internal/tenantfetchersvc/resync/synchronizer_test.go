@@ -539,7 +539,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 				svc := &automock.TenantCreator{}
 				tenantWithExistingParent := newSubaccountTenant
 				tenantWithExistingParent.Parents = []string{parentTenantID}
-				svc.On("FetchTenant", ctx, newTenantID).Return(&newSubaccountTenant, nil)
+				svc.On("FetchTenant", ctx, newTenantID).Return([]model.BusinessTenantMappingInput{newSubaccountTenant}, nil)
 				svc.On("CreateTenants", ctx, []model.BusinessTenantMappingInput{tenantWithExistingParent}).Return(nil)
 				return svc
 			},
@@ -613,7 +613,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 				svc := &automock.TenantCreator{}
 				tenantWithoutParent := newSubaccountTenant
 				tenantWithoutParent.Parents = []string{}
-				svc.On("FetchTenant", ctx, newTenantID).Return(&tenantWithoutParent, nil)
+				svc.On("FetchTenant", ctx, newTenantID).Return([]model.BusinessTenantMappingInput{tenantWithoutParent}, nil)
 				return svc
 			},
 			ExpectedErrMsg: fmt.Sprintf("parent tenant not found of tenant with ID %s", newTenantID),

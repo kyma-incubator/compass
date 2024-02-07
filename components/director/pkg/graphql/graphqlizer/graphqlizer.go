@@ -1021,6 +1021,9 @@ func (g *Graphqlizer) WriteTenantInputToGQL(in graphql.BusinessTenantMappingInpu
 		{{- if $.LicenseType }}
 		licenseType: {{ quote .LicenseType }},
 		{{- end }}
+		{{- if .AdditionalFields }}
+		additionalFields: {{ quote .AdditionalFields }},
+		{{- end }}
 		type: {{ quote .Type }},
 		provider: {{ quote .Provider }}
 	}`)
