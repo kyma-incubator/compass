@@ -351,9 +351,6 @@ func (r *repository) Update(ctx context.Context, m *model.FormationAssignment) e
 
 	var oldEntity Entity
 	if err := r.globalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", m.ID)}, repo.NoOrderBy, &oldEntity); err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil
-		}
 		return err
 	}
 

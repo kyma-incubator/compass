@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -45,6 +47,9 @@ func (s *formationStatusService) UpdateWithConstraints(ctx context.Context, form
 	}
 
 	if err := s.formationRepository.Update(ctx, formation); err != nil {
+		if operation == model.DeleteFormation && apperrors.IsNotFoundError(err) {
+			return nil
+		}
 		log.C(ctx).Errorf("An error occurred while updating formation with ID: %q", formation.ID)
 		return errors.Wrapf(err, "An error occurred while updating formation with ID: %q", formation.ID)
 	}
