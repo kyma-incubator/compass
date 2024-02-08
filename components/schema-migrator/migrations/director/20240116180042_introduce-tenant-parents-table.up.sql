@@ -279,7 +279,7 @@ WHERE ta.tenant_id = trc.tenant_id
   AND ta.owner = trc.owner;
 
 -- Drop the temporary table
-DROP TABLE temporary_tenant_runtimes_table;
+DROP TABLE temporary_tenant_runtime_contexts_table;
 
 -- After fixing the swapped source and tenant_id there are leftover records stating that the GA knows about the resource from itself which is not correct as The GA knows about the resource from the CRM. Such records should be deleted
 DELETE
