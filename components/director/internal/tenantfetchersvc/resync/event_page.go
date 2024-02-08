@@ -212,14 +212,14 @@ func (ep EventsPage) eventDataToTenant(ctx context.Context, eventType EventsType
 			return nil, err
 		}
 
-		if !gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectIDField).Exists() {
+		costObjectIDField := gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectIDField)
+		if !costObjectIDField.Exists() || costObjectIDField.String() == "" {
 			return []*model.BusinessTenantMappingInput{subaccount}, nil
 		}
 
-		subaccount.CostObjectID = str.Ptr(gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectIDField).String())
+		subaccount.CostObjectID = str.Ptr(costObjectIDField.String())
 
-		costObjectIDResult := gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectIDField).String()
-		costObject := constructCostObjectTenant(costObjectIDResult, licenseTypeValue, ep)
+		costObject := constructCostObjectTenant(costObjectIDField.String(), licenseTypeValue, ep)
 		costObject.CostObjectType = str.Ptr(gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectTypeField).String())
 
 		return []*model.BusinessTenantMappingInput{subaccount, costObject}, err
