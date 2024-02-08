@@ -68,16 +68,17 @@ func (c *converter) ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant {
 
 func (c *converter) ToGraphQLInput(in model.BusinessTenantMappingInput) graphql.BusinessTenantMappingInput {
 	return graphql.BusinessTenantMappingInput{
-		Name:             in.Name,
-		ExternalTenant:   in.ExternalTenant,
-		Parents:          stringsToPointerStrings(in.Parents),
-		Subdomain:        str.Ptr(in.Subdomain),
-		Region:           str.Ptr(in.Region),
-		Type:             in.Type,
-		Provider:         in.Provider,
-		LicenseType:      in.LicenseType,
-		CustomerID:       in.CustomerID,
-		AdditionalFields: c.strPtrToJSONPtr(in.AdditionalFields),
+		Name:           in.Name,
+		ExternalTenant: in.ExternalTenant,
+		Parents:        stringsToPointerStrings(in.Parents),
+		Subdomain:      str.Ptr(in.Subdomain),
+		Region:         str.Ptr(in.Region),
+		Type:           in.Type,
+		Provider:       in.Provider,
+		LicenseType:    in.LicenseType,
+		CustomerID:     in.CustomerID,
+		CostObjectType: in.CostObjectType,
+		CostObjectID:   in.CostObjectID,
 	}
 }
 
@@ -116,16 +117,17 @@ func (c *converter) InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) mod
 	}
 
 	return model.BusinessTenantMappingInput{
-		Name:             tnt.Name,
-		ExternalTenant:   externalTenant,
-		Parents:          trimmedParents,
-		Subdomain:        str.PtrStrToStr(tnt.Subdomain),
-		Region:           str.PtrStrToStr(tnt.Region),
-		Type:             tnt.Type,
-		Provider:         tnt.Provider,
-		LicenseType:      tnt.LicenseType,
-		CustomerID:       customerID,
-		AdditionalFields: c.jsonPtrToStrPtr(tnt.AdditionalFields),
+		Name:           tnt.Name,
+		ExternalTenant: externalTenant,
+		Parents:        trimmedParents,
+		Subdomain:      str.PtrStrToStr(tnt.Subdomain),
+		Region:         str.PtrStrToStr(tnt.Region),
+		Type:           tnt.Type,
+		Provider:       tnt.Provider,
+		LicenseType:    tnt.LicenseType,
+		CustomerID:     customerID,
+		CostObjectType: tnt.CostObjectType,
+		CostObjectID:   tnt.CostObjectID,
 	}
 }
 
@@ -211,22 +213,6 @@ func (c *converter) TenantAccessFromEntity(in *repo.TenantAccess) *model.TenantA
 		Owner:            in.Owner,
 		Source:           in.Source,
 	}
-}
-
-func (c *converter) strPtrToJSONPtr(in *string) *graphql.JSON {
-	if in == nil {
-		return nil
-	}
-	out := graphql.JSON(*in)
-	return &out
-}
-
-func (c *converter) jsonPtrToStrPtr(in *graphql.JSON) *string {
-	if in == nil {
-		return nil
-	}
-	out := string(*in)
-	return &out
 }
 
 func fromTenantAccessObjectTypeToResourceType(objectType graphql.TenantAccessObjectType) (resource.Type, error) {

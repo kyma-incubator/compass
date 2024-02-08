@@ -1106,9 +1106,9 @@ func TestCreateSubaccountsWithCostObject(t *testing.T) {
 	require.NoError(t, err)
 
 	// cleanup global account and subaccounts
-	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(subaccountExternalTenants, gaExternalTenant))
+	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(subaccountExternalTenants, gaExternalTenant, costObjectId))
 
-	createEvent := genMockSubaccountWithCostObjectEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, costObjectId, costObjectType, subaccountCreateSubPath, customerIDs[0])
+	createEvent := genMockSubaccountWithCostObjectEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, costObjectId, costObjectType, region, customerIDs[0])
 	setMockTenantEvents(t, genMockPage(createEvent, 1), subaccountCreateSubPath)
 	defer cleanupMockEvents(t, subaccountCreateSubPath)
 
@@ -1254,7 +1254,7 @@ func genMockSubaccountMoveEvent(guid, displayName, subdomain, licenseType, direc
 	return fmt.Sprintf(mockSubaccountEventPattern, guid, displayName, subdomain, licenseType, directoryParentGUID, sourceGlobalAccountGuid, targetGlobalAccountGuid, region, customerID, parentGuid)
 }
 
-func genMockSubaccountWithCostObjectEvent(guid, displayName, subdomain, licenseType, directoryParentGUID, parentGuid, region, costObjectId, costObjectType, customerID string) string {
+func genMockSubaccountWithCostObjectEvent(guid, displayName, subdomain, licenseType, directoryParentGUID, parentGuid, costObjectId, costObjectType, region, customerID string) string {
 	return fmt.Sprintf(mockSubaccountWithCostObjectEventPattern, guid, displayName, subdomain, licenseType, directoryParentGUID, region, costObjectId, costObjectType, customerID, parentGuid)
 }
 

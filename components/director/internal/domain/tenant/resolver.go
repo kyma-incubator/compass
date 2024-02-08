@@ -2,8 +2,6 @@ package tenant
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
@@ -269,19 +267,7 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	empJSON1, err := json.MarshalIndent(inputTenants, "", "  ")
-	if err != nil {
-		fmt.Println("err", err)
-	}
-	fmt.Printf("inputTenants 0\n %s\n", string(empJSON1))
-
 	tenants := r.conv.MultipleInputFromGraphQL(inputTenants)
-
-	empJSON2, err := json.MarshalIndent(tenants, "", "  ")
-	if err != nil {
-		fmt.Println("err", err)
-	}
-	fmt.Printf("tenants 1\n %s\n", string(empJSON2))
 
 	tenantIDs, err := r.srv.UpsertMany(ctx, tenants...)
 	if err != nil {

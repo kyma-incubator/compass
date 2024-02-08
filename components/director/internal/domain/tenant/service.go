@@ -2,10 +2,6 @@ package tenant
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-
-	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -415,9 +411,14 @@ func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.Bus
 	tenantList := []model.BusinessTenantMappingInput{tenantInput}
 	subdomains, regions := tenantLocality(tenantList)
 	customerIDs := tenantCustomerIDs(tenantList)
+	costObjectIDs := tenantCostObjectIDs(tenantList)
+	costObjectTypes := tenantCostObjectTypes(tenantList)
+
 	subdomain := ""
 	region := ""
 	customerID := ""
+	costObjectID := ""
+	costObjectType := ""
 
 	if s, ok := subdomains[tenant.ExternalTenant]; ok {
 		subdomain = s
@@ -428,8 +429,14 @@ func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.Bus
 	if id, ok := customerIDs[tenant.ExternalTenant]; ok {
 		customerID = id
 	}
+	if id, ok := costObjectIDs[tenant.ExternalTenant]; ok {
+		costObjectID = id
+	}
+	if t, ok := costObjectTypes[tenant.ExternalTenant]; ok {
+		costObjectType = t
+	}
 
-	tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, customerID, str.PtrStrToStr(tenantInput.AdditionalFields), upsertFunc)
+	tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, customerID, costObjectID, costObjectType, upsertFunc)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
 	}
@@ -445,13 +452,8 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 
 	subdomains, regions := tenantLocality(tenantInputs)
 	customerIDs := tenantCustomerIDs(tenantInputs)
-	additionalFieldMappings := tenantAdditionalFields(tenantInputs)
-
-	empJSON1, err := json.MarshalIndent(additionalFieldMappings, "", "  ")
-	if err != nil {
-		fmt.Println("err", err)
-	}
-	fmt.Printf("additionalFieldMappings 3\n %s\n", string(empJSON1))
+	costObjectIDs := tenantCostObjectIDs(tenantInputs)
+	costObjectTypes := tenantCostObjectTypes(tenantInputs)
 
 	tenantIDs := make([]string, 0, len(tenants))
 
@@ -459,7 +461,8 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 		subdomain := ""
 		region := ""
 		customerID := ""
-		additionalFields := ""
+		costObjectID := ""
+		costObjectType := ""
 		if s, ok := subdomains[tenant.ExternalTenant]; ok {
 			subdomain = s
 		}
@@ -469,11 +472,14 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 		if id, ok := customerIDs[tenant.ExternalTenant]; ok {
 			customerID = id
 		}
-		if mappings, ok := additionalFieldMappings[tenant.ExternalTenant]; ok {
-			additionalFields = mappings
+		if id, ok := costObjectIDs[tenant.ExternalTenant]; ok {
+			costObjectID = id
+		}
+		if t, ok := costObjectTypes[tenant.ExternalTenant]; ok {
+			costObjectType = t
 		}
 
-		tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, customerID, additionalFields, upsertFunc)
+		tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, customerID, costObjectID, costObjectType, upsertFunc)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
 		}
@@ -496,27 +502,24 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 	return tenantIDs, nil
 }
 
-func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region, customerID, additionalFields string, action func(context.Context, model.BusinessTenantMapping) (string, error)) (string, error) {
+func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region, customerID, costObjectID, costObjectType string, action func(context.Context, model.BusinessTenantMapping) (string, error)) (string, error) {
 	internalID, err := action(ctx, tenant)
 	if err != nil {
 		return "", err
 	}
 
-	return internalID, s.upsertLabels(ctx, internalID, subdomain, region, str.PtrStrToStr(tenant.LicenseType), customerID, additionalFields)
+	return internalID, s.upsertLabels(ctx, internalID, subdomain, region, str.PtrStrToStr(tenant.LicenseType), customerID, costObjectID, costObjectType)
 }
 
-func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region, licenseType, customerID string, additionalFields string) error {
+func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region, licenseType, customerID, costObjectID, costObjectType string) error {
 	labelKeyValueMappings := map[string]string{
 		SubdomainLabelKey:      subdomain,
 		RegionLabelKey:         region,
 		LicenseTypeLabelKey:    licenseType,
 		CustomerIDLabelKey:     customerID,
-		CostObjectIDLabelKey:   gjson.Get(additionalFields, CostObjectIDLabelKey).String(),
-		CostObjectTypeLabelKey: gjson.Get(additionalFields, CostObjectTypeLabelKey).String(),
+		CostObjectIDLabelKey:   costObjectID,
+		CostObjectTypeLabelKey: costObjectType,
 	}
-
-	fmt.Println(additionalFields)
-	fmt.Println(gjson.Get(additionalFields, "costObjectType").String())
 
 	for labelKey, labelValue := range labelKeyValueMappings {
 		if len(labelValue) > 0 {
@@ -555,15 +558,26 @@ func tenantCustomerIDs(tenants []model.BusinessTenantMappingInput) map[string]st
 	return customerIDs
 }
 
-func tenantAdditionalFields(tenants []model.BusinessTenantMappingInput) map[string]string {
-	additionalFields := make(map[string]string)
+func tenantCostObjectIDs(tenants []model.BusinessTenantMappingInput) map[string]string {
+	costObjectIDs := make(map[string]string)
 	for _, t := range tenants {
-		if t.AdditionalFields != nil {
-			additionalFields[t.ExternalTenant] = str.PtrStrToStr(t.AdditionalFields)
+		if t.CostObjectID != nil {
+			costObjectIDs[t.ExternalTenant] = str.PtrStrToStr(t.CostObjectID)
 		}
 	}
 
-	return additionalFields
+	return costObjectIDs
+}
+
+func tenantCostObjectTypes(tenants []model.BusinessTenantMappingInput) map[string]string {
+	costObjectTypes := make(map[string]string)
+	for _, t := range tenants {
+		if t.CostObjectType != nil {
+			costObjectTypes[t.ExternalTenant] = str.PtrStrToStr(t.CostObjectType)
+		}
+	}
+
+	return costObjectTypes
 }
 
 // DeleteMany removes all tenants with the provided external tenant ids from the Compass storage.

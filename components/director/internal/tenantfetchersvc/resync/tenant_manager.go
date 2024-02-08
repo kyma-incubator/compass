@@ -2,7 +2,6 @@ package resync
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math"
 	"strconv"
@@ -190,12 +189,6 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 func (tm *TenantsManager) CreateTenants(ctx context.Context, tenants []model.BusinessTenantMappingInput) error {
 	tenantsToCreateGQL := tm.tenantConverter.MultipleInputToGraphQLInput(tenants)
 	return runInChunks(ctx, tm.config.TenantOperationChunkSize, tenantsToCreateGQL, func(ctx context.Context, chunk []graphql.BusinessTenantMappingInput) error {
-		empJSON1, err := json.MarshalIndent(chunk, "", "  ")
-		if err != nil {
-			fmt.Println("err", err)
-		}
-		fmt.Printf("chunk 0\n %s\n", string(empJSON1))
-
 		return tm.gqlClient.WriteTenants(ctx, chunk)
 	})
 }

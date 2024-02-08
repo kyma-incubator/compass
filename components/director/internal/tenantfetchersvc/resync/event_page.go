@@ -3,10 +3,7 @@ package resync
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"regexp"
-
-	directortenant "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -219,11 +216,11 @@ func (ep EventsPage) eventDataToTenant(ctx context.Context, eventType EventsType
 			return []*model.BusinessTenantMappingInput{subaccount}, nil
 		}
 
-		subaccount.AdditionalFields = str.Ptr(fmt.Sprintf(`{"%s": "%s"}`, directortenant.CostObjectIDLabelKey, gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectIDField).String()))
+		subaccount.CostObjectID = str.Ptr(gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectIDField).String())
 
 		costObjectIDResult := gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectIDField).String()
 		costObject := constructCostObjectTenant(costObjectIDResult, licenseTypeValue, ep)
-		costObject.AdditionalFields = str.Ptr(fmt.Sprintf(`{"%s": "%s"}`, directortenant.CostObjectTypeLabelKey, gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectTypeField).String()))
+		costObject.CostObjectType = str.Ptr(gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectTypeField).String())
 
 		return []*model.BusinessTenantMappingInput{subaccount, costObject}, err
 	}

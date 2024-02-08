@@ -46,16 +46,17 @@ func (t BusinessTenantMapping) ToInput() BusinessTenantMappingInput {
 
 // BusinessTenantMappingInput missing godoc
 type BusinessTenantMappingInput struct {
-	Name             string   `json:"name"`
-	ExternalTenant   string   `json:"id"`
-	Parents          []string `json:"parents"`
-	Subdomain        string   `json:"subdomain"`
-	Region           string   `json:"region"`
-	Type             string   `json:"type"`
-	Provider         string
-	LicenseType      *string `json:"licenseType"`
-	CustomerID       *string `json:"customerID"`
-	AdditionalFields *string `json:"additionalFields"`
+	Name           string   `json:"name"`
+	ExternalTenant string   `json:"id"`
+	Parents        []string `json:"parents"`
+	Subdomain      string   `json:"subdomain"`
+	Region         string   `json:"region"`
+	Type           string   `json:"type"`
+	Provider       string
+	LicenseType    *string `json:"licenseType"`
+	CustomerID     *string `json:"customerID"`
+	CostObjectID   *string `json:"costObjectID"`
+	CostObjectType *string `json:"costObjectType"`
 }
 
 // MovedSubaccountMappingInput missing godoc

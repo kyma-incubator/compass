@@ -608,7 +608,8 @@ input BusinessTenantMappingInput {
 	provider: String!
 	licenseType: String
 	customerId: String
-	additionalFields: JSON
+	costObjectId: String
+	costObjectType: String
 }
 
 input CSRFTokenCredentialRequestAuthInput {

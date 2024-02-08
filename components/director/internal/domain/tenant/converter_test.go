@@ -31,8 +31,8 @@ var (
 	subdomain               = "subdomain"
 	region                  = "region"
 	licenseType             = "TESTLICENSE"
-	additionalFields        = `{ "costObjectId": "id" }`
-	graphAdditionalField    = graphql.JSON(additionalFields)
+	costObjectID            = "cost-obj-id"
+	costObjectType          = "cost-type"
 )
 
 const (
@@ -129,21 +129,22 @@ func TestConverter_ToGraphQLInput(t *testing.T) {
 		c := tenant.NewConverter()
 
 		// WHEN
-		in := newModelBusinessTenantMappingInputWithAdditionalFields(names[0], subdomain, region, &licenseType, &additionalFields)
+		in := newModelBusinessTenantMappingInputWithCostObject(names[0], subdomain, region, &licenseType)
 		in.CustomerID = testCustomerID
 
 		res := c.ToGraphQLInput(in)
 		expected := graphql.BusinessTenantMappingInput{
-			Name:             names[0],
-			ExternalTenant:   testExternal,
-			Parents:          []*string{},
-			Subdomain:        str.Ptr(subdomain),
-			Region:           str.Ptr(region),
-			Type:             string(tnt.Account),
-			Provider:         testProvider,
-			LicenseType:      str.Ptr(licenseType),
-			CustomerID:       testCustomerID,
-			AdditionalFields: &graphAdditionalField,
+			Name:           names[0],
+			ExternalTenant: testExternal,
+			Parents:        []*string{},
+			Subdomain:      str.Ptr(subdomain),
+			Region:         str.Ptr(region),
+			Type:           string(tnt.Account),
+			Provider:       testProvider,
+			LicenseType:    str.Ptr(licenseType),
+			CustomerID:     testCustomerID,
+			CostObjectID:   &costObjectID,
+			CostObjectType: &costObjectType,
 		}
 
 		// THEN
@@ -157,25 +158,27 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 
 		// WHEN
 		in := graphql.BusinessTenantMappingInput{
-			Name:             names[0],
-			ExternalTenant:   externalTenants[0],
-			Parents:          parentIDsPtr,
-			Subdomain:        str.Ptr(subdomain),
-			Region:           str.Ptr(region),
-			Type:             string(tnt.Account),
-			Provider:         testProvider,
-			AdditionalFields: &graphAdditionalField,
+			Name:           names[0],
+			ExternalTenant: externalTenants[0],
+			Parents:        parentIDsPtr,
+			Subdomain:      str.Ptr(subdomain),
+			Region:         str.Ptr(region),
+			Type:           string(tnt.Account),
+			Provider:       testProvider,
+			CostObjectID:   &costObjectID,
+			CostObjectType: &costObjectType,
 		}
 		res := c.InputFromGraphQL(in)
 		expected := model.BusinessTenantMappingInput{
-			Name:             names[0],
-			ExternalTenant:   externalTenants[0],
-			Parents:          parentIDs,
-			Subdomain:        subdomain,
-			Region:           region,
-			Type:             string(tnt.Account),
-			Provider:         testProvider,
-			AdditionalFields: &additionalFields,
+			Name:           names[0],
+			ExternalTenant: externalTenants[0],
+			Parents:        parentIDs,
+			Subdomain:      subdomain,
+			Region:         region,
+			Type:           string(tnt.Account),
+			Provider:       testProvider,
+			CostObjectID:   &costObjectID,
+			CostObjectType: &costObjectType,
 		}
 
 		// THEN
