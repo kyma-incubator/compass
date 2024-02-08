@@ -60,23 +60,16 @@ func fixBusinessTenantMappingInput(externalTenant, provider, subdomain, region, 
 	}
 }
 
-func fixBusinessTenantMappingInputWithAdditionalFields(externalTenant, provider, subdomain, region, parent string, tenantType tenant.Type, licenseType, additionalFields *string) model.BusinessTenantMappingInput {
+func fixBusinessTenantMappingInputWithCostObjectID(externalTenant, provider, subdomain, region, parent string, tenantType tenant.Type, licenseType, costObjectID *string) model.BusinessTenantMappingInput {
 	tnt := fixBusinessTenantMappingInput(externalTenant, provider, subdomain, region, parent, tenantType, licenseType)
-	tnt.AdditionalFields = additionalFields
+	tnt.CostObjectID = costObjectID
 	return tnt
 }
 
-func fixCostObjectInputWithAdditionalFields(externalTenant, provider, region string, tenantType tenant.Type, licenseType, additionalFields *string) model.BusinessTenantMappingInput {
-	return model.BusinessTenantMappingInput{
-		Name:           externalTenant,
-		ExternalTenant: externalTenant,
-		Provider:       provider,
-		Subdomain:      "",
-		Region:         region,
-		Parents:        []string{},
-		Type:           tenant.TypeToStr(tenantType),
-		LicenseType:    licenseType,
-	}
+func fixBusinessTenantMappingInputWithCostObjectType(externalTenant, provider, subdomain, region, parent string, tenantType tenant.Type, licenseType, costObjectType *string) model.BusinessTenantMappingInput {
+	tnt := fixBusinessTenantMappingInput(externalTenant, provider, subdomain, region, parent, tenantType, licenseType)
+	tnt.CostObjectType = costObjectType
+	return tnt
 }
 
 func fixID() string {

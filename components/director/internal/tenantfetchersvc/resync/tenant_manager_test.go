@@ -2,6 +2,7 @@ package resync_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/tidwall/gjson"
@@ -731,11 +732,11 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 
 	jobConfig := configForTenantType(tenant.Account)
 
-	tenantAdditionalFields := `{"costObjectId": "id-here"}`
-	tenantAdditionalFieldsForCostObject := `{"costObjectType": "type"}`
-	eventAdditionalFields := `{"costObjectId": "id-here", "costObjectType": "type"}`
-	busTenant := fixBusinessTenantMappingInputWithAdditionalFields("1", provider, "subdomain-1", region, "", tenant.Subaccount, &testLicenseType, &tenantAdditionalFields)
-	costObjTenant := fixBusinessTenantMappingInputWithAdditionalFields("id-here", provider, "", "", "", tenant.CostObject, &testLicenseType, &tenantAdditionalFieldsForCostObject)
+	costObjectID := "id-here"
+	costObjectType := "type"
+	eventAdditionalFields := fmt.Sprintf(`{"costObjectId": "%s", "costObjectType": "%s"}`, costObjectID, costObjectType)
+	busTenant := fixBusinessTenantMappingInputWithCostObjectID("1", provider, "subdomain-1", region, "", tenant.Subaccount, &testLicenseType, &costObjectID)
+	costObjTenant := fixBusinessTenantMappingInputWithCostObjectType("id-here", provider, "", "", "", tenant.CostObject, &testLicenseType, &costObjectType)
 	costObjTenant.Parents = []string{}
 
 	event := fixEvent(t, "Subaccount", busTenant.Parents[0], eventFieldsFromTenant(tenant.Subaccount, jobConfig.APIConfig.TenantFieldMapping, busTenant, eventAdditionalFields))

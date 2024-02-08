@@ -256,7 +256,6 @@ func constructGlobalAccountTenant(ctx context.Context, jsonPayload, name, subdom
 }
 
 func constructCostObjectTenant(costObjectID string, licenseType *string, ep EventsPage) *model.BusinessTenantMappingInput {
-
 	return &model.BusinessTenantMappingInput{
 		Name:           costObjectID,
 		ExternalTenant: costObjectID,

@@ -23,8 +23,10 @@ const (
 	// LicenseTypeLabelKey is the key of the tenant label for licensetype.
 	LicenseTypeLabelKey = "licensetype"
 	// CustomerIDLabelKey is the key of the SAP-managed customer subaccounts
-	CustomerIDLabelKey     = "customerId"
-	CostObjectIDLabelKey   = "costObjectId"
+	CustomerIDLabelKey = "customerId"
+	// CostObjectIDLabelKey is the key for cost object tenant ID
+	CostObjectIDLabelKey = "costObjectId"
+	// CostObjectTypeLabelKey os the ley for cost object tenant type
 	CostObjectTypeLabelKey = "costObjectType"
 )
 
