@@ -206,8 +206,8 @@ global:
       version: "v20240116-f0e3d794"
       name: compass-ord-service
     schema_migrator:
-      dir: dev/incubator/
-      version: "PR-3645"
+      dir: prod/incubator/
+      version: "v20240208-e66ff160"
       name: compass-schema-migrator
     system_broker:
       dir: prod/incubator/
