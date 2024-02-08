@@ -176,6 +176,9 @@ func (r *repository) Update(ctx context.Context, model *model.Formation) error {
 
 	var retrievedEntity Entity
 	if err := r.globalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", model.ID)}, repo.NoOrderBy, &retrievedEntity); err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil
+		}
 		return err
 	}
 

@@ -585,7 +585,6 @@ func TestRepository_Update(t *testing.T) {
 	})
 
 	t.Run("Success when the formation assignment state is CONFIG_PENDING but the configuration is changed, last state change timestamp should be updated", func(t *testing.T) {
-		//t.Run("test", func(t *testing.T) {
 		// GIVEN
 		faModelWithConfigPendingState := fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON)
 		faModelWithConfigPendingState.State = configPendingAssignmentState
@@ -604,6 +603,35 @@ func TestRepository_Update(t *testing.T) {
 		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formation_assignments SET state = ?, value = ?, error = ?, last_state_change_timestamp = ?, last_notification_sent_timestamp = ? WHERE id = ? AND tenant_id = ?`)).
 			WithArgs(configPendingAssignmentState, TestConfigValueStr, TestErrorValueStr, sqlmock.AnyArg(), &defaultTime, TestID, TestTenantID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", faModelWithConfigPendingState).Return(faEntityWithConfigPendingState)
+
+		r := formationassignment.NewRepository(mockConverter)
+
+		// WHEN
+		err := r.Update(ctx, faModelWithConfigPendingState)
+
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Success when the formation assignment is missing", func(t *testing.T) {
+		// GIVEN
+		faModelWithConfigPendingState := fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON)
+		faModelWithConfigPendingState.State = configPendingAssignmentState
+
+		faEntityWithConfigPendingState := fixFormationAssignmentEntityWithConfigurationAndError(TestConfigValueStr, TestErrorValueStr)
+		faEntityWithConfigPendingState.State = configPendingAssignmentState
+
+		slqxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		ctx := persistence.SaveToContext(emptyCtx, slqxDB)
+
+		rows := sqlmock.NewRows(fixColumns)
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE id = $1`)).
+			WithArgs(TestID).WillReturnRows(rows)
 
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)

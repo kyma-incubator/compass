@@ -316,6 +316,36 @@ func TestRepository_Update(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 	})
+
+	t.Run("Success when the formation state is changed and timestamp is updated", func(t *testing.T) {
+		// GIVEN
+		formationModelWithReadyState := fixFormationModel()
+		formationModelWithReadyState.State = model.ReadyFormationState
+
+		formationEntityWithReadyState := fixFormationEntity()
+		formationEntityWithReadyState.State = string(model.ReadyFormationState)
+
+		emptyCtx := context.TODO()
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		ctx := persistence.SaveToContext(emptyCtx, sqlxDB)
+
+		rows := sqlmock.NewRows(fixColumns())
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name, state, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formations WHERE id = $1`)).
+			WithArgs(FormationID).WillReturnRows(rows)
+
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", formationModelWithReadyState).Return(formationEntityWithReadyState, nil).Once()
+
+		repo := formation.NewRepository(mockConverter)
+
+		// WHEN
+		err := repo.Update(ctx, formationModelWithReadyState)
+
+		// THEN
+		require.NoError(t, err)
+	})
 }
 
 func TestRepository_Delete(t *testing.T) {
