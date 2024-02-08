@@ -40,15 +40,13 @@ CREATE INDEX tenant_parents_tenant_id ON tenant_parents (tenant_id);
 CREATE INDEX tenant_parents_parent_id ON tenant_parents (parent_id);
 
 -- Migrate tenant access records for applications
-
---
 CREATE TABLE tenant_applications_temp AS TABLE tenant_applications;
 
 -- Add source column to tenant_applications_temp table
 ALTER TABLE tenant_applications_temp
     ADD COLUMN source uuid;
 
--- ALTER TABLE tenant_applications_temp DROP CONSTRAINT tenant_applications_temp_pkey;
+-- Add unique_tenant_applications_temp constraint
 ALTER TABLE tenant_applications_temp
     ADD CONSTRAINT unique_tenant_applications_temp UNIQUE (tenant_id, id, source);
 
@@ -59,17 +57,32 @@ INSERT INTO tenant_applications_temp
               JOIN tenant_parents tp ON ta.tenant_id = tp.tenant_id)
 ON CONFLICT (tenant_id,id,source) DO NOTHING;
 
+-- Remove unique_tenant_applications_temp constraint
+ALTER TABLE tenant_applications_temp
+    DROP CONSTRAINT unique_tenant_applications_temp;
+
+-- Create temporary table
+CREATE TABLE temporary_tenant_applications_table AS TABLE tenant_applications_temp WITH NO DATA;
+
+-- Populate the temporary table
+INSERT INTO temporary_tenant_applications_table
+SELECT parent_ta.*
+FROM tenant_applications_temp parent_ta
+         JOIN tenant_parents tp ON parent_ta.tenant_id = tp.parent_id
+         JOIN tenant_applications_temp child_ta
+              ON child_ta.tenant_id = tp.tenant_id AND parent_ta.ID = child_ta.ID;
+
 -- Add tenant access records for the owning tenant itself
 UPDATE tenant_applications_temp ta
 SET source = ta.tenant_id
 WHERE ta.source IS NULL
   AND NOT EXISTS (SELECT 1
-                  FROM tenant_applications_temp parent_ta
-                           JOIN tenant_parents tp ON parent_ta.tenant_id = tp.parent_id
-                           JOIN tenant_applications_temp child_ta
-                                ON child_ta.tenant_id = tp.tenant_id AND parent_ta.ID = child_ta.ID
+                  FROM temporary_tenant_applications_table parent_ta
                   WHERE ta.tenant_id = parent_ta.tenant_id
                     AND ta.id = parent_ta.id);
+
+-- Drop the temporary table
+DROP TABLE temporary_tenant_applications_table;
 
 -- Delete tenant access records with null source as they leftover access records for the parents of the owning tenant that were already populated by the previous queries
 DELETE
@@ -78,19 +91,33 @@ WHERE source IS NULL;
 
 -- Tenant access records that originated from the directive were processed in the reverse direction. Now according to the TA table the CRM knows about the resource from the GA
 -- We have to swap the source and tenant_id for records where the source is GA, the tenant_id is CRM and there is a record for the same resource where the tenant_id is resource-group (this means that the resource was created in Atom)
-UPDATE tenant_applications_temp ta
-SET source    = ta.tenant_id,
-    tenant_id = ta.source
+
+-- Create temporary table
+CREATE TABLE temporary_tenant_applications_table AS TABLE tenant_applications_temp WITH NO DATA;
+
+-- Populate the temporary table
+INSERT INTO temporary_tenant_applications_table
+SELECT ta1.*
 FROM tenant_applications_temp ta1
          JOIN business_tenant_mappings_temp btm
               ON btm.id = ta1.tenant_id AND btm.type = 'customer'::tenant_type
          JOIN business_tenant_mappings_temp btm2 ON btm2.id = ta1.source AND btm2.type = 'account'::tenant_type
          JOIN tenant_applications_temp ta2 ON ta1.id = ta2.id
-         JOIN business_tenant_mappings_temp btm3 ON btm3.id = ta2.tenant_id AND btm3.type = 'resource-group'::tenant_type
-WHERE ta.tenant_id = ta1.tenant_id
-  AND ta.source = ta1.source
-  AND ta.id = ta1.id
-  AND ta.owner = ta1.owner;
+         JOIN business_tenant_mappings_temp btm3
+              ON btm3.id = ta2.tenant_id AND btm3.type = 'resource-group'::tenant_type;
+
+
+UPDATE tenant_applications_temp ta
+SET source    = ta.tenant_id,
+    tenant_id = ta.source
+FROM temporary_tenant_applications_table tt
+WHERE ta.tenant_id = tt.tenant_id
+  AND ta.source = tt.source
+  AND ta.id = tt.id
+  AND ta.owner = tt.owner;
+
+-- Drop the temporary table
+DROP TABLE temporary_tenant_applications_table;
 
 -- After fixing the swapped source and tenant_id there are leftover records stating that the GA knows about the resource from itself which is not correct as The GA knows about the resource from the CRM. Such records should be deleted
 DELETE
@@ -140,19 +167,32 @@ WHERE source IS NULL;
 
 -- Tenant access records that originated from the directive were processed in the reverse direction. Now according to the TA table the CRM knows about the resource from the GA
 -- We have to swap the source and tenant_id for records where the source is GA, the tenant_id is CRM and there is a record for the same resource where the tenant_id is resource-group (this means that the resource was created in Atom)
-UPDATE tenant_runtimes ta
-SET source    = ta.tenant_id,
-    tenant_id = ta.source
+
+-- Create temporary table
+CREATE TABLE temporary_tenant_runtimes_table AS TABLE tenant_runtimes WITH NO DATA;
+
+-- Populate the temporary table
+INSERT INTO temporary_tenant_runtimes_table
+SELECT ta1.*
 FROM tenant_runtimes ta1
          JOIN business_tenant_mappings_temp btm
               ON btm.id = ta1.tenant_id AND btm.type = 'customer'::tenant_type
          JOIN business_tenant_mappings_temp btm2 ON btm2.id = ta1.source AND btm2.type = 'account'::tenant_type
          JOIN tenant_runtimes ta2 ON ta1.id = ta2.id
-         JOIN business_tenant_mappings_temp btm3 ON btm3.id = ta2.tenant_id AND btm3.type = 'resource-group'::tenant_type
-WHERE ta.tenant_id = ta1.tenant_id
-  AND ta.source = ta1.source
-  AND ta.id = ta1.id
-  AND ta.owner = ta1.owner;
+         JOIN business_tenant_mappings_temp btm3
+              ON btm3.id = ta2.tenant_id AND btm3.type = 'resource-group'::tenant_type;
+
+UPDATE tenant_runtimes ta
+SET source    = ta.tenant_id,
+    tenant_id = ta.source
+FROM temporary_tenant_runtimes_table tr
+WHERE ta.tenant_id = tr.tenant_id
+  AND ta.source = tr.source
+  AND ta.id = tr.id
+  AND ta.owner = tr.owner;
+
+-- Drop the temporary table
+DROP TABLE temporary_tenant_runtimes_table;
 
 -- After fixing the swapped source and tenant_id there are leftover records stating that the GA knows about the resource from itself which is not correct as The GA knows about the resource from the CRM. Such records should be deleted
 DELETE
@@ -175,7 +215,6 @@ ALTER TABLE tenant_runtimes
     ADD PRIMARY KEY (tenant_id, id, source);
 
 CREATE INDEX tenant_runtimes_source ON tenant_runtimes (source);
-
 
 -- Migrate tenant access records for runtime_contexts
 
@@ -215,19 +254,32 @@ WHERE source IS NULL;
 
 -- Tenant access records that originated from the directive were processed in the reverse direction. Now according to the TA table the CRM knows about the resource from the GA
 -- We have to swap the source and tenant_id for records where the source is GA, the tenant_id is CRM and there is a record for the same resource where the tenant_id is resource-group (this means that the resource was created in Atom)
-UPDATE tenant_runtime_contexts ta
-SET source    = ta.tenant_id,
-    tenant_id = ta.source
+
+-- Create temporary table
+CREATE TABLE temporary_tenant_runtime_contexts_table AS TABLE tenant_runtime_contexts WITH NO DATA;
+
+-- Populate the temporary table
+INSERT INTO temporary_tenant_runtime_contexts_table
+SELECT ta1.*
 FROM tenant_runtime_contexts ta1
          JOIN business_tenant_mappings_temp btm
               ON btm.id = ta1.tenant_id AND btm.type = 'customer'::tenant_type
          JOIN business_tenant_mappings_temp btm2 ON btm2.id = ta1.source AND btm2.type = 'account'::tenant_type
          JOIN tenant_runtime_contexts ta2 ON ta1.id = ta2.id
-         JOIN business_tenant_mappings_temp btm3 ON btm3.id = ta2.tenant_id AND btm3.type = 'resource-group'::tenant_type
-WHERE ta.tenant_id = ta1.tenant_id
-  AND ta.source = ta1.source
-  AND ta.id = ta1.id
-  AND ta.owner = ta1.owner;
+         JOIN business_tenant_mappings_temp btm3
+              ON btm3.id = ta2.tenant_id AND btm3.type = 'resource-group'::tenant_type;
+
+UPDATE tenant_runtime_contexts ta
+SET source    = ta.tenant_id,
+    tenant_id = ta.source
+FROM temporary_tenant_runtime_contexts_table trc
+WHERE ta.tenant_id = trc.tenant_id
+  AND ta.source = trc.source
+  AND ta.id = trc.id
+  AND ta.owner = trc.owner;
+
+-- Drop the temporary table
+DROP TABLE temporary_tenant_runtime_contexts_table;
 
 -- After fixing the swapped source and tenant_id there are leftover records stating that the GA knows about the resource from itself which is not correct as The GA knows about the resource from the CRM. Such records should be deleted
 DELETE
@@ -273,9 +325,6 @@ ALTER TABLE tenant_applications_temp
     RENAME TO tenant_applications;
 ALTER TABLE tenant_applications
     ADD PRIMARY KEY (tenant_id, id, source);
-ALTER TABLE tenant_applications
-    DROP CONSTRAINT unique_tenant_applications_temp;
-
 
 ALTER TABLE tenant_applications
     ADD CONSTRAINT tenant_applications_tenant_id_fkey
@@ -347,8 +396,6 @@ SELECT w.id,
 FROM webhooks w
          JOIN formation_templates ft ON w.formation_template_id = ft.id
          JOIN tenant_parents tp ON ft.tenant_id = tp.parent_id;
-
-
 
 DROP VIEW IF EXISTS webhooks_tenants;
 
@@ -468,7 +515,7 @@ BEGIN
     EXECUTE FORMAT('SELECT COUNT(1) FROM tenant_parents WHERE tenant_id = %L AND parent_id = %L', NEW.target_tenant_id,
                    NEW.tenant_id) INTO count;
     IF
-        count = 0 THEN
+            count = 0 THEN
         RAISE EXCEPTION 'target_tenant_id should be direct child of tenant_id';
     END IF;
     RETURN NULL;
