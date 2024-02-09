@@ -210,7 +210,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3592"
+      version: "PR-3644"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
@@ -223,7 +223,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3614"
+      version: "PR-3642"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -231,7 +231,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3640"
+      version: "PR-3642"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
