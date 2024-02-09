@@ -1,6 +1,9 @@
 package destination_test
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
@@ -152,9 +155,12 @@ func fixClientCertAuthTypeAuthentication() *operators.ClientCertAuthentication {
 	return &operators.ClientCertAuthentication{URL: destinationURL}
 }
 
-func fixDesignTimeDestinationsDetails() []operators.Destination {
-	return []operators.Destination{
-		fixDestinationDetails(designTimeDestName, string(destinationcreatorpkg.AuthTypeNoAuth), externalDestinationSubaccountID),
+func fixDesignTimeDestinationsDetails() []operators.DestinationRaw {
+	return []operators.DestinationRaw{
+		{
+			Destination: json.RawMessage(
+				fmt.Sprintf(`{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authenticationType":"%s","subaccountId":"%s","description":"%s", "instanceId":"%s"}`, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationcreatorpkg.AuthTypeNoAuth), externalDestinationSubaccountID, destinationDescription, destinationInstanceID)),
+		},
 	}
 }
 

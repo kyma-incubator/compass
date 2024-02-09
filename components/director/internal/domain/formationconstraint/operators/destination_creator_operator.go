@@ -3,7 +3,15 @@ package operators
 import (
 	"context"
 	"encoding/json"
+	"regexp"
 	"runtime/debug"
+
+	"k8s.io/utils/strings/slices"
+
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
@@ -19,6 +27,8 @@ import (
 const (
 	// DestinationCreatorOperator represents the destination creator operator
 	DestinationCreatorOperator = "DestinationCreator"
+	authenticationKeyOld       = "authentication"
+	authenticationKey          = "authenticationType"
 )
 
 // NewDestinationCreatorInput is input constructor for DestinationCreatorOperator. It returns empty OperatorInput
@@ -233,13 +243,131 @@ func isNotificationStatusReportConfigEmpty(notificationStatusReport *statusrepor
 
 // Configuration represents a formation assignment (or reverse formation assignment) configuration
 type Configuration struct {
-	Destinations         []Destination        `json:"destinations"`
+	Destinations         []DestinationRaw     `json:"destinations"`
 	Credentials          Credentials          `json:"credentials"`
 	AdditionalProperties AdditionalProperties `json:"additionalProperties"`
 }
 
 // AdditionalProperties is an alias for slice of `json.RawMessage` elements
 type AdditionalProperties []json.RawMessage
+
+// DestinationRaw represents the destination provided by the customer
+type DestinationRaw struct {
+	Destination json.RawMessage
+}
+
+// UnmarshalJSON is the DestinationRaw's implementation of Unmarshaler
+func (d *DestinationRaw) UnmarshalJSON(data []byte) error {
+	var raw json.RawMessage
+	err := json.Unmarshal(data, &raw)
+	if err != nil {
+		return err
+	}
+
+	if keyContent := gjson.Get(string(raw), authenticationKeyOld); keyContent.Exists() {
+		raw, err = sjson.SetBytes(raw, authenticationKey, keyContent.String())
+		if err != nil {
+			return errors.Wrapf(err, "while setting %q key to the destination details", authenticationKey)
+		}
+		raw, err = sjson.DeleteBytes(d.Destination, "subaccountId")
+		if err != nil {
+			return errors.Wrapf(err, "while removing %q key from the destination details", authenticationKeyOld)
+		}
+	}
+
+	d.Destination = raw
+
+	return nil
+}
+
+// GetName returns the name of the destination
+func (d *DestinationRaw) GetName() string {
+	return gjson.Get(string(d.Destination), "name").String()
+}
+
+// GetSubaccountID returns the subaccount ID of the destination
+func (d *DestinationRaw) GetSubaccountID() string {
+	return gjson.Get(string(d.Destination), "subaccountId").String()
+}
+
+// SetSubaccountID sets the subaccountID field of the destination to subaccountID
+func (d *DestinationRaw) SetSubaccountID(subaccountID string) error {
+	id := subaccountID
+	bytes, err := sjson.SetBytes(d.Destination, "subaccountId", id)
+	if err != nil {
+		return err
+	}
+
+	d.Destination = bytes
+
+	return nil
+}
+
+// GetInstanceID returns the instance ID of the destination
+func (d *DestinationRaw) GetInstanceID() string {
+	return gjson.Get(string(d.Destination), "instanceId").String()
+}
+
+// StripInternalFields removes the fields meant for internal usage from the destination
+func (d *DestinationRaw) StripInternalFields() (*DestinationRaw, error) {
+	stripped, err := sjson.DeleteBytes(d.Destination, "subaccountId")
+	if err != nil {
+		return nil, err
+	}
+	stripped, err = sjson.DeleteBytes(stripped, "instanceId")
+	if err != nil {
+		return nil, err
+	}
+
+	return &DestinationRaw{Destination: stripped}, nil
+}
+
+// Validate validates the DestinationRaw object against a predefined set of rules
+func (d *DestinationRaw) Validate() error {
+	return validation.ValidateStruct(d,
+		validation.Field(&d.Destination, validation.Required, validation.By(func(interface{}) error {
+			name := d.GetName()
+			if len(name) < 1 || len(name) > destinationcreatorpkg.MaxDestinationNameLength {
+				return errors.Errorf("Name length should be between 1 and %d", destinationcreatorpkg.MaxDestinationNameLength)
+			}
+
+			if !regexp.MustCompile(reqBodyNameRegex).MatchString(name) {
+				return errors.New("Name is invalid")
+			}
+
+			if len(gjson.Get(string(d.Destination), "url").String()) < 1 {
+				return errors.New("URL is required")
+			}
+
+			if !slices.Contains([]string{string(destinationcreatorpkg.TypeHTTP), string(destinationcreatorpkg.TypeRFC), string(destinationcreatorpkg.TypeLDAP), string(destinationcreatorpkg.TypeMAIL)}, gjson.Get(string(d.Destination), "type").String()) {
+				return errors.New("Unknown destination type")
+			}
+
+			if !slices.Contains([]string{string(destinationcreatorpkg.ProxyTypeInternet), string(destinationcreatorpkg.ProxyTypeOnPremise), string(destinationcreatorpkg.ProxyTypePrivateLink)}, gjson.Get(string(d.Destination), "proxyType").String()) {
+				return errors.New("Unknown proxy type")
+			}
+
+			if len(gjson.Get(string(d.Destination), "authenticationType").String()) < 1 {
+				return errors.New("AuthenticationType is required")
+			}
+
+			return nil
+		})))
+}
+
+// ToModelDestination converts to model.Destination
+func (d *DestinationRaw) ToModelDestination(id, subaccountID, formationAssignmentID string) (*model.Destination, error) {
+	return &model.Destination{
+		ID:                    id,
+		Name:                  gjson.Get(string(d.Destination), "name").String(),
+		Type:                  gjson.Get(string(d.Destination), "type").String(),
+		URL:                   gjson.Get(string(d.Destination), "url").String(),
+		Authentication:        gjson.Get(string(d.Destination), "authenticationType").String(),
+		SubaccountID:          subaccountID,
+		InstanceID:            str.Ptr(gjson.Get(string(d.Destination), "instanceId").String()),
+		FormationAssignmentID: &formationAssignmentID,
+	}, nil
+}
 
 // Credentials represent a different type of credentials configuration - inbound, outbound
 type Credentials struct {
