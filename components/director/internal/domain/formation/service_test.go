@@ -1586,7 +1586,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Success when formation has async webhook and updating to deleting state returns not found error",
+			Name: "Success when formation has async webhook and updating to deleting state returns unauthorized error",
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
 				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleAsyncWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(formationNotificationAsyncDeleteRequests, nil).Once()
@@ -1596,7 +1596,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(fixFormationModelWithState(model.ReadyFormationState), nil).Once()
-				formationRepoMock.On("Update", ctx, fixFormationModelWithState(model.DeletingFormationState)).Return(notFoundError).Once()
+				formationRepoMock.On("Update", ctx, fixFormationModelWithState(model.DeletingFormationState)).Return(unauthorizedError).Once()
 				return formationRepoMock
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
@@ -2019,7 +2019,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Error when processing formation notifications fails and formation is missing",
+			Name: "Error when processing formation notifications fails and formation update returns unauthorized error",
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
 				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(formationNotificationAsyncDeleteRequests, nil).Once()
@@ -2028,7 +2028,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Update", ctx, formationWithCreateErrorStateAndTechnicalAssignmentError).Return(notFoundError).Once()
+				formationRepoMock.On("Update", ctx, formationWithCreateErrorStateAndTechnicalAssignmentError).Return(unauthorizedError).Once()
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation2, nil).Once()
 				return formationRepoMock
 			},

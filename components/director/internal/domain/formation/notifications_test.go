@@ -809,7 +809,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Success when updating formation assignment last notification sent timestamp and not found error is returned",
+			Name: "Success when updating formation assignment last notification sent timestamp and unauthorized error is returned",
 			WebhookClientFN: func() *automock.WebhookClient {
 				client := &automock.WebhookClient{}
 				client.On("Do", ctx, faRequestExtWithUnassignOperation).Return(nil, nil)
@@ -823,7 +823,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 			},
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				faRepo := &automock.FormationAssignmentRepository{}
-				faRepo.On("Update", ctx, fa).Return(notFoundError).Once()
+				faRepo.On("Update", ctx, fa).Return(unauthorizedError).Once()
 				return faRepo
 			},
 			WebhookRequest: faRequestExtWithUnassignOperation,
@@ -849,7 +849,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Success when updating formation last notification sent timestamp and not found error is returned",
+			Name: "Success when updating formation last notification sent timestamp and unauthorized error is returned",
 			WebhookClientFN: func() *automock.WebhookClient {
 				client := &automock.WebhookClient{}
 				client.On("Do", ctx, deleteFormationRequestExt).Return(nil, nil)
@@ -863,7 +863,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 			},
 			FormationRepo: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Update", ctx, formationModel).Return(notFoundError).Once()
+				formationRepo.On("Update", ctx, formationModel).Return(unauthorizedError).Once()
 				return formationRepo
 			},
 			WebhookRequest: deleteFormationRequestExt,

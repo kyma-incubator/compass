@@ -273,7 +273,7 @@ func (ns *notificationsService) updateLastNotificationSentTimestamp(ctx context.
 			// That covers the case when we send two unassign notifications to one participant
 			// and the response of the first notification is returned and processed, which deletes the formation assignment,
 			// while the second notification still hasn't been sent.
-			if webhookNotificationReq.GetOperation() == model.UnassignFormation && apperrors.IsNotFoundError(updateErr) {
+			if webhookNotificationReq.GetOperation() == model.UnassignFormation && apperrors.IsUnauthorizedError(updateErr) { // the not found error is disguised behind the unauthorized error
 				return nil
 			}
 			return errors.Wrapf(updateErr, "while updating last notification sent timestamp for formation assignment with ID: %s", fa.ID)

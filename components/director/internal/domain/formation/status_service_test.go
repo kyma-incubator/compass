@@ -97,10 +97,10 @@ func TestUpdateWithConstraints(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Success when updating formation and not found error is received",
+			Name: "Success when updating formation and unauthorized error is received",
 			FormationRepoFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("Update", ctx, &modelFormation).Return(notFoundError).Once()
+				repo.On("Update", ctx, &modelFormation).Return(unauthorizedError).Once()
 				return repo
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
