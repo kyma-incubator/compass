@@ -43,7 +43,6 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 	testCases := []struct {
 		Name                     string
 		Context                  context.Context
-		FormationOperation       model.FormationOperation
 		FormationAssignment      *model.FormationAssignment
 		FormationAssignmentRepo  func() *automock.FormationAssignmentRepository
 		NotificationSvc          func() *automock.FaNotificationService
@@ -54,7 +53,6 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 		{
 			Name:                "Success with config in notification status report",
 			Context:             ctxWithTenant,
-			FormationOperation:  assignOperation,
 			FormationAssignment: initialStateAssignment,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
@@ -77,7 +75,6 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 		{
 			Name:                "Success with config in notification status report - replace previous config if config in report",
 			Context:             ctxWithTenant,
-			FormationOperation:  assignOperation,
 			FormationAssignment: assignmentWithStateAndOldConfig,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
@@ -100,7 +97,6 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 		{
 			Name:                "Success with config in notification status report - clear previous config if no config in report",
 			Context:             ctxWithTenant,
-			FormationOperation:  assignOperation,
 			FormationAssignment: assignmentWithStateAndOldConfig,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
@@ -123,7 +119,6 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 		{
 			Name:                "Success with config in notification status report - do not set config if config from report is considered empty - \\\"\\\" or {}",
 			Context:             ctxWithTenant,
-			FormationOperation:  assignOperation,
 			FormationAssignment: assignmentWithStateAndOldConfig,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
@@ -146,7 +141,6 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 		{
 			Name:                "Success with error in notification status report - do not clear config",
 			Context:             ctxWithTenant,
-			FormationOperation:  assignOperation,
 			FormationAssignment: assignmentWithStateAndConfig,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
@@ -169,7 +163,6 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 		{
 			Name:                "Error while enforcing constraints POST",
 			Context:             ctxWithTenant,
-			FormationOperation:  assignOperation,
 			FormationAssignment: assignmentWithStateAndConfig,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
@@ -193,7 +186,6 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 		{
 			Name:                "Error while updating formation assignment",
 			Context:             ctxWithTenant,
-			FormationOperation:  assignOperation,
 			FormationAssignment: assignmentWithStateAndConfig,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
@@ -216,7 +208,6 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 		{
 			Name:                "Error while updating formation assignment - unauthorized",
 			Context:             ctxWithTenant,
-			FormationOperation:  assignOperation,
 			FormationAssignment: assignmentWithStateAndConfig,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
@@ -237,31 +228,8 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 			ExpectedErrorMsg:         notFoundError.Error(),
 		},
 		{
-			Name:                "Success when updating formation assignment and not found error is received",
-			Context:             ctxWithTenant,
-			FormationOperation:  unassignOperation,
-			FormationAssignment: assignmentWithStateAndConfig,
-			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
-				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Update", ctxWithTenant, assignmentWithConfigAndError).Return(notFoundError).Once()
-				return repo
-			},
-			ConstraintEngine: func() *automock.ConstraintEngine {
-				constraintEngine := &automock.ConstraintEngine{}
-				constraintEngine.On("EnforceConstraints", ctxWithTenant, formationconstraint.PreNotificationStatusReturned, preJoinPointDetails, formation.FormationTemplateID).Return(nil).Once()
-				return constraintEngine
-			},
-			NotificationSvc: func() *automock.FaNotificationService {
-				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, assignmentWithStateAndConfig, model.UnassignFormation, statusReportWithError).Return(preJoinPointDetails, nil).Once()
-				return notificationSvc
-			},
-			NotificationStatusReport: statusReportWithError,
-		},
-		{
 			Name:                "Error while enforcing constraints PRE",
 			Context:             ctxWithTenant,
-			FormationOperation:  assignOperation,
 			FormationAssignment: assignmentWithStateAndConfig,
 			ConstraintEngine: func() *automock.ConstraintEngine {
 				constraintEngine := &automock.ConstraintEngine{}
@@ -279,7 +247,6 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 		{
 			Name:                "Error while preparing details",
 			Context:             ctxWithTenant,
-			FormationOperation:  assignOperation,
 			FormationAssignment: assignmentWithStateAndConfig,
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
@@ -292,7 +259,6 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 		{
 			Name:                     "Error while loading tenant from context",
 			Context:                  emptyCtx,
-			FormationOperation:       assignOperation,
 			FormationAssignment:      assignmentWithStateAndConfig,
 			NotificationStatusReport: statusReportWithError,
 			ExpectedErrorMsg:         "while loading tenant from context",
@@ -317,7 +283,7 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 			svc := formationassignment.NewFormationAssignmentStatusService(faRepo, constraintEngine, notificationSvc)
 
 			// WHEN
-			err := svc.UpdateWithConstraints(testCase.Context, testCase.NotificationStatusReport, testCase.FormationAssignment, testCase.FormationOperation)
+			err := svc.UpdateWithConstraints(testCase.Context, testCase.NotificationStatusReport, testCase.FormationAssignment, assignOperation)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)

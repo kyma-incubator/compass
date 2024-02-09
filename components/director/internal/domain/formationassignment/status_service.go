@@ -81,9 +81,6 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 		if apperrors.IsUnauthorizedError(err) {
 			return apperrors.NewNotFoundError(resource.FormationAssignment, id)
 		}
-		if operation == model.UnassignFormation && apperrors.IsNotFoundError(err) {
-			return nil
-		}
 		return errors.Wrapf(err, "while updating formation assignment with ID: %q", id)
 	}
 
