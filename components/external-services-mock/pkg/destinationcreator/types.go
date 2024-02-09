@@ -8,6 +8,7 @@ const (
 	SAMLAssertionDestinationType = "SAML assertion"
 	ClientCertDestinationType    = "client certificate authentication"
 	OAuth2ClientCredentialsType  = "oauth2 client credentials"
+	OAuth2MTLSType               = "oauth2 mTLS"
 )
 
 type Destination interface {
@@ -71,6 +72,19 @@ func (c *OAuth2ClientCredentialsDestination) GetType() string {
 	return OAuth2ClientCredentialsType
 }
 
+// OAuth2ClientCredentialsDestination is a structure representing a oauth2 client credentials destination entity and its data from the remote destination service
+type OAuth2MTLSDestination struct {
+	NoAuthenticationDestination
+	TokenServiceURL     string `json:"tokenServiceURL"`
+	TokenServiceURLType string `json:"tokenServiceURLType"`
+	ClientID            string `json:"clientId"`
+	KeyStoreLocation    string `json:"keyStoreLocation"`
+}
+
+func (c *OAuth2MTLSDestination) GetType() string {
+	return OAuth2MTLSType
+}
+
 // DestinationSvcCertificateResponse contains the response data from destination service certificate request
 type DestinationSvcCertificateResponse struct {
 	Name    string `json:"Name"`
@@ -128,4 +142,12 @@ type DestinationSvcOAuth2ClientCredsDestResponse struct {
 	Owner                    OwnerDetails                       `json:"owner"`
 	DestinationConfiguration OAuth2ClientCredentialsDestination `json:"destinationConfiguration"`
 	AuthTokens               []AuthTokensDetails                `json:"authTokens"`
+}
+
+// DestinationSvcOAuth2ClientCredsDestResponse contains the response data from destination service 'find API' request for destination of type 'OAuth2ClientCredentials'
+type DestinationSvcOAuth2MTLSDestResponse struct {
+	Owner                    OwnerDetails          `json:"owner"`
+	DestinationConfiguration OAuth2MTLSDestination `json:"destinationConfiguration"`
+	AuthTokens               []AuthTokensDetails   `json:"authTokens"`
+	CertificateDetails       []CertificateDetails  `json:"certificates"`
 }

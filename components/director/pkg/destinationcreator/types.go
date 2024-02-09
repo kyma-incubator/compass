@@ -41,6 +41,8 @@ const (
 	SAMLAssertionDestPath = "credentials.inboundCommunication.samlAssertion"
 	// ClientCertAuthDestPath represents the client certificate authentication destination type in the assignment config
 	ClientCertAuthDestPath = "credentials.inboundCommunication.clientCertificateAuthentication"
+	// Oauth2mTLSAuthDestPath represents the client certificate authentication destination type in the assignment config
+	Oauth2mTLSAuthDestPath = "credentials.inboundCommunication.oauth2MTLSAuthentication"
 
 	// DedicatedTokenServiceURLType represents the 'Dedicated' token service URL type of OAuth2ClientCredentials destination
 	DedicatedTokenServiceURLType TokenServiceURLType = "Dedicated"

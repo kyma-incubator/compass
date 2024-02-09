@@ -97,6 +97,9 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 		destinationRequestBody = &ClientCertificateAuthDestRequestBody{}
 	case destinationcreatorpkg.AuthTypeOAuth2ClientCredentials:
 		destinationRequestBody = &OAuth2ClientCredsDestRequestBody{}
+	case destinationcreatorpkg.AuthTypeOAuth2MTLS:
+		destinationRequestBody = &OAuth2MTLSDestRequestBody{}
+		
 	default:
 		err := errors.Errorf("The provided destination authentication type: %s is invalid", authTypeResult.String())
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusInternalServerError)
@@ -380,6 +383,24 @@ func (h *Handler) buildFindAPIResponse(dest destinationcreator.Destination, r *h
 			return "", errors.New("error while type asserting destination to OAuth2ClientCredentials one")
 		}
 		findAPIResponse = fmt.Sprintf(FindAPIOAuth2ClientCredsDestResponseTemplate, subaccountID, instanceID, oauth2ClientCredsDest.Name, oauth2ClientCredsDest.Type, oauth2ClientCredsDest.URL, oauth2ClientCredsDest.Authentication, oauth2ClientCredsDest.ProxyType, oauth2ClientCredsDest.ClientID, oauth2ClientCredsDest.ClientSecret, oauth2ClientCredsDest.TokenServiceURL)
+	case destinationcreator.OAuth2MTLSType:
+		oauth2MTLSDest, ok := dest.(*destinationcreator.OAuth2MTLSDestination)
+		if !ok {
+			return "", errors.New("error while type asserting destination to OAuth2MTLS one")
+		}
+		findAPIResponse = fmt.Sprintf(FindAPIOAuth2MTLSDestResponseTemplate,
+			subaccountID,
+			instanceID,
+			oauth2MTLSDest.Name,
+			oauth2MTLSDest.Type,
+			oauth2MTLSDest.URL,
+			oauth2MTLSDest.Authentication,
+			oauth2MTLSDest.ProxyType,
+			oauth2MTLSDest.TokenServiceURLType,
+			oauth2MTLSDest.ClientID,
+			oauth2MTLSDest.TokenServiceURL,
+			oauth2MTLSDest.KeyStoreLocation,
+		)
 	}
 
 	return findAPIResponse, nil
