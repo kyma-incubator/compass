@@ -126,17 +126,17 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 		return errors.Wrapf(err, "while building destination URL")
 	}
 
-	stripInternalFields, err := destinationDetails.StripInternalFields()
+	destinationWithStrippedInternalFields, err := destinationDetails.StripInternalFields()
 	if err != nil {
 		return err
 	}
 
-	if err := stripInternalFields.Validate(); err != nil {
+	if err := destinationWithStrippedInternalFields.Validate(); err != nil {
 		return errors.Wrapf(err, "while validating no authentication destination request body")
 	}
 
 	log.C(ctx).Infof("Creating design time destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
-	_, statusCode, err := s.executeCreateRequest(ctx, strURL, stripInternalFields.Destination, destinationName)
+	_, statusCode, err := s.executeCreateRequest(ctx, strURL, destinationWithStrippedInternalFields.Destination, destinationName)
 	if err != nil {
 		return errors.Wrapf(err, "while creating design time destination with name: %q in the destination service", destinationName)
 	}

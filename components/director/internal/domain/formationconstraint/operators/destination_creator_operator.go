@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"runtime/debug"
 
+	"k8s.io/utils/strings/slices"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/tidwall/gjson"
@@ -337,11 +339,11 @@ func (d *DestinationRaw) Validate() error {
 				return errors.New("URL is required")
 			}
 
-			if !contains([]string{string(destinationcreatorpkg.TypeHTTP), string(destinationcreatorpkg.TypeRFC), string(destinationcreatorpkg.TypeLDAP), string(destinationcreatorpkg.TypeMAIL)}, gjson.Get(string(d.Destination), "type").String()) {
+			if !slices.Contains([]string{string(destinationcreatorpkg.TypeHTTP), string(destinationcreatorpkg.TypeRFC), string(destinationcreatorpkg.TypeLDAP), string(destinationcreatorpkg.TypeMAIL)}, gjson.Get(string(d.Destination), "type").String()) {
 				return errors.New("Unknown destination type")
 			}
 
-			if !contains([]string{string(destinationcreatorpkg.ProxyTypeInternet), string(destinationcreatorpkg.ProxyTypeOnPremise), string(destinationcreatorpkg.ProxyTypePrivateLink)}, gjson.Get(string(d.Destination), "proxyType").String()) {
+			if !slices.Contains([]string{string(destinationcreatorpkg.ProxyTypeInternet), string(destinationcreatorpkg.ProxyTypeOnPremise), string(destinationcreatorpkg.ProxyTypePrivateLink)}, gjson.Get(string(d.Destination), "proxyType").String()) {
 				return errors.New("Unknown proxy type")
 			}
 
