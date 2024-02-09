@@ -259,7 +259,7 @@ func (ns *notificationsService) updateLastNotificationSentTimestamp(ctx context.
 		log.C(ctx).Infof("Updating the last notification sent timestamp for formation with ID: %s", f.ID)
 		f.SetLastNotificationSentTimestamp(time.Now())
 		if updateErr := ns.formationRepo.Update(ctx, f); updateErr != nil {
-			if webhookNotificationReq.GetOperation() == model.DeleteFormation && apperrors.IsNotFoundError(updateErr) {
+			if webhookNotificationReq.GetOperation() == model.DeleteFormation && apperrors.IsUnauthorizedError(updateErr) { // the not found error is disguised behind the unauthorized error
 				return nil
 			}
 			return errors.Wrapf(updateErr, "while updating last notification sent timestamp for formation with ID: %s", f.ID)

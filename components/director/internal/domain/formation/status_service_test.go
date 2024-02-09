@@ -97,7 +97,7 @@ func TestUpdateWithConstraints(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Success when updating formation assignment and not found error is received",
+			Name: "Success when updating formation and not found error is received",
 			FormationRepoFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
 				repo.On("Update", ctx, &modelFormation).Return(notFoundError).Once()

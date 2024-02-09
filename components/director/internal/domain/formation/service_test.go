@@ -2019,7 +2019,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Error when processing formation notifications fails and formation assignment is missing",
+			Name: "Error when processing formation notifications fails and formation is missing",
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
 				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(formationNotificationAsyncDeleteRequests, nil).Once()
