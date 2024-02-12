@@ -97,6 +97,26 @@ func TestUpdateWithConstraints(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
+			Name: "Success when updating formation and unauthorized error is received",
+			FormationRepoFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("Update", ctx, &modelFormation).Return(unauthorizedError).Once()
+				return repo
+			},
+			NotificationsSvcFn: func() *automock.NotificationsService {
+				notificationsSvc := &automock.NotificationsService{}
+				notificationsSvc.On("PrepareDetailsForNotificationStatusReturned", ctx, &modelFormation, model.DeleteFormation).Return(preDetails, nil).Once()
+				return notificationsSvc
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreNotificationStatusReturned, preDetails, preDetails.Formation.FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			InputFormation:     &modelFormation,
+			FormationOperation: model.DeleteFormation,
+		},
+		{
 			Name: "Returns error when enforcing pre constraints fails",
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationsSvc := &automock.NotificationsService{}
