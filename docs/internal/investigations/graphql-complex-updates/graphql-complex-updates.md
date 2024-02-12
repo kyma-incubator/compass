@@ -1,4 +1,4 @@
-# GraphQL mutation for updating complex types
+# GraphQL Mutation for Updating Complex Types
 
 ## Overview
 
@@ -7,7 +7,7 @@ Term "complex GraphQL type" is used to describe a type with other object types o
 Updating such types is currently problematic because it requires fetching a lot of data to change single value. 
 Most of the presented approaches have a link to an example they were based on.
 
-## Investigated mutation designs
+## Investigated Mutation Designs
 
 ### 1. Simple Patch
 
@@ -18,7 +18,7 @@ Because we use the `nil` value to determine whether to change current value or n
 
 Example: [link](https://medium.com/workflowgen/graphql-mutations-partial-updates-implementation-bff586bda989)
 
-##### Handling nil values if we would need them (@kfurgol)
+##### Handling nil Values if We Would Need Them (@kfurgol)
 
 If such a case occurred, we came up with several ideas:
 First, we thought about providing a wrapper type which would look like that:
@@ -79,7 +79,7 @@ updateApplication(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547", patch: {
 }
 ```
 
-### 2. Simple Patch (single input)
+### 2. Simple Patch (Single Input)
 
 #### Description
 
@@ -127,7 +127,7 @@ updateApplication(in: {
 }
 ```
 
-**Remove all EventAPIs for Application**
+**Remove All EventAPIs For Application**
 ```graphql
 updateApplication(in: {
     id: "52cc65fe-c94f-4d94-b59a-01c1ba865547"
@@ -203,7 +203,7 @@ type Mutation {
 
 #### Usage
 
-**Set description to empty value**
+**Set Description To Empty Value**
 ```graphql
 updateApplication(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547", actions: {
     setDescription: {
@@ -215,7 +215,7 @@ updateApplication(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547", actions: {
 }
 ```
 
-**Remove all EventAPIs for Application**
+**Remove All EventAPIs For Application**
 ```graphql
 updateApplication(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547", actions: {
     setEventAPIs: {
@@ -227,7 +227,7 @@ updateApplication(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547", actions: {
 }
 ```
 
-### 4. PUT-like Approach with additional mutations
+### 4. PUT-like Approach with Additional Mutations
 
 #### Schema
 
@@ -261,7 +261,7 @@ updateApplication(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547", in: {
 }
 ```
 
-**Remove all EventAPIs for Application**
+**Remove All EventAPIs For Application**
 ```graphql
 deleteAllApplicationEventAPIs(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547") {
     id
@@ -269,7 +269,7 @@ deleteAllApplicationEventAPIs(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547") {
 }
 ```
 
-## Implementation details 
+## Implementation Details 
 
 Each resource that can be updated (Runtime, Application, API, Document, etc.) should have additional field `version` (name TBD) that would be updated each time its update mutation is executed, and the client would need that version each time it presents user some data that can be updated.
 

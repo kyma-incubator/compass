@@ -1,4 +1,4 @@
-# Manage your Applications using Kyma Console and Compass UIs
+# Manage Your Applications Using Kyma Console and Compass UIs
 
 This tutorial presents the basic flow in which you manually register an external Application's API into Compass and expose it into the Kyma Runtime. In the Kyma Runtime, you then create a Function that calls the Application's API. While going through this tutorial, you will navigate between two UI views:
 
@@ -10,15 +10,15 @@ This tutorial presents the basic flow in which you manually register an external
 For simplicity reasons, use the available Order Service as the sample external Application for this tutorial. Prepare the following:
 
 - [`order-service`](./assets/order-service.yaml) file that contains the service definition, deployment, and its API
-- [API specification](./assets/order-service-api-spec.yaml) of `order-service`
+- [API Specification](./assets/order-service-api-spec.yaml) of `order-service`
 - [Function](./assets/function.yaml) that calls `order-service` for orders
-- [Compass cluster with all Kyma components installed](./04-01-installation.md#single-cluster-with-compass-and-runtime-agent). This tutorial won't work on local k3d installation.
+- [Compass Cluster with All Kyma Components Installed](./04-01-installation.md#single-cluster-with-compass-and-runtime-agent). This tutorial won't work on local k3d installation.
 
 >**NOTE:** Read [this](./04-01-installation.md) document to learn how to install Kyma with the Compass module.
 
 ## Steps
 
-### Deploy the external Application
+### Deploy the External Application
 
 1. Log in to the Kyma Console and create a new Namespace by selecting the **Add new namespace** button.
 
@@ -26,7 +26,7 @@ For simplicity reasons, use the available Order Service as the sample external A
 
 3. In the **API Rules** tab, copy the URL to your Application. You will use it in the Compass UI in the next steps.
 
-### Register your Application in the Compass UI
+### Register Your Application in the Compass UI
 
 1. Open a separate tab in your browser and go to `https://compass.{CLUSTER_DOMAIN}`. It will navigate you to the Compass UI. From the drop-down list on the top navigation panel, select the tenant you want to work on. For the purpose of this tutorial, select the `default` tenant. In the **Runtimes** tab, there is already the default `kymaruntime` that you can work on to complete this tutorial. Make sure that your Runtime is assigned to the `DEFAULT` scenario.
 
@@ -40,10 +40,10 @@ For simplicity reasons, use the available Order Service as the sample external A
 
     c. Navigate to the `test-bundle` Bundle and click the **+** button in the **API Definitions** section. Fill in all the required fields. In the **Target URL** field, paste the URL to your Application.
 
-    d. Click the **Add specification** button and upload the `order-service` [API spec file](./assets/order-service-api-spec.yaml). Click **Create**.
+    d. Click the **Add specification** button and upload the `order-service` [API Spec File](./assets/order-service-api-spec.yaml). Click **Create**.
 
 
-### Use your Application in the Kyma Console UI
+### Use Your Application in the Kyma Console UI
 
 1. Go back to the Kyma Console UI. You can see that the `test-app` Application is registered in the **Applications/Systems** view. Select `test-app` and bind it to your Namespace by selecting the **Create Binding** button.
 

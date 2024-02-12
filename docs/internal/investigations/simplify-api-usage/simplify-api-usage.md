@@ -1,4 +1,4 @@
-# Simplify usage of Compass API
+# Simplify Usage of Compass API
 
 ## Terminology:
 `consumer` - system, which calls Compass API (Application, Runtime, Integration System - no User included!)
@@ -26,9 +26,9 @@ There is another case when Integration System creates an application, it also ha
 ## Requirements
 * `consumer id (e.g. applicationID)` not required
 
-## Possible solutions
+## Possible Solutions
 
-### 1. `consumer ID` should be optional for operations related to itself
+### 1. `consumer ID` Should be Optional for Operations Related to Itself
  
 The `applicationID`/`runtimeID` fields could be changed to be optional in mutations in the schema
  
@@ -72,7 +72,7 @@ There are 8 test cases in just one mutation, having in mind we would change arou
 * API becomes less readable due to optional `ID` parameter (the user could be confused what happens if we don't provide one)
 * internal API complexity increases - additional dependancy for resolvers 
 
-### 2. Separated mutations where `consumer ID` input parameter is not needed
+### 2. Separated Mutations Where `consumer ID` Input Parameter isn't Needed
 There could be another mutation which doesn't accept `applicationID`/`runtimeID` as a parameter, so we would have doubled mutations. Take this for example:
 
 `addAPI(applicationID: ID, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")`
@@ -93,7 +93,7 @@ and
 * API becomes a lot bigger - around 20 new mutations
 * the same situation with tests as described in first solution
 
-### 3. The Viewer pattern
+### 3. The Viewer Pattern
 The alternative to solutions presented above is the Viewer pattern.
 It is a GraphQL query that looks like:
 ```graphql

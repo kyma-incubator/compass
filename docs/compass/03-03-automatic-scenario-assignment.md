@@ -157,7 +157,7 @@ Runtime is unassigned from the `WAREHOUSE` formation.
 }
 ```
 
-### Create ASA when Runtime exists
+### Create ASA When Runtime Exists
 
 You can also assign a Runtime to a given formation using ASA when the Runtime already exists. If there is a Runtime that matches a new assignment, that is, it is in the wanted `subaccount` tenant, then, it is automatically assigned to the formation.
 All of the following requests are done in the context of a tenant of type `account`, which is a parent of the given `subaccount` tenant.

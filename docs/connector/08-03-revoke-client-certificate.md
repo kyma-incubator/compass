@@ -1,4 +1,4 @@
-# Revoke a client certificate
+# Revoke a Client Certificate
 
 After you have established a secure connection with Compass and generated a client certificate, you may want to revoke this certificate at some point. To revoke a client certificate, follow the steps in this tutorial.
 
@@ -6,11 +6,11 @@ After you have established a secure connection with Compass and generated a clie
 
 ## Prerequisites
 
-- [OpenSSL toolkit](https://www.openssl.org/docs/man1.0.2/apps/openssl.html) to create a Certificate Signing Request (CSR), keys, and certificates which meet high security standards
+- [OpenSSL Toolkit](https://www.openssl.org/docs/man1.0.2/apps/openssl.html) to create a Certificate Signing Request (CSR), keys, and certificates which meet high security standards
 - Compass (version 1.8 or higher)
 - Registered Application
 - Runtime connected to Compass
-- [Established secure connection with Compass](08-01-establish-secure-connection-with-compass.md)
+- [Established Secure Connection with Compass](08-01-establish-secure-connection-with-compass.md)
 
 > **NOTE**: To see how to maintain a secure connection with Compass and renew a client certificate, read [this](08-02-maintain-secure-connection-with-compass.md) document.
 

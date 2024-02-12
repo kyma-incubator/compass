@@ -41,7 +41,7 @@ LabelDefinition key has to be unique for a given tenant. You can provide only on
 setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label!
 ```
 
-### Define and set LabelDefinitions
+### Define and Set LabelDefinitions
 
 See the example of how you can create and set a LabelDefinition:
 
@@ -179,7 +179,7 @@ query {
 }
 ```
 
-## **Scenarios** label
+## **Scenarios** Label
 
 Every Application is labeled with the special **Scenarios** label which automatically has the `default` value assigned. As every Application has to be assigned to at least one scenario, if no scenarios are explicitly specified, the `default` scenario is used.
 

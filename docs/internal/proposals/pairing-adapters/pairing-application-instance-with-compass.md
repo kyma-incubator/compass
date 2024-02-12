@@ -4,7 +4,7 @@
 
 Application is one of the three basic objects in Compass. It is an abstraction over the actual Application instance. To fully benefit from the Compass features, the Application instance must be paired with its abstraction. For that reason, the Compass offers the API.
 
-## API specification
+## API Specification
 
 The `AuthTypeInput` GraphQL input parameter describes the supported authentication type, for example OAuth2 or ClientCertificate.
 
@@ -46,8 +46,8 @@ type Mutation {
 }
 ```
 
-## Establishing a trusted relation for the Application
+## Establishing a Trusted Relation for the Application
 
 Compass offers two ways of establishing a trusted relation:
-1. [Pairing without use of Integration System](./pairing-without-using-integration-system.md)
-1. [Pairing with use of Integration System](./pairing-with-use-integration-system.md)
+1. [Pairing without Use of Integration System](./pairing-without-using-integration-system.md)
+1. [Pairing with Use of Integration System](./pairing-with-use-integration-system.md)

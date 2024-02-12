@@ -1,14 +1,14 @@
-# Maintain a secure connection with Compass
+# Maintain a Secure Connection with Compass
 
 After you have established a secure connection with Compass, you can fetch the configuration details and renew the client certificate before it expires. To renew the client certificate, follow the steps in this tutorial.
 
 ## Prerequisites
 
-- [OpenSSL toolkit](https://www.openssl.org/docs/man1.0.2/apps/openssl.html) to create a Certificate Signing Request (CSR), keys, and certificates which meet high security standards
+- [OpenSSL Toolkit](https://www.openssl.org/docs/man1.0.2/apps/openssl.html) to create a Certificate Signing Request (CSR), keys, and certificates which meet high security standards
 - Compass (version 1.8 or higher)
 - Registered Application
 - Runtime connected to Compass
-- [Established secure connection with Compass](08-01-establish-secure-connection-with-compass.md)
+- [Established Secure Connection with Compass](08-01-establish-secure-connection-with-compass.md)
 
 ## Steps
 
