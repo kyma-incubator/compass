@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher/apiclient"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -59,18 +60,20 @@ type BusinessTenantMappingConverter interface {
 type Resolver struct {
 	transact persistence.Transactioner
 
-	srv     BusinessTenantMappingService
-	conv    BusinessTenantMappingConverter
-	fetcher Fetcher
+	srv                 BusinessTenantMappingService
+	conv                BusinessTenantMappingConverter
+	fetcher             Fetcher
+	systemFetcherClient *apiclient.SystemFetcherClient
 }
 
 // NewResolver returns the GraphQL resolver for tenants.
-func NewResolver(transact persistence.Transactioner, srv BusinessTenantMappingService, conv BusinessTenantMappingConverter, fetcher Fetcher) *Resolver {
+func NewResolver(transact persistence.Transactioner, srv BusinessTenantMappingService, conv BusinessTenantMappingConverter, fetcher Fetcher, systemFetcherSyncClientConfig apiclient.SystemFetcherSyncClientConfig) *Resolver {
 	return &Resolver{
-		transact: transact,
-		srv:      srv,
-		conv:     conv,
-		fetcher:  fetcher,
+		transact:            transact,
+		srv:                 srv,
+		conv:                conv,
+		fetcher:             fetcher,
+		systemFetcherClient: apiclient.NewSystemFetcherClient(systemFetcherSyncClientConfig),
 	}
 }
 
@@ -275,6 +278,8 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 		return nil, err
 	}
 
+	r.syncSystemsForTenants(ctx, tenantIDs)
+
 	return tenantIDs, nil
 }
 
@@ -298,6 +303,8 @@ func (r *Resolver) WriteSingle(ctx context.Context, inputTenant graphql.Business
 	if err = tx.Commit(); err != nil {
 		return "", err
 	}
+
+	r.syncSystemsForTenant(ctx, id)
 
 	return id, nil
 }
@@ -393,8 +400,22 @@ func (r *Resolver) fetchTenant(ctx context.Context, tx persistence.PersistenceTx
 	return tr, nil
 }
 
+func (r *Resolver) syncSystemsForTenant(ctx context.Context, tenantID string) {
+	log.C(ctx).Infof("Calling sync systems API with TenantID %q", tenantID)
+	if err := r.systemFetcherClient.Sync(ctx, tenantID); err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while calling sync systems API with TenantID %q", tenantID)
+	}
+}
+
+func (r *Resolver) syncSystemsForTenants(ctx context.Context, tenantIDs []string) {
+	for _, tenantID := range tenantIDs {
+		r.syncSystemsForTenant(ctx, tenantID)
+	}
+}
+
 // AddTenantAccess adds a tenant access record for tenantID about resourceID
 func (r *Resolver) AddTenantAccess(ctx context.Context, in graphql.TenantAccessInput) (*graphql.TenantAccess, error) {
+	log.C(ctx).Infof("Adding access for tenant %s to resource with ID %s of type %s and access level %t", in.TenantID, in.ResourceID, in.ResourceType, in.Owner)
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -433,12 +454,13 @@ func (r *Resolver) AddTenantAccess(ctx context.Context, in graphql.TenantAccessI
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
-
+	log.C(ctx).Infof("Successfully added access for tenant %s to resource with ID %s of type %s and access level %t", in.TenantID, in.ResourceID, in.ResourceType, in.Owner)
 	return output, nil
 }
 
 // RemoveTenantAccess removes the tenant access record for tenantID about resourceID
 func (r *Resolver) RemoveTenantAccess(ctx context.Context, tenantID, resourceID string, resourceType graphql.TenantAccessObjectType) (*graphql.TenantAccess, error) {
+	log.C(ctx).Infof("Removing access for tenant %s to resource with ID %s of type %s", tenantID, resourceID, resourceType)
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -479,6 +501,8 @@ func (r *Resolver) RemoveTenantAccess(ctx context.Context, tenantID, resourceID 
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
+
+	log.C(ctx).Infof("Successfully removed access for tenant %s to resource with ID %s of type %s", tenantID, resourceID, resourceType)
 
 	return output, nil
 }

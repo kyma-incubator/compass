@@ -830,6 +830,10 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 
 // mergeORDLabels merges labels2 into labels1
 func mergeORDLabels(labels1, labels2 json.RawMessage) (json.RawMessage, error) {
+	if len(labels1) == 0 {
+		return labels2, nil
+	}
+
 	if len(labels2) == 0 {
 		return labels1, nil
 	}

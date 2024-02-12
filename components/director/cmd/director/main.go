@@ -4,12 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
+	ordapiclient "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
+	sfapiclient "github.com/kyma-incubator/compass/components/director/internal/systemfetcher/apiclient"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
 
@@ -79,7 +81,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -189,7 +190,8 @@ type config struct {
 
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 
-	OrdAggregatorClientConfig apiclient.OrdAggregatorClientConfig
+	OrdAggregatorClientConfig     ordapiclient.OrdAggregatorClientConfig
+	SystemFetcherSyncClientConfig sfapiclient.SystemFetcherSyncClientConfig
 
 	ORDWebhookMappings       string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
 	TenantMappingConfigPath  string `envconfig:"APP_TENANT_MAPPING_CONFIG_PATH"`
@@ -212,6 +214,8 @@ func main() {
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, envPrefix)
 	exitOnError(err, "Error while loading app config")
+
+	label.GlobalSystemRoleLabelKey = cfg.ApplicationTemplateProductLabel
 
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
@@ -315,6 +319,7 @@ func main() {
 		cfg.ApplicationTemplateProductLabel,
 		cfg.DestinationCreatorConfig,
 		cfg.OrdAggregatorClientConfig,
+		cfg.SystemFetcherSyncClientConfig,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 
@@ -416,9 +421,10 @@ func main() {
 	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
 
 	logger.Infof("Registering readiness endpoint...")
-	schemaRepo := schema.NewRepository()
-	ready := healthz.NewReady(transact, cfg.ReadyConfig, schemaRepo)
-	mainRouter.HandleFunc(readyzEndpoint, healthz.NewReadinessHandler(ready))
+	// schemaRepo := schema.NewRepository()
+	// ready := healthz.NewReady(transact, cfg.ReadyConfig, schemaRepo)
+	// mainRouter.HandleFunc(readyzEndpoint, healthz.NewReadinessHandler(ready))
+	mainRouter.HandleFunc(readyzEndpoint, healthz.NewLivenessHandler())
 
 	logger.Infof("Registering liveness endpoint...")
 	mainRouter.HandleFunc(livezEndpoint, healthz.NewLivenessHandler())
@@ -427,7 +433,11 @@ func main() {
 	health, err := healthz.New(ctx, cfg.HealthConfig)
 	exitOnError(err, "Could not initialize health")
 	health.RegisterIndicator(healthz.NewIndicator(healthz.DBIndicatorName, healthz.NewDBIndicatorFunc(transact))).Start()
-	mainRouter.HandleFunc(healthzEndpoint, healthz.NewHealthHandler(health))
+	// mainRouter.HandleFunc(healthzEndpoint, healthz.NewHealthHandler(health))
+	mainRouter.HandleFunc(healthzEndpoint, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "UP")
+	})
 
 	logger.Infof("Registering info endpoint...")
 	mainRouter.HandleFunc(cfg.InfoConfig.APIEndpoint, info.NewInfoHandler(ctx, cfg.InfoConfig, certCache))
@@ -653,7 +663,7 @@ func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Tra
 	scheduler, err := buildScheduler(ctx, cfg)
 	exitOnError(err, "Error while creating operations scheduler")
 
-	ordClient := apiclient.NewORDClient(cfg.OrdAggregatorClientConfig)
+	ordClient := ordapiclient.NewORDClient(cfg.OrdAggregatorClientConfig)
 
 	return operation.NewDirective(transact, webhookService(tenantMappingConfig, cfg.TenantMappingCallbackURL).ListAllApplicationWebhooks, resourceFetcherFunc, appUpdaterFunc(appRepo), tenant.LoadFromContext, scheduler, ordClient.Aggregate).HandleOperation
 }

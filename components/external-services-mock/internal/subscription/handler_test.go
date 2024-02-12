@@ -95,6 +95,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 
 	providerCfg := ProviderConfig{
 		TenantIDProperty:                                          "tenantProperty",
+		CostObjectIDProperty:                                      "costObjectIdProperty",
 		SubaccountTenantIDProperty:                                "subaccountProperty",
 		SubdomainProperty:                                         "subdomainProperty",
 		LicenseTypeProperty:                                       "LicenseTypeProperty",

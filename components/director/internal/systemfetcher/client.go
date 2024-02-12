@@ -111,6 +111,14 @@ func (c *Client) fetchSystemsForTenant(ctx context.Context, url string, tenant *
 		return nil, errors.Wrap(err, "failed to unmarshal systems response")
 	}
 
+	for idx, system := range systems {
+		templatedSystem, err := system.EnhanceWithTemplateID()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to map systems with Application Template ID")
+		}
+		systems[idx] = templatedSystem
+	}
+
 	return systems, nil
 }
 
@@ -163,8 +171,12 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 func (c *Client) buildFilter(systemSynchronizationTimestamps map[string]SystemSynchronizationTimestamp) map[string]string {
 	var filterBuilder FilterBuilder
 
-	for _, at := range ApplicationTemplates {
-		appTemplateLblFilter, ok := at.Labels[ApplicationTemplateLabelFilter]
+	usedSystemRoles := make(map[string]bool)
+
+	for _, key := range SortedTemplateMappingKeys {
+		templateMapping := ApplicationTemplates[key]
+
+		appTemplateLblFilter, ok := templateMapping.Labels[ApplicationTemplateLabelFilter]
 		if !ok {
 			continue
 		}
@@ -179,6 +191,12 @@ func (c *Client) buildFilter(systemSynchronizationTimestamps map[string]SystemSy
 			if !ok {
 				continue
 			}
+
+			if _, exists := usedSystemRoles[appTemplateLblStr]; exists {
+				continue
+			}
+
+			usedSystemRoles[appTemplateLblStr] = true
 
 			expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", appTemplateLblStr)
 

@@ -79,11 +79,6 @@ type directorClient interface {
 	DeleteSystemAsync(ctx context.Context, id, tenant string) error
 }
 
-//go:generate mockery --name=templateRenderer --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
-type templateRenderer interface {
-	ApplicationRegisterInputFromTemplate(ctx context.Context, sc System) (*model.ApplicationRegisterInput, error)
-}
-
 // Config holds the configuration available for the SystemFetcher.
 type Config struct {
 	DirectorGraphqlURL        string        `envconfig:"APP_DIRECTOR_GRAPHQL_URL"`
@@ -103,7 +98,7 @@ type SystemFetcher struct {
 	systemsService     systemsService
 	systemsSyncService SystemsSyncService
 	tbtService         tenantBusinessTypeService
-	templateRenderer   templateRenderer
+	templateRenderer   TemplateRenderer
 	systemsAPIClient   systemsAPIClient
 	directorClient     directorClient
 
@@ -111,7 +106,7 @@ type SystemFetcher struct {
 }
 
 // NewSystemFetcher returns a new SystemFetcher.
-func NewSystemFetcher(tx persistence.Transactioner, ts tenantService, ss systemsService, sSync SystemsSyncService, tbts tenantBusinessTypeService, tr templateRenderer, sac systemsAPIClient, directorClient directorClient, config Config) *SystemFetcher {
+func NewSystemFetcher(tx persistence.Transactioner, ts tenantService, ss systemsService, sSync SystemsSyncService, tbts tenantBusinessTypeService, tr TemplateRenderer, sac systemsAPIClient, directorClient directorClient, config Config) *SystemFetcher {
 	return &SystemFetcher{
 		transaction:        tx,
 		tenantService:      ts,
@@ -132,7 +127,7 @@ type tenantSystems struct {
 }
 
 // SetTemplateRenderer replaces the current template renderer
-func (s *SystemFetcher) SetTemplateRenderer(templateRenderer templateRenderer) {
+func (s *SystemFetcher) SetTemplateRenderer(templateRenderer TemplateRenderer) {
 	s.templateRenderer = templateRenderer
 }
 

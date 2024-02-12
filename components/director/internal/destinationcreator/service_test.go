@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/tidwall/sjson"
+
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 
 	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator"
@@ -57,7 +59,9 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 	designTimeDestDetails := fixDesignTimeDestinationDetails()
 
 	designTimeDestDetailsWithoutName := fixDesignTimeDestinationDetails()
-	designTimeDestDetailsWithoutName.Name = ""
+	designTimeDestDetailsWithoutNameString, err := sjson.Set(string(designTimeDestDetailsWithoutName.Destination), "name", "")
+	designTimeDestDetailsWithoutName.Destination = json.RawMessage(designTimeDestDetailsWithoutNameString)
+	require.NoError(t, err)
 
 	destConfigWithInvalidDestBaseURL := fixDestinationConfig()
 	destConfigWithInvalidDestBaseURL.DestinationAPIConfig.BaseURL = ":wrong"
@@ -65,7 +69,7 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 	testCases := []struct {
 		name                string
 		config              *destinationcreator.Config
-		destinationDetails  operators.Destination
+		destinationDetails  operators.DestinationRaw
 		formationAssignment *model.FormationAssignment
 		httpClient          func() *automock.HttpClient
 		labelRepoFn         func() *automock.LabelRepository
@@ -232,7 +236,7 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
 				return tenantRepo
 			},
-			expectedErrMessage: fmt.Sprintf("Failed to create entity with name: %q, status: %d, body: %s", designTimeDestDetails.Name, http.StatusOK, "test-body"),
+			expectedErrMessage: fmt.Sprintf("Failed to create entity with name: %q, status: %d, body: %s", designTimeDestDetails.GetName(), http.StatusOK, "test-body"),
 		},
 		{
 			name:                "Success while executing remote design time destination request and the status code is conflict",

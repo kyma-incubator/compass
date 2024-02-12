@@ -158,6 +158,7 @@ global:
           discriminatorValue: ""
           entityTypeField: "type"
           idField: "guid"
+          costObjectIDField: "costObject"
           nameField: "displayName"
           tenantEventsField: "events"
           totalPagesField: "totalPages"

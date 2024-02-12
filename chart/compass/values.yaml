@@ -147,6 +147,9 @@ global:
     - name: TestIsolatedAccount
       id: ded8eca9-12b9-4076-9458-9deabff87bd8
       type: account
+    - name: TestSystemFetcherOnNewGA
+      id: 44dfe415-4847-4feb-8580-ecb07958347d
+      type: account
   tenantsLabels:
     - tenantID: 818005d6-9264-4abb-af4c-29c754630a7d # TestTenantSubstitutionSubaccount
       key: customerId
@@ -159,23 +162,23 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3587"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3587"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3587"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3596"
+      version: "PR-3643"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3587"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
@@ -183,23 +186,23 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3610"
       name: compass-kyma-adapter
     instance_creator:
-      dir: prod/incubator/
-      version: "v20240112-68df17f1"
+      dir: dev/incubator/
+      version: "PR-3608"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3577"
+      version: "PR-3609"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3587"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3587"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
@@ -207,7 +210,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3589"
+      version: "PR-3644"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
@@ -220,7 +223,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3642"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -228,7 +231,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3596"
+      version: "PR-3642"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -598,6 +601,9 @@ global:
   instanceCreator:
     port: 8080
     apiRootPath: "/instance-creator"
+    apiTenantMappingsEndpoint: "/v1/tenantMappings/{tenant-id}"
+    subaccountQueryParam: "subaccount_id"
+    labelsQueryParam: "labelQuery"
     tenantInfo:
       requestTimeout: 30s
     authentication:
@@ -714,6 +720,10 @@ global:
         user: ""
         password: ""
       iasAdapter:
+        name: ""
+        user: ""
+        password: ""
+      instanceCreator:
         name: ""
         user: ""
         password: ""
@@ -909,6 +919,7 @@ global:
     tenantProvider:
       tenantIdProperty: "tenantId"
       customerIdProperty: "customerId"
+      costObjectIdProperty: "costObjectId"
       subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
       licenseTypeProperty: "licenseType"
@@ -1093,9 +1104,12 @@ global:
     name: "system-fetcher"
     port: 3000
     prefix: /system-fetcher
+    syncEndpoint: /sync
     job:
       schedulePeriod: 60m
       isSchedulable: true
+    client:
+      timeout: "30s"
     lease:
       lockname: systemfetcherlease
     authentication:
@@ -1194,6 +1208,7 @@ global:
           idField: "id"
           nameField: "name"
           customerIdField: "customerId"
+          costObjectIDField: "costObject"
           subdomainField: "subdomain"
           licenseTypeField: "licenseType"
           discriminatorField: ""
@@ -1221,6 +1236,7 @@ global:
           idField: "guid"
           nameField: "displayName"
           customerIdField: "customerId"
+          costObjectIDField: "costObject"
           subdomainField: "subdomain"
           licenseTypeField: "licenseType"
           discriminatorField: ""
@@ -1352,6 +1368,7 @@ global:
         providerSubaccountID: "47b4575a-f102-414a-8398-2d973ad65f3a" # TestProviderSubaccount from our testing tenants
         consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
         consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
+        costObjectID: "de235c0e-9cb0-4f39-9fd5-d558ec6850bb" # randomly chosen
         consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
         providerSubaccountIDRegion2: "731b7bc4-5472-41d2-a447-e4c0f45de739" # TestProviderSubaccountRegion2 from our testing tenants
         consumerAccountIDTenantHierarchy: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants; more info in 'TestFormationNotificationsTenantHierarchy'
@@ -1488,6 +1505,7 @@ global:
         - "tenant_access:write"
         - "formation:read"
         - "formation:write"
+        - "formation:global_write"
         - "formation:global_read"
       instance_creator:
         - "application_template:read"
@@ -1597,6 +1615,7 @@ global:
         - "formation.state:write"
         - "tenant_access:write"
         - "bundle_instance_auth:write"
+        - "formation:global_write"
         - "formation:global_read"
       default:
         - "runtime:read"

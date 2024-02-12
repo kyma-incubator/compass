@@ -40,7 +40,7 @@ type UIDService interface {
 
 //go:generate mockery --exported --name=destinationCreatorService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationCreatorService interface {
-	CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) error
+	CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.DestinationRaw, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) error
 	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
 	CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
 	CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
@@ -87,23 +87,26 @@ func NewService(
 	}
 }
 
-// CreateDesignTimeDestinations is responsible to create so-called design time(destinationcreator.AuthTypeNoAuth) destination resource in the remote destination service as well as in our DB
-func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationsDetails []operators.Destination, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
+// CreateDesignTimeDestinations is responsible to create so-called design time destination resource in the remote destination service as well as in our DB
+func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationsDetails []operators.DestinationRaw, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
 	for _, destinationDetails := range destinationsDetails {
 		if err := s.createDesignTimeDestinations(ctx, destinationDetails, formationAssignment, skipSubaccountValidation); err != nil {
-			return errors.Wrapf(err, "while creating design time destination with name: %q", destinationDetails.Name)
+			return errors.Wrapf(err, "while creating design time destination with name: %q", destinationDetails.GetName())
 		}
 	}
 
 	return nil
 }
 
-func (s *Service) createDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
-	subaccountID, err := s.destinationCreatorSvc.DetermineDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment, skipSubaccountValidation)
+func (s *Service) createDesignTimeDestinations(ctx context.Context, destinationDetails operators.DestinationRaw, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
+	subaccountID, err := s.destinationCreatorSvc.DetermineDestinationSubaccount(ctx, destinationDetails.GetSubaccountID(), formationAssignment, skipSubaccountValidation)
 	if err != nil {
 		return err
 	}
-	destinationDetails.SubaccountID = subaccountID
+
+	if err = destinationDetails.SetSubaccountID(subaccountID); err != nil {
+		return err
+	}
 
 	t, err := s.tenantRepo.GetByExternalTenant(ctx, subaccountID)
 	if err != nil {
@@ -111,35 +114,29 @@ func (s *Service) createDesignTimeDestinations(ctx context.Context, destinationD
 	}
 
 	tenantID := t.ID
-	destinationFromDB, err := s.destinationRepo.GetDestinationByNameAndTenant(ctx, destinationDetails.Name, tenantID)
+	destinationFromDB, err := s.destinationRepo.GetDestinationByNameAndTenant(ctx, destinationDetails.GetName(), tenantID)
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			return err
 		}
-		log.C(ctx).Infof("Destination with name: %q and tenant ID: %q was not found in our DB, it will be created...", destinationDetails.Name, tenantID)
+		log.C(ctx).Infof("Destination with name: %q and tenant ID: %q was not found in our DB, it will be created...", destinationDetails.GetName(), tenantID)
 	}
 
 	if destinationFromDB != nil && destinationFromDB.FormationAssignmentID != nil && *destinationFromDB.FormationAssignmentID != formationAssignment.ID {
-		return errors.Errorf("Already have destination with name: %q and tenant ID: %q for assignment ID: %q. Could not have second destination with the same name and tenant ID but with different assignment ID: %q", destinationDetails.Name, tenantID, *destinationFromDB.FormationAssignmentID, formationAssignment.ID)
+		return errors.Errorf("Already have destination with name: %q and tenant ID: %q for assignment ID: %q. Could not have second destination with the same name and tenant ID but with different assignment ID: %q", destinationDetails.GetName(), tenantID, *destinationFromDB.FormationAssignmentID, formationAssignment.ID)
 	}
 
 	if err = s.destinationCreatorSvc.CreateDesignTimeDestinations(ctx, destinationDetails, formationAssignment, 0, skipSubaccountValidation); err != nil {
 		return err
 	}
 
-	destModel := &model.Destination{
-		ID:                    s.uidSvc.Generate(),
-		Name:                  destinationDetails.Name,
-		Type:                  destinationDetails.Type,
-		URL:                   destinationDetails.URL,
-		Authentication:        destinationDetails.Authentication,
-		SubaccountID:          t.ID,
-		InstanceID:            &destinationDetails.InstanceID,
-		FormationAssignmentID: &formationAssignment.ID,
+	destModel, err := destinationDetails.ToModelDestination(s.uidSvc.Generate(), t.ID, formationAssignment.ID)
+	if err != nil {
+		return err
 	}
 
 	if err = s.destinationRepo.UpsertWithEmbeddedTenant(ctx, destModel); err != nil {
-		return errors.Wrapf(err, "while upserting design time destination with name: %q and assignment ID: %q in the DB", destinationDetails.Name, formationAssignment.ID)
+		return errors.Wrapf(err, "while upserting design time destination with name: %q and assignment ID: %q in the DB", destinationDetails.GetName(), formationAssignment.ID)
 	}
 
 	return nil

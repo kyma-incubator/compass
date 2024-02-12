@@ -11,13 +11,16 @@ import (
 )
 
 const (
-	tenantParentsTable = "tenant_parents"
-	tenantIDColumn     = "tenant_id"
-	parentIDColumn     = "parent_id"
+	// TenantParentsTable the name of the table containing parency relations
+	TenantParentsTable = "tenant_parents"
+	// TenantIDColumn the column containing the tenant ID
+	TenantIDColumn = "tenant_id"
+	// ParentIDColumn the column containing the parent ID
+	ParentIDColumn = "parent_id"
 )
 
 var (
-	tenantParentsSelectedColumns = []string{tenantIDColumn, parentIDColumn}
+	tenantParentsSelectedColumns = []string{TenantIDColumn, ParentIDColumn}
 )
 
 // TenantParent defines tenant parent record
@@ -73,10 +76,10 @@ type TenantParentRepository interface {
 // NewRepository returns a new entity responsible for repo-layer tenant operations. All of its methods require persistence.PersistenceOp it the provided context.
 func NewRepository() *pgRepository {
 	return &pgRepository{
-		listerGlobal:   repo.NewListerGlobal(resource.TenantParent, tenantParentsTable, tenantParentsSelectedColumns),
-		creatorGlobal:  repo.NewCreatorGlobal(resource.TenantParent, tenantParentsTable, tenantParentsSelectedColumns),
-		upserterGlobal: repo.NewUpserterGlobal(resource.TenantParent, tenantParentsTable, tenantParentsSelectedColumns, tenantParentsSelectedColumns, []string{}),
-		deleterGlobal:  repo.NewDeleterGlobal(resource.TenantParent, tenantParentsTable),
+		listerGlobal:   repo.NewListerGlobal(resource.TenantParent, TenantParentsTable, tenantParentsSelectedColumns),
+		creatorGlobal:  repo.NewCreatorGlobal(resource.TenantParent, TenantParentsTable, tenantParentsSelectedColumns),
+		upserterGlobal: repo.NewUpserterGlobal(resource.TenantParent, TenantParentsTable, tenantParentsSelectedColumns, tenantParentsSelectedColumns, []string{}),
+		deleterGlobal:  repo.NewDeleterGlobal(resource.TenantParent, TenantParentsTable),
 	}
 }
 
@@ -84,11 +87,11 @@ func NewRepository() *pgRepository {
 func (r *pgRepository) ListParents(ctx context.Context, tenantID string) ([]string, error) {
 	tenantParents := TenantParentCollection{}
 	conditions := repo.Conditions{
-		repo.NewEqualCondition(tenantIDColumn, tenantID),
+		repo.NewEqualCondition(TenantIDColumn, tenantID),
 	}
 
 	if err := r.listerGlobal.ListGlobal(ctx, &tenantParents, conditions...); err != nil {
-		log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantParent, resource.List, "while listing tenant parent records from '%s' table", tenantParentsTable))
+		log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantParent, resource.List, "while listing tenant parent records from '%s' table", TenantParentsTable))
 		return nil, err
 	}
 
@@ -99,7 +102,7 @@ func (r *pgRepository) ListParents(ctx context.Context, tenantID string) ([]stri
 func (r *pgRepository) ListByParent(ctx context.Context, parentID string) ([]string, error) {
 	tenantParents := TenantParentCollection{}
 	conditions := repo.Conditions{
-		repo.NewEqualCondition(parentIDColumn, parentID),
+		repo.NewEqualCondition(ParentIDColumn, parentID),
 	}
 
 	if err := r.listerGlobal.ListGlobal(ctx, &tenantParents, conditions...); err != nil {
@@ -134,8 +137,8 @@ func (r *pgRepository) UpsertMultiple(ctx context.Context, tenantID string, pare
 // Delete deletes the tenant parent mapping for tenantID and parentID
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, parentID string) error {
 	if err := r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{
-		repo.NewEqualCondition(tenantIDColumn, tenantID),
-		repo.NewEqualCondition(parentIDColumn, parentID),
+		repo.NewEqualCondition(TenantIDColumn, tenantID),
+		repo.NewEqualCondition(ParentIDColumn, parentID),
 	}); err != nil {
 		log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantParent, resource.Create, "while deleting tenant parent mapping for tenant with id %s and parent %s", tenantID, parentID))
 		return err

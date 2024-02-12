@@ -51,7 +51,18 @@ var (
 	testTableColumns              = []string{"id", "external_name", "external_tenant", "type", "provider_name", "status"}
 	tenantAccessTestTableColumns  = []string{"tenant_id", "id", "owner", "source"}
 	testTenantParentsTableColumns = []string{"tenant_id", "parent_id"}
-	tenantAccessInput             = graphql.TenantAccessInput{
+	testRootParents               = []*model.BusinessTenantMapping{{ID: testParentID}, {ID: testParentID2}}
+	tenantGAModel                 = &model.BusinessTenantMapping{
+		ID:             testInternal,
+		ExternalTenant: testExternal,
+		Type:           tenant.Account,
+	}
+	tenantFolderModel = &model.BusinessTenantMapping{
+		ID:             testInternal,
+		ExternalTenant: testExternal,
+		Type:           tenant.Folder,
+	}
+	tenantAccessInput = graphql.TenantAccessInput{
 		TenantID:     testExternal,
 		ResourceType: graphql.TenantAccessObjectTypeApplication,
 		ResourceID:   testID,
@@ -345,21 +356,67 @@ func unusedTenantService() *automock.BusinessTenantMappingService {
 	return &automock.BusinessTenantMappingService{}
 }
 
+func unusedTenantMappingRepo() *automock.TenantMappingRepository {
+	return &automock.TenantMappingRepository{}
+}
+
 func unusedFetcherService() *automock.Fetcher {
 	return &automock.Fetcher{}
 }
 
 func fixDeleteTenantAccessesQuery() string {
-	return regexp.QuoteMeta(`WITH RECURSIVE parents AS
-                  (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST($1 AS uuid) AS child_id
-                   FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
-                   WHERE id = $2
-                   UNION ALL
-                   SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
-                   FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
-                                                    INNER JOIN parents p on p.parent_id = t2.id)
-			DELETE FROM `) + `(.+)` + regexp.QuoteMeta(` WHERE id IN ($3) AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)
-`)
+	return regexp.QuoteMeta(`WITH RECURSIVE
+    parents AS
+        (SELECT t1.id,
+                t1.type,
+                tp1.parent_id,
+                0                                                    AS depth,
+                CAST( $1 AS uuid) AS child_id
+         FROM business_tenant_mappings t1
+                  LEFT JOIN tenant_parents tp1 ON t1.id = tp1.tenant_id
+         WHERE id = $2
+         UNION ALL
+         SELECT t2.id, t2.type, tp2.parent_id, p.depth + 1, p.id AS child_id
+         FROM business_tenant_mappings t2
+                  LEFT JOIN tenant_parents tp2 ON t2.id = tp2.tenant_id
+                  INNER JOIN parents p ON p.parent_id = t2.id),
+    parent_access_records_count AS (SELECT pp.id    AS tenant_id,
+                                           act.id   AS obj_id,
+                                           pp.depth,
+                                           COUNT(1) AS access_records_count
+                                    FROM `) + `(.+)` + regexp.QuoteMeta(`act
+                                             JOIN parents pp ON act.tenant_id = pp.id
+                                    WHERE act.id IN ($3)
+                                    GROUP BY pp.id, pp.depth, act.id),
+    anchor AS (SELECT par.*
+               FROM parent_access_records_count par
+                        LEFT JOIN
+                    parent_access_records_count par2 ON par.obj_id = par2.obj_id
+                        AND par.depth > par2.depth AND par2.access_records_count > 1
+               WHERE par.access_records_count > 1
+                 AND par2.tenant_id IS NULL
+
+               UNION ALL
+
+               SELECT par.*
+               FROM parent_access_records_count par
+                        LEFT JOIN
+                    parent_access_records_count par2 ON par.obj_id = par2.obj_id
+                        AND par.depth > par2.depth AND par2.access_records_count > 1
+                        LEFT JOIN
+                    parent_access_records_count par3 ON par.obj_id = par3.obj_id
+                        AND par.depth < par3.depth
+               WHERE par.access_records_count = 1
+                 AND par2.tenant_id IS NULL
+                 AND par3.tenant_id IS NULL)
+DELETE
+FROM `) + `(.+)` + regexp.QuoteMeta(`act
+WHERE act.id IN ($4)
+  AND EXISTS (SELECT id
+              FROM parents
+              WHERE tenant_id = parents.id
+                AND source = parents.child_id
+                AND parents.depth <= ALL (SELECT a.depth FROM anchor a WHERE a.obj_id = act.id));`)
 }
 
 func fixInsertTenantAccessesQuery() string {
@@ -375,4 +432,12 @@ func fixInsertTenantAccessesQuery() string {
                                                                                                                 OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object'))
 					)
 			ON CONFLICT ( tenant_id, id, source ) DO NOTHING`)
+}
+
+func fixDeleteTenantAccessesFromDirective() string {
+	return regexp.QuoteMeta(`
+DELETE FROM  `) + `(.+)` + regexp.QuoteMeta(` a 
+WHERE id IN ($1) AND source IN ($2, $3) AND NOT EXISTS
+		(SELECT 1 FROM `) + `(.+)` + regexp.QuoteMeta(` ta WHERE ta.tenant_id = a.source AND ta.id = a.id);
+`)
 }
