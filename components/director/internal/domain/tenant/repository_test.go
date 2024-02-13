@@ -2577,7 +2577,7 @@ func TestPgRepository_Update(t *testing.T) {
 				return db, dbMock
 			},
 			Input:                newModelBusinessTenantMappingWithType(testID, testName, []string{testParent2External, testParent3External}, nil, tenantEntity.Account),
-			ExpectedErrorMessage: fmt.Sprintf("while adding tenant parent record for tenant with ID %s and parent teannt with ID %s", testID, testParentID2),
+			ExpectedErrorMessage: fmt.Sprintf("while adding tenant parent record for tenant with ID %s and parent tenant with ID %s", testID, testParentID2),
 		},
 		{
 			Name: "Fail while listing parent tenants by external ID",
