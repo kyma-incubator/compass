@@ -26,7 +26,7 @@ const (
 	CustomerIDLabelKey = "customerId"
 	// CostObjectIDLabelKey is the key for cost object tenant ID
 	CostObjectIDLabelKey = "costObjectId"
-	// CostObjectTypeLabelKey os the ley for cost object tenant type
+	// CostObjectTypeLabelKey is the key for cost object tenant type
 	CostObjectTypeLabelKey = "costObjectType"
 )
 

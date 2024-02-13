@@ -40,7 +40,7 @@ type TenantStorageService interface {
 //
 //go:generate mockery --name=TenantCreator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantCreator interface {
-	FetchTenant(ctx context.Context, externalTenantID string) ([]model.BusinessTenantMappingInput, error)
+	FetchTenants(ctx context.Context, externalTenantID string) ([]model.BusinessTenantMappingInput, error)
 	TenantsToCreate(ctx context.Context, region, fromTimestamp string) ([]model.BusinessTenantMappingInput, error)
 	CreateTenants(ctx context.Context, eventsTenants []model.BusinessTenantMappingInput) error
 }
@@ -220,7 +220,7 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 		return nil
 	}
 
-	fetchedTenants, err := ts.creator.FetchTenant(ctx, tenantID)
+	fetchedTenants, err := ts.creator.FetchTenants(ctx, tenantID)
 	if err != nil {
 		return err
 	}

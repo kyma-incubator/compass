@@ -28,8 +28,8 @@ func (_m *TenantCreator) CreateTenants(ctx context.Context, eventsTenants []mode
 	return r0
 }
 
-// FetchTenant provides a mock function with given fields: ctx, externalTenantID
-func (_m *TenantCreator) FetchTenant(ctx context.Context, externalTenantID string) ([]model.BusinessTenantMappingInput, error) {
+// FetchTenants provides a mock function with given fields: ctx, externalTenantID
+func (_m *TenantCreator) FetchTenants(ctx context.Context, externalTenantID string) ([]model.BusinessTenantMappingInput, error) {
 	ret := _m.Called(ctx, externalTenantID)
 
 	var r0 []model.BusinessTenantMappingInput

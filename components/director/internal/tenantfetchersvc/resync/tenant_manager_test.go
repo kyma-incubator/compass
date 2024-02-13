@@ -851,7 +851,7 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 			manager, err := resync.NewTenantsManager(cfg, directorClient, universalClient, regionalDetails, tenantConverter)
 			require.NoError(t, err)
 
-			actualTenant, err := manager.FetchTenant(ctx, busTenant.ExternalTenant)
+			actualTenant, err := manager.FetchTenants(ctx, busTenant.ExternalTenant)
 			if len(tc.expectedErrMsg) > 0 {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tc.expectedErrMsg)

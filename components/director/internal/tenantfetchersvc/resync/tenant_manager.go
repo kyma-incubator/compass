@@ -111,8 +111,9 @@ func (tm *TenantsManager) TenantsToDelete(ctx context.Context, region, fromTimes
 	return res, nil
 }
 
-// FetchTenant retrieves a given tenant from all available regions and updates or creates it in Compass
-func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID string) ([]model.BusinessTenantMappingInput, error) {
+// FetchTenants retrieves a given tenant from all available regions and updates or creates it in Compass. It may also return a cost object tenant alongside
+// the global account or the subaccount
+func (tm *TenantsManager) FetchTenants(ctx context.Context, externalTenantID string) ([]model.BusinessTenantMappingInput, error) {
 	additionalFields := map[string]string{
 		tm.config.QueryConfig.EntityField: externalTenantID,
 	}
