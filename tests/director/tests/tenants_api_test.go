@@ -549,6 +549,113 @@ func TestWriteTenants(t *testing.T) {
 	require.True(t, slices.Contains(actualOrgenant.Parents, actualCustomer1Tenant.InternalID))
 }
 
+func TestWriteTenantsTenantAccess(t *testing.T) {
+	testProvider := "e2e-test-provider"
+	testLicenseType := "LICENSETYPE"
+
+	customerExternalTenant := "customerID"
+	customerName := "customer-name"
+
+	accountExternalTenant := "account-external-tenant-1"
+	accountName := "account-name"
+	accountSubdomain := "account-subdomain"
+	customerSubdomain := "customer-subdomain"
+
+	region := "local"
+
+	tenants := []graphql.BusinessTenantMappingInput{
+		{
+			Name:           accountName,
+			ExternalTenant: accountExternalTenant,
+			Subdomain:      &accountSubdomain,
+			Region:         &region,
+			Type:           string(tenant.Account),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+	}
+	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
+	assert.NoError(t, err)
+	defer func() { // cleanup tenants
+		err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenants)
+		assert.NoError(t, err)
+		log.D().Info("Successfully cleanup tenants")
+	}()
+
+	var actualAccountTenant graphql.Tenant
+	getTenant := fixtures.FixTenantRequest(accountExternalTenant)
+	t.Logf("Query tenant for external tenant: %q", accountExternalTenant)
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenant, &actualAccountTenant)
+	require.NoError(t, err)
+	require.Equal(t, accountExternalTenant, actualAccountTenant.ID)
+	require.Equal(t, accountName, *actualAccountTenant.Name)
+	require.Equal(t, string(tenant.Account), actualAccountTenant.Type)
+
+	in := graphql.ApplicationRegisterInput{
+		Name:           "e2e-test-app",
+		ProviderName:   ptr.String("provider name"),
+		Description:    ptr.String("application used for e2e tests"),
+		HealthCheckURL: ptr.String("http://mye2etest.com/health"),
+		Labels: graphql.Labels{
+			"group": []interface{}{"e2e-test"},
+		},
+	}
+
+	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
+	require.NoError(t, err)
+
+	// WHEN
+	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
+
+	actualApp := graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, accountExternalTenant, request, &actualApp)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, accountExternalTenant, &actualApp)
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp)
+	require.NotEmpty(t, actualApp.ID)
+	assertions.AssertApplication(t, in, actualApp)
+
+	tenants = []graphql.BusinessTenantMappingInput{
+		{
+			Name:           customerName,
+			ExternalTenant: customerExternalTenant,
+			Parents:        nil,
+			Subdomain:      &customerSubdomain,
+			Region:         &region,
+			Type:           string(tenant.Customer),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+		{
+			Name:           accountName,
+			ExternalTenant: accountExternalTenant,
+			Parents:        []*string{&customerExternalTenant},
+			Subdomain:      &accountSubdomain,
+			Region:         &region,
+			Type:           string(tenant.Account),
+			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
+		},
+	}
+
+	err = fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
+	assert.NoError(t, err)
+	defer func() { // cleanup tenants
+		err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenants)
+		assert.NoError(t, err)
+		log.D().Info("Successfully cleanup tenants")
+	}()
+
+	// Check that the customer has access to the application
+	app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, customerExternalTenant, actualApp.ID)
+	require.NotEmpty(t, app)
+	require.NotEmpty(t, app.ID)
+	assertions.AssertApplication(t, in, app)
+}
+
 func TestTenantParentUpdateWithCostObject(t *testing.T) {
 	// GIVEN
 	isolatedAccount := tenant.TestTenants.GetIDByName(t, tenant.TestIsolatedAccountName)
