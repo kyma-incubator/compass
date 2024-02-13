@@ -21,11 +21,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 
@@ -79,6 +80,7 @@ type Handler struct {
 	verifiers             map[string]TokenVerifier
 	verifiersMutex        sync.RWMutex
 	authenticators        []authenticator.Config
+	tokenDataCache        TokenDataCache
 }
 
 // OpenIDMetadata contains basic metadata for OIDC provider needed during request authentication
@@ -108,7 +110,7 @@ func DefaultTokenVerifierProvider(ctx context.Context, metadata OpenIDMetadata) 
 }
 
 // NewHandler constructs the AuthenticationMappingHandler
-func NewHandler(reqDataParser ReqDataParser, httpClient *http.Client, tokenVerifierProvider TokenVerifierProvider, authenticators []authenticator.Config) *Handler {
+func NewHandler(reqDataParser ReqDataParser, httpClient *http.Client, tokenVerifierProvider TokenVerifierProvider, authenticators []authenticator.Config, validity time.Duration) *Handler {
 	return &Handler{
 		reqDataParser:         reqDataParser,
 		httpClient:            httpClient,
@@ -116,6 +118,7 @@ func NewHandler(reqDataParser ReqDataParser, httpClient *http.Client, tokenVerif
 		verifiers:             make(map[string]TokenVerifier),
 		verifiersMutex:        sync.RWMutex{},
 		authenticators:        authenticators,
+		tokenDataCache:        NewTokenDataCache(validity),
 	}
 }
 
@@ -170,6 +173,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 }
 
 func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, authenticatorName string) (TokenData, authenticator.Coordinates, error) {
+	h.tokenDataCache.Cleanup()
 	authorizationHeader := reqData.Header.Get("Authorization")
 	if authorizationHeader == "" || !strings.HasPrefix(strings.ToLower(authorizationHeader), "bearer ") {
 		return nil, authenticator.Coordinates{}, errors.Errorf("unexpected or empty authorization header with length %d", len(authorizationHeader))
@@ -203,6 +207,13 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, a
 		}
 		issuerURL := fmt.Sprintf("%s://%s.%s%s", protocol, issuerSubdomain, issuer.DomainURL, "/oauth/token")
 
+		exists, claimsFromCache := h.tokenDataCache.GetTokenData(token, issuerURL)
+		if exists {
+			claims = claimsFromCache
+			index = 0
+			continue
+		}
+
 		h.verifiersMutex.RLock()
 		verifier, found := h.verifiers[issuerURL]
 		h.verifiersMutex.RUnlock()
@@ -214,6 +225,7 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, a
 				aggregatedErr = errors.Wrapf(aggregatedErr, "unable to verify token with issuer %q: %s", issuerURL, err)
 				continue
 			}
+			h.tokenDataCache.PutTokenData(token, issuerURL, claims)
 			index = i
 			break
 		}
@@ -230,6 +242,13 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, a
 			protocol = issuer.Protocol
 		}
 		issuerURL := fmt.Sprintf("%s://%s.%s%s", protocol, issuerSubdomain, issuer.DomainURL, "/oauth/token")
+
+		exists, claimsFromCache := h.tokenDataCache.GetTokenData(token, issuerURL)
+		if exists {
+			claims = claimsFromCache
+			index = 0
+			continue
+		}
 
 		log.C(ctx).Infof("Verifier for issuer %q not found. Attempting to construct new verifier from well-known endpoint", issuerURL)
 		resp, err := h.getOpenIDConfig(ctx, issuerURL)
@@ -264,6 +283,7 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, a
 			aggregatedErr = errors.Wrapf(aggregatedErr, "unable to verify token with issuer %q: %s", issuerURL, err)
 			continue
 		}
+		h.tokenDataCache.PutTokenData(token, issuerURL, claims)
 		index = i
 		break
 	}
@@ -385,7 +405,7 @@ func handleResponseError(ctx context.Context, response *http.Response) error {
 		}
 	}()
 
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		body = []byte(fmt.Sprintf("error reading response body: %s", err))
 	}
