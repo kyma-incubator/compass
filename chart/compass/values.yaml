@@ -1507,6 +1507,8 @@ global:
         - "formation:write"
         - "formation:global_write"
         - "formation:global_read"
+      tenant_discovery_operator:
+        - "application:read"
       instance_creator:
         - "application_template:read"
         - "formation:read"
