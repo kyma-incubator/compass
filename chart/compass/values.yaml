@@ -210,7 +210,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3652"
+      version: "PR-3644"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
