@@ -23,10 +23,6 @@ type DestinationCreatorService struct {
 func (_m *DestinationCreatorService) CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreator.DestinationInfo, error) {
 	ret := _m.Called(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CreateBasicCredentialDestinations")
-	}
-
 	var r0 *destinationcreator.DestinationInfo
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string, uint8, bool) (*destinationcreator.DestinationInfo, error)); ok {
@@ -52,10 +48,6 @@ func (_m *DestinationCreatorService) CreateBasicCredentialDestinations(ctx conte
 // CreateClientCertificateDestination provides a mock function with given fields: ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation
 func (_m *DestinationCreatorService) CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreator.DestinationInfo, error) {
 	ret := _m.Called(ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CreateClientCertificateDestination")
-	}
 
 	var r0 *destinationcreator.DestinationInfo
 	var r1 error
@@ -83,10 +75,6 @@ func (_m *DestinationCreatorService) CreateClientCertificateDestination(ctx cont
 func (_m *DestinationCreatorService) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.DestinationRaw, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) error {
 	ret := _m.Called(ctx, destinationDetails, formationAssignment, depth, skipSubaccountValidation)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CreateDesignTimeDestinations")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, operators.DestinationRaw, *model.FormationAssignment, uint8, bool) error); ok {
 		r0 = rf(ctx, destinationDetails, formationAssignment, depth, skipSubaccountValidation)
@@ -100,10 +88,6 @@ func (_m *DestinationCreatorService) CreateDesignTimeDestinations(ctx context.Co
 // CreateOAuth2ClientCredentialsDestinations provides a mock function with given fields: ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation
 func (_m *DestinationCreatorService) CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2ClientCredsCredentials *operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreator.DestinationInfo, error) {
 	ret := _m.Called(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CreateOAuth2ClientCredentialsDestinations")
-	}
 
 	var r0 *destinationcreator.DestinationInfo
 	var r1 error
@@ -131,10 +115,6 @@ func (_m *DestinationCreatorService) CreateOAuth2ClientCredentialsDestinations(c
 func (_m *DestinationCreatorService) CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreator.DestinationInfo, error) {
 	ret := _m.Called(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CreateSAMLAssertionDestination")
-	}
-
 	var r0 *destinationcreator.DestinationInfo
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.SAMLAssertionAuthentication, *model.FormationAssignment, []string, uint8, bool) (*destinationcreator.DestinationInfo, error)); ok {
@@ -161,10 +141,6 @@ func (_m *DestinationCreatorService) CreateSAMLAssertionDestination(ctx context.
 func (_m *DestinationCreatorService) DeleteCertificate(ctx context.Context, certificateName string, externalDestSubaccountID string, instanceID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
 	ret := _m.Called(ctx, certificateName, externalDestSubaccountID, instanceID, formationAssignment, skipSubaccountValidation)
 
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteCertificate")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *model.FormationAssignment, bool) error); ok {
 		r0 = rf(ctx, certificateName, externalDestSubaccountID, instanceID, formationAssignment, skipSubaccountValidation)
@@ -179,10 +155,6 @@ func (_m *DestinationCreatorService) DeleteCertificate(ctx context.Context, cert
 func (_m *DestinationCreatorService) DeleteDestination(ctx context.Context, destinationName string, externalDestSubaccountID string, instanceID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
 	ret := _m.Called(ctx, destinationName, externalDestSubaccountID, instanceID, formationAssignment, skipSubaccountValidation)
 
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteDestination")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *model.FormationAssignment, bool) error); ok {
 		r0 = rf(ctx, destinationName, externalDestSubaccountID, instanceID, formationAssignment, skipSubaccountValidation)
@@ -196,10 +168,6 @@ func (_m *DestinationCreatorService) DeleteDestination(ctx context.Context, dest
 // DetermineDestinationSubaccount provides a mock function with given fields: ctx, externalDestSubaccountID, formationAssignment, skipSubaccountValidation
 func (_m *DestinationCreatorService) DetermineDestinationSubaccount(ctx context.Context, externalDestSubaccountID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) (string, error) {
 	ret := _m.Called(ctx, externalDestSubaccountID, formationAssignment, skipSubaccountValidation)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DetermineDestinationSubaccount")
-	}
 
 	var r0 string
 	var r1 error
@@ -225,10 +193,6 @@ func (_m *DestinationCreatorService) DetermineDestinationSubaccount(ctx context.
 func (_m *DestinationCreatorService) EnsureDestinationSubaccountIDsCorrectness(ctx context.Context, destinationsDetails []operators.Destination, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
 	ret := _m.Called(ctx, destinationsDetails, formationAssignment, skipSubaccountValidation)
 
-	if len(ret) == 0 {
-		panic("no return value specified for EnsureDestinationSubaccountIDsCorrectness")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, *model.FormationAssignment, bool) error); ok {
 		r0 = rf(ctx, destinationsDetails, formationAssignment, skipSubaccountValidation)
@@ -242,10 +206,6 @@ func (_m *DestinationCreatorService) EnsureDestinationSubaccountIDsCorrectness(c
 // GetConsumerTenant provides a mock function with given fields: ctx, formationAssignment
 func (_m *DestinationCreatorService) GetConsumerTenant(ctx context.Context, formationAssignment *model.FormationAssignment) (string, error) {
 	ret := _m.Called(ctx, formationAssignment)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetConsumerTenant")
-	}
 
 	var r0 string
 	var r1 error
