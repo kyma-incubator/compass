@@ -128,3 +128,5 @@ FROM applications apps
                       apps_subaccounts.tenant_id,
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON apps.id = t_apps.id;
+
+COMMIT;
