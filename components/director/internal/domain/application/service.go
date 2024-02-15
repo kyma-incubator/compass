@@ -50,7 +50,9 @@ const (
 	// ApplicationTypeLabelKey is the key of the application label for determining the type of the application.
 	ApplicationTypeLabelKey = "applicationType"
 
+	// TenantBusinessTypeNameLabelKey is a label key for tenant business type names
 	TenantBusinessTypeNameLabelKey = "tenantBusinessTypeName"
+	// TenantBusinessTypeCodeLabelKey is a label key for tenant business type codes
 	TenantBusinessTypeCodeLabelKey = "tenantBusinessTypeCode"
 )
 
