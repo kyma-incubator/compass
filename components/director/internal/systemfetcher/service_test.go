@@ -23,7 +23,6 @@ import (
 const (
 	appType              = "type-1"
 	mainURLKey           = "mainUrl"
-	testID               = "testID"
 	testTenantID         = "t1"
 	testTenantExternalID = "et1"
 	testTenantName       = "tenant1"
