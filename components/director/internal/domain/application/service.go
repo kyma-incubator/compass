@@ -49,6 +49,9 @@ const (
 	ManagedLabelKey = "managed"
 	// ApplicationTypeLabelKey is the key of the application label for determining the type of the application.
 	ApplicationTypeLabelKey = "applicationType"
+
+	TenantBusinessTypeNameLabelKey = "tenantBusinessTypeName"
+	TenantBusinessTypeCodeLabelKey = "tenantBusinessTypeCode"
 )
 
 type repoCreatorFunc func(ctx context.Context, tenant string, application *model.Application) error
