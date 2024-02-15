@@ -294,6 +294,14 @@ func newModelBusinessTenantMappingInput(name, subdomain, region string, licenseT
 	return newModelBusinessTenantMappingInputWithType(testExternal, name, []string{}, subdomain, region, licenseType, tenant.Account)
 }
 
+func newModelBusinessTenantMappingInputWithCostObject(name, subdomain, region string, licenseType *string) model.BusinessTenantMappingInput {
+	tnt := newModelBusinessTenantMappingInputWithType(testExternal, name, []string{}, subdomain, region, licenseType, tenant.Account)
+	tnt.CostObjectID = &costObjectID
+	tnt.CostObjectType = &costObjectType
+
+	return tnt
+}
+
 func newModelBusinessTenantMappingInputWithCustomerID(name string, customerID *string) model.BusinessTenantMappingInput {
 	tnt := newModelBusinessTenantMappingInputWithType(testExternal, name, []string{}, "", "", nil, tenant.Subaccount)
 	tnt.CustomerID = customerID

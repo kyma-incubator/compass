@@ -6271,6 +6271,8 @@ input BusinessTenantMappingInput {
 	provider: String!
 	licenseType: String
 	customerId: String
+	costObjectId: String
+	costObjectType: String
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -36010,6 +36012,18 @@ func (ec *executionContext) unmarshalInputBusinessTenantMappingInput(ctx context
 		case "customerId":
 			var err error
 			it.CustomerID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "costObjectId":
+			var err error
+			it.CostObjectID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "costObjectType":
+			var err error
+			it.CostObjectType, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
