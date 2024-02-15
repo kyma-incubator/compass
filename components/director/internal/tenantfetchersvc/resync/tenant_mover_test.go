@@ -494,7 +494,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 }
 
 func movedEventFieldsFromTenant(tenantFieldMapping resync.TenantFieldMapping, movedSAFieldMapping resync.MovedSubaccountsFieldMapping, tenantInput model.MovedSubaccountMappingInput) map[string]string {
-	eventFields := eventFieldsFromTenant(tenant.Subaccount, tenantFieldMapping, tenantInput.TenantMappingInput)
+	eventFields := eventFieldsFromTenant(tenant.Subaccount, tenantFieldMapping, tenantInput.TenantMappingInput, "")
 	eventFields[movedSAFieldMapping.SourceTenant] = tenantInput.SourceTenant
 	eventFields[movedSAFieldMapping.TargetTenant] = tenantInput.TargetTenant
 	eventFields[movedSAFieldMapping.SubaccountID] = tenantInput.SubaccountID

@@ -992,6 +992,12 @@ func (g *Graphqlizer) WriteTenantsInputToGQL(in []graphql.BusinessTenantMappingI
 				{{- if $tenant.CustomerID }}
 				customerId: {{ quote $tenant.CustomerID }},
 				{{- end }}
+				{{- if $tenant.CostObjectID }}
+				costObjectId: {{ quote $tenant.CostObjectID }},
+				{{- end }}
+				{{- if $tenant.CostObjectType }}
+				costObjectType: {{ quote $tenant.CostObjectType }},
+				{{- end }}
 				type: {{ quote $tenant.Type }},
 				provider: {{ quote $tenant.Provider }}
 			}
@@ -1017,6 +1023,12 @@ func (g *Graphqlizer) WriteTenantInputToGQL(in graphql.BusinessTenantMappingInpu
 		{{- end }}
 		{{- if $.LicenseType }}
 		licenseType: {{ quote .LicenseType }},
+		{{- end }}
+		{{- if .CostObjectID }}
+		costObjectId: {{ quote .CostObjectID }},
+		{{- end }}
+		{{- if .CostObjectType }}
+		costObjectType: {{ quote .CostObjectType }},
 		{{- end }}
 		type: {{ quote .Type }},
 		provider: {{ quote .Provider }}
@@ -1053,6 +1065,12 @@ func (g *Graphqlizer) UpdateTenantsInputToGQL(in graphql.BusinessTenantMappingIn
 			{{- end }}
 			{{- if .LicenseType }}
 			licenseType: {{ quote .LicenseType }},
+			{{- end }}
+			{{- if .CostObjectID }}
+			costObjectId: {{ quote .CostObjectID }},
+			{{- end }}
+			{{- if .CostObjectType }}
+			costObjectType: {{ quote .CostObjectType }},
 			{{- end }}
 			type: {{ quote .Type }},
 			provider: {{ quote .Provider }}
