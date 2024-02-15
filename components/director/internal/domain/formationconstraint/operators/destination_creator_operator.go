@@ -269,7 +269,7 @@ func (d *DestinationRaw) UnmarshalJSON(data []byte) error {
 		if err != nil {
 			return errors.Wrapf(err, "while setting %q key to the destination details", authenticationKey)
 		}
-		raw, err = sjson.DeleteBytes(d.Destination, "subaccountId")
+		raw, err = sjson.DeleteBytes(raw, authenticationKeyOld)
 		if err != nil {
 			return errors.Wrapf(err, "while removing %q key from the destination details", authenticationKeyOld)
 		}
