@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"net/http"
 	"regexp"
 	"strings"
@@ -113,14 +114,25 @@ func (i InstanceCreatorHandler) HandlerFunc(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	correlationID := correlation.CorrelationIDFromContext(ctx)
+
 	// respond with 202 to the UCL call
 	httputils.Respond(w, http.StatusAccepted)
 
 	log.C(ctx).Info("Instance Creator Handler handles instance creation...")
-	go i.handleInstances(ctx, &reqBody, uclStatusAPIUrl)
+	go i.handleInstances(correlationID, &reqBody, uclStatusAPIUrl)
 }
 
-func (i *InstanceCreatorHandler) handleInstances(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL string) {
+func (i *InstanceCreatorHandler) handleInstances(correlationID string, reqBody *tenantmapping.Body, statusAPIURL string) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	correlationIDKey := correlation.RequestIDHeaderKey
+	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
+
+	logger := log.C(ctx).WithField(correlationIDKey, correlationID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
 	if reqBody.Context.Operation == assignOperation {
 		i.handleAssign(ctx, reqBody, statusAPIURL)
 	} else {
