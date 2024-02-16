@@ -102,4 +102,4 @@ log::info "Triggering the tests"
 ARTIFACTS=${ARTIFACTS} ${COMPASS_SOURCE_DIR}/installation/scripts/testing.sh ${DUMP_DB}
 log::info "Test execution completed"
 
-kubectl logs -n compass-system --selector app=<appName> --tail=-1
+kubectl logs -n compass-system --selector app=director --tail=-1
