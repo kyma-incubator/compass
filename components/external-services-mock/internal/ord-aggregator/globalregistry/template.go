@@ -44,13 +44,13 @@ const ordDocument = `{
     {
       "ordId": "sap:product:SAPGraph:",
       "title": "SAP Graph",
-      "shortDescription": "SAP Graph is the easy-to-use API for the data of the Intelligent Enterprise from SAP.\nIt provides an intuitive programming model that you can use to easily build new extensions and applications using SAP data.",
+      "shortDescription": "The easy-to-use API for the data of the Intelligent Enterprise from SAP.",
       "vendor": "sap:vendor:SAP:"
     },
     {
       "ordId": "sap:product:SAPS4HANACloud:",
       "title": "SAP S/4HANA Cloud",
-      "shortDescription": "The next generation digital core designed to help you run simple\nin a digital economy. It provides the industry-specific capabilities and cloud\nbenefits that your business needs.",
+      "shortDescription": "The next generation digital core designed to help you run simple in a digital economy. It provides the industry-specific capabilities and cloud benefits that your business needs.",
       "vendor": "sap:vendor:SAP:",
       "labels": {
         "logo": [
@@ -61,7 +61,7 @@ const ordDocument = `{
     {
       "ordId": "sap:product:SAPS4HANA:",
       "title": "SAP S/4HANA",
-      "shortDescription": "A future-ready ERP system with built-in intelligent technologies,\nincluding AI, machine learning, and advanced analytics which transforms business\nprocesses with intelligent automation.",
+      "shortDescription": "A future-ready ERP system with built-in intelligent technologies, including AI, machine learning, and advanced analytics.",
       "vendor": "sap:vendor:SAP:",
       "labels": {
         "logo": [
@@ -85,13 +85,13 @@ const ordDocument = `{
 	{
 		"ordId": "sap:product:SAPSuccessFactors:",
 		"title": "SAP SuccessFactors",
-		"shortDescription": "SAP SuccessFactors is a world-leading provider of cloud human experience management (HXM).",
+		"shortDescription": "World-leading provider of cloud human experience management (HXM).",
 		"vendor": "sap:vendor:SAP:"
 	},
     {
       "ordId": "sap:product:SAPTransactionalBankingforSAPS4HANA:",
       "title": "SAP Transactional Banking for SAP S/4HANA",
-      "shortDescription": "SAP Transactional Banking for SAP S/4HANA is an open core banking platform, which is based on an architecture that ensures real-time processing and continuous availability.",
+      "shortDescription": "Open core banking platform, which is based on an architecture that ensures real-time processing and continuous availability.",
       "vendor": "sap:vendor:SAP:",
       "parent": "sap:product:SAPS4HANA:"
     },
@@ -106,7 +106,13 @@ const ordDocument = `{
       "title": "SAP S/4HANA Cloud Private Edition",
       "shortDescription": "The next generation digital core designed to help you run simple in a digital economy. It provides the industry-specific capabilities and cloud benefits that your business needs.",
       "vendor": "sap:vendor:SAP:"
-    }
+    },
+	{
+		"ordId": "sap:product:SAPMasterDataIntegration:",
+		"title": "SAP Master Data Integration",
+		"shortDescription": "SAP Master Data Integration provide and manage generic replication to keep consistent view on master data.",
+		"vendor": "sap:vendor:SAP:"
+	}
   ],
    "vendors":[
 		{

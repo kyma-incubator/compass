@@ -59,7 +59,7 @@ func NewClientConfig(maxParallelDocumentsPerApplication int, retryDelay time.Dur
 //
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
-	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, appBaseURL directorwh.OpenResourceDiscoveryWebhookRequestObject) (Documents, string, error)
+	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, appBaseURL directorwh.OpenResourceDiscoveryWebhookRequestObject) (Documents, []string, string, error)
 }
 
 // ORDDocumentsClient defines ORD documents client
@@ -79,13 +79,13 @@ func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecu
 }
 
 // FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
-func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (Documents, string, error) {
+func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (Documents, []string, string, error) {
 	var tenantValue string
 
 	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference && resource.Type != directorresource.ApplicationTemplate; needsTenantHeader {
 		tntFromCtx, err := tenant.LoadTenantPairFromContext(ctx)
 		if err != nil {
-			return nil, "", errors.Wrapf(err, "while loading tenant from context for application template webhook flow")
+			return nil, nil, "", errors.Wrapf(err, "while loading tenant from context for application template webhook flow")
 		}
 
 		tenantValue = tntFromCtx.ExternalID
@@ -108,20 +108,21 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 
 	if err != nil {
 		log.C(ctx).Error(errors.Wrap(err, "error fetching ORD well-known config").Error())
-		return nil, "", err
+		return nil, nil, "", err
 	}
 
 	webhookBaseURL, err := calculateBaseURL(webhook, *config)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "while calculating baseURL")
+		return nil, nil, "", errors.Wrap(err, "while calculating baseURL")
 	}
 
 	err = config.Validate(webhookBaseURL)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "while validating ORD config")
+		return nil, nil, "", errors.Wrap(err, "while validating ORD config")
 	}
 
 	docs := make([]*Document, 0)
+	docsString := make([]string, 0)
 	docMutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	workers := make(chan struct{}, c.config.maxParallelDocumentsPerApplication)
@@ -149,10 +150,11 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 			}
 
 			var doc *Document
+			var docString string
 			err = retry.Do(
 				func() error {
 					var innerErr error
-					doc, innerErr = c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, requestObject)
+					doc, docString, innerErr = c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, requestObject)
 					return innerErr
 				},
 				retry.Attempts(c.config.retryAttempts),
@@ -172,7 +174,7 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 			} else {
 				doc.Perspective = SystemInstancePerspective
 			}
-			addDocument(&docs, doc, &docMutex)
+			addDocument(&docs, doc, &docMutex, &docsString, docString)
 		}(docDetails)
 	}
 
@@ -183,7 +185,7 @@ func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Con
 		stringErrors := convertErrorsToStrings(fetchDocErrors)
 		fetchDocErr = errors.Errorf(strings.Join(stringErrors, "\n"))
 	}
-	return docs, webhookBaseURL, fetchDocErr
+	return docs, docsString, webhookBaseURL, fetchDocErr
 }
 
 func convertErrorsToStrings(errors []error) (result []string) {
@@ -193,34 +195,34 @@ func convertErrorsToStrings(errors []error) (result []string) {
 	return result
 }
 
-func (c *ORDDocumentsClient) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (*Document, error) {
+func (c *ORDDocumentsClient) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (*Document, string, error) {
 	log.C(ctx).Infof("Fetching ORD Document %q with Access Strategy %q", documentURL, accessStrategy)
 	executor, err := c.accessStrategyExecutorProvider.Provide(accessStrategy)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	resp, err := executor.Execute(ctx, c.Client, documentURL, requestObject.TenantID, requestObject.Headers)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	defer closeBody(ctx, resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("error while fetching open resource discovery document %q: status code %d", documentURL, resp.StatusCode)
+		return nil, "", errors.Errorf("error while fetching open resource discovery document %q: status code %d", documentURL, resp.StatusCode)
 	}
 
 	resp.Body = http.MaxBytesReader(nil, resp.Body, 2097152)
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "error reading document body")
+		return nil, "", errors.Wrap(err, "error reading document body")
 	}
 	result := &Document{}
 	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		return nil, errors.Wrap(err, "error unmarshaling document")
+		return nil, "", errors.Wrap(err, "error unmarshaling document")
 	}
-	return result, nil
+	return result, string(bodyBytes), nil
 }
 
 func closeBody(ctx context.Context, body io.ReadCloser) {
@@ -229,10 +231,11 @@ func closeBody(ctx context.Context, body io.ReadCloser) {
 	}
 }
 
-func addDocument(docs *[]*Document, doc *Document, mutex *sync.Mutex) {
+func addDocument(docs *[]*Document, doc *Document, mutex *sync.Mutex, docsString *[]string, docString string) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	*docs = append(*docs, doc)
+	*docsString = append(*docsString, docString)
 }
 
 func addError(fetchDocErrors *[]error, err error, mutex *sync.Mutex) {

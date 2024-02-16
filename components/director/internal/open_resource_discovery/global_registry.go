@@ -59,7 +59,7 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 		Name: "global-registry",
 		Type: directorresource.Application,
 	}
-	documents, _, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, &model.Webhook{
+	documents, docsString, _, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, &model.Webhook{
 		Type: model.WebhookTypeOpenResourceDiscovery,
 		URL:  &s.config.URL,
 	}, application.ORDWebhookMapping{}, webhook.OpenResourceDiscoveryWebhookRequestObject{})
@@ -67,7 +67,13 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 		return nil, errors.Wrapf(err, "while fetching global registry documents from %s", s.config.URL)
 	}
 
-	if err := documents.Validate(s.config.URL, ResourcesFromDB{}, nil, map[string]bool{}, s.credentialExchangeStrategyTenantMappings); err != nil {
+	validationClient := NewValidationClient("http://localhost:8080") //TODO env variable or const?
+	documentValidator := NewDocumentValidator(validationClient)
+
+	// TODO log validation errors
+	_, err = documentValidator.Validate(ctx, documents, s.config.URL, map[string]bool{}, docsString)
+	// log validation errors
+	if err != nil {
 		return nil, errors.Wrap(err, "while validating global registry documents")
 	}
 

@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -50,6 +51,23 @@ const (
 	// ProcessingErrorMsg is the error message for processing error in ORD Documents
 	ProcessingErrorMsg = "error processing ORD documents"
 )
+
+type ProcessingError struct {
+	ValidationErrors []ValidationError `json:"validation_errors"`
+	RuntimeError     error             `json:"runtime_error"`
+}
+
+func (p *ProcessingError) Error() string {
+	return p.toJSON()
+}
+
+func (p *ProcessingError) toJSON() string {
+	bytes, err := json.Marshal(p)
+	if err != nil {
+		return fmt.Sprintf(`{"error": "failed to marshal error: %s"}`, err)
+	}
+	return string(bytes)
+}
 
 // ServiceConfig contains configuration for the ORD aggregator service
 type ServiceConfig struct {
@@ -196,9 +214,10 @@ func (s *Service) ProcessApplication(ctx context.Context, appID string) error {
 				globalResourcesLoaded = true
 			}
 			log.C(ctx).Infof("Process Webhook ID %s for Application with ID %s", wh.ID, appID)
-			if err = s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs); err != nil {
-				return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
-			}
+			//if err = s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs); err != nil {
+			//	return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
+			//}
+			return s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs)
 		}
 	}
 	return nil
@@ -239,9 +258,10 @@ func (s *Service) ProcessAppInAppTemplateContext(ctx context.Context, appTemplat
 				return errors.Errorf("cannot find application with id %q for app template with id %q", appID, appTemplateID)
 			}
 
-			if err = s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs); err != nil {
-				return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
-			}
+			//if err = s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs); err != nil {
+			//	return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
+			//}
+			return s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs)
 		}
 	}
 	return nil
@@ -267,9 +287,10 @@ func (s *Service) ProcessApplicationTemplate(ctx context.Context, appTemplateID 
 			}
 
 			log.C(ctx).Infof("Processing Webhook ID %s for Application Tempalate with ID %s", wh.ID, appTemplateID)
-			if err = s.processApplicationTemplateWebhook(ctx, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
-				return err
-			}
+			//if err = s.processApplicationTemplateWebhook(ctx, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
+			//	return err
+			//}
+			return s.processApplicationTemplateWebhook(ctx, wh, appTemplateID, globalResourcesOrdIDs)
 		}
 	}
 	return nil
@@ -333,35 +354,41 @@ func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) (
 	return webhooks, nil
 }
 
-func (s *Service) processDocuments(ctx context.Context, resource Resource, webhookBaseURL, webhookBaseProxyURL string, ordRequestObject requestobject.OpenResourceDiscoveryWebhookRequestObject, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
+func (s *Service) processDocuments(ctx context.Context, resource Resource, webhookBaseURL, webhookBaseProxyURL string, ordRequestObject requestobject.OpenResourceDiscoveryWebhookRequestObject, documents Documents, globalResourcesOrdIDs map[string]bool, docsString []string) ([]ValidationError, error) {
 	if _, err := s.processDescribedSystemVersions(ctx, resource, documents); err != nil {
-		return err
-	}
-
-	resourcesFromDB, err := s.fetchResources(ctx, resource, documents)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
 	resourceHashes, err := hashResources(documents)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	validationResult := documents.Validate(webhookBaseURL, resourcesFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
-	if validationResult != nil {
-		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
-		*validationErrors = validationResult
+	validationClient := NewValidationClient("http://localhost:8080") //TODO env variable or const?
+	documentValidator := NewDocumentValidator(validationClient)
+
+	validationErrors, err := documentValidator.Validate(ctx, documents, webhookBaseURL, globalResourcesOrdIDs, docsString)
+	if err != nil {
+		return validationErrors, err
 	}
 
-	if err := documents.Sanitize(webhookBaseURL, webhookBaseProxyURL); err != nil {
-		return errors.Wrap(err, "while sanitizing ORD documents")
+	documentSanitizer := NewDocumentSanitizer()
+	validationErrorsFromSanitize, err := documentSanitizer.Sanitize(documents, webhookBaseURL, webhookBaseProxyURL)
+	validationErrors = append(validationErrors, validationErrorsFromSanitize...)
+	if err != nil {
+		return validationErrors, errors.Wrap(err, "while sanitizing ORD documents")
+	}
+
+	for _, e := range validationErrors {
+		if e.Severity == ErrorSeverity {
+			return validationErrors, nil
+		}
 	}
 
 	ordLocalTenantID := s.getUniqueLocalTenantID(documents)
 	if ordLocalTenantID != "" && resource.LocalTenantID == nil {
 		if err := s.appSvc.Update(ctx, resource.ID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr(ordLocalTenantID)}); err != nil {
-			return err
+			return validationErrors, err
 		}
 	}
 	for _, doc := range documents {
@@ -382,7 +409,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 
 			appTemplateVersion, err := s.getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx, applicationTemplateID, doc.DescribedSystemVersion.Version)
 			if err != nil {
-				return err
+				return validationErrors, err
 			}
 
 			resourceToAggregate = Resource{
@@ -394,77 +421,77 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		log.C(ctx).Infof("Starting processing vendors for %s with id: %q", resource.Type, resource.ID)
 		vendorsFromDB, err := s.vendorProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Vendors)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing vendors for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing products for %s with id: %q", resource.Type, resource.ID)
 		productsFromDB, err := s.productProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Products)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing products for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing packages for %s with id: %q", resource.Type, resource.ID)
 		packagesFromDB, err := s.packageProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Packages, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing packages for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing bundles for %s with id: %q", resource.Type, resource.ID)
 		bundlesFromDB, err := s.processBundles(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.ConsumptionBundles, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing bundles for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing apis for %s with id: %q", resource.Type, resource.ID)
 		apisFromDB, apiFetchRequests, err := s.apiProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, bundlesFromDB, packagesFromDB, doc.APIResources, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing apis for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing events for %s with id: %q", resource.Type, resource.ID)
 		eventsFromDB, eventFetchRequests, err := s.eventProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, bundlesFromDB, packagesFromDB, doc.EventResources, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing events for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing entity types for %s with id: %q", resource.Type, resource.ID)
 		entityTypesFromDB, err := s.entityTypeProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.EntityTypes, packagesFromDB, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing entity types for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing capabilities for %s with id: %q", resource.Type, resource.ID)
 		capabilitiesFromDB, capabilitiesFetchRequests, err := s.capabilityProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.Capabilities, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing capabilities for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing integration dependencies for %s with id: %q", resource.Type, resource.ID)
 		integrationDependenciesFromDB, err := s.integrationDependencyProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.IntegrationDependencies, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing integration dependencies for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing data products for %s with id: %q", resource.Type, resource.ID)
 		dataProductsFromDB, err := s.dataProductProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.DataProducts, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing data products for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing tombstones for %s with id: %q", resource.Type, resource.ID)
 		tombstonesFromDB, err := s.tombstoneProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Tombstones)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing tombstones for %s with id: %q", resource.Type, resource.ID)
 
@@ -473,18 +500,18 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 
 		fetchRequests, err = s.tombstonedResourcesDeleter.Delete(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, dataProductsFromDB, tombstonesFromDB, fetchRequests)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished deleting tombstoned resources for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing specs for %s with id: %q", resource.Type, resource.ID)
 		if err := s.processSpecs(ctx, resourceToAggregate.Type, fetchRequests, ordRequestObject); err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing specs for %s with id: %q", resource.Type, resource.ID)
 	}
 
-	return nil
+	return validationErrors, nil
 }
 
 func (s *Service) processSpecs(ctx context.Context, resourceType directorresource.Type, ordFetchRequests []*processor.OrdFetchRequest, ordRequestObject requestobject.OpenResourceDiscoveryWebhookRequestObject) error {
@@ -1257,6 +1284,7 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model.Webhook, resource Resource, globalResourcesOrdIDs map[string]bool, ordWebhookMapping application.ORDWebhookMapping) error {
 	var (
 		documents      Documents
+		docsString     []string
 		webhookBaseURL string
 		err            error
 	)
@@ -1318,7 +1346,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 	}
 
 	if (webhook.Type == model.WebhookTypeOpenResourceDiscovery || webhook.Type == model.WebhookTypeOpenResourceDiscoveryStatic) && webhook.URL != nil {
-		documents, webhookBaseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, webhook, ordWebhookMapping, ordRequestObject)
+		documents, docsString, webhookBaseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, webhook, ordWebhookMapping, ordRequestObject)
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
@@ -1329,23 +1357,17 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 
 	if len(documents) > 0 {
 		log.C(ctx).Infof("Processing ORD documents for resource %s with ID %s", resource.Type, resource.ID)
-		var validationError error
 
-		err = s.processDocuments(ctx, resource, webhookBaseURL, ordWebhookMapping.ProxyURL, ordRequestObject, documents, globalResourcesOrdIDs, &validationError)
-		if ordValidationError, ok := (validationError).(*ORDDocumentValidationError); ok {
-			validationErrors := strings.Split(ordValidationError.Error(), MultiErrorSeparator)
-
-			// the first item in the slice is the message 'invalid documents' for the wrapped errors
-			validationErrors = validationErrors[1:]
-
+		validationErrors, err := s.processDocuments(ctx, resource, webhookBaseURL, ordWebhookMapping.ProxyURL, ordRequestObject, documents, globalResourcesOrdIDs, docsString)
+		if validationErrors != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 
-			for i := range validationErrors {
-				validationErrors[i] = strings.TrimSpace(validationErrors[i])
-				metricsPusher.ReportAggregationFailureORD(ctx, validationErrors[i])
+			for _, e := range validationErrors {
+				metricsPusher.ReportAggregationFailureORD(ctx, fmt.Sprintf("%s|%s|%s", e.Severity, e.OrdId, e.Description))
 			}
 
-			log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error(ValidationErrorMsg)
+			// TODO revisit
+			log.C(ctx).WithError(errors.New("Some error")).WithField("validation_errors", validationErrors).Error(ValidationErrorMsg)
 		}
 		var errs *multierror.Error
 		if err != nil {
@@ -1356,15 +1378,20 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 			errs = multierror.Append(errs, errors.Wrap(err, ProcessingErrorMsg))
 		}
 
-		if validationError != nil {
-			errs = multierror.Append(errs, errors.Wrap(validationError, ValidationErrorMsg))
+		fmt.Println(err, len(validationErrors), "Before return of processing errors")
+
+		if err == nil && len(validationErrors) == 0 {
+			return nil
 		}
 
-		if errs != nil {
-			return errs
+		return &ProcessingError{
+			ValidationErrors: validationErrors,
+			RuntimeError:     err,
 		}
-		log.C(ctx).Info("Successfully processed ORD documents")
 	}
+
+	log.C(ctx).Info("Successfully processed ORD documents")
+
 	return nil
 }
 
@@ -1464,11 +1491,11 @@ func (s *Service) processApplicationWebhook(ctx context.Context, webhook *model.
 		Name:          app.Name,
 		LocalTenantID: app.LocalTenantID,
 	}
-	if err = s.processWebhookAndDocuments(ctx, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
-		return errors.Wrapf(err, "while processing webhook %s for application %s", webhook.ID, appID)
-	}
+	//if err = s.processWebhookAndDocuments(ctx, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
+	//	return errors.Wrapf(err, "while processing webhook %s for application %s", webhook.ID, appID)
+	//}
 
-	return nil
+	return s.processWebhookAndDocuments(ctx, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping)
 }
 
 func (s *Service) processApplicationTemplateWebhook(ctx context.Context, webhook *model.Webhook, appTemplateID string, globalResourcesOrdIDs map[string]bool) error {
@@ -1496,11 +1523,11 @@ func (s *Service) processApplicationTemplateWebhook(ctx context.Context, webhook
 		ID:   appTemplate.ID,
 		Name: appTemplate.Name,
 	}
-	if err = s.processWebhookAndDocuments(ctx, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
-		return err
-	}
+	//if err = s.processWebhookAndDocuments(ctx, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
+	//	return err
+	//}
 
-	return nil
+	return s.processWebhookAndDocuments(ctx, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping)
 }
 
 func (s *Service) getMappingORDConfiguration(applicationType string) application.ORDWebhookMapping {

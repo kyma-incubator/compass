@@ -4,10 +4,10 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/dataproduct"
@@ -485,24 +485,74 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	log.C(ctx).Infof("Taken operation for processing: %s", op.ID)
 	if errProcess := opProcessor.Process(ctx, op); errProcess != nil {
 		log.C(ctx).Infof("Error while processing operation with id %q. Err: %v", op.ID, errProcess)
-		if strings.Contains(errProcess.Error(), ord.ValidationErrorMsg) && !strings.Contains(errProcess.Error(), ord.ProcessingErrorMsg) { // if is only validation error
-			if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, errProcess.Error()); errMarkAsCompleted != nil {
-				log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
-				return op.ID, errMarkAsCompleted
+
+		var processingError *ord.ProcessingError
+		ok := errors.As(errProcess, &processingError)
+		if !ok {
+			newProcessingError := ord.ProcessingError{
+				ValidationErrors: nil,
+				RuntimeError:     errProcess,
 			}
-			return op.ID, nil
+			if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, newProcessingError.Error()); errMarkAsFailed != nil {
+				log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
+				return op.ID, errMarkAsFailed
+			}
+			return op.ID, processingError
 		}
-		if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, errProcess.Error()); errMarkAsFailed != nil {
-			log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
-			return op.ID, errMarkAsFailed
+
+		if len(processingError.ValidationErrors) > 0 {
+			fmt.Println("MARKING OPERATION AS FAILED", len(processingError.ValidationErrors))
+			if thereAreValidationErrorsWithErrSeverity(processingError.ValidationErrors) || processingError.RuntimeError != nil {
+				// MARK AS FAILED
+				if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError.Error()); errMarkAsFailed != nil {
+					log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
+					return op.ID, errMarkAsFailed
+				}
+				return op.ID, processingError
+			} else if !thereAreValidationErrorsWithErrSeverity(processingError.ValidationErrors) && processingError.RuntimeError == nil {
+				// MARK AS COMPLETED
+				if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, processingError.Error()); errMarkAsCompleted != nil {
+					log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
+					return op.ID, errMarkAsCompleted
+				}
+				return op.ID, nil
+			}
+		} else if len(processingError.ValidationErrors) == 0 {
+			fmt.Println("MARKING OPERATION AS FAILED", len(processingError.ValidationErrors))
+			if processingError.RuntimeError == nil {
+				//MARK AS COMPLETED
+				if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, processingError.Error()); errMarkAsCompleted != nil {
+					log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
+					return op.ID, errMarkAsCompleted
+				}
+				return op.ID, nil
+			} else {
+				//MARK AS FAILED
+				if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError.Error()); errMarkAsFailed != nil {
+					log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
+					return op.ID, errMarkAsFailed
+				}
+				return op.ID, processingError
+			}
 		}
-		return op.ID, errProcess
 	}
 	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, ""); errMarkAsCompleted != nil {
 		log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
 		return op.ID, errMarkAsCompleted
 	}
+
+	fmt.Println("AFTER PROCESS")
 	return op.ID, nil
+}
+
+func thereAreValidationErrorsWithErrSeverity(errors []ord.ValidationError) bool {
+	for _, e := range errors {
+		if e.Severity == ord.ErrorSeverity {
+			return true
+		}
+	}
+
+	return false
 }
 
 func startSyncORDOperationsJob(ctx context.Context, ordOperationMaintainer ord.OperationMaintainer, cfg config) error {

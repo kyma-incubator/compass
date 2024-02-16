@@ -35,6 +35,7 @@ func (p *OperationsProcessor) Process(ctx context.Context, operation *model.Oper
 	// If only ApplicationID is defined - process the application ord data
 	if opData.ApplicationID != "" && opData.ApplicationTemplateID == "" {
 		if err := p.OrdSvc.ProcessApplication(ctx, opData.ApplicationID); err != nil {
+			log.C(ctx).Errorf("After process in operation processor")
 			return err
 		}
 	}
