@@ -28,6 +28,15 @@ type TenantMappingsService struct {
 	IASService IASService
 }
 
+func (s TenantMappingsService) CanSafelyRemoveTenantMapping(ctx context.Context, formationID string) (bool, error) {
+	tenantMappingsFromDB, err := s.Storage.ListTenantMappings(ctx, formationID)
+	if err != nil {
+		return false, errors.Newf("failed to get tenant mappings for formation '%s': %w", formationID, postgres.Error(err))
+	}
+
+	return len(tenantMappingsFromDB) < 2, nil
+}
+
 func (s TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error {
 	formationID := tenantMapping.FormationID
 	tenantMappingsFromDB, err := s.Storage.ListTenantMappings(ctx, formationID)
@@ -140,10 +149,10 @@ func (s TenantMappingsService) handleUnassign(ctx context.Context,
 			return errors.Newf("failed to remove applications consumed APIs in formation '%s': %w", formationID, err)
 		}
 	}
-	return s.removeTenantMappingFromDB(ctx, tenantMapping)
+	return s.RemoveTenantMappingFromDB(ctx, tenantMapping)
 }
 
-func (s TenantMappingsService) removeTenantMappingFromDB(
+func (s TenantMappingsService) RemoveTenantMappingFromDB(
 	ctx context.Context, tenantMapping types.TenantMapping) error {
 	formationID := tenantMapping.FormationID
 	err := s.Storage.DeleteTenantMapping(ctx, formationID, tenantMapping.AssignedTenants[0].UCLApplicationID)

@@ -15,6 +15,30 @@ type TenantMappingsService struct {
 	mock.Mock
 }
 
+// CanSafelyRemoveTenantMapping provides a mock function with given fields: ctx, formationID
+func (_m *TenantMappingsService) CanSafelyRemoveTenantMapping(ctx context.Context, formationID string) (bool, error) {
+	ret := _m.Called(ctx, formationID)
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return rf(ctx, formationID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
+		r0 = rf(ctx, formationID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, formationID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ProcessTenantMapping provides a mock function with given fields: ctx, tenantMapping
 func (_m *TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error {
 	ret := _m.Called(ctx, tenantMapping)
@@ -29,13 +53,26 @@ func (_m *TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenan
 	return r0
 }
 
-type mockConstructorTestingTNewTenantMappingsService interface {
-	mock.TestingT
-	Cleanup(func())
+// RemoveTenantMappingFromDB provides a mock function with given fields: ctx, tenantMapping
+func (_m *TenantMappingsService) RemoveTenantMappingFromDB(ctx context.Context, tenantMapping types.TenantMapping) error {
+	ret := _m.Called(ctx, tenantMapping)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, types.TenantMapping) error); ok {
+		r0 = rf(ctx, tenantMapping)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // NewTenantMappingsService creates a new instance of TenantMappingsService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantMappingsService(t mockConstructorTestingTNewTenantMappingsService) *TenantMappingsService {
+// The first argument is typically a *testing.T value.
+func NewTenantMappingsService(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *TenantMappingsService {
 	mock := &TenantMappingsService{}
 	mock.Mock.Test(t)
 
