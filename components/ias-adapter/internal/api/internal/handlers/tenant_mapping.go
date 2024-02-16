@@ -19,7 +19,7 @@ import (
 type TenantMappingsService interface {
 	CanSafelyRemoveTenantMapping(ctx context.Context, formationID string) (bool, error)
 	ProcessTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error
-	RemoveTenantMappingFromDB(ctx context.Context, tenantMapping types.TenantMapping) error
+	RemoveTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error
 }
 
 type TenantMappingsHandler struct {
@@ -98,7 +98,7 @@ func (h TenantMappingsHandler) handleValidateError(ctx *gin.Context, err error, 
 		return
 	}
 
-	if err := h.Service.RemoveTenantMappingFromDB(ctx, *tenantMapping); err != nil {
+	if err := h.Service.RemoveTenantMapping(ctx, *tenantMapping); err != nil {
 		internal.RespondWithError(
 			ctx, http.StatusInternalServerError, fmt.Errorf("failed to remove tenant mapping: %w", err))
 		return

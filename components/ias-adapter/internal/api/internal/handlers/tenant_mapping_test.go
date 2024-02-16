@@ -97,14 +97,14 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			})
 			It("Should fail with 500 if tenantMappings remove call fails", func() {
 				mockService.On("CanSafelyRemoveTenantMapping", mock.Anything, mock.Anything).Return(true, nil)
-				mockService.On("RemoveTenantMappingFromDB", mock.Anything, mock.Anything).Return(errExpected)
+				mockService.On("RemoveTenantMapping", mock.Anything, mock.Anything).Return(errExpected)
 				w, ctx := createTestRequest(tenantMapping)
 				handler.Patch(ctx)
 				expectError(w, http.StatusInternalServerError, errExpected.Error())
 			})
 			It("Should succeed if tenantMappings are less then 2", func() {
 				mockService.On("CanSafelyRemoveTenantMapping", mock.Anything, mock.Anything).Return(true, nil)
-				mockService.On("RemoveTenantMappingFromDB", mock.Anything, mock.Anything).Return(nil)
+				mockService.On("RemoveTenantMapping", mock.Anything, mock.Anything).Return(nil)
 				w, ctx := createTestRequest(tenantMapping)
 				handler.Patch(ctx)
 				expectSuccess(w)

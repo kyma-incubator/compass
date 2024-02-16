@@ -56,6 +56,18 @@ func (s TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenantM
 	}
 }
 
+func (s TenantMappingsService) RemoveTenantMapping(
+	ctx context.Context, tenantMapping types.TenantMapping) error {
+	formationID := tenantMapping.FormationID
+	err := s.Storage.DeleteTenantMapping(ctx, formationID, tenantMapping.AssignedTenants[0].UCLApplicationID)
+	if err != nil {
+		logger.FromContext(ctx).Err(err).Msgf("Failed to clean up tenant mapping for formation '%s'", formationID)
+		return errors.Newf("failed to clean up tenant mapping for formation '%s': %w",
+			formationID, postgres.Error(err))
+	}
+	return nil
+}
+
 func (s TenantMappingsService) handleAssign(ctx context.Context,
 	tenantMapping types.TenantMapping, tenantMappingsFromDB map[string]types.TenantMapping) error {
 
@@ -149,19 +161,7 @@ func (s TenantMappingsService) handleUnassign(ctx context.Context,
 			return errors.Newf("failed to remove applications consumed APIs in formation '%s': %w", formationID, err)
 		}
 	}
-	return s.RemoveTenantMappingFromDB(ctx, tenantMapping)
-}
-
-func (s TenantMappingsService) RemoveTenantMappingFromDB(
-	ctx context.Context, tenantMapping types.TenantMapping) error {
-	formationID := tenantMapping.FormationID
-	err := s.Storage.DeleteTenantMapping(ctx, formationID, tenantMapping.AssignedTenants[0].UCLApplicationID)
-	if err != nil {
-		logger.FromContext(ctx).Err(err).Msgf("Failed to clean up tenant mapping for formation '%s'", formationID)
-		return errors.Newf("failed to clean up tenant mapping for formation '%s': %w",
-			formationID, postgres.Error(err))
-	}
-	return nil
+	return s.RemoveTenantMapping(ctx, tenantMapping)
 }
 
 func (s TenantMappingsService) getIASApplication(

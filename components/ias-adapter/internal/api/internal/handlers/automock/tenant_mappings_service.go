@@ -53,8 +53,8 @@ func (_m *TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenan
 	return r0
 }
 
-// RemoveTenantMappingFromDB provides a mock function with given fields: ctx, tenantMapping
-func (_m *TenantMappingsService) RemoveTenantMappingFromDB(ctx context.Context, tenantMapping types.TenantMapping) error {
+// RemoveTenantMapping provides a mock function with given fields: ctx, tenantMapping
+func (_m *TenantMappingsService) RemoveTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error {
 	ret := _m.Called(ctx, tenantMapping)
 
 	var r0 error
