@@ -239,7 +239,7 @@ func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBa
 		for _, capability := range doc.Capabilities {
 			referredPkg, ok := packages[*capability.OrdPackageID]
 			if !ok {
-				valErrors = append(valErrors, newCustomValidationError(*capability.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("The capability has a reference to unknown package %q", capability.OrdPackageID)))
+				valErrors = append(valErrors, newCustomValidationError(*capability.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("The capability has a reference to unknown package %q", *capability.OrdPackageID)))
 				continue
 			}
 			if capability.Tags, err = mergeJSONArraysOfStrings(referredPkg.Tags, capability.Tags); err != nil {
@@ -252,7 +252,7 @@ func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBa
 		for _, integrationDependency := range doc.IntegrationDependencies {
 			referredPkg, ok := packages[*integrationDependency.OrdPackageID]
 			if !ok {
-				valErrors = append(valErrors, newCustomValidationError(*integrationDependency.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("The integration dependency has a reference to unknown package %q", integrationDependency.OrdPackageID)))
+				valErrors = append(valErrors, newCustomValidationError(*integrationDependency.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("The integration dependency has a reference to unknown package %q", *integrationDependency.OrdPackageID)))
 				continue
 			}
 			if integrationDependency.Tags, err = mergeJSONArraysOfStrings(referredPkg.Tags, integrationDependency.Tags); err != nil {
@@ -270,7 +270,7 @@ func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBa
 
 			referredPkg, ok := packages[*dataProduct.OrdPackageID]
 			if !ok {
-				valErrors = append(valErrors, newCustomValidationError(*dataProduct.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("The data product has a reference to unknown package %q", dataProduct.OrdPackageID)))
+				valErrors = append(valErrors, newCustomValidationError(*dataProduct.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("The data product has a reference to unknown package %q", *dataProduct.OrdPackageID)))
 				continue
 			}
 			if dataProduct.Tags, err = mergeJSONArraysOfStrings(referredPkg.Tags, dataProduct.Tags); err != nil {

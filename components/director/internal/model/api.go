@@ -2,15 +2,11 @@ package model
 
 import (
 	"encoding/json"
-	"regexp"
 	"strconv"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -126,26 +122,26 @@ type APIResourceDefinition struct { // This is the place from where the specific
 	AccessStrategy accessstrategy.AccessStrategies `json:"accessStrategies"`
 }
 
-// Validate missing godoc
-func (rd *APIResourceDefinition) Validate() error {
-	const CustomTypeRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
-	return validation.ValidateStruct(rd,
-		validation.Field(&rd.Type, validation.Required, validation.In(APISpecTypeOpenAPIV2, APISpecTypeOpenAPIV3, APISpecTypeRaml, APISpecTypeEDMX,
-			APISpecTypeCsdl, APISpecTypeWsdlV1, APISpecTypeWsdlV2, APISpecTypeRfcMetadata, APISpecTypeCustom, APISpecTypeSQLAPIDefinitionV1, APISpecTypeGraphqlSDL), validation.When(rd.CustomType != "", validation.In(APISpecTypeCustom))),
-		validation.Field(&rd.CustomType, validation.When(rd.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex)))),
-		validation.Field(&rd.MediaType, validation.Required, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML, SpecFormatApplicationXML, SpecFormatPlainText, SpecFormatOctetStream),
-			validation.When(rd.Type == APISpecTypeOpenAPIV2 || rd.Type == APISpecTypeOpenAPIV3, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML)),
-			validation.When(rd.Type == APISpecTypeRaml, validation.In(SpecFormatTextYAML)),
-			validation.When(rd.Type == APISpecTypeEDMX, validation.In(SpecFormatApplicationXML)),
-			validation.When(rd.Type == APISpecTypeCsdl, validation.In(SpecFormatApplicationJSON)),
-			validation.When(rd.Type == APISpecTypeWsdlV1 || rd.Type == APISpecTypeWsdlV2, validation.In(SpecFormatApplicationXML)),
-			validation.When(rd.Type == APISpecTypeRfcMetadata, validation.In(SpecFormatApplicationXML)),
-			validation.When(rd.Type == APISpecTypeSQLAPIDefinitionV1, validation.In(SpecFormatApplicationJSON)),
-			validation.When(rd.Type == APISpecTypeGraphqlSDL, validation.In(SpecFormatPlainText))),
-		validation.Field(&rd.URL, validation.Required, is.RequestURI),
-		validation.Field(&rd.AccessStrategy),
-	)
-}
+//// Validate missing godoc
+//func (rd *APIResourceDefinition) Validate() error {
+//	const CustomTypeRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+//	return validation.ValidateStruct(rd,
+//		validation.Field(&rd.Type, validation.Required, validation.In(APISpecTypeOpenAPIV2, APISpecTypeOpenAPIV3, APISpecTypeRaml, APISpecTypeEDMX,
+//			APISpecTypeCsdl, APISpecTypeWsdlV1, APISpecTypeWsdlV2, APISpecTypeRfcMetadata, APISpecTypeCustom, APISpecTypeSQLAPIDefinitionV1, APISpecTypeGraphqlSDL), validation.When(rd.CustomType != "", validation.In(APISpecTypeCustom))),
+//		validation.Field(&rd.CustomType, validation.When(rd.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex)))),
+//		validation.Field(&rd.MediaType, validation.Required, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML, SpecFormatApplicationXML, SpecFormatPlainText, SpecFormatOctetStream),
+//			validation.When(rd.Type == APISpecTypeOpenAPIV2 || rd.Type == APISpecTypeOpenAPIV3, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML)),
+//			validation.When(rd.Type == APISpecTypeRaml, validation.In(SpecFormatTextYAML)),
+//			validation.When(rd.Type == APISpecTypeEDMX, validation.In(SpecFormatApplicationXML)),
+//			validation.When(rd.Type == APISpecTypeCsdl, validation.In(SpecFormatApplicationJSON)),
+//			validation.When(rd.Type == APISpecTypeWsdlV1 || rd.Type == APISpecTypeWsdlV2, validation.In(SpecFormatApplicationXML)),
+//			validation.When(rd.Type == APISpecTypeRfcMetadata, validation.In(SpecFormatApplicationXML)),
+//			validation.When(rd.Type == APISpecTypeSQLAPIDefinitionV1, validation.In(SpecFormatApplicationJSON)),
+//			validation.When(rd.Type == APISpecTypeGraphqlSDL, validation.In(SpecFormatPlainText))),
+//		validation.Field(&rd.URL, validation.Required, is.RequestURI),
+//		validation.Field(&rd.AccessStrategy),
+//	)
+//}
 
 // ToSpec missing godoc
 func (rd *APIResourceDefinition) ToSpec() *SpecInput {

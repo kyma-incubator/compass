@@ -2,7 +2,6 @@ package ord
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
@@ -31,8 +30,9 @@ type globalRegistryService struct {
 
 	transact persistence.Transactioner
 
-	vendorService  GlobalVendorService
-	productService GlobalProductService
+	vendorService     GlobalVendorService
+	productService    GlobalProductService
+	documentValidator *DocumentValidator
 
 	ordClient Client
 
@@ -40,7 +40,7 @@ type globalRegistryService struct {
 }
 
 // NewGlobalRegistryService creates new instance of GlobalRegistryService.
-func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalRegistryConfig, vendorService GlobalVendorService, productService GlobalProductService, ordClient Client, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) *globalRegistryService {
+func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalRegistryConfig, vendorService GlobalVendorService, productService GlobalProductService, ordClient Client, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping, documentValidator *DocumentValidator) *globalRegistryService {
 	return &globalRegistryService{
 		transact:                                 transact,
 		config:                                   config,
@@ -48,6 +48,7 @@ func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalR
 		productService:                           productService,
 		ordClient:                                ordClient,
 		credentialExchangeStrategyTenantMappings: credentialExchangeStrategyTenantMappings,
+		documentValidator:                        documentValidator,
 	}
 }
 
@@ -67,11 +68,8 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 		return nil, errors.Wrapf(err, "while fetching global registry documents from %s", s.config.URL)
 	}
 
-	validationClient := NewValidationClient("http://localhost:8080") //TODO env variable or const?
-	documentValidator := NewDocumentValidator(validationClient)
-
 	// TODO log validation errors
-	_, err = documentValidator.Validate(ctx, documents, s.config.URL, map[string]bool{}, docsString)
+	_, err = s.documentValidator.Validate(ctx, documents, s.config.URL, map[string]bool{}, docsString)
 	// log validation errors
 	if err != nil {
 		return nil, errors.Wrap(err, "while validating global registry documents")

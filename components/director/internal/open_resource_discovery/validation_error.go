@@ -1,8 +1,7 @@
 package ord
 
 const (
-	ErrorSeverity   = "error"
-	WarningSeverity = "warning"
+	ErrorSeverity = "error"
 )
 
 type ValidationError struct {

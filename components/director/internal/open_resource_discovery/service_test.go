@@ -33,6 +33,7 @@ const (
 	processApplicationFnName             = "ProcessApplication"
 	processAppInAppTemplateContextFnName = "ProcessAppInAppTemplateContext"
 	processApplicationTemplateFnName     = "ProcessApplicationTemplate"
+	sapVendor                            = "sap:vendor:SAP:"
 )
 
 func TestService_Processing(t *testing.T) {
@@ -1294,7 +1295,7 @@ func TestService_Processing(t *testing.T) {
 			globalRegistrySvcFn: func() *automock.GlobalRegistryService {
 				globalRegistrySvcFn := &automock.GlobalRegistryService{}
 				globalRegistrySvcFn.On("SyncGlobalResources", mock.Anything).Return(nil, errors.New("error")).Once()
-				globalRegistrySvcFn.On("ListGlobalResources", mock.Anything).Return(map[string]bool{ord.SapVendor: true}, nil).Once()
+				globalRegistrySvcFn.On("ListGlobalResources", mock.Anything).Return(map[string]bool{sapVendor: true}, nil).Once()
 				return globalRegistrySvcFn
 			},
 			clientFn:      successfulClientFetch,
@@ -4357,7 +4358,7 @@ func TestService_ProcessAppInAppTemplateContext(t *testing.T) {
 
 func successfulGlobalRegistrySvc() *automock.GlobalRegistryService {
 	globalRegistrySvcFn := &automock.GlobalRegistryService{}
-	globalRegistrySvcFn.On("SyncGlobalResources", mock.Anything).Return(map[string]bool{ord.SapVendor: true}, nil).Once()
+	globalRegistrySvcFn.On("SyncGlobalResources", mock.Anything).Return(map[string]bool{sapVendor: true}, nil).Once()
 	return globalRegistrySvcFn
 }
 

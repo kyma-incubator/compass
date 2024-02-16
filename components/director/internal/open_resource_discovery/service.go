@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/mitchellh/hashstructure/v2"
 	"strconv"
 	"strings"
 	"sync"
@@ -38,8 +39,6 @@ import (
 )
 
 const (
-	// MultiErrorSeparator represents the separator for splitting multi error into slice of validation errors
-	MultiErrorSeparator string = "* "
 	// TenantMappingCustomTypeIdentifier represents an identifier for tenant mapping webhooks in Credential exchange strategies
 	TenantMappingCustomTypeIdentifier = "sap.ucl:tenant-mapping"
 
@@ -52,9 +51,13 @@ const (
 	ProcessingErrorMsg = "error processing ORD documents"
 )
 
+type RuntimeError struct {
+	Message string `json:"message"`
+}
+
 type ProcessingError struct {
 	ValidationErrors []ValidationError `json:"validation_errors"`
-	RuntimeError     error             `json:"runtime_error"`
+	RuntimeError     *RuntimeError     `json:"runtime_error"`
 }
 
 func (p *ProcessingError) Error() string {
@@ -146,10 +149,11 @@ type Service struct {
 
 	globalRegistrySvc GlobalRegistryService
 	ordClient         Client
+	documentValidator *DocumentValidator
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, apiProcessor APIProcessor, eventSvc EventService, eventProcessor EventProcessor, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, capabilityProcessor CapabilityProcessor, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, dataProductSvc DataProductService, dataProductProcessor DataProductProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, packageProcessor PackageProcessor, productProcessor ProductProcessor, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, tombstonedResourcesDeleter TombstonedResourcesDeleter, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, apiProcessor APIProcessor, eventSvc EventService, eventProcessor EventProcessor, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, capabilityProcessor CapabilityProcessor, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, dataProductSvc DataProductService, dataProductProcessor DataProductProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, packageProcessor PackageProcessor, productProcessor ProductProcessor, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, tombstonedResourcesDeleter TombstonedResourcesDeleter, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService, documentValidator *DocumentValidator) *Service {
 	return &Service{
 		config:                         config,
 		metricsCfg:                     metricsCfg,
@@ -187,6 +191,7 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		labelSvc:                       labelService,
 		ordWebhookMapping:              ordWebhookMapping,
 		opSvc:                          opSvc,
+		documentValidator:              documentValidator,
 	}
 }
 
@@ -364,10 +369,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		return nil, err
 	}
 
-	validationClient := NewValidationClient("http://localhost:8080") //TODO env variable or const?
-	documentValidator := NewDocumentValidator(validationClient)
-
-	validationErrors, err := documentValidator.Validate(ctx, documents, webhookBaseURL, globalResourcesOrdIDs, docsString)
+	validationErrors, err := s.documentValidator.Validate(ctx, documents, webhookBaseURL, globalResourcesOrdIDs, docsString)
 	if err != nil {
 		return validationErrors, err
 	}
@@ -1302,6 +1304,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 	ctx = addFieldToLogger(ctx, "resource_type", string(resource.Type))
 
 	var appBaseURL *string
+	fmt.Println(resource.Type, directorresource.Application, resource.Type == directorresource.Application)
 	if resource.Type == directorresource.Application {
 		tx, err := s.transact.Begin()
 		if err != nil {
@@ -1380,14 +1383,54 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 
 		fmt.Println(err, len(validationErrors), "Before return of processing errors")
 
-		if err == nil && len(validationErrors) == 0 {
+		if err != nil {
+			return &ProcessingError{
+				ValidationErrors: nil,
+				RuntimeError:     &RuntimeError{Message: err.Error()},
+			}
+		}
+
+		if len(validationErrors) == 0 {
 			return nil
 		}
 
 		return &ProcessingError{
 			ValidationErrors: validationErrors,
-			RuntimeError:     err,
+			RuntimeError:     nil,
 		}
+		////
+		//if err == nil {
+		//	if len(validationErrors) == 0 {
+		//		return nil
+		//	}
+		//
+		//	return &ProcessingError{
+		//		ValidationErrors: validationErrors,
+		//		RuntimeError:     nil,
+		//	}
+		//}
+		//
+		//if len(validationErrors) == 0 {
+		//	return err
+		//}
+		//
+		//return &ProcessingError{
+		//	ValidationErrors: validationErrors,
+		//	RuntimeError:     &RuntimeError{Message: err.Error()},
+		//}
+
+		//if err != nil {
+		//	return &ProcessingError{
+		//		ValidationErrors: validationErrors,
+		//		RuntimeError:     &RuntimeError{Message: err.Error()},
+		//	}
+		//}
+		//
+		//return &ProcessingError{
+		//	ValidationErrors: validationErrors,
+		//	RuntimeError:     nil,
+		//}
+
 	}
 
 	log.C(ctx).Info("Successfully processed ORD documents")
@@ -1780,4 +1823,126 @@ func (s *Service) saveLowestOwnerForAppToContextInTx(ctx context.Context, appID 
 	}
 
 	return ctx, tx.Commit()
+}
+
+func normalizeAPIDefinition(api *model.APIDefinitionInput) (model.APIDefinitionInput, error) {
+	bytes, err := json.Marshal(api)
+	if err != nil {
+		return model.APIDefinitionInput{}, errors.Wrapf(err, "error while marshalling api definition with ID %s", str.PtrStrToStr(api.OrdID))
+	}
+
+	var normalizedAPIDefinition model.APIDefinitionInput
+	if err := json.Unmarshal(bytes, &normalizedAPIDefinition); err != nil {
+		return model.APIDefinitionInput{}, errors.Wrapf(err, "error while unmarshalling api definition with ID %s", str.PtrStrToStr(api.OrdID))
+	}
+
+	return normalizedAPIDefinition, nil
+}
+
+func normalizeEventDefinition(event *model.EventDefinitionInput) (model.EventDefinitionInput, error) {
+	bytes, err := json.Marshal(event)
+	if err != nil {
+		return model.EventDefinitionInput{}, errors.Wrapf(err, "error while marshalling event definition with ID %s", str.PtrStrToStr(event.OrdID))
+	}
+
+	var normalizedEventDefinition model.EventDefinitionInput
+	if err := json.Unmarshal(bytes, &normalizedEventDefinition); err != nil {
+		return model.EventDefinitionInput{}, errors.Wrapf(err, "error while unmarshalling event definition with ID %s", str.PtrStrToStr(event.OrdID))
+	}
+
+	return normalizedEventDefinition, nil
+}
+
+func normalizeEntityType(entityType *model.EntityTypeInput) (model.EntityTypeInput, error) {
+	bytes, err := json.Marshal(entityType)
+	if err != nil {
+		return model.EntityTypeInput{}, errors.Wrapf(err, "error while marshalling entity type with ID %s", entityType.OrdID)
+	}
+
+	var normalizedEntityType model.EntityTypeInput
+	if err := json.Unmarshal(bytes, &normalizedEntityType); err != nil {
+		return model.EntityTypeInput{}, errors.Wrapf(err, "error while unmarshalling entity type with ID %s", entityType.OrdID)
+	}
+
+	return normalizedEntityType, nil
+}
+
+func normalizeCapability(capability *model.CapabilityInput) (model.CapabilityInput, error) {
+	bytes, err := json.Marshal(capability)
+	if err != nil {
+		return model.CapabilityInput{}, errors.Wrapf(err, "error while marshalling capability with ID %s", str.PtrStrToStr(capability.OrdID))
+	}
+
+	var normalizedCapability model.CapabilityInput
+	if err := json.Unmarshal(bytes, &normalizedCapability); err != nil {
+		return model.CapabilityInput{}, errors.Wrapf(err, "error while unmarshalling capability with ID %s", str.PtrStrToStr(capability.OrdID))
+	}
+
+	return normalizedCapability, nil
+}
+
+func normalizeIntegrationDependency(integrationDependency *model.IntegrationDependencyInput) (model.IntegrationDependencyInput, error) {
+	bytes, err := json.Marshal(integrationDependency)
+	if err != nil {
+		return model.IntegrationDependencyInput{}, errors.Wrapf(err, "error while marshalling integration dependency with ID %s", str.PtrStrToStr(integrationDependency.OrdID))
+	}
+
+	var normalizedIntegrationDependency model.IntegrationDependencyInput
+	if err := json.Unmarshal(bytes, &normalizedIntegrationDependency); err != nil {
+		return model.IntegrationDependencyInput{}, errors.Wrapf(err, "error while unmarshalling integration dependency with ID %s", str.PtrStrToStr(integrationDependency.OrdID))
+	}
+
+	return normalizedIntegrationDependency, nil
+}
+
+func normalizeDataProduct(dataProduct *model.DataProductInput) (model.DataProductInput, error) {
+	bytes, err := json.Marshal(dataProduct)
+	if err != nil {
+		return model.DataProductInput{}, errors.Wrapf(err, "error while marshalling data product with ID %s", str.PtrStrToStr(dataProduct.OrdID))
+	}
+
+	var normalizedDataProduct model.DataProductInput
+	if err := json.Unmarshal(bytes, &normalizedDataProduct); err != nil {
+		return model.DataProductInput{}, errors.Wrapf(err, "error while unmarshalling data product with ID %s", str.PtrStrToStr(dataProduct.OrdID))
+	}
+
+	return normalizedDataProduct, nil
+}
+
+func normalizePackage(pkg *model.PackageInput) (model.PackageInput, error) {
+	bytes, err := json.Marshal(pkg)
+	if err != nil {
+		return model.PackageInput{}, errors.Wrapf(err, "error while marshalling package definition with ID %s", pkg.OrdID)
+	}
+
+	var normalizedPkgDefinition model.PackageInput
+	if err := json.Unmarshal(bytes, &normalizedPkgDefinition); err != nil {
+		return model.PackageInput{}, errors.Wrapf(err, "error while unmarshalling package definition with ID %s", pkg.OrdID)
+	}
+
+	return normalizedPkgDefinition, nil
+}
+
+func normalizeBundle(bndl *model.BundleCreateInput) (model.BundleCreateInput, error) {
+	bytes, err := json.Marshal(bndl)
+	if err != nil {
+		return model.BundleCreateInput{}, errors.Wrapf(err, "error while marshalling bundle definition with ID %v", bndl.OrdID)
+	}
+
+	var normalizedBndlDefinition model.BundleCreateInput
+	if err := json.Unmarshal(bytes, &normalizedBndlDefinition); err != nil {
+		return model.BundleCreateInput{}, errors.Wrapf(err, "error while unmarshalling bundle definition with ID %v", bndl.OrdID)
+	}
+
+	return normalizedBndlDefinition, nil
+}
+
+// HashObject hashes the given object
+func HashObject(obj interface{}) (uint64, error) {
+	hash, err := hashstructure.Hash(obj, hashstructure.FormatV2, &hashstructure.HashOptions{SlicesAsSets: true})
+	if err != nil {
+		return 0, errors.New("failed to hash the given object")
+	}
+
+	return hash, nil
 }

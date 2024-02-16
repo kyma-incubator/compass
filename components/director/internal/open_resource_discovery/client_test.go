@@ -439,7 +439,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				testWebhook.Auth.AccessStrategy = &test.AccessStrategy
 			}
 
-			docs, actualBaseURL, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), testResource, testWebhook, ordMappings, requestObject)
+			docs, _, actualBaseURL, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), testResource, testWebhook, ordMappings, requestObject)
 
 			if test.ExpectedErr != nil {
 				require.Error(t, err)

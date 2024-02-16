@@ -369,10 +369,12 @@ func main() {
 	ordClientWithTenantExecutor := newORDClientWithTenantExecutor(cfg, clientConfig, certCache)
 	ordClientWithoutTenantExecutor := newORDClientWithoutTenantExecutor(cfg, clientConfig, certCache)
 
-	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
+	validationClient := ord.NewValidationClient("http://localhost:8080") //TODO env variable or const?
+	documentValidator := ord.NewDocumentValidator(validationClient)
+	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings, documentValidator)
 
 	ordConfig := ord.NewServiceConfig(cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
-	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, apiProcessor, eventAPISvc, eventProcessor, entityTypeSvc, entityTypeProcessor, capabilitySvc, capabilityProcessor, integrationDependencySvc, integrationDependencyProcessor, dataProductSvc, dataProductProcessor, specSvc, fetchRequestSvc, packageSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, ordWebhookMapping, opSvc)
+	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, apiProcessor, eventAPISvc, eventProcessor, entityTypeSvc, entityTypeProcessor, capabilitySvc, capabilityProcessor, integrationDependencySvc, integrationDependencyProcessor, dataProductSvc, dataProductProcessor, specSvc, fetchRequestSvc, packageSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, ordWebhookMapping, opSvc, documentValidator)
 	ordOpProcessor := &ord.OperationsProcessor{
 		OrdSvc: ordSvc,
 	}
@@ -471,6 +473,12 @@ func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig
 	return ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithoutTenant)
 }
 
+// 1. Runtime error - Expected failed operation +
+// 2. Runtime error in ProcessingError - Expected fail operation +
+// 3. Runtime error = nil, ValidationErrors with Errors - Expected fail operation +
+// 4. Runtime error = nil, ValidationErrors with Warnings only - Expected completed operation +
+// 5. Runtime error = nil, len(ValidationErrors)==0 - Expected completed operation +
+
 func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *ord.OperationsProcessor) (string, error) {
 	op, errGetOperation := opManager.GetOperation(ctx)
 	if errGetOperation != nil {
@@ -491,7 +499,7 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 		if !ok {
 			newProcessingError := ord.ProcessingError{
 				ValidationErrors: nil,
-				RuntimeError:     errProcess,
+				RuntimeError:     &ord.RuntimeError{Message: errProcess.Error()},
 			}
 			if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, newProcessingError.Error()); errMarkAsFailed != nil {
 				log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
@@ -500,41 +508,19 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 			return op.ID, processingError
 		}
 
-		if len(processingError.ValidationErrors) > 0 {
-			fmt.Println("MARKING OPERATION AS FAILED", len(processingError.ValidationErrors))
-			if thereAreValidationErrorsWithErrSeverity(processingError.ValidationErrors) || processingError.RuntimeError != nil {
-				// MARK AS FAILED
-				if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError.Error()); errMarkAsFailed != nil {
-					log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
-					return op.ID, errMarkAsFailed
-				}
-				return op.ID, processingError
-			} else if !thereAreValidationErrorsWithErrSeverity(processingError.ValidationErrors) && processingError.RuntimeError == nil {
-				// MARK AS COMPLETED
-				if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, processingError.Error()); errMarkAsCompleted != nil {
-					log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
-					return op.ID, errMarkAsCompleted
-				}
-				return op.ID, nil
+		if processingError.RuntimeError != nil || (len(processingError.ValidationErrors) > 0 && thereAreValidationErrorsWithErrSeverity(processingError.ValidationErrors)) {
+			if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError.Error()); errMarkAsFailed != nil {
+				log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
+				return op.ID, errMarkAsFailed
 			}
-		} else if len(processingError.ValidationErrors) == 0 {
-			fmt.Println("MARKING OPERATION AS FAILED", len(processingError.ValidationErrors))
-			if processingError.RuntimeError == nil {
-				//MARK AS COMPLETED
-				if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, processingError.Error()); errMarkAsCompleted != nil {
-					log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
-					return op.ID, errMarkAsCompleted
-				}
-				return op.ID, nil
-			} else {
-				//MARK AS FAILED
-				if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError.Error()); errMarkAsFailed != nil {
-					log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
-					return op.ID, errMarkAsFailed
-				}
-				return op.ID, processingError
-			}
+			return op.ID, processingError
 		}
+
+		if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, processingError.Error()); errMarkAsCompleted != nil {
+			log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
+			return op.ID, errMarkAsCompleted
+		}
+		return op.ID, nil
 	}
 	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, ""); errMarkAsCompleted != nil {
 		log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)

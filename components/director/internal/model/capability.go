@@ -2,11 +2,8 @@ package model
 
 import (
 	"encoding/json"
-	"regexp"
 	"strconv"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -79,20 +76,21 @@ type CapabilityDefinition struct {
 	AccessStrategy accessstrategy.AccessStrategies `json:"accessStrategies"`
 }
 
-// Validate missing godoc
-func (cd *CapabilityDefinition) Validate() error {
-	const CustomTypeRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
-	return validation.ValidateStruct(cd,
-		validation.Field(&cd.Type, validation.Required, validation.In(CapabilitySpecTypeMDICapabilityDefinitionV1, CapabilitySpecTypeCustom), validation.When(cd.CustomType != "", validation.In(CapabilitySpecTypeCustom))),
-		validation.Field(&cd.CustomType, validation.When(cd.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex))),
-			validation.Length(0, 255),
-			validation.When(cd.Type == CapabilitySpecTypeCustom, validation.Required)),
-		validation.Field(&cd.MediaType, validation.Required, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML, SpecFormatApplicationXML, SpecFormatPlainText, SpecFormatOctetStream),
-			validation.When(cd.Type == CapabilitySpecTypeMDICapabilityDefinitionV1, validation.In(SpecFormatApplicationJSON))),
-		validation.Field(&cd.URL, validation.Required, is.RequestURI),
-		validation.Field(&cd.AccessStrategy),
-	)
-}
+//
+//// Validate missing godoc
+//func (cd *CapabilityDefinition) Validate() error {
+//	const CustomTypeRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+//	return validation.ValidateStruct(cd,
+//		validation.Field(&cd.Type, validation.Required, validation.In(CapabilitySpecTypeMDICapabilityDefinitionV1, CapabilitySpecTypeCustom), validation.When(cd.CustomType != "", validation.In(CapabilitySpecTypeCustom))),
+//		validation.Field(&cd.CustomType, validation.When(cd.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex))),
+//			validation.Length(0, 255),
+//			validation.When(cd.Type == CapabilitySpecTypeCustom, validation.Required)),
+//		validation.Field(&cd.MediaType, validation.Required, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML, SpecFormatApplicationXML, SpecFormatPlainText, SpecFormatOctetStream),
+//			validation.When(cd.Type == CapabilitySpecTypeMDICapabilityDefinitionV1, validation.In(SpecFormatApplicationJSON))),
+//		validation.Field(&cd.URL, validation.Required, is.RequestURI),
+//		validation.Field(&cd.AccessStrategy),
+//	)
+//}
 
 // ToSpec missing godoc
 func (cd *CapabilityDefinition) ToSpec() *SpecInput {
