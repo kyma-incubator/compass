@@ -142,7 +142,7 @@ func (i *InstanceCreatorHandler) handleAssign(ctx context.Context, reqBody *tena
 		}
 	}()
 
-	assignmentID := reqBody.AssignedTenant.AssignmentID
+	assignmentID := reqBody.ReceiverTenant.AssignmentID
 
 	advisoryLocker := connection.GetAdvisoryLocker()
 
@@ -361,7 +361,7 @@ func (i *InstanceCreatorHandler) handleUnassign(ctx context.Context, reqBody *te
 
 	advisoryLocker := connection.GetAdvisoryLocker()
 
-	assignmentID := reqBody.AssignedTenant.AssignmentID
+	assignmentID := reqBody.ReceiverTenant.AssignmentID
 
 	log.C(ctx).Debugf("Trying to get an advisory lock with (assignmentID, operation): (%q, %q)...", assignmentID, reqBody.Context.Operation)
 	// This lock prevents multiple unassign operations to execute simultaneously
@@ -400,7 +400,7 @@ func (i *InstanceCreatorHandler) handleUnassign(ctx context.Context, reqBody *te
 
 // Core Instance Deletion Logic
 func (i *InstanceCreatorHandler) handleInstanceDeletion(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL string) {
-	assignmentID := reqBody.AssignedTenant.AssignmentID
+	assignmentID := reqBody.ReceiverTenant.AssignmentID
 	region := reqBody.ReceiverTenant.Region
 	subaccount := reqBody.ReceiverTenant.SubaccountID
 	labels := map[string][]string{assignmentIDKey: {assignmentID}}
@@ -472,7 +472,7 @@ func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, req
 	}
 
 	smLabels := map[string][]string{
-		assignmentIDKey:    {reqBody.AssignedTenant.AssignmentID},
+		assignmentIDKey:    {reqBody.ReceiverTenant.AssignmentID},
 		currentWaveHashKey: {currentWaveHash},
 	}
 	log.C(ctx).Debugf("Listing service instances with labels %v for region %q and subaccount %q...", smLabels, region, subaccount)
