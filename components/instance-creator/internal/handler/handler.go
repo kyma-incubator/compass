@@ -100,16 +100,16 @@ func (i InstanceCreatorHandler) HandlerFunc(w http.ResponseWriter, r *http.Reque
 	if err := decodeJSONBody(r, &reqBody); err != nil {
 		var mr *malformedRequest
 		if errors.As(err, &mr) {
-			httputils.RespondWithBody(ctx, w, http.StatusBadRequest, err.Error())
+			respondWithError(ctx, w, http.StatusBadRequest, err)
 		} else {
-			httputils.RespondWithBody(ctx, w, http.StatusBadRequest, errors.Wrap(err, "while decoding json request body"))
+			respondWithError(ctx, w, http.StatusBadRequest, errors.Wrap(err, "while decoding json request body"))
 		}
 		return
 	}
 
 	log.C(ctx).Info("Validating tenant mapping request body...")
 	if err := reqBody.Validate(); err != nil {
-		httputils.RespondWithBody(ctx, w, http.StatusBadRequest, errors.Wrapf(err, "while validating the request body"))
+		respondWithError(ctx, w, http.StatusBadRequest, errors.Wrapf(err, "while validating the request body"))
 		return
 	}
 
@@ -802,4 +802,16 @@ func DeepMergeJSON(src, dest gjson.Result) gjson.Result {
 	merge(src, dest, "")
 
 	return res
+}
+
+// respondWithError writes a http response using with the JSON encoded error wrapped in an Error struct
+func respondWithError(ctx context.Context, w http.ResponseWriter, status int, err error) {
+	log.C(ctx).WithError(err).Errorf("Responding with error: %v", err)
+	w.Header().Add(contentTypeHeaderKey, contentTypeApplicationJSON)
+	w.WriteHeader(status)
+	errorResponse := ErrorResponse{Message: err.Error()}
+	encodingErr := json.NewEncoder(w).Encode(errorResponse)
+	if encodingErr != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to encode error response: %v", err)
+	}
 }
