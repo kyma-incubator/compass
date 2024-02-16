@@ -71,6 +71,24 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			ExpectedResult: true,
 		},
 		{
+			Name:  "Success when deprecated \"authentication\" key is used in design time destination",
+			Input: inputForAssignNotificationStatusReturnedWithDeprecatedDestinationKey,
+			DestinationSvc: func() *automock.DestinationService {
+				destSvc := &automock.DestinationService{}
+				destSvc.On("CreateDesignTimeDestinations", ctx, designTimeDests, faDeprecatedDestinationKey, false).Return(nil).Once()
+				return destSvc
+			},
+			DestinationCreatorSvc: func() *automock.DestinationCreatorService {
+				destCreatorSvc := &automock.DestinationCreatorService{}
+				destCreatorSvc.On("CreateCertificate", ctx, samlAssertionDests, destinationcreatorpkg.AuthTypeSAMLAssertion, faDeprecatedDestinationKey, uint8(0), false, true).Return(certData, nil).Once()
+				destCreatorSvc.On("EnrichAssignmentConfigWithSAMLCertificateData", faDeprecatedDestinationKey.Value, destinationcreatorpkg.SAMLAssertionDestPath, certData).Return(destsConfigValueRawJSON, nil).Once()
+				destCreatorSvc.On("CreateCertificate", ctx, clientCertAuthDests, destinationcreatorpkg.AuthTypeClientCertificate, faDeprecatedDestinationKey, uint8(0), false, false).Return(certData, nil).Once()
+				destCreatorSvc.On("EnrichAssignmentConfigWithCertificateData", fa.Value, destinationcreatorpkg.ClientCertAuthDestPath, certData).Return(destsConfigValueRawJSON, nil).Once()
+				return destCreatorSvc
+			},
+			ExpectedResult: true,
+		},
+		{
 			Name:  "Success when operation is 'assign' and location is 'NotificationStatusReturned' with full destination config and the input indicates to use cert svc keystore for SAML",
 			Input: inputForAssignNotificationStatusReturnedWithCertSvcKeyStore,
 			DestinationSvc: func() *automock.DestinationService {
