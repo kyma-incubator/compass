@@ -162,23 +162,23 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3587"
+      version: "PR-3638"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3587"
+      version: "PR-3638"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3587"
+      version: "PR-3638"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3643"
+      version: "PR-3659"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3587"
+      version: "PR-3638"
       name: compass-hydrator
     ias_adapter:
       dir: prod/incubator/
@@ -198,15 +198,15 @@ global:
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
-      version: "PR-3587"
+      version: "PR-3638"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3587"
+      version: "PR-3638"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-120"
+      version: "PR-122"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
@@ -223,7 +223,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3642"
+      version: "PR-3659"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -231,7 +231,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3642"
+      version: "PR-3659"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1209,6 +1209,8 @@ global:
           nameField: "name"
           customerIdField: "customerId"
           costObjectIDField: "costObject"
+          subaccountCostObjectIDField: "costObjectId"
+          subaccountCostObjectTypeField: "costObjectType"
           subdomainField: "subdomain"
           licenseTypeField: "licenseType"
           discriminatorField: ""
@@ -1237,6 +1239,8 @@ global:
           nameField: "displayName"
           customerIdField: "customerId"
           costObjectIDField: "costObject"
+          subaccountCostObjectIDField: "costObjectId"
+          subaccountCostObjectTypeField: "costObjectType"
           subdomainField: "subdomain"
           licenseTypeField: "licenseType"
           discriminatorField: ""
@@ -1507,6 +1511,8 @@ global:
         - "formation:write"
         - "formation:global_write"
         - "formation:global_read"
+      tenant_discovery_operator:
+        - "application:read"
       instance_creator:
         - "application_template:read"
         - "formation:read"
