@@ -897,114 +897,59 @@ func Test_HandlerFunc(t *testing.T) {
 		expectedResponseCode int
 	}{
 		{
-			name:        "Wrong json - fails on decoding",
-			requestBody: `wrong json`,
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Request body contains badly-formed JSON")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Wrong json - fails on decoding",
+			requestBody:          `wrong json`,
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Missing config(empty json) - fails on validation",
-			requestBody: emptyJSON,
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Context FormationID must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Missing config(empty json) - fails on validation",
+			requestBody:          emptyJSON,
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Missing config(empty context, receiverTenant and assignedTenant) - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, emptyJSON, emptyJSON, emptyJSON),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("while validating the request body")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Missing config(empty context, receiverTenant and assignedTenant) - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, emptyJSON, emptyJSON, emptyJSON),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Missing formation ID in the context - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, `{"operation": "assign"}`, emptyJSON, emptyJSON),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Context FormationID must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Missing formation ID in the context - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, `{"operation": "assign"}`, emptyJSON, emptyJSON),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Missing operation in the context - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, `{"uclFormationId": "formation-id", "operation": ""}`, emptyJSON, emptyJSON),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Context Operation must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Missing operation in the context - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, `{"uclFormationId": "formation-id", "operation": ""}`, emptyJSON, emptyJSON),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Wrong operation in the context - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, `{"uclFormationId": "formation-id", "operation": "wrong-operation"}`, emptyJSON, emptyJSON),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody(`Context Operation must be \"assign\" or \"unassign\"`)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Wrong operation in the context - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, `{"uclFormationId": "formation-id", "operation": "wrong-operation"}`, emptyJSON, emptyJSON),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Formation assignment is missing in the assignedTenant - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, emptyJSON, emptyJSON),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("AssignedTenant AssignmentID must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Formation assignment is missing in the assignedTenant - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, emptyJSON, emptyJSON),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Region is missing in the receiverTenant - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, emptyJSON, fmt.Sprintf(assignedTenantFormatter, assignmentID, emptyJSON)),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("ReceiverTenant Region must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Region is missing in the receiverTenant - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, emptyJSON, fmt.Sprintf(assignedTenantFormatter, assignmentID, emptyJSON)),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Subaccount ID is missing in the receiverTenant - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, `{"deploymentRegion": "region"}`, fmt.Sprintf(assignedTenantFormatter, assignmentID, emptyJSON)),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("ReceiverTenant SubaccountID must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Subaccount ID is missing in the receiverTenant - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, `{"deploymentRegion": "region"}`, fmt.Sprintf(assignedTenantFormatter, assignmentID, emptyJSON)),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Operation is assign and inboundCommunication is missing in the assignedTenant configuration - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, assignmentID, emptyJSON)),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("AssignedTenant inbound communication is missing in the configuration")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Operation is assign and inboundCommunication is missing in the assignedTenant configuration - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, assignmentID, emptyJSON)),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Operation is assign and receiverTenant has outboundCommunication but not in the same path as assignedTenant inboundCommunication - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, `{"credentials": {"another-field":{"credentials": {"outboundCommunication":{}}}}}`), fmt.Sprintf(assignedTenantFormatter, assignmentID, `{"credentials": {"inboundCommunication":{}}}`)),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody(`ReceiverTenant outbound communication should be in the same place as the assigned tenant inbound communication`)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Operation is assign and receiverTenant has outboundCommunication but not in the same path as assignedTenant inboundCommunication - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, `{"credentials": {"another-field":{"credentials": {"outboundCommunication":{}}}}}`), fmt.Sprintf(assignedTenantFormatter, assignmentID, `{"credentials": {"inboundCommunication":{}}}`)),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
 			name:        "Operation is unassign and fails while retrieving service instances by assignment ID",

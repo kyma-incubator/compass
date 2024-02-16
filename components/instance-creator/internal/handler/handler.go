@@ -16,7 +16,6 @@ import (
 	"github.com/tidwall/sjson"
 
 	"github.com/PaesslerAG/jsonpath"
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
@@ -90,55 +89,50 @@ func NewHandler(smClient Client, mtlsHTTPClient mtlsHTTPClient, connector persis
 
 // HandlerFunc is the implementation of InstanceCreatorHandler
 func (i InstanceCreatorHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	ctx := log.ContextWithLogger(r.Context(), log.LoggerWithCorrelationID(r))
 
 	log.C(ctx).Info("Instance Creator Handler was hit...")
 
 	uclStatusAPIUrl := r.Header.Get(locationHeader)
-
-	// respond with 202 to the UCL call
-	httputils.Respond(w, http.StatusAccepted)
-
-	correlationID := correlation.CorrelationIDFromContext(ctx)
-
-	log.C(ctx).Info("Instance Creator Handler handles instance creation...")
-	go i.handleInstances(r, uclStatusAPIUrl, correlationID)
-}
-
-func (i *InstanceCreatorHandler) handleInstances(r *http.Request, statusAPIURL, correlationID string) {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
 
 	log.C(ctx).Info("Decoding the request body...")
 	var reqBody tenantmapping.Body
 	if err := decodeJSONBody(r, &reqBody); err != nil {
 		var mr *malformedRequest
 		if errors.As(err, &mr) {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, "", err)
+			httputils.RespondWithBody(ctx, w, http.StatusBadRequest, err.Error())
 		} else {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, "", errors.Wrap(err, "while decoding json request body"))
+			httputils.RespondWithBody(ctx, w, http.StatusBadRequest, errors.Wrap(err, "while decoding json request body"))
 		}
 		return
 	}
 
 	log.C(ctx).Info("Validating tenant mapping request body...")
 	if err := reqBody.Validate(); err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, "", errors.Wrapf(err, "while validating the request body"))
+		httputils.RespondWithBody(ctx, w, http.StatusBadRequest, errors.Wrapf(err, "while validating the request body"))
 		return
 	}
 
+	// respond with 202 to the UCL call
+	httputils.Respond(w, http.StatusAccepted)
+
+	log.C(ctx).Info("Instance Creator Handler handles instance creation...")
+	go i.handleInstances(ctx, &reqBody, uclStatusAPIUrl)
+}
+
+func (i *InstanceCreatorHandler) handleInstances(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL string) {
 	if reqBody.Context.Operation == assignOperation {
-		i.handleAssign(ctx, &reqBody, statusAPIURL, correlationID)
+		i.handleAssign(ctx, reqBody, statusAPIURL)
 	} else {
-		i.handleUnassign(ctx, &reqBody, statusAPIURL, correlationID)
+		i.handleUnassign(ctx, reqBody, statusAPIURL)
 	}
 }
 
-func (i *InstanceCreatorHandler) handleAssign(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL, correlationID string) {
+func (i *InstanceCreatorHandler) handleAssign(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL string) {
 	log.C(ctx).Debug("Getting a single DB connection for instance creation...")
 	connection, err := i.connector.GetConnection(ctx)
 	if err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrap(err, "while trying to get database connection"))
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrap(err, "while trying to get database connection"))
 		return
 	}
 	defer func() {
@@ -156,7 +150,7 @@ func (i *InstanceCreatorHandler) handleAssign(ctx context.Context, reqBody *tena
 	// This lock prevents multiple assign operations to execute simultaneously
 	locked, err := advisoryLocker.TryLock(ctx, assignmentID+reqBody.Context.Operation)
 	if err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
 		return
 	}
 	if !locked {
@@ -173,7 +167,7 @@ func (i *InstanceCreatorHandler) handleAssign(ctx context.Context, reqBody *tena
 	log.C(ctx).Debugf("Locking an advisory lock with assignmentID %q...", assignmentID)
 	// This lock prevents assign and unassign operations to execute simultaneously
 	if err := advisoryLocker.Lock(ctx, assignmentID); err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
 		return
 	}
 	defer func() {
@@ -184,15 +178,15 @@ func (i *InstanceCreatorHandler) handleAssign(ctx context.Context, reqBody *tena
 	}()
 
 	log.C(ctx).Debug("Handling instance creation...")
-	i.handleInstanceCreation(ctx, reqBody, statusAPIURL, correlationID)
+	i.handleInstanceCreation(ctx, reqBody, statusAPIURL)
 }
 
 // Core Instance Creation Logic
-func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL, correlationID string) {
+func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL string) {
 	log.C(ctx).Debug("Adding receiver tenant outbound communication if missing...")
 	err := reqBody.AddReceiverTenantOutboundCommunicationIfMissing()
 	if err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, err)
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, err)
 		return
 	}
 
@@ -201,7 +195,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 
 	serviceInstancesPath := tenantmapping.FindKeyPath(assignedTenantInboundCommunication.Value(), serviceInstancesKey)
 	if serviceInstancesPath == "" {
-		i.reportToUCLWithSuccess(ctx, statusAPIURL, correlationID, configPendingState, fmt.Sprintf("Service instances details are missing. Returning %q...", configPendingState), nil)
+		i.reportToUCLWithSuccess(ctx, statusAPIURL, configPendingState, fmt.Sprintf("Service instances details are missing. Returning %q...", configPendingState), nil)
 		return
 	}
 
@@ -213,7 +207,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 
 		assignedTenantConfiguration, err = i.createServiceInstances(ctx, reqBody, globalServiceInstances.Raw, assignedTenantConfiguration, currentPath)
 		if err != nil {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while creating service instances"))
+			i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrapf(err, "while creating service instances"))
 			return
 		}
 	}
@@ -251,7 +245,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 		return err == nil
 	})
 	if err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while creating service instances for auth methods"))
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrapf(err, "while creating service instances for auth methods"))
 		return
 	}
 
@@ -264,7 +258,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 		log.C(ctx).Debugf("Removing global service instance details(if they exist) from receiver tenant inbound communication...")
 		receiverTenantConfiguration, err = sjson.DeleteBytes(receiverTenantConfiguration, fmt.Sprintf("%s.%s", inboundCommunicationPath, serviceInstancesKey))
 		if err != nil {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while removing global service instances from receiver tenant inboundCommunication"))
+			i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrapf(err, "while removing global service instances from receiver tenant inboundCommunication"))
 			return
 		}
 
@@ -281,21 +275,21 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 			return true
 		})
 		if err != nil {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while deleting auth methods with local instances or refering global instances"))
+			i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrapf(err, "while deleting auth methods with local instances or refering global instances"))
 			return
 		}
 
 		log.C(ctx).Debugf("Creating temporary config with reverse field which will be used to populate the reverse paths...")
 		receiverTenantConfigurationWithReverse, err := sjson.SetBytes(receiverTenantConfiguration, reverseKey, gjson.ParseBytes(assignedTenantConfiguration).Value())
 		if err != nil {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while setting reverse object in receiver tenant configuration"))
+			i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrapf(err, "while setting reverse object in receiver tenant configuration"))
 			return
 		}
 
 		log.C(ctx).Debugf("Substituting the reverse jsonpaths...")
 		receiverTenantConfigurationGJSONResult, err := SubstituteGJSON(ctx, gjson.ParseBytes(receiverTenantConfiguration), gjson.ParseBytes(receiverTenantConfigurationWithReverse).Value())
 		if err != nil {
-			i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while converting receiver tenant configuration to gjson.Result"))
+			i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrapf(err, "while converting receiver tenant configuration to gjson.Result"))
 			return
 		}
 
@@ -306,7 +300,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 		if (receiverTenantInboundCommunication.IsObject() && len(receiverTenantInboundCommunication.Map()) == 0) || (receiverTenantInboundCommunication.IsArray() && len(receiverTenantInboundCommunication.Array()) == 0) {
 			receiverTenantConfiguration, err = sjson.DeleteBytes(receiverTenantConfiguration, inboundCommunicationPath)
 			if err != nil {
-				i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while removing the whole receiver tenant inbound communication"))
+				i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrapf(err, "while removing the whole receiver tenant inbound communication"))
 				return
 			}
 		}
@@ -318,7 +312,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 	log.C(ctx).Debugf("Removing assigned tenant global service instances from inbound communication...")
 	assignedTenantConfiguration, err = sjson.DeleteBytes(assignedTenantConfiguration, fmt.Sprintf("%s.%s", assignedTenantInboundCommunicationPath, serviceInstancesKey))
 	if err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while removing global service instances from assigned tenant inbound communication"))
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrapf(err, "while removing global service instances from assigned tenant inbound communication"))
 		return
 	}
 
@@ -329,7 +323,7 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 		return err == nil
 	})
 	if err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while deleting service instances for auth methods"))
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrapf(err, "while deleting service instances for auth methods"))
 		return
 	}
 
@@ -343,19 +337,19 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 
 	responseConfig, err := sjson.SetBytes(receiverTenantConfiguration, receiverTenantOutboundCommunicationPath, mergedReceiverTenantOutboundCommunication.Value())
 	if err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrapf(err, "while setting merged receiver tenant outboundCommunication with assigned tenant inboundCommunication in receiver tenant"))
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrapf(err, "while setting merged receiver tenant outboundCommunication with assigned tenant inboundCommunication in receiver tenant"))
 		return
 	}
 
 	// Report to UCL with success
-	i.reportToUCLWithSuccess(ctx, statusAPIURL, correlationID, readyState, "Successfully processed Service Instance creation.", responseConfig)
+	i.reportToUCLWithSuccess(ctx, statusAPIURL, readyState, "Successfully processed Service Instance creation.", responseConfig)
 }
 
-func (i *InstanceCreatorHandler) handleUnassign(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL, correlationID string) {
+func (i *InstanceCreatorHandler) handleUnassign(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL string) {
 	log.C(ctx).Debug("Getting a single DB connection for instance deletion...")
 	connection, err := i.connector.GetConnection(ctx)
 	if err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrap(err, "while trying to get database connection"))
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrap(err, "while trying to get database connection"))
 		return
 	}
 	defer func() {
@@ -373,7 +367,7 @@ func (i *InstanceCreatorHandler) handleUnassign(ctx context.Context, reqBody *te
 	// This lock prevents multiple unassign operations to execute simultaneously
 	locked, err := advisoryLocker.TryLock(ctx, assignmentID+reqBody.Context.Operation)
 	if err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
 		return
 	}
 	if !locked {
@@ -390,7 +384,7 @@ func (i *InstanceCreatorHandler) handleUnassign(ctx context.Context, reqBody *te
 	log.C(ctx).Debugf("Locking an advisory lock with assignmentID %q...", assignmentID)
 	// This lock prevents unassign and assign operations to execute simultaneously
 	if err := advisoryLocker.Lock(ctx, assignmentID); err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
 		return
 	}
 	defer func() {
@@ -401,11 +395,11 @@ func (i *InstanceCreatorHandler) handleUnassign(ctx context.Context, reqBody *te
 	}()
 
 	log.C(ctx).Debug("Handling instance deletion...")
-	i.handleInstanceDeletion(ctx, reqBody, statusAPIURL, correlationID)
+	i.handleInstanceDeletion(ctx, reqBody, statusAPIURL)
 }
 
 // Core Instance Deletion Logic
-func (i *InstanceCreatorHandler) handleInstanceDeletion(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL, correlationID string) {
+func (i *InstanceCreatorHandler) handleInstanceDeletion(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL string) {
 	assignmentID := reqBody.AssignedTenant.AssignmentID
 	region := reqBody.ReceiverTenant.Region
 	subaccount := reqBody.ReceiverTenant.SubaccountID
@@ -416,11 +410,11 @@ func (i *InstanceCreatorHandler) handleInstanceDeletion(ctx context.Context, req
 	if err != nil {
 		if strings.Contains(err.Error(), fmt.Sprintf(subaccountIsMissingFormatter, subaccount)) {
 			log.C(ctx).Debugf("Subaccount %q was deleted while we are trying to delete its instances. Returning...", subaccount)
-			i.reportToUCLWithSuccess(ctx, statusAPIURL, correlationID, readyState, "Successfully processed Service Instance deletion.", nil)
+			i.reportToUCLWithSuccess(ctx, statusAPIURL, readyState, "Successfully processed Service Instance deletion.", nil)
 			return
 		}
 
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, deleteErrorState, errors.Wrapf(err, "while retrieving service instances for assignmentID: %q", assignmentID))
+		i.reportToUCLWithError(ctx, statusAPIURL, deleteErrorState, errors.Wrapf(err, "while retrieving service instances for assignmentID: %q", assignmentID))
 		return
 	}
 
@@ -429,11 +423,11 @@ func (i *InstanceCreatorHandler) handleInstanceDeletion(ctx context.Context, req
 	if err != nil {
 		if strings.Contains(err.Error(), fmt.Sprintf(subaccountIsMissingFormatter, subaccount)) {
 			log.C(ctx).Debugf("Subaccount %q was deleted while we are trying to delete its instances. Returning...", subaccount)
-			i.reportToUCLWithSuccess(ctx, statusAPIURL, correlationID, readyState, "Successfully processed Service Instance deletion.", nil)
+			i.reportToUCLWithSuccess(ctx, statusAPIURL, readyState, "Successfully processed Service Instance deletion.", nil)
 			return
 		}
 
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, deleteErrorState, errors.Wrapf(err, "while retrieving service bindings for service instaces with IDs: %v", serviceInstancesIDs))
+		i.reportToUCLWithError(ctx, statusAPIURL, deleteErrorState, errors.Wrapf(err, "while retrieving service bindings for service instaces with IDs: %v", serviceInstancesIDs))
 		return
 	}
 
@@ -441,11 +435,11 @@ func (i *InstanceCreatorHandler) handleInstanceDeletion(ctx context.Context, req
 	if err = i.SMClient.DeleteMultipleResourcesByIDs(ctx, region, subaccount, &types.ServiceBindings{}, serviceBindingsIDs); err != nil {
 		if strings.Contains(err.Error(), fmt.Sprintf(subaccountIsMissingFormatter, subaccount)) {
 			log.C(ctx).Debugf("Subaccount %q was deleted while we are trying to delete its instances. Returning...", subaccount)
-			i.reportToUCLWithSuccess(ctx, statusAPIURL, correlationID, readyState, "Successfully processed Service Instance deletion.", nil)
+			i.reportToUCLWithSuccess(ctx, statusAPIURL, readyState, "Successfully processed Service Instance deletion.", nil)
 			return
 		}
 
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, deleteErrorState, errors.Wrapf(err, "while deleting service bindings with IDs: %v", serviceBindingsIDs))
+		i.reportToUCLWithError(ctx, statusAPIURL, deleteErrorState, errors.Wrapf(err, "while deleting service bindings with IDs: %v", serviceBindingsIDs))
 		return
 	}
 
@@ -453,16 +447,16 @@ func (i *InstanceCreatorHandler) handleInstanceDeletion(ctx context.Context, req
 	if err := i.SMClient.DeleteMultipleResourcesByIDs(ctx, region, subaccount, &types.ServiceInstances{}, serviceInstancesIDs); err != nil {
 		if strings.Contains(err.Error(), fmt.Sprintf(subaccountIsMissingFormatter, subaccount)) {
 			log.C(ctx).Debugf("Subaccount %q was deleted while we are trying to delete its instances. Returning...", subaccount)
-			i.reportToUCLWithSuccess(ctx, statusAPIURL, correlationID, readyState, "Successfully processed Service Instance deletion.", nil)
+			i.reportToUCLWithSuccess(ctx, statusAPIURL, readyState, "Successfully processed Service Instance deletion.", nil)
 			return
 		}
 
-		i.reportToUCLWithError(ctx, statusAPIURL, correlationID, deleteErrorState, errors.Wrapf(err, "while deleting service instances with IDs: %v", serviceInstancesIDs))
+		i.reportToUCLWithError(ctx, statusAPIURL, deleteErrorState, errors.Wrapf(err, "while deleting service instances with IDs: %v", serviceInstancesIDs))
 		return
 	}
 
 	// Report to UCL with success
-	i.reportToUCLWithSuccess(ctx, statusAPIURL, correlationID, readyState, "Successfully processed Service Instance deletion.", nil)
+	i.reportToUCLWithSuccess(ctx, statusAPIURL, readyState, "Successfully processed Service Instance deletion.", nil)
 }
 
 func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, reqBody *tenantmapping.Body, serviceInstancesRaw string, assignedTenantConfiguration json.RawMessage, pathToServiceInstances string) (json.RawMessage, error) {
@@ -601,16 +595,7 @@ func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, req
 	return assignedTenantConfiguration, nil
 }
 
-func (i *InstanceCreatorHandler) callUCLStatusAPI(statusAPIURL, correlationID string, response interface{}) {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
-
-	correlationIDKey := correlation.RequestIDHeaderKey
-	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
-
-	logger := log.C(ctx).WithField(correlationIDKey, correlationID)
-	ctx = log.ContextWithLogger(ctx, logger)
-
+func (i *InstanceCreatorHandler) callUCLStatusAPI(ctx context.Context, statusAPIURL string, response interface{}) {
 	reqBodyBytes, err := json.Marshal(response)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("error while marshalling request body")
@@ -659,17 +644,17 @@ func (mr *malformedRequest) Error() string {
 }
 
 // reportToUCLWithError reports status to the UCL Status API with the JSON error wrapped in an ErrorResponse struct
-func (i *InstanceCreatorHandler) reportToUCLWithError(ctx context.Context, statusAPIURL, correlationID string, state string, err error) {
+func (i *InstanceCreatorHandler) reportToUCLWithError(ctx context.Context, statusAPIURL, state string, err error) {
 	log.C(ctx).Error(err.Error())
 	errorResponse := ErrorResponse{State: state, Message: err.Error()}
-	i.callUCLStatusAPI(statusAPIURL, correlationID, errorResponse)
+	i.callUCLStatusAPI(ctx, statusAPIURL, errorResponse)
 }
 
 // reportToUCLWithSuccess reports status to the UCL Status API with the JSON success wrapped in an SuccessResponse struct
-func (i *InstanceCreatorHandler) reportToUCLWithSuccess(ctx context.Context, statusAPIURL, correlationID, state, msg string, configuration json.RawMessage) {
+func (i *InstanceCreatorHandler) reportToUCLWithSuccess(ctx context.Context, statusAPIURL, state, msg string, configuration json.RawMessage) {
 	log.C(ctx).Info(msg)
 	successResponse := SuccessResponse{State: state, Configuration: configuration}
-	i.callUCLStatusAPI(statusAPIURL, correlationID, successResponse)
+	i.callUCLStatusAPI(ctx, statusAPIURL, successResponse)
 }
 
 // SubstituteGJSON substitutes the jsonpaths in a given json
