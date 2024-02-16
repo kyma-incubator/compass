@@ -925,7 +925,7 @@ func Test_HandlerFunc(t *testing.T) {
 			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:                 "Formation assignment is missing in the assignedTenant - fails on validation",
+			name:                 "Formation assignment is missing in the receiverTenant - fails on validation",
 			requestBody:          fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, emptyJSON, emptyJSON),
 			expectedResponseCode: http.StatusBadRequest,
 		},
