@@ -3,6 +3,7 @@ package operators
 import (
 	"context"
 	"encoding/json"
+	"github.com/davecgh/go-spew/spew"
 	"regexp"
 	"runtime/debug"
 
@@ -89,6 +90,8 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		if err := json.Unmarshal(notificationStatusReport.Configuration, &assignmentConfig); err != nil {
 			return false, errors.Wrapf(err, "while unmarshalling tenant mapping response configuration for assignment with ID: %q", formationAssignment.ID)
 		}
+
+		spew.Dump("HHHHHHHHHHHHHHHHHHHHH",assignmentConfig)
 
 		if len(assignmentConfig.Destinations) > 0 {
 			log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", len(assignmentConfig.Destinations))
@@ -241,10 +244,11 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 		oauth2MTLSDetails := assignmentConfig.Credentials.InboundCommunicationDetails.OAuth2MTLSAuthentication
 		oauth2MTLSCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.OAuth2MTLSAuthentication
+		spew.Dump("_____________________", assignmentConfig)
 		if oauth2MTLSDetails != nil && oauth2MTLSCreds != nil && len(oauth2MTLSDetails.Destinations) > 0 {
-			log.C(ctx).Infof("There is/are %d inbound oauth2 client credentials destination(s) details available in the configuration", len(oauth2MTLSDetails.Destinations))
+			log.C(ctx).Infof("There is/are %d inbound oauth2 mTLS destination(s) details available in the configuration", len(oauth2MTLSDetails.Destinations))
 			if err := e.destinationSvc.CreateOAuth2MTLSDestinations(ctx, oauth2MTLSDetails.Destinations, oauth2MTLSCreds, formationAssignment, oauth2MTLSDetails.CorrelationIDs, di.SkipSubaccountValidation); err != nil {
-				return false, errors.Wrap(err, "while creating oauth2 client credentials destinations")
+				return false, errors.Wrap(err, "while creating oauth2 mTLS destinations")
 			}
 		}
 
@@ -298,12 +302,13 @@ func (d *DestinationRaw) UnmarshalJSON(data []byte) error {
 		if err != nil {
 			return errors.Wrapf(err, "while setting %q key to the destination details", authenticationKey)
 		}
-		raw, err = sjson.DeleteBytes(d.Destination, "subaccountId")
+		raw, err = sjson.DeleteBytes(raw, authenticationKeyOld)
+		//raw, err = sjson.DeleteBytes(d.Destination, "subaccountId")
 		if err != nil {
 			return errors.Wrapf(err, "while removing %q key from the destination details", authenticationKeyOld)
 		}
 	}
-
+spew.Dump("HOLA AMIGOS")
 	d.Destination = raw
 
 	return nil
@@ -412,7 +417,7 @@ type OutboundCommunicationCredentials struct {
 	OAuth2SAMLBearerAssertionAuthentication *OAuth2SAMLBearerAssertionAuthentication `json:"oauth2SamlBearerAssertion,omitempty"`
 	ClientCertAuthentication                *ClientCertAuthentication                `json:"clientCertificateAuthentication,omitempty"`
 	OAuth2ClientCredentialsAuthentication   *OAuth2ClientCredentialsAuthentication   `json:"oauth2ClientCredentials,omitempty"`
-	OAuth2MTLSAuthentication                *OAuth2MTLSAuthentication                `json:"oauth2MTLSAuthentication"`
+	OAuth2MTLSAuthentication                *OAuth2MTLSAuthentication                `json:"oauth2mtls,omitempty"`
 }
 
 // NoAuthentication represents outbound communication without any authentication
@@ -473,7 +478,7 @@ type InboundCommunicationDetails struct {
 	OAuth2SAMLBearerAssertionDetails       *InboundOAuth2SAMLBearerAssertionDetails `json:"oauth2SamlBearerAssertion,omitempty"`
 	ClientCertificateAuthenticationDetails *InboundClientCertAuthenticationDetails  `json:"clientCertificateAuthentication,omitempty"`
 	OAuth2ClientCredentialsDetails         *InboundOAuth2ClientCredentialsDetails   `json:"oauth2ClientCredentials,omitempty"`
-	OAuth2MTLSAuthentication               *InboundOAuth2MTLSAuthenticationDetails  `json:"oauth2MTLSAuthentication"`
+	OAuth2MTLSAuthentication               *InboundOAuth2MTLSAuthenticationDetails  `json:"oauth2mtls,omitempty"`
 }
 
 // InboundBasicAuthenticationDetails represents inbound communication configuration details for basic authentication

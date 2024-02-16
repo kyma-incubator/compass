@@ -144,10 +144,9 @@ type DestinationSvcOAuth2ClientCredsDestResponse struct {
 	AuthTokens               []AuthTokensDetails                `json:"authTokens"`
 }
 
-// DestinationSvcOAuth2ClientCredsDestResponse contains the response data from destination service 'find API' request for destination of type 'OAuth2ClientCredentials'
+// DestinationSvcOAuth2MTLSDestResponse contains the response data from destination service 'find API' request for destination of type 'OAuth2ClientCredentials'
 type DestinationSvcOAuth2MTLSDestResponse struct {
 	Owner                    OwnerDetails          `json:"owner"`
 	DestinationConfiguration OAuth2MTLSDestination `json:"destinationConfiguration"`
 	AuthTokens               []AuthTokensDetails   `json:"authTokens"`
-	CertificateDetails       []CertificateDetails  `json:"certificates"`
 }

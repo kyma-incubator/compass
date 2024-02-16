@@ -80,9 +80,8 @@ type OAuth2MTLSDestinationRequestBody struct {
 	BaseDestinationRequestBody
 	TokenServiceURL     string `json:"tokenServiceURL"`
 	ClientID            string `json:"clientId"`
-	ClientSecret        string `json:"clientSecret"`
 	TokenServiceURLType string `json:"tokenServiceURLType,omitempty"`
-	KeyStoreLocation string `json:"keyStoreLocation"`
+	KeyStoreLocation    string `json:"tokenServiceKeystoreLocation"`
 }
 
 // CertificateRequestBody contains the necessary fields for the destination creator certificate request body
@@ -166,7 +165,6 @@ func (b *OAuth2MTLSDestinationRequestBody) Validate() error {
 		validation.Field(&b.ProxyType, validation.In(destinationcreatorpkg.ProxyTypeInternet, destinationcreatorpkg.ProxyTypeOnPremise, destinationcreatorpkg.ProxyTypePrivateLink)),
 		validation.Field(&b.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeOAuth2ClientCredentials)),
 		validation.Field(&b.ClientID, validation.Required),
-		validation.Field(&b.ClientSecret, validation.Required),
 		validation.Field(&b.TokenServiceURL, validation.Required),
 		validation.Field(&b.TokenServiceURLType, validation.In(string(destinationcreatorpkg.DedicatedTokenServiceURLType), string(destinationcreatorpkg.CommonTokenServiceURLType))),
 		validation.Field(&b.KeyStoreLocation, validation.Required),

@@ -519,7 +519,6 @@ func (s *Service) CreateOAuth2MTLSDestinations(ctx context.Context, destinationD
 			AuthenticationType: destinationcreatorpkg.AuthTypeOAuth2ClientCredentials,
 		},
 		ClientID:        oauth2MTLSAuthentication.ClientID,
-		ClientSecret:    oauth2MTLSAuthentication.ClientSecret,
 		TokenServiceURL: oauth2MTLSAuthentication.TokenServiceURL,
 		KeyStoreLocation: certName + destinationcreatorpkg.JavaKeyStoreFileExtension,
 	}
@@ -553,13 +552,13 @@ func (s *Service) CreateOAuth2MTLSDestinations(ctx context.Context, destinationD
 	}
 
 	if err := reqBody.Validate(); err != nil {
-		return nil, errors.Wrapf(err, "while validating oauth2 client credentials destination request body")
+		return nil, errors.Wrapf(err, "while validating oauth2 mTLS destination request body")
 	}
 
-	log.C(ctx).Infof("Creating inbound oauth2 client credentials destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
+	log.C(ctx).Infof("Creating inbound oauth2 mTLS destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
 	_, statusCode, err := s.executeCreateRequest(ctx, strURL, reqBody, destinationName)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while creating inbound oauth2 client credentials destination with name: %q in the destination service", destinationName)
+		return nil, errors.Wrapf(err, "while creating inbound oauth2 mTLS destination with name: %q in the destination service", destinationName)
 	}
 
 	if statusCode == http.StatusConflict {

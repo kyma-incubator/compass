@@ -133,10 +133,10 @@ github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-2024012
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20240124080603-b438fb12a9cb/go.mod h1:XeAI1p7whMQ7uilPBilW4pUmlqtODTwHDnX98KrAaD4=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20240124080603-b438fb12a9cb h1:3MS5FeetFq9g6DQunL17RJWOTAH6kVLYWkRtUPl1zuc=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20240124080603-b438fb12a9cb/go.mod h1:Phn075LXVaET/V4N2YO0xKNeC7EAczLEAjjzodEY18Q=
-github.com/kyma-incubator/compass/components/director v0.0.0-20240205122514-f349d1b2c676 h1:5TQT86f1uNg2rU/uAIrCXiAvFuzO1LsROummRBLzNnQ=
-github.com/kyma-incubator/compass/components/director v0.0.0-20240205122514-f349d1b2c676/go.mod h1:eRgJGoMNtO7yN+tPGPVC7+85dXcZ6tN5z/qrgm3EnZI=
-github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20240124080603-b438fb12a9cb h1:ccTHMogKU9RWWMqYecAeja4LOJCnV/A68pQdk1acMa0=
-github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20240124080603-b438fb12a9cb/go.mod h1:Vpb5XZ8rCe6sWfWJohpu7cVMJIHExjO63YCxKNW7dtY=
+github.com/kyma-incubator/compass/components/director v0.0.0-20240212074714-260047634d03 h1:jUBn3EsxVgJ4BpCDb8TP8QmlcM56Y3xLsqhIbafjt1k=
+github.com/kyma-incubator/compass/components/director v0.0.0-20240212074714-260047634d03/go.mod h1:2GPCj+wXJ1MNeJdADXLKZbaKW3tY8+pEqoGaybEpvD4=
+github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20240212074714-260047634d03 h1:wyBS+cb6LatgxUf62umtSP9q/Xr80jlHyIoNsi3xRRQ=
+github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20240212074714-260047634d03/go.mod h1:jm1qT13kmZwIJ1OnqBumUgI2wVQKy6VQbNKE3JNHW4U=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20240124080603-b438fb12a9cb h1:SaJQ6RRbxeHZPv/gPzFSifrn6rJ7T8B7I6HYp1u7xfw=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20240124080603-b438fb12a9cb/go.mod h1:27qmVKf6hn6DoQj8qeqkNYfTcx0pEL49YCqLipC1XsU=
 github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240123081221-34fb1f6bc126 h1:mqh55X5e5KMAfidVZcCpeZ4NWED4cxb269pCjRVAYJU=
