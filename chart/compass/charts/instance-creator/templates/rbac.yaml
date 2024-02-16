@@ -16,7 +16,7 @@ metadata:
   name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorClientCertSecret.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
-    {{- include "director.labels" . | nindent 4 }}
+    {{- include "instanceCreator.labels" . | nindent 4 }}
 rules:
   - apiGroups: ["*"]
     resources: ["secrets"]
@@ -29,10 +29,10 @@ metadata:
   name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorClientCertSecret.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
-    {{- include "director.labels" . | nindent 4 }}
+    {{- include "instanceCreator.labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
-    name: {{ $.Chart.Name }}-{{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorClientCertSecret.name }}
+    name: {{ template "fullname" . }}
     namespace: {{ $.Release.Namespace }}
 roleRef:
   kind: Role
