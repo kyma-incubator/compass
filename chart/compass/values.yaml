@@ -173,8 +173,8 @@ global:
       version: "v20240205-05672afc"
       name: compass-pairing-adapter
     director:
-      dir: dev/incubator/
-      version: "PR-3660"
+      dir: prod/incubator/
+      version: "v20240216-f8c59f01"
       name: compass-director
     hydrator:
       dir: prod/incubator/
@@ -222,16 +222,16 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: dev/incubator/
-      version: "PR-3660"
+      dir: prod/incubator/
+      version: "v20240216-f8c59f01"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: dev/incubator/
-      version: "PR-3660"
+      dir: prod/incubator/
+      version: "v20240216-f8c59f01"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
