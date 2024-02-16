@@ -811,7 +811,7 @@ func (r *Resolver) checkAppTemplateExistenceByProductLabel(ctx context.Context, 
 
 	productLabelArr, ok := productLabel.([]interface{})
 	if !ok {
-		return errors.Errorf("could not parse %q label for application template", r.appTemplateProductLabel)
+		return errors.Errorf("could not parse %q label for application template - it must be a string array", r.appTemplateProductLabel)
 	}
 
 	log.C(ctx).Infof("Getting application template for labels %q: %q", r.appTemplateProductLabel, productLabel)
