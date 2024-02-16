@@ -40,7 +40,7 @@ const (
 	serviceBindingKey             = "serviceBinding"
 	serviceInstanceServiceBinding = "service"
 	serviceInstancePlanKey        = "plan"
-	configurationKey              = "configuration"
+	parametersKey                 = "parameters"
 	nameKey                       = "name"
 	assignmentIDKey               = "assignment_id"
 	currentWaveHashKey            = "current_wave_hash"
@@ -120,7 +120,7 @@ func (i InstanceCreatorHandler) HandlerFunc(w http.ResponseWriter, r *http.Reque
 	// respond with 202 to the UCL call
 	httputils.Respond(w, http.StatusAccepted)
 
-	log.C(ctx).Info("Instance Creator Handler handles instance creation...")
+	log.C(ctx).Info("Instance Creator Handler handles instances...")
 	go i.handleInstances(correlationID, &reqBody, uclStatusAPIUrl)
 }
 
@@ -544,7 +544,7 @@ func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, req
 
 		serviceOfferingCatalogName := gjson.Get(serviceInstance.Raw, serviceInstanceServiceBinding).String()
 		servicePlanCatalogName := gjson.Get(serviceInstance.Raw, serviceInstancePlanKey).String()
-		serviceInstanceParameters := []byte(gjson.Get(serviceInstance.Raw, configurationKey).String())
+		serviceInstanceParameters := []byte(gjson.Get(serviceInstance.Raw, parametersKey).String())
 
 		log.C(ctx).Debugf("Getting the service offering ID with catalog name('service' field from the contract) %q for region %q and subaccount %q...", serviceOfferingCatalogName, region, subaccount)
 		serviceOfferingID, err := i.SMClient.RetrieveResource(ctx, region, subaccount, &types.ServiceOfferings{}, &types.ServiceOfferingMatchParameters{CatalogName: serviceOfferingCatalogName})
@@ -581,7 +581,7 @@ func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, req
 			return nil, err
 		}
 
-		serviceBindingParameters := []byte(gjson.Get(serviceInstanceBinding.Raw, configurationKey).String())
+		serviceBindingParameters := []byte(gjson.Get(serviceInstanceBinding.Raw, parametersKey).String())
 		if err != nil {
 			return nil, errors.Wrapf(err, "while extracting the parameters of service binding for a service instance with id: %d", idx)
 		}
