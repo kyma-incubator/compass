@@ -529,7 +529,7 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	return op.ID, nil
 }
 
-func thereAreValidationErrorsWithErrSeverity(errors []ord.ValidationError) bool {
+func thereAreValidationErrorsWithErrSeverity(errors []*ord.ValidationError) bool {
 	for _, e := range errors {
 		if e.Severity == ord.ErrorSeverity {
 			return true

@@ -15,24 +15,24 @@ import (
 //
 //go:generate mockery --name=Validator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Validator interface {
-	Validate(ctx context.Context, documents []*Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string) ([]ValidationError, error)
+	Validate(ctx context.Context, documents []*Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string) ([]*ValidationError, error)
 }
 
 type DocumentValidator struct {
 	client *ValidationClient
 }
 
-func NewDocumentValidator(client *ValidationClient) *DocumentValidator {
+func NewDocumentValidator(client *ValidationClient) Validator {
 	return &DocumentValidator{
 		client: client,
 	}
 }
 
-func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string) ([]ValidationError, error) {
-	var result []ValidationError
+// Validate validates all documents f
+func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string) ([]*ValidationError, error) {
+	var result []*ValidationError
 
 	for i := range documents {
-		// validation errors coming from API Metadata validator
 		log.C(ctx).Info("Calling API Metadata Validator for document")
 
 		errors1, err := v.client.Validate("sap:base:v1", docsString[i])
@@ -47,16 +47,28 @@ func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document,
 		result = append(result, currentDocumentErrors...)
 
 		deleteInvalidResourcesFromDocument(documents[i], currentDocumentErrors)
+
+		e1 := validateORDConfigurations(documents[i], baseURL)
+		if e1 != nil {
+			result = append(result, e1)
+		}
+
 	}
 
-	log.C(ctx).Info("Check for duplicate resources and entity relations")
-	// UCL validations - check for duplicates and unknown package reference
-	errors2, err := v.ValidateOld(documents, baseURL, globalResourcesOrdIDs)
+	resourceIDs := ResourceIDs{
+		PackageIDs:          make(map[string]bool),
+		PackagePolicyLevels: make(map[string]string),
+	}
+
+	e2, err := v.checkForDuplications(documents, &resourceIDs)
 	if err != nil {
-		return nil, errors.Wrap(err, "while validating document")
+		return nil, err
 	}
 
-	result = append(result, errors2...)
+	e3 := v.checkEntityRelations(documents, &resourceIDs, globalResourcesOrdIDs)
+
+	result = append(result, e2...)
+	result = append(result, e3...)
 
 	return result, nil
 }
@@ -103,7 +115,7 @@ func findResourceOrdIdByPath(data interface{}, path []string) (string, error) {
 	return ordId, nil
 }
 
-func deleteInvalidResourcesFromDocument(document *Document, documentErrors []ValidationError) {
+func deleteInvalidResourcesFromDocument(document *Document, documentErrors []*ValidationError) {
 	for _, e := range documentErrors {
 		if e.Severity != ErrorSeverity {
 			continue
@@ -187,12 +199,12 @@ func deleteInvalidResourcesFromDocument(document *Document, documentErrors []Val
 	}
 }
 
-func (v *DocumentValidator) toValidationErrors(document interface{}, result []ValidationResult) []ValidationError {
-	valErrs := make([]ValidationError, 0)
+func (v *DocumentValidator) toValidationErrors(document interface{}, result []ValidationResult) []*ValidationError {
+	valErrs := make([]*ValidationError, 0)
 
 	for _, r := range result {
 		ordId, _ := findResourceOrdIdByPath(document, r.Path)
-		valErrs = append(valErrs, ValidationError{
+		valErrs = append(valErrs, &ValidationError{
 			OrdId:       ordId,
 			Severity:    r.Severity,
 			Type:        r.Code,
@@ -202,33 +214,29 @@ func (v *DocumentValidator) toValidationErrors(document interface{}, result []Va
 	return valErrs
 }
 
-// ValidateOld validates all the documents for a system instance
-func (v *DocumentValidator) ValidateOld(docs []*Document, calculatedBaseURL string, globalResourcesOrdIDs map[string]bool) ([]ValidationError, error) {
+func validateORDConfigurations(doc *Document, calculatedBaseURL string) *ValidationError {
 	var (
 		baseURL             = calculatedBaseURL
 		isBaseURLConfigured = len(calculatedBaseURL) > 0
-		validationErrors    []ValidationError
 	)
 
-	for _, doc := range docs {
-		if !isBaseURLConfigured && (doc.DescribedSystemInstance == nil || doc.DescribedSystemInstance.BaseURL == nil) {
-			validationErrors = append(validationErrors, newCustomValidationError("", ErrorSeverity, "no baseURL provided", "no baseURL was provided neither from /well-known URL, nor from config, nor from describedSystemInstance"))
-			continue
-		}
-
-		if len(baseURL) == 0 {
-			baseURL = *doc.DescribedSystemInstance.BaseURL
-		}
-
-		if doc.DescribedSystemInstance != nil && doc.DescribedSystemInstance.BaseURL != nil && *doc.DescribedSystemInstance.BaseURL != baseURL {
-			validationErrors = append(validationErrors, newCustomValidationError("", ErrorSeverity, "", fmt.Sprintf("describedSystemInstance should be the same as the one providing the documents - %s : %s", *doc.DescribedSystemInstance.BaseURL, baseURL)))
-		}
+	if !isBaseURLConfigured && (doc.DescribedSystemInstance == nil || doc.DescribedSystemInstance.BaseURL == nil) {
+		return newCustomValidationError("", ErrorSeverity, "no baseURL provided", "no baseURL was provided neither from /well-known URL, nor from config, nor from describedSystemInstance")
 	}
 
-	resourceIDs := ResourceIDs{
-		PackageIDs:          make(map[string]bool),
-		PackagePolicyLevels: make(map[string]string),
+	if len(baseURL) == 0 {
+		baseURL = *doc.DescribedSystemInstance.BaseURL
 	}
+
+	if doc.DescribedSystemInstance != nil && doc.DescribedSystemInstance.BaseURL != nil && *doc.DescribedSystemInstance.BaseURL != baseURL {
+		return newCustomValidationError("", ErrorSeverity, "", fmt.Sprintf("describedSystemInstance should be the same as the one providing the documents - %s : %s", *doc.DescribedSystemInstance.BaseURL, baseURL))
+	}
+
+	return nil
+}
+
+func (v *DocumentValidator) checkForDuplications(docs []*Document, resourceIDs *ResourceIDs) ([]*ValidationError, error) {
+	var validationErrors []*ValidationError
 
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
@@ -243,17 +251,17 @@ func (v *DocumentValidator) ValidateOld(docs []*Document, calculatedBaseURL stri
 		}
 	}
 
-	r1, e1 := v.checkForDuplications(docs, SystemVersionPerspective, true, resourceIDs.PackagePolicyLevels)
-	r2, e2 := v.checkForDuplications(docs, SystemInstancePerspective, true, resourceIDs.PackagePolicyLevels)
-	r3, e3 := v.checkForDuplications(docs, "", false, resourceIDs.PackagePolicyLevels)
+	r1, e1 := v.checkForDuplicationsWithPerspective(docs, SystemVersionPerspective, true, resourceIDs.PackagePolicyLevels)
+	r2, e2 := v.checkForDuplicationsWithPerspective(docs, SystemInstancePerspective, true, resourceIDs.PackagePolicyLevels)
+	r3, e3 := v.checkForDuplicationsWithPerspective(docs, "", false, resourceIDs.PackagePolicyLevels)
 
-	if err := mergo.Merge(&resourceIDs, r1); err != nil {
+	if err := mergo.Merge(resourceIDs, r1); err != nil {
 		return validationErrors, err
 	}
-	if err := mergo.Merge(&resourceIDs, r2); err != nil {
+	if err := mergo.Merge(resourceIDs, r2); err != nil {
 		return validationErrors, err
 	}
-	if err := mergo.Merge(&resourceIDs, r3); err != nil {
+	if err := mergo.Merge(resourceIDs, r3); err != nil {
 		return validationErrors, err
 	}
 
@@ -261,15 +269,11 @@ func (v *DocumentValidator) ValidateOld(docs []*Document, calculatedBaseURL stri
 	validationErrors = append(validationErrors, e2...)
 	validationErrors = append(validationErrors, e3...)
 
-	_, e4 := v.checkEntityRelations(docs, resourceIDs, globalResourcesOrdIDs, resourceIDs.PackagePolicyLevels)
-
-	validationErrors = append(validationErrors, e4...)
-
 	return validationErrors, nil
 }
 
-func (v *DocumentValidator) checkEntityRelations(docs []*Document, resourceIDs ResourceIDs, globalResourcesOrdIDs map[string]bool, packagePolicyLevels map[string]string) (ResourceIDs, []ValidationError) {
-	var validationErrors []ValidationError
+func (v *DocumentValidator) checkEntityRelations(docs []*Document, resourceIDs *ResourceIDs, globalResourcesOrdIDs map[string]bool) []*ValidationError {
+	var validationErrors []*ValidationError
 
 	invalidApisIndices := make([]int, 0)
 	invalidEventsIndices := make([]int, 0)
@@ -391,24 +395,11 @@ func (v *DocumentValidator) checkEntityRelations(docs []*Document, resourceIDs R
 		invalidDataProductsIndices = nil
 	}
 
-	return ResourceIDs{
-		PackageIDs:               resourceIDs.PackageIDs,
-		ProductIDs:               resourceIDs.ProductIDs,
-		APIIDs:                   resourceIDs.APIIDs,
-		EventIDs:                 resourceIDs.EventIDs,
-		EntityTypeIDs:            resourceIDs.EntityTypeIDs,
-		VendorIDs:                resourceIDs.VendorIDs,
-		BundleIDs:                resourceIDs.BundleIDs,
-		PackagePolicyLevels:      resourceIDs.PackagePolicyLevels,
-		CapabilityIDs:            resourceIDs.CapabilityIDs,
-		IntegrationDependencyIDs: resourceIDs.IntegrationDependencyIDs,
-		DataProductIDs:           resourceIDs.DataProductIDs,
-	}, validationErrors
-
+	return validationErrors
 }
 
-func (v *DocumentValidator) checkForDuplications(docs []*Document, perspectiveConstraint DocumentPerspective, forbidDuplications bool, packagePolicyLevels map[string]string) (ResourceIDs, []ValidationError) {
-	var validationErrors []ValidationError
+func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document, perspectiveConstraint DocumentPerspective, forbidDuplications bool, packagePolicyLevels map[string]string) (ResourceIDs, []*ValidationError) {
+	var validationErrors []*ValidationError
 
 	resourceIDs := ResourceIDs{
 		PackageIDs:               make(map[string]bool),

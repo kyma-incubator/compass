@@ -32,7 +32,7 @@ type globalRegistryService struct {
 
 	vendorService     GlobalVendorService
 	productService    GlobalProductService
-	documentValidator *DocumentValidator
+	documentValidator Validator
 
 	ordClient Client
 
@@ -40,7 +40,7 @@ type globalRegistryService struct {
 }
 
 // NewGlobalRegistryService creates new instance of GlobalRegistryService.
-func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalRegistryConfig, vendorService GlobalVendorService, productService GlobalProductService, ordClient Client, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping, documentValidator *DocumentValidator) *globalRegistryService {
+func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalRegistryConfig, vendorService GlobalVendorService, productService GlobalProductService, ordClient Client, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping, documentValidator Validator) *globalRegistryService {
 	return &globalRegistryService{
 		transact:                                 transact,
 		config:                                   config,

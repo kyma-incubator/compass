@@ -56,8 +56,8 @@ type RuntimeError struct {
 }
 
 type ProcessingError struct {
-	ValidationErrors []ValidationError `json:"validation_errors"`
-	RuntimeError     *RuntimeError     `json:"runtime_error"`
+	ValidationErrors []*ValidationError `json:"validation_errors"`
+	RuntimeError     *RuntimeError      `json:"runtime_error"`
 }
 
 func (p *ProcessingError) Error() string {
@@ -149,11 +149,11 @@ type Service struct {
 
 	globalRegistrySvc GlobalRegistryService
 	ordClient         Client
-	documentValidator *DocumentValidator
+	documentValidator Validator
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, apiProcessor APIProcessor, eventSvc EventService, eventProcessor EventProcessor, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, capabilityProcessor CapabilityProcessor, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, dataProductSvc DataProductService, dataProductProcessor DataProductProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, packageProcessor PackageProcessor, productProcessor ProductProcessor, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, tombstonedResourcesDeleter TombstonedResourcesDeleter, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService, documentValidator *DocumentValidator) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, apiProcessor APIProcessor, eventSvc EventService, eventProcessor EventProcessor, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, capabilityProcessor CapabilityProcessor, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, dataProductSvc DataProductService, dataProductProcessor DataProductProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, packageProcessor PackageProcessor, productProcessor ProductProcessor, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, tombstonedResourcesDeleter TombstonedResourcesDeleter, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService, documentValidator Validator) *Service {
 	return &Service{
 		config:                         config,
 		metricsCfg:                     metricsCfg,
@@ -263,9 +263,6 @@ func (s *Service) ProcessAppInAppTemplateContext(ctx context.Context, appTemplat
 				return errors.Errorf("cannot find application with id %q for app template with id %q", appID, appTemplateID)
 			}
 
-			//if err = s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs); err != nil {
-			//	return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
-			//}
 			return s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs)
 		}
 	}
@@ -292,9 +289,7 @@ func (s *Service) ProcessApplicationTemplate(ctx context.Context, appTemplateID 
 			}
 
 			log.C(ctx).Infof("Processing Webhook ID %s for Application Tempalate with ID %s", wh.ID, appTemplateID)
-			//if err = s.processApplicationTemplateWebhook(ctx, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
-			//	return err
-			//}
+
 			return s.processApplicationTemplateWebhook(ctx, wh, appTemplateID, globalResourcesOrdIDs)
 		}
 	}
@@ -359,7 +354,7 @@ func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) (
 	return webhooks, nil
 }
 
-func (s *Service) processDocuments(ctx context.Context, resource Resource, webhookBaseURL, webhookBaseProxyURL string, ordRequestObject requestobject.OpenResourceDiscoveryWebhookRequestObject, documents Documents, globalResourcesOrdIDs map[string]bool, docsString []string) ([]ValidationError, error) {
+func (s *Service) processDocuments(ctx context.Context, resource Resource, webhookBaseURL, webhookBaseProxyURL string, ordRequestObject requestobject.OpenResourceDiscoveryWebhookRequestObject, documents Documents, globalResourcesOrdIDs map[string]bool, docsString []string) ([]*ValidationError, error) {
 	if _, err := s.processDescribedSystemVersions(ctx, resource, documents); err != nil {
 		return nil, err
 	}

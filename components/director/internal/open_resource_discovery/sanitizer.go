@@ -26,9 +26,8 @@ func NewDocumentSanitizer() *DocumentSanitizer {
 //   - Package's partOfProducts, tags, countries, industry, lineOfBusiness, labels are inherited by the resources in the package.
 //   - Ensure to assign `defaultEntryPoint` if missing and there are available `entryPoints` to API's `PartOfConsumptionBundles`
 //   - If some resource(Package, API, Event or Data Product) doesn't have provided `policyLevel` and `customPolicyLevel`, these are inherited from the document
-func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBaseProxyURL string) ([]ValidationError, error) {
-
-	valErrors := make([]ValidationError, 0)
+func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBaseProxyURL string) ([]*ValidationError, error) {
+	valErrors := make([]*ValidationError, 0)
 
 	var err error
 
@@ -291,8 +290,8 @@ func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBa
 	return valErrors, err
 }
 
-func newCustomValidationError(ordId, severity, errorType, description string) ValidationError {
-	return ValidationError{
+func newCustomValidationError(ordId, severity, errorType, description string) *ValidationError {
+	return &ValidationError{
 		OrdId:       ordId,
 		Severity:    severity,
 		Type:        errorType,
