@@ -2228,6 +2228,7 @@ const (
 	WebhookTypeOpenResourceDiscovery       WebhookType = "OPEN_RESOURCE_DISCOVERY"
 	WebhookTypeOpenResourceDiscoveryStatic WebhookType = "OPEN_RESOURCE_DISCOVERY_STATIC"
 	WebhookTypeFormationLifecycle          WebhookType = "FORMATION_LIFECYCLE"
+	WebhookTypeSystemFieldDiscovery        WebhookType = "SYSTEM_FIELD_DISCOVERY"
 )
 
 var AllWebhookType = []WebhookType{
@@ -2238,11 +2239,12 @@ var AllWebhookType = []WebhookType{
 	WebhookTypeOpenResourceDiscovery,
 	WebhookTypeOpenResourceDiscoveryStatic,
 	WebhookTypeFormationLifecycle,
+	WebhookTypeSystemFieldDiscovery,
 }
 
 func (e WebhookType) IsValid() bool {
 	switch e {
-	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeOpenResourceDiscoveryStatic, WebhookTypeFormationLifecycle:
+	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeOpenResourceDiscoveryStatic, WebhookTypeFormationLifecycle, WebhookTypeSystemFieldDiscovery:
 		return true
 	}
 	return false

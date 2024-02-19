@@ -87,7 +87,7 @@ type ApplicationConverter interface {
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
-	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
+	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string, systemFieldDiscoveryLabelIsTrue bool) (string, error)
 	Get(ctx context.Context, id string) (*model.Application, error)
 }
 
@@ -124,40 +124,50 @@ type SelfRegisterManager interface {
 	GetSelfRegDistinguishingLabelKey() string
 }
 
+// SystemFieldDiscoveryEngine is responsible for system field discovery operations
+//
+//go:generate mockery --name=SystemFieldDiscoveryEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
+type SystemFieldDiscoveryEngine interface {
+	EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, region, subacountID, appTemplateName, appName string) ([]*model.WebhookInput, bool)
+	CreateLabelForApplicationWebhook(ctx context.Context, appID string) error
+}
+
 // Resolver missing godoc
 type Resolver struct {
 	transact persistence.Transactioner
 
-	appSvc                  ApplicationService
-	appConverter            ApplicationConverter
-	appTemplateSvc          ApplicationTemplateService
-	appTemplateConverter    ApplicationTemplateConverter
-	webhookSvc              WebhookService
-	webhookConverter        WebhookConverter
-	labelSvc                LabelService
-	selfRegManager          SelfRegisterManager
-	uidService              UIDService
-	appTemplateProductLabel string
-	certSubjectMappingSvc   CertSubjectMappingService
-	ordClient               *apiclient.ORDClient
+	appSvc                     ApplicationService
+	appConverter               ApplicationConverter
+	appTemplateSvc             ApplicationTemplateService
+	appTemplateConverter       ApplicationTemplateConverter
+	webhookSvc                 WebhookService
+	webhookConverter           WebhookConverter
+	labelSvc                   LabelService
+	selfRegManager             SelfRegisterManager
+	uidService                 UIDService
+	systemFieldDiscoveryEngine SystemFieldDiscoveryEngine
+	appTemplateProductLabel    string
+	certSubjectMappingSvc      CertSubjectMappingService
+	ordClient                  *apiclient.ORDClient
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, labelSvc LabelService, selfRegisterManager SelfRegisterManager, uidService UIDService, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string, ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, labelSvc LabelService, selfRegisterManager SelfRegisterManager, uidService UIDService, systemFieldDiscoveryEngine SystemFieldDiscoveryEngine, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string, ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig) *Resolver {
 	return &Resolver{
-		transact:                transact,
-		appSvc:                  appSvc,
-		appConverter:            appConverter,
-		appTemplateSvc:          appTemplateSvc,
-		appTemplateConverter:    appTemplateConverter,
-		webhookSvc:              webhookService,
-		webhookConverter:        webhookConverter,
-		labelSvc:                labelSvc,
-		selfRegManager:          selfRegisterManager,
-		uidService:              uidService,
-		appTemplateProductLabel: appTemplateProductLabel,
-		certSubjectMappingSvc:   certSubjectMappingSvc,
-		ordClient:               apiclient.NewORDClient(ordAggregatorClientConfig),
+		transact:                   transact,
+		appSvc:                     appSvc,
+		appConverter:               appConverter,
+		appTemplateSvc:             appTemplateSvc,
+		appTemplateConverter:       appTemplateConverter,
+		webhookSvc:                 webhookService,
+		webhookConverter:           webhookConverter,
+		labelSvc:                   labelSvc,
+		selfRegManager:             selfRegisterManager,
+		uidService:                 uidService,
+		systemFieldDiscoveryEngine: systemFieldDiscoveryEngine,
+		appTemplateProductLabel:    appTemplateProductLabel,
+		certSubjectMappingSvc:      certSubjectMappingSvc,
+		ordClient:                  apiclient.NewORDClient(ordAggregatorClientConfig),
 	}
 }
 
@@ -466,12 +476,25 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	if err != nil {
 		return nil, err
 	}
+
+	systemFieldDiscoveryLabelIsTrue := false
+	region, subaccountID, available := areSystemFieldDiscoveryPrerequisitesAvailable(ctx, appCreateInputModel, appTemplate)
+	if available {
+		appCreateInputModel.Webhooks, systemFieldDiscoveryLabelIsTrue = r.systemFieldDiscoveryEngine.EnrichApplicationWebhookIfNeeded(ctx, appCreateInputModel, region, subaccountID, appTemplate.Name, applicationName)
+	}
+
 	log.C(ctx).Infof("Creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
-	id, err := r.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID)
+	id, err := r.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID, systemFieldDiscoveryLabelIsTrue)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	}
 	log.C(ctx).Infof("Application with name %s and id %s successfully created from Application Template with name %s", applicationName, id, in.TemplateName)
+
+	if systemFieldDiscoveryLabelIsTrue {
+		if err := r.systemFieldDiscoveryEngine.CreateLabelForApplicationWebhook(ctx, id); err != nil {
+			return nil, err
+		}
+	}
 
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
@@ -967,4 +990,31 @@ func extractRegionPlaceholder(placeholders []model.ApplicationTemplatePlaceholde
 	}
 
 	return regionPlaceholder, nil
+}
+
+func areSystemFieldDiscoveryPrerequisitesAvailable(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, appTemplate *model.ApplicationTemplate) (string, string, bool) {
+	var regionValue, subaccountIDValue string
+	ok := false
+	if regionLabel, exists := appCreateInputModel.Labels[selfregmanager.RegionLabel]; exists {
+		regionValue, ok = regionLabel.(string)
+		if !ok {
+			log.C(ctx).Infof("%s label for Application with Application Template with ID %s is not a string", selfregmanager.RegionLabel, appTemplate.ID)
+			return "", "", false
+		}
+	} else {
+		log.C(ctx).Infof("%s label for Application with Application Template with ID %s is nmissing", selfregmanager.RegionLabel, appTemplate.ID)
+		return "", "", false
+	}
+
+	if subaccountIDLabel, exists := appTemplate.Labels[globalSubaccountIDLabelKey]; exists {
+		subaccountIDValue, ok = subaccountIDLabel.(string)
+		if !ok {
+			log.C(ctx).Infof("%s label for Application Template with ID %s is not a string", globalSubaccountIDLabelKey, appTemplate.ID)
+			return "", "", false
+		}
+	} else {
+		log.C(ctx).Infof("%s label for Application Template with ID %s is missing", globalSubaccountIDLabelKey, appTemplate.ID)
+		return "", "", false
+	}
+	return regionValue, subaccountIDValue, true
 }

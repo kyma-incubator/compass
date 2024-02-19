@@ -342,6 +342,7 @@ global:
       requestBodyPattern: '{"key": "%s"}'
       saasAppNameLabelKey: "CMPSaaSAppName"
       saasAppNamePath: "localSaaSAppNamePath"
+      saasRegistryURLPath: "localSaaSRegistryPath"
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
     runtimeTypeLabelKey: "runtimeType"
@@ -909,6 +910,8 @@ global:
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
     port: 3000
+    systemFieldDiscoveryWebhookPartialProcessing: true
+    systemFieldDiscoveryWebhookPartialProcessMaxDays: 7
     xsappNamePath: "xsappname"
     omitDependenciesParamName: ""
     omitDependenciesParamValue: ""

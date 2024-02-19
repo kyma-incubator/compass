@@ -491,6 +491,8 @@ func labelableObjectField(objectType model.LabelableObject) string {
 		return "tenant_id"
 	case model.AppTemplateLabelableObject:
 		return "app_template_id"
+	case model.WebhookLabelableObject:
+		return "webhook_id"
 	}
 
 	return ""

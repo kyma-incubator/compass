@@ -164,6 +164,10 @@ spec:
               value: {{ .Values.global.tenantFetcher.omitDependenciesParamName | quote }}
             - name: APP_TENANT_FETCHER_OMIT_PARAM_VALUE
               value: {{ .Values.global.tenantFetcher.omitDependenciesParamValue | quote }}
+            - name: APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESSING
+              value: "{{ .Values.global.tenantFetcher.systemFieldDiscoveryWebhookPartialProcessing }}"
+            - name: APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS
+              value: "{{ .Values.global.tenantFetcher.systemFieldDiscoveryWebhookPartialProcessMaxDays }}"
             {{- if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
             - name: APP_METRICS_PUSH_ENDPOINT
               value: {{ $.Values.global.metrics.pushEndpoint }}

@@ -19,14 +19,31 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
+	bundleutil "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	pkgAuth "github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+	pkgwebhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
-	auth "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
+	authmiddleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -68,6 +85,9 @@ type config struct {
 	Features features.Config
 
 	SecurityConfig securityConfig
+
+	SystemFieldDiscoveryWebhookPartialProcessing     bool `envconfig:"APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESSING"`
+	SystemFieldDiscoveryWebhookPartialProcessMaxDays int  `envconfig:"APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS"`
 }
 
 type securityConfig struct {
@@ -119,6 +139,77 @@ func main() {
 	handler := initAPIHandler(ctx, httpClient, cfg, tenantSynchronizers)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
+	authConverter := auth.NewConverter()
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	docConverter := document.NewConverter(frConverter)
+	webhookConverter := webhook.NewConverter(authConverter)
+	specConverter := spec.NewConverter(frConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+	tenantConverter := tenant.NewConverter()
+	tenantRepo := tenant.NewRepository(tenantConverter)
+
+	webhookRepo := webhook.NewRepository(webhookConverter)
+	applicationRepo := application.NewRepository(appConverter)
+	uidSvc := uid.NewService()
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, nil, nil, nil, nil, nil, nil, uidSvc, nil, "", nil)
+
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, map[string]interface{}{}, "")
+
+	webhookClient := pkgAuth.PrepareHTTPClient(cfg.Handler.ClientTimeout)
+	go func() {
+		webhooks, err := webhookSvc.ListByTypeAndLabelFilter(ctx, model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry")))
+		if err != nil {
+			return //?
+		}
+		if cfg.SystemFieldDiscoveryWebhookPartialProcessing {
+			log.C(ctx).Infof("Partial system field discovery webhook processing is enabled for webhooks which are not older than %d days", cfg.SystemFieldDiscoveryWebhookPartialProcessMaxDays)
+		}
+		date := time.Now().AddDate(0, 0, -1*cfg.SystemFieldDiscoveryWebhookPartialProcessMaxDays)
+		for _, wh := range webhooks {
+			if cfg.SystemFieldDiscoveryWebhookPartialProcessing && wh.CreatedAt.Before(date) {
+				continue
+			}
+
+			ctx, err = saveCredentialsToContext(ctx, wh)
+			if err != nil {
+				log.C(ctx).Errorf(errors.Wrap(err, "failed saving credentials to context").Error())
+				continue
+			}
+
+			respBody, err := pkgwebhook.ExecuteSystemFieldDiscoveryWebhook(ctx, webhookClient, wh)
+			if err != nil {
+				log.C(ctx).Errorf(err.Error())
+			}
+			var response pkgwebhook.SubscriptionsResponse
+			if err = json.Unmarshal(respBody, &response); err != nil {
+				log.C(ctx).Errorf(errors.Wrap(err, "failed to unmarshal subscriptions response").Error())
+				continue
+			}
+			for _, subscription := range response.Subscriptions {
+				if subscription.AppURL != "" {
+					err := appSvc.UpdateBaseURLAndReadyState(ctx, wh.ObjectID, subscription.AppURL, true)
+					if err != nil {
+						log.C(ctx).Errorf(errors.Wrapf(err, "failed to update base url and ready state for webhook with id %q and app with id %q", wh.ID, wh.ObjectID).Error())
+						break
+					}
+					err = webhookSvc.Delete(ctx, wh.ID, model.ApplicationWebhookReference)
+					if err != nil {
+						log.C(ctx).Errorf(errors.Wrapf(err, "failed to delete application webhook with id %q ", wh.ID).Error())
+						break
+					}
+					break
+				}
+			}
+		}
+		// stop and try after 2-3 min
+		time.Sleep(2 * time.Minute)
+	}()
+
 	go func() {
 		<-ctx.Done()
 		// Interrupt signal received - shut down the servers
@@ -126,6 +217,19 @@ func main() {
 	}()
 
 	runMainSrv()
+}
+
+func saveCredentialsToContext(ctx context.Context, webhook *model.Webhook) (context.Context, error) {
+	if webhook.Auth != nil && webhook.Auth.Credential.Oauth != nil {
+		credentials := &pkgAuth.OAuthCredentials{
+			ClientID:     webhook.Auth.Credential.Oauth.ClientID,
+			ClientSecret: webhook.Auth.Credential.Oauth.ClientSecret,
+			TokenURL:     webhook.Auth.Credential.Oauth.URL,
+		}
+		ctx = pkgAuth.SaveToContext(ctx, credentials)
+		return ctx, nil
+	}
+	return ctx, errors.Errorf("webhook credentials are missing for webhook with id %q", webhook.ID)
 }
 
 func stopTenantFetcherJobTicker(ctx context.Context, tenantFetcherJobTicker *time.Ticker, jobName string) {
@@ -201,7 +305,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 
 func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg securityConfig, requiredScopes ...string) {
 	scopeValidator := claims.NewScopesValidator(requiredScopes)
-	middleware := auth.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
+	middleware := authmiddleware.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())
 
 	log.C(ctx).Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
@@ -367,4 +471,8 @@ func dependenciesConfigToMap(cfg tenantfetcher.HandlerConfig) (map[string][]tena
 	}
 
 	return dependenciesConfig, nil
+}
+
+func initWebhookAndAppSvc() {
+
 }

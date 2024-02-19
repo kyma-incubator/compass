@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -30,6 +31,7 @@ type WebhookRepository interface {
 	ListByReferenceObjectID(ctx context.Context, tenant, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error)
 	ListByReferenceObjectIDGlobal(ctx context.Context, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error)
 	ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error)
+	ListByTypeAndLabelFilter(ctx context.Context, webhookType model.WebhookType, filter []*labelfilter.LabelFilter) ([]*model.Webhook, error)
 	ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 	Create(ctx context.Context, tenant string, item *model.Webhook) error
 	Update(ctx context.Context, tenant string, item *model.Webhook) error
@@ -99,6 +101,11 @@ func (s *service) Get(ctx context.Context, id string, objectType model.WebhookRe
 // GetByIDAndWebhookTypeGlobal returns a webhook given an objectID, objectType and webhookType
 func (s *service) GetByIDAndWebhookTypeGlobal(ctx context.Context, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) {
 	return s.webhookRepo.GetByIDAndWebhookTypeGlobal(ctx, objectID, objectType, webhookType)
+}
+
+// ListByTypeAndLabelFilter lists all webhooks with given webhook type and label matching the specified filter
+func (s *service) ListByTypeAndLabelFilter(ctx context.Context, webhookType model.WebhookType, filter *labelfilter.LabelFilter) ([]*model.Webhook, error) {
+	return s.webhookRepo.ListByTypeAndLabelFilter(ctx, webhookType, []*labelfilter.LabelFilter{filter})
 }
 
 // ListForApplication missing godoc

@@ -57,6 +57,8 @@ const (
 	TenantLabelableObject LabelableObject = "Tenant"
 	// AppTemplateLabelableObject represents an application template entity.
 	AppTemplateLabelableObject LabelableObject = "Application Template"
+	// WebhookLabelableObject represents a webhook entity.
+	WebhookLabelableObject LabelableObject = "Webhook"
 )
 
 // GetResourceType returns the resource type of the label based on the referenced entity.
