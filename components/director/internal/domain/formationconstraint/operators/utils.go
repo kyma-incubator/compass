@@ -18,6 +18,18 @@ import (
 // reqBodyNameRegex is a regex defined by the destination creator API specifying what destination names are allowed
 var reqBodyNameRegex = "[a-zA-Z0-9_-]{1,64}"
 
+func isConfigEmpty(config string) bool {
+	return config == "" || config == "{}" || config == "\"\"" || config == "null"
+}
+
+func isFormationAssignmentConfigEmpty(assignment *model.FormationAssignment) bool {
+	return assignment != nil && isConfigEmpty(string(assignment.Value))
+}
+
+func isNotificationStatusReportConfigEmpty(notificationStatusReport *statusreport.NotificationStatusReport) bool {
+	return notificationStatusReport != nil && isConfigEmpty(string(notificationStatusReport.Configuration))
+}
+
 // RetrieveFormationAssignmentPointer converts the provided memory address in form of an integer back to the model.FormationAssignment pointer structure
 // It's important the provided memory address to stores information about model.FormationAssignment entity, otherwise the result could be very abnormal
 func RetrieveFormationAssignmentPointer(ctx context.Context, joinPointDetailsAssignmentMemoryAddress uintptr) (*model.FormationAssignment, error) {
