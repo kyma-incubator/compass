@@ -121,7 +121,6 @@ func Test_GetTenantCommunication(t *testing.T) {
 					Operation:   "assign",
 				},
 				AssignedTenant: tenantmapping.AssignedTenant{
-					AssignmentID:  "456",
 					Configuration: json.RawMessage(`{"credentials": {"inboundCommunication": {"key": "value"}}}`),
 				},
 			},
@@ -137,7 +136,6 @@ func Test_GetTenantCommunication(t *testing.T) {
 					Operation:   "assign",
 				},
 				AssignedTenant: tenantmapping.AssignedTenant{
-					AssignmentID:  "456",
 					Configuration: json.RawMessage(`{"credentials": {"inboundCommunication": {"key": {"key2": {"key3": "value"}}}}}`),
 				},
 			},
@@ -153,7 +151,6 @@ func Test_GetTenantCommunication(t *testing.T) {
 					Operation:   "assign",
 				},
 				AssignedTenant: tenantmapping.AssignedTenant{
-					AssignmentID:  "456",
 					Configuration: json.RawMessage(`{"credentials": {"outboundCommunication": {"key": "value"}}}`),
 				},
 			},

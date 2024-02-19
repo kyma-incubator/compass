@@ -20,9 +20,8 @@ type SuccessResponse struct {
 
 // ErrorResponse structure used for JSON encoded error response
 type ErrorResponse struct {
-	State         string          `json:"state,omitempty"`
-	Configuration json.RawMessage `json:"configuration"`
-	Message       string          `json:"error"`
+	State   string `json:"state,omitempty"`
+	Message string `json:"error"`
 }
 
 func decodeJSONBody(r *http.Request, dst interface{}) error {
