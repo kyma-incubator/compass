@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 )
@@ -51,6 +52,7 @@ const (
 type Handler struct {
 	cfg            config.Config
 	mtlsHTTPClient *http.Client
+	mu             *sync.RWMutex
 	caller         *external_caller.Caller
 }
 
@@ -58,6 +60,7 @@ func NewHandler(cfg config.Config, mtlsHTTPClient *http.Client) *Handler {
 	return &Handler{
 		cfg:            cfg,
 		mtlsHTTPClient: mtlsHTTPClient,
+		mu:             &sync.RWMutex{},
 	}
 }
 
@@ -158,7 +161,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	httputil.Respond(w, http.StatusAccepted)
 
-	go func() {
+	go func(m *sync.RWMutex) {
 		ctx, cancel := context.WithCancel(context.TODO())
 		defer cancel()
 
@@ -174,7 +177,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			if tm.Context.Operation == UnassignOperation {
 				log.C(ctx).Infof("Handle MDI 'read' instance for %s operation...", UnassignOperation)
-				mdiSvcInstanceID, err := h.retrieveServiceInstanceIDByName(ctx, mdiReadSvcInstanceName, tenantID)
+				mdiReadSvcInstanceID, err := h.retrieveServiceInstanceIDByName(ctx, mdiReadSvcInstanceName, tenantID)
 				if err != nil {
 					log.C(ctx).Error(err)
 					reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
@@ -184,8 +187,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				if mdiSvcInstanceID != "" {
-					if err := h.deleteServiceKeys(ctx, mdiSvcInstanceID, mdiReadSvcInstanceName, tenantID); err != nil {
+				if mdiReadSvcInstanceID != "" {
+					if err := h.deleteServiceKeys(ctx, mdiReadSvcInstanceID, mdiReadSvcInstanceName, tenantID); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting service key(s) for MDI 'read' instance: %s\"}", err.Error())
 						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
@@ -193,7 +196,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						}
 						return
 					}
-					if err := h.deleteServiceInstance(ctx, mdiSvcInstanceID, mdiReadSvcInstanceName, tenantID); err != nil {
+					if err := h.deleteServiceInstance(ctx, mdiReadSvcInstanceID, mdiReadSvcInstanceName, tenantID); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting MDI 'read' instance: %s\"}", err.Error())
 						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
@@ -230,8 +233,24 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			m.Lock()
+			mdiReadSvcInstanceID, err := h.retrieveServiceInstanceIDByName(ctx, mdiReadSvcInstanceName, tenantID)
+			if err != nil {
+				log.C(ctx).Error(err)
+				reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+
+			if mdiReadSvcInstanceID != "" {
+				log.C(ctx).Infof("Service instance with name: %s is already created or in process of creating. Returning...", mdiReadSvcInstanceName)
+				return
+			}
+
 			mdiReadInstanceParams := `{"application":"ariba","businessSystemId":"MDCS","enableTenantDeletion":true}`
-			svcInstanceIDMDI, err := h.createServiceInstance(ctx, mdiReadSvcInstanceName, mdiPlanID, mdiReadInstanceParams, tenantID)
+			mdiReadSvcInstanceID, err = h.createServiceInstance(ctx, mdiReadSvcInstanceName, mdiPlanID, mdiReadInstanceParams, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating MDI 'read' service instance: %s\"}", err.Error())
@@ -244,7 +263,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			mdiReadSvcKeyName := mdiReadSvcInstanceName + "-key"
 			mdiReadSvcKeyName = truncateString(ctx, mdiReadSvcKeyName, serviceBindingMaxLengthName)
 
-			mdiServiceKeyID, err := h.createServiceKey(ctx, mdiReadSvcKeyName, "", svcInstanceIDMDI, mdiReadSvcInstanceName, tenantID)
+			mdiServiceKeyID, err := h.createServiceKey(ctx, mdiReadSvcKeyName, "", mdiReadSvcInstanceID, mdiReadSvcInstanceName, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating MDI 'read' service key: %s\"}", err.Error())
@@ -253,6 +272,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 				return
 			}
+			m.Unlock()
 
 			mdiReadServiceKey, err := h.retrieveServiceKeyByID(ctx, mdiServiceKeyID, tenantID)
 			if err != nil {
@@ -312,12 +332,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if tm.AssignedTenant.ApplicationNamespace == s4AppNamespace && tm.ReceiverTenant.ApplicationNamespace == mdoAppNamespace {
-			mdiWriteSvcInstance := mdiCatalogName + "-write-instance-" + formationID
-			mdiWriteSvcInstance = truncateString(ctx, mdiWriteSvcInstance, serviceInstanceNameMaxLength)
+			mdiWriteSvcInstanceName := mdiCatalogName + "-write-instance-" + formationID
+			mdiWriteSvcInstanceName = truncateString(ctx, mdiWriteSvcInstanceName, serviceInstanceNameMaxLength)
 
 			if tm.Context.Operation == UnassignOperation {
 				log.C(ctx).Infof("Handle MDI 'write' instance for %s operation...", UnassignOperation)
-				svcInstanceIDMDI, err := h.retrieveServiceInstanceIDByName(ctx, mdiWriteSvcInstance, tenantID)
+				mdiWriteSvcInstanceID, err := h.retrieveServiceInstanceIDByName(ctx, mdiWriteSvcInstanceName, tenantID)
 				if err != nil {
 					log.C(ctx).Error(err)
 					reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
@@ -327,8 +347,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				if svcInstanceIDMDI != "" {
-					if err := h.deleteServiceKeys(ctx, svcInstanceIDMDI, mdiWriteSvcInstance, tenantID); err != nil {
+				if mdiWriteSvcInstanceID != "" {
+					if err := h.deleteServiceKeys(ctx, mdiWriteSvcInstanceID, mdiWriteSvcInstanceName, tenantID); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting service key(s) for MDI 'write' instance: %s\"}", err.Error())
 						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
@@ -336,7 +356,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						}
 						return
 					}
-					if err := h.deleteServiceInstance(ctx, svcInstanceIDMDI, mdiWriteSvcInstance, tenantID); err != nil {
+					if err := h.deleteServiceInstance(ctx, mdiWriteSvcInstanceID, mdiWriteSvcInstanceName, tenantID); err != nil {
 						log.C(ctx).Error(err)
 						reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while deleting MDI 'write' instance: %s\"}", err.Error())
 						if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
@@ -387,7 +407,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			offeringIDMDI, err := h.retrieveServiceOffering(ctx, mdiCatalogName, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
-				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
+				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while retrieving service offerings: %s\"}", err.Error())
 				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
 					log.C(ctx).Error(statusAPIErr)
 				}
@@ -404,8 +424,24 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			m.Lock()
+			mdiWriteSvcInstanceID, err := h.retrieveServiceInstanceIDByName(ctx, mdiWriteSvcInstanceName, tenantID)
+			if err != nil {
+				log.C(ctx).Error(err)
+				reqBody := fmt.Sprintf("{\"state\":\"DELETE_ERROR\", \"error\": \"An error occurred while retrieving service instances: %s\"}", err.Error())
+				if statusAPIErr := h.sendStatusAPIRequest(ctx, statusAPIURL, reqBody); statusAPIErr != nil {
+					log.C(ctx).Error(statusAPIErr)
+				}
+				return
+			}
+
+			if mdiWriteSvcInstanceID != "" {
+				log.C(ctx).Infof("Service instance with name: %s is already created or in process of creating. Returning...", mdiWriteSvcInstanceName)
+				return
+			}
+
 			mdiWriteInstanceParams := fmt.Sprintf(`{"application":"s4","businessSystemId":"%s","enableTenantDeletion":true,"writePermissions":[{"entityType":"sap.odm.businesspartner.BusinessPartnerRelationship"},{"entityType":"sap.odm.businesspartner.BusinessPartner"},{"entityType":"sap.odm.businesspartner.ContactPersonRelationship"},{"entityType":"sap.odm.finance.costobject.ProjectControllingObject"},{"entityType":"sap.odm.finance.costobject.CostCenter"}]}`, businessSystemID)
-			mdiSvcInstanceID, err := h.createServiceInstance(ctx, mdiWriteSvcInstance, mdiPlanID, mdiWriteInstanceParams, tenantID)
+			mdiWriteSvcInstanceID, err = h.createServiceInstance(ctx, mdiWriteSvcInstanceName, mdiPlanID, mdiWriteInstanceParams, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating MDI 'write' service instance: %s\"}", err.Error())
@@ -415,10 +451,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			mdiWriteSvcKeyName := mdiWriteSvcInstance + "-key"
+			mdiWriteSvcKeyName := mdiWriteSvcInstanceName + "-key"
 			mdiWriteSvcKeyName = truncateString(ctx, mdiWriteSvcKeyName, serviceBindingMaxLengthName)
 
-			mdiWriteServiceKeyID, err := h.createServiceKey(ctx, mdiWriteSvcKeyName, "", mdiSvcInstanceID, mdiWriteSvcInstance, tenantID)
+			mdiWriteServiceKeyID, err := h.createServiceKey(ctx, mdiWriteSvcKeyName, "", mdiWriteSvcInstanceID, mdiWriteSvcInstanceName, tenantID)
 			if err != nil {
 				log.C(ctx).Error(err)
 				reqBody := fmt.Sprintf("{\"state\":\"CREATE_ERROR\", \"error\": \"An error occurred while creating MDI 'write' service key: %s\"}", err.Error())
@@ -427,6 +463,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 				return
 			}
+			m.Unlock()
 
 			mdiWriteServiceKey, err := h.retrieveServiceKeyByID(ctx, mdiWriteServiceKeyID, tenantID)
 			if err != nil {
@@ -655,7 +692,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
-	}()
+	}(h.mu)
 }
 
 func removeCertificateTags(cert string) string {
