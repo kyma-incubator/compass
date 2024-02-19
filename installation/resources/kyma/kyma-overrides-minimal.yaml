@@ -30,17 +30,17 @@ istio:
     images:
       istio_proxyv2:
         name: "proxyv2"
-        version: "1.16.2-distroless"
+        version: "1.17.2-distroless"
         directory: "istio"
         containerRegistryPath: "docker.io"
       istio_pilot:
         name: "pilot"
-        version: "1.16.2-distroless"
+        version: "1.17.2-distroless"
         directory: "istio"
         containerRegistryPath: "docker.io"
       istio_install-cni:
         name: "install-cni"
-        version: "1.16.2-distroless"
+        version: "1.17.2-distroless"
         directory: "istio"
         containerRegistryPath: "docker.io"
 

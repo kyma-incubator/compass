@@ -1529,6 +1529,9 @@ func (s *service) SetFormationToErrorState(ctx context.Context, formation *model
 	formation.Error = marshaledErr
 
 	if err := s.formationRepository.Update(ctx, formation); err != nil {
+		if state == model.DeleteErrorFormationState && apperrors.IsUnauthorizedError(err) { // the not found error is disguised behind the unauthorized error
+			return nil
+		}
 		return err
 	}
 	return nil
@@ -1871,7 +1874,11 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 		}
 		log.C(ctx).Infof("Updating formation with ID: %q and name: %q to: %q state and waiting for the receiver to report the status on the status API...", formation.ID, formation.Name, formation.State)
 		if err = s.formationRepository.Update(ctx, formation); err != nil {
-			return errors.Wrapf(err, "while updating formation with id %q", formation.ID)
+			if errorState == model.DeleteErrorFormationState && apperrors.IsUnauthorizedError(err) { // the not found error is disguised behind the unauthorized error
+				return nil
+			}
+
+			return errors.Wrapf(err, "while updating formation with ID: %q", formation.ID)
 		}
 		return nil
 	}

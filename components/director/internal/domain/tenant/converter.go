@@ -77,6 +77,8 @@ func (c *converter) ToGraphQLInput(in model.BusinessTenantMappingInput) graphql.
 		Provider:       in.Provider,
 		LicenseType:    in.LicenseType,
 		CustomerID:     in.CustomerID,
+		CostObjectType: in.CostObjectType,
+		CostObjectID:   in.CostObjectID,
 	}
 }
 
@@ -124,6 +126,8 @@ func (c *converter) InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) mod
 		Provider:       tnt.Provider,
 		LicenseType:    tnt.LicenseType,
 		CustomerID:     customerID,
+		CostObjectType: tnt.CostObjectType,
+		CostObjectID:   tnt.CostObjectID,
 	}
 }
 

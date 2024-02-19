@@ -585,7 +585,6 @@ func TestRepository_Update(t *testing.T) {
 	})
 
 	t.Run("Success when the formation assignment state is CONFIG_PENDING but the configuration is changed, last state change timestamp should be updated", func(t *testing.T) {
-		//t.Run("test", func(t *testing.T) {
 		// GIVEN
 		faModelWithConfigPendingState := fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON)
 		faModelWithConfigPendingState.State = configPendingAssignmentState

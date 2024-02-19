@@ -25,6 +25,8 @@ const (
 	ManagedApplicationConsumerType = "Managed Application Consumer"
 	// LandscapeResourceOperatorType represents a landscape resource operator consumer type
 	LandscapeResourceOperatorType = "Landscape Resource Operator"
+	// TenantDiscoveryOperatorType represents a tenant discovery operator consumer type
+	TenantDiscoveryOperatorType = "Tenant Discovery Operator"
 	// InstanceCreator is a consumer type that is used by Instance Creator operator
 	InstanceCreator = "Instance Creator"
 	// TechnicalClient represents a technical client consumer type
@@ -44,6 +46,7 @@ var SupportedConsumerTypes = map[string]bool{
 	ManagedApplicationProviderOperatorType: true,
 	ManagedApplicationConsumerType:         true,
 	LandscapeResourceOperatorType:          true,
+	TenantDiscoveryOperatorType:            true,
 	InstanceCreator:                        true,
 	TechnicalClient:                        true,
 }

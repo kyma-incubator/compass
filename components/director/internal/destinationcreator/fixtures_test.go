@@ -3,6 +3,7 @@ package destinationcreator_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -186,8 +187,9 @@ func fixDestinationInfo(authType, destType, url string) *destinationcreatorpkg.D
 	}
 }
 
-func fixDesignTimeDestinationDetails() operators.Destination {
-	return fixDestinationDetails(designTimeDestName, string(destinationcreatorpkg.AuthTypeNoAuth), destinationExternalSubaccountID)
+func fixDesignTimeDestinationDetails() operators.DestinationRaw {
+	return operators.DestinationRaw{
+		Destination: json.RawMessage(fmt.Sprintf(`{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authenticationType":"%s","subaccountId":"%s","description":"%s"}`, destinationURL, designTimeDestName, destinationTypeHTTP, destinationProxyTypeInternet, string(destinationcreatorpkg.AuthTypeNoAuth), destinationExternalSubaccountID, destinationDescription))}
 }
 
 func fixBasicDestinationDetails() operators.Destination {
