@@ -10,15 +10,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
 	requestobject "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
-	"dario.cat/mergo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
@@ -152,6 +149,7 @@ type Service struct {
 	documentValidator Validator
 }
 
+// TODO remove redundant services
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
 func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, apiProcessor APIProcessor, eventSvc EventService, eventProcessor EventProcessor, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, capabilityProcessor CapabilityProcessor, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, dataProductSvc DataProductService, dataProductProcessor DataProductProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, packageProcessor PackageProcessor, productProcessor ProductProcessor, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, tombstonedResourcesDeleter TombstonedResourcesDeleter, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService, documentValidator Validator) *Service {
 	return &Service{
@@ -962,321 +960,322 @@ func (s *Service) resyncAppTemplateVersion(ctx context.Context, appTemplateID st
 	return err
 }
 
-func (s *Service) fetchAPIDefFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.APIDefinition, error) {
-	var (
-		apisFromDB []*model.APIDefinition
-		err        error
-	)
+//func (s *Service) fetchAPIDefFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.APIDefinition, error) {
+//	var (
+//		apisFromDB []*model.APIDefinition
+//		err        error
+//	)
+//
+//	if resourceType == directorresource.ApplicationTemplateVersion {
+//		apisFromDB, err = s.apiSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+//	} else {
+//		apisFromDB, err = s.apiSvc.ListByApplicationID(ctx, resourceID)
+//	}
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	apiDataFromDB := make(map[string]*model.APIDefinition, len(apisFromDB))
+//
+//	for _, api := range apisFromDB {
+//		apiOrdID := str.PtrStrToStr(api.OrdID)
+//		apiDataFromDB[apiOrdID] = api
+//	}
+//
+//	return apiDataFromDB, nil
+//}
 
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		apisFromDB, err = s.apiSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	} else {
-		apisFromDB, err = s.apiSvc.ListByApplicationID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
+//func (s *Service) fetchCapabilitiesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Capability, error) {
+//	var (
+//		capabilitiesFromDB []*model.Capability
+//		err                error
+//	)
+//
+//	if resourceType == directorresource.ApplicationTemplateVersion {
+//		capabilitiesFromDB, err = s.capabilitySvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+//	} else {
+//		capabilitiesFromDB, err = s.capabilitySvc.ListByApplicationID(ctx, resourceID)
+//	}
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	capabilitiesDataFromDB := make(map[string]*model.Capability, len(capabilitiesFromDB))
+//
+//	for _, capability := range capabilitiesFromDB {
+//		capabilityOrdID := str.PtrStrToStr(capability.OrdID)
+//		capabilitiesDataFromDB[capabilityOrdID] = capability
+//	}
+//
+//	return capabilitiesDataFromDB, nil
+//}
+//
+//func (s *Service) fetchIntegrationDependenciesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.IntegrationDependency, error) {
+//	var (
+//		integrationDependenciesFromDB []*model.IntegrationDependency
+//		err                           error
+//	)
+//
+//	if resourceType == directorresource.ApplicationTemplateVersion {
+//		integrationDependenciesFromDB, err = s.integrationDependencySvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+//	} else {
+//		integrationDependenciesFromDB, err = s.integrationDependencySvc.ListByApplicationID(ctx, resourceID)
+//	}
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	integrationDependenciesDataFromDB := make(map[string]*model.IntegrationDependency, len(integrationDependenciesFromDB))
+//
+//	for _, integrationDependency := range integrationDependenciesFromDB {
+//		integrationDependencyOrdID := str.PtrStrToStr(integrationDependency.OrdID)
+//		integrationDependenciesDataFromDB[integrationDependencyOrdID] = integrationDependency
+//	}
+//
+//	return integrationDependenciesDataFromDB, nil
+//}
+//
+//
+//func (s *Service) fetchEntityTypesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.EntityType, error) {
+//	var (
+//		entityTypesFromDB []*model.EntityType
+//		err               error
+//	)
+//
+//	if resourceType == directorresource.ApplicationTemplateVersion {
+//		entityTypesFromDB, err = s.entityTypeSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+//	} else {
+//		entityTypesFromDB, err = s.entityTypeSvc.ListByApplicationID(ctx, resourceID)
+//	}
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	entityTypesDataFromDB := make(map[string]*model.EntityType, len(entityTypesFromDB))
+//
+//	for _, entityType := range entityTypesFromDB {
+//		entityTypesDataFromDB[entityType.OrdID] = entityType
+//	}
+//
+//	return entityTypesDataFromDB, nil
+//}
+//
+//func (s *Service) fetchDataProductsFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.DataProduct, error) {
+//	var (
+//		dataProductsFromDB []*model.DataProduct
+//		err                error
+//	)
+//
+//	if resourceType == directorresource.ApplicationTemplateVersion {
+//		dataProductsFromDB, err = s.dataProductSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+//	} else {
+//		dataProductsFromDB, err = s.dataProductSvc.ListByApplicationID(ctx, resourceID)
+//	}
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	dataProductDataFromDB := make(map[string]*model.DataProduct, len(dataProductsFromDB))
+//
+//	for _, dataProduct := range dataProductsFromDB {
+//		dataProductOrdID := str.PtrStrToStr(dataProduct.OrdID)
+//		dataProductDataFromDB[dataProductOrdID] = dataProduct
+//	}
+//
+//	return dataProductDataFromDB, nil
+//}
+//
+//func (s *Service) fetchPackagesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Package, error) {
+//	var (
+//		packagesFromDB []*model.Package
+//		err            error
+//	)
+//
+//	if resourceType == directorresource.ApplicationTemplateVersion {
+//		packagesFromDB, err = s.packageSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+//	} else {
+//		packagesFromDB, err = s.packageSvc.ListByApplicationID(ctx, resourceID)
+//	}
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	packageDataFromDB := make(map[string]*model.Package)
+//
+//	for _, pkg := range packagesFromDB {
+//		packageDataFromDB[pkg.OrdID] = pkg
+//	}
+//
+//	return packageDataFromDB, nil
+//}
+//
+//func (s *Service) fetchEventDefFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.EventDefinition, error) {
+//	var (
+//		eventsFromDB []*model.EventDefinition
+//		err          error
+//	)
+//
+//	if resourceType == directorresource.ApplicationTemplateVersion {
+//		eventsFromDB, err = s.eventSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+//	} else {
+//		eventsFromDB, err = s.eventSvc.ListByApplicationID(ctx, resourceID)
+//	}
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	eventDataFromDB := make(map[string]*model.EventDefinition)
+//
+//	for _, event := range eventsFromDB {
+//		eventOrdID := str.PtrStrToStr(event.OrdID)
+//		eventDataFromDB[eventOrdID] = event
+//	}
+//
+//	return eventDataFromDB, nil
+//}
+//
+//func (s *Service) fetchBundlesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Bundle, error) {
+//	var (
+//		bundlesFromDB []*model.Bundle
+//		err           error
+//	)
+//
+//	if resourceType == directorresource.ApplicationTemplateVersion {
+//		bundlesFromDB, err = s.bundleSvc.ListByApplicationTemplateVersionIDNoPaging(ctx, resourceID)
+//	} else {
+//		bundlesFromDB, err = s.bundleSvc.ListByApplicationIDNoPaging(ctx, resourceID)
+//	}
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	bundleDataFromDB := make(map[string]*model.Bundle)
+//
+//	for _, bndl := range bundlesFromDB {
+//		bndlOrdID := str.PtrStrToStr(bndl.OrdID)
+//		bundleDataFromDB[bndlOrdID] = bndl
+//	}
+//
+//	return bundleDataFromDB, nil
+//}
 
-	apiDataFromDB := make(map[string]*model.APIDefinition, len(apisFromDB))
-
-	for _, api := range apisFromDB {
-		apiOrdID := str.PtrStrToStr(api.OrdID)
-		apiDataFromDB[apiOrdID] = api
-	}
-
-	return apiDataFromDB, nil
-}
-
-func (s *Service) fetchCapabilitiesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Capability, error) {
-	var (
-		capabilitiesFromDB []*model.Capability
-		err                error
-	)
-
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		capabilitiesFromDB, err = s.capabilitySvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	} else {
-		capabilitiesFromDB, err = s.capabilitySvc.ListByApplicationID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	capabilitiesDataFromDB := make(map[string]*model.Capability, len(capabilitiesFromDB))
-
-	for _, capability := range capabilitiesFromDB {
-		capabilityOrdID := str.PtrStrToStr(capability.OrdID)
-		capabilitiesDataFromDB[capabilityOrdID] = capability
-	}
-
-	return capabilitiesDataFromDB, nil
-}
-
-func (s *Service) fetchIntegrationDependenciesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.IntegrationDependency, error) {
-	var (
-		integrationDependenciesFromDB []*model.IntegrationDependency
-		err                           error
-	)
-
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		integrationDependenciesFromDB, err = s.integrationDependencySvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	} else {
-		integrationDependenciesFromDB, err = s.integrationDependencySvc.ListByApplicationID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	integrationDependenciesDataFromDB := make(map[string]*model.IntegrationDependency, len(integrationDependenciesFromDB))
-
-	for _, integrationDependency := range integrationDependenciesFromDB {
-		integrationDependencyOrdID := str.PtrStrToStr(integrationDependency.OrdID)
-		integrationDependenciesDataFromDB[integrationDependencyOrdID] = integrationDependency
-	}
-
-	return integrationDependenciesDataFromDB, nil
-}
-
-func (s *Service) fetchEntityTypesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.EntityType, error) {
-	var (
-		entityTypesFromDB []*model.EntityType
-		err               error
-	)
-
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		entityTypesFromDB, err = s.entityTypeSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	} else {
-		entityTypesFromDB, err = s.entityTypeSvc.ListByApplicationID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	entityTypesDataFromDB := make(map[string]*model.EntityType, len(entityTypesFromDB))
-
-	for _, entityType := range entityTypesFromDB {
-		entityTypesDataFromDB[entityType.OrdID] = entityType
-	}
-
-	return entityTypesDataFromDB, nil
-}
-
-func (s *Service) fetchDataProductsFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.DataProduct, error) {
-	var (
-		dataProductsFromDB []*model.DataProduct
-		err                error
-	)
-
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		dataProductsFromDB, err = s.dataProductSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	} else {
-		dataProductsFromDB, err = s.dataProductSvc.ListByApplicationID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	dataProductDataFromDB := make(map[string]*model.DataProduct, len(dataProductsFromDB))
-
-	for _, dataProduct := range dataProductsFromDB {
-		dataProductOrdID := str.PtrStrToStr(dataProduct.OrdID)
-		dataProductDataFromDB[dataProductOrdID] = dataProduct
-	}
-
-	return dataProductDataFromDB, nil
-}
-
-func (s *Service) fetchPackagesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Package, error) {
-	var (
-		packagesFromDB []*model.Package
-		err            error
-	)
-
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		packagesFromDB, err = s.packageSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	} else {
-		packagesFromDB, err = s.packageSvc.ListByApplicationID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	packageDataFromDB := make(map[string]*model.Package)
-
-	for _, pkg := range packagesFromDB {
-		packageDataFromDB[pkg.OrdID] = pkg
-	}
-
-	return packageDataFromDB, nil
-}
-
-func (s *Service) fetchEventDefFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.EventDefinition, error) {
-	var (
-		eventsFromDB []*model.EventDefinition
-		err          error
-	)
-
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		eventsFromDB, err = s.eventSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	} else {
-		eventsFromDB, err = s.eventSvc.ListByApplicationID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	eventDataFromDB := make(map[string]*model.EventDefinition)
-
-	for _, event := range eventsFromDB {
-		eventOrdID := str.PtrStrToStr(event.OrdID)
-		eventDataFromDB[eventOrdID] = event
-	}
-
-	return eventDataFromDB, nil
-}
-
-func (s *Service) fetchBundlesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Bundle, error) {
-	var (
-		bundlesFromDB []*model.Bundle
-		err           error
-	)
-
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		bundlesFromDB, err = s.bundleSvc.ListByApplicationTemplateVersionIDNoPaging(ctx, resourceID)
-	} else {
-		bundlesFromDB, err = s.bundleSvc.ListByApplicationIDNoPaging(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	bundleDataFromDB := make(map[string]*model.Bundle)
-
-	for _, bndl := range bundlesFromDB {
-		bndlOrdID := str.PtrStrToStr(bndl.OrdID)
-		bundleDataFromDB[bndlOrdID] = bndl
-	}
-
-	return bundleDataFromDB, nil
-}
-
-func (s *Service) fetchResources(ctx context.Context, resource Resource, documents Documents) (ResourcesFromDB, error) {
-	resourceIDs := make(map[string]directorresource.Type, 0)
-
-	if resource.Type == directorresource.Application {
-		resourceIDs[resource.ID] = directorresource.Application
-	}
-
-	for _, doc := range documents {
-		if doc.DescribedSystemVersion != nil {
-			appTemplateID := resource.ID
-			if resource.Type == directorresource.Application && resource.ParentID != nil {
-				appTemplateID = *resource.ParentID
-			}
-
-			appTemplateVersion, err := s.getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx, appTemplateID, doc.DescribedSystemVersion.Version)
-			if err != nil {
-				return ResourcesFromDB{}, err
-			}
-			resourceIDs[appTemplateVersion.ID] = directorresource.ApplicationTemplateVersion
-		}
-	}
-
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return ResourcesFromDB{}, err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	apiDataFromDB := make(map[string]*model.APIDefinition)
-	eventDataFromDB := make(map[string]*model.EventDefinition)
-	packageDataFromDB := make(map[string]*model.Package)
-	bundleDataFromDB := make(map[string]*model.Bundle)
-	capabilitiesDataFromDB := make(map[string]*model.Capability)
-	integrationDependenciesFromDB := make(map[string]*model.IntegrationDependency)
-	entityTypesDataFromDB := make(map[string]*model.EntityType)
-	dataProductDataFromDB := make(map[string]*model.DataProduct)
-
-	for resourceID, resourceType := range resourceIDs {
-		apiData, err := s.fetchAPIDefFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching apis for %s with id %s", resourceType, resourceID)
-		}
-
-		eventData, err := s.fetchEventDefFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching events for %s with id %s", resourceType, resourceID)
-		}
-
-		packageData, err := s.fetchPackagesFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching packages for %s with id %s", resourceType, resourceID)
-		}
-
-		bundleData, err := s.fetchBundlesFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching bundles for %s with id %s", resourceType, resourceID)
-		}
-
-		capabilityData, err := s.fetchCapabilitiesFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching capabilities for %s with id %s", resourceType, resourceID)
-		}
-
-		integrationDependencyData, err := s.fetchIntegrationDependenciesFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching integration dependencies for %s with id %s", resourceType, resourceID)
-		}
-
-		entityTypeData, err := s.fetchEntityTypesFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching entity types for %s with id %s", resourceType, resourceID)
-		}
-
-		dataProductData, err := s.fetchDataProductsFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching data products for %s with id %s", resourceType, resourceID)
-		}
-
-		if err = mergo.Merge(&apiDataFromDB, apiData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-		if err = mergo.Merge(&eventDataFromDB, eventData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-		if err = mergo.Merge(&packageDataFromDB, packageData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-		if err = mergo.Merge(&bundleDataFromDB, bundleData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-		if err = mergo.Merge(&capabilitiesDataFromDB, capabilityData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-		if err = mergo.Merge(&integrationDependenciesFromDB, integrationDependencyData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-		if err = mergo.Merge(&entityTypesDataFromDB, entityTypeData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-		if err = mergo.Merge(&dataProductDataFromDB, dataProductData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-	}
-
-	return ResourcesFromDB{
-		APIs:                    apiDataFromDB,
-		Events:                  eventDataFromDB,
-		Packages:                packageDataFromDB,
-		Bundles:                 bundleDataFromDB,
-		Capabilities:            capabilitiesDataFromDB,
-		IntegrationDependencies: integrationDependenciesFromDB,
-		EntityTypes:             entityTypesDataFromDB,
-		DataProducts:            dataProductDataFromDB,
-	}, tx.Commit()
-}
+//func (s *Service) fetchResources(ctx context.Context, resource Resource, documents Documents) (ResourcesFromDB, error) {
+//	resourceIDs := make(map[string]directorresource.Type, 0)
+//
+//	if resource.Type == directorresource.Application {
+//		resourceIDs[resource.ID] = directorresource.Application
+//	}
+//
+//	for _, doc := range documents {
+//		if doc.DescribedSystemVersion != nil {
+//			appTemplateID := resource.ID
+//			if resource.Type == directorresource.Application && resource.ParentID != nil {
+//				appTemplateID = *resource.ParentID
+//			}
+//
+//			appTemplateVersion, err := s.getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx, appTemplateID, doc.DescribedSystemVersion.Version)
+//			if err != nil {
+//				return ResourcesFromDB{}, err
+//			}
+//			resourceIDs[appTemplateVersion.ID] = directorresource.ApplicationTemplateVersion
+//		}
+//	}
+//
+//	tx, err := s.transact.Begin()
+//	if err != nil {
+//		return ResourcesFromDB{}, err
+//	}
+//	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+//
+//	ctx = persistence.SaveToContext(ctx, tx)
+//
+//	apiDataFromDB := make(map[string]*model.APIDefinition)
+//	eventDataFromDB := make(map[string]*model.EventDefinition)
+//	packageDataFromDB := make(map[string]*model.Package)
+//	bundleDataFromDB := make(map[string]*model.Bundle)
+//	capabilitiesDataFromDB := make(map[string]*model.Capability)
+//	integrationDependenciesFromDB := make(map[string]*model.IntegrationDependency)
+//	entityTypesDataFromDB := make(map[string]*model.EntityType)
+//	dataProductDataFromDB := make(map[string]*model.DataProduct)
+//
+//	for resourceID, resourceType := range resourceIDs {
+//		apiData, err := s.fetchAPIDefFromDB(ctx, resourceType, resourceID)
+//		if err != nil {
+//			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching apis for %s with id %s", resourceType, resourceID)
+//		}
+//
+//		eventData, err := s.fetchEventDefFromDB(ctx, resourceType, resourceID)
+//		if err != nil {
+//			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching events for %s with id %s", resourceType, resourceID)
+//		}
+//
+//		packageData, err := s.fetchPackagesFromDB(ctx, resourceType, resourceID)
+//		if err != nil {
+//			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching packages for %s with id %s", resourceType, resourceID)
+//		}
+//
+//		bundleData, err := s.fetchBundlesFromDB(ctx, resourceType, resourceID)
+//		if err != nil {
+//			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching bundles for %s with id %s", resourceType, resourceID)
+//		}
+//
+//		capabilityData, err := s.fetchCapabilitiesFromDB(ctx, resourceType, resourceID)
+//		if err != nil {
+//			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching capabilities for %s with id %s", resourceType, resourceID)
+//		}
+//
+//		integrationDependencyData, err := s.fetchIntegrationDependenciesFromDB(ctx, resourceType, resourceID)
+//		if err != nil {
+//			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching integration dependencies for %s with id %s", resourceType, resourceID)
+//		}
+//
+//		entityTypeData, err := s.fetchEntityTypesFromDB(ctx, resourceType, resourceID)
+//		if err != nil {
+//			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching entity types for %s with id %s", resourceType, resourceID)
+//		}
+//
+//		dataProductData, err := s.fetchDataProductsFromDB(ctx, resourceType, resourceID)
+//		if err != nil {
+//			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching data products for %s with id %s", resourceType, resourceID)
+//		}
+//
+//		if err = mergo.Merge(&apiDataFromDB, apiData); err != nil {
+//			return ResourcesFromDB{}, err
+//		}
+//		if err = mergo.Merge(&eventDataFromDB, eventData); err != nil {
+//			return ResourcesFromDB{}, err
+//		}
+//		if err = mergo.Merge(&packageDataFromDB, packageData); err != nil {
+//			return ResourcesFromDB{}, err
+//		}
+//		if err = mergo.Merge(&bundleDataFromDB, bundleData); err != nil {
+//			return ResourcesFromDB{}, err
+//		}
+//		if err = mergo.Merge(&capabilitiesDataFromDB, capabilityData); err != nil {
+//			return ResourcesFromDB{}, err
+//		}
+//		if err = mergo.Merge(&integrationDependenciesFromDB, integrationDependencyData); err != nil {
+//			return ResourcesFromDB{}, err
+//		}
+//		if err = mergo.Merge(&entityTypesDataFromDB, entityTypeData); err != nil {
+//			return ResourcesFromDB{}, err
+//		}
+//		if err = mergo.Merge(&dataProductDataFromDB, dataProductData); err != nil {
+//			return ResourcesFromDB{}, err
+//		}
+//	}
+//
+//	return ResourcesFromDB{
+//		APIs:                    apiDataFromDB,
+//		Events:                  eventDataFromDB,
+//		Packages:                packageDataFromDB,
+//		Bundles:                 bundleDataFromDB,
+//		Capabilities:            capabilitiesDataFromDB,
+//		IntegrationDependencies: integrationDependenciesFromDB,
+//		EntityTypes:             entityTypesDataFromDB,
+//		DataProducts:            dataProductDataFromDB,
+//	}, tx.Commit()
+//}
 
 func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model.Webhook, resource Resource, globalResourcesOrdIDs map[string]bool, ordWebhookMapping application.ORDWebhookMapping) error {
 	var (
@@ -1366,13 +1365,12 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 			// TODO revisit
 			log.C(ctx).WithError(errors.New("Some error")).WithField("validation_errors", validationErrors).Error(ValidationErrorMsg)
 		}
-		var errs *multierror.Error
+
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
 
 			log.C(ctx).WithError(err).Errorf("%s: %v", ProcessingErrorMsg, err)
-			errs = multierror.Append(errs, errors.Wrap(err, ProcessingErrorMsg))
 		}
 
 		if err != nil {
@@ -1390,39 +1388,6 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 			ValidationErrors: validationErrors,
 			RuntimeError:     nil,
 		}
-		////
-		//if err == nil {
-		//	if len(validationErrors) == 0 {
-		//		return nil
-		//	}
-		//
-		//	return &ProcessingError{
-		//		ValidationErrors: validationErrors,
-		//		RuntimeError:     nil,
-		//	}
-		//}
-		//
-		//if len(validationErrors) == 0 {
-		//	return err
-		//}
-		//
-		//return &ProcessingError{
-		//	ValidationErrors: validationErrors,
-		//	RuntimeError:     &RuntimeError{Message: err.Error()},
-		//}
-
-		//if err != nil {
-		//	return &ProcessingError{
-		//		ValidationErrors: validationErrors,
-		//		RuntimeError:     &RuntimeError{Message: err.Error()},
-		//	}
-		//}
-		//
-		//return &ProcessingError{
-		//	ValidationErrors: validationErrors,
-		//	RuntimeError:     nil,
-		//}
-
 	}
 
 	log.C(ctx).Info("Successfully processed ORD documents")

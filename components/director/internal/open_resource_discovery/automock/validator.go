@@ -15,19 +15,19 @@ type Validator struct {
 }
 
 // Validate provides a mock function with given fields: ctx, documents, baseURL, globalResourcesOrdIDs, docsString
-func (_m *Validator) Validate(ctx context.Context, documents []*ord.Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string) ([]ord.ValidationError, error) {
+func (_m *Validator) Validate(ctx context.Context, documents []*ord.Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string) ([]*ord.ValidationError, error) {
 	ret := _m.Called(ctx, documents, baseURL, globalResourcesOrdIDs, docsString)
 
-	var r0 []ord.ValidationError
+	var r0 []*ord.ValidationError
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*ord.Document, string, map[string]bool, []string) ([]ord.ValidationError, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []*ord.Document, string, map[string]bool, []string) ([]*ord.ValidationError, error)); ok {
 		return rf(ctx, documents, baseURL, globalResourcesOrdIDs, docsString)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []*ord.Document, string, map[string]bool, []string) []ord.ValidationError); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []*ord.Document, string, map[string]bool, []string) []*ord.ValidationError); ok {
 		r0 = rf(ctx, documents, baseURL, globalResourcesOrdIDs, docsString)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]ord.ValidationError)
+			r0 = ret.Get(0).([]*ord.ValidationError)
 		}
 	}
 
