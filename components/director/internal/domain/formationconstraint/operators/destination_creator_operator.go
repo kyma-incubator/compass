@@ -227,18 +227,6 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 	return true, nil
 }
 
-func isConfigEmpty(config string) bool {
-	return config == "" || config == "{}" || config == "\"\"" || config == "null"
-}
-
-func isFormationAssignmentConfigEmpty(assignment *model.FormationAssignment) bool {
-	return assignment != nil && isConfigEmpty(string(assignment.Value))
-}
-
-func isNotificationStatusReportConfigEmpty(notificationStatusReport *statusreport.NotificationStatusReport) bool {
-	return notificationStatusReport != nil && isConfigEmpty(string(notificationStatusReport.Configuration))
-}
-
 // Destination Creator Operator types
 
 // Configuration represents a formation assignment (or reverse formation assignment) configuration
