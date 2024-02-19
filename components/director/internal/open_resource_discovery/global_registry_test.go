@@ -322,7 +322,12 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				client = test.clientFn()
 			}
 
-			svc := ord.NewGlobalRegistryService(tx, ord.GlobalRegistryConfig{URL: baseURL}, vendorSvc, productSvc, client, credentialExchangeStrategyTenantMappings)
+			documentValidator := &automock.Validator{}
+			if test.documentValidatorFn != nil {
+				documentValidator = test.documentValidatorFn()
+			}
+
+			svc := ord.NewGlobalRegistryService(tx, ord.GlobalRegistryConfig{URL: baseURL}, vendorSvc, productSvc, client, credentialExchangeStrategyTenantMappings, documentValidator)
 			globalIDs, err := svc.SyncGlobalResources(context.TODO())
 			if test.ExpectedErr != nil {
 				require.Error(t, err)

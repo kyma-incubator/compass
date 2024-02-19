@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -527,7 +526,6 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 		return op.ID, errMarkAsCompleted
 	}
 
-	fmt.Println("AFTER PROCESS")
 	return op.ID, nil
 }
 

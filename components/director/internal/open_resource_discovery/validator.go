@@ -72,10 +72,7 @@ func findResourceOrdIdByPath(data interface{}, path []string) (string, error) {
 			if !ok {
 				return "", errors.New("Key not found in map")
 			}
-			fmt.Println(path, "path")
-			if path[0] == "packages" {
-				fmt.Println(val, "IF PKGg")
-			}
+
 			current = val
 			ordIdVal, exists := t["ordId"]
 			if exists {
@@ -194,7 +191,6 @@ func (v *DocumentValidator) toValidationErrors(document interface{}, result []Va
 	valErrs := make([]ValidationError, 0)
 
 	for _, r := range result {
-		fmt.Println(r.Path)
 		ordId, _ := findResourceOrdIdByPath(document, r.Path)
 		valErrs = append(valErrs, ValidationError{
 			OrdId:       ordId,

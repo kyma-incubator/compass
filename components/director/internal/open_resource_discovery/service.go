@@ -1304,7 +1304,6 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 	ctx = addFieldToLogger(ctx, "resource_type", string(resource.Type))
 
 	var appBaseURL *string
-	fmt.Println(resource.Type, directorresource.Application, resource.Type == directorresource.Application)
 	if resource.Type == directorresource.Application {
 		tx, err := s.transact.Begin()
 		if err != nil {
@@ -1380,8 +1379,6 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 			log.C(ctx).WithError(err).Errorf("%s: %v", ProcessingErrorMsg, err)
 			errs = multierror.Append(errs, errors.Wrap(err, ProcessingErrorMsg))
 		}
-
-		fmt.Println(err, len(validationErrors), "Before return of processing errors")
 
 		if err != nil {
 			return &ProcessingError{

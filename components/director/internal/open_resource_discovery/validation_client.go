@@ -56,8 +56,6 @@ func (vc *ValidationClient) Validate(ruleset string, requestBody string) ([]Vali
 		return nil, err
 	}
 
-	fmt.Println(string(body), "BODY FROM VALIDATOR")
-
 	var results []ValidationResult
 	if err = json.Unmarshal(body, &results); err != nil {
 		return nil, err
