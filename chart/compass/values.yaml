@@ -189,8 +189,8 @@ global:
       version: "v20240202-4a19198c"
       name: compass-kyma-adapter
     instance_creator:
-      dir: prod/incubator/
-      version: "v20240202-275c5acb"
+      dir: dev/incubator/
+      version: "PR-3670"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: prod/incubator/
