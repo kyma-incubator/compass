@@ -80,11 +80,11 @@ SELECT w.id,
        w.integration_system_id,
        w.app_template_id,
        w.formation_template_id,
-       btm.id,
+       tp.tenant_id,
        true
 FROM webhooks w
          JOIN formation_templates ft on w.formation_template_id = ft.id
-         JOIN business_tenant_mappings btm on ft.tenant_id = btm.parent;
+         JOIN tenant_parents tp ON ft.tenant_id = tp.parent_id;
 
 
 CREATE OR REPLACE VIEW webhooks_tenants
@@ -179,11 +179,11 @@ SELECT w.id,
        w.integration_system_id,
        w.app_template_id,
        w.formation_template_id,
-       btm.id,
+       tp.tenant_id,
        true
 FROM webhooks w
          JOIN formation_templates ft on w.formation_template_id = ft.id
-         JOIN business_tenant_mappings btm on ft.tenant_id = btm.parent;
+         JOIN tenant_parents tp ON ft.tenant_id = tp.parent_id;
 
 CREATE OR REPLACE VIEW runtime_webhooks_tenants
             (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
