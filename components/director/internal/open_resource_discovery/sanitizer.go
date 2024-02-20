@@ -3,20 +3,23 @@ package ord
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"path"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-	"net/url"
-	"path"
 )
 
 const unknownReferenceCode = "sap-ord-unknown-reference"
 const duplicateResourceCode = "sap-ord-duplicate-resource"
 
+// DocumentSanitizer represents the sanitizer of ORD documents
 type DocumentSanitizer struct {
 }
 
+// NewDocumentSanitizer returns new instance of a document sanitizer
 func NewDocumentSanitizer() *DocumentSanitizer {
 	return &DocumentSanitizer{}
 }
@@ -159,7 +162,7 @@ func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBa
 
 			referredPkg, ok := packages[*api.OrdPackageID]
 			if !ok {
-				valErrors = append(valErrors, newCustomValidationError(*api.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("The api has a reference to unknown package %q", *api.OrdPackageID)))
+				valErrors = append(valErrors, newCustomValidationError(*api.OrdID, unknownReferenceCode, fmt.Sprintf("The api has a reference to unknown package %q", *api.OrdPackageID)))
 				continue
 			}
 			if api.PartOfProducts, err = mergeJSONArraysOfStrings(referredPkg.PartOfProducts, api.PartOfProducts); err != nil {
@@ -190,7 +193,7 @@ func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBa
 
 			referredPkg, ok := packages[*event.OrdPackageID]
 			if !ok {
-				valErrors = append(valErrors, newCustomValidationError(*event.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("The event has a reference to unknown package %q", *event.OrdPackageID)))
+				valErrors = append(valErrors, newCustomValidationError(*event.OrdID, unknownReferenceCode, fmt.Sprintf("The event has a reference to unknown package %q", *event.OrdPackageID)))
 				continue
 			}
 			if event.PartOfProducts, err = mergeJSONArraysOfStrings(referredPkg.PartOfProducts, event.PartOfProducts); err != nil {
@@ -221,7 +224,7 @@ func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBa
 
 			referredPkg, ok := packages[entityType.OrdPackageID]
 			if !ok {
-				valErrors = append(valErrors, newCustomValidationError(entityType.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("The entity type has a reference to unknown package %q", entityType.OrdPackageID)))
+				valErrors = append(valErrors, newCustomValidationError(entityType.OrdID, unknownReferenceCode, fmt.Sprintf("The entity type has a reference to unknown package %q", entityType.OrdPackageID)))
 				continue
 			}
 			if entityType.PartOfProducts, err = mergeJSONArraysOfStrings(referredPkg.PartOfProducts, entityType.PartOfProducts); err != nil {
@@ -238,7 +241,7 @@ func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBa
 		for _, capability := range doc.Capabilities {
 			referredPkg, ok := packages[*capability.OrdPackageID]
 			if !ok {
-				valErrors = append(valErrors, newCustomValidationError(*capability.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("The capability has a reference to unknown package %q", *capability.OrdPackageID)))
+				valErrors = append(valErrors, newCustomValidationError(*capability.OrdID, unknownReferenceCode, fmt.Sprintf("The capability has a reference to unknown package %q", *capability.OrdPackageID)))
 				continue
 			}
 			if capability.Tags, err = mergeJSONArraysOfStrings(referredPkg.Tags, capability.Tags); err != nil {
@@ -251,7 +254,7 @@ func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBa
 		for _, integrationDependency := range doc.IntegrationDependencies {
 			referredPkg, ok := packages[*integrationDependency.OrdPackageID]
 			if !ok {
-				valErrors = append(valErrors, newCustomValidationError(*integrationDependency.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("The integration dependency has a reference to unknown package %q", *integrationDependency.OrdPackageID)))
+				valErrors = append(valErrors, newCustomValidationError(*integrationDependency.OrdID, unknownReferenceCode, fmt.Sprintf("The integration dependency has a reference to unknown package %q", *integrationDependency.OrdPackageID)))
 				continue
 			}
 			if integrationDependency.Tags, err = mergeJSONArraysOfStrings(referredPkg.Tags, integrationDependency.Tags); err != nil {
@@ -269,7 +272,7 @@ func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBa
 
 			referredPkg, ok := packages[*dataProduct.OrdPackageID]
 			if !ok {
-				valErrors = append(valErrors, newCustomValidationError(*dataProduct.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("The data product has a reference to unknown package %q", *dataProduct.OrdPackageID)))
+				valErrors = append(valErrors, newCustomValidationError(*dataProduct.OrdID, unknownReferenceCode, fmt.Sprintf("The data product has a reference to unknown package %q", *dataProduct.OrdPackageID)))
 				continue
 			}
 			if dataProduct.Tags, err = mergeJSONArraysOfStrings(referredPkg.Tags, dataProduct.Tags); err != nil {
@@ -290,10 +293,10 @@ func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBa
 	return valErrors, err
 }
 
-func newCustomValidationError(ordId, severity, errorType, description string) *ValidationError {
+func newCustomValidationError(ordId, errorType, description string) *ValidationError {
 	return &ValidationError{
-		OrdId:       ordId,
-		Severity:    severity,
+		OrdID:       ordId,
+		Severity:    ErrorSeverity,
 		Type:        errorType,
 		Description: description,
 	}

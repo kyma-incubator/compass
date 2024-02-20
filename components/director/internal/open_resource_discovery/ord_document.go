@@ -111,18 +111,6 @@ func (c WellKnownConfig) Validate(baseURL string) error {
 // Documents is a slice of Document objects
 type Documents []*Document
 
-// ResourcesFromDB holds some of the ORD data from the database
-type ResourcesFromDB struct {
-	APIs                    map[string]*model.APIDefinition
-	Events                  map[string]*model.EventDefinition
-	EntityTypes             map[string]*model.EntityType
-	Packages                map[string]*model.Package
-	Bundles                 map[string]*model.Bundle
-	Capabilities            map[string]*model.Capability
-	IntegrationDependencies map[string]*model.IntegrationDependency
-	DataProducts            map[string]*model.DataProduct
-}
-
 // ResourceIDs holds some of the ORD entities' IDs
 type ResourceIDs struct {
 	PackageIDs               map[string]bool

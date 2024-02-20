@@ -4,40 +4,34 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
+// ValidationResult represents the structure of the response from the successful requests to API Metadata Validator
 type ValidationResult struct {
 	Code             string   `json:"code"`
 	Path             []string `json:"path"`
 	Message          string   `json:"message"`
 	Severity         string   `json:"severity"`
-	Range            Range    `json:"range"`
 	ProductStandards []string `json:"productStandards"`
 }
 
-type Range struct {
-	Start Position `json:"start"`
-	End   Position `json:"end"`
-}
-
-type Position struct {
-	Line      int `json:"line"`
-	Character int `json:"character"`
-}
-
+// ValidationClient represents the client for the API Metadata Validator
 type ValidationClient struct {
 	url string
 }
 
+// NewValidationClient returns new validation client
 func NewValidationClient(url string) *ValidationClient {
 	return &ValidationClient{
 		url: url,
 	}
 }
 
+// Validate sends request to API Metadata Validator to validate one ORD document
 func (vc *ValidationClient) Validate(ruleset string, requestBody string) ([]ValidationResult, error) {
 	url := fmt.Sprintf("%s/api/v1/document/validate?ruleset=%s", vc.url, ruleset)
 

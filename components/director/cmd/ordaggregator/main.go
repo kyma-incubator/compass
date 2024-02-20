@@ -368,7 +368,7 @@ func main() {
 	ordClientWithTenantExecutor := newORDClientWithTenantExecutor(cfg, clientConfig, certCache)
 	ordClientWithoutTenantExecutor := newORDClientWithoutTenantExecutor(cfg, clientConfig, certCache)
 
-	validationClient := ord.NewValidationClient("http://localhost:8080") //TODO env variable or const?
+	validationClient := ord.NewValidationClient("http://localhost:8080") // TODO env variable or const?
 	documentValidator := ord.NewDocumentValidator(validationClient)
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings, documentValidator)
 

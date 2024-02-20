@@ -2,13 +2,14 @@ package ord
 
 import (
 	"context"
-	"dario.cat/mergo"
 	"encoding/json"
 	"fmt"
+	"strconv"
+
+	"dario.cat/mergo"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
-	"strconv"
 )
 
 // Validator validates list of ORD documents
@@ -18,41 +19,46 @@ type Validator interface {
 	Validate(ctx context.Context, documents []*Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string) ([]*ValidationError, error)
 }
 
+// DocumentValidator validates the ORD documents
 type DocumentValidator struct {
 	client *ValidationClient
 }
 
+// NewDocumentValidator returns new document validator for validating ORD documents
 func NewDocumentValidator(client *ValidationClient) Validator {
 	return &DocumentValidator{
 		client: client,
 	}
 }
 
-// Validate validates all documents f
-func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string) ([]*ValidationError, error) {
-	var result []*ValidationError
+// Validate validates all ORD documents with the API Metadata Validator and checks resource duplications and entity relations
+func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document, baseURL string, globalResourcesOrdIDs map[string]bool, documentsAsString []string) ([]*ValidationError, error) {
+	var combinedValidationErrors []*ValidationError
 
 	for i := range documents {
 		log.C(ctx).Info("Calling API Metadata Validator for document")
 
-		errors1, err := v.client.Validate("sap:base:v1", docsString[i])
+		errorsFromAPIMetadataValidator, err := v.client.Validate("sap:base:v1", documentsAsString[i])
 		if err != nil {
-			return nil, errors.Wrap(err, "while validating document with API Metadata validator")
+			return nil, errors.Wrap(err, "error while validating document with API Metadata validator")
 		}
 
 		var data interface{}
-		err = json.Unmarshal([]byte(docsString[i]), &data)
-		currentDocumentErrors := v.toValidationErrors(data, errors1)
+		err = json.Unmarshal([]byte(documentsAsString[i]), &data)
+		if err != nil {
+			return nil, errors.Wrap(err, "error while unmarshalling ORD documents as string")
+		}
 
-		result = append(result, currentDocumentErrors...)
+		currentDocumentErrors := v.toValidationErrors(data, errorsFromAPIMetadataValidator)
+
+		combinedValidationErrors = append(combinedValidationErrors, currentDocumentErrors...)
 
 		deleteInvalidResourcesFromDocument(documents[i], currentDocumentErrors)
 
-		e1 := validateORDConfigurations(documents[i], baseURL)
-		if e1 != nil {
-			result = append(result, e1)
+		errorsFromORDConfig := validateORDConfigurations(documents[i], baseURL)
+		if errorsFromORDConfig != nil {
+			combinedValidationErrors = append(combinedValidationErrors, errorsFromORDConfig)
 		}
-
 	}
 
 	resourceIDs := ResourceIDs{
@@ -60,22 +66,22 @@ func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document,
 		PackagePolicyLevels: make(map[string]string),
 	}
 
-	e2, err := v.checkForDuplications(documents, &resourceIDs)
+	duplicationErrors, err := v.checkForDuplications(documents, &resourceIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	e3 := v.checkEntityRelations(documents, &resourceIDs, globalResourcesOrdIDs)
+	resourceReferenceErrors := v.checkEntityRelations(documents, &resourceIDs, globalResourcesOrdIDs)
 
-	result = append(result, e2...)
-	result = append(result, e3...)
+	combinedValidationErrors = append(combinedValidationErrors, duplicationErrors...)
+	combinedValidationErrors = append(combinedValidationErrors, resourceReferenceErrors...)
 
-	return result, nil
+	return combinedValidationErrors, nil
 }
 
-func findResourceOrdIdByPath(data interface{}, path []string) (string, error) {
+func findResourceOrdIDByPath(data interface{}, path []string) (string, error) {
 	current := data
-	var ordId string
+	var ordID string
 
 	for _, key := range path {
 		switch t := current.(type) {
@@ -86,9 +92,9 @@ func findResourceOrdIdByPath(data interface{}, path []string) (string, error) {
 			}
 
 			current = val
-			ordIdVal, exists := t["ordId"]
+			ordIDVal, exists := t["ordId"]
 			if exists {
-				ordId = ordIdVal.(string)
+				ordID = ordIDVal.(string)
 			}
 		case []interface{}:
 			idx, err := strconv.Atoi(key)
@@ -101,9 +107,9 @@ func findResourceOrdIdByPath(data interface{}, path []string) (string, error) {
 			current = t[idx]
 			switch c := current.(type) {
 			case map[string]interface{}:
-				ordIdVal, exists := c["ordId"]
+				ordIDVal, exists := c["ordId"]
 				if exists {
-					ordId = ordIdVal.(string)
+					ordID = ordIDVal.(string)
 				}
 			}
 
@@ -112,7 +118,7 @@ func findResourceOrdIdByPath(data interface{}, path []string) (string, error) {
 		}
 	}
 
-	return ordId, nil
+	return ordID, nil
 }
 
 func deleteInvalidResourcesFromDocument(document *Document, documentErrors []*ValidationError) {
@@ -121,77 +127,77 @@ func deleteInvalidResourcesFromDocument(document *Document, documentErrors []*Va
 			continue
 		}
 		for apiIdx, api := range document.APIResources {
-			if *api.OrdID == e.OrdId {
+			if *api.OrdID == e.OrdID {
 				document.APIResources = append(document.APIResources[:apiIdx], document.APIResources[apiIdx+1:]...)
 				continue
 			}
 		}
 
 		for eventIdx, event := range document.EventResources {
-			if *event.OrdID == e.OrdId {
+			if *event.OrdID == e.OrdID {
 				document.EventResources = append(document.EventResources[:eventIdx], document.EventResources[eventIdx+1:]...)
 				continue
 			}
 		}
 
 		for entityTypeIdx, entityType := range document.EntityTypes {
-			if entityType.OrdID == e.OrdId {
+			if entityType.OrdID == e.OrdID {
 				document.EntityTypes = append(document.EntityTypes[:entityTypeIdx], document.EntityTypes[entityTypeIdx+1:]...)
 				continue
 			}
 		}
 
 		for capabilityIdx, capability := range document.Capabilities {
-			if *capability.OrdID == e.OrdId {
+			if *capability.OrdID == e.OrdID {
 				document.Capabilities = append(document.Capabilities[:capabilityIdx], document.Capabilities[capabilityIdx+1:]...)
 				continue
 			}
 		}
 
 		for dataProductIdx, dataProduct := range document.DataProducts {
-			if *dataProduct.OrdID == e.OrdId {
+			if *dataProduct.OrdID == e.OrdID {
 				document.DataProducts = append(document.DataProducts[:dataProductIdx], document.DataProducts[dataProductIdx+1:]...)
 				continue
 			}
 		}
 
 		for integrationDependencyIdx, integrationDependency := range document.IntegrationDependencies {
-			if *integrationDependency.OrdID == e.OrdId {
+			if *integrationDependency.OrdID == e.OrdID {
 				document.IntegrationDependencies = append(document.IntegrationDependencies[:integrationDependencyIdx], document.IntegrationDependencies[integrationDependencyIdx+1:]...)
 				continue
 			}
 		}
 
 		for vendorIdx, vendor := range document.Vendors {
-			if vendor.OrdID == e.OrdId {
+			if vendor.OrdID == e.OrdID {
 				document.Vendors = append(document.Vendors[:vendorIdx], document.Vendors[vendorIdx+1:]...)
 				continue
 			}
 		}
 
 		for productIdx, product := range document.Products {
-			if product.OrdID == e.OrdId {
+			if product.OrdID == e.OrdID {
 				document.Products = append(document.Products[:productIdx], document.Products[productIdx+1:]...)
 				continue
 			}
 		}
 
 		for pkgIdx, pkg := range document.Packages {
-			if pkg.OrdID == e.OrdId {
+			if pkg.OrdID == e.OrdID {
 				document.Packages = append(document.Packages[:pkgIdx], document.Packages[pkgIdx+1:]...)
 				continue
 			}
 		}
 
 		for bundleIdx, bundle := range document.ConsumptionBundles {
-			if *bundle.OrdID == e.OrdId {
+			if *bundle.OrdID == e.OrdID {
 				document.ConsumptionBundles = append(document.ConsumptionBundles[:bundleIdx], document.ConsumptionBundles[bundleIdx+1:]...)
 				continue
 			}
 		}
 
 		for tombstoneIdx, tombstone := range document.Tombstones {
-			if tombstone.OrdID == e.OrdId {
+			if tombstone.OrdID == e.OrdID {
 				document.Tombstones = append(document.Tombstones[:tombstoneIdx], document.Tombstones[tombstoneIdx+1:]...)
 				continue
 			}
@@ -199,16 +205,16 @@ func deleteInvalidResourcesFromDocument(document *Document, documentErrors []*Va
 	}
 }
 
-func (v *DocumentValidator) toValidationErrors(document interface{}, result []ValidationResult) []*ValidationError {
+func (v *DocumentValidator) toValidationErrors(document interface{}, validationResults []ValidationResult) []*ValidationError {
 	valErrs := make([]*ValidationError, 0)
 
-	for _, r := range result {
-		ordId, _ := findResourceOrdIdByPath(document, r.Path)
+	for _, valResult := range validationResults {
+		ordID, _ := findResourceOrdIDByPath(document, valResult.Path)
 		valErrs = append(valErrs, &ValidationError{
-			OrdId:       ordId,
-			Severity:    r.Severity,
-			Type:        r.Code,
-			Description: r.Message,
+			OrdID:       ordID,
+			Severity:    valResult.Severity,
+			Type:        valResult.Code,
+			Description: valResult.Message,
 		})
 	}
 	return valErrs
@@ -221,7 +227,7 @@ func validateORDConfigurations(doc *Document, calculatedBaseURL string) *Validat
 	)
 
 	if !isBaseURLConfigured && (doc.DescribedSystemInstance == nil || doc.DescribedSystemInstance.BaseURL == nil) {
-		return newCustomValidationError("", ErrorSeverity, "no baseURL provided", "no baseURL was provided neither from /well-known URL, nor from config, nor from describedSystemInstance")
+		return newCustomValidationError("", "no baseURL provided", "no baseURL was provided neither from /well-known URL, nor from config, nor from describedSystemInstance")
 	}
 
 	if len(baseURL) == 0 {
@@ -229,7 +235,7 @@ func validateORDConfigurations(doc *Document, calculatedBaseURL string) *Validat
 	}
 
 	if doc.DescribedSystemInstance != nil && doc.DescribedSystemInstance.BaseURL != nil && *doc.DescribedSystemInstance.BaseURL != baseURL {
-		return newCustomValidationError("", ErrorSeverity, "", fmt.Sprintf("describedSystemInstance should be the same as the one providing the documents - %s : %s", *doc.DescribedSystemInstance.BaseURL, baseURL))
+		return newCustomValidationError("", "", fmt.Sprintf("describedSystemInstance should be the same as the one providing the documents - %s : %s", *doc.DescribedSystemInstance.BaseURL, baseURL))
 	}
 
 	return nil
@@ -241,7 +247,7 @@ func (v *DocumentValidator) checkForDuplications(docs []*Document, resourceIDs *
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
 			if _, ok := resourceIDs.PackageIDs[pkg.OrdID]; ok {
-				validationErrors = append(validationErrors, newCustomValidationError(pkg.OrdID, ErrorSeverity, duplicateResourceCode, fmt.Sprintf("found duplicate package with ord id %q", pkg.OrdID)))
+				validationErrors = append(validationErrors, newCustomValidationError(pkg.OrdID, duplicateResourceCode, fmt.Sprintf("found duplicate package with ord id %q", pkg.OrdID)))
 				continue
 			}
 			resourceIDs.PackageIDs[pkg.OrdID] = true
@@ -285,29 +291,29 @@ func (v *DocumentValidator) checkEntityRelations(docs []*Document, resourceIDs *
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
 			if pkg.Vendor != nil && !resourceIDs.VendorIDs[*pkg.Vendor] && !globalResourcesOrdIDs[*pkg.Vendor] {
-				validationErrors = append(validationErrors, newCustomValidationError(pkg.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("package with id %q has a reference to unknown vendor %q", pkg.OrdID, *pkg.Vendor)))
+				validationErrors = append(validationErrors, newCustomValidationError(pkg.OrdID, unknownReferenceCode, fmt.Sprintf("package with id %q has a reference to unknown vendor %q", pkg.OrdID, *pkg.Vendor)))
 			}
 			ordIDs := gjson.ParseBytes(pkg.PartOfProducts).Array()
 			for _, productID := range ordIDs {
 				if !resourceIDs.ProductIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
-					validationErrors = append(validationErrors, newCustomValidationError(pkg.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("package with id %q has a reference to unknown product %q", pkg.OrdID, productID.String())))
+					validationErrors = append(validationErrors, newCustomValidationError(pkg.OrdID, unknownReferenceCode, fmt.Sprintf("package with id %q has a reference to unknown product %q", pkg.OrdID, productID.String())))
 				}
 			}
 		}
 		for _, product := range doc.Products {
 			if !resourceIDs.VendorIDs[product.Vendor] && !globalResourcesOrdIDs[product.Vendor] {
-				validationErrors = append(validationErrors, newCustomValidationError(product.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("product with id %q has a reference to unknown vendor %q", product.OrdID, product.Vendor)))
+				validationErrors = append(validationErrors, newCustomValidationError(product.OrdID, unknownReferenceCode, fmt.Sprintf("product with id %q has a reference to unknown vendor %q", product.OrdID, product.Vendor)))
 			}
 		}
 		for i, api := range doc.APIResources {
 			if api.OrdPackageID != nil && !resourceIDs.PackageIDs[*api.OrdPackageID] {
-				validationErrors = append(validationErrors, newCustomValidationError(*api.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("api with id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID)))
+				validationErrors = append(validationErrors, newCustomValidationError(*api.OrdID, unknownReferenceCode, fmt.Sprintf("api with id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID)))
 				invalidApisIndices = append(invalidApisIndices, i)
 			}
 			if api.PartOfConsumptionBundles != nil {
 				for _, apiBndlRef := range api.PartOfConsumptionBundles {
 					if !resourceIDs.BundleIDs[apiBndlRef.BundleOrdID] {
-						validationErrors = append(validationErrors, newCustomValidationError(*api.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("api with id %q has a reference to unknown bundle %q", *api.OrdID, apiBndlRef.BundleOrdID)))
+						validationErrors = append(validationErrors, newCustomValidationError(*api.OrdID, unknownReferenceCode, fmt.Sprintf("api with id %q has a reference to unknown bundle %q", *api.OrdID, apiBndlRef.BundleOrdID)))
 					}
 				}
 			}
@@ -315,22 +321,21 @@ func (v *DocumentValidator) checkEntityRelations(docs []*Document, resourceIDs *
 			ordIDs := gjson.ParseBytes(api.PartOfProducts).Array()
 			for _, productID := range ordIDs {
 				if !resourceIDs.ProductIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
-					validationErrors = append(validationErrors, newCustomValidationError(*api.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("api with id %q has a reference to unknown product %q", *api.OrdID, productID.String())))
+					validationErrors = append(validationErrors, newCustomValidationError(*api.OrdID, unknownReferenceCode, fmt.Sprintf("api with id %q has a reference to unknown product %q", *api.OrdID, productID.String())))
 				}
 			}
 		}
 
 		for i, event := range doc.EventResources {
 			if event.OrdPackageID != nil && !resourceIDs.PackageIDs[*event.OrdPackageID] {
-				validationErrors = append(validationErrors, newCustomValidationError(*event.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("event with id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID)))
+				validationErrors = append(validationErrors, newCustomValidationError(*event.OrdID, unknownReferenceCode, fmt.Sprintf("event with id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID)))
 
 				invalidEventsIndices = append(invalidEventsIndices, i)
 			}
 			if event.PartOfConsumptionBundles != nil {
 				for _, eventBndlRef := range event.PartOfConsumptionBundles {
 					if !resourceIDs.BundleIDs[eventBndlRef.BundleOrdID] {
-						validationErrors = append(validationErrors, newCustomValidationError(*event.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("event with id %q has a reference to unknown bundle %q", *event.OrdID, eventBndlRef.BundleOrdID)))
-
+						validationErrors = append(validationErrors, newCustomValidationError(*event.OrdID, unknownReferenceCode, fmt.Sprintf("event with id %q has a reference to unknown bundle %q", *event.OrdID, eventBndlRef.BundleOrdID)))
 					}
 				}
 			}
@@ -338,14 +343,14 @@ func (v *DocumentValidator) checkEntityRelations(docs []*Document, resourceIDs *
 			ordIDs := gjson.ParseBytes(event.PartOfProducts).Array()
 			for _, productID := range ordIDs {
 				if !resourceIDs.ProductIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
-					validationErrors = append(validationErrors, newCustomValidationError(*event.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("event with id %q has a reference to unknown product %q", *event.OrdID, productID.String())))
+					validationErrors = append(validationErrors, newCustomValidationError(*event.OrdID, unknownReferenceCode, fmt.Sprintf("event with id %q has a reference to unknown product %q", *event.OrdID, productID.String())))
 				}
 			}
 		}
 
 		for i, entityType := range doc.EntityTypes {
 			if !resourceIDs.PackageIDs[entityType.OrdPackageID] {
-				validationErrors = append(validationErrors, newCustomValidationError(entityType.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("entity type with id %q has a reference to unknown package %q", entityType.OrdID, entityType.OrdPackageID)))
+				validationErrors = append(validationErrors, newCustomValidationError(entityType.OrdID, unknownReferenceCode, fmt.Sprintf("entity type with id %q has a reference to unknown package %q", entityType.OrdID, entityType.OrdPackageID)))
 
 				invalidEntityTypesIndices = append(invalidEntityTypesIndices, i)
 			}
@@ -353,15 +358,14 @@ func (v *DocumentValidator) checkEntityRelations(docs []*Document, resourceIDs *
 			ordIDs := gjson.ParseBytes(entityType.PartOfProducts).Array()
 			for _, productID := range ordIDs {
 				if !resourceIDs.ProductIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
-					validationErrors = append(validationErrors, newCustomValidationError(entityType.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("entity type with id %q has a reference to unknown product %q", entityType.OrdID, productID.String())))
-
+					validationErrors = append(validationErrors, newCustomValidationError(entityType.OrdID, unknownReferenceCode, fmt.Sprintf("entity type with id %q has a reference to unknown product %q", entityType.OrdID, productID.String())))
 				}
 			}
 		}
 
 		for i, capability := range doc.Capabilities {
 			if capability.OrdPackageID != nil && !resourceIDs.PackageIDs[*capability.OrdPackageID] {
-				validationErrors = append(validationErrors, newCustomValidationError(*capability.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("capability with id %q has a reference to unknown package %q", *capability.OrdID, *capability.OrdPackageID)))
+				validationErrors = append(validationErrors, newCustomValidationError(*capability.OrdID, unknownReferenceCode, fmt.Sprintf("capability with id %q has a reference to unknown package %q", *capability.OrdID, *capability.OrdPackageID)))
 
 				invalidCapabilitiesIndices = append(invalidCapabilitiesIndices, i)
 			}
@@ -369,14 +373,14 @@ func (v *DocumentValidator) checkEntityRelations(docs []*Document, resourceIDs *
 
 		for i, integrationDependency := range doc.IntegrationDependencies {
 			if integrationDependency.OrdPackageID != nil && !resourceIDs.PackageIDs[*integrationDependency.OrdPackageID] {
-				validationErrors = append(validationErrors, newCustomValidationError(*integrationDependency.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("integration dependency with id %q has a reference to unknown package %q", *integrationDependency.OrdID, *integrationDependency.OrdPackageID)))
+				validationErrors = append(validationErrors, newCustomValidationError(*integrationDependency.OrdID, unknownReferenceCode, fmt.Sprintf("integration dependency with id %q has a reference to unknown package %q", *integrationDependency.OrdID, *integrationDependency.OrdPackageID)))
 				invalidIntegrationDependenciesIndices = append(invalidIntegrationDependenciesIndices, i)
 			}
 		}
 
 		for i, dataProduct := range doc.DataProducts {
 			if dataProduct.OrdPackageID != nil && !resourceIDs.PackageIDs[*dataProduct.OrdPackageID] {
-				validationErrors = append(validationErrors, newCustomValidationError(*dataProduct.OrdID, ErrorSeverity, unknownReferenceCode, fmt.Sprintf("data product with id %q has a reference to unknown package %q", *dataProduct.OrdID, *dataProduct.OrdPackageID)))
+				validationErrors = append(validationErrors, newCustomValidationError(*dataProduct.OrdID, unknownReferenceCode, fmt.Sprintf("data product with id %q has a reference to unknown package %q", *dataProduct.OrdID, *dataProduct.OrdPackageID)))
 
 				invalidDataProductsIndices = append(invalidDataProductsIndices, i)
 			}
@@ -433,7 +437,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 		for _, bndl := range doc.ConsumptionBundles {
 			if bndl.OrdID != nil {
 				if _, ok := resourceIDs.BundleIDs[*bndl.OrdID]; ok && forbidDuplications {
-					validationErrors = append(validationErrors, newCustomValidationError(*bndl.OrdID, ErrorSeverity, duplicateResourceCode, "duplicate bundle"))
+					validationErrors = append(validationErrors, newCustomValidationError(*bndl.OrdID, duplicateResourceCode, "duplicate bundle"))
 				}
 				resourceIDs.BundleIDs[*bndl.OrdID] = true
 			}
@@ -441,7 +445,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 
 		for _, product := range doc.Products {
 			if _, ok := resourceIDs.ProductIDs[product.OrdID]; ok && forbidDuplications {
-				validationErrors = append(validationErrors, newCustomValidationError(product.OrdID, ErrorSeverity, duplicateResourceCode, "duplicate product"))
+				validationErrors = append(validationErrors, newCustomValidationError(product.OrdID, duplicateResourceCode, "duplicate product"))
 			}
 			resourceIDs.ProductIDs[product.OrdID] = true
 		}
@@ -449,7 +453,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 		for _, api := range doc.APIResources {
 			if api.OrdID != nil {
 				if _, ok := resourceIDs.APIIDs[*api.OrdID]; ok && forbidDuplications {
-					validationErrors = append(validationErrors, newCustomValidationError(*api.OrdID, ErrorSeverity, duplicateResourceCode, "duplicate api"))
+					validationErrors = append(validationErrors, newCustomValidationError(*api.OrdID, duplicateResourceCode, "duplicate api"))
 				}
 				resourceIDs.APIIDs[*api.OrdID] = true
 			}
@@ -458,7 +462,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 		for _, event := range doc.EventResources {
 			if event.OrdID != nil {
 				if _, ok := resourceIDs.EventIDs[*event.OrdID]; ok && forbidDuplications {
-					validationErrors = append(validationErrors, newCustomValidationError(*event.OrdID, ErrorSeverity, duplicateResourceCode, "duplicate event"))
+					validationErrors = append(validationErrors, newCustomValidationError(*event.OrdID, duplicateResourceCode, "duplicate event"))
 				}
 
 				resourceIDs.EventIDs[*event.OrdID] = true
@@ -467,7 +471,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 
 		for _, entityType := range doc.EntityTypes {
 			if _, ok := resourceIDs.EventIDs[entityType.OrdID]; ok && forbidDuplications {
-				validationErrors = append(validationErrors, newCustomValidationError(entityType.OrdID, ErrorSeverity, duplicateResourceCode, "duplicate entity type"))
+				validationErrors = append(validationErrors, newCustomValidationError(entityType.OrdID, duplicateResourceCode, "duplicate entity type"))
 			}
 
 			resourceIDs.EventIDs[entityType.OrdID] = true
@@ -476,7 +480,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 		for _, capability := range doc.Capabilities {
 			if capability.OrdID != nil {
 				if _, ok := resourceIDs.CapabilityIDs[*capability.OrdID]; ok && forbidDuplications {
-					validationErrors = append(validationErrors, newCustomValidationError(*capability.OrdID, ErrorSeverity, duplicateResourceCode, "duplicate capability"))
+					validationErrors = append(validationErrors, newCustomValidationError(*capability.OrdID, duplicateResourceCode, "duplicate capability"))
 				}
 				resourceIDs.CapabilityIDs[*capability.OrdID] = true
 			}
@@ -485,7 +489,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 		for _, integrationDependency := range doc.IntegrationDependencies {
 			if integrationDependency.OrdID != nil {
 				if _, ok := resourceIDs.IntegrationDependencyIDs[*integrationDependency.OrdID]; ok && forbidDuplications {
-					validationErrors = append(validationErrors, newCustomValidationError(*integrationDependency.OrdID, ErrorSeverity, duplicateResourceCode, "duplicate integration dependency"))
+					validationErrors = append(validationErrors, newCustomValidationError(*integrationDependency.OrdID, duplicateResourceCode, "duplicate integration dependency"))
 				}
 				resourceIDs.IntegrationDependencyIDs[*integrationDependency.OrdID] = true
 			}
@@ -494,7 +498,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 		for _, dataProduct := range doc.DataProducts {
 			if dataProduct.OrdID != nil {
 				if _, ok := resourceIDs.DataProductIDs[*dataProduct.OrdID]; ok && forbidDuplications {
-					validationErrors = append(validationErrors, newCustomValidationError(*dataProduct.OrdID, ErrorSeverity, duplicateResourceCode, "duplicate data product"))
+					validationErrors = append(validationErrors, newCustomValidationError(*dataProduct.OrdID, duplicateResourceCode, "duplicate data product"))
 				}
 				resourceIDs.DataProductIDs[*dataProduct.OrdID] = true
 			}
@@ -502,7 +506,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 
 		for _, vendor := range doc.Vendors {
 			if _, ok := resourceIDs.VendorIDs[vendor.OrdID]; ok && forbidDuplications {
-				validationErrors = append(validationErrors, newCustomValidationError(vendor.OrdID, ErrorSeverity, duplicateResourceCode, "duplicate vendor"))
+				validationErrors = append(validationErrors, newCustomValidationError(vendor.OrdID, duplicateResourceCode, "duplicate vendor"))
 			}
 			resourceIDs.VendorIDs[vendor.OrdID] = true
 		}
