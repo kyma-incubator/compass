@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"regexp"
 	"strings"
 
@@ -38,9 +39,10 @@ import (
 )
 
 const (
-	globalSubaccountIDLabelKey = "global_subaccount_id"
-	sapProviderName            = "SAP"
-	displayNameLabelKey        = "displayName"
+	systemFieldDiscoveryLabelKey = "systemFieldDiscovery"
+	globalSubaccountIDLabelKey   = "global_subaccount_id"
+	sapProviderName              = "SAP"
+	displayNameLabelKey          = "displayName"
 )
 
 // ApplicationTemplateService missing godoc
@@ -128,7 +130,7 @@ type SelfRegisterManager interface {
 //
 //go:generate mockery --name=SystemFieldDiscoveryEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemFieldDiscoveryEngine interface {
-	EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, region, subacountID, appTemplateName, appName string) ([]*model.WebhookInput, bool)
+	EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, systemFieldDiscovery bool, region, subacountID, appTemplateName, appName string) ([]*model.WebhookInput, bool)
 	CreateLabelForApplicationWebhook(ctx context.Context, appID string) error
 }
 
@@ -425,7 +427,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	log.C(ctx).Debugf("Extracting Application Template with name %q and consumer id REDACTED_%x from GraphQL input", in.TemplateName, sha256.Sum256([]byte(consumerInfo.ConsumerID)))
-	appTemplate, err := r.retrieveAppTemplate(ctx, in.TemplateName, consumerInfo.ConsumerID, in.ID)
+	appTemplate, err := r.retrieveAppTemplate(ctx, in.TemplateName, "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", in.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -477,11 +479,17 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 		return nil, err
 	}
 
-	systemFieldDiscoveryLabelIsTrue := false
-	region, subaccountID, available := areSystemFieldDiscoveryPrerequisitesAvailable(ctx, appCreateInputModel, appTemplate)
-	if available {
-		appCreateInputModel.Webhooks, systemFieldDiscoveryLabelIsTrue = r.systemFieldDiscoveryEngine.EnrichApplicationWebhookIfNeeded(ctx, appCreateInputModel, region, subaccountID, appTemplate.Name, applicationName)
+	region, subaccountID, systemFieldDiscovery, err := r.areSystemFieldDiscoveryPrerequisitesAvailable(ctx, appCreateInputModel, appTemplate.ID)
+	if err != nil {
+		return nil, err
 	}
+
+	systemFieldDiscoveryLabelIsTrue := false
+	if systemFieldDiscovery {
+		appCreateInputModel.Webhooks, systemFieldDiscoveryLabelIsTrue = r.systemFieldDiscoveryEngine.EnrichApplicationWebhookIfNeeded(ctx, appCreateInputModel, systemFieldDiscovery, region, subaccountID, appTemplate.Name, applicationName)
+	}
+
+	spew.Dump("region, subb, systemFieldDsicovery:", region, subaccountID, systemFieldDiscovery)
 
 	log.C(ctx).Infof("Creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	id, err := r.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID, systemFieldDiscoveryLabelIsTrue)
@@ -992,29 +1000,48 @@ func extractRegionPlaceholder(placeholders []model.ApplicationTemplatePlaceholde
 	return regionPlaceholder, nil
 }
 
-func areSystemFieldDiscoveryPrerequisitesAvailable(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, appTemplate *model.ApplicationTemplate) (string, string, bool) {
+// region label for application and global_subaccount_id and systemFieldDiscovery label for app template must exist
+func (r *Resolver) areSystemFieldDiscoveryPrerequisitesAvailable(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, appTemplateID string) (string, string, bool, error) {
 	var regionValue, subaccountIDValue string
+	var systemFieldDiscoveryValue bool
 	ok := false
 	if regionLabel, exists := appCreateInputModel.Labels[selfregmanager.RegionLabel]; exists {
 		regionValue, ok = regionLabel.(string)
 		if !ok {
-			log.C(ctx).Infof("%s label for Application with Application Template with ID %s is not a string", selfregmanager.RegionLabel, appTemplate.ID)
-			return "", "", false
+			log.C(ctx).Infof("%s label for Application with Application Template with ID %s is not a string", selfregmanager.RegionLabel, appTemplateID)
+			return "", "", false, nil
 		}
 	} else {
-		log.C(ctx).Infof("%s label for Application with Application Template with ID %s is nmissing", selfregmanager.RegionLabel, appTemplate.ID)
-		return "", "", false
+		log.C(ctx).Infof("%s label for Application with Application Template with ID %s is missing", selfregmanager.RegionLabel, appTemplateID)
+		return "", "", false, nil
 	}
 
-	if subaccountIDLabel, exists := appTemplate.Labels[globalSubaccountIDLabelKey]; exists {
-		subaccountIDValue, ok = subaccountIDLabel.(string)
+	appTemplateLabels, err := r.appTemplateSvc.ListLabels(ctx, appTemplateID)
+	if err != nil {
+		return "", "", false, errors.Errorf("error while listing labels for Application Template with ID %s", appTemplateID)
+	}
+
+	if subaccountIDLabel, exists := appTemplateLabels[globalSubaccountIDLabelKey]; exists {
+		subaccountIDValue, ok = subaccountIDLabel.Value.(string)
 		if !ok {
-			log.C(ctx).Infof("%s label for Application Template with ID %s is not a string", globalSubaccountIDLabelKey, appTemplate.ID)
-			return "", "", false
+			log.C(ctx).Infof("%s label for Application Template with ID %s is not a string", globalSubaccountIDLabelKey, appTemplateID)
+			return "", "", false, nil
 		}
 	} else {
-		log.C(ctx).Infof("%s label for Application Template with ID %s is missing", globalSubaccountIDLabelKey, appTemplate.ID)
-		return "", "", false
+		log.C(ctx).Infof("%s label for Application Template with ID %s is missing", globalSubaccountIDLabelKey, appTemplateID)
+		return "", "", false, nil
 	}
-	return regionValue, subaccountIDValue, true
+
+	if systemFieldDiscoveryLabel, exists := appTemplateLabels[systemFieldDiscoveryLabelKey]; exists {
+		systemFieldDiscoveryValue, ok = systemFieldDiscoveryLabel.Value.(bool)
+		if !ok {
+			log.C(ctx).Infof("%s label for Application Template with ID %s is not a boolean", systemFieldDiscoveryLabelKey, appTemplateID)
+			return "", "", false, nil
+		}
+	} else {
+		log.C(ctx).Infof("%s label for Application Template with ID %s is missing", systemFieldDiscoveryLabelKey, appTemplateID)
+		return "", "", false, nil
+	}
+
+	return regionValue, subaccountIDValue, systemFieldDiscoveryValue, nil
 }

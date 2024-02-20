@@ -12,10 +12,8 @@ import (
 )
 
 const (
-	// SystemFieldDiscoveryLabelKey is the key of the aoo template system field discovery label, that stores if a webhook of type SYSTEM_FIELD_DISCOVERY should be created.
-	SystemFieldDiscoveryLabelKey = "systemFieldDiscovery"
-	RegistryLabelKey             = "registry"
-	RegistryLabelValue           = "saas-registry" // should be configuration?
+	RegistryLabelKey   = "registry"
+	RegistryLabelValue = "saas-registry" // should be configuration?
 )
 
 // LabelService is responsible updating already existing labels, and their label definitions.
@@ -58,20 +56,14 @@ func NewSystemFieldDiscoveryEngine(cfg config.SystemFieldDiscoveryEngineConfig, 
 }
 
 // EnrichApplicationWebhookIfNeeded enriches application webhook input with webhook of type 'SYSTEM_FIELD_DISCOVERY' if needed
-func (s *systemFieldDiscoveryEngine) EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, region, subacountID, appTemplateName, appName string) ([]*model.WebhookInput, bool) {
-	var systemFieldDiscoveryLabelIsTrue, isBool bool
-	if label, exists := appCreateInputModel.Labels[SystemFieldDiscoveryLabelKey]; exists {
-		if systemFieldDiscoveryLabelIsTrue, isBool = label.(bool); isBool {
-			if systemFieldDiscoveryLabelIsTrue {
-				log.C(ctx).Infof("Application Template with name %q has label %q with value %t. Enriching the application with name %q with webhook of type %q", appTemplateName, SystemFieldDiscoveryLabelKey, systemFieldDiscoveryLabelIsTrue, appName, model.WebhookTypeSystemFieldDiscovery)
-				appCreateInputModel.Webhooks = s.enrichWithWebhook(appCreateInputModel.Webhooks, region, subacountID)
-				log.C(ctx).Infof("Sucessfully enriched Application with name %q with webhook of type %q", appName, model.WebhookTypeSystemFieldDiscovery)
-			}
-		} else {
-			log.C(ctx).Infof("%q label for Application Template with name %q is not a boolean", SystemFieldDiscoveryLabelKey, appTemplateName)
-		}
+func (s *systemFieldDiscoveryEngine) EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, systemFieldDiscovery bool, region, subacountID, appTemplateName, appName string) ([]*model.WebhookInput, bool) {
+	if systemFieldDiscovery {
+		log.C(ctx).Infof("Application Template with name %q has label systemFieldDiscovery with value %t. Enriching the application with name %q with webhook of type %q", appTemplateName, systemFieldDiscovery, appName, model.WebhookTypeSystemFieldDiscovery)
+		appCreateInputModel.Webhooks = s.enrichWithWebhook(appCreateInputModel.Webhooks, region, subacountID)
+		log.C(ctx).Infof("Sucessfully enriched Application with name %q with webhook of type %q", appName, model.WebhookTypeSystemFieldDiscovery)
 	}
-	return appCreateInputModel.Webhooks, systemFieldDiscoveryLabelIsTrue
+
+	return appCreateInputModel.Webhooks, systemFieldDiscovery
 }
 
 func (s *systemFieldDiscoveryEngine) enrichWithWebhook(modelInputWebhooks []*model.WebhookInput, region, subaccountID string) []*model.WebhookInput {

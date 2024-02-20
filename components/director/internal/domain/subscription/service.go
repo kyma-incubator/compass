@@ -38,6 +38,8 @@ const (
 	SubscriptionsLabelKey = "subscriptions"
 	// PreviousSubscriptionID represents a previous subscription id. This is needed, because before introducing this change there might be subscriptions which we don't know that they existed.
 	PreviousSubscriptionID = "00000000-0000-0000-0000-000000000000"
+	// SystemFieldDiscoveryLabelKey is the key of the aoo template system field discovery label, that stores if a webhook of type SYSTEM_FIELD_DISCOVERY should be created.
+	SystemFieldDiscoveryLabelKey = "systemFieldDiscovery"
 )
 
 // RuntimeService is responsible for Runtime operations
@@ -88,6 +90,7 @@ type ApplicationTemplateService interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
+	GetLabel(ctx context.Context, appTemplateID string, key string) (*model.Label, error)
 }
 
 // ApplicationTemplateConverter missing godoc
@@ -119,7 +122,7 @@ type ApplicationService interface {
 //
 //go:generate mockery --name=SystemFieldDiscoveryEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemFieldDiscoveryEngine interface {
-	EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, region, subacountID, appTemplateName, appName string) ([]*model.WebhookInput, bool)
+	EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, systemFieldDiscovery bool, region, subacountID, appTemplateName, appName string) ([]*model.WebhookInput, bool)
 	CreateLabelForApplicationWebhook(ctx context.Context, appID string) error
 }
 
@@ -491,7 +494,21 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 	}
 
 	var systemFieldDiscoveryLabelIsTrue bool
-	appCreateInputModel.Webhooks, systemFieldDiscoveryLabelIsTrue = s.systemFieldDiscoveryEngine.EnrichApplicationWebhookIfNeeded(ctx, appCreateInputModel, region, subscribedSubaccountID, appTemplate.Name, subscribedAppName)
+	systemFieldDiscoveryLabel, err := s.appTemplateSvc.GetLabel(ctx, appTemplate.ID, SystemFieldDiscoveryLabelKey)
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return "", err
+	} else {
+		if apperrors.IsNotFoundError(err) {
+			log.C(ctx).Infof("%s label for Application Template with ID %s is missing", SystemFieldDiscoveryLabelKey, appTemplate.ID)
+		} else {
+			systemFieldDiscoveryValue, ok := systemFieldDiscoveryLabel.Value.(bool)
+			if !ok {
+				log.C(ctx).Infof("%s label for Application Template with ID %s is not a boolean", SystemFieldDiscoveryLabelKey, appTemplate.ID)
+			} else {
+				appCreateInputModel.Webhooks, systemFieldDiscoveryLabelIsTrue = s.systemFieldDiscoveryEngine.EnrichApplicationWebhookIfNeeded(ctx, appCreateInputModel, systemFieldDiscoveryValue, region, subscribedSubaccountID, appTemplate.Name, subscribedAppName)
+			}
+		}
+	}
 
 	log.C(ctx).Infof("Creating an Application with name %q from Application Template with name %q", subscribedAppName, appTemplate.Name)
 	appID, err := s.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID, systemFieldDiscoveryLabelIsTrue)

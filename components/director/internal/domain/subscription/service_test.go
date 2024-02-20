@@ -1202,6 +1202,10 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 		fixModelApplication(appTmplID, appTmplName, appTmplID),
 	}
 	systemFieldDiscoveryLabelIsTrue := true
+	appTemplateLabel := &model.Label{
+		Value: systemFieldDiscoveryLabelIsTrue,
+	}
+	systemFieldDiscoveryLabelKey := "systemFieldDiscovery"
 
 	testCases := []struct {
 		Name                       string
@@ -1229,6 +1233,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFiltersWithPrefix).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
+				appTemplateSvc.On("GetLabel", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppTemplate.ID, systemFieldDiscoveryLabelKey).Return(appTemplateLabel, nil).Once()
 				return appTemplateSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -1261,7 +1266,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				newWebhooks := modelAppCreateInputWithLabels.Webhooks
 				newWebhooks = append(newWebhooks, &model.WebhookInput{
 					Type: model.WebhookTypeSystemFieldDiscovery})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, tenantRegionWithPrefix, subaccountTenantExtID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
+				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, systemFieldDiscoveryLabelIsTrue, tenantRegionWithPrefix, subaccountTenantExtID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
 				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", ctxWithTenantMatcher(subaccountTenantInternalID), appTmplID).Return(nil).Once()
 
 				return systemFieldDiscoveryEngine
@@ -1284,6 +1289,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFiltersWithPrefix).Return(modelAppTemplateWithPlaceholders, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplateWithPlaceholders, modelAppFromTemplateInputWithPlaceholders.Values).Return(jsonAppCreateInput, nil).Once()
+				appTemplateSvc.On("GetLabel", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppTemplateWithPlaceholders.ID, systemFieldDiscoveryLabelKey).Return(appTemplateLabel, nil).Once()
 				return appTemplateSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -1310,7 +1316,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				newWebhooks := modelAppCreateInputWithLabels.Webhooks
 				newWebhooks = append(newWebhooks, &model.WebhookInput{
 					Type: model.WebhookTypeSystemFieldDiscovery})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, tenantRegionWithPrefix, subaccountTenantExtID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
+				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, systemFieldDiscoveryLabelIsTrue, tenantRegionWithPrefix, subaccountTenantExtID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
 				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", ctxWithTenantMatcher(subaccountTenantInternalID), appTmplID).Return(nil).Once()
 
 				return systemFieldDiscoveryEngine
@@ -1535,6 +1541,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFiltersWithPrefix).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInputWithEmptySubdomain.Values).Return(jsonAppCreateInput, nil).Once()
+				appTemplateSvc.On("GetLabel", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppTemplate.ID, systemFieldDiscoveryLabelKey).Return(appTemplateLabel, nil).Once()
 				return appTemplateSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -1567,7 +1574,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				newWebhooks := modelAppCreateInputWithLabels.Webhooks
 				newWebhooks = append(newWebhooks, &model.WebhookInput{
 					Type: model.WebhookTypeSystemFieldDiscovery})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, tenantRegionWithPrefix, subaccountTenantExtID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
+				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, systemFieldDiscoveryLabelIsTrue, tenantRegionWithPrefix, subaccountTenantExtID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
 				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", ctxWithTenantMatcher(subaccountTenantInternalID), appTmplID).Return(nil).Once()
 
 				return systemFieldDiscoveryEngine
@@ -1742,6 +1749,61 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			Repeats:             1,
 		},
 		{
+			Name:                "Returns an error when getting label for app template",
+			Region:              tenantRegionWithPrefix,
+			SubscriptionPayload: subscriptionPayload,
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFiltersWithPrefix).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
+				appTemplateSvc.On("GetLabel", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppTemplate.ID, systemFieldDiscoveryLabelKey).Return(nil, testError).Once()
+				return appTemplateSvc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
+				return tenantSvc
+			},
+			AppConverterFn: func() *automock.ApplicationConverter {
+				appConv := &automock.ApplicationConverter{}
+				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
+				appConv.On("CreateInputFromGraphQL", ctxWithTenantMatcher(subaccountTenantInternalID), gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
+				return appConv
+			},
+			AppTemplConverterFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", modelAppTemplate, gqlAppFromTemplateInput).Return(modelAppFromTemplateSimplifiedInput, nil).Once()
+
+				return appTemplateConv
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListAll", ctxWithTenantMatcher(subaccountTenantInternalID)).Return([]*model.Application{}, nil).Once()
+				appSvc.AssertNotCalled(t, "CreateFromTemplate")
+				return appSvc
+			},
+			SystemFieldDiscoveryEngine: func() *automock.SystemFieldDiscoveryEngine {
+				systemFieldDiscoveryEngine := &automock.SystemFieldDiscoveryEngine{}
+				newWebhooks := modelAppCreateInputWithLabels.Webhooks
+				newWebhooks = append(newWebhooks, &model.WebhookInput{
+					Type: model.WebhookTypeSystemFieldDiscovery})
+				systemFieldDiscoveryEngine.AssertNotCalled(t, "EnrichApplicationWebhookIfNeeded")
+				systemFieldDiscoveryEngine.AssertNotCalled(t, "CreateLabelForApplicationWebhook")
+
+				return systemFieldDiscoveryEngine
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				lblSvc := &automock.LabelService{}
+				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.TenantLabelableObject, subaccountTenantInternalID, subscription.SubdomainLabelKey).Return(subdomainLabel, nil).Once()
+
+				return lblSvc
+			},
+			UIDServiceFn:        unusedUUIDSvc,
+			ExpectedErrorOutput: testError.Error(),
+			IsSuccessful:        false,
+			Repeats:             1,
+		},
+		{
 			Name:                "Returns an error when creating app from app template",
 			Region:              tenantRegionWithPrefix,
 			SubscriptionPayload: subscriptionPayload,
@@ -1749,6 +1811,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFiltersWithPrefix).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
+				appTemplateSvc.On("GetLabel", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppTemplate.ID, systemFieldDiscoveryLabelKey).Return(appTemplateLabel, nil).Once()
 				return appTemplateSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -1779,7 +1842,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				newWebhooks := modelAppCreateInputWithLabels.Webhooks
 				newWebhooks = append(newWebhooks, &model.WebhookInput{
 					Type: model.WebhookTypeSystemFieldDiscovery})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, tenantRegionWithPrefix, subaccountTenantExtID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
+				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, systemFieldDiscoveryLabelIsTrue, tenantRegionWithPrefix, subaccountTenantExtID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
 				systemFieldDiscoveryEngine.AssertNotCalled(t, "CreateLabelForApplicationWebhook")
 
 				return systemFieldDiscoveryEngine
@@ -1803,6 +1866,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFiltersWithPrefix).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
+				appTemplateSvc.On("GetLabel", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppTemplate.ID, systemFieldDiscoveryLabelKey).Return(appTemplateLabel, nil).Once()
 				return appTemplateSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -1833,7 +1897,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				newWebhooks := modelAppCreateInputWithLabels.Webhooks
 				newWebhooks = append(newWebhooks, &model.WebhookInput{
 					Type: model.WebhookTypeSystemFieldDiscovery})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, tenantRegionWithPrefix, subaccountTenantExtID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
+				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, systemFieldDiscoveryLabelIsTrue, tenantRegionWithPrefix, subaccountTenantExtID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
 				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", ctxWithTenantMatcher(subaccountTenantInternalID), appTmplID).Return(testError).Once()
 
 				return systemFieldDiscoveryEngine

@@ -72,6 +72,8 @@ func (obj LabelableObject) GetResourceType() resource.Type {
 		return resource.ApplicationLabel
 	case TenantLabelableObject:
 		return resource.TenantLabel
+	case WebhookLabelableObject:
+		return resource.Webhook
 	}
 	return ""
 }

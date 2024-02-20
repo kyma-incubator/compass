@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	tableColumns       = []string{"id", tenantColumn, "app_id", "runtime_id", "runtime_context_id", "app_template_id", keyColumn, "value", "version"}
+	tableColumns       = []string{"id", tenantColumn, "app_id", "runtime_id", "runtime_context_id", "app_template_id", keyColumn, "value", "version", "webhook_id"}
 	updatableColumns   = []string{"value"}
 	idColumns          = []string{"id"}
 	versionedIDColumns = append(idColumns, "version")

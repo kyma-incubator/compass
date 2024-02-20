@@ -39,32 +39,23 @@ var (
 )
 
 func Test_EnrichApplicationWebhookIfNeeded(t *testing.T) {
-	systemFieldDiscoveryLabelKey := "systemFieldDiscovery"
-
-	appInputWithTrueLabel := model.ApplicationRegisterInput{
-		Labels: map[string]interface{}{
-			systemFieldDiscoveryLabelKey: true,
-		},
-		Webhooks: []*model.WebhookInput{},
-	}
-	appInputWithFalseLabel := model.ApplicationRegisterInput{
-		Labels: map[string]interface{}{
-			systemFieldDiscoveryLabelKey: false,
-		},
+	appInput := model.ApplicationRegisterInput{
 		Webhooks: []*model.WebhookInput{},
 	}
 
 	testCases := []struct {
-		Name               string
-		Config             config.SystemFieldDiscoveryEngineConfig
-		Input              model.ApplicationRegisterInput
-		ExpectedWebhooks   []*model.WebhookInput
-		ExpectedLabelValue bool
+		Name                           string
+		Config                         config.SystemFieldDiscoveryEngineConfig
+		Input                          model.ApplicationRegisterInput
+		systemFieldDiscoveryLabelValue bool
+		ExpectedWebhooks               []*model.WebhookInput
+		ExpectedLabelValue             bool
 	}{
 		{
-			Name:   "Label is true",
-			Config: testConfig,
-			Input:  appInputWithTrueLabel,
+			Name:                           "Label is true",
+			Config:                         testConfig,
+			systemFieldDiscoveryLabelValue: true,
+			Input:                          appInput,
 			ExpectedWebhooks: []*model.WebhookInput{{
 				Type: model.WebhookTypeSystemFieldDiscovery,
 				URL:  str.Ptr("https://saas_registry_url/saas-manager/v1/service/subscriptions?includeIndirectSubscriptions=true&tenantId=subaccountID"),
@@ -81,11 +72,12 @@ func Test_EnrichApplicationWebhookIfNeeded(t *testing.T) {
 			ExpectedLabelValue: true,
 		},
 		{
-			Name:               "Label is false",
-			Config:             testConfig,
-			Input:              appInputWithFalseLabel,
-			ExpectedWebhooks:   []*model.WebhookInput{},
-			ExpectedLabelValue: false,
+			Name:                           "Label is false",
+			Config:                         testConfig,
+			Input:                          appInput,
+			systemFieldDiscoveryLabelValue: false,
+			ExpectedWebhooks:               []*model.WebhookInput{},
+			ExpectedLabelValue:             false,
 		},
 	}
 
@@ -95,7 +87,7 @@ func Test_EnrichApplicationWebhookIfNeeded(t *testing.T) {
 			engine, err := systemfielddiscoveryengine.NewSystemFieldDiscoveryEngine(testCase.Config, nil, nil, nil)
 			require.NoError(t, err)
 
-			webhooks, labelValue := engine.EnrichApplicationWebhookIfNeeded(context.TODO(), testCase.Input, "test-region", "subaccountID", "appTemplateName", "appName")
+			webhooks, labelValue := engine.EnrichApplicationWebhookIfNeeded(context.TODO(), testCase.Input, testCase.systemFieldDiscoveryLabelValue, "test-region", "subaccountID", "appTemplateName", "appName")
 
 			require.Equal(t, testCase.ExpectedWebhooks, webhooks)
 			require.Equal(t, testCase.ExpectedLabelValue, labelValue)
