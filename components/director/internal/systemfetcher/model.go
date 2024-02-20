@@ -3,7 +3,6 @@ package systemfetcher
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
@@ -62,7 +61,6 @@ func (s *System) UnmarshalJSON(data []byte) error {
 
 // EnhanceWithTemplateID tries to find an Application Template ID for the system and attach it to the object.
 func (s *System) EnhanceWithTemplateID() (System, error) {
-	count := 0
 	for tmKey, tm := range ApplicationTemplates {
 		if !s.isMatchedBySystemRole(tmKey) {
 			continue
@@ -73,9 +71,9 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 			break
 		}
 
-		fmt.Printf("ALEX: \n%d: %s\n", count, tmKey.Region)
-		count++
 		// Regional Application Template
+		// Use GenerateAppRegisterInput to resolve the application Input. This way we would know what is the actual
+		// region from the system payload
 		appInput, err := tm.Renderer.GenerateAppRegisterInput(context.Background(), *s, tm.AppTemplate, false)
 		if err != nil {
 			return *s, err
@@ -124,7 +122,6 @@ func getTemplateMappingBySystemRoleAndRegion(systemPayload map[string]interface{
 	}
 
 	for key, mapping := range ApplicationTemplates {
-		fmt.Printf("config region: %s. App region: %s\n", key.Region, region)
 		if key.Label == systemSourceValue && key.Region == region {
 			return mapping
 		}
