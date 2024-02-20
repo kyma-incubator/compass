@@ -472,7 +472,3 @@ func dependenciesConfigToMap(cfg tenantfetcher.HandlerConfig) (map[string][]tena
 
 	return dependenciesConfig, nil
 }
-
-func initWebhookAndAppSvc() {
-
-}

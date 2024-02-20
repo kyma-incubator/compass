@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 const (
@@ -93,11 +92,12 @@ func (s *systemFieldDiscoveryEngine) enrichWithWebhook(modelInputWebhooks []*mod
 }
 
 func (s *systemFieldDiscoveryEngine) CreateLabelForApplicationWebhook(ctx context.Context, appID string) error {
-	wh, err := s.webhookSvc.GetByIDAndWebhookTypeGlobal(ctx, appID, model.ApplicationWebhookReference, model.WebhookTypeSystemFieldDiscovery)
+	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
-	tnt, err := tenant.LoadFromContext(ctx)
+
+	wh, err := s.webhookSvc.GetByIDAndWebhookTypeGlobal(ctx, appID, model.ApplicationWebhookReference, model.WebhookTypeSystemFieldDiscovery)
 	if err != nil {
 		return err
 	}
@@ -114,8 +114,4 @@ func (s *systemFieldDiscoveryEngine) CreateLabelForApplicationWebhook(ctx contex
 	log.C(ctx).Infof("Sucessfully created label with key: %q and value: %q for %q with id: %q", RegistryLabelKey, RegistryLabelValue, model.WebhookLabelableObject, wh.ID)
 
 	return nil
-}
-
-func ExecuteWebhook(client *http.Client, webhook *model.Webhook) {
-
 }

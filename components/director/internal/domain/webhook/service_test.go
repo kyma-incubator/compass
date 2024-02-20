@@ -3,6 +3,7 @@ package webhook_test
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"testing"
 	"time"
 
@@ -373,6 +374,70 @@ func TestService_GetByIDAndWebhookTypeGlobal(t *testing.T) {
 		})
 	}
 }
+
+func TestService_ListByTypeAndLabelFilter(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	url := "bar"
+
+	webhookModels := []*model.Webhook{fixApplicationModelWebhookWithProxy("1", id, url, time.Time{})}
+	filter := &labelfilter.LabelFilter{Key: "someKey"}
+	filters := []*labelfilter.LabelFilter{filter}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.WebhookRepository
+		ExpectedWebhooks   []*model.Webhook
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByTypeAndLabelFilter", ctx, model.WebhookTypeSystemFieldDiscovery, filters).Return(webhookModels, nil).Once()
+				return repo
+			},
+			ExpectedWebhooks:   webhookModels,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when webhook retrieval failed",
+			RepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByTypeAndLabelFilter", ctx, model.WebhookTypeSystemFieldDiscovery, filters).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedWebhooks:   webhookModels,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			svc := webhook.NewService(repo, nil, nil, nil, nil, "")
+
+			// WHEN
+			actual, err := svc.ListByTypeAndLabelFilter(ctx, model.WebhookTypeSystemFieldDiscovery, filter)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedWebhooks, actual)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_ListForApplication(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")

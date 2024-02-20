@@ -7,7 +7,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -139,9 +138,6 @@ type service struct {
 	subscriptionLabelKey         string
 	runtimeTypeLabelKey          string
 	subscriptionProviderLabelKey string
-	oauthTokenPath               string
-	regionToInstanceConfig       map[string]config.InstanceConfig
-	regionToSaaSRegistryURL      map[string]*string
 }
 
 // NewService returns a new object responsible for service-layer Subscription operations.
