@@ -166,6 +166,7 @@ do
         echo "Running test is ${running_test}"
         if [[ ! "${running_test}" == "none" ]]; then
           logs_from_last_min=$("$KUBECTL" logs -n kyma-system --since=1m ${running_test})
+          logs_from_director_last_min=$("$KUBECTL" logs -n compass-system --selector app=director --since=1m)
           if echo "${logs_from_last_min}" | grep -q "FAIL:"; then
             echo "----------------------------"
             echo "A test has failed in the last minute."
