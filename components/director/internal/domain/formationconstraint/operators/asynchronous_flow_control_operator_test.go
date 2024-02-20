@@ -87,7 +87,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		},
 		// Assign during PreStatusReturned
 		{
-			Name:                             "Success when transitioning to READY state with inbound credentials",
+			Name:                             "Error when formation assignment config is invalid",
 			Input:                            inputForNotificationStatusReturnedAssign,
 			Assignment:                       fixFormationAssignmentWithState(model.InitialAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.InitialAssignmentState),
@@ -95,6 +95,16 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 			StatusReport:                     fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), invalidFAConfig),
 			ExpectedStatusReportState:        string(model.ConfigPendingAssignmentState),
 			ExpectedErrorMsg:                 "while unmarshalling tenant mapping response configuration for assignment with ID:",
+		},
+		{
+			Name:                             "Success when transitioning to READY state with no configuration",
+			Input:                            inputForNotificationStatusReturnedAssign,
+			Assignment:                       fixFormationAssignmentWithState(model.InitialAssignmentState),
+			ReverseAssignment:                fixFormationAssignmentWithState(model.InitialAssignmentState),
+			ExpectedFormationAssignmentState: string(model.InitialAssignmentState),
+			StatusReport:                     fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), emptyConfig),
+			ExpectedStatusReportState:        string(model.ReadyAssignmentState),
+			ExpectedResult:                   true,
 		},
 		{
 			Name:                             "Success when transitioning to READY state with inbound credentials",
