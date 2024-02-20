@@ -173,6 +173,10 @@ do
             echo "Logs from test execution:"
             echo "${logs_from_last_min}"
             echo "----------------------------"
+            echo "Director:"
+            echo "----------------------------"
+            echo "${logs_from_director_last_min}"
+            echo "----------------------------"
           fi
         fi
         previousPrintTime=${min}
