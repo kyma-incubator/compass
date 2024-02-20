@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -115,6 +117,7 @@ var (
 	emptyCtx          = context.Background()
 	testErr           = errors.New("Test error")
 	unauthorizedError = apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
+	notFoundError     = apperrors.NewNotFoundError(resource.FormationAssignment, FormationAssignmentID)
 
 	formationModelWithoutError = fixFormationModelWithoutError()
 	modelFormation             = model.Formation{

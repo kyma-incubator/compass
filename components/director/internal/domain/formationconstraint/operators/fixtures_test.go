@@ -117,6 +117,7 @@ var (
 
 // Destination Creator variables
 var (
+	emptyConfig                  = json.RawMessage("{}")
 	invalidFAConfig              = json.RawMessage("invalid-Destination-config")
 	configWithDifferentStructure = json.RawMessage(testJSONConfig)
 	destsConfigValueRawJSON      = json.RawMessage(

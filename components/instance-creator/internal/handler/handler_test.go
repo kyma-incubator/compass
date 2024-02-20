@@ -32,7 +32,7 @@ const (
 	serviceBindingKey             = "serviceBinding"
 	serviceInstanceServiceBinding = "service"
 	serviceInstancePlanKey        = "plan"
-	configurationKey              = "configuration"
+	parametersKey                 = "parameters"
 	nameKey                       = "name"
 	assignmentIDKey               = "assignment_id"
 )
@@ -76,10 +76,7 @@ func Test_HandlerFunc(t *testing.T) {
 	reqBodyContextWithAssign := fmt.Sprintf(reqBodyContextFormatter, formationID, assignOperation)
 	reqBodyContextWithUnassign := fmt.Sprintf(reqBodyContextFormatter, formationID, unassignOperation)
 
-	assignedTenantFormatter := `{
-		"uclAssignmentId": %q,
-		"configuration": %s
-	}`
+	assignedTenantFormatter := `{"configuration": %s}`
 
 	assignedTenantConfigurationWithGlobalInstancesWithoutJsonpaths := `{
 	      "credentials": {
@@ -301,6 +298,7 @@ func Test_HandlerFunc(t *testing.T) {
 	expectedResponseForLocalInstances := `{"state":"READY","configuration":{"credentials":{"outboundCommunication":{"auth_method_with_local_instances":{"certificate":"-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----","clientId":"clientid","correlationIds":["ASD"],"tokenServiceUrl":"url"},"no-instances-auth-method":{"certificate":"-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----"}}}}}`
 
 	receiverTenantFormatter := `{
+		"uclAssignmentId": %q,
 		"deploymentRegion": %q,
 		"subaccountId": %q,
 		"configuration": %s
@@ -897,118 +895,63 @@ func Test_HandlerFunc(t *testing.T) {
 		expectedResponseCode int
 	}{
 		{
-			name:        "Wrong json - fails on decoding",
-			requestBody: `wrong json`,
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Request body contains badly-formed JSON")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Wrong json - fails on decoding",
+			requestBody:          `wrong json`,
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Missing config(empty json) - fails on validation",
-			requestBody: emptyJSON,
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Context FormationID must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Missing config(empty json) - fails on validation",
+			requestBody:          emptyJSON,
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Missing config(empty context, receiverTenant and assignedTenant) - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, emptyJSON, emptyJSON, emptyJSON),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("while validating the request body")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Missing config(empty context, receiverTenant and assignedTenant) - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, emptyJSON, emptyJSON, emptyJSON),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Missing formation ID in the context - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, `{"operation": "assign"}`, emptyJSON, emptyJSON),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Context FormationID must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Missing formation ID in the context - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, `{"operation": "assign"}`, emptyJSON, emptyJSON),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Missing operation in the context - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, `{"uclFormationId": "formation-id", "operation": ""}`, emptyJSON, emptyJSON),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("Context Operation must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Missing operation in the context - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, `{"uclFormationId": "formation-id", "operation": ""}`, emptyJSON, emptyJSON),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Wrong operation in the context - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, `{"uclFormationId": "formation-id", "operation": "wrong-operation"}`, emptyJSON, emptyJSON),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody(`Context Operation must be \"assign\" or \"unassign\"`)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Wrong operation in the context - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, `{"uclFormationId": "formation-id", "operation": "wrong-operation"}`, emptyJSON, emptyJSON),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Formation assignment is missing in the assignedTenant - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, emptyJSON, emptyJSON),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("AssignedTenant AssignmentID must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Formation assignment is missing in the receiverTenant - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, emptyJSON, emptyJSON),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Region is missing in the receiverTenant - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, emptyJSON, fmt.Sprintf(assignedTenantFormatter, assignmentID, emptyJSON)),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("ReceiverTenant Region must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Region is missing in the receiverTenant - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, emptyJSON, fmt.Sprintf(assignedTenantFormatter, emptyJSON)),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Subaccount ID is missing in the receiverTenant - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, `{"deploymentRegion": "region"}`, fmt.Sprintf(assignedTenantFormatter, assignmentID, emptyJSON)),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("ReceiverTenant SubaccountID must be provided")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Subaccount ID is missing in the receiverTenant - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, `{"deploymentRegion": "region"}`, fmt.Sprintf(assignedTenantFormatter, emptyJSON)),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Operation is assign and inboundCommunication is missing in the assignedTenant configuration - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, assignmentID, emptyJSON)),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody("AssignedTenant inbound communication is missing in the configuration")).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Operation is assign and inboundCommunication is missing in the assignedTenant configuration - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, emptyJSON)),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name:        "Operation is assign and receiverTenant has outboundCommunication but not in the same path as assignedTenant inboundCommunication - fails on validation",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, `{"credentials": {"another-field":{"credentials": {"outboundCommunication":{}}}}}`), fmt.Sprintf(assignedTenantFormatter, assignmentID, `{"credentials": {"inboundCommunication":{}}}`)),
-			mtlsClientFn: func() *automock.MtlsHTTPClient {
-				client := &automock.MtlsHTTPClient{}
-				client.On("Do", requestThatHasBody(`ReceiverTenant outbound communication should be in the same place as the assigned tenant inbound communication`)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
-				return client
-			},
-			expectedResponseCode: http.StatusAccepted,
+			name:                 "Operation is assign and receiverTenant has outboundCommunication but not in the same path as assignedTenant inboundCommunication - fails on validation",
+			requestBody:          fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, `{"credentials": {"another-field":{"credentials": {"outboundCommunication":{}}}}}`), fmt.Sprintf(assignedTenantFormatter, `{"credentials": {"inboundCommunication":{}}}`)),
+			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
 			name:        "Operation is unassign and fails while retrieving service instances by assignment ID",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithUnassign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, `{"credentials": {"another-field":{"credentials": {"outboundCommunication":{}}}}}`), fmt.Sprintf(assignedTenantFormatter, assignmentID, `{"credentials": {"inboundCommunication":{}}}`)),
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithUnassign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, `{"credentials": {"another-field":{"credentials": {"outboundCommunication":{}}}}}`), fmt.Sprintf(assignedTenantFormatter, `{"credentials": {"inboundCommunication":{}}}`)),
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("RetrieveMultipleResourcesIDsByLabels", mock.Anything, region, subaccount, mock.Anything, map[string][]string{assignmentIDKey: {assignmentID}}).Return(nil, testErr).Once()
@@ -1024,7 +967,7 @@ func Test_HandlerFunc(t *testing.T) {
 		},
 		{
 			name:        "Operation is unassign and fails while retrieving service instances bindings by service instances IDs",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithUnassign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, `{"credentials": {"another-field":{"credentials": {"outboundCommunication":{}}}}}`), fmt.Sprintf(assignedTenantFormatter, assignmentID, `{"credentials": {"inboundCommunication":{}}}`)),
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithUnassign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, `{"credentials": {"another-field":{"credentials": {"outboundCommunication":{}}}}}`), fmt.Sprintf(assignedTenantFormatter, `{"credentials": {"inboundCommunication":{}}}`)),
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("RetrieveMultipleResourcesIDsByLabels", mock.Anything, region, subaccount, mock.Anything, map[string][]string{assignmentIDKey: {assignmentID}}).Return(serviceInstancesIDs, nil).Once()
@@ -1041,7 +984,7 @@ func Test_HandlerFunc(t *testing.T) {
 		},
 		{
 			name:        "Operation is unassign and fails while deleting service instances bindings by service instances IDs",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithUnassign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, `{"credentials": {"another-field":{"credentials": {"outboundCommunication":{}}}}}`), fmt.Sprintf(assignedTenantFormatter, assignmentID, `{"credentials": {"inboundCommunication":{}}}`)),
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithUnassign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, `{"credentials": {"another-field":{"credentials": {"outboundCommunication":{}}}}}`), fmt.Sprintf(assignedTenantFormatter, `{"credentials": {"inboundCommunication":{}}}`)),
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("RetrieveMultipleResourcesIDsByLabels", mock.Anything, region, subaccount, mock.Anything, map[string][]string{assignmentIDKey: {assignmentID}}).Return(serviceInstancesIDs, nil).Once()
@@ -1059,7 +1002,7 @@ func Test_HandlerFunc(t *testing.T) {
 		},
 		{
 			name:        "Operation is unassign and fails while deleting service instances by service instances IDs",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithUnassign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, `{"credentials": {"another-field":{"credentials": {"outboundCommunication":{}}}}}`), fmt.Sprintf(assignedTenantFormatter, assignmentID, `{"credentials": {"inboundCommunication":{}}}`)),
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithUnassign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, `{"credentials": {"another-field":{"credentials": {"outboundCommunication":{}}}}}`), fmt.Sprintf(assignedTenantFormatter, `{"credentials": {"inboundCommunication":{}}}`)),
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("RetrieveMultipleResourcesIDsByLabels", mock.Anything, region, subaccount, mock.Anything, map[string][]string{assignmentIDKey: {assignmentID}}).Return(serviceInstancesIDs, nil).Once()
@@ -1078,7 +1021,7 @@ func Test_HandlerFunc(t *testing.T) {
 		},
 		{
 			name:        "Success - Operation is unassign and successfully deletes instances",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithUnassign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, `{"credentials": {"another-field":{"credentials": {"outboundCommunication":{}}}}}`), fmt.Sprintf(assignedTenantFormatter, assignmentID, `{"credentials": {"inboundCommunication":{}}}`)),
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithUnassign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, `{"credentials": {"another-field":{"credentials": {"outboundCommunication":{}}}}}`), fmt.Sprintf(assignedTenantFormatter, `{"credentials": {"inboundCommunication":{}}}`)),
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("RetrieveMultipleResourcesIDsByLabels", mock.Anything, region, subaccount, mock.Anything, map[string][]string{assignmentIDKey: {assignmentID}}).Return(serviceInstancesIDs, nil).Once()
@@ -1097,7 +1040,7 @@ func Test_HandlerFunc(t *testing.T) {
 		},
 		{
 			name:        "Success - Operation is assign and service instances are missing. Expecting CONFIG_PENDING.",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, assignmentID, `{"credentials": {"inboundCommunication":{}}}`)),
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, `{"credentials": {"inboundCommunication":{}}}`)),
 			mtlsClientFn: func() *automock.MtlsHTTPClient {
 				client := &automock.MtlsHTTPClient{}
 				client.On("Do", requestThatHasJSONBody(`{"state":"CONFIG_PENDING","configuration":null}`)).Return(fixHTTPResponse(http.StatusOK, ""), nil).Once()
@@ -1108,7 +1051,7 @@ func Test_HandlerFunc(t *testing.T) {
 		},
 		{
 			name:        "Success - Operation is assign and there are only global service instances without jsonpaths.",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, assignmentID, assignedTenantConfigurationWithGlobalInstancesWithoutJsonpaths)),
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, assignedTenantConfigurationWithGlobalInstancesWithoutJsonpaths)),
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				mockSMClient(client, assignedTenantConfigurationWithGlobalInstancesWithoutJsonpaths)
@@ -1124,7 +1067,7 @@ func Test_HandlerFunc(t *testing.T) {
 		},
 		{
 			name:        "Success - Operation is assign and there are only global service instances with jsonpaths.",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, assignmentID, assignedTenantConfigurationWithGlobalInstancesWithJsonpaths)),
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, assignedTenantConfigurationWithGlobalInstancesWithJsonpaths)),
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				mockSMClient(client, substitutedAssignedTenantConfigurationWithGlobalInstancesWithJsonpaths)
@@ -1140,7 +1083,7 @@ func Test_HandlerFunc(t *testing.T) {
 		},
 		{
 			name:        "Success - Operation is assign and there are only global service instances with jsonpaths which must be recreated.",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, assignmentID, assignedTenantConfigurationWithGlobalInstancesWithJsonpaths)),
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, assignedTenantConfigurationWithGlobalInstancesWithJsonpaths)),
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				substitutedGlobalServiceInstances := Configuration(substitutedAssignedTenantConfigurationWithGlobalInstancesWithJsonpaths).GetGlobalServiceInstances(inboundCommunicationKey).ToArray()
@@ -1184,7 +1127,7 @@ func Test_HandlerFunc(t *testing.T) {
 		},
 		{
 			name:        "Success - Operation is assign and there are only global service instances and with service details in receiver tenant inbound communication - check that the inbound is deleted",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, receiverTenantConfigurationWithServiceInstanceDetails), fmt.Sprintf(assignedTenantFormatter, assignmentID, assignedTenantConfigurationWithGlobalInstancesWithoutJsonpaths)),
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, receiverTenantConfigurationWithServiceInstanceDetails), fmt.Sprintf(assignedTenantFormatter, assignedTenantConfigurationWithGlobalInstancesWithoutJsonpaths)),
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				mockSMClient(client, assignedTenantConfigurationWithGlobalInstancesWithoutJsonpaths)
@@ -1200,7 +1143,7 @@ func Test_HandlerFunc(t *testing.T) {
 		},
 		{
 			name:        "Success - Operation is assign and there are only global service instances and with service details in receiver tenant inbound communication - check that the inbound is left only with auth methods without service instance details",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, receiverTenantConfigurationWithServiceInstanceDetailsAndMethodWithoutInstances), fmt.Sprintf(assignedTenantFormatter, assignmentID, assignedTenantConfigurationWithGlobalInstancesWithoutJsonpaths)),
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, receiverTenantConfigurationWithServiceInstanceDetailsAndMethodWithoutInstances), fmt.Sprintf(assignedTenantFormatter, assignedTenantConfigurationWithGlobalInstancesWithoutJsonpaths)),
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				mockSMClient(client, assignedTenantConfigurationWithGlobalInstancesWithoutJsonpaths)
@@ -1216,7 +1159,7 @@ func Test_HandlerFunc(t *testing.T) {
 		},
 		{
 			name:        "Success - Operation is assign and there are only global service instances and with service details in receiver tenant inbound communication - check that the inbound is left only with auth methods without service instance details",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, receiverTenantConfigurationWithServiceInstanceDetailsAndMethodWithoutInstancesAndReversePaths), fmt.Sprintf(assignedTenantFormatter, assignmentID, assignedTenantConfigurationWithGlobalInstancesWithoutJsonpaths)),
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, receiverTenantConfigurationWithServiceInstanceDetailsAndMethodWithoutInstancesAndReversePaths), fmt.Sprintf(assignedTenantFormatter, assignedTenantConfigurationWithGlobalInstancesWithoutJsonpaths)),
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				mockSMClient(client, assignedTenantConfigurationWithGlobalInstancesWithoutJsonpaths)
@@ -1232,7 +1175,7 @@ func Test_HandlerFunc(t *testing.T) {
 		},
 		{
 			name:        "Success - Operation is assign and there are only local service instances with jsonpaths.",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, assignmentID, assignedTenantConfigurationWithLocalInstancesWithJsonpaths)),
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, emptyJSON), fmt.Sprintf(assignedTenantFormatter, assignedTenantConfigurationWithLocalInstancesWithJsonpaths)),
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				mockSMClient(client, substitutedAssignedTenantConfigurationWithLocalInstancesWithJsonpaths)
@@ -1248,7 +1191,7 @@ func Test_HandlerFunc(t *testing.T) {
 		},
 		{
 			name:        "Success - Operation is assign with full config",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, receiverTenantFullConfiguration), fmt.Sprintf(assignedTenantFormatter, assignmentID, assignedTenantFullConfiguration)),
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, receiverTenantFullConfiguration), fmt.Sprintf(assignedTenantFormatter, assignedTenantFullConfiguration)),
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				mockSMClient(client, substitutedAssignedTenantFullConfiguration)
@@ -1264,7 +1207,7 @@ func Test_HandlerFunc(t *testing.T) {
 		},
 		{
 			name:        "Success - Operation is assign with full config but receiver tenant outboundCommunication missing",
-			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, region, subaccount, receiverTenantFullConfigurationWithoutOutboundCommunication), fmt.Sprintf(assignedTenantFormatter, assignmentID, assignedTenantFullConfiguration)),
+			requestBody: fmt.Sprintf(reqBodyFormatter, reqBodyContextWithAssign, fmt.Sprintf(receiverTenantFormatter, assignmentID, region, subaccount, receiverTenantFullConfigurationWithoutOutboundCommunication), fmt.Sprintf(assignedTenantFormatter, assignedTenantFullConfiguration)),
 			smClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				mockSMClient(client, substitutedAssignedTenantFullConfiguration)
@@ -1441,7 +1384,7 @@ func (si ServiceInstance) GetName() string {
 }
 
 func (si ServiceInstance) GetParameters() string {
-	return gjson.Get(string(si), configurationKey).String()
+	return gjson.Get(string(si), parametersKey).String()
 }
 
 func (si ServiceInstance) GetServiceBinding() ServiceBinding {
@@ -1458,7 +1401,7 @@ func (si ServiceInstance) ToJSONRawMessage() json.RawMessage {
 }
 
 func (sb ServiceBinding) GetParameters() string {
-	return gjson.Get(string(sb), configurationKey).String()
+	return gjson.Get(string(sb), parametersKey).String()
 }
 
 func (sb ServiceBinding) GetName() string {

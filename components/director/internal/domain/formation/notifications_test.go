@@ -829,6 +829,26 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 			WebhookRequest: faRequestExtWithUnassignOperation,
 		},
 		{
+			Name: "Success when updating formation assignment last notification sent timestamp and not found error is returned",
+			WebhookClientFN: func() *automock.WebhookClient {
+				client := &automock.WebhookClient{}
+				client.On("Do", ctx, faRequestExtWithUnassignOperation).Return(nil, nil)
+				return client
+			},
+			ConstraintEngine: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preSendNotificationJoinPointDetailsForAssignmentWithUnassignOperation, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PostSendNotification, postSendNotificationJoinPointDetailsForAssignmentWithUnassignOperation, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				faRepo := &automock.FormationAssignmentRepository{}
+				faRepo.On("Update", ctx, fa).Return(notFoundError).Once()
+				return faRepo
+			},
+			WebhookRequest: faRequestExtWithUnassignOperation,
+		},
+		{
 			Name: "Error when updating formation last notification sent timestamp fail",
 			WebhookClientFN: func() *automock.WebhookClient {
 				client := &automock.WebhookClient{}
@@ -864,6 +884,26 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 			FormationRepo: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
 				formationRepo.On("Update", ctx, formationModel).Return(unauthorizedError).Once()
+				return formationRepo
+			},
+			WebhookRequest: deleteFormationRequestExt,
+		},
+		{
+			Name: "Success when updating formation last notification sent timestamp and not found error is returned",
+			WebhookClientFN: func() *automock.WebhookClient {
+				client := &automock.WebhookClient{}
+				client.On("Do", ctx, deleteFormationRequestExt).Return(nil, nil)
+				return client
+			},
+			ConstraintEngine: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preSendNotificationJoinPointDetailsForDeleteFormation, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PostSendNotification, postSendNotificationJoinPointDetailsForDeleteFormation, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			FormationRepo: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("Update", ctx, formationModel).Return(notFoundError).Once()
 				return formationRepo
 			},
 			WebhookRequest: deleteFormationRequestExt,
