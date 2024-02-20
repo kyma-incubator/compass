@@ -2,7 +2,9 @@ package bundle
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -39,37 +41,41 @@ type EntityConverter interface {
 }
 
 type pgRepository struct {
-	existQuerier       repo.ExistQuerier
-	singleGetter       repo.SingleGetter
-	singleGlobalGetter repo.SingleGetterGlobal
-	deleter            repo.Deleter
-	deleterGlobal      repo.DeleterGlobal
-	lister             repo.Lister
-	globalLister       repo.ListerGlobal
-	unionLister        repo.UnionLister
-	creator            repo.Creator
-	creatorGlobal      repo.CreatorGlobal
-	updater            repo.Updater
-	updaterGlobal      repo.UpdaterGlobal
-	conv               EntityConverter
+	existQuerier          repo.ExistQuerier
+	singleGetter          repo.SingleGetter
+	singleGlobalGetter    repo.SingleGetterGlobal
+	deleter               repo.Deleter
+	deleterGlobal         repo.DeleterGlobal
+	lister                repo.Lister
+	conditionLister       repo.ConditionTreeLister
+	conditionListerGlobal repo.ConditionTreeListerGlobal
+	globalLister          repo.ListerGlobal
+	unionLister           repo.UnionLister
+	creator               repo.Creator
+	creatorGlobal         repo.CreatorGlobal
+	updater               repo.Updater
+	updaterGlobal         repo.UpdaterGlobal
+	conv                  EntityConverter
 }
 
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:       repo.NewExistQuerier(bundleTable),
-		singleGetter:       repo.NewSingleGetter(bundleTable, bundleColumns),
-		singleGlobalGetter: repo.NewSingleGetterGlobal(resource.Bundle, bundleTable, bundleColumns),
-		deleter:            repo.NewDeleter(bundleTable),
-		deleterGlobal:      repo.NewDeleterGlobal(resource.Bundle, bundleTable),
-		lister:             repo.NewLister(bundleTable, bundleColumns),
-		globalLister:       repo.NewListerGlobal(resource.Bundle, bundleTable, bundleColumns),
-		unionLister:        repo.NewUnionLister(bundleTable, bundleColumns),
-		creator:            repo.NewCreator(bundleTable, bundleColumns),
-		creatorGlobal:      repo.NewCreatorGlobal(resource.Bundle, bundleTable, bundleColumns),
-		updater:            repo.NewUpdater(bundleTable, updatableColumns, []string{"id"}),
-		updaterGlobal:      repo.NewUpdaterGlobal(resource.Bundle, bundleTable, updatableColumns, []string{"id"}),
-		conv:               conv,
+		existQuerier:          repo.NewExistQuerier(bundleTable),
+		singleGetter:          repo.NewSingleGetter(bundleTable, bundleColumns),
+		singleGlobalGetter:    repo.NewSingleGetterGlobal(resource.Bundle, bundleTable, bundleColumns),
+		deleter:               repo.NewDeleter(bundleTable),
+		deleterGlobal:         repo.NewDeleterGlobal(resource.Bundle, bundleTable),
+		lister:                repo.NewLister(bundleTable, bundleColumns),
+		conditionLister:       repo.NewConditionTreeLister(bundleTable, bundleColumns),
+		conditionListerGlobal: repo.NewConditionTreeListerGlobal(bundleTable, bundleColumns),
+		globalLister:          repo.NewListerGlobal(resource.Bundle, bundleTable, bundleColumns),
+		unionLister:           repo.NewUnionLister(bundleTable, bundleColumns),
+		creator:               repo.NewCreator(bundleTable, bundleColumns),
+		creatorGlobal:         repo.NewCreatorGlobal(resource.Bundle, bundleTable, bundleColumns),
+		updater:               repo.NewUpdater(bundleTable, updatableColumns, []string{"id"}),
+		updaterGlobal:         repo.NewUpdaterGlobal(resource.Bundle, bundleTable, updatableColumns, []string{"id"}),
+		conv:                  conv,
 	}
 }
 
@@ -309,21 +315,65 @@ func (r *pgRepository) ListByDestination(ctx context.Context, tenantID string, d
 		`, []interface{}{tenantID, destination.XSystemType, destination.XSystemTenantID})
 	}
 
-	conditions := repo.Conditions{
-		appIDInCondition,
-		repo.NewJSONArrMatchAnyStringCondition(correlationIDs, destination.XCorrelationID),
-	}
-	err := r.globalLister.ListGlobal(ctx, &bundleCollection, conditions...)
+	orConditions := buildCorrelationIDConditions(destination.XCorrelationID)
+	conditions := repo.And(
+		&repo.ConditionTree{Operand: appIDInCondition},
+		repo.Or(repo.ConditionTreesFromConditions(orConditions)...),
+	)
+
+	err := r.conditionListerGlobal.ListConditionTreeGlobal(ctx, resource.Bundle, &bundleCollection, conditions)
 	if err != nil {
 		return nil, err
 	}
+
 	bundles := make([]*model.Bundle, 0, bundleCollection.Len())
 	for _, bundle := range bundleCollection {
 		bundleModel, err := r.conv.FromEntity(&bundle)
 		if err != nil {
-			return nil, errors.Wrap(err, "while creating Bundle model from entity")
+			return nil, errors.Wrap(err, "while converting Bundle model from entity")
 		}
 		bundles = append(bundles, bundleModel)
 	}
 	return bundles, nil
+}
+
+// ListByApplicationAndCorrelationIDs lists application bundles in a certain tenant that have matching correlation IDs
+func (r *pgRepository) ListByApplicationAndCorrelationIDs(ctx context.Context, tenantID, appID, correlationIDs string) ([]*model.Bundle, error) {
+	var appIDInCondition repo.Condition
+	bundleCollection := BundleCollection{}
+
+	appIDInCondition = repo.NewEqualCondition(appIDColumn, appID)
+	correlationIDConditions := buildCorrelationIDConditions(correlationIDs)
+	conditions := repo.And(
+		&repo.ConditionTree{Operand: appIDInCondition},
+		repo.Or(repo.ConditionTreesFromConditions(correlationIDConditions)...),
+	)
+
+	err := r.conditionLister.ListConditionTree(ctx, resource.Bundle, tenantID, &bundleCollection, conditions)
+	if err != nil {
+		return nil, err
+	}
+
+	bundles := make([]*model.Bundle, 0, bundleCollection.Len())
+	for _, bundle := range bundleCollection {
+		bundleModel, err := r.conv.FromEntity(&bundle)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting Bundle model from entity")
+		}
+		bundles = append(bundles, bundleModel)
+	}
+	return bundles, nil
+}
+
+func buildCorrelationIDConditions(correlationIDs string) []repo.Condition {
+	orConditions := make([]repo.Condition, 0)
+	for _, correlationID := range destinationcreator.DeconstructCorrelationIDs(correlationIDs) {
+		orConditions = append(orConditions, repo.NewExistsConditionForSubQuery(`
+			SELECT 1
+			FROM jsonb_array_elements_text(correlation_ids) as correlation_ids_text
+			WHERE correlation_ids_text LIKE ?
+		`, []interface{}{fmt.Sprintf("%%%s%%", correlationID)}))
+	}
+
+	return orConditions
 }
