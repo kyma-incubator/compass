@@ -14,23 +14,23 @@ type ApplicationService struct {
 	mock.Mock
 }
 
-// CreateFromTemplate provides a mock function with given fields: ctx, in, appTemplateID
-func (_m *ApplicationService) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error) {
-	ret := _m.Called(ctx, in, appTemplateID)
+// CreateFromTemplate provides a mock function with given fields: ctx, in, appTemplateID, systemFieldDiscoveryLabelIsTrue
+func (_m *ApplicationService) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string, systemFieldDiscoveryLabelIsTrue bool) (string, error) {
+	ret := _m.Called(ctx, in, appTemplateID, systemFieldDiscoveryLabelIsTrue)
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput, *string) (string, error)); ok {
-		return rf(ctx, in, appTemplateID)
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput, *string, bool) (string, error)); ok {
+		return rf(ctx, in, appTemplateID, systemFieldDiscoveryLabelIsTrue)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput, *string) string); ok {
-		r0 = rf(ctx, in, appTemplateID)
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput, *string, bool) string); ok {
+		r0 = rf(ctx, in, appTemplateID, systemFieldDiscoveryLabelIsTrue)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationRegisterInput, *string) error); ok {
-		r1 = rf(ctx, in, appTemplateID)
+	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationRegisterInput, *string, bool) error); ok {
+		r1 = rf(ctx, in, appTemplateID, systemFieldDiscoveryLabelIsTrue)
 	} else {
 		r1 = ret.Error(1)
 	}
