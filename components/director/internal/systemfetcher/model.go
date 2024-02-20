@@ -3,6 +3,7 @@ package systemfetcher
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
@@ -15,8 +16,6 @@ var (
 	// ApplicationTemplates contains available Application Templates, should only be used for the unmarshaling of system data
 	// It represents a model.ApplicationTemplate with its labels in the form of map[string]*model.Label
 	ApplicationTemplates map[TemplateMappingKey]TemplateMapping
-	// SortedTemplateMappingKeys contains an array of TemplateMappingKey that have been sorted by the label proeprty
-	SortedTemplateMappingKeys []TemplateMappingKey
 	// ApplicationTemplateLabelFilter represent a label for the Application Templates which has a value that
 	// should match to the SystemSourceKey's value of the fetched systems
 	ApplicationTemplateLabelFilter string
@@ -63,6 +62,7 @@ func (s *System) UnmarshalJSON(data []byte) error {
 
 // EnhanceWithTemplateID tries to find an Application Template ID for the system and attach it to the object.
 func (s *System) EnhanceWithTemplateID() (System, error) {
+	count := 0
 	for tmKey, tm := range ApplicationTemplates {
 		if !s.isMatchedBySystemRole(tmKey) {
 			continue
@@ -73,6 +73,8 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 			break
 		}
 
+		fmt.Printf("ALEX: \n%d: %s\n", count, tmKey.Region)
+		count++
 		// Regional Application Template
 		appInput, err := tm.Renderer.GenerateAppRegisterInput(context.Background(), *s, tm.AppTemplate, false)
 		if err != nil {
@@ -122,6 +124,7 @@ func getTemplateMappingBySystemRoleAndRegion(systemPayload map[string]interface{
 	}
 
 	for key, mapping := range ApplicationTemplates {
+		fmt.Printf("config region: %s. App region: %s\n", key.Region, region)
 		if key.Label == systemSourceValue && key.Region == region {
 			return mapping
 		}
