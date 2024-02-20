@@ -70,7 +70,7 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 			return false, err
 		}
 		if ri.Operation == model.AssignFormation {
-			if statusReport.State == string(model.ReadyAssignmentState) {
+			if statusReport.State == string(model.ReadyAssignmentState) && !isNotificationStatusReportConfigEmpty(statusReport) {
 				var assignmentConfig Configuration
 				if err = json.Unmarshal(statusReport.Configuration, &assignmentConfig); err != nil {
 					return false, errors.Wrapf(err, "while unmarshalling tenant mapping response configuration for assignment with ID: %q", formationAssignment.ID)
