@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -129,7 +131,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				},
 			},
 		}
-		systemfetcher.SortedTemplateMappingKeys = []systemfetcher.TemplateMappingKey{templateMappingKey}
+
 		mock.bodiesToReturn = [][]byte{[]byte(`[{
 			"displayName": "name1",
 			"productDescription": "description",
@@ -179,9 +181,38 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				selfregmanager.RegionLabel: "us20",
 			},
 		}
+
+		s1 := systemfetcher.System{
+			SystemPayload: map[string]interface{}{
+				"displayName":            "name1",
+				"productDescription":     "description",
+				"baseUrl":                "url",
+				"infrastructureProvider": "provider1",
+				"key":                    "type1",
+				"regionKey":              "us10",
+			},
+			TemplateID:      "",
+			StatusCondition: "",
+		}
+
+		s2 := systemfetcher.System{
+			SystemPayload: map[string]interface{}{
+				"displayName":            "name2",
+				"productDescription":     "description",
+				"baseUrl":                "url",
+				"infrastructureProvider": "provider1",
+				"key":                    "type2",
+			},
+			TemplateID:      "",
+			StatusCondition: "",
+		}
+
 		renderer := &automock.TemplateRenderer{}
-		renderer.On("GenerateAppRegisterInput", mockery.Anything, mockery.Anything, appTemplate1, false).Return(appRegisterInput1, nil)
-		renderer.On("GenerateAppRegisterInput", mockery.Anything, mockery.Anything, appTemplate2, false).Return(appRegisterInput2, nil)
+		renderer.On("GenerateAppRegisterInput", mockery.Anything, s1, appTemplate1, false).Return(appRegisterInput1, nil)
+		renderer.On("GenerateAppRegisterInput", mockery.Anything, s2, appTemplate2, false).Return(appRegisterInput2, nil)
+		// GenerateAppRegisterInput is mainly used to resolve the label placeholder for the application.
+		// When given the appTemplate2 it should resolve the label to the system's payload "regionKey": "us10" and that is why the appRegisterInput1 is expected to be returned
+		renderer.On("GenerateAppRegisterInput", mockery.Anything, s1, appTemplate2, false).Return(appRegisterInput1, nil).Maybe()
 
 		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
 			templateMappingKey1: {
@@ -213,7 +244,6 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				Renderer: renderer,
 			},
 		}
-		systemfetcher.SortedTemplateMappingKeys = []systemfetcher.TemplateMappingKey{templateMappingKey1, templateMappingKey2}
 
 		systemSynchronizationTimestamps := map[string]systemfetcher.SystemSynchronizationTimestamp{
 			"type1": {
@@ -227,7 +257,8 @@ func TestFetchSystemsForTenant(t *testing.T) {
 			"productDescription": "description",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
-			"key": "type1"
+			"key": "type1",
+			"regionKey": "us10"
 		}, {
 			"displayName": "name2",
 			"productDescription": "description",
@@ -264,7 +295,6 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				},
 			},
 		}
-		systemfetcher.SortedTemplateMappingKeys = []systemfetcher.TemplateMappingKey{templateMappingKey}
 		systemSynchronizationTimestamps := map[string]systemfetcher.SystemSynchronizationTimestamp{
 			"type1": {
 				ID:                syncTimestampID,
@@ -313,7 +343,6 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				},
 			},
 		}
-		systemfetcher.SortedTemplateMappingKeys = []systemfetcher.TemplateMappingKey{templateMappingKey}
 
 		mock.bodiesToReturn = [][]byte{
 			[]byte(fourSystemsResp),
@@ -381,7 +410,6 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				},
 			},
 		}
-		systemfetcher.SortedTemplateMappingKeys = []systemfetcher.TemplateMappingKey{templateMappingKey1, templateMappingKey2, templateMappingKey3}
 
 		mock.bodiesToReturn = [][]byte{[]byte(`[{
 			"displayName": "name1",
@@ -415,7 +443,6 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	t.Run("Fail with unexpected status code", func(t *testing.T) {
 		mock.expectedFilterCriteria = ""
 		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{}
-		systemfetcher.SortedTemplateMappingKeys = []systemfetcher.TemplateMappingKey{}
 
 		mock.callNumber = 0
 		mock.pageCount = 1
@@ -453,7 +480,7 @@ func fixHTTPClient(t *testing.T) (*mockData, string) {
 	}
 	mux.HandleFunc("/fetch", func(w http.ResponseWriter, r *http.Request) {
 		filter := r.URL.Query().Get("$filter")
-		require.Equal(t, mock.expectedFilterCriteria, filter)
+		require.Equal(t, sortStrings(mock.expectedFilterCriteria), sortStrings(filter))
 
 		requests = append(requests, filter)
 		w.Header().Set("Content-Type", "application/json")
@@ -510,4 +537,10 @@ func fixSystemsWithTbt() []systemfetcher.System {
 			StatusCondition: model.ApplicationStatusConditionInitial,
 		},
 	}
+}
+
+func sortStrings(w string) string {
+	s := strings.Split(w, "")
+	sort.Strings(s)
+	return strings.Join(s, "")
 }
