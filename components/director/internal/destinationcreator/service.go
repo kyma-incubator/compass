@@ -1092,7 +1092,7 @@ func enrichDestinationAdditionalPropertiesWithCorrelationIDs(
 		return destinationAdditionalProperties, nil
 	}
 
-	joinedCorrelationIDs := strings.Join(correlationIDs, ",")
+	joinedCorrelationIDs := destinationcreatorpkg.ConstructCorrelationIDsString(correlationIDs)
 	additionalProps, err := sjson.Set(string(destinationAdditionalProperties), destinationCreatorCfg.CorrelationIDsKey, joinedCorrelationIDs)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while setting the correlation IDs as additional properties of the destination")
