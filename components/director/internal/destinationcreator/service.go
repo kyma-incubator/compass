@@ -516,7 +516,7 @@ func (s *Service) CreateOAuth2mTLSDestinations(ctx context.Context, destinationD
 			Name:               destinationDetails.Name,
 			Type:               destinationcreatorpkg.TypeHTTP,
 			ProxyType:          destinationcreatorpkg.ProxyTypeInternet,
-			AuthenticationType: destinationcreatorpkg.AuthTypeOAuth2ClientCredentials, //in the destination creator there is no separate type for oauth2mTLS destinations
+			AuthenticationType: destinationcreatorpkg.AuthTypeOAuth2ClientCredentials, // in the destination creator there is no separate type for oauth2mTLS destinations
 		},
 		ClientID:         oauth2MTLSAuthentication.ClientID,
 		TokenServiceURL:  oauth2MTLSAuthentication.TokenServiceURL,

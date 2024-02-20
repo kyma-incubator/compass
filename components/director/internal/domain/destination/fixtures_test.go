@@ -213,8 +213,8 @@ func fixOAuth2ClientCredsAuthn() *operators.OAuth2ClientCredentialsAuthenticatio
 func fixOAuth2mTLSAuthn() *operators.OAuth2mTLSAuthentication {
 	return &operators.OAuth2mTLSAuthentication{
 		URL:             destinationURL,
-		TokenServiceURL: oauth2ClientCredsTokenServiceURL,
-		ClientID:        oauth2ClientCredsClientID,
+		TokenServiceURL: oauth2mTLSTokenServiceURL,
+		ClientID:        oauth2mTLSClientID,
 	}
 }
 
