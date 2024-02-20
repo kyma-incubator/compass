@@ -379,6 +379,8 @@ type BusinessTenantMappingInput struct {
 	Provider       string    `json:"provider"`
 	LicenseType    *string   `json:"licenseType"`
 	CustomerID     *string   `json:"customerId"`
+	CostObjectID   *string   `json:"costObjectId"`
+	CostObjectType *string   `json:"costObjectType"`
 }
 
 type CSRFTokenCredentialRequestAuth struct {
