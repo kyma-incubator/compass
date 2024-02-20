@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"net/http"
 	"os"
 	"time"
@@ -173,10 +174,13 @@ func getDestinationService(cfg config, transact persistence.Transactioner) *dest
 	tenantConverter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConverter)
 
+	formationAssignmentConv := formationassignment.NewConverter()
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+
 	err := cfg.DestinationsConfig.MapInstanceConfigs()
 	exitOnError(err, "error while loading destination instances config")
 
-	return destinationfetcher.NewDestinationService(transact, uuidSvc, destRepo, bundleRepo, labelRepo, cfg.DestinationsConfig, cfg.DestinationServiceAPIConfig, tenantRepo, cfg.SelfRegisterDistinguishLabelKey)
+	return destinationfetcher.NewDestinationService(transact, uuidSvc, destRepo, bundleRepo, labelRepo, cfg.DestinationsConfig, cfg.DestinationServiceAPIConfig, tenantRepo, formationAssignmentRepo, cfg.SelfRegisterDistinguishLabelKey)
 }
 
 func initAPIHandler(ctx context.Context, httpClient *http.Client,
