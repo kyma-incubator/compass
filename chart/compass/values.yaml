@@ -173,8 +173,8 @@ global:
       version: "v20240205-05672afc"
       name: compass-pairing-adapter
     director:
-      dir: dev/incubator/
-      version: "PR-3669"
+      dir: prod/incubator/
+      version: "v20240219-1d66376c"
       name: compass-director
     hydrator:
       dir: prod/incubator/
@@ -189,8 +189,8 @@ global:
       version: "v20240202-4a19198c"
       name: compass-kyma-adapter
     instance_creator:
-      dir: dev/incubator/
-      version: "PR-3670"
+      dir: prod/incubator/
+      version: "v20240219-ad4e6964"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: prod/incubator/
