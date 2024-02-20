@@ -22,8 +22,8 @@ const (
 	AuthTypeClientCertificate AuthType = "ClientCertificateAuthentication"
 	// AuthTypeOAuth2ClientCredentials represents the OAuth2ClientCredentials destination authentication
 	AuthTypeOAuth2ClientCredentials AuthType = "OAuth2ClientCredentials"
-	// AuthTypeOAuth2MTLS represents the OAuth2 MTLS destination authentication
-	AuthTypeOAuth2MTLS AuthType = "OAuth2MTLS"
+	// AuthTypeOAuth2mTLS represents the OAuth2 mTLS destination authentication
+	AuthTypeOAuth2mTLS AuthType = "OAuth2mTLS"
 
 	// ProxyTypeInternet represents the Internet proxy type
 	ProxyTypeInternet ProxyType = "Internet"

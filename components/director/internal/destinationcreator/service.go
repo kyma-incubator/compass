@@ -487,8 +487,8 @@ func (s *Service) CreateOAuth2ClientCredentialsDestinations(ctx context.Context,
 	}, nil
 }
 
-// CreateOAuth2MTLSDestinations todo
-func (s *Service) CreateOAuth2MTLSDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2MTLSAuthentication *operators.OAuth2MTLSAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error) {
+// CreateOAuth2mTLSDestinations is responsible to create an oauth2 mTLS destination resource in the remote destination service
+func (s *Service) CreateOAuth2mTLSDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2MTLSAuthentication *operators.OAuth2mTLSAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error) {
 	subaccountID := destinationDetails.SubaccountID
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
@@ -506,9 +506,9 @@ func (s *Service) CreateOAuth2MTLSDestinations(ctx context.Context, destinationD
 		return nil, errors.Wrapf(err, "while building destination URL")
 	}
 
-	certName, err := GetDestinationCertificateName(ctx, destinationcreatorpkg.AuthTypeOAuth2MTLS, formationAssignment.ID)
+	certName, err := GetDestinationCertificateName(ctx, destinationcreatorpkg.AuthTypeOAuth2mTLS, formationAssignment.ID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting destination certificate name for destination auth type: %s", destinationcreatorpkg.AuthTypeOAuth2MTLS)
+		return nil, errors.Wrapf(err, "while getting destination certificate name for destination auth type: %s", destinationcreatorpkg.AuthTypeOAuth2mTLS)
 	}
 
 	reqBody := &OAuth2MTLSDestinationRequestBody{
@@ -516,10 +516,10 @@ func (s *Service) CreateOAuth2MTLSDestinations(ctx context.Context, destinationD
 			Name:               destinationDetails.Name,
 			Type:               destinationcreatorpkg.TypeHTTP,
 			ProxyType:          destinationcreatorpkg.ProxyTypeInternet,
-			AuthenticationType: destinationcreatorpkg.AuthTypeOAuth2ClientCredentials,
+			AuthenticationType: destinationcreatorpkg.AuthTypeOAuth2ClientCredentials, //in the destination creator there is no separate type for oauth2mTLS destinations
 		},
-		ClientID:        oauth2MTLSAuthentication.ClientID,
-		TokenServiceURL: oauth2MTLSAuthentication.TokenServiceURL,
+		ClientID:         oauth2MTLSAuthentication.ClientID,
+		TokenServiceURL:  oauth2MTLSAuthentication.TokenServiceURL,
 		KeyStoreLocation: certName + destinationcreatorpkg.JavaKeyStoreFileExtension,
 	}
 
@@ -547,8 +547,8 @@ func (s *Service) CreateOAuth2MTLSDestinations(ctx context.Context, destinationD
 		reqBody.TokenServiceURLType = destinationDetails.TokenServiceURLType
 	}
 
-	if destinationDetails.Authentication != "" && destinationcreatorpkg.AuthType(destinationDetails.Authentication) != destinationcreatorpkg.AuthTypeOAuth2ClientCredentials {
-		return nil, errors.Errorf("The provided authentication type: %s in the destination details is invalid. It should be %s", destinationDetails.Authentication, destinationcreatorpkg.AuthTypeOAuth2ClientCredentials)
+	if destinationDetails.Authentication != "" && destinationcreatorpkg.AuthType(destinationDetails.Authentication) != destinationcreatorpkg.AuthTypeOAuth2mTLS {
+		return nil, errors.Errorf("The provided authentication type: %s in the destination details is invalid. It should be %s", destinationDetails.Authentication, destinationcreatorpkg.AuthTypeOAuth2mTLS)
 	}
 
 	if err := reqBody.Validate(); err != nil {
@@ -572,11 +572,11 @@ func (s *Service) CreateOAuth2MTLSDestinations(ctx context.Context, destinationD
 			return nil, errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
 		}
 
-		return s.CreateOAuth2MTLSDestinations(ctx, destinationDetails, oauth2MTLSAuthentication, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+		return s.CreateOAuth2mTLSDestinations(ctx, destinationDetails, oauth2MTLSAuthentication, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	}
 
 	return &destinationcreatorpkg.DestinationInfo{
-		AuthenticationType: reqBody.AuthenticationType,
+		AuthenticationType: destinationcreatorpkg.AuthTypeOAuth2mTLS,
 		Type:               reqBody.Type,
 		URL:                reqBody.URL,
 	}, nil
@@ -668,7 +668,7 @@ func GetDestinationCertificateName(ctx context.Context, destinationAuthenticatio
 		certName = certificateSAMLBearerAssertionDestinationPrefix + formationAssignmentID
 	case destinationcreatorpkg.AuthTypeClientCertificate:
 		certName = certificateClientCertificateDestinationPrefix + formationAssignmentID
-	case destinationcreatorpkg.AuthTypeOAuth2MTLS:
+	case destinationcreatorpkg.AuthTypeOAuth2mTLS:
 		certName = certificateOAuth2MTLSDestinationPrefix + formationAssignmentID
 	default:
 		return "", errors.Errorf("Invalid destination authentication type: %q for certificate creation", destinationAuthentication)

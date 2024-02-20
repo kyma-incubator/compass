@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"io"
 	"net/http"
 	"strings"
@@ -256,7 +255,6 @@ func (h *Handler) createDestination(ctx context.Context, bodyBytes []byte, reqBo
 	}
 
 	log.C(ctx).Infof("Validating %s destination request body...", destinationTypeName)
-	spew.Dump("MMMMMMMMMMMMM", reqBody)
 	if err := reqBody.Validate(); err != nil {
 		return http.StatusBadRequest, errors.Wrapf(err, "An error occurred while validating %s destination request body", destinationTypeName)
 	}

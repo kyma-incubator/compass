@@ -127,6 +127,36 @@ func (_m *DestinationCreatorService) CreateOAuth2ClientCredentialsDestinations(c
 	return r0, r1
 }
 
+// CreateOAuth2mTLSDestinations provides a mock function with given fields: ctx, destinationDetails, oauth2MTLSAuthentication, formationAssignment, correlationIDs, depth, skipSubaccountValidation
+func (_m *DestinationCreatorService) CreateOAuth2mTLSDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2MTLSAuthentication *operators.OAuth2mTLSAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreator.DestinationInfo, error) {
+	ret := _m.Called(ctx, destinationDetails, oauth2MTLSAuthentication, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateOAuth2mTLSDestinations")
+	}
+
+	var r0 *destinationcreator.DestinationInfo
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.OAuth2mTLSAuthentication, *model.FormationAssignment, []string, uint8, bool) (*destinationcreator.DestinationInfo, error)); ok {
+		return rf(ctx, destinationDetails, oauth2MTLSAuthentication, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.OAuth2mTLSAuthentication, *model.FormationAssignment, []string, uint8, bool) *destinationcreator.DestinationInfo); ok {
+		r0 = rf(ctx, destinationDetails, oauth2MTLSAuthentication, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*destinationcreator.DestinationInfo)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, operators.Destination, *operators.OAuth2mTLSAuthentication, *model.FormationAssignment, []string, uint8, bool) error); ok {
+		r1 = rf(ctx, destinationDetails, oauth2MTLSAuthentication, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // CreateSAMLAssertionDestination provides a mock function with given fields: ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation
 func (_m *DestinationCreatorService) CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreator.DestinationInfo, error) {
 	ret := _m.Called(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)

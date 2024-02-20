@@ -14,7 +14,7 @@ var (
 	certificateSAMLAssertionDestinationPrefix       = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeSAMLAssertion)
 	certificateSAMLBearerAssertionDestinationPrefix = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeSAMLBearerAssertion)
 	certificateClientCertificateDestinationPrefix   = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeClientCertificate)
-	certificateOAuth2MTLSDestinationPrefix          = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeOAuth2MTLS)
+	certificateOAuth2MTLSDestinationPrefix          = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeOAuth2mTLS)
 )
 
 // Validator validates destination creator request body
@@ -75,7 +75,7 @@ type OAuth2ClientCredsDestinationRequestBody struct {
 	TokenServiceURLType string `json:"tokenServiceURLType,omitempty"`
 }
 
-// OAuth2MTLSDestinationRequestBody todo
+// OAuth2MTLSDestinationRequestBody contains the necessary fields for the destination request body with authentication type OAuth2mTLS
 type OAuth2MTLSDestinationRequestBody struct {
 	BaseDestinationRequestBody
 	TokenServiceURL     string `json:"tokenServiceURL"`

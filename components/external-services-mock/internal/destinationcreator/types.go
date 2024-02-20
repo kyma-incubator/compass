@@ -91,7 +91,7 @@ type OAuth2ClientCredsDestRequestBody struct {
 	ClientSecret    string `json:"clientSecret"`
 }
 
-// OAuth2MTLSDestRequestBody todo
+// OAuth2MTLSDestRequestBody contains the necessary fields for the destination request body with authentication type OAuth2mTLS
 type OAuth2MTLSDestRequestBody struct {
 	BaseDestinationRequestBody
 	TokenServiceURL     string `json:"tokenServiceURL"`

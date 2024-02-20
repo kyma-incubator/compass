@@ -45,7 +45,7 @@ type destinationCreatorService interface {
 	CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
 	CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
 	CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2ClientCredsCredentials *operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
-	CreateOAuth2MTLSDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2MTLSAuthentication *operators.OAuth2MTLSAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
+	CreateOAuth2mTLSDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2MTLSAuthentication *operators.OAuth2mTLSAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreatorpkg.DestinationInfo, error)
 	DeleteDestination(ctx context.Context, destinationName, externalDestSubaccountID, instanceID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error
 	DeleteCertificate(ctx context.Context, certificateName, externalDestSubaccountID, instanceID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error
 	DetermineDestinationSubaccount(ctx context.Context, externalDestSubaccountID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) (string, error)
@@ -58,7 +58,7 @@ var supportedDestinationsWithCertificate = map[string]bool{
 	string(destinationcreatorpkg.AuthTypeSAMLAssertion):       true,
 	string(destinationcreatorpkg.AuthTypeSAMLBearerAssertion): true,
 	string(destinationcreatorpkg.AuthTypeClientCertificate):   true,
-	string(destinationcreatorpkg.AuthTypeOAuth2MTLS):          true,
+	string(destinationcreatorpkg.AuthTypeOAuth2mTLS):          true,
 }
 
 // Service consists of a service-level operations related to the destination entity
@@ -376,18 +376,18 @@ func (s *Service) createOAuth2ClientCredentialsDestinations(ctx context.Context,
 	return nil
 }
 
-// CreateOAuth2MTLSDestinations todo
-func (s *Service) CreateOAuth2MTLSDestinations(ctx context.Context, destinationsDetails []operators.Destination, oauth2MTLSCredentials *operators.OAuth2MTLSAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
+// CreateOAuth2mTLSDestinations is responsible to create an oauth2 mTLS destination resource in the remote destination service as well as in our DB
+func (s *Service) CreateOAuth2mTLSDestinations(ctx context.Context, destinationsDetails []operators.Destination, oauth2mTLSCredentials *operators.OAuth2mTLSAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
 	for _, destinationDetails := range destinationsDetails {
-		if err := s.createOAuth2MTLSDestinations(ctx, destinationDetails, oauth2MTLSCredentials, formationAssignment, correlationIDs, skipSubaccountValidation); err != nil {
+		if err := s.createOAuth2MTLSDestinations(ctx, destinationDetails, oauth2mTLSCredentials, formationAssignment, correlationIDs, skipSubaccountValidation); err != nil {
 			return errors.Wrapf(err, "while creating oauth2 mTLS destination with name: %q", destinationDetails.Name)
 		}
 	}
 	return nil
 }
 
-// createOAuth2ClientCredentialsDestinations is responsible to create an oauth2 client credentials destination resource in the remote destination service as well as in our DB
-func (s *Service) createOAuth2MTLSDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2MTLSCredentials *operators.OAuth2MTLSAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
+// createOAuth2MTLSDestinations is responsible to create an oauth2 mTLS destination resource in the remote destination service as well as in our DB
+func (s *Service) createOAuth2MTLSDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2mTLSCredentials *operators.OAuth2mTLSAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
 	subaccountID, err := s.destinationCreatorSvc.DetermineDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment, skipSubaccountValidation)
 	if err != nil {
 		return err
@@ -412,7 +412,7 @@ func (s *Service) createOAuth2MTLSDestinations(ctx context.Context, destinationD
 		return errors.Errorf("Already have destination with name: %q and tenant ID: %q for assignment ID: %q. Could not have second destination with the same name and tenant ID but with different assignment ID: %q", destinationDetails.Name, tenantID, *destinationFromDB.FormationAssignmentID, formationAssignment.ID)
 	}
 
-	destInfo, err := s.destinationCreatorSvc.CreateOAuth2MTLSDestinations(ctx, destinationDetails, oauth2MTLSCredentials, formationAssignment, correlationIDs, 0, skipSubaccountValidation)
+	destInfo, err := s.destinationCreatorSvc.CreateOAuth2mTLSDestinations(ctx, destinationDetails, oauth2mTLSCredentials, formationAssignment, correlationIDs, 0, skipSubaccountValidation)
 	if err != nil {
 		return err
 	}
