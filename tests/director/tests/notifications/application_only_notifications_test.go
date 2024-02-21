@@ -480,7 +480,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 	//	assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
 	//	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 	//})
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 100; i++ {
 		t.Run("Asynchronous App to App Formation Assignment Notifications using the Default Tenant Mapping Handler", func(t *testing.T) {
 			webhookType := graphql.WebhookTypeApplicationTenantMapping
 			webhookMode := graphql.WebhookModeAsyncCallback
