@@ -85,8 +85,19 @@ type ClientCertificateAuthDestRequestBody struct {
 type OAuth2ClientCredsDestRequestBody struct {
 	BaseDestinationRequestBody
 	TokenServiceURL string `json:"tokenServiceURL"`
-	ClientID        string `json:"clientId"`
+	TokenServiceURLType string `json:"tokenServiceURLType"`
+	ClientID            string `json:"clientId"`
+	KeyStoreLocation    string `json:"tokenServiceKeystoreLocation"`
 	ClientSecret    string `json:"clientSecret"`
+}
+
+// OAuth2MTLSDestRequestBody contains the necessary fields for the destination request body with authentication type OAuth2mTLS
+type OAuth2MTLSDestRequestBody struct {
+	BaseDestinationRequestBody
+	TokenServiceURL     string `json:"tokenServiceURL"`
+	TokenServiceURLType string `json:"tokenServiceURLType"`
+	ClientID            string `json:"clientId"`
+	KeyStoreLocation    string `json:"tokenServiceKeystoreLocation"`
 }
 
 // CertificateRequestBody contains the necessary fields for the destination creator certificate request body
@@ -233,7 +244,8 @@ func (b *OAuth2ClientCredsDestRequestBody) Validate() error {
 		validation.Field(&b.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeOAuth2ClientCredentials)),
 		validation.Field(&b.TokenServiceURL, validation.Required),
 		validation.Field(&b.ClientID, validation.Required),
-		validation.Field(&b.ClientSecret, validation.Required),
+		validation.Field(&b.KeyStoreLocation, validation.When(b.ClientSecret != "",validation.Empty).Else(validation.Required)),
+		validation.Field(&b.ClientSecret, validation.When(b.KeyStoreLocation != "",validation.Empty).Else(validation.Required)),
 	)
 }
 
@@ -253,7 +265,46 @@ func (b *OAuth2ClientCredsDestRequestBody) ToDestination() destinationcreator.De
 }
 
 func (b *OAuth2ClientCredsDestRequestBody) GetDestinationType() string {
-	return destinationcreator.OAuth2ClientCredentialsType
+	if b.KeyStoreLocation != "" {
+		return destinationcreator.OAuth2mTLSType
+	}else {
+		return destinationcreator.OAuth2ClientCredentialsType
+	}
+}
+
+// Validate validates that the AuthTypeBasic request body contains the required fields, and they are valid
+func (b *OAuth2MTLSDestRequestBody) Validate() error {
+	return validation.ValidateStruct(b,
+		validation.Field(&b.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
+		validation.Field(&b.URL, validation.Required),
+		validation.Field(&b.Type, validation.In(destinationcreatorpkg.TypeHTTP, destinationcreatorpkg.TypeRFC, destinationcreatorpkg.TypeLDAP, destinationcreatorpkg.TypeMAIL)),
+		validation.Field(&b.ProxyType, validation.In(destinationcreatorpkg.ProxyTypeInternet, destinationcreatorpkg.ProxyTypeOnPremise, destinationcreatorpkg.ProxyTypePrivateLink)),
+		validation.Field(&b.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeOAuth2MTLS)),
+		validation.Field(&b.TokenServiceURL, validation.Required),
+		validation.Field(&b.TokenServiceURLType, validation.Required),
+		validation.Field(&b.ClientID, validation.Required),
+		validation.Field(&b.KeyStoreLocation, validation.Required),
+	)
+}
+
+func (b *OAuth2MTLSDestRequestBody) ToDestination() destinationcreator.Destination {
+	return &destinationcreator.OAuth2mTLSDestination{
+		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
+			Name:           b.Name,
+			Type:           b.Type,
+			URL:            b.URL,
+			Authentication: b.AuthenticationType,
+			ProxyType:      b.ProxyType,
+		},
+		TokenServiceURL:     b.TokenServiceURL,
+		TokenServiceURLType: b.TokenServiceURLType,
+		ClientID:            b.ClientID,
+		KeyStoreLocation:    b.KeyStoreLocation,
+	}
+}
+
+func (b *OAuth2MTLSDestRequestBody) GetDestinationType() string {
+	return destinationcreator.OAuth2mTLSType
 }
 
 // Validate validates that the SAML assertion certificate request body contains the required fields, and they are valid
