@@ -143,6 +143,8 @@ func (l *unionLister) list(ctx context.Context, resourceType resource.Type, page
 		return nil, persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list page of objects from '%s' table", l.tableName)
 	}
 
+	inCondition := NewInConditionForStringValues(idsColumn, ids)
+	conditions = append(conditions, inCondition)
 	totalCount, err := l.getTotalCount(ctx, resourceType, persist, idsColumn, []string{idsColumn}, OrderByParams{NewAscOrderBy(idsColumn)}, conditions)
 	if err != nil {
 		return nil, err
