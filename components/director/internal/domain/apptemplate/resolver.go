@@ -427,7 +427,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	log.C(ctx).Debugf("Extracting Application Template with name %q and consumer id REDACTED_%x from GraphQL input", in.TemplateName, sha256.Sum256([]byte(consumerInfo.ConsumerID)))
-	appTemplate, err := r.retrieveAppTemplate(ctx, in.TemplateName, "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", in.ID)
+	appTemplate, err := r.retrieveAppTemplate(ctx, in.TemplateName, consumerInfo.ConsumerID, in.ID)
 	if err != nil {
 		return nil, err
 	}

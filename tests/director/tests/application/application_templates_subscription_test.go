@@ -6,14 +6,14 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
-
-	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -25,7 +25,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
@@ -81,6 +80,10 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		for i := range appTemplateInput.Placeholders {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		}
+		regionInConfiguration := "eu-1"
+		appTemplateInput.ApplicationInput.Labels["region"] = regionInConfiguration
+		appTemplateInput.Labels["global_subbacount_id"] = tenant.TestTenants.GetDefaultTenantID()
+		appTemplateInput.Labels["systemFieldDiscovery"] = true
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
@@ -105,7 +108,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		require.NoError(stdT, err)
 		require.Equal(stdT, http.StatusOK, response.StatusCode)
 
-		t.Run("Application is created successfully in consumer subaccount as a result of subscription", func(t *testing.T) {
+		t.Run("Application is created successfully in consumer subaccount as a result of subscription and system field discovery webhook is created", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
 
@@ -115,6 +118,11 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			// THEN
 			appPageExt := fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
+
+			require.NotEmpty(t, appPageExt.Data[0].Webhooks)
+			// webhooks with types - configuration changed and system field discovery
+			require.Len(t, appPageExt.Data[0].Webhooks, 2)
+
 			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
 		})
 

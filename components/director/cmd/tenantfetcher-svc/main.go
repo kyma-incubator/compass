@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -36,6 +37,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	pkgAuth "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 	pkgwebhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"net/http"
 	"os"
@@ -139,6 +141,12 @@ func main() {
 	handler := initAPIHandler(ctx, httpClient, cfg, tenantSynchronizers)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
+	go func() {
+		<-ctx.Done()
+		// Interrupt signal received - shut down the servers
+		shutdownMainSrv()
+	}()
+
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -161,59 +169,106 @@ func main() {
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, map[string]interface{}{}, "")
 
 	webhookClient := pkgAuth.PrepareHTTPClient(cfg.Handler.ClientTimeout)
-	go func() {
-		webhooks, err := webhookSvc.ListByTypeAndLabelFilter(ctx, model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry")))
-		if err != nil {
-			return //?
-		}
-		if cfg.SystemFieldDiscoveryWebhookPartialProcessing {
-			log.C(ctx).Infof("Partial system field discovery webhook processing is enabled for webhooks which are not older than %d days", cfg.SystemFieldDiscoveryWebhookPartialProcessMaxDays)
-		}
-		date := time.Now().AddDate(0, 0, -1*cfg.SystemFieldDiscoveryWebhookPartialProcessMaxDays)
-		for _, wh := range webhooks {
-			if cfg.SystemFieldDiscoveryWebhookPartialProcessing && wh.CreatedAt.Before(date) {
-				continue
-			}
-
-			ctx, err = saveCredentialsToContext(ctx, wh)
-			if err != nil {
-				log.C(ctx).Errorf(errors.Wrap(err, "failed saving credentials to context").Error())
-				continue
-			}
-
-			respBody, err := pkgwebhook.ExecuteSystemFieldDiscoveryWebhook(ctx, webhookClient, wh)
-			if err != nil {
-				log.C(ctx).Errorf(err.Error())
-			}
-			var response pkgwebhook.SubscriptionsResponse
-			if err = json.Unmarshal(respBody, &response); err != nil {
-				log.C(ctx).Errorf(errors.Wrap(err, "failed to unmarshal subscriptions response").Error())
-				continue
-			}
-			for _, subscription := range response.Subscriptions {
-				if subscription.AppURL != "" {
-					err := appSvc.UpdateBaseURLAndReadyState(ctx, wh.ObjectID, subscription.AppURL, true)
-					if err != nil {
-						log.C(ctx).Errorf(errors.Wrapf(err, "failed to update base url and ready state for webhook with id %q and app with id %q", wh.ID, wh.ObjectID).Error())
-						break
-					}
-					err = webhookSvc.Delete(ctx, wh.ID, model.ApplicationWebhookReference)
-					if err != nil {
-						log.C(ctx).Errorf(errors.Wrapf(err, "failed to delete application webhook with id %q ", wh.ID).Error())
-						break
-					}
-					break
-				}
-			}
-		}
-		// stop and try after 2-3 min
-		time.Sleep(2 * time.Minute)
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "error while closing the connection to the database")
 	}()
 
 	go func() {
-		<-ctx.Done()
-		// Interrupt signal received - shut down the servers
-		shutdownMainSrv()
+		for {
+			log.C(ctx).Infof("Starting to process webhooks with type %q", model.WebhookTypeSystemFieldDiscovery)
+
+			tx, err := transact.Begin()
+			if err != nil {
+				log.C(ctx).Errorf(errors.Wrap(err, "failed to begin a transaction").Error())
+				continue
+			}
+			defer transact.RollbackUnlessCommitted(ctx, tx)
+			ctx = persistence.SaveToContext(ctx, tx)
+
+			webhooks, err := webhookSvc.ListByTypeAndLabelFilter(ctx, model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry")))
+
+			if err := tx.Commit(); err != nil {
+				log.C(ctx).Errorf(errors.Wrap(err, "failed to commit a transaction").Error())
+				continue
+			}
+			spew.Dump("webhooks: ", webhooks)
+
+			if err != nil {
+				log.C(ctx).Errorf(errors.Wrap(err, "failed listing webhooks by type and label").Error())
+				continue
+			}
+
+			if cfg.SystemFieldDiscoveryWebhookPartialProcessing {
+				log.C(ctx).Infof("Partial system field discovery webhook processing is enabled for webhooks which are not older than %d days", cfg.SystemFieldDiscoveryWebhookPartialProcessMaxDays)
+			}
+			date := time.Now().AddDate(0, 0, -1*cfg.SystemFieldDiscoveryWebhookPartialProcessMaxDays)
+			for _, wh := range webhooks {
+				if cfg.SystemFieldDiscoveryWebhookPartialProcessing && wh.CreatedAt.Before(date) {
+					continue
+				}
+
+				ctx, err = saveCredentialsToContext(ctx, wh)
+				if err != nil {
+					log.C(ctx).Errorf(errors.Wrap(err, "failed saving credentials to context").Error())
+					continue
+				}
+
+				respBody, err := pkgwebhook.ExecuteSystemFieldDiscoveryWebhook(ctx, webhookClient, wh)
+				if err != nil {
+					log.C(ctx).Errorf(err.Error())
+				}
+				var response pkgwebhook.SubscriptionsResponse
+				if err = json.Unmarshal(respBody, &response); err != nil {
+					log.C(ctx).Errorf(errors.Wrap(err, "failed to unmarshal subscriptions response").Error())
+					continue
+				}
+				tx, err := transact.Begin()
+				if err != nil {
+					log.C(ctx).Errorf(errors.Wrap(err, "failed to begin a transaction").Error())
+					continue
+				}
+				defer transact.RollbackUnlessCommitted(ctx, tx)
+				ctx = persistence.SaveToContext(ctx, tx)
+				for _, subscription := range response.Subscriptions {
+					if subscription.AppURL != "" {
+						internalTntID, err := tenantSvc.GetLowestOwnerForResource(ctx, directorresource.Application, wh.ObjectID)
+						if err != nil {
+							log.C(ctx).Errorf(errors.Wrap(err, "failed to get lowest owner for resource").Error())
+							break
+						}
+
+						tnt, err := tenantSvc.GetTenantByID(ctx, internalTntID)
+						if err != nil {
+							log.C(ctx).Errorf(errors.Wrap(err, "failed to get tenant by id").Error())
+							break
+						}
+
+						ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
+
+						err = appSvc.UpdateBaseURLAndReadyState(ctx, wh.ObjectID, subscription.AppURL, true)
+						if err != nil {
+							log.C(ctx).Errorf(errors.Wrapf(err, "failed to update base url and ready state for webhook with id %q and app with id %q", wh.ID, wh.ObjectID).Error())
+							break
+						}
+						err = webhookSvc.Delete(ctx, wh.ID, model.ApplicationWebhookReference)
+						if err != nil {
+							log.C(ctx).Errorf(errors.Wrapf(err, "failed to delete application webhook with id %q ", wh.ID).Error())
+							break
+						}
+						break
+					}
+				}
+				if err := tx.Commit(); err != nil {
+					log.C(ctx).Errorf(errors.Wrap(err, "failed to commit a transaction").Error())
+					continue
+				}
+			}
+			// stop and try after 2-3 min
+			time.Sleep(10 * time.Second)
+		}
 	}()
 
 	runMainSrv()
