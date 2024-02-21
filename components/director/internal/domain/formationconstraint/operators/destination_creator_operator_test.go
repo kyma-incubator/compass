@@ -182,6 +182,20 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			ExpectedResult: true,
 		},
 		{
+			Name:  "Success when operation is 'assign' and location is 'NotificationStatusReturned' with full destination config and the input indicates to use cert svc keystore for SAML",
+			Input: inputWithAssignmentWithOauth2mTLSCertData,
+			DestinationSvc: func() *automock.DestinationService {
+				destSvc := &automock.DestinationService{}
+				destSvc.On("CreateDesignTimeDestinations", ctx, designTimeDests, faWithOauth2mTLSCertData, false).Return(nil).Once()
+				return destSvc
+			},
+			DestinationCreatorSvc: func() *automock.DestinationCreatorService {
+				destCreatorSvc := &automock.DestinationCreatorService{}
+				return destCreatorSvc
+			},
+			ExpectedResult: true,
+		},
+		{
 			Name:  "Error when operation is 'assign', location is 'NotificationStatusReturned' and the creation of SAML assertion certificate fails",
 			Input: inputForAssignNotificationStatusReturned,
 			DestinationSvc: func() *automock.DestinationService {

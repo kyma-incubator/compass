@@ -266,7 +266,7 @@ func (b *OAuth2ClientCredsDestRequestBody) ToDestination() destinationcreator.De
 
 func (b *OAuth2ClientCredsDestRequestBody) GetDestinationType() string {
 	if b.KeyStoreLocation != "" {
-		return destinationcreator.OAuth2MTLSType
+		return destinationcreator.OAuth2mTLSType
 	}else {
 		return destinationcreator.OAuth2ClientCredentialsType
 	}
@@ -288,7 +288,7 @@ func (b *OAuth2MTLSDestRequestBody) Validate() error {
 }
 
 func (b *OAuth2MTLSDestRequestBody) ToDestination() destinationcreator.Destination {
-	return &destinationcreator.OAuth2MTLSDestination{
+	return &destinationcreator.OAuth2mTLSDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
 			Name:           b.Name,
 			Type:           b.Type,
@@ -304,7 +304,7 @@ func (b *OAuth2MTLSDestRequestBody) ToDestination() destinationcreator.Destinati
 }
 
 func (b *OAuth2MTLSDestRequestBody) GetDestinationType() string {
-	return destinationcreator.OAuth2MTLSType
+	return destinationcreator.OAuth2mTLSType
 }
 
 // Validate validates that the SAML assertion certificate request body contains the required fields, and they are valid

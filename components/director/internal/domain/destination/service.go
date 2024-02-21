@@ -378,25 +378,23 @@ func (s *Service) createOAuth2ClientCredentialsDestinations(ctx context.Context,
 
 // CreateOAuth2mTLSDestinations is responsible to create an oauth2 mTLS destination resource in the remote destination service as well as in our DB
 func (s *Service) CreateOAuth2mTLSDestinations(ctx context.Context, destinationsDetails []operators.Destination, oauth2mTLSCredentials *operators.OAuth2mTLSAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
+	if err := s.destinationCreatorSvc.EnsureDestinationSubaccountIDsCorrectness(ctx, destinationsDetails, formationAssignment, skipSubaccountValidation); err != nil {
+		return errors.Wrap(err, "while ensuring the provided subaccount IDs in the destination details are correct")
+	}
+
 	for _, destinationDetails := range destinationsDetails {
-		if err := s.createOAuth2MTLSDestinations(ctx, destinationDetails, oauth2mTLSCredentials, formationAssignment, correlationIDs, skipSubaccountValidation); err != nil {
+		if err := s.createOAuth2mTLSDestinations(ctx, destinationDetails, oauth2mTLSCredentials, formationAssignment, correlationIDs, skipSubaccountValidation); err != nil {
 			return errors.Wrapf(err, "while creating oauth2 mTLS destination with name: %q", destinationDetails.Name)
 		}
 	}
 	return nil
 }
 
-// createOAuth2MTLSDestinations is responsible to create an oauth2 mTLS destination resource in the remote destination service as well as in our DB
-func (s *Service) createOAuth2MTLSDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2mTLSCredentials *operators.OAuth2mTLSAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
-	subaccountID, err := s.destinationCreatorSvc.DetermineDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment, skipSubaccountValidation)
+// createOAuth2mTLSDestinations is responsible to create an oauth2 mTLS destination resource in the remote destination service as well as in our DB
+func (s *Service) createOAuth2mTLSDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2mTLSCredentials *operators.OAuth2mTLSAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
+	t, err := s.tenantRepo.GetByExternalTenant(ctx, destinationDetails.SubaccountID)
 	if err != nil {
-		return err
-	}
-	destinationDetails.SubaccountID = subaccountID
-
-	t, err := s.tenantRepo.GetByExternalTenant(ctx, subaccountID)
-	if err != nil {
-		return errors.Wrapf(err, "while getting tenant by external ID: %q", subaccountID)
+		return errors.Wrapf(err, "while getting tenant by external ID: %q", destinationDetails.SubaccountID)
 	}
 
 	tenantID := t.ID

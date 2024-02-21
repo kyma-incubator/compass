@@ -383,8 +383,8 @@ func (h *Handler) buildFindAPIResponse(dest destinationcreator.Destination, r *h
 			return "", errors.New("error while type asserting destination to OAuth2ClientCredentials one")
 		}
 		findAPIResponse = fmt.Sprintf(FindAPIOAuth2ClientCredsDestResponseTemplate, subaccountID, instanceID, oauth2ClientCredsDest.Name, oauth2ClientCredsDest.Type, oauth2ClientCredsDest.URL, oauth2ClientCredsDest.Authentication, oauth2ClientCredsDest.ProxyType, oauth2ClientCredsDest.ClientID, oauth2ClientCredsDest.ClientSecret, oauth2ClientCredsDest.TokenServiceURL)
-	case destinationcreator.OAuth2MTLSType:
-		oauth2MTLSDest, ok := dest.(*destinationcreator.OAuth2MTLSDestination)
+	case destinationcreator.OAuth2mTLSType:
+		oauth2MTLSDest, ok := dest.(*destinationcreator.OAuth2mTLSDestination)
 		if !ok {
 			return "", errors.New("error while type asserting destination to OAuth2MTLS one")
 		}

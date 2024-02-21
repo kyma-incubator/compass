@@ -1179,24 +1179,24 @@ func TestService_CreateOAuth2mTLSDestinations(t *testing.T) {
 			Name: "Success",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, oauth2mTLSDestDetails.SubaccountID, &fa, false).Return(oauth2mTLSDestDetails.SubaccountID, nil)
-				destCreatorSvc.On("CreateOAuth2mTLSDestinations", ctx, oauth2mTLSDestDetails, oauth2mTLSAuthn, &fa, correlationIDs, initialDepth, false).Return(oauth2mTLSDestInfo, nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, oauth2mTLSDestsDetails, &fa, false).Return(nil).Once()
+				destCreatorSvc.On("CreateOAuth2mTLSDestinations", ctx, oauth2mTLSDestDetails, oauth2mTLSAuthn, &fa, correlationIDs, initialDepth, false).Return(oauth2mTLSDestInfo, nil).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("GetByExternalTenant", ctx, oauth2mTLSDestDetails.SubaccountID).Return(tenant, nil)
+				tenantRepo.On("GetByExternalTenant", ctx, oauth2mTLSDestDetails.SubaccountID).Return(tenant, nil).Once()
 				return tenantRepo
 			},
 			DestinationRepoFn: func() *automock.DestinationRepository {
 				destinationRepo := &automock.DestinationRepository{}
-				destinationRepo.On("GetDestinationByNameAndTenant", ctx, oauth2mTLSDestDetails.Name, tenant.ID).Return(destModel, nil)
-				destinationRepo.On("UpsertWithEmbeddedTenant", ctx, destModel).Return(nil)
+				destinationRepo.On("GetDestinationByNameAndTenant", ctx, oauth2mTLSDestDetails.Name, tenant.ID).Return(destModel, nil).Once()
+				destinationRepo.On("UpsertWithEmbeddedTenant", ctx, destModel).Return(nil).Once()
 				return destinationRepo
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
-				uidSvc.On("Generate").Return(fixUUID())
+				uidSvc.On("Generate").Return(fixUUID()).Once()
 				return uidSvc
 			},
 		},
@@ -1204,24 +1204,24 @@ func TestService_CreateOAuth2mTLSDestinations(t *testing.T) {
 			Name: "Success when there is no destination in db",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, oauth2mTLSDestDetails.SubaccountID, &fa, false).Return(oauth2mTLSDestDetails.SubaccountID, nil)
-				destCreatorSvc.On("CreateOAuth2mTLSDestinations", ctx, oauth2mTLSDestDetails, oauth2mTLSAuthn, &fa, correlationIDs, initialDepth, false).Return(oauth2mTLSDestInfo, nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, oauth2mTLSDestsDetails, &fa, false).Return(nil).Once()
+				destCreatorSvc.On("CreateOAuth2mTLSDestinations", ctx, oauth2mTLSDestDetails, oauth2mTLSAuthn, &fa, correlationIDs, initialDepth, false).Return(oauth2mTLSDestInfo, nil).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("GetByExternalTenant", ctx, oauth2mTLSDestDetails.SubaccountID).Return(tenant, nil)
+				tenantRepo.On("GetByExternalTenant", ctx, oauth2mTLSDestDetails.SubaccountID).Return(tenant, nil).Once()
 				return tenantRepo
 			},
 			DestinationRepoFn: func() *automock.DestinationRepository {
 				destinationRepo := &automock.DestinationRepository{}
-				destinationRepo.On("GetDestinationByNameAndTenant", ctx, oauth2mTLSDestDetails.Name, tenant.ID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Destination))
-				destinationRepo.On("UpsertWithEmbeddedTenant", ctx, destModel).Return(nil)
+				destinationRepo.On("GetDestinationByNameAndTenant", ctx, oauth2mTLSDestDetails.Name, tenant.ID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Destination)).Once()
+				destinationRepo.On("UpsertWithEmbeddedTenant", ctx, destModel).Return(nil).Once()
 				return destinationRepo
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
-				uidSvc.On("Generate").Return(fixUUID())
+				uidSvc.On("Generate").Return(fixUUID()).Once()
 				return uidSvc
 			},
 		},
@@ -1229,7 +1229,7 @@ func TestService_CreateOAuth2mTLSDestinations(t *testing.T) {
 			Name: "Error when validating destination subaccount",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, oauth2mTLSDestDetails.SubaccountID, &fa, false).Return("", testErr)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, oauth2mTLSDestsDetails, &fa, false).Return(testErr).Once()
 				return destCreatorSvc
 			},
 			ExpectedErrMessage: errMsg,
@@ -1238,12 +1238,12 @@ func TestService_CreateOAuth2mTLSDestinations(t *testing.T) {
 			Name: "Error when getting tenant by external ID",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, oauth2mTLSDestDetails.SubaccountID, &fa, false).Return(oauth2mTLSDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, oauth2mTLSDestsDetails, &fa, false).Return(nil).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("GetByExternalTenant", ctx, oauth2mTLSDestDetails.SubaccountID).Return(nil, testErr)
+				tenantRepo.On("GetByExternalTenant", ctx, oauth2mTLSDestDetails.SubaccountID).Return(nil, testErr).Once()
 				return tenantRepo
 			},
 			ExpectedErrMessage: "while getting tenant by external ID",
@@ -1252,17 +1252,17 @@ func TestService_CreateOAuth2mTLSDestinations(t *testing.T) {
 			Name: "Error when getting destination from db and error is different from 'Not Found'",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, oauth2mTLSDestDetails.SubaccountID, &fa, false).Return(oauth2mTLSDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, oauth2mTLSDestsDetails, &fa, false).Return(nil).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("GetByExternalTenant", ctx, oauth2mTLSDestDetails.SubaccountID).Return(tenant, nil)
+				tenantRepo.On("GetByExternalTenant", ctx, oauth2mTLSDestDetails.SubaccountID).Return(tenant, nil).Once()
 				return tenantRepo
 			},
 			DestinationRepoFn: func() *automock.DestinationRepository {
 				destinationRepo := &automock.DestinationRepository{}
-				destinationRepo.On("GetDestinationByNameAndTenant", ctx, oauth2mTLSDestDetails.Name, tenant.ID).Return(nil, testErr)
+				destinationRepo.On("GetDestinationByNameAndTenant", ctx, oauth2mTLSDestDetails.Name, tenant.ID).Return(nil, testErr).Once()
 				return destinationRepo
 			},
 			ExpectedErrMessage: errMsg,
@@ -1271,17 +1271,17 @@ func TestService_CreateOAuth2mTLSDestinations(t *testing.T) {
 			Name: "Error when destination from db is found but its formation assignment id is different from the provided formation assignment",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, oauth2mTLSDestDetails.SubaccountID, &fa, false).Return(oauth2mTLSDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, oauth2mTLSDestsDetails, &fa, false).Return(nil).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("GetByExternalTenant", ctx, oauth2mTLSDestDetails.SubaccountID).Return(tenant, nil)
+				tenantRepo.On("GetByExternalTenant", ctx, oauth2mTLSDestDetails.SubaccountID).Return(tenant, nil).Once()
 				return tenantRepo
 			},
 			DestinationRepoFn: func() *automock.DestinationRepository {
 				destinationRepo := &automock.DestinationRepository{}
-				destinationRepo.On("GetDestinationByNameAndTenant", ctx, oauth2mTLSDestDetails.Name, tenant.ID).Return(destModelWithDifferentFAID, nil)
+				destinationRepo.On("GetDestinationByNameAndTenant", ctx, oauth2mTLSDestDetails.Name, tenant.ID).Return(destModelWithDifferentFAID, nil).Once()
 				return destinationRepo
 			},
 			ExpectedErrMessage: "Could not have second destination with the same name and tenant ID but with different assignment ID",
@@ -1290,18 +1290,18 @@ func TestService_CreateOAuth2mTLSDestinations(t *testing.T) {
 			Name: "Error when creating destination via destination creator service",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, oauth2mTLSDestDetails.SubaccountID, &fa, false).Return(oauth2mTLSDestDetails.SubaccountID, nil)
-				destCreatorSvc.On("CreateOAuth2mTLSDestinations", ctx, oauth2mTLSDestDetails, oauth2mTLSAuthn, &fa, correlationIDs, initialDepth, false).Return(nil, testErr)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, oauth2mTLSDestsDetails, &fa, false).Return(nil).Once()
+				destCreatorSvc.On("CreateOAuth2mTLSDestinations", ctx, oauth2mTLSDestDetails, oauth2mTLSAuthn, &fa, correlationIDs, initialDepth, false).Return(nil, testErr).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("GetByExternalTenant", ctx, oauth2mTLSDestDetails.SubaccountID).Return(tenant, nil)
+				tenantRepo.On("GetByExternalTenant", ctx, oauth2mTLSDestDetails.SubaccountID).Return(tenant, nil).Once()
 				return tenantRepo
 			},
 			DestinationRepoFn: func() *automock.DestinationRepository {
 				destinationRepo := &automock.DestinationRepository{}
-				destinationRepo.On("GetDestinationByNameAndTenant", ctx, oauth2mTLSDestDetails.Name, tenant.ID).Return(destModel, nil)
+				destinationRepo.On("GetDestinationByNameAndTenant", ctx, oauth2mTLSDestDetails.Name, tenant.ID).Return(destModel, nil).Once()
 				return destinationRepo
 			},
 			ExpectedErrMessage: errMsg,
@@ -1310,24 +1310,24 @@ func TestService_CreateOAuth2mTLSDestinations(t *testing.T) {
 			Name: "Error when upserting destination in db",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, oauth2mTLSDestDetails.SubaccountID, &fa, false).Return(oauth2mTLSDestDetails.SubaccountID, nil)
-				destCreatorSvc.On("CreateOAuth2mTLSDestinations", ctx, oauth2mTLSDestDetails, oauth2mTLSAuthn, &fa, correlationIDs, initialDepth, false).Return(oauth2mTLSDestInfo, nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, oauth2mTLSDestsDetails, &fa, false).Return(nil).Once()
+				destCreatorSvc.On("CreateOAuth2mTLSDestinations", ctx, oauth2mTLSDestDetails, oauth2mTLSAuthn, &fa, correlationIDs, initialDepth, false).Return(oauth2mTLSDestInfo, nil).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("GetByExternalTenant", ctx, oauth2mTLSDestDetails.SubaccountID).Return(tenant, nil)
+				tenantRepo.On("GetByExternalTenant", ctx, oauth2mTLSDestDetails.SubaccountID).Return(tenant, nil).Once()
 				return tenantRepo
 			},
 			DestinationRepoFn: func() *automock.DestinationRepository {
 				destinationRepo := &automock.DestinationRepository{}
-				destinationRepo.On("GetDestinationByNameAndTenant", ctx, oauth2mTLSDestDetails.Name, tenant.ID).Return(destModel, nil)
-				destinationRepo.On("UpsertWithEmbeddedTenant", ctx, destModel).Return(testErr)
+				destinationRepo.On("GetDestinationByNameAndTenant", ctx, oauth2mTLSDestDetails.Name, tenant.ID).Return(destModel, nil).Once()
+				destinationRepo.On("UpsertWithEmbeddedTenant", ctx, destModel).Return(testErr).Once()
 				return destinationRepo
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
-				uidSvc.On("Generate").Return(fixUUID())
+				uidSvc.On("Generate").Return(fixUUID()).Once()
 				return uidSvc
 			},
 			ExpectedErrMessage: "while upserting oauth2 mTLS destination with name",

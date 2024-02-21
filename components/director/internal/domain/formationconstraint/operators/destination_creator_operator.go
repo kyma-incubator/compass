@@ -143,15 +143,15 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 				notificationStatusReport.Configuration = config
 			}
 
-			if clientCertDetails := assignmentConfig.Credentials.InboundCommunicationDetails.OAuth2MTLSAuthentication; clientCertDetails != nil && len(clientCertDetails.Destinations) > 0 {
-				log.C(ctx).Infof("There is/are %d oauth2mTLS destination details in the configuration response", len(clientCertDetails.Destinations))
+			if oauth2mTLSDetails := assignmentConfig.Credentials.InboundCommunicationDetails.OAuth2MTLSAuthentication; oauth2mTLSDetails != nil && len(oauth2mTLSDetails.Destinations) > 0 {
+				log.C(ctx).Infof("There is/are %d oauth2mTLS destination details in the configuration response", len(oauth2mTLSDetails.Destinations))
 
-				if clientCertDetails.Certificate != nil && *clientCertDetails.Certificate != "" {
+				if oauth2mTLSDetails.Certificate != nil && *oauth2mTLSDetails.Certificate != "" {
 					log.C(ctx).Infof("The certificate for oauth2mTlS authentication destination already exists. No new certificate will be generated.")
 					return true, nil
 				}
 
-				certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, clientCertDetails.Destinations, destinationcreatorpkg.AuthTypeOAuth2mTLS, formationAssignment, 0, di.SkipSubaccountValidation, false)
+				certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, oauth2mTLSDetails.Destinations, destinationcreatorpkg.AuthTypeOAuth2mTLS, formationAssignment, 0, di.SkipSubaccountValidation, false)
 				if err != nil {
 					return false, errors.Wrap(err, "while creating oauth2mTLS authentication certificate")
 				}
@@ -459,7 +459,7 @@ type InboundCommunicationDetails struct {
 	OAuth2SAMLBearerAssertionDetails       *InboundOAuth2SAMLBearerAssertionDetails `json:"oauth2SamlBearerAssertion,omitempty"`
 	ClientCertificateAuthenticationDetails *InboundClientCertAuthenticationDetails  `json:"clientCertificateAuthentication,omitempty"`
 	OAuth2ClientCredentialsDetails         *InboundOAuth2ClientCredentialsDetails   `json:"oauth2ClientCredentials,omitempty"`
-	OAuth2MTLSAuthentication               *InboundOAuth2MTLSAuthenticationDetails  `json:"oauth2mtls,omitempty"`
+	OAuth2MTLSAuthentication               *InboundOAuth2mTLSAuthenticationDetails  `json:"oauth2mtls,omitempty"`
 }
 
 // InboundBasicAuthenticationDetails represents inbound communication configuration details for basic authentication
@@ -497,8 +497,8 @@ type InboundOAuth2ClientCredentialsDetails struct {
 	Destinations   []Destination `json:"destinations"`
 }
 
-// InboundOAuth2MTLSAuthenticationDetails represents inbound communication configuration details for oauth2 MTLS authentication
-type InboundOAuth2MTLSAuthenticationDetails struct {
+// InboundOAuth2mTLSAuthenticationDetails represents inbound communication configuration details for oauth2 mTLS authentication
+type InboundOAuth2mTLSAuthenticationDetails struct {
 	CorrelationIDs []string      `json:"correlationIds"`
 	Destinations   []Destination `json:"destinations"`
 	Certificate    *string       `json:"certificate,omitempty"`
