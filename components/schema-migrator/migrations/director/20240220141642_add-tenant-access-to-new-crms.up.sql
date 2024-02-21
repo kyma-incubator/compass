@@ -11,12 +11,12 @@ INSERT INTO tenant_applications
                         AND ta.tenant_id = ti.source
                         AND ta.source = ti.tenant_id)) ON CONFLICT (tenant_id,id,source) DO NOTHING;
 
-CREATE INDEX business_tenant_mappings_type_idx ON business_tenant_mappings (type);
+CREATE INDEX IF NOT EXISTS business_tenant_mappings_type_idx ON business_tenant_mappings (type);
 
-CREATE INDEX labels_key_idx ON labels (key);
+CREATE INDEX IF NOT EXISTS labels_key_idx ON labels (key);
 
-CREATE INDEX formation_assignments_source_idx ON formation_assignments (source);
+CREATE INDEX IF NOT EXISTS formation_assignments_source_idx ON formation_assignments (source);
 
-CREATE INDEX formation_assignments_target_idx ON formation_assignments (target);
+CREATE INDEX IF NOT EXISTS formation_assignments_target_idx ON formation_assignments (target);
 
 COMMIT;
