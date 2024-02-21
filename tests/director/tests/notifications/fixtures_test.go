@@ -358,6 +358,27 @@ func assertOAuth2ClientCredsDestination(t *testing.T, client *clients.Destinatio
 	}
 }
 
+func assertOAuth2mTLSDestination(t *testing.T, client *clients.DestinationClient, serviceURL, oauth2mTLSDestinationName, oauth2mTLSDestinationURL, instanceID, ownerSubaccountID, authToken string, expectedNumberOfAuthTokens int) {
+	oauth2mTLSDestBytes := client.FindDestinationByName(t, serviceURL, oauth2mTLSDestinationName, authToken, "", http.StatusOK)
+	var oauth2mTLSDest esmdestinationcreator.DestinationSvcOAuth2MTLSDestResponse
+	err := json.Unmarshal(oauth2mTLSDestBytes, &oauth2mTLSDest)
+	require.NoError(t, err)
+	require.Equal(t, ownerSubaccountID, oauth2mTLSDest.Owner.SubaccountID)
+	require.Equal(t, instanceID, oauth2mTLSDest.Owner.InstanceID)
+	require.Equal(t, oauth2mTLSDestinationName, oauth2mTLSDest.DestinationConfiguration.Name)
+	require.Equal(t, directordestinationcreator.TypeHTTP, oauth2mTLSDest.DestinationConfiguration.Type)
+	require.Equal(t, oauth2mTLSDestinationURL, oauth2mTLSDest.DestinationConfiguration.URL)
+	require.Equal(t, directordestinationcreator.AuthTypeOAuth2ClientCredentials, oauth2mTLSDest.DestinationConfiguration.Authentication)
+	require.Equal(t, directordestinationcreator.ProxyTypeInternet, oauth2mTLSDest.DestinationConfiguration.ProxyType)
+
+	for i := 0; i < expectedNumberOfAuthTokens; i++ {
+		require.NotEmpty(t, oauth2mTLSDest.AuthTokens)
+		require.NotEmpty(t, oauth2mTLSDest.AuthTokens[i].Type)
+		require.Equal(t, oauth2AuthType, oauth2mTLSDest.AuthTokens[i].Type)
+		require.NotEmpty(t, oauth2mTLSDest.AuthTokens[i].Value)
+	}
+}
+
 func assertFormationAssignmentsNotificationWithItemsStructure(t *testing.T, notification gjson.Result, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID string) {
 	assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t, notification, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID, nil)
 }
@@ -728,6 +749,11 @@ func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Resu
 		}
 
 		modifiedNotification, err = sjson.Delete(modifiedNotification, "RequestBody.receiverTenant.configuration.credentials.inboundCommunication.clientCertificateAuthentication.certificate")
+		if err != nil {
+			return err
+		}
+
+		modifiedNotification, err = sjson.Delete(modifiedNotification, "RequestBody.receiverTenant.configuration.credentials.inboundCommunication.oauth2mtls.certificate")
 		if err != nil {
 			return err
 		}
