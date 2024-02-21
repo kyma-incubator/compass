@@ -22,6 +22,8 @@ const (
 	AuthTypeClientCertificate AuthType = "ClientCertificateAuthentication"
 	// AuthTypeOAuth2ClientCredentials represents the OAuth2ClientCredentials destination authentication
 	AuthTypeOAuth2ClientCredentials AuthType = "OAuth2ClientCredentials"
+	// AuthTypeOAuth2mTLS represents the OAuth2 mTLS destination authentication
+	AuthTypeOAuth2mTLS AuthType = "OAuth2mTLS"
 
 	// ProxyTypeInternet represents the Internet proxy type
 	ProxyTypeInternet ProxyType = "Internet"
@@ -39,6 +41,8 @@ const (
 	SAMLAssertionDestPath = "credentials.inboundCommunication.samlAssertion"
 	// ClientCertAuthDestPath represents the client certificate authentication destination type in the assignment config
 	ClientCertAuthDestPath = "credentials.inboundCommunication.clientCertificateAuthentication"
+	// Oauth2mTLSAuthDestPath represents the oauth2mTLS authentication destination type in the assignment config
+	Oauth2mTLSAuthDestPath = "credentials.inboundCommunication.oauth2mtls"
 
 	// DedicatedTokenServiceURLType represents the 'Dedicated' token service URL type of OAuth2ClientCredentials destination
 	DedicatedTokenServiceURLType TokenServiceURLType = "Dedicated"

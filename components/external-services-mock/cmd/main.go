@@ -402,7 +402,7 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
-	notificationHandler := formationnotification.NewHandler(cfg.NotificationConfig, cfg.ProviderDestinationConfig)
+	notificationHandler := formationnotification.NewHandler(cfg.NotificationConfig, cfg.ProviderDestinationConfig, buildUrl(cfg.ExternalURL, "/secured/oauth/token"))
 	// formation assignment notifications sync handlers
 	router.HandleFunc("/formation-callback/{tenantId}", notificationHandler.Patch).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
@@ -834,4 +834,8 @@ func getClaimsTenant(claims jwt.Claims) string {
 	default:
 		return ""
 	}
+}
+
+func buildUrl(host, path string) string {
+	return "https://" + host + ":443" + path
 }
