@@ -38,7 +38,7 @@ const (
 
 func TestService_Processing(t *testing.T) {
 	testErr := errors.New("Test error")
-	validatingORDDocsErr := []*ord.ValidationError{{OrdId: "ns:eventResource:test:v1"}}
+	validatingORDDocsErr := []*ord.ValidationError{{OrdID: "ns:eventResource:test:v1"}}
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	emptyORDMapping := application.ORDWebhookMapping{}

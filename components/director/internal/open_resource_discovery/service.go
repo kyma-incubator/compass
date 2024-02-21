@@ -153,6 +153,7 @@ type Service struct {
 }
 
 // TODO remove redundant services
+
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
 func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, apiProcessor APIProcessor, eventSvc EventService, eventProcessor EventProcessor, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, capabilityProcessor CapabilityProcessor, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, dataProductSvc DataProductService, dataProductProcessor DataProductProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, packageProcessor PackageProcessor, productProcessor ProductProcessor, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, tombstonedResourcesDeleter TombstonedResourcesDeleter, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService, documentValidator Validator) *Service {
 	return &Service{
@@ -220,9 +221,7 @@ func (s *Service) ProcessApplication(ctx context.Context, appID string) error {
 				globalResourcesLoaded = true
 			}
 			log.C(ctx).Infof("Process Webhook ID %s for Application with ID %s", wh.ID, appID)
-			//if err = s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs); err != nil {
-			//	return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
-			//}
+
 			return s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs)
 		}
 	}
@@ -372,16 +371,20 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 
 	documentSanitizer := NewDocumentSanitizer()
 	validationErrorsFromSanitize, err := documentSanitizer.Sanitize(documents, webhookBaseURL, webhookBaseProxyURL)
-	validationErrors = append(validationErrors, validationErrorsFromSanitize...)
 	if err != nil {
 		return validationErrors, errors.Wrap(err, "while sanitizing ORD documents")
 	}
 
-	for _, e := range validationErrors {
-		if e.Severity == ErrorSeverity {
-			return validationErrors, nil
-		}
+	if len(validationErrorsFromSanitize) > 0 {
+		log.C(ctx).Errorf("Stopping aggregation of resource with id %s", resource.ID)
+		return append(validationErrors, validationErrorsFromSanitize...), nil
 	}
+
+	//for _, e := range validationErrors {
+	//	if e.Severity == ErrorSeverity {
+	//		return validationErrors, nil
+	//	}
+	//}
 
 	ordLocalTenantID := s.getUniqueLocalTenantID(documents)
 	if ordLocalTenantID != "" && resource.LocalTenantID == nil {
@@ -1047,6 +1050,13 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 			for _, e := range validationErrors {
 				metricsPusher.ReportAggregationFailureORD(ctx, fmt.Sprintf("%s|%s|%s", e.Severity, e.OrdID, e.Description))
 			}
+			//
+			//var errorNotification string
+			//
+			//for _, e := range validationErrors {
+			//	errorNotification += fmt.Sprintf("%s|%s|%s", e.OrdID, e.Description, e.Type)
+			//}
+			//metricsPusher.ReportAggregationFailureORD(ctx, errorNotification)
 
 			// TODO revisit
 			log.C(ctx).WithError(errors.New("Some error")).WithField("validation_errors", validationErrors).Error(ValidationErrorMsg)

@@ -29,15 +29,6 @@ type AspectEventResourceInput struct {
 	Subset     json.RawMessage `json:"subset"`
 }
 
-//// Validate validates Aspect Event Resource fields
-//func (a *AspectEventResourceInput) Validate() error {
-//	return validation.ValidateStruct(a,
-//		validation.Field(&a.OrdID, validation.Required, validation.Length(common.MinOrdIDLength, common.MaxOrdIDLength), validation.Match(regexp.MustCompile(common.AspectEventResourceRegex))),
-//		validation.Field(&a.MinVersion, validation.NilOrNotEmpty, validation.Match(regexp.MustCompile(common.AspectResourcesMinVersionRegex))),
-//		validation.Field(&a.Subset, validation.By(common.ValidateAspectEventResourceSubset)),
-//	)
-//}
-
 // ToAspectEventResource converts AspectEventResourceInput to AspectEventResource
 func (a *AspectEventResourceInput) ToAspectEventResource(id string, resourceType resource.Type, resourceID string, aspectID string) *AspectEventResource {
 	if a == nil {

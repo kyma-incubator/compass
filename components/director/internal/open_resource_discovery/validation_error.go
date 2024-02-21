@@ -3,6 +3,8 @@ package ord
 const (
 	// ErrorSeverity is one of the severity levels of a validation error
 	ErrorSeverity = "error"
+	// WarningSeverity is one of the severity levels of a validation error
+	WarningSeverity = "warning"
 )
 
 // ValidationError represents a validation error when aggregating and validating ORD documents

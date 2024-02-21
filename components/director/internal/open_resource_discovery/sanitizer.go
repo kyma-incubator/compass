@@ -293,9 +293,9 @@ func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBa
 	return valErrors, err
 }
 
-func newCustomValidationError(ordId, errorType, description string) *ValidationError {
+func newCustomValidationError(ordID, errorType, description string) *ValidationError {
 	return &ValidationError{
-		OrdID:       ordId,
+		OrdID:       ordID,
 		Severity:    ErrorSeverity,
 		Type:        errorType,
 		Description: description,
