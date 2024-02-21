@@ -173,8 +173,8 @@ global:
       version: "v20240205-05672afc"
       name: compass-pairing-adapter
     director:
-      dir: prod/incubator/
-      version: "v20240219-1d66376c"
+      dir: dev/incubator/
+      version: "PR-3675"
       name: compass-director
     hydrator:
       dir: prod/incubator/
@@ -209,8 +209,8 @@ global:
       version: "v20240116-f0e3d794"
       name: compass-ord-service
     schema_migrator:
-      dir: prod/incubator/
-      version: "v20240208-cfc8feed"
+      dir: dev/incubator/
+      version: "PR-3675"
       name: compass-schema-migrator
     system_broker:
       dir: prod/incubator/
@@ -230,8 +230,8 @@ global:
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: prod/incubator/
-      version: "v20240216-f8c59f01"
+      dir: dev/incubator/
+      version: "PR-3675"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
