@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"testing"
+
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/automock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestDocumentValidator_Validate(t *testing.T) {
@@ -17,7 +18,7 @@ func TestDocumentValidator_Validate(t *testing.T) {
 		Name                     string
 		ClientValidatorFn        func() *automock.ValidatorClient
 		InputDocument            string
-		InputBaseUrl             string
+		InputBaseURL             string
 		ExpectedRuntimeError     error
 		ExpectedValidationErrors []*ord.ValidationError
 	}{
@@ -28,8 +29,8 @@ func TestDocumentValidator_Validate(t *testing.T) {
 				clientValidator.On("Validate", policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
 				return clientValidator
 			},
-			InputDocument: fmt.Sprintf(OrdDocument, baseURL),
-			InputBaseUrl:  baseURL,
+			InputDocument: fmt.Sprintf(ordDocument, baseURL),
+			InputBaseURL:  baseURL,
 		},
 		{
 			Name: "Runtime error from API Metadata Validator",
@@ -38,8 +39,8 @@ func TestDocumentValidator_Validate(t *testing.T) {
 				clientValidator.On("Validate", policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, errors.New("Test runtime error"))
 				return clientValidator
 			},
-			InputDocument:        fmt.Sprintf(OrdDocument, baseURL),
-			InputBaseUrl:         baseURL,
+			InputDocument:        fmt.Sprintf(ordDocument, baseURL),
+			InputBaseURL:         baseURL,
 			ExpectedRuntimeError: errors.New("error while validating document with API Metadata validator"),
 		},
 		{
@@ -49,8 +50,8 @@ func TestDocumentValidator_Validate(t *testing.T) {
 				clientValidator.On("Validate", policyLevelBase, mock.Anything).Return(validationResultsErrorSeverity, nil)
 				return clientValidator
 			},
-			InputDocument:            fmt.Sprintf(OrdDocument, baseURL),
-			InputBaseUrl:             baseURL,
+			InputDocument:            fmt.Sprintf(ordDocument, baseURL),
+			InputBaseURL:             baseURL,
 			ExpectedValidationErrors: validationErrorsErrorSeverity,
 		},
 		{
@@ -60,8 +61,8 @@ func TestDocumentValidator_Validate(t *testing.T) {
 				clientValidator.On("Validate", policyLevelBase, mock.Anything).Return(validationResultsWarningSeverity, nil)
 				return clientValidator
 			},
-			InputDocument:            fmt.Sprintf(OrdDocument, baseURL),
-			InputBaseUrl:             baseURL,
+			InputDocument:            fmt.Sprintf(ordDocument, baseURL),
+			InputBaseURL:             baseURL,
 			ExpectedValidationErrors: validationErrorsWarningSeverity,
 		},
 		{
@@ -71,8 +72,8 @@ func TestDocumentValidator_Validate(t *testing.T) {
 				clientValidator.On("Validate", policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
 				return clientValidator
 			},
-			InputDocument:            fmt.Sprintf(OrdDocumentWithDuplicates, baseURL),
-			InputBaseUrl:             baseURL,
+			InputDocument:            fmt.Sprintf(ordDocumentWithDuplicates, baseURL),
+			InputBaseURL:             baseURL,
 			ExpectedValidationErrors: validationErrorDuplicateResources,
 		},
 		{
@@ -82,8 +83,8 @@ func TestDocumentValidator_Validate(t *testing.T) {
 				clientValidator.On("Validate", policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
 				return clientValidator
 			},
-			InputDocument:            fmt.Sprintf(OrdDocumentAPIHasUnknownReference, baseURL),
-			InputBaseUrl:             baseURL,
+			InputDocument:            fmt.Sprintf(ordDocumentAPIHasUnknownReference, baseURL),
+			InputBaseURL:             baseURL,
 			ExpectedValidationErrors: validationErrorUnknownReference,
 		},
 		{
@@ -93,9 +94,9 @@ func TestDocumentValidator_Validate(t *testing.T) {
 				clientValidator.On("Validate", policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
 				return clientValidator
 			},
-			InputDocument:            fmt.Sprintf(OrdDocumentWithWrongBaseUrl, ""),
-			InputBaseUrl:             "",
-			ExpectedValidationErrors: validationErrorMissingBaseUrl,
+			InputDocument:            fmt.Sprintf(ordDocumentWithWrongBaseUrl, ""),
+			InputBaseURL:             "",
+			ExpectedValidationErrors: validationErrorMissingBaseURL,
 		},
 		{
 			Name: "Validation error when there is a mismatch between the given baseUrls",
@@ -104,9 +105,9 @@ func TestDocumentValidator_Validate(t *testing.T) {
 				clientValidator.On("Validate", policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
 				return clientValidator
 			},
-			InputDocument:            fmt.Sprintf(OrdDocumentWithWrongBaseUrl, "https://differentbase.com"),
-			InputBaseUrl:             baseURL,
-			ExpectedValidationErrors: validationErrorMismatchedBaseUrl,
+			InputDocument:            fmt.Sprintf(ordDocumentWithWrongBaseUrl, "https://differentbase.com"),
+			InputBaseURL:             baseURL,
+			ExpectedValidationErrors: validationErrorMismatchedBaseURL,
 		},
 	}
 
@@ -115,9 +116,12 @@ func TestDocumentValidator_Validate(t *testing.T) {
 			validator := ord.NewDocumentValidator(test.ClientValidatorFn())
 
 			result := &ord.Document{}
-			json.Unmarshal([]byte(test.InputDocument), &result)
+			err := json.Unmarshal([]byte(test.InputDocument), &result)
+			if err != nil {
+				return
+			}
 
-			validationErrors, err := validator.Validate(context.TODO(), []*ord.Document{result}, test.InputBaseUrl, map[string]bool{}, []string{test.InputDocument})
+			validationErrors, err := validator.Validate(context.TODO(), []*ord.Document{result}, test.InputBaseURL, map[string]bool{}, []string{test.InputDocument})
 
 			if test.ExpectedRuntimeError != nil {
 				require.Error(t, err)

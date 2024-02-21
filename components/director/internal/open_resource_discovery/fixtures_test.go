@@ -91,7 +91,7 @@ const (
 	policyLevelBase  = "sap:base:v1"
 )
 
-const OrdDocument = `{
+const ordDocument = `{
    "$schema":"./spec/v1/generated/Document.schema.json",
    "openResourceDiscovery":"1.2",
    "policyLevel": "sap:core:v1",
@@ -780,7 +780,7 @@ const OrdDocument = `{
     ]
 }`
 
-const OrdDocumentWithDuplicates = `{
+const ordDocumentWithDuplicates = `{
    "$schema":"./spec/v1/generated/Document.schema.json",
    "openResourceDiscovery":"1.8",
    "policyLevel": "sap:core:v1",
@@ -850,7 +850,7 @@ const OrdDocumentWithDuplicates = `{
    ]
 }`
 
-const OrdDocumentAPIHasUnknownReference = `{
+const ordDocumentAPIHasUnknownReference = `{
    "$schema":"./spec/v1/generated/Document.schema.json",
    "openResourceDiscovery":"1.8",
    "policyLevel": "sap:core:v1",
@@ -903,7 +903,7 @@ const OrdDocumentAPIHasUnknownReference = `{
    ]
 }`
 
-const OrdDocumentWithWrongBaseUrl = `{
+const ordDocumentWithWrongBaseUrl = `{
    "$schema":"./spec/v1/generated/Document.schema.json",
    "openResourceDiscovery":"1.8",
    "policyLevel": "sap:core:v1",
@@ -1000,11 +1000,11 @@ var validationErrorUnknownReference = []*ord.ValidationError{
 	{OrdID: "ns:apiResource:API_ID:v2", Severity: ord.ErrorSeverity, Type: "sap-ord-unknown-reference", Description: "The api has a reference to unknown package \"ns:package:PACKAGE_ID_UNKNOWN:v1\""},
 }
 
-var validationErrorMissingBaseUrl = []*ord.ValidationError{
+var validationErrorMissingBaseURL = []*ord.ValidationError{
 	{OrdID: "", Severity: ord.ErrorSeverity, Type: "sap-ord-no-base-url", Description: "no baseURL was provided neither from /well-known URL, nor from config, nor from describedSystemInstance"},
 }
 
-var validationErrorMismatchedBaseUrl = []*ord.ValidationError{
+var validationErrorMismatchedBaseURL = []*ord.ValidationError{
 	{OrdID: "", Severity: ord.ErrorSeverity, Type: "sap-ord-baseUrl-mismatch", Description: "describedSystemInstance should be the same as the one providing the documents - https://differentbase.com : http://test.com:8080"},
 }
 

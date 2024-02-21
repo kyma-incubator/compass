@@ -3,9 +3,10 @@ package ord
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/pkg/errors"
 	"net/http"
 	"net/url"
+
+	"github.com/pkg/errors"
 )
 
 const (

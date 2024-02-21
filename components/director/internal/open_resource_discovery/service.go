@@ -380,12 +380,6 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		return append(validationErrors, validationErrorsFromSanitize...), nil
 	}
 
-	//for _, e := range validationErrors {
-	//	if e.Severity == ErrorSeverity {
-	//		return validationErrors, nil
-	//	}
-	//}
-
 	ordLocalTenantID := s.getUniqueLocalTenantID(documents)
 	if ordLocalTenantID != "" && resource.LocalTenantID == nil {
 		if err := s.appSvc.Update(ctx, resource.ID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr(ordLocalTenantID)}); err != nil {

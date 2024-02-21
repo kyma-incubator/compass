@@ -3,11 +3,12 @@ package ord_test
 import (
 	"bytes"
 	"encoding/json"
-	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"testing"
+
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 )
