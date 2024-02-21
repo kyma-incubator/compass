@@ -903,7 +903,7 @@ const ordDocumentAPIHasUnknownReference = `{
    ]
 }`
 
-const ordDocumentWithWrongBaseUrl = `{
+const ordDocumentWithWrongBaseURL = `{
    "$schema":"./spec/v1/generated/Document.schema.json",
    "openResourceDiscovery":"1.8",
    "policyLevel": "sap:core:v1",

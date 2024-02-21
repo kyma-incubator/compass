@@ -1044,13 +1044,6 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 			for _, e := range validationErrors {
 				metricsPusher.ReportAggregationFailureORD(ctx, fmt.Sprintf("%s|%s|%s", e.Severity, e.OrdID, e.Description))
 			}
-			//
-			//var errorNotification string
-			//
-			//for _, e := range validationErrors {
-			//	errorNotification += fmt.Sprintf("%s|%s|%s", e.OrdID, e.Description, e.Type)
-			//}
-			//metricsPusher.ReportAggregationFailureORD(ctx, errorNotification)
 
 			// TODO revisit
 			log.C(ctx).WithError(errors.New("Some error")).WithField("validation_errors", validationErrors).Error(ValidationErrorMsg)

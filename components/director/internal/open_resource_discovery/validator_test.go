@@ -94,7 +94,7 @@ func TestDocumentValidator_Validate(t *testing.T) {
 				clientValidator.On("Validate", policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
 				return clientValidator
 			},
-			InputDocument:            fmt.Sprintf(ordDocumentWithWrongBaseUrl, ""),
+			InputDocument:            fmt.Sprintf(ordDocumentWithWrongBaseURL, ""),
 			InputBaseURL:             "",
 			ExpectedValidationErrors: validationErrorMissingBaseURL,
 		},
@@ -105,7 +105,7 @@ func TestDocumentValidator_Validate(t *testing.T) {
 				clientValidator.On("Validate", policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
 				return clientValidator
 			},
-			InputDocument:            fmt.Sprintf(ordDocumentWithWrongBaseUrl, "https://differentbase.com"),
+			InputDocument:            fmt.Sprintf(ordDocumentWithWrongBaseURL, "https://differentbase.com"),
 			InputBaseURL:             baseURL,
 			ExpectedValidationErrors: validationErrorMismatchedBaseURL,
 		},
