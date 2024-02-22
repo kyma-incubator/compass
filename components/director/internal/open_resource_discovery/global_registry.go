@@ -2,6 +2,7 @@ package ord
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -69,9 +70,18 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 		return nil, errors.Wrapf(err, "while fetching global registry documents from %s", s.config.URL)
 	}
 
-	// TODO log validation errors
-	_, err = s.documentValidator.Validate(ctx, documents, s.config.URL, map[string]bool{}, docsString)
-	// log validation errors
+	validationErrors, err := s.documentValidator.Validate(ctx, documents, s.config.URL, map[string]bool{}, docsString)
+	if len(validationErrors) > 0 {
+		// convert validationErrors array of pointers to array of objects in order to log them properly
+		var validationErrorsObjects []ValidationError
+		for _, errPtr := range validationErrors {
+			if errPtr != nil {
+				validationErrorsObjects = append(validationErrorsObjects, *errPtr)
+			}
+		}
+
+		log.C(ctx).WithError(errors.New("Error validating global registry resources")).WithField("validation_errors", validationErrorsObjects).Error(ValidationErrorMsg)
+	}
 	if err != nil {
 		return nil, errors.Wrap(err, "while validating global registry documents")
 	}

@@ -1041,7 +1041,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 				}
 			}
 
-			log.C(ctx).WithError(errors.New(fmt.Sprintf("%s for resource with ID %q", ValidationErrorMsg, resource.ID))).WithField("validation_errors", validationErrorsObjects).Error(ValidationErrorMsg)
+			log.C(ctx).WithError(errors.New(fmt.Sprintf("%s for resource with ID %s", ValidationErrorMsg, resource.ID))).WithField("validation_errors", validationErrorsObjects).Error(ValidationErrorMsg)
 		}
 
 		if err != nil {
@@ -1059,7 +1059,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 		}
 
 		if len(validationErrors) == 0 {
-			log.C(ctx).Infof("Successfully processed ORD documents for resource with iD %q", resource.ID)
+			log.C(ctx).Infof("Successfully processed ORD documents for resource with ID %s", resource.ID)
 
 			return nil
 		}

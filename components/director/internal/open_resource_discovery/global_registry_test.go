@@ -85,13 +85,14 @@ func TestService_SyncGlobalResources(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name                string
-		TransactionerFn     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		productSvcFn        func() *automock.GlobalProductService
-		vendorSvcFn         func() *automock.GlobalVendorService
-		clientFn            func() *automock.Client
-		documentValidatorFn func() *automock.Validator
-		ExpectedErr         error
+		Name                    string
+		TransactionerFn         func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		productSvcFn            func() *automock.GlobalProductService
+		vendorSvcFn             func() *automock.GlobalVendorService
+		clientFn                func() *automock.Client
+		documentValidatorFn     func() *automock.Validator
+		ExpectedErr             error
+		ExpectedValidationError bool
 	}{
 		{
 			Name:                "Success when resources are not in db should Create them",
@@ -146,13 +147,23 @@ func TestService_SyncGlobalResources(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name:            "Error when ord docs are invalid",
-			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			Name:            "Validation error when ord docs are invalid",
+			TransactionerFn: txGen.ThatSucceeds,
+			productSvcFn:    successfulProductCreate,
+			vendorSvcFn: func() *automock.GlobalVendorService {
+				vendorSvc := &automock.GlobalVendorService{}
+				vendorSvc.On("ListGlobal", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				vendorSvc.On("ListGlobal", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				return vendorSvc
+			},
 			documentValidatorFn: func() *automock.Validator {
 				docValidator := &automock.Validator{}
 				doc := fixGlobalRegistryORDDocument()
 				doc.Vendors[0].OrdID = "invalid-ord-id"
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{}, []string{}).Return(nil, errors.New("ordId: must be in a valid format."))
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{}, []string{}).Run(func(args mock.Arguments) {
+					docs := args.Get(1).([]*ord.Document)
+					docs[0].Vendors = docs[0].Vendors[1:]
+				}).Return([]*ord.ValidationError{{OrdID: "ordId", Description: "ordId: must be in a valid format."}}, nil)
 				return docValidator
 			},
 			clientFn: func() *automock.Client {
@@ -162,7 +173,7 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook, ordMapping, ordRequestObject).Return(ord.Documents{doc}, []string{}, baseURL, nil)
 				return client
 			},
-			ExpectedErr: errors.New("ordId: must be in a valid format."),
+			ExpectedValidationError: true,
 		},
 		{
 			Name:            "Error when ord docs contains resource that is not vendor or product",
@@ -370,8 +381,14 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				require.Contains(t, err.Error(), test.ExpectedErr.Error())
 			} else {
 				require.NoError(t, err)
-				require.Len(t, globalIDs, 2)
-				require.True(t, globalIDs[vendorORDID])
+
+				if test.ExpectedValidationError {
+					require.Len(t, globalIDs, 1)
+				} else {
+					require.Len(t, globalIDs, 2)
+					require.True(t, globalIDs[vendorORDID])
+				}
+
 				require.True(t, globalIDs[globalProductORDID])
 			}
 

@@ -3,6 +3,8 @@
 package automock
 
 import (
+	context "context"
+
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -12,25 +14,25 @@ type ValidatorClient struct {
 	mock.Mock
 }
 
-// Validate provides a mock function with given fields: ruleset, requestBody
-func (_m *ValidatorClient) Validate(ruleset string, requestBody string) ([]ord.ValidationResult, error) {
-	ret := _m.Called(ruleset, requestBody)
+// Validate provides a mock function with given fields: ctx, ruleset, requestBody
+func (_m *ValidatorClient) Validate(ctx context.Context, ruleset string, requestBody string) ([]ord.ValidationResult, error) {
+	ret := _m.Called(ctx, ruleset, requestBody)
 
 	var r0 []ord.ValidationResult
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string) ([]ord.ValidationResult, error)); ok {
-		return rf(ruleset, requestBody)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]ord.ValidationResult, error)); ok {
+		return rf(ctx, ruleset, requestBody)
 	}
-	if rf, ok := ret.Get(0).(func(string, string) []ord.ValidationResult); ok {
-		r0 = rf(ruleset, requestBody)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []ord.ValidationResult); ok {
+		r0 = rf(ctx, ruleset, requestBody)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]ord.ValidationResult)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(ruleset, requestBody)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ruleset, requestBody)
 	} else {
 		r1 = ret.Error(1)
 	}

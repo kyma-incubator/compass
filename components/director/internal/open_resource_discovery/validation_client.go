@@ -51,7 +51,7 @@ func NewValidationClient(url string, client *http.Client) *ValidationClient {
 
 // Validate sends request to API Metadata Validator to validate one ORD document
 func (vc *ValidationClient) Validate(ctx context.Context, ruleset string, requestBody string) ([]ValidationResult, error) {
-	log.C(ctx).Infof("Creating request to API Metadata Validator with url %q", vc.url)
+	log.C(ctx).Infof("Creating request to API Metadata Validator with base url %s and validation endpoint %s", vc.url, validateEndpoint)
 	req, err := vc.createRequest(ruleset, requestBody)
 	if err != nil {
 		return nil, err
