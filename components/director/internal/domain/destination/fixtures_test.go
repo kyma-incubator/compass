@@ -32,6 +32,7 @@ const (
 	samlAssertionDestName     = "test-saml-assertion-dest-name"
 	clientCertAuthDestName    = "test-client-cert-auth-dest-name"
 	oauth2ClientCredsDestName = "test-oauth2-client-creds-dest-name"
+	oauth2mTLSDestName        = "test-oauth2-mTLS-dest-name"
 	destinationURL            = "http://dest-test-url"
 	destinationDescription    = "test-dest-description"
 
@@ -41,6 +42,8 @@ const (
 	oauth2ClientCredsTokenServiceURL = "http://oauth2-token-service-url"
 	oauth2ClientCredsClientID        = "test-client-id"
 	oauth2ClientCredsClientSecret    = "test-client-secret"
+	oauth2mTLSTokenServiceURL        = "http://oauth2-mTLS-token-service-url"
+	oauth2mTLSClientID               = "test-client-id-mTLS"
 
 	// Other
 	destinationLatestRevision = "2"
@@ -147,6 +150,10 @@ func fixOAuth2ClientCredsDestInfo() *destinationcreatorpkg.DestinationInfo {
 	return fixDestinationInfo(destinationcreatorpkg.AuthTypeOAuth2ClientCredentials, destinationType, destinationURL)
 }
 
+func fixOAuth2mTLSDestInfo() *destinationcreatorpkg.DestinationInfo {
+	return fixDestinationInfo(destinationcreatorpkg.AuthTypeOAuth2mTLS, destinationType, destinationURL)
+}
+
 func fixSAMLAssertionAuthentication() *operators.SAMLAssertionAuthentication {
 	return &operators.SAMLAssertionAuthentication{URL: destinationURL}
 }
@@ -188,12 +195,26 @@ func fixOAuth2ClientCredsDestinationsDetails() []operators.Destination {
 	}
 }
 
+func fixOAuth2mTLSDestinationsDetails() []operators.Destination {
+	return []operators.Destination{
+		fixDestinationDetails(oauth2mTLSDestName, string(destinationcreatorpkg.AuthTypeOAuth2mTLS), externalDestinationSubaccountID),
+	}
+}
+
 func fixOAuth2ClientCredsAuthn() *operators.OAuth2ClientCredentialsAuthentication {
 	return &operators.OAuth2ClientCredentialsAuthentication{
 		URL:             destinationURL,
 		TokenServiceURL: oauth2ClientCredsTokenServiceURL,
 		ClientID:        oauth2ClientCredsClientID,
 		ClientSecret:    oauth2ClientCredsClientSecret,
+	}
+}
+
+func fixOAuth2mTLSAuthn() *operators.OAuth2mTLSAuthentication {
+	return &operators.OAuth2mTLSAuthentication{
+		URL:             destinationURL,
+		TokenServiceURL: oauth2mTLSTokenServiceURL,
+		ClientID:        oauth2mTLSClientID,
 	}
 }
 
