@@ -15,8 +15,6 @@ var (
 	// ApplicationTemplates contains available Application Templates, should only be used for the unmarshaling of system data
 	// It represents a model.ApplicationTemplate with its labels in the form of map[string]*model.Label
 	ApplicationTemplates map[TemplateMappingKey]TemplateMapping
-	// SortedTemplateMappingKeys contains an array of TemplateMappingKey that have been sorted by the label proeprty
-	SortedTemplateMappingKeys []TemplateMappingKey
 	// ApplicationTemplateLabelFilter represent a label for the Application Templates which has a value that
 	// should match to the SystemSourceKey's value of the fetched systems
 	ApplicationTemplateLabelFilter string
@@ -74,6 +72,8 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 		}
 
 		// Regional Application Template
+		// Use GenerateAppRegisterInput to resolve the application Input. This way we would know what is the actual
+		// region from the system payload
 		appInput, err := tm.Renderer.GenerateAppRegisterInput(context.Background(), *s, tm.AppTemplate, false)
 		if err != nil {
 			return *s, err
