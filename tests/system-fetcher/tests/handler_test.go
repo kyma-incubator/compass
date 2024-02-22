@@ -62,7 +62,9 @@ const (
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {},
-		"additionalAttributes": {}
+		"additionalAttributes": {},
+		"businessTypeId": "tbtID",
+		"businessTypeDescription": "tbt description name"
 	}`
 	defaultMockSystems = `[{
 		"systemNumber": "1",
@@ -75,7 +77,9 @@ const (
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
-		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10"}
+		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10"},
+		"businessTypeId": "tbtID",
+		"businessTypeDescription": "tbt description name"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -86,7 +90,9 @@ const (
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
-		"additionalAttributes": {}
+		"additionalAttributes": {},
+		"businessTypeId": "tbtID",
+		"businessTypeDescription": "tbt description name"
 	}]`
 
 	singleMockSystem = `[{
@@ -100,7 +106,9 @@ const (
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
-		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10"}
+		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10"},
+		"businessTypeId": "tbtID",
+		"businessTypeDescription": "tbt description name"
 	}]`
 
 	nameLabelKey           = "displayName"
@@ -1625,11 +1633,13 @@ func cleanupMockSystems(t *testing.T) {
 
 func applicationLabels(name, appTemplateName, integrationSystemID string, fromTemplate bool, regionLabel string) directorSchema.Labels {
 	labels := directorSchema.Labels{
-		"managed":              "true",
-		"name":                 fmt.Sprintf("mp-%s", name),
-		"ppmsProductVersionId": "12345",
-		"productId":            "XXX",
-		"integrationSystemID":  integrationSystemID,
+		"managed":                "true",
+		"name":                   fmt.Sprintf("mp-%s", name),
+		"ppmsProductVersionId":   "12345",
+		"productId":              "XXX",
+		"integrationSystemID":    integrationSystemID,
+		"tenantBusinessTypeCode": "tbtID",
+		"tenantBusinessTypeName": "tbt description name",
 	}
 
 	if fromTemplate {
