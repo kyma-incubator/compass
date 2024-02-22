@@ -39,10 +39,6 @@ spec:
               value: {{ .Values.global.tenantFetcher.omitDependenciesParamName | quote }}
             - name: APP_TENANT_FETCHER_OMIT_PARAM_VALUE
               value: {{ .Values.global.tenantFetcher.omitDependenciesParamValue | quote }}
-            - name: APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESSING
-              value: "{{ .Values.global.tenantFetcher.systemFieldDiscoveryWebhookPartialProcessing }}"
-            - name: APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS
-              value: "{{ .Values.global.tenantFetcher.systemFieldDiscoveryWebhookPartialProcessMaxDays }}"
             - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
             - name: APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY
