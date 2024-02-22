@@ -167,6 +167,9 @@ do
         echo "Running test is ${running_test}"
         if [[ ! "${running_test}" == "none" ]]; then
           logs_from_last_min=$("$KUBECTL" logs -n kyma-system --since=1m ${running_test})
+          echo "Logs from test execution:"
+          echo "${logs_from_last_min}"
+          echo "----------------------------"
           echo "Director:"
           echo "----------------------------"
           "$KUBECTL" logs -n compass-system --since=1m ${director_pod}
