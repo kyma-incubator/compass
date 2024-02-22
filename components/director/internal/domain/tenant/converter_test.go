@@ -31,6 +31,8 @@ var (
 	subdomain               = "subdomain"
 	region                  = "region"
 	licenseType             = "TESTLICENSE"
+	costObjectID            = "cost-obj-id"
+	costObjectType          = "cost-type"
 )
 
 const (
@@ -127,7 +129,7 @@ func TestConverter_ToGraphQLInput(t *testing.T) {
 		c := tenant.NewConverter()
 
 		// WHEN
-		in := newModelBusinessTenantMappingInput(names[0], subdomain, region, &licenseType)
+		in := newModelBusinessTenantMappingInputWithCostObject(names[0], subdomain, region, &licenseType)
 		in.CustomerID = testCustomerID
 
 		res := c.ToGraphQLInput(in)
@@ -141,6 +143,8 @@ func TestConverter_ToGraphQLInput(t *testing.T) {
 			Provider:       testProvider,
 			LicenseType:    str.Ptr(licenseType),
 			CustomerID:     testCustomerID,
+			CostObjectID:   &costObjectID,
+			CostObjectType: &costObjectType,
 		}
 
 		// THEN
@@ -161,6 +165,8 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			Region:         str.Ptr(region),
 			Type:           string(tnt.Account),
 			Provider:       testProvider,
+			CostObjectID:   &costObjectID,
+			CostObjectType: &costObjectType,
 		}
 		res := c.InputFromGraphQL(in)
 		expected := model.BusinessTenantMappingInput{
@@ -171,6 +177,8 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			Region:         region,
 			Type:           string(tnt.Account),
 			Provider:       testProvider,
+			CostObjectID:   &costObjectID,
+			CostObjectType: &costObjectType,
 		}
 
 		// THEN

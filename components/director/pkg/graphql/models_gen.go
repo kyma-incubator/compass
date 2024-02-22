@@ -379,6 +379,8 @@ type BusinessTenantMappingInput struct {
 	Provider       string    `json:"provider"`
 	LicenseType    *string   `json:"licenseType"`
 	CustomerID     *string   `json:"customerId"`
+	CostObjectID   *string   `json:"costObjectId"`
+	CostObjectType *string   `json:"costObjectType"`
 }
 
 type CSRFTokenCredentialRequestAuth struct {
@@ -870,12 +872,6 @@ type TenantAccessInput struct {
 	ResourceType TenantAccessObjectType `json:"resourceType"`
 	ResourceID   string                 `json:"resourceID"`
 	Owner        bool                   `json:"owner"`
-}
-
-type TenantBusinessType struct {
-	ID   string `json:"id"`
-	Code string `json:"code"`
-	Name string `json:"name"`
 }
 
 type TenantPage struct {

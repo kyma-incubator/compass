@@ -111,8 +111,9 @@ func (tm *TenantsManager) TenantsToDelete(ctx context.Context, region, fromTimes
 	return res, nil
 }
 
-// FetchTenant retrieves a given tenant from all available regions and updates or creates it in Compass
-func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID string) (*model.BusinessTenantMappingInput, error) {
+// FetchTenants retrieves a given tenant from all available regions and updates or creates it in Compass. It may also return a cost object tenant alongside
+// the global account or the subaccount
+func (tm *TenantsManager) FetchTenants(ctx context.Context, externalTenantID string) ([]model.BusinessTenantMappingInput, error) {
 	additionalFields := map[string]string{
 		tm.config.QueryConfig.EntityField: externalTenantID,
 	}
@@ -125,30 +126,39 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 
 	if len(fetchedTenants) >= 1 {
 		log.C(ctx).Infof("Tenant found from central region with universal client")
-		return &fetchedTenants[0], err
+
+		if co := costObjectTenantFromSlice(fetchedTenants); co.ExternalTenant != "" {
+			return []model.BusinessTenantMappingInput{fetchedTenants[0], co}, err
+		}
+
+		return []model.BusinessTenantMappingInput{fetchedTenants[0]}, err
 	}
 
 	log.C(ctx).Infof("Tenant not found from central region, checking regional APIs")
 
-	tenantChan := make(chan *model.BusinessTenantMappingInput, len(tm.regionalClients))
+	tenantChan := make(chan []model.BusinessTenantMappingInput, len(tm.regionalClients))
 	for region, regionalClient := range tm.regionalClients {
-		go func(ctx context.Context, region string, regionalClient EventAPIClient, ch chan *model.BusinessTenantMappingInput) {
+		go func(ctx context.Context, region string, regionalClient EventAPIClient, ch chan []model.BusinessTenantMappingInput) {
 			ctx = context.WithValue(ctx, TenantRegionCtxKey, region)
 			createdRegionalTenants, err := fetchCreatedTenantsWithRetries(ctx, regionalClient, tm.config.RetryAttempts, tm.supportedEventTypes, configProvider)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("Failed to fetch created tenants from region %s: %v", region, err)
 			}
 
-			if len(createdRegionalTenants) == 1 {
-				log.C(ctx).Infof("Tenant found in region %s", region)
-				if createdRegionalTenants[0].Region == "" {
-					createdRegionalTenants[0].Region = region
-				}
-				ch <- &createdRegionalTenants[0]
-			} else {
+			if len(createdRegionalTenants) == 0 {
 				log.C(ctx).Warnf("Tenant not found in region %s", region)
 				ch <- nil
+				return
 			}
+
+			for _, tnt := range createdRegionalTenants {
+				log.C(ctx).Infof("Tenant %q found in region %s", tnt.ExternalTenant, region)
+				if tnt.Region == "" {
+					tnt.Region = region
+				}
+			}
+
+			ch <- createdRegionalTenants
 		}(ctx, region, regionalClient, tenantChan)
 	}
 
@@ -159,7 +169,7 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 		return nil, nil
 	}
 
-	var tenant *model.BusinessTenantMappingInput
+	tenant := make([]model.BusinessTenantMappingInput, 0)
 	for result := range tenantChan {
 		if result != nil {
 			tenant = result
@@ -456,6 +466,16 @@ func runInChunks(ctx context.Context, maxChunkSize int, tenants []graphql.Busine
 	}
 
 	return nil
+}
+
+func costObjectTenantFromSlice(fetchedTenants []model.BusinessTenantMappingInput) model.BusinessTenantMappingInput {
+	for _, tenant := range fetchedTenants {
+		if tenant.Type == string(tenantpkg.CostObject) {
+			return tenant
+		}
+	}
+
+	return model.BusinessTenantMappingInput{}
 }
 
 type safeError struct {

@@ -315,8 +315,8 @@ func TestPgRepository_ListByRuntimeIDs(t *testing.T) {
 				},
 			},
 			{
-				Query:    regexp.QuoteMeta(`SELECT runtime_id AS id, COUNT(*) AS total_count FROM public.runtime_contexts WHERE (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $1)) GROUP BY runtime_id ORDER BY runtime_id ASC`),
-				Args:     []driver.Value{tenantID},
+				Query:    regexp.QuoteMeta(`SELECT runtime_id AS id, COUNT(*) AS total_count FROM public.runtime_contexts WHERE (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $1)) AND runtime_id IN ($2, $3, $4) GROUP BY runtime_id ORDER BY runtime_id ASC`),
+				Args:     []driver.Value{tenantID, emptyPageRuntimeID, onePageRuntimeID, multiplePagesRuntimeID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(emptyPageRuntimeID, 0).AddRow(onePageRuntimeID, 1).AddRow(multiplePagesRuntimeID, 2)}

@@ -203,11 +203,26 @@ func (ep EventsPage) eventDataToTenant(ctx context.Context, eventType EventsType
 			return []*model.BusinessTenantMappingInput{globalAccount}, nil
 		}
 
-		costObject := constructCostObjectTenant(jsonPayload, licenseTypeValue, ep)
+		costObjectIDResult := gjson.Get(jsonPayload, ep.FieldMapping.CostObjectIDField).String()
+		costObject := constructCostObjectTenant(costObjectIDResult, licenseTypeValue, ep)
 		return []*model.BusinessTenantMappingInput{globalAccount, costObject}, nil
 	} else {
-		tnt, err := constructSubaccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, licenseTypeValue, ep)
-		return []*model.BusinessTenantMappingInput{tnt}, err
+		subaccount, err := constructSubaccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, licenseTypeValue, ep)
+		if err != nil {
+			return nil, err
+		}
+
+		costObjectIDField := gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectIDField)
+		if !costObjectIDField.Exists() || costObjectIDField.String() == "" {
+			return []*model.BusinessTenantMappingInput{subaccount}, nil
+		}
+
+		subaccount.CostObjectID = str.Ptr(costObjectIDField.String())
+
+		costObject := constructCostObjectTenant(costObjectIDField.String(), licenseTypeValue, ep)
+		costObject.CostObjectType = str.Ptr(gjson.Get(jsonPayload, ep.FieldMapping.SubaccountCostObjectTypeField).String())
+
+		return []*model.BusinessTenantMappingInput{subaccount, costObject}, err
 	}
 }
 
@@ -240,12 +255,10 @@ func constructGlobalAccountTenant(ctx context.Context, jsonPayload, name, subdom
 	}
 }
 
-func constructCostObjectTenant(jsonPayload string, licenseType *string, ep EventsPage) *model.BusinessTenantMappingInput {
-	costObjectIDResult := gjson.Get(jsonPayload, ep.FieldMapping.CostObjectIDField).String()
-
+func constructCostObjectTenant(costObjectID string, licenseType *string, ep EventsPage) *model.BusinessTenantMappingInput {
 	return &model.BusinessTenantMappingInput{
-		Name:           costObjectIDResult,
-		ExternalTenant: costObjectIDResult,
+		Name:           costObjectID,
+		ExternalTenant: costObjectID,
 		Parents:        []string{},
 		Subdomain:      "",
 		Region:         "",
