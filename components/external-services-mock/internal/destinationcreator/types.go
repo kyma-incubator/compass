@@ -84,11 +84,11 @@ type ClientCertificateAuthDestRequestBody struct {
 // OAuth2ClientCredsDestRequestBody contains the necessary fields for the destination request body with authentication type OAuth2ClientCredentials
 type OAuth2ClientCredsDestRequestBody struct {
 	BaseDestinationRequestBody
-	TokenServiceURL string `json:"tokenServiceURL"`
+	TokenServiceURL     string `json:"tokenServiceURL"`
 	TokenServiceURLType string `json:"tokenServiceURLType"`
 	ClientID            string `json:"clientId"`
 	KeyStoreLocation    string `json:"tokenServiceKeystoreLocation"`
-	ClientSecret    string `json:"clientSecret"`
+	ClientSecret        string `json:"clientSecret"`
 }
 
 // OAuth2MTLSDestRequestBody contains the necessary fields for the destination request body with authentication type OAuth2mTLS
@@ -244,8 +244,8 @@ func (b *OAuth2ClientCredsDestRequestBody) Validate() error {
 		validation.Field(&b.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeOAuth2ClientCredentials)),
 		validation.Field(&b.TokenServiceURL, validation.Required),
 		validation.Field(&b.ClientID, validation.Required),
-		validation.Field(&b.KeyStoreLocation, validation.When(b.ClientSecret != "",validation.Empty).Else(validation.Required)),
-		validation.Field(&b.ClientSecret, validation.When(b.KeyStoreLocation != "",validation.Empty).Else(validation.Required)),
+		validation.Field(&b.KeyStoreLocation, validation.When(b.ClientSecret != "", validation.Empty).Else(validation.Required)),
+		validation.Field(&b.ClientSecret, validation.When(b.KeyStoreLocation != "", validation.Empty).Else(validation.Required)),
 	)
 }
 
@@ -267,7 +267,7 @@ func (b *OAuth2ClientCredsDestRequestBody) ToDestination() destinationcreator.De
 func (b *OAuth2ClientCredsDestRequestBody) GetDestinationType() string {
 	if b.KeyStoreLocation != "" {
 		return destinationcreator.OAuth2mTLSType
-	}else {
+	} else {
 		return destinationcreator.OAuth2ClientCredentialsType
 	}
 }
@@ -279,7 +279,7 @@ func (b *OAuth2MTLSDestRequestBody) Validate() error {
 		validation.Field(&b.URL, validation.Required),
 		validation.Field(&b.Type, validation.In(destinationcreatorpkg.TypeHTTP, destinationcreatorpkg.TypeRFC, destinationcreatorpkg.TypeLDAP, destinationcreatorpkg.TypeMAIL)),
 		validation.Field(&b.ProxyType, validation.In(destinationcreatorpkg.ProxyTypeInternet, destinationcreatorpkg.ProxyTypeOnPremise, destinationcreatorpkg.ProxyTypePrivateLink)),
-		validation.Field(&b.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeOAuth2MTLS)),
+		validation.Field(&b.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeOAuth2mTLS)),
 		validation.Field(&b.TokenServiceURL, validation.Required),
 		validation.Field(&b.TokenServiceURLType, validation.Required),
 		validation.Field(&b.ClientID, validation.Required),
