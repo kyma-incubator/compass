@@ -2,7 +2,6 @@ package operationsmanager
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -132,7 +131,6 @@ func (om *OperationsManager) MarkOperationCompleted(ctx context.Context, id stri
 	defer om.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	fmt.Println(customErr.Error())
 	if err := om.opSvc.MarkAsCompleted(ctx, id, customErr); err != nil {
 		return errors.Wrapf(err, "while marking operation with id %q as completed", id)
 	}

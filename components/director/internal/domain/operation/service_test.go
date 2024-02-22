@@ -3,9 +3,10 @@ package operation_test
 import (
 	"context"
 	"encoding/json"
-	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"testing"
 	"time"
+
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 

@@ -4,12 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 

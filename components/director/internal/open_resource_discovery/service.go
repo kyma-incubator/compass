@@ -1038,8 +1038,6 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 			log.C(ctx).WithError(errors.New(fmt.Sprintf("%s for resource with ID %s", ValidationErrorMsg, resource.ID))).WithField("validation_errors", validationErrorsObjects).Error(ValidationErrorMsg)
 		}
 
-		//err = errors.New("Test runtime error")
-
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())

@@ -3,7 +3,6 @@ package operation
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
@@ -99,7 +98,6 @@ func (s *service) MarkAsCompleted(ctx context.Context, id string, customErr erro
 	if customErr != nil {
 		opError := NewOperationError(customErr)
 		rawMessage, err := opError.ToJSONRawMessage()
-		fmt.Println(string(rawMessage))
 		if err != nil {
 			return errors.Wrap(err, "while marshaling operation error")
 		}
@@ -202,18 +200,18 @@ func (s *service) ListAllByType(ctx context.Context, opType model.OperationType)
 	return s.opRepo.ListAllByType(ctx, opType)
 }
 
-type CustomError struct {
+type customError struct {
 	ErrorMsg error
 }
 
 // OperationError represents an error from operation processing.
 type OperationError struct {
-	CustomError CustomError `json:"error"`
+	CustomError customError `json:"error"`
 }
 
 // NewOperationError creates OperationError instance.
 func NewOperationError(customErr error) *OperationError {
-	return &OperationError{CustomError: CustomError{ErrorMsg: customErr}}
+	return &OperationError{CustomError: customError{ErrorMsg: customErr}}
 }
 
 // ToJSONRawMessage converts the operation error ro JSON
@@ -222,7 +220,6 @@ func (or *OperationError) ToJSONRawMessage() (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(string(jsonBytes))
 
 	return jsonBytes, nil
 }
