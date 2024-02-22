@@ -28,7 +28,7 @@ type WebhookService interface {
 
 // TenantService is responsible for the service-layer Tenant operations.
 //
-//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantService interface {
 	GetLowestOwnerForResource(ctx context.Context, resourceType directorresource.Type, objectID string) (string, error)
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
@@ -36,8 +36,15 @@ type TenantService interface {
 
 // ApplicationService is responsible for the service-layer application operations.
 //
-//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
+	UpdateBaseURLAndReadyState(ctx context.Context, appID, baseURL string, ready bool) error
+}
+
+// Client is responsible for the service-layer application operations.
+//
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type Client interface {
 	UpdateBaseURLAndReadyState(ctx context.Context, appID, baseURL string, ready bool) error
 }
 
@@ -84,57 +91,6 @@ func (w *WebhookProcessor) StartProcessWebhooksJob(ctx context.Context) error {
 		SchedulePeriod: w.webhookProcessorJobInterval,
 	}
 	return cronjob.RunCronJob(ctx, w.webhookProcessorElectionConfig, resyncJob)
-}
-
-func (w *WebhookProcessor) listWebhooksByTypeAndLabelFilter(ctx context.Context) ([]*model.Webhook, error) {
-	tx, err := w.transact.Begin()
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to begin a transaction for listing webhooks by type %q and label", model.WebhookTypeSystemFieldDiscovery)
-	}
-	defer w.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	webhooks, err := w.webhookSvc.ListByTypeAndLabelFilter(ctx, model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry")))
-	if err != nil {
-		return nil, err
-	}
-
-	return webhooks, tx.Commit()
-}
-
-func (w *WebhookProcessor) processSubscription(ctx context.Context, subscription pkgwebhook.Subscription, webhook *model.Webhook) (bool, error) {
-	if subscription.AppURL == "" {
-		return false, nil
-	}
-
-	tx, err := w.transact.Begin()
-	if err != nil {
-		return false, errors.Wrapf(err, "failed to begin a transaction for processing subscriptions for webhook with id %q and type %q and label", webhook.ID, model.WebhookTypeSystemFieldDiscovery)
-	}
-	defer w.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	internalTntID, err := w.tenantSvc.GetLowestOwnerForResource(ctx, directorresource.Application, webhook.ObjectID)
-	if err != nil {
-		return false, errors.Wrapf(err, "failed to get lowest owner for %q resource with id %q", directorresource.Application, webhook.ObjectID)
-	}
-
-	tnt, err := w.tenantSvc.GetTenantByID(ctx, internalTntID)
-	if err != nil {
-		return false, errors.Wrapf(err, "failed to get tenant by id for internal tenant with id %q", internalTntID)
-	}
-
-	ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
-
-	if err := w.appSvc.UpdateBaseURLAndReadyState(ctx, webhook.ObjectID, subscription.AppURL, true); err != nil {
-		return false, errors.Wrapf(err, "failed to update base url and ready state for webhook with id %q and app with id %q", webhook.ID, webhook.ObjectID)
-	}
-
-	if err := w.webhookSvc.Delete(ctx, webhook.ID, model.ApplicationWebhookReference); err != nil {
-		return false, errors.Wrapf(err, "failed to delete application webhook with id %q for app with id %q", webhook.ID, webhook.ObjectID)
-	}
-
-	return true, tx.Commit()
 }
 
 func (w *WebhookProcessor) processWebhooks(ctx context.Context) error {
@@ -186,6 +142,57 @@ func (w *WebhookProcessor) processWebhooks(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func (w *WebhookProcessor) listWebhooksByTypeAndLabelFilter(ctx context.Context) ([]*model.Webhook, error) {
+	tx, err := w.transact.Begin()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to begin a transaction for listing webhooks by type %q and label", model.WebhookTypeSystemFieldDiscovery)
+	}
+	defer w.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	webhooks, err := w.webhookSvc.ListByTypeAndLabelFilter(ctx, model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry")))
+	if err != nil {
+		return nil, err
+	}
+
+	return webhooks, tx.Commit()
+}
+
+func (w *WebhookProcessor) processSubscription(ctx context.Context, subscription pkgwebhook.Subscription, webhook *model.Webhook) (bool, error) {
+	if subscription.AppURL == "" {
+		return false, nil
+	}
+
+	tx, err := w.transact.Begin()
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to begin a transaction for processing subscriptions for webhook with id %q and type %q and label", webhook.ID, model.WebhookTypeSystemFieldDiscovery)
+	}
+	defer w.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	internalTntID, err := w.tenantSvc.GetLowestOwnerForResource(ctx, directorresource.Application, webhook.ObjectID)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to get lowest owner for %q resource with id %q", directorresource.Application, webhook.ObjectID)
+	}
+
+	tnt, err := w.tenantSvc.GetTenantByID(ctx, internalTntID)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to get tenant by id for internal tenant with id %q", internalTntID)
+	}
+
+	ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
+
+	if err := w.appSvc.UpdateBaseURLAndReadyState(ctx, webhook.ObjectID, subscription.AppURL, true); err != nil {
+		return false, errors.Wrapf(err, "failed to update base url and ready state for webhook with id %q and app with id %q", webhook.ID, webhook.ObjectID)
+	}
+
+	if err := w.webhookSvc.Delete(ctx, webhook.ID, model.ApplicationWebhookReference); err != nil {
+		return false, errors.Wrapf(err, "failed to delete application webhook with id %q for app with id %q", webhook.ID, webhook.ObjectID)
+	}
+
+	return true, tx.Commit()
 }
 
 func saveCredentialsToContext(ctx context.Context, webhook *model.Webhook) (context.Context, error) {

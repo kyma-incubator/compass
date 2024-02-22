@@ -6,13 +6,13 @@ import (
 )
 
 type SystemFieldDiscoveryEngineConfig struct {
-	SaasRegSecretPath string `envconfig:"APP_SELF_REGISTER_SECRET_PATH"`               //fix naming //tmp/keyConfig
-	OauthTokenPath    string `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"` // oauth/token
+	SaasRegSecretPath string `envconfig:"APP_SELF_REGISTER_SECRET_PATH"`
+	OauthTokenPath    string `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
 
-	SaasRegClientIDPath     string `envconfig:"APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH"`     //clientid
-	SaasRegClientSecretPath string `envconfig:"APP_SELF_REGISTER_INSTANCE_CLIENT_SECRET_PATH"` //clientsecret
-	SaasRegTokenURLPath     string `envconfig:"APP_SELF_REGISTER_INSTANCE_URL_PATH"`           //url  (cmp.hana.authentication....)
-	SaasRegURLPath          string `envconfig:"APP_SELF_REGISTER_SAAS_REGISTRY_URL_PATH"`      //saas_registry_url
+	SaasRegClientIDPath     string `envconfig:"APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH"`
+	SaasRegClientSecretPath string `envconfig:"APP_SELF_REGISTER_INSTANCE_CLIENT_SECRET_PATH"`
+	SaasRegTokenURLPath     string `envconfig:"APP_SELF_REGISTER_INSTANCE_URL_PATH"`
+	SaasRegURLPath          string `envconfig:"APP_SELF_REGISTER_SAAS_REGISTRY_URL_PATH"`
 
 	RegionToSaasRegConfig map[string]SaasRegConfig `envconfig:"-"`
 }

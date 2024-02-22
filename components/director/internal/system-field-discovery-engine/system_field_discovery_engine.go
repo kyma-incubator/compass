@@ -13,7 +13,7 @@ import (
 
 const (
 	RegistryLabelKey   = "registry"
-	RegistryLabelValue = "saas-registry" // should be configuration?
+	RegistryLabelValue = "saas-registry"
 )
 
 // LabelService is responsible updating already existing labels, and their label definitions.
@@ -83,6 +83,7 @@ func (s *systemFieldDiscoveryEngine) enrichWithWebhook(modelInputWebhooks []*mod
 	return modelInputWebhooks
 }
 
+// CreateLabelForApplicationWebhook creates label for webhook for application with id
 func (s *systemFieldDiscoveryEngine) CreateLabelForApplicationWebhook(ctx context.Context, appID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
