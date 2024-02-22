@@ -7,7 +7,6 @@ import (
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"net/http"
 	"os"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -341,8 +340,6 @@ func reloadTemplates(ctx context.Context, cfg config, transact persistence.Trans
 	if err != nil {
 		return nil, errors.Wrapf(err, "while calculating application templates mappings")
 	}
-
-	calculateSortedTemplateMappingKeys()
 
 	return templateRenderer, nil
 }
@@ -754,17 +751,4 @@ func createSelectFilter(selectFilterProperties map[string]bool, placeholdersMapp
 	}
 
 	return selectFilter
-}
-
-func calculateSortedTemplateMappingKeys() {
-	templateMappingKeys := make([]systemfetcher.TemplateMappingKey, 0, len(systemfetcher.ApplicationTemplates))
-	for key := range systemfetcher.ApplicationTemplates {
-		templateMappingKeys = append(templateMappingKeys, key)
-	}
-
-	sort.Slice(templateMappingKeys, func(i, j int) bool {
-		return templateMappingKeys[i].Label < templateMappingKeys[j].Label
-	})
-
-	systemfetcher.SortedTemplateMappingKeys = templateMappingKeys
 }

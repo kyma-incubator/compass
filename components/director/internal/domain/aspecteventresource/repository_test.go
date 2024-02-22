@@ -74,7 +74,7 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 
 	selectQueryForAspectEventResources := `^\(SELECT id, app_id, app_template_version_id, aspect_id, ord_id, min_version, subset, ready, created_at, updated_at, deleted_at, error FROM public.aspect_event_resources WHERE \(id IN \(SELECT id FROM aspect_event_resources_tenants WHERE tenant_id = \$1\)\) AND app_id = \$2 ORDER BY aspect_id ASC, app_id ASC LIMIT \$3 OFFSET \$4\) UNION \(SELECT id, app_id, app_template_version_id, aspect_id, ord_id, min_version, subset, ready, created_at, updated_at, deleted_at, error FROM public.aspect_event_resources WHERE \(id IN \(SELECT id FROM aspect_event_resources_tenants WHERE tenant_id = \$5\)\) AND app_id = \$6 ORDER BY aspect_id ASC, app_id ASC LIMIT \$7 OFFSET \$8\)`
 
-	countQueryForAspectsEventResources := `SELECT app_id AS id, COUNT\(\*\) AS total_count FROM public.aspect_event_resources WHERE \(id IN \(SELECT id FROM aspect_event_resources_tenants WHERE tenant_id = \$1\)\) GROUP BY app_id ORDER BY app_id ASC`
+	countQueryForAspectsEventResources := `SELECT app_id AS id, COUNT\(\*\) AS total_count FROM public.aspect_event_resources WHERE \(id IN \(SELECT id FROM aspect_event_resources_tenants WHERE tenant_id = \$1\)\) AND app_id IN \(\$2, \$3\) GROUP BY app_id ORDER BY app_id ASC`
 
 	t.Run("success when everything is returned for aspect event resources", func(t *testing.T) {
 		ExpectedLimit := 1
@@ -95,7 +95,7 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQueryForAspectsEventResources).
-			WithArgs(tenantID).
+			WithArgs(tenantID, firstAppID, secondAppID).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
 				AddRow(firstAppID, totalCountForFirstAspectEventResource).
 				AddRow(secondAppID, totalCountForSecondAspectEventResource))
