@@ -78,7 +78,7 @@ func (p AggregationFailurePusher) ReportAggregationFailure(ctx context.Context, 
 }
 
 // ReportAggregationFailureORD reports failed aggregation with the provided error. copy
-func (p AggregationFailurePusher) ReportAggregationFailureORD(ctx context.Context, err, severity string) {
+func (p AggregationFailurePusher) ReportAggregationFailureORD(ctx context.Context, err string) {
 	if p.pusher == nil {
 		log.C(ctx).Error("Metrics pusher is not configured, skipping report...")
 		return
@@ -90,7 +90,7 @@ func (p AggregationFailurePusher) ReportAggregationFailureORD(ctx context.Contex
 	currentResourceType := log.C(ctx).Data["resource_type"]
 	currentCorrelationID := log.C(ctx).Data["x-request-id"]
 
-	p.aggregationFailuresCounter.WithLabelValues(err, currentResourceID.(string), currentResourceType.(string), currentCorrelationID.(string), severity).Inc()
+	p.aggregationFailuresCounter.WithLabelValues(err, currentResourceID.(string), currentResourceType.(string), currentCorrelationID.(string)).Inc()
 
 	p.push(ctx)
 }

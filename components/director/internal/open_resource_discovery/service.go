@@ -962,7 +962,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 		MetricName: strings.ReplaceAll(strings.ToLower(s.metricsCfg.JobName), "-", "_") + "_job_sync_failure_number",
 		Timeout:    s.metricsCfg.ClientTimeout,
 		Subsystem:  metrics.OrdAggregatorSubsystem,
-		Labels:     []string{metrics.ErrorMetricLabel, metrics.ResourceIDMetricLabel, metrics.ResourceTypeMetricLabel, metrics.CorrelationIDMetricLabel, metrics.SeverityLevelLabel},
+		Labels:     []string{metrics.ErrorMetricLabel, metrics.ResourceIDMetricLabel, metrics.ResourceTypeMetricLabel, metrics.CorrelationIDMetricLabel},
 	}
 
 	ctx = addFieldToLogger(ctx, "resource_id", resource.ID)
@@ -1016,7 +1016,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 		documents, docsString, webhookBaseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, webhook, ordWebhookMapping, ordRequestObject)
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
-			metricsPusher.ReportAggregationFailureORD(ctx, err.Error(), ErrorSeverity)
+			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
 
 			return errors.Wrapf(err, "error fetching ORD document for webhook with id %q: %v", webhook.ID, err)
 		}
@@ -1027,12 +1027,6 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 
 		validationErrors, err := s.processDocuments(ctx, resource, webhookBaseURL, ordWebhookMapping.ProxyURL, ordRequestObject, documents, globalResourcesOrdIDs, docsString)
 		if len(validationErrors) > 0 {
-			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
-
-			for _, e := range validationErrors {
-				metricsPusher.ReportAggregationFailureORD(ctx, fmt.Sprintf("%s|%s", e.OrdID, e.Description), e.Severity)
-			}
-
 			// convert validationErrors array of pointers to array of objects in order to log them properly
 			var validationErrorsObjects []ValidationError
 			for _, errPtr := range validationErrors {
@@ -1044,9 +1038,11 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 			log.C(ctx).WithError(errors.New(fmt.Sprintf("%s for resource with ID %s", ValidationErrorMsg, resource.ID))).WithField("validation_errors", validationErrorsObjects).Error(ValidationErrorMsg)
 		}
 
+		//err = errors.New("Test runtime error")
+
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
-			metricsPusher.ReportAggregationFailureORD(ctx, err.Error(), ErrorSeverity)
+			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
 
 			log.C(ctx).WithError(err).Errorf("%s: %v", ProcessingErrorMsg, err)
 		}

@@ -498,11 +498,11 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 		var processingError *ord.ProcessingError
 		ok := errors.As(errProcess, &processingError)
 		if !ok {
-			newProcessingError := ord.ProcessingError{
+			newProcessingError := &ord.ProcessingError{
 				ValidationErrors: nil,
 				RuntimeError:     &ord.RuntimeError{Message: errProcess.Error()},
 			}
-			if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, newProcessingError.Error()); errMarkAsFailed != nil {
+			if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, newProcessingError); errMarkAsFailed != nil {
 				log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
 				return op.ID, errMarkAsFailed
 			}
@@ -510,20 +510,20 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 		}
 
 		if processingError.RuntimeError != nil || (len(processingError.ValidationErrors) > 0 && thereAreValidationErrorsWithErrSeverity(processingError.ValidationErrors)) {
-			if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError.Error()); errMarkAsFailed != nil {
+			if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError); errMarkAsFailed != nil {
 				log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
 				return op.ID, errMarkAsFailed
 			}
 			return op.ID, processingError
 		}
 
-		if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, processingError.Error()); errMarkAsCompleted != nil {
+		if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, processingError); errMarkAsCompleted != nil {
 			log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
 			return op.ID, errMarkAsCompleted
 		}
 		return op.ID, nil
 	}
-	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, ""); errMarkAsCompleted != nil {
+	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, nil); errMarkAsCompleted != nil {
 		log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
 		return op.ID, errMarkAsCompleted
 	}

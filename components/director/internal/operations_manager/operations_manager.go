@@ -2,6 +2,7 @@ package operationsmanager
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -123,7 +124,7 @@ func (om *OperationsManager) FindOperationByData(ctx context.Context, data inter
 }
 
 // MarkOperationCompleted marks the operation with the given ID as completed
-func (om *OperationsManager) MarkOperationCompleted(ctx context.Context, id, errorMsg string) error {
+func (om *OperationsManager) MarkOperationCompleted(ctx context.Context, id string, customErr error) error {
 	tx, err := om.transact.Begin()
 	if err != nil {
 		return err
@@ -131,7 +132,8 @@ func (om *OperationsManager) MarkOperationCompleted(ctx context.Context, id, err
 	defer om.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := om.opSvc.MarkAsCompleted(ctx, id, errorMsg); err != nil {
+	fmt.Println(customErr.Error())
+	if err := om.opSvc.MarkAsCompleted(ctx, id, customErr); err != nil {
 		return errors.Wrapf(err, "while marking operation with id %q as completed", id)
 	}
 
@@ -139,7 +141,7 @@ func (om *OperationsManager) MarkOperationCompleted(ctx context.Context, id, err
 }
 
 // MarkOperationFailed marks the operation with the given ID as failed
-func (om *OperationsManager) MarkOperationFailed(ctx context.Context, id, errorMsg string) error {
+func (om *OperationsManager) MarkOperationFailed(ctx context.Context, id string, customErr error) error {
 	tx, err := om.transact.Begin()
 	if err != nil {
 		return err
@@ -147,7 +149,7 @@ func (om *OperationsManager) MarkOperationFailed(ctx context.Context, id, errorM
 	defer om.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := om.opSvc.MarkAsFailed(ctx, id, errorMsg); err != nil {
+	if err := om.opSvc.MarkAsFailed(ctx, id, customErr); err != nil {
 		return errors.Wrapf(err, "while marking operation with id %q as failed", id)
 	}
 	return tx.Commit()
