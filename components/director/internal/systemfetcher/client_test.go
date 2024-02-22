@@ -480,7 +480,7 @@ func fixHTTPClient(t *testing.T) (*mockData, string) {
 	}
 	mux.HandleFunc("/fetch", func(w http.ResponseWriter, r *http.Request) {
 		filter := r.URL.Query().Get("$filter")
-		require.Equal(t, sortStrings(mock.expectedFilterCriteria), sortStrings(filter))
+		require.True(t, compareStrings(mock.expectedFilterCriteria, filter))
 
 		requests = append(requests, filter)
 		w.Header().Set("Content-Type", "application/json")
@@ -539,8 +539,12 @@ func fixSystemsWithTbt() []systemfetcher.System {
 	}
 }
 
-func sortStrings(w string) string {
-	s := strings.Split(w, "")
-	sort.Strings(s)
-	return strings.Join(s, "")
+func compareStrings(s1, s2 string) bool {
+	tokens1 := strings.Split(s1, " or ")
+	tokens2 := strings.Split(s2, " or ")
+
+	sort.Strings(tokens1)
+	sort.Strings(tokens2)
+
+	return strings.Join(tokens1, " or ") == strings.Join(tokens2, " or ")
 }
