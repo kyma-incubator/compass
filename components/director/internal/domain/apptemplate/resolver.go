@@ -1000,8 +1000,7 @@ func extractRegionPlaceholder(placeholders []model.ApplicationTemplatePlaceholde
 // region label for application and global_subaccount_id and systemFieldDiscovery labels for app template must exist
 func (r *Resolver) areSystemFieldDiscoveryPrerequisitesAvailable(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, appTemplateID string) (string, string, bool, error) {
 	var regionValue, subaccountIDValue string
-	var systemFieldDiscoveryValue bool
-	ok := false
+	var systemFieldDiscoveryValue, ok bool
 	if regionLabel, exists := appCreateInputModel.Labels[selfregmanager.RegionLabel]; exists {
 		regionValue, ok = regionLabel.(string)
 		if !ok {

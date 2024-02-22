@@ -1784,9 +1784,6 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			SystemFieldDiscoveryEngine: func() *automock.SystemFieldDiscoveryEngine {
 				systemFieldDiscoveryEngine := &automock.SystemFieldDiscoveryEngine{}
-				newWebhooks := modelAppCreateInputWithLabels.Webhooks
-				newWebhooks = append(newWebhooks, &model.WebhookInput{
-					Type: model.WebhookTypeSystemFieldDiscovery})
 				systemFieldDiscoveryEngine.AssertNotCalled(t, "EnrichApplicationWebhookIfNeeded")
 				systemFieldDiscoveryEngine.AssertNotCalled(t, "CreateLabelForApplicationWebhook")
 
