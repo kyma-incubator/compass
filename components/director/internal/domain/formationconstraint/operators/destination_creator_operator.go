@@ -142,6 +142,26 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 				}
 				notificationStatusReport.Configuration = config
 			}
+
+			if oauth2mTLSDetails := assignmentConfig.Credentials.InboundCommunicationDetails.OAuth2MTLSAuthentication; oauth2mTLSDetails != nil && len(oauth2mTLSDetails.Destinations) > 0 {
+				log.C(ctx).Infof("There is/are %d oauth2mTLS destination details in the configuration response", len(oauth2mTLSDetails.Destinations))
+
+				if oauth2mTLSDetails.Certificate != nil && *oauth2mTLSDetails.Certificate != "" {
+					log.C(ctx).Infof("The certificate for oauth2mTlS authentication destination already exists. No new certificate will be generated.")
+					return true, nil
+				}
+
+				certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, oauth2mTLSDetails.Destinations, destinationcreatorpkg.AuthTypeOAuth2mTLS, formationAssignment, 0, di.SkipSubaccountValidation, false)
+				if err != nil {
+					return false, errors.Wrap(err, "while creating oauth2mTLS authentication certificate")
+				}
+
+				config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithCertificateData(notificationStatusReport.Configuration, destinationcreatorpkg.Oauth2mTLSAuthDestPath, certData)
+				if err != nil {
+					return false, err
+				}
+				notificationStatusReport.Configuration = config
+			}
 		}
 
 		log.C(ctx).Infof("Finished executing operator: %q for location with constraint type: %q and operation name: %q during %q operation", DestinationCreatorOperator, di.Location.ConstraintType, di.Location.OperationName, model.AssignFormation)
@@ -219,6 +239,15 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			}
 		}
 
+		oauth2MTLSDetails := assignmentConfig.Credentials.InboundCommunicationDetails.OAuth2MTLSAuthentication
+		oauth2MTLSCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.OAuth2MTLSAuthentication
+		if oauth2MTLSDetails != nil && oauth2MTLSCreds != nil && len(oauth2MTLSDetails.Destinations) > 0 {
+			log.C(ctx).Infof("There is/are %d inbound oauth2 mTLS destination(s) details available in the configuration", len(oauth2MTLSDetails.Destinations))
+			if err := e.destinationSvc.CreateOAuth2mTLSDestinations(ctx, oauth2MTLSDetails.Destinations, oauth2MTLSCreds, formationAssignment, oauth2MTLSDetails.CorrelationIDs, di.SkipSubaccountValidation); err != nil {
+				return false, errors.Wrap(err, "while creating oauth2 mTLS destinations")
+			}
+		}
+
 		log.C(ctx).Infof("Finished executing operator: %q for location with constraint type: %q and operation name: %q during %q operation", DestinationCreatorOperator, di.Location.ConstraintType, di.Location.OperationName, model.AssignFormation)
 		return true, nil
 	}
@@ -262,7 +291,6 @@ func (d *DestinationRaw) UnmarshalJSON(data []byte) error {
 			return errors.Wrapf(err, "while removing %q key from the destination details", authenticationKeyOld)
 		}
 	}
-
 	d.Destination = raw
 
 	return nil
@@ -371,6 +399,7 @@ type OutboundCommunicationCredentials struct {
 	OAuth2SAMLBearerAssertionAuthentication *OAuth2SAMLBearerAssertionAuthentication `json:"oauth2SamlBearerAssertion,omitempty"`
 	ClientCertAuthentication                *ClientCertAuthentication                `json:"clientCertificateAuthentication,omitempty"`
 	OAuth2ClientCredentialsAuthentication   *OAuth2ClientCredentialsAuthentication   `json:"oauth2ClientCredentials,omitempty"`
+	OAuth2MTLSAuthentication                *OAuth2mTLSAuthentication                `json:"oauth2mtls,omitempty"`
 }
 
 // NoAuthentication represents outbound communication without any authentication
@@ -415,6 +444,14 @@ type OAuth2ClientCredentialsAuthentication struct {
 	CorrelationIds  []string `json:"correlationIds,omitempty"`
 }
 
+// OAuth2mTLSAuthentication represents outbound communication with OAuth 2 mTLS authentication
+type OAuth2mTLSAuthentication struct {
+	URL             string   `json:"url"`
+	TokenServiceURL string   `json:"tokenServiceUrl"`
+	ClientID        string   `json:"clientId"`
+	CorrelationIds  []string `json:"correlationIds,omitempty"`
+}
+
 // InboundCommunicationDetails consists of a different type of inbound communication configuration details
 type InboundCommunicationDetails struct {
 	BasicAuthenticationDetails             *InboundBasicAuthenticationDetails       `json:"basicAuthentication,omitempty"`
@@ -422,6 +459,7 @@ type InboundCommunicationDetails struct {
 	OAuth2SAMLBearerAssertionDetails       *InboundOAuth2SAMLBearerAssertionDetails `json:"oauth2SamlBearerAssertion,omitempty"`
 	ClientCertificateAuthenticationDetails *InboundClientCertAuthenticationDetails  `json:"clientCertificateAuthentication,omitempty"`
 	OAuth2ClientCredentialsDetails         *InboundOAuth2ClientCredentialsDetails   `json:"oauth2ClientCredentials,omitempty"`
+	OAuth2MTLSAuthentication               *InboundOAuth2mTLSAuthenticationDetails  `json:"oauth2mtls,omitempty"`
 }
 
 // InboundBasicAuthenticationDetails represents inbound communication configuration details for basic authentication
@@ -457,6 +495,13 @@ type InboundClientCertAuthenticationDetails struct {
 type InboundOAuth2ClientCredentialsDetails struct {
 	CorrelationIDs []string      `json:"correlationIds"`
 	Destinations   []Destination `json:"destinations"`
+}
+
+// InboundOAuth2mTLSAuthenticationDetails represents inbound communication configuration details for oauth2 mTLS authentication
+type InboundOAuth2mTLSAuthenticationDetails struct {
+	CorrelationIDs []string      `json:"correlationIds"`
+	Destinations   []Destination `json:"destinations"`
+	Certificate    *string       `json:"certificate,omitempty"`
 }
 
 // Destination holds different destination types properties
