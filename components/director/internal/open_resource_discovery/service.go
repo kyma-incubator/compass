@@ -117,18 +117,11 @@ type Service struct {
 	webhookSvc                     WebhookService
 	bundleSvc                      BundleService
 	bundleReferenceSvc             BundleReferenceService
-	apiSvc                         APIService
 	apiProcessor                   APIProcessor
-	eventSvc                       EventService
 	eventProcessor                 EventProcessor
-	entityTypeSvc                  EntityTypeService
-	capabilitySvc                  CapabilityService
 	capabilityProcessor            CapabilityProcessor
-	integrationDependencySvc       IntegrationDependencyService
-	dataProductSvc                 DataProductService
 	specSvc                        SpecService
 	fetchReqSvc                    FetchRequestService
-	packageSvc                     PackageService
 	packageProcessor               PackageProcessor
 	productProcessor               ProductProcessor
 	vendorProcessor                VendorProcessor
@@ -152,10 +145,8 @@ type Service struct {
 	documentValidator Validator
 }
 
-// TODO remove redundant services
-
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, apiProcessor APIProcessor, eventSvc EventService, eventProcessor EventProcessor, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, capabilityProcessor CapabilityProcessor, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, dataProductSvc DataProductService, dataProductProcessor DataProductProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, packageProcessor PackageProcessor, productProcessor ProductProcessor, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, tombstonedResourcesDeleter TombstonedResourcesDeleter, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService, documentValidator Validator) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiProcessor APIProcessor, eventProcessor EventProcessor, entityTypeProcessor EntityTypeProcessor, capabilityProcessor CapabilityProcessor, integrationDependencyProcessor IntegrationDependencyProcessor, dataProductProcessor DataProductProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageProcessor PackageProcessor, productProcessor ProductProcessor, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, tombstonedResourcesDeleter TombstonedResourcesDeleter, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService, documentValidator Validator) *Service {
 	return &Service{
 		config:                         config,
 		metricsCfg:                     metricsCfg,
@@ -164,21 +155,14 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		webhookSvc:                     webhookSvc,
 		bundleSvc:                      bundleSvc,
 		bundleReferenceSvc:             bundleReferenceSvc,
-		apiSvc:                         apiSvc,
 		apiProcessor:                   apiProcessor,
-		eventSvc:                       eventSvc,
 		eventProcessor:                 eventProcessor,
-		entityTypeSvc:                  entityTypeSvc,
 		entityTypeProcessor:            entityTypeProcessor,
-		capabilitySvc:                  capabilitySvc,
 		capabilityProcessor:            capabilityProcessor,
-		integrationDependencySvc:       integrationDependencySvc,
 		integrationDependencyProcessor: integrationDependencyProcessor,
-		dataProductSvc:                 dataProductSvc,
 		dataProductProcessor:           dataProductProcessor,
 		specSvc:                        specSvc,
 		fetchReqSvc:                    fetchReqSvc,
-		packageSvc:                     packageSvc,
 		packageProcessor:               packageProcessor,
 		productProcessor:               productProcessor,
 		vendorProcessor:                vendorProcessor,

@@ -2927,37 +2927,26 @@ func TestService_Processing(t *testing.T) {
 			if test.bundleRefSvcFn != nil {
 				bndlRefSvc = test.bundleRefSvcFn()
 			}
-			apiSvc := &automock.APIService{}
 			apiProcessor := &automock.APIProcessor{}
 			if test.apiProcessorFn != nil {
 				apiProcessor = test.apiProcessorFn()
 			}
-			eventSvc := &automock.EventService{}
-
 			eventProcessor := &automock.EventProcessor{}
 			if test.eventProcessorFn != nil {
 				eventProcessor = test.eventProcessorFn()
 			}
-			entityTypeSvc := &automock.EntityTypeService{}
-
 			entityTypeProcessor := &automock.EntityTypeProcessor{}
 			if test.entityTypeProcessorFn != nil {
 				entityTypeProcessor = test.entityTypeProcessorFn()
 			}
-			capabilitySvc := &automock.CapabilityService{}
-
 			capabilityProcessor := &automock.CapabilityProcessor{}
 			if test.capabilityProcessorFn != nil {
 				capabilityProcessor = test.capabilityProcessorFn()
 			}
-			integrationDependencySvc := &automock.IntegrationDependencyService{}
-
 			integrationDependencyProcessor := &automock.IntegrationDependencyProcessor{}
 			if test.integrationDependencyProcessorFn != nil {
 				integrationDependencyProcessor = test.integrationDependencyProcessorFn()
 			}
-			dataProductSvc := &automock.DataProductService{}
-
 			dataProductProcessor := &automock.DataProductProcessor{}
 			if test.dataProductProcessorFn != nil {
 				dataProductProcessor = test.dataProductProcessorFn()
@@ -2970,8 +2959,6 @@ func TestService_Processing(t *testing.T) {
 			if test.fetchReqFn != nil {
 				fetchReqSvc = test.fetchReqFn()
 			}
-			packageSvc := &automock.PackageService{}
-
 			packageProcessor := &automock.PackageProcessor{}
 			if test.packageProcessorFn != nil {
 				packageProcessor = test.packageProcessorFn()
@@ -3033,7 +3020,7 @@ func TestService_Processing(t *testing.T) {
 			metrixCfg := ord.MetricsConfig{}
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, apiProcessor, eventSvc, eventProcessor, entityTypeSvc, entityTypeProcessor, capabilitySvc, capabilityProcessor, integrationDependencySvc, integrationDependencyProcessor, dataProductSvc, dataProductProcessor, specSvc, fetchReqSvc, packageSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, ordWebhookMappings, nil, documentValidator)
+			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiProcessor, eventProcessor, entityTypeProcessor, capabilityProcessor, integrationDependencyProcessor, dataProductProcessor, specSvc, fetchReqSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, ordWebhookMappings, nil, documentValidator)
 
 			var err error
 			switch test.processFnName {
@@ -3051,7 +3038,7 @@ func TestService_Processing(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, tx, appSvc, whSvc, bndlSvc, apiSvc, eventSvc, entityTypeSvc, entityTypeProcessor, capabilitySvc, integrationDependencySvc, integrationDependencyProcessor, dataProductSvc, dataProductProcessor, specSvc, packageSvc, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, labelSvc, tombstonedResourcesDeleter)
+			mock.AssertExpectationsForObjects(t, tx, appSvc, whSvc, bndlSvc, entityTypeProcessor, integrationDependencyProcessor, dataProductProcessor, specSvc, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, labelSvc, tombstonedResourcesDeleter)
 		})
 	}
 }
@@ -3239,20 +3226,13 @@ func TestService_ProcessApplication(t *testing.T) {
 
 			bndlSvc := &automock.BundleService{}
 			bndlRefSvc := &automock.BundleReferenceService{}
-			apiSvc := &automock.APIService{}
 			apiProcessor := &automock.APIProcessor{}
-			eventSvc := &automock.EventService{}
 			eventProcessor := &automock.EventProcessor{}
-			entityTypeSvc := &automock.EntityTypeService{}
-			capabilitySvc := &automock.CapabilityService{}
 			capabilityProcessor := &automock.CapabilityProcessor{}
-			integrationDependencySvc := &automock.IntegrationDependencyService{}
 			integrationDependencyProcessor := &automock.IntegrationDependencyProcessor{}
-			dataProductSvc := &automock.DataProductService{}
 			dataProductProcessor := &automock.DataProductProcessor{}
 			specSvc := &automock.SpecService{}
 			fetchReqSvc := &automock.FetchRequestService{}
-			packageSvc := &automock.PackageService{}
 			packageProcessor := &automock.PackageProcessor{}
 			productProcessor := &automock.ProductProcessor{}
 			vendorProcessor := &automock.VendorProcessor{}
@@ -3266,7 +3246,7 @@ func TestService_ProcessApplication(t *testing.T) {
 			metrixCfg := ord.MetricsConfig{}
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, apiProcessor, eventSvc, eventProcessor, entityTypeSvc, nil, capabilitySvc, capabilityProcessor, integrationDependencySvc, integrationDependencyProcessor, dataProductSvc, dataProductProcessor, specSvc, fetchReqSvc, packageSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, []application.ORDWebhookMapping{}, nil, documentValidator)
+			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiProcessor, eventProcessor, nil, capabilityProcessor, integrationDependencyProcessor, dataProductProcessor, specSvc, fetchReqSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, []application.ORDWebhookMapping{}, nil, documentValidator)
 			err := svc.ProcessApplication(context.TODO(), test.appID)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -3275,7 +3255,7 @@ func TestService_ProcessApplication(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, tx, appSvc, whSvc, bndlSvc, apiSvc, eventSvc, entityTypeSvc, capabilitySvc, integrationDependencySvc, integrationDependencyProcessor, specSvc, packageSvc, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, labelSvc)
+			mock.AssertExpectationsForObjects(t, tx, appSvc, whSvc, bndlSvc, integrationDependencyProcessor, specSvc, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, labelSvc)
 		})
 	}
 }
@@ -3371,20 +3351,13 @@ func TestService_ProcessApplicationTemplate(t *testing.T) {
 
 			bndlSvc := &automock.BundleService{}
 			bndlRefSvc := &automock.BundleReferenceService{}
-			apiSvc := &automock.APIService{}
 			apiProcessor := &automock.APIProcessor{}
-			eventSvc := &automock.EventService{}
 			eventProcessor := &automock.EventProcessor{}
-			entityTypeSvc := &automock.EntityTypeService{}
-			capabilitySvc := &automock.CapabilityService{}
 			capabilityProcessor := &automock.CapabilityProcessor{}
-			integrationDependencySvc := &automock.IntegrationDependencyService{}
 			integrationDependencyProcessor := &automock.IntegrationDependencyProcessor{}
-			dataProductSvc := &automock.DataProductService{}
 			dataProductProcessor := &automock.DataProductProcessor{}
 			specSvc := &automock.SpecService{}
 			fetchReqSvc := &automock.FetchRequestService{}
-			packageSvc := &automock.PackageService{}
 			packageProcessor := &automock.PackageProcessor{}
 			productProcessor := &automock.ProductProcessor{}
 			vendorProcessor := &automock.VendorProcessor{}
@@ -3432,7 +3405,7 @@ func TestService_ProcessApplicationTemplate(t *testing.T) {
 			documentValidator := &automock.Validator{}
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metricsCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, apiProcessor, eventSvc, eventProcessor, entityTypeSvc, nil, capabilitySvc, capabilityProcessor, integrationDependencySvc, integrationDependencyProcessor, dataProductSvc, dataProductProcessor, specSvc, fetchReqSvc, packageSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, []application.ORDWebhookMapping{}, nil, documentValidator)
+			svc := ord.NewAggregatorService(ordCfg, metricsCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiProcessor, eventProcessor, nil, capabilityProcessor, integrationDependencyProcessor, dataProductProcessor, specSvc, fetchReqSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, []application.ORDWebhookMapping{}, nil, documentValidator)
 			err := svc.ProcessApplicationTemplate(context.TODO(), test.appTemplateID)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -3441,7 +3414,7 @@ func TestService_ProcessApplicationTemplate(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, tx, appSvc, whSvc, bndlSvc, apiSvc, eventSvc, entityTypeSvc, capabilitySvc, integrationDependencySvc, integrationDependencyProcessor, specSvc, packageSvc, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, labelSvc)
+			mock.AssertExpectationsForObjects(t, tx, appSvc, whSvc, bndlSvc, integrationDependencyProcessor, specSvc, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, labelSvc)
 		})
 	}
 }
@@ -3658,20 +3631,13 @@ func TestService_ProcessAppInAppTemplateContext(t *testing.T) {
 
 			bndlSvc := &automock.BundleService{}
 			bndlRefSvc := &automock.BundleReferenceService{}
-			apiSvc := &automock.APIService{}
 			apiProcessor := &automock.APIProcessor{}
-			eventSvc := &automock.EventService{}
 			eventProcessor := &automock.EventProcessor{}
-			entityTypeSvc := &automock.EntityTypeService{}
-			capabilitySvc := &automock.CapabilityService{}
 			capabilityProcessor := &automock.CapabilityProcessor{}
-			integrationDependencySvc := &automock.IntegrationDependencyService{}
 			integrationDependencyProcessor := &automock.IntegrationDependencyProcessor{}
-			dataProductSvc := &automock.DataProductService{}
 			dataProductProcessor := &automock.DataProductProcessor{}
 			specSvc := &automock.SpecService{}
 			fetchReqSvc := &automock.FetchRequestService{}
-			packageSvc := &automock.PackageService{}
 			packageProcessor := &automock.PackageProcessor{}
 			productProcessor := &automock.ProductProcessor{}
 			vendorProcessor := &automock.VendorProcessor{}
@@ -3719,7 +3685,7 @@ func TestService_ProcessAppInAppTemplateContext(t *testing.T) {
 			documentValidator := &automock.Validator{}
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, apiProcessor, eventSvc, eventProcessor, entityTypeSvc, nil, capabilitySvc, capabilityProcessor, integrationDependencySvc, integrationDependencyProcessor, dataProductSvc, dataProductProcessor, specSvc, fetchReqSvc, packageSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, []application.ORDWebhookMapping{}, nil, documentValidator)
+			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiProcessor, eventProcessor, nil, capabilityProcessor, integrationDependencyProcessor, dataProductProcessor, specSvc, fetchReqSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, []application.ORDWebhookMapping{}, nil, documentValidator)
 			err := svc.ProcessAppInAppTemplateContext(context.TODO(), test.appTemplateID, test.appID)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -3728,7 +3694,7 @@ func TestService_ProcessAppInAppTemplateContext(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, tx, appSvc, whSvc, bndlSvc, apiSvc, eventSvc, entityTypeSvc, capabilitySvc, integrationDependencySvc, integrationDependencyProcessor, specSvc, packageSvc, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, labelSvc)
+			mock.AssertExpectationsForObjects(t, tx, appSvc, whSvc, bndlSvc, integrationDependencyProcessor, specSvc, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, labelSvc)
 		})
 	}
 }

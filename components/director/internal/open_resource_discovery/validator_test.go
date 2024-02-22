@@ -14,6 +14,12 @@ import (
 )
 
 func TestDocumentValidator_Validate(t *testing.T) {
+	validatorClientCallWithoutValidationErrors := func() *automock.ValidatorClient {
+		clientValidator := &automock.ValidatorClient{}
+		clientValidator.On("Validate", policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
+		return clientValidator
+	}
+
 	testCases := []struct {
 		Name                     string
 		ClientValidatorFn        func() *automock.ValidatorClient
@@ -23,14 +29,10 @@ func TestDocumentValidator_Validate(t *testing.T) {
 		ExpectedValidationErrors []*ord.ValidationError
 	}{
 		{
-			Name: "Success without errors",
-			ClientValidatorFn: func() *automock.ValidatorClient {
-				clientValidator := &automock.ValidatorClient{}
-				clientValidator.On("Validate", policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
-				return clientValidator
-			},
-			InputDocument: fmt.Sprintf(ordDocument, baseURL),
-			InputBaseURL:  baseURL,
+			Name:              "Success without errors",
+			ClientValidatorFn: validatorClientCallWithoutValidationErrors,
+			InputDocument:     fmt.Sprintf(ordDocument, baseURL),
+			InputBaseURL:      baseURL,
 		},
 		{
 			Name: "Runtime error from API Metadata Validator",
@@ -66,45 +68,29 @@ func TestDocumentValidator_Validate(t *testing.T) {
 			ExpectedValidationErrors: validationErrorsWarningSeverity,
 		},
 		{
-			Name: "Validation error when there is a duplicate API resource",
-			ClientValidatorFn: func() *automock.ValidatorClient {
-				clientValidator := &automock.ValidatorClient{}
-				clientValidator.On("Validate", policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
-				return clientValidator
-			},
+			Name:                     "Validation error when there is a duplicate API resource",
+			ClientValidatorFn:        validatorClientCallWithoutValidationErrors,
 			InputDocument:            fmt.Sprintf(ordDocumentWithDuplicates, baseURL),
 			InputBaseURL:             baseURL,
 			ExpectedValidationErrors: validationErrorDuplicateResources,
 		},
 		{
-			Name: "Validation error when there is a resource with unknown reference",
-			ClientValidatorFn: func() *automock.ValidatorClient {
-				clientValidator := &automock.ValidatorClient{}
-				clientValidator.On("Validate", policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
-				return clientValidator
-			},
+			Name:                     "Validation error when there is a resource with unknown reference",
+			ClientValidatorFn:        validatorClientCallWithoutValidationErrors,
 			InputDocument:            fmt.Sprintf(ordDocumentAPIHasUnknownReference, baseURL),
 			InputBaseURL:             baseURL,
 			ExpectedValidationErrors: validationErrorUnknownReference,
 		},
 		{
-			Name: "Validation error when baseUrl is missing",
-			ClientValidatorFn: func() *automock.ValidatorClient {
-				clientValidator := &automock.ValidatorClient{}
-				clientValidator.On("Validate", policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
-				return clientValidator
-			},
+			Name:                     "Validation error when baseUrl is missing",
+			ClientValidatorFn:        validatorClientCallWithoutValidationErrors,
 			InputDocument:            fmt.Sprintf(ordDocumentWithWrongBaseURL, ""),
 			InputBaseURL:             "",
 			ExpectedValidationErrors: validationErrorMissingBaseURL,
 		},
 		{
-			Name: "Validation error when there is a mismatch between the given baseUrls",
-			ClientValidatorFn: func() *automock.ValidatorClient {
-				clientValidator := &automock.ValidatorClient{}
-				clientValidator.On("Validate", policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
-				return clientValidator
-			},
+			Name:                     "Validation error when there is a mismatch between the given baseUrls",
+			ClientValidatorFn:        validatorClientCallWithoutValidationErrors,
 			InputDocument:            fmt.Sprintf(ordDocumentWithWrongBaseURL, "https://differentbase.com"),
 			InputBaseURL:             baseURL,
 			ExpectedValidationErrors: validationErrorMismatchedBaseURL,
