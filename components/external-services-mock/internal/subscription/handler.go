@@ -2,12 +2,12 @@ package subscription
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -25,7 +25,10 @@ const (
 	subscribedRootProviderIdValue           = "subscribedRootProviderID"
 	subscribedRootProviderAppNameValue      = "subscribedRootProviderAppName"
 	subscribedRootProviderSubaccountIdValue = "subscribedRootProviderSubaccountID"
-	useQueryParam                           = "use"
+	// useParentType is query parameter key used to specify parent tenant of which type should be used in the mocked tenant event
+	useParentType = "useParentType"
+	// useParentID is query parameter key used to specify which ID should be used in the mocked tenant event
+	useParentID = "useParentID"
 )
 
 type handler struct {
@@ -34,7 +37,8 @@ type handler struct {
 	providerConfig   ProviderConfig
 	jobID            string
 	tenantsHierarchy map[string]string // maps consumerSubaccount to consumerAccount
-	useCostObject    bool
+	useParentType    string
+	useParentID      string
 }
 
 type JobStatus struct {
@@ -132,17 +136,19 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 	log.C(ctx).Info("Successfully handled subscription job status request")
 }
 
-// ConfigureCostObject defines if the cost object property should be provided in the subscription payload
-func (h *handler) ConfigureCostObject(writer http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	shouldUseParam := r.URL.Query().Get(useQueryParam)
-	shouldUse, err := strconv.ParseBool(shouldUseParam)
-	if err != nil {
-		log.C(ctx).Errorf("while casting %q query param to bool. Err: %v", useQueryParam, err)
-		writer.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	h.useCostObject = shouldUse
+// ConfigureTenantTypeAndID defines what parent type and parent ID should be provided in the subscription payload
+func (h *handler) ConfigureTenantTypeAndID(writer http.ResponseWriter, r *http.Request) {
+	parentType := r.URL.Query().Get(useParentType)
+	parentID := r.URL.Query().Get(useParentID)
+	h.useParentType = parentType
+	h.useParentID = parentID
+	writer.WriteHeader(http.StatusOK)
+}
+
+// ResetTenantTypeAndID resets the parent type and parent ID that should be provided in the subscription payload
+func (h *handler) ResetTenantTypeAndID(writer http.ResponseWriter, r *http.Request) {
+	h.useParentType = ""
+	h.useParentID = ""
 	writer.WriteHeader(http.StatusOK)
 }
 
@@ -174,7 +180,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 
 	// Build a request for consumer subscribe/unsubscribe
 	BuildTenantFetcherRegionalURL(&h.tenantConfig)
-	request, err := h.createTenantRequest(httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token, providerSubaccID, subscriptionID, subscriptionFlow)
+	request, err := h.createTenantRequest(ctx, httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token, providerSubaccID, subscriptionID, subscriptionFlow)
 	if err != nil {
 		log.C(ctx).Errorf("while creating subscription request: %s", err.Error())
 		return http.StatusInternalServerError, errors.Wrap(err, "while creating subscription request")
@@ -214,7 +220,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 	return http.StatusOK, nil
 }
 
-func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, providerSubaccID, subscriptionID, subscriptionFlow string) (*http.Request, error) {
+func (h *handler) createTenantRequest(ctx context.Context, httpMethod, tenantFetcherUrl, token, providerSubaccID, subscriptionID, subscriptionFlow string) (*http.Request, error) {
 	var (
 		body = "{}"
 		err  error
@@ -266,17 +272,18 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
 
-	if h.useCostObject {
-		if len(h.tenantConfig.TestCostObjectID) > 0 {
-			body, err = sjson.Set(body, h.providerConfig.CostObjectIDProperty, h.tenantConfig.TestCostObjectID)
+	if h.useParentType != "" && h.useParentID != "" {
+		log.C(ctx).Infof("Setting tenant parent of type %s with id %s", h.useParentType, h.useParentID)
+		if h.useParentType == "costObject" {
+			body, err = sjson.Set(body, h.providerConfig.CostObjectIDProperty, h.useParentID)
 			if err != nil {
 				return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 			}
-		}
-	} else {
-		body, err = sjson.Set(body, h.providerConfig.CustomerIDProperty, h.tenantConfig.TestCustomerID)
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+		} else {
+			body, err = sjson.Set(body, h.providerConfig.CustomerIDProperty, h.useParentID)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+			}
 		}
 	}
 
