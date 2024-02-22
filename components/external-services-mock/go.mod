@@ -3,7 +3,7 @@ module github.com/kyma-incubator/compass/components/external-services-mock
 go 1.20
 
 require (
-	github.com/davecgh/go-spew v1.1.1
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/goccy/go-json v0.10.2 // indirect
@@ -31,8 +31,8 @@ require (
 
 require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240216174932-5f5792b933a9
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20240123081221-34fb1f6bc126
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240222082904-21bd206c00f0
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20240222082904-21bd206c00f0
 	github.com/tidwall/sjson v1.2.5
 	k8s.io/apimachinery v0.26.9
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
