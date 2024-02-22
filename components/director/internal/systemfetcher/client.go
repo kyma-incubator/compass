@@ -173,9 +173,7 @@ func (c *Client) buildFilter(systemSynchronizationTimestamps map[string]SystemSy
 
 	usedSystemRoles := make(map[string]bool)
 
-	for _, key := range SortedTemplateMappingKeys {
-		templateMapping := ApplicationTemplates[key]
-
+	for _, templateMapping := range ApplicationTemplates {
 		appTemplateLblFilter, ok := templateMapping.Labels[ApplicationTemplateLabelFilter]
 		if !ok {
 			continue
@@ -217,6 +215,7 @@ func (c *Client) buildFilter(systemSynchronizationTimestamps map[string]SystemSy
 			}
 		}
 	}
+
 	result := map[string]string{"fetchAcrossZones": "true"}
 
 	if len(c.apiConfig.FilterCriteria) > 0 {
