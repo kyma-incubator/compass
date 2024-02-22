@@ -160,17 +160,29 @@ do
     fi
     if (( ${previousPrintTime} != ${min} )); then
         running_test=$("$KUBECTL" get cts ${suiteName} -o yaml | grep "status: Running" -B5 | head -n 1 | cut -d ':' -f 2 | tr -d " ")
+        director_pod=$("$KUBECTL" get pods -n compass-system | grep compass-director | head -n 1 | cut -d ' ' -f 1)
         if [ -z "$running_test" ]; then
           running_test="none"
         fi
         echo "Running test is ${running_test}"
         if [[ ! "${running_test}" == "none" ]]; then
           logs_from_last_min=$("$KUBECTL" logs -n kyma-system --since=1m ${running_test})
+          echo "Logs from test execution:"
+          echo "${logs_from_last_min}"
+          echo "----------------------------"
+          echo "Director:"
+          echo "----------------------------"
+          "$KUBECTL" logs -n compass-system --since=1m ${director_pod}
+          echo "----------------------------"
           if echo "${logs_from_last_min}" | grep -q "FAIL:"; then
             echo "----------------------------"
             echo "A test has failed in the last minute."
             echo "Logs from test execution:"
             echo "${logs_from_last_min}"
+            echo "----------------------------"
+            echo "Director:"
+            echo "----------------------------"
+            echo "${logs_from_director_last_min}"
             echo "----------------------------"
           fi
         fi
