@@ -86,7 +86,7 @@ func (w *WebhookProcessor) StartWebhookProcessorJob(ctx context.Context) error {
 		Fn: func(jobCtx context.Context) {
 			log.C(jobCtx).Info("Starting WebhookProcessorJob...")
 
-			if err := w.processWebhooks(ctx); err != nil {
+			if err := w.ProcessWebhooks(ctx); err != nil {
 				log.C(jobCtx).Errorf("Error during execution of WebhookProcessorJob %v", err)
 			}
 
@@ -97,7 +97,8 @@ func (w *WebhookProcessor) StartWebhookProcessorJob(ctx context.Context) error {
 	return cronjob.RunCronJob(ctx, w.webhookProcessorElectionConfig, resyncJob)
 }
 
-func (w *WebhookProcessor) processWebhooks(ctx context.Context) error {
+// ProcessWebhooks processes webhooks
+func (w *WebhookProcessor) ProcessWebhooks(ctx context.Context) error {
 	log.C(ctx).Infof("Starting to process webhooks with type %q", model.WebhookTypeSystemFieldDiscovery)
 
 	webhooks, err := w.listWebhooksByTypeAndLabelFilter(ctx)
