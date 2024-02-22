@@ -235,6 +235,7 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 	router.HandleFunc("/saas-manager/v1/applications/{app_name}/subscription", subHandler.Subscribe).Methods(http.MethodPost)
 	router.HandleFunc("/saas-manager/v1/applications/{app_name}/subscription", subHandler.Unsubscribe).Methods(http.MethodDelete)
 	router.HandleFunc(fmt.Sprintf("/api/v1/jobs/%s", jobID), subHandler.JobStatus).Methods(http.MethodGet)
+	router.HandleFunc(fmt.Sprintf("/api/v1/configure/costobject"), subHandler.ConfigureCostObject).Methods(http.MethodPut)
 
 	// Both handlers below are part of the provider setup. On real environment when someone is subscribed to provider tenant we want to mock OnSubscription and GetDependency callbacks
 	// and return expected results. CMP will be returned as dependency and will execute its subscription logic.

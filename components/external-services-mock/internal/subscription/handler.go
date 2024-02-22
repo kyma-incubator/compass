@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -24,6 +25,7 @@ const (
 	subscribedRootProviderIdValue           = "subscribedRootProviderID"
 	subscribedRootProviderAppNameValue      = "subscribedRootProviderAppName"
 	subscribedRootProviderSubaccountIdValue = "subscribedRootProviderSubaccountID"
+	useQueryParam                           = "use"
 )
 
 type handler struct {
@@ -32,6 +34,7 @@ type handler struct {
 	providerConfig   ProviderConfig
 	jobID            string
 	tenantsHierarchy map[string]string // maps consumerSubaccount to consumerAccount
+	useCostObject    bool
 }
 
 type JobStatus struct {
@@ -127,6 +130,20 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.C(ctx).Info("Successfully handled subscription job status request")
+}
+
+// ConfigureCostObject defines if the cost object property should be provided in the subscription payload
+func (h *handler) ConfigureCostObject(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	shouldUseParam := r.URL.Query().Get(useQueryParam)
+	shouldUse, err := strconv.ParseBool(shouldUseParam)
+	if err != nil {
+		log.C(ctx).Errorf("while casting %q query param to bool. Err: %v", useQueryParam, err)
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	h.useCostObject = shouldUse
+	writer.WriteHeader(http.StatusOK)
 }
 
 func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string) (int, error) {
@@ -249,17 +266,19 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
 
-	if len(h.tenantConfig.TestConsumerTenantID) > 0 {
-		body, err = sjson.Set(body, h.providerConfig.ConsumerTenantIDProperty, h.tenantConfig.TestConsumerTenantID)
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+	if h.useCostObject {
+		if len(h.tenantConfig.TestCostObjectID) > 0 {
+			body, err = sjson.Set(body, h.providerConfig.CostObjectIDProperty, h.tenantConfig.TestCostObjectID)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+			}
 		}
-	}
-
-	if len(h.tenantConfig.TestCostObjectID) > 0 {
-		body, err = sjson.Set(body, h.providerConfig.CostObjectIDProperty, h.tenantConfig.TestCostObjectID)
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+	} else {
+		if len(h.tenantConfig.TestConsumerTenantID) > 0 {
+			body, err = sjson.Set(body, h.providerConfig.ConsumerTenantIDProperty, h.tenantConfig.TestConsumerTenantID)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+			}
 		}
 	}
 

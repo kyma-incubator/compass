@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -126,6 +127,23 @@ func CreateSubscription(t *testing.T, conf Config, httpClient *http.Client, appT
 		return GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == JobSucceededStatus
 	}, EventuallyTimeout, EventuallyTick)
 	t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTmpl.Name, appTmpl.ID, subscriptionProviderSubaccountID)
+}
+
+func ConfigureCostObjectUsage(t *testing.T, httpClient *http.Client, subscriptionToken, subscriptionUrl string, shouldUse bool) {
+	apiPath := fmt.Sprintf("/api/v1/configure/costobject?use=%s", strconv.FormatBool(shouldUse))
+	configureReq, err := http.NewRequest(http.MethodPut, subscriptionUrl+apiPath, nil)
+	require.NoError(t, err)
+	configureReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
+
+	t.Logf("Configuring costobject usage to %v", shouldUse)
+	resp, err := httpClient.Do(configureReq)
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Logf("Could not close response body %s", err)
+		}
+	}()
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d.", resp.StatusCode, http.StatusOK))
 }
 
 func CreateRuntimeSubscription(t *testing.T, conf Config, httpClient *http.Client, providerRuntime graphql.RuntimeExt, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue string, shouldUnsubscribeFirst bool, subscriptionFlow string) {
