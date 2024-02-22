@@ -9,14 +9,17 @@ import (
 	"net/http"
 )
 
+// Subscription represents subscription object in a saas-manager response payload.
 type Subscription struct {
 	AppURL string `json:"url"`
 }
 
+// SubscriptionsResponse represents collection of all subscription objects in a saas-manager response payload.
 type SubscriptionsResponse struct {
 	Subscriptions []Subscription `json:"subscriptions"`
 }
 
+// ExecuteSystemFieldDiscoveryWebhook executes webhook of type system field discovery
 func ExecuteSystemFieldDiscoveryWebhook(ctx context.Context, client *http.Client, webhook *model.Webhook) ([]byte, error) {
 	webhookURL := webhook.URL
 	if webhookURL == nil {

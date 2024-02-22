@@ -48,6 +48,7 @@ type Client interface {
 	UpdateBaseURLAndReadyState(ctx context.Context, appID, baseURL string, ready bool) error
 }
 
+// WebhookProcessor represents webhook processor
 type WebhookProcessor struct {
 	transact                       persistence.Transactioner
 	webhookSvc                     WebhookService
@@ -61,6 +62,7 @@ type WebhookProcessor struct {
 	systemFieldDiscoveryWebhookPartialProcessMaxDays int
 }
 
+// NewWebhookProcessor creates new webhook processor
 func NewWebhookProcessor(transact persistence.Transactioner, webhookSvc WebhookService, tenantSvc TenantService, appSvc ApplicationService, webhookClient *http.Client,
 	webhookProcessorElectionConfig cronjob.ElectionConfig, webhookProcessorJobInterval time.Duration, systemFieldDiscoveryWebhookPartialProcessing bool, systemFieldDiscoveryWebhookPartialProcessMaxDays int) *WebhookProcessor {
 	return &WebhookProcessor{
@@ -76,7 +78,8 @@ func NewWebhookProcessor(transact persistence.Transactioner, webhookSvc WebhookS
 	}
 }
 
-func (w *WebhookProcessor) StartProcessWebhooksJob(ctx context.Context) error {
+// StartWebhookProcessorJob starts webhook processor job.
+func (w *WebhookProcessor) StartWebhookProcessorJob(ctx context.Context) error {
 	resyncJob := cronjob.CronJob{
 		Name: "WebhookProcessorJob",
 		Fn: func(jobCtx context.Context) {
@@ -136,7 +139,7 @@ func (w *WebhookProcessor) processWebhooks(ctx context.Context) error {
 				break
 			}
 			if processed {
-				log.C(ctx).Infof("Sucessfully processed webhookd with id %q", wh.ID)
+				log.C(ctx).Infof("Successfully processed webhookd with id %q", wh.ID)
 				break
 			}
 		}

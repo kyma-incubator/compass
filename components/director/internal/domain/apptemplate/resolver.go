@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"regexp"
 	"strings"
 
@@ -488,8 +487,6 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	if systemFieldDiscovery {
 		appCreateInputModel.Webhooks, systemFieldDiscoveryLabelIsTrue = r.systemFieldDiscoveryEngine.EnrichApplicationWebhookIfNeeded(ctx, appCreateInputModel, systemFieldDiscovery, region, subaccountID, appTemplate.Name, applicationName)
 	}
-
-	spew.Dump("region, subb, systemFieldDsicovery:", region, subaccountID, systemFieldDiscovery)
 
 	log.C(ctx).Infof("Creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	id, err := r.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID, systemFieldDiscoveryLabelIsTrue)

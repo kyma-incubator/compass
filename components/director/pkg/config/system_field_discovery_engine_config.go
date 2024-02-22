@@ -5,6 +5,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// SystemFieldDiscoveryEngineConfig is configuration for the system field discovery engine
 type SystemFieldDiscoveryEngineConfig struct {
 	SaasRegSecretPath string `envconfig:"APP_SELF_REGISTER_SECRET_PATH"`
 	OauthTokenPath    string `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`

@@ -83,7 +83,6 @@ func Test_EnrichApplicationWebhookIfNeeded(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			engine, err := systemfielddiscoveryengine.NewSystemFieldDiscoveryEngine(testCase.Config, nil, nil, nil)
 			require.NoError(t, err)
 
@@ -105,7 +104,7 @@ func Test_CreateLabelForApplicationWebhook(t *testing.T) {
 		Key:        systemfielddiscoveryengine.RegistryLabelKey,
 		ObjectID:   webhookID,
 		ObjectType: model.WebhookLabelableObject,
-		Value:      systemfielddiscoveryengine.RegistryLabelValue,
+		Value:      systemfielddiscoveryengine.SaaSRegistryLabelValue,
 	}
 	modelWebhook := &model.Webhook{ID: webhookID}
 
@@ -126,9 +125,9 @@ func Test_CreateLabelForApplicationWebhook(t *testing.T) {
 				return labelSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
-				UidSvc := &automock.UidService{}
-				UidSvc.On("Generate").Return(uuid).Once()
-				return UidSvc
+				UIDSvc := &automock.UidService{}
+				UIDSvc.On("Generate").Return(uuid).Once()
+				return UIDSvc
 			},
 			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
@@ -146,9 +145,9 @@ func Test_CreateLabelForApplicationWebhook(t *testing.T) {
 				return labelSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
-				UidSvc := &automock.UidService{}
-				UidSvc.On("Generate").Return(uuid).Once()
-				return UidSvc
+				UIDSvc := &automock.UidService{}
+				UIDSvc.On("Generate").Return(uuid).Once()
+				return UIDSvc
 			},
 			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
@@ -166,9 +165,9 @@ func Test_CreateLabelForApplicationWebhook(t *testing.T) {
 				return labelSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
-				UidSvc := &automock.UidService{}
-				UidSvc.On("Generate").Return(uuid).Once()
-				return UidSvc
+				UIDSvc := &automock.UidService{}
+				UIDSvc.On("Generate").Return(uuid).Once()
+				return UIDSvc
 			},
 			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
@@ -181,7 +180,6 @@ func Test_CreateLabelForApplicationWebhook(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
 			webhookSvc := testCase.WebhookServiceFn()

@@ -12,8 +12,10 @@ import (
 )
 
 const (
-	RegistryLabelKey   = "registry"
-	RegistryLabelValue = "saas-registry"
+	// RegistryLabelKey is the label key for registry label
+	RegistryLabelKey = "registry"
+	// SaaSRegistryLabelValue is the label value for saas registry label
+	SaaSRegistryLabelValue = "saas-registry"
 )
 
 // LabelService is responsible updating already existing labels, and their label definitions.
@@ -60,7 +62,7 @@ func (s *systemFieldDiscoveryEngine) EnrichApplicationWebhookIfNeeded(ctx contex
 	if systemFieldDiscovery {
 		log.C(ctx).Infof("Application Template with name %q has label systemFieldDiscovery with value %t. Enriching the application with name %q with webhook of type %q", appTemplateName, systemFieldDiscovery, appName, model.WebhookTypeSystemFieldDiscovery)
 		appCreateInputModel.Webhooks = s.enrichWithWebhook(appCreateInputModel.Webhooks, region, subacountID)
-		log.C(ctx).Infof("Sucessfully enriched Application with name %q with webhook of type %q", appName, model.WebhookTypeSystemFieldDiscovery)
+		log.C(ctx).Infof("Successfully enriched Application with name %q with webhook of type %q", appName, model.WebhookTypeSystemFieldDiscovery)
 	}
 
 	return appCreateInputModel.Webhooks, systemFieldDiscovery
@@ -94,17 +96,17 @@ func (s *systemFieldDiscoveryEngine) CreateLabelForApplicationWebhook(ctx contex
 	if err != nil {
 		return err
 	}
-	log.C(ctx).Infof("Creating label with key: %q and value: %q for %q with id: %q", RegistryLabelKey, RegistryLabelValue, model.WebhookLabelableObject, wh.ID)
+	log.C(ctx).Infof("Creating label with key: %q and value: %q for %q with id: %q", RegistryLabelKey, SaaSRegistryLabelValue, model.WebhookLabelableObject, wh.ID)
 	if err := s.labelSvc.CreateLabel(ctx, tnt, s.uidSvc.Generate(), &model.LabelInput{
 		Key:        RegistryLabelKey,
-		Value:      RegistryLabelValue,
+		Value:      SaaSRegistryLabelValue,
 		ObjectID:   wh.ID,
 		ObjectType: model.WebhookLabelableObject,
 	}); err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q", RegistryLabelKey, RegistryLabelValue, model.WebhookLabelableObject, wh.ID)
-		return errors.Wrapf(err, "while creating label with key: %q and value: %q for object type: %q and ID: %q", RegistryLabelKey, RegistryLabelValue, model.WebhookLabelableObject, wh.ID)
+		log.C(ctx).WithError(err).Errorf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q", RegistryLabelKey, SaaSRegistryLabelValue, model.WebhookLabelableObject, wh.ID)
+		return errors.Wrapf(err, "while creating label with key: %q and value: %q for object type: %q and ID: %q", RegistryLabelKey, SaaSRegistryLabelValue, model.WebhookLabelableObject, wh.ID)
 	}
-	log.C(ctx).Infof("Sucessfully created label with key: %q and value: %q for %q with id: %q", RegistryLabelKey, RegistryLabelValue, model.WebhookLabelableObject, wh.ID)
+	log.C(ctx).Infof("Successfully created label with key: %q and value: %q for %q with id: %q", RegistryLabelKey, SaaSRegistryLabelValue, model.WebhookLabelableObject, wh.ID)
 
 	return nil
 }
