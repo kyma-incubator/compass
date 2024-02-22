@@ -35,9 +35,9 @@ func TestUnionList(t *testing.T) {
 		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("(SELECT id, name, description FROM %s WHERE %s AND id = $2 ORDER BY id ASC LIMIT $3 OFFSET $4) UNION (SELECT id, name, description FROM %s WHERE %s AND id = $6 ORDER BY id ASC LIMIT $7 OFFSET $8)",
 			appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$1"), appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$5")))).
 			WithArgs(tenantID, appID, 10, 0, tenantID, appID2, 10, 0).WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id AS id, COUNT(*) AS total_count FROM %s WHERE %s GROUP BY id ORDER BY id ASC",
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id AS id, COUNT(*) AS total_count FROM %s WHERE %s AND id IN ($2, $3) GROUP BY id ORDER BY id ASC",
 			appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$1")))).
-			WithArgs(tenantID).WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).AddRow(appID, 1).AddRow(appID2, 1))
+			WithArgs(tenantID, appID, appID2).WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).AddRow(appID, 1).AddRow(appID2, 1))
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest AppCollection
 
@@ -61,9 +61,9 @@ func TestUnionList(t *testing.T) {
 		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("(SELECT id, name, description FROM %s WHERE name = $1 AND %s AND id = $3 ORDER BY id ASC LIMIT $4 OFFSET $5) UNION (SELECT id, name, description FROM %s WHERE name = $6 AND %s AND id = $8 ORDER BY id ASC LIMIT $9 OFFSET $10)",
 			appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$2"), appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$7")))).
 			WithArgs(appName, tenantID, appID, 10, 0, appName, tenantID, appID2, 10, 0).WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id AS id, COUNT(*) AS total_count FROM %s WHERE name = $1 AND %s GROUP BY id ORDER BY id ASC",
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id AS id, COUNT(*) AS total_count FROM %s WHERE name = $1 AND %s AND id IN ($3, $4) GROUP BY id ORDER BY id ASC",
 			appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$2")))).
-			WithArgs(appName, tenantID).WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).AddRow(appID, 1))
+			WithArgs(appName, tenantID, appID, appID2).WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).AddRow(appID, 1))
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest AppCollection
 
@@ -103,9 +103,9 @@ func TestUnionList(t *testing.T) {
 		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("(SELECT id, name, description FROM %s WHERE %s AND id = $2 ORDER BY id ASC LIMIT $3 OFFSET $4) UNION (SELECT id, name, description FROM %s WHERE %s AND id = $6 ORDER BY id ASC LIMIT $7 OFFSET $8)",
 			appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$1"), appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$5")))).
 			WithArgs(tenantID, appID, 10, 0, tenantID, appID2, 10, 0).WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id AS id, COUNT(*) AS total_count FROM %s WHERE %s GROUP BY id ORDER BY id ASC",
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id AS id, COUNT(*) AS total_count FROM %s WHERE %s AND id IN ($2, $3) GROUP BY id ORDER BY id ASC",
 			appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$1")))).
-			WithArgs(tenantID).WillReturnError(someError())
+			WithArgs(tenantID, appID, appID2).WillReturnError(someError())
 		var dest AppCollection
 
 		counts, err := sut.List(ctx, resourceType, tenantID, []string{appID, appID2}, "id", 10, "", repo.OrderByParams{repo.NewAscOrderBy("id")}, &dest)
@@ -166,8 +166,8 @@ func TestUnionListWithEmbeddedTenant(t *testing.T) {
 
 		mock.ExpectQuery(regexp.QuoteMeta("(SELECT id, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND id = $2 ORDER BY id ASC LIMIT $3 OFFSET $4) UNION (SELECT id, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $5 AND id = $6 ORDER BY id ASC LIMIT $7 OFFSET $8)")).
 			WithArgs(tenantID, peterID, 10, 0, tenantID, homerID, 10, 0).WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id AS id, COUNT(*) AS total_count FROM users WHERE tenant_id = $1 GROUP BY id ORDER BY id ASC")).
-			WithArgs(tenantID).WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).AddRow(peterID, 1).AddRow(homerID, 1))
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id AS id, COUNT(*) AS total_count FROM users WHERE tenant_id = $1 AND id IN ($2, $3) GROUP BY id ORDER BY id ASC")).
+			WithArgs(tenantID, peterID, homerID).WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).AddRow(peterID, 1).AddRow(homerID, 1))
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
@@ -190,8 +190,8 @@ func TestUnionListWithEmbeddedTenant(t *testing.T) {
 
 		mock.ExpectQuery(regexp.QuoteMeta("(SELECT id, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name = $2 AND id = $3 ORDER BY id ASC LIMIT $4 OFFSET $5) UNION (SELECT id, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $6 AND first_name = $7 AND id = $8 ORDER BY id ASC LIMIT $9 OFFSET $10)")).
 			WithArgs(tenantID, "Peter", peterID, 10, 0, tenantID, "Peter", homerID, 10, 0).WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id AS id, COUNT(*) AS total_count FROM users WHERE tenant_id = $1 AND first_name = $2 GROUP BY id ORDER BY id ASC")).
-			WithArgs(tenantID, "Peter").WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).AddRow(peterID, 1))
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id AS id, COUNT(*) AS total_count FROM users WHERE tenant_id = $1 AND first_name = $2 AND id IN ($3, $4) GROUP BY id ORDER BY id ASC")).
+			WithArgs(tenantID, "Peter", peterID, homerID).WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).AddRow(peterID, 1))
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
@@ -229,8 +229,8 @@ func TestUnionListWithEmbeddedTenant(t *testing.T) {
 
 		mock.ExpectQuery(regexp.QuoteMeta("(SELECT id, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND id = $2 ORDER BY id ASC LIMIT $3 OFFSET $4) UNION (SELECT id, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $5 AND id = $6 ORDER BY id ASC LIMIT $7 OFFSET $8)")).
 			WithArgs(tenantID, peterID, 10, 0, tenantID, homerID, 10, 0).WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id AS id, COUNT(*) AS total_count FROM users WHERE tenant_id = $1 GROUP BY id ORDER BY id ASC")).
-			WithArgs(tenantID).WillReturnError(someError())
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id AS id, COUNT(*) AS total_count FROM users WHERE tenant_id = $1 AND id IN ($2, $3) GROUP BY id ORDER BY id ASC")).
+			WithArgs(tenantID, peterID, homerID).WillReturnError(someError())
 		var dest UserCollection
 
 		counts, err := sut.List(ctx, UserType, tenantID, []string{peterID, homerID}, "id", 10, "", repo.OrderByParams{repo.NewAscOrderBy("id")}, &dest)
@@ -285,7 +285,7 @@ func TestUnionListGlobal(t *testing.T) {
 
 		mock.ExpectQuery(regexp.QuoteMeta("(SELECT id, tenant_id, first_name, last_name, age FROM users WHERE id = $1 ORDER BY id ASC LIMIT $2 OFFSET $3) UNION (SELECT id, tenant_id, first_name, last_name, age FROM users WHERE id = $4 ORDER BY id ASC LIMIT $5 OFFSET $6)")).
 			WithArgs(peterID, 10, 0, homerID, 10, 0).WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id AS id, COUNT(*) AS total_count FROM users GROUP BY id ORDER BY id ASC")).
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id AS id, COUNT(*) AS total_count FROM users WHERE id IN ($1, $2) GROUP BY id ORDER BY id ASC")).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).AddRow(peterID, 1).AddRow(homerID, 1))
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
@@ -309,8 +309,8 @@ func TestUnionListGlobal(t *testing.T) {
 
 		mock.ExpectQuery(regexp.QuoteMeta("(SELECT id, tenant_id, first_name, last_name, age FROM users WHERE first_name = $1 AND id = $2 ORDER BY id ASC LIMIT $3 OFFSET $4) UNION (SELECT id, tenant_id, first_name, last_name, age FROM users WHERE first_name = $5 AND id = $6 ORDER BY id ASC LIMIT $7 OFFSET $8)")).
 			WithArgs("Peter", peterID, 10, 0, "Peter", homerID, 10, 0).WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id AS id, COUNT(*) AS total_count FROM users WHERE first_name = $1 GROUP BY id ORDER BY id ASC")).
-			WithArgs("Peter").WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).AddRow(peterID, 1))
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id AS id, COUNT(*) AS total_count FROM users WHERE first_name = $1 AND id IN ($2, $3) GROUP BY id ORDER BY id ASC")).
+			WithArgs("Peter", peterID, homerID).WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).AddRow(peterID, 1))
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
@@ -347,7 +347,7 @@ func TestUnionListGlobal(t *testing.T) {
 
 		mock.ExpectQuery(regexp.QuoteMeta("(SELECT id, tenant_id, first_name, last_name, age FROM users WHERE id = $1 ORDER BY id ASC LIMIT $2 OFFSET $3) UNION (SELECT id, tenant_id, first_name, last_name, age FROM users WHERE id = $4 ORDER BY id ASC LIMIT $5 OFFSET $6)")).
 			WithArgs(peterID, 10, 0, homerID, 10, 0).WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id AS id, COUNT(*) AS total_count FROM users GROUP BY id ORDER BY id ASC")).WillReturnError(someError())
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id AS id, COUNT(*) AS total_count FROM users WHERE id IN ($1, $2) GROUP BY id ORDER BY id ASC")).WillReturnError(someError())
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest UserCollection
 
