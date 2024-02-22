@@ -4,7 +4,7 @@ CREATE OR REPLACE VIEW tenants_apps
             (tenant_id, formation_id, id, name, description, status_condition, status_timestamp, healthcheck_url,
              integration_system_id, provider_name, base_url, labels, tags, ready, created_at, updated_at, deleted_at,
              error, app_template_id, correlation_ids, system_number, application_namespace, local_tenant_id,
-             tenant_business_type_id, product_type, fa_formation_id, assignment_id, formation_type_id, target_id)
+             product_type, fa_formation_id, assignment_id, formation_type_id, target_id)
 AS
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.formation_id,
@@ -29,7 +29,6 @@ SELECT DISTINCT t_apps.tenant_id,
                 apps.system_number,
                 COALESCE(apps.application_namespace, tmpl.application_namespace) AS application_namespace,
                 apps.local_tenant_id,
-                apps.tenant_business_type_id,
                 tmpl.name                                                        AS product_type,
                 formation_details.formation_id, -- this may seem as a duplicate of 't_apps.formation_id' but is not, because 't_apps.formation_id' can have default value but 'formation_details.formation_id' will always have the 'real' formation id
                 formation_details.assignment_id,
