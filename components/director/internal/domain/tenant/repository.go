@@ -139,7 +139,7 @@ func (r *pgRepository) Upsert(ctx context.Context, item model.BusinessTenantMapp
 	if err != nil {
 		return "", errors.Wrapf(err, "while getting business tenant mapping by external id %s", item.ExternalTenant)
 	}
-	return btm.ID, r.processParents(ctx, item.ID, item.Parents, btm.Parents)
+	return btm.ID, r.processParents(ctx, btm.ID, item.Parents, btm.Parents)
 }
 
 // Get retrieves the active tenant with matching internal ID from the Compass storage.
