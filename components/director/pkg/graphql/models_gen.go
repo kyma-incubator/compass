@@ -874,12 +874,6 @@ type TenantAccessInput struct {
 	Owner        bool                   `json:"owner"`
 }
 
-type TenantBusinessType struct {
-	ID   string `json:"id"`
-	Code string `json:"code"`
-	Name string `json:"name"`
-}
-
 type TenantPage struct {
 	Data       []*Tenant `json:"data"`
 	PageInfo   *PageInfo `json:"pageInfo"`

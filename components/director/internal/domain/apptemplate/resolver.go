@@ -833,13 +833,13 @@ func (r *Resolver) checkAppTemplateExistenceByProductLabel(ctx context.Context, 
 		}
 
 		if _, err := extractRegionPlaceholder(appTemplateInput.Placeholders); err != nil {
-			return err
+			return errors.Wrapf(err, "for regional Application Template input")
 		}
 	}
 
 	productLabelArr, ok := productLabel.([]interface{})
 	if !ok {
-		return errors.Errorf("could not parse %q label for application template", r.appTemplateProductLabel)
+		return errors.Errorf("could not parse %q label for application template - it must be a string array", r.appTemplateProductLabel)
 	}
 
 	log.C(ctx).Infof("Getting application template for labels %q: %q", r.appTemplateProductLabel, productLabel)
@@ -970,11 +970,11 @@ func (r *Resolver) isSelfRegFlow(labels map[string]interface{}) (bool, error) {
 func isRegionPlaceholderEqualToExistingPlaceholder(inputPlaceholders, existingPlaceholders []model.ApplicationTemplatePlaceholder) (bool, error) {
 	inputRegionPlaceholder, err := extractRegionPlaceholder(inputPlaceholders)
 	if err != nil {
-		return false, err
+		return false, errors.Wrapf(err, "for Application Template input")
 	}
 	existingRegionPlaceholder, err := extractRegionPlaceholder(existingPlaceholders)
 	if err != nil {
-		return false, err
+		return false, errors.Wrapf(err, "for existing Application Template")
 	}
 	return inputRegionPlaceholder == existingRegionPlaceholder, nil
 }

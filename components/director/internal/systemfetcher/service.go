@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/tidwall/gjson"
 
@@ -62,13 +64,6 @@ type SystemsSyncService interface {
 	Upsert(ctx context.Context, in *model.SystemSynchronizationTimestamp) error
 }
 
-//go:generate mockery --name=tenantBusinessTypeService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
-type tenantBusinessTypeService interface {
-	Create(ctx context.Context, in *model.TenantBusinessTypeInput) (string, error)
-	GetByID(ctx context.Context, id string) (*model.TenantBusinessType, error)
-	ListAll(ctx context.Context) ([]*model.TenantBusinessType, error)
-}
-
 //go:generate mockery --name=systemsAPIClient --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type systemsAPIClient interface {
 	FetchSystemsForTenant(ctx context.Context, tenant *model.BusinessTenantMapping, systemSynchronizationTimestamps map[string]SystemSynchronizationTimestamp) ([]System, error)
@@ -97,7 +92,6 @@ type SystemFetcher struct {
 	tenantService      tenantService
 	systemsService     systemsService
 	systemsSyncService SystemsSyncService
-	tbtService         tenantBusinessTypeService
 	templateRenderer   TemplateRenderer
 	systemsAPIClient   systemsAPIClient
 	directorClient     directorClient
@@ -106,13 +100,12 @@ type SystemFetcher struct {
 }
 
 // NewSystemFetcher returns a new SystemFetcher.
-func NewSystemFetcher(tx persistence.Transactioner, ts tenantService, ss systemsService, sSync SystemsSyncService, tbts tenantBusinessTypeService, tr TemplateRenderer, sac systemsAPIClient, directorClient directorClient, config Config) *SystemFetcher {
+func NewSystemFetcher(tx persistence.Transactioner, ts tenantService, ss systemsService, sSync SystemsSyncService, tr TemplateRenderer, sac systemsAPIClient, directorClient directorClient, config Config) *SystemFetcher {
 	return &SystemFetcher{
 		transaction:        tx,
 		tenantService:      ts,
 		systemsService:     ss,
 		systemsSyncService: sSync,
-		tbtService:         tbts,
 		templateRenderer:   tr,
 		systemsAPIClient:   sac,
 		directorClient:     directorClient,
@@ -160,12 +153,7 @@ func (s *SystemFetcher) ProcessTenant(ctx context.Context, tenantID string) erro
 		log.C(ctx).Infof("Systems: %#v", systems)
 	}
 
-	tenantBusinessTypes, err := s.getTenantBusinessTypes(ctx)
-	if err != nil {
-		return errors.Wrap(err, "failed to get tenant business types")
-	}
-
-	if err := s.processSystemsForTenant(ctx, tenant, systems, tenantBusinessTypes); err != nil {
+	if err := s.processSystemsForTenant(ctx, tenant, systems); err != nil {
 		return errors.Wrapf(err, "failed to save systems for tenant %s", tenantID)
 	}
 
@@ -295,7 +283,7 @@ func (s *SystemFetcher) upsertSystemsSyncTimestampsForTenantInternal(ctx context
 	return nil
 }
 
-func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMapping *model.BusinessTenantMapping, systems []System, tenantBusinessTypes map[string]*model.TenantBusinessType) error {
+func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMapping *model.BusinessTenantMapping, systems []System) error {
 	log.C(ctx).Infof("Saving %d systems for tenant %s", len(systems), tenantMapping.Name)
 
 	for _, system := range systems {
@@ -354,19 +342,13 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 				system.StatusCondition = app.Status.Condition
 			}
 
-			log.C(ctx).Infof("Started processing tenant business type for system with system number %s", systemNumber)
-			tenantBusinessType, err := s.processSystemTenantBusinessType(ctx, systemPayload, tenantBusinessTypes)
-			if err != nil {
-				return err
-			}
-
 			appInput, err := s.convertSystemToAppRegisterInput(ctx, system)
 			if err != nil {
 				return err
 			}
-			if tenantBusinessType != nil {
-				appInput.TenantBusinessTypeID = &tenantBusinessType.ID
-			}
+
+			log.C(ctx).Infof("Started processing tenant business type for system with system number %s", systemNumber)
+			appInput = s.enrichAppInputLabelsWithTenantBusinessType(systemPayload, appInput)
 
 			if appInput.TemplateID == "" {
 				if err = s.systemsService.TrustedUpsert(ctx, appInput.ApplicationRegisterInput); err != nil {
@@ -427,51 +409,17 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 	}, nil
 }
 
-func (s *SystemFetcher) getTenantBusinessTypes(ctx context.Context) (map[string]*model.TenantBusinessType, error) {
-	tx, err := s.transaction.Begin()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to begin transaction")
-	}
-	defer s.transaction.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	tenantBusinessTypes, err := s.tbtService.ListAll(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to retrieve tenant business types")
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to commit while retrieving tenant business types")
-	}
-
-	tbtMap := make(map[string]*model.TenantBusinessType, 0)
-	for _, tbt := range tenantBusinessTypes {
-		tbtMap[tbt.Code] = tbt
-	}
-
-	return tbtMap, nil
-}
-
-func (s *SystemFetcher) processSystemTenantBusinessType(ctx context.Context, systemPayload []byte, tenantBusinessTypes map[string]*model.TenantBusinessType) (*model.TenantBusinessType, error) {
+func (s *SystemFetcher) enrichAppInputLabelsWithTenantBusinessType(systemPayload []byte, appInput *model.ApplicationRegisterInputWithTemplate) *model.ApplicationRegisterInputWithTemplate {
 	businessTypeID := gjson.GetBytes(systemPayload, businessTypeIDKey).String()
 	businessTypeDescription := gjson.GetBytes(systemPayload, businessTypeDescriptionKey).String()
-	tbt, exists := tenantBusinessTypes[businessTypeID]
 	if businessTypeID != "" && businessTypeDescription != "" {
-		if !exists {
-			log.C(ctx).Infof("Creating tenant business type with code: %q", businessTypeID)
-			createdTbtID, err := s.tbtService.Create(ctx, &model.TenantBusinessTypeInput{Code: businessTypeID, Name: businessTypeDescription})
-			if err != nil {
-				return nil, err
-			}
-			createdTbt, err := s.tbtService.GetByID(ctx, createdTbtID)
-			if err != nil {
-				return nil, err
-			}
-			tenantBusinessTypes[createdTbt.Code] = createdTbt
-			return createdTbt, nil
+		if len(appInput.Labels) == 0 {
+			appInput.Labels = map[string]interface{}{}
 		}
+
+		appInput.Labels[application.TenantBusinessTypeCodeLabelKey] = businessTypeID
+		appInput.Labels[application.TenantBusinessTypeNameLabelKey] = businessTypeDescription
 	}
-	return tbt, nil
+
+	return appInput
 }

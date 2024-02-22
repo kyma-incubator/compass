@@ -19,7 +19,10 @@ import (
 	logCtx "github.com/kyma-incubator/compass/components/ias-adapter/internal/logger/context"
 )
 
+var test *testing.T
+
 func TestHandlers(t *testing.T) {
+	test = t
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Handlers Test Suite")
 }

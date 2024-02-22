@@ -68,13 +68,12 @@ func (_m *TemplateRenderer) GenerateAppRegisterInput(ctx context.Context, sc sys
 	return r0, r1
 }
 
-type mockConstructorTestingTNewTemplateRenderer interface {
+// NewTemplateRenderer creates a new instance of TemplateRenderer. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTemplateRenderer(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTemplateRenderer creates a new instance of TemplateRenderer. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTemplateRenderer(t mockConstructorTestingTNewTemplateRenderer) *TemplateRenderer {
+}) *TemplateRenderer {
 	mock := &TemplateRenderer{}
 	mock.Mock.Test(t)
 
