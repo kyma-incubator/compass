@@ -2,8 +2,9 @@ package webhook
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 

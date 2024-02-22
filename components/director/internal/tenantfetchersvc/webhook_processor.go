@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -14,8 +17,6 @@ import (
 	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 	pkgwebhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/pkg/errors"
-	"net/http"
-	"time"
 )
 
 // WebhookService is responsible for the service-layer Webhook operations.

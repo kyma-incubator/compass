@@ -2,11 +2,12 @@ package webhook
 
 import (
 	"context"
+	"io"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
-	"io"
-	"net/http"
 )
 
 // Subscription represents subscription object in a saas-manager response payload.

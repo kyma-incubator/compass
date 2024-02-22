@@ -3,9 +3,10 @@ package domain
 import (
 	"context"
 	"fmt"
-	systemfielddiscoveryengine "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine"
 	"net/http"
 	"net/url"
+
+	systemfielddiscoveryengine "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
 

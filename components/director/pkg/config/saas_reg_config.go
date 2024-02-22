@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/pkg/errors"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // SaasRegConfig is a saas reg config

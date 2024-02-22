@@ -20,6 +20,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -34,10 +39,6 @@ import (
 	pkgAuth "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
-	"net/http"
-	"os"
-	"strings"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	authmiddleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
