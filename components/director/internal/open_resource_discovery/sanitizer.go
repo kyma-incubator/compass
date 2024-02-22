@@ -20,8 +20,8 @@ type DocumentSanitizer struct {
 }
 
 // NewDocumentSanitizer returns new instance of a document sanitizer
-func NewDocumentSanitizer() *DocumentSanitizer {
-	return &DocumentSanitizer{}
+func NewDocumentSanitizer() DocumentSanitizer {
+	return DocumentSanitizer{}
 }
 
 // Sanitize performs all the merging and rewriting rules defined in ORD. This method should be invoked after Documents are validated with the Validate method.

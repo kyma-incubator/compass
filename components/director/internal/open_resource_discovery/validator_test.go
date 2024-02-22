@@ -16,7 +16,7 @@ import (
 func TestDocumentValidator_Validate(t *testing.T) {
 	validatorClientCallWithoutValidationErrors := func() *automock.ValidatorClient {
 		clientValidator := &automock.ValidatorClient{}
-		clientValidator.On("Validate", policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
+		clientValidator.On("Validate", mock.Anything, policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
 		return clientValidator
 	}
 

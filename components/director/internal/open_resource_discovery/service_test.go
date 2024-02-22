@@ -38,7 +38,7 @@ const (
 
 func TestService_Processing(t *testing.T) {
 	testErr := errors.New("Test error")
-	validatingORDDocsErr := []*ord.ValidationError{{OrdID: "ns:eventResource:test:v1"}}
+	validatingORDDocsErr := []*ord.ValidationError{{OrdID: "ns:resource:test:v1", Type: "sap-ord-validation-error", Severity: ord.ErrorSeverity, Description: "Validation error"}}
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	emptyORDMapping := application.ORDWebhookMapping{}
@@ -1702,7 +1702,7 @@ func TestService_Processing(t *testing.T) {
 				}).Return(validatingORDDocsErr, nil)
 				return docValidator
 			},
-			ExpectedErr: errors.New("\"validation_errors\":[{\"ordId\":\"ns:eventResource:test:v1\""),
+			ExpectedErr: errors.New("\"validation_errors\":[{\"ordId\":\"ns:resource:test:v1\""),
 		},
 		{
 			Name: "Does not resync resources if vendors processing fail",
@@ -3017,10 +3017,12 @@ func TestService_Processing(t *testing.T) {
 				documentValidator = test.documentValidatorFn()
 			}
 
+			documentSanitizer := ord.NewDocumentSanitizer()
+
 			metrixCfg := ord.MetricsConfig{}
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiProcessor, eventProcessor, entityTypeProcessor, capabilityProcessor, integrationDependencyProcessor, dataProductProcessor, specSvc, fetchReqSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, ordWebhookMappings, nil, documentValidator)
+			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiProcessor, eventProcessor, entityTypeProcessor, capabilityProcessor, integrationDependencyProcessor, dataProductProcessor, specSvc, fetchReqSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, ordWebhookMappings, nil, documentValidator, documentSanitizer)
 
 			var err error
 			switch test.processFnName {
@@ -3242,11 +3244,12 @@ func TestService_ProcessApplication(t *testing.T) {
 			tombstonedResourcesDeleter := &automock.TombstonedResourcesDeleter{}
 
 			documentValidator := &automock.Validator{}
+			documentSanitizer := ord.NewDocumentSanitizer()
 
 			metrixCfg := ord.MetricsConfig{}
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiProcessor, eventProcessor, nil, capabilityProcessor, integrationDependencyProcessor, dataProductProcessor, specSvc, fetchReqSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, []application.ORDWebhookMapping{}, nil, documentValidator)
+			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiProcessor, eventProcessor, nil, capabilityProcessor, integrationDependencyProcessor, dataProductProcessor, specSvc, fetchReqSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, []application.ORDWebhookMapping{}, nil, documentValidator, documentSanitizer)
 			err := svc.ProcessApplication(context.TODO(), test.appID)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -3403,9 +3406,10 @@ func TestService_ProcessApplicationTemplate(t *testing.T) {
 			metricsCfg := ord.MetricsConfig{}
 
 			documentValidator := &automock.Validator{}
+			documentSanitizer := ord.NewDocumentSanitizer()
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metricsCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiProcessor, eventProcessor, nil, capabilityProcessor, integrationDependencyProcessor, dataProductProcessor, specSvc, fetchReqSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, []application.ORDWebhookMapping{}, nil, documentValidator)
+			svc := ord.NewAggregatorService(ordCfg, metricsCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiProcessor, eventProcessor, nil, capabilityProcessor, integrationDependencyProcessor, dataProductProcessor, specSvc, fetchReqSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, []application.ORDWebhookMapping{}, nil, documentValidator, documentSanitizer)
 			err := svc.ProcessApplicationTemplate(context.TODO(), test.appTemplateID)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -3683,9 +3687,10 @@ func TestService_ProcessAppInAppTemplateContext(t *testing.T) {
 			metrixCfg := ord.MetricsConfig{}
 
 			documentValidator := &automock.Validator{}
+			documentSanitizer := ord.NewDocumentSanitizer()
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiProcessor, eventProcessor, nil, capabilityProcessor, integrationDependencyProcessor, dataProductProcessor, specSvc, fetchReqSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, []application.ORDWebhookMapping{}, nil, documentValidator)
+			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiProcessor, eventProcessor, nil, capabilityProcessor, integrationDependencyProcessor, dataProductProcessor, specSvc, fetchReqSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, []application.ORDWebhookMapping{}, nil, documentValidator, documentSanitizer)
 			err := svc.ProcessAppInAppTemplateContext(context.TODO(), test.appTemplateID, test.appID)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)

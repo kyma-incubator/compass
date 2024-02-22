@@ -2,7 +2,9 @@ package ord
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 	"net/url"
 
@@ -21,7 +23,7 @@ const (
 //
 //go:generate mockery --name=ValidatorClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ValidatorClient interface {
-	Validate(ruleset, requestBody string) ([]ValidationResult, error)
+	Validate(ctx context.Context, ruleset, requestBody string) ([]ValidationResult, error)
 }
 
 // ValidationResult represents the structure of the response from the successful requests to API Metadata Validator
@@ -48,12 +50,14 @@ func NewValidationClient(url string, client *http.Client) *ValidationClient {
 }
 
 // Validate sends request to API Metadata Validator to validate one ORD document
-func (vc *ValidationClient) Validate(ruleset string, requestBody string) ([]ValidationResult, error) {
+func (vc *ValidationClient) Validate(ctx context.Context, ruleset string, requestBody string) ([]ValidationResult, error) {
+	log.C(ctx).Infof("Creating request to API Metadata Validator with url %q", vc.url)
 	req, err := vc.createRequest(ruleset, requestBody)
 	if err != nil {
 		return nil, err
 	}
 
+	log.C(ctx).Infof("Sending request to API Metadata Validator")
 	resp, err := vc.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -63,6 +67,8 @@ func (vc *ValidationClient) Validate(ruleset string, requestBody string) ([]Vali
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("unexpected response status code: %d. expected: %d", resp.StatusCode, http.StatusOK)
 	}
+
+	log.C(ctx).Infof("Successful request to API Metadata Validator")
 
 	var results []ValidationResult
 	if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
@@ -97,5 +103,6 @@ func (vc *ValidationClient) createRequest(ruleset, requestBody string) (*http.Re
 	}
 
 	req.Header.Set(contentTypeHeaderKey, contentTypeApplicationJSON)
+
 	return req, nil
 }

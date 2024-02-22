@@ -36,9 +36,8 @@ func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document,
 	var combinedValidationErrors []*ValidationError
 
 	for i := range documents {
-		log.C(ctx).Info("Calling API Metadata Validator for document")
-
-		errorsFromAPIMetadataValidator, err := v.client.Validate("sap:base:v1", documentsAsString[i])
+		log.C(ctx).Info("Validate document with API Metadata Validator")
+		errorsFromAPIMetadataValidator, err := v.client.Validate(ctx, "sap:base:v1", documentsAsString[i])
 		if err != nil {
 			return nil, errors.Wrap(err, "error while validating document with API Metadata validator")
 		}
@@ -51,9 +50,12 @@ func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document,
 
 		currentDocumentErrors := v.toValidationErrors(data, errorsFromAPIMetadataValidator)
 
-		combinedValidationErrors = append(combinedValidationErrors, currentDocumentErrors...)
+		if len(currentDocumentErrors) > 0 {
+			log.C(ctx).Infof("There are %q validation errors from API Metadata Validator, deleting invalid resources from document", len(currentDocumentErrors))
+			deleteInvalidResourcesFromDocument(documents[i], currentDocumentErrors)
 
-		deleteInvalidResourcesFromDocument(documents[i], currentDocumentErrors)
+			combinedValidationErrors = append(combinedValidationErrors, currentDocumentErrors...)
+		}
 
 		errorsFromORDConfig := validateORDConfigurations(documents[i], baseURL)
 		if errorsFromORDConfig != nil {
@@ -306,6 +308,7 @@ func (v *DocumentValidator) checkEntityRelations(docs []*Document, resourceIDs *
 		for i, api := range doc.APIResources {
 			if api.OrdPackageID != nil && !resourceIDs.PackageIDs[*api.OrdPackageID] {
 				validationErrors = append(validationErrors, newCustomValidationError(*api.OrdID, unknownReferenceCode, fmt.Sprintf("The api has a reference to unknown package %q", *api.OrdPackageID)))
+
 				invalidApisIndices = append(invalidApisIndices, i)
 			}
 			if api.PartOfConsumptionBundles != nil {
@@ -372,6 +375,7 @@ func (v *DocumentValidator) checkEntityRelations(docs []*Document, resourceIDs *
 		for i, integrationDependency := range doc.IntegrationDependencies {
 			if integrationDependency.OrdPackageID != nil && !resourceIDs.PackageIDs[*integrationDependency.OrdPackageID] {
 				validationErrors = append(validationErrors, newCustomValidationError(*integrationDependency.OrdID, unknownReferenceCode, fmt.Sprintf("The integration dependency has a reference to unknown package %q", *integrationDependency.OrdPackageID)))
+
 				invalidIntegrationDependenciesIndices = append(invalidIntegrationDependenciesIndices, i)
 			}
 		}
@@ -436,6 +440,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 			if bndl.OrdID != nil {
 				if _, ok := resourceIDs.BundleIDs[*bndl.OrdID]; ok && forbidDuplications {
 					validationErrors = append(validationErrors, newCustomValidationError(*bndl.OrdID, duplicateResourceCode, "duplicate bundle"))
+
 					invalidBundlesIndices = append(invalidProductsIndices, i)
 				}
 				resourceIDs.BundleIDs[*bndl.OrdID] = true
@@ -445,6 +450,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 		for i, product := range doc.Products {
 			if _, ok := resourceIDs.ProductIDs[product.OrdID]; ok && forbidDuplications {
 				validationErrors = append(validationErrors, newCustomValidationError(product.OrdID, duplicateResourceCode, "duplicate product"))
+
 				invalidProductsIndices = append(invalidProductsIndices, i)
 			}
 			resourceIDs.ProductIDs[product.OrdID] = true
@@ -454,6 +460,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 			if api.OrdID != nil {
 				if _, ok := resourceIDs.APIIDs[*api.OrdID]; ok && forbidDuplications {
 					validationErrors = append(validationErrors, newCustomValidationError(*api.OrdID, duplicateResourceCode, "duplicate api"))
+
 					invalidApisIndices = append(invalidApisIndices, i)
 				}
 				resourceIDs.APIIDs[*api.OrdID] = true
@@ -464,6 +471,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 			if event.OrdID != nil {
 				if _, ok := resourceIDs.EventIDs[*event.OrdID]; ok && forbidDuplications {
 					validationErrors = append(validationErrors, newCustomValidationError(*event.OrdID, duplicateResourceCode, "duplicate event"))
+
 					invalidEventsIndices = append(invalidEventsIndices, i)
 				}
 				resourceIDs.EventIDs[*event.OrdID] = true
@@ -482,6 +490,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 			if capability.OrdID != nil {
 				if _, ok := resourceIDs.CapabilityIDs[*capability.OrdID]; ok && forbidDuplications {
 					validationErrors = append(validationErrors, newCustomValidationError(*capability.OrdID, duplicateResourceCode, "duplicate capability"))
+
 					invalidCapabilitiesIndices = append(invalidCapabilitiesIndices, i)
 				}
 				resourceIDs.CapabilityIDs[*capability.OrdID] = true
@@ -492,6 +501,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 			if integrationDependency.OrdID != nil {
 				if _, ok := resourceIDs.IntegrationDependencyIDs[*integrationDependency.OrdID]; ok && forbidDuplications {
 					validationErrors = append(validationErrors, newCustomValidationError(*integrationDependency.OrdID, duplicateResourceCode, "duplicate integration dependency"))
+
 					invalidIntegrationDependenciesIndices = append(invalidIntegrationDependenciesIndices, i)
 				}
 				resourceIDs.IntegrationDependencyIDs[*integrationDependency.OrdID] = true
@@ -502,6 +512,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 			if dataProduct.OrdID != nil {
 				if _, ok := resourceIDs.DataProductIDs[*dataProduct.OrdID]; ok && forbidDuplications {
 					validationErrors = append(validationErrors, newCustomValidationError(*dataProduct.OrdID, duplicateResourceCode, "duplicate data product"))
+
 					invalidDataProductsIndices = append(invalidDataProductsIndices, i)
 				}
 				resourceIDs.DataProductIDs[*dataProduct.OrdID] = true
@@ -511,6 +522,7 @@ func (v *DocumentValidator) checkForDuplicationsWithPerspective(docs []*Document
 		for i, vendor := range doc.Vendors {
 			if _, ok := resourceIDs.VendorIDs[vendor.OrdID]; ok && forbidDuplications {
 				validationErrors = append(validationErrors, newCustomValidationError(vendor.OrdID, duplicateResourceCode, "duplicate vendor"))
+
 				invalidVendorsIndices = append(invalidVendorsIndices, i)
 			}
 			resourceIDs.VendorIDs[vendor.OrdID] = true

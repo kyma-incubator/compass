@@ -2,6 +2,7 @@ package ord_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -59,7 +60,7 @@ func TestValidationClient_Validate(t *testing.T) {
 	vc := ord.NewValidationClient("http://example.com", client)
 
 	// Test the Validate method
-	results, err := vc.Validate("ruleset", "requestBody")
+	results, err := vc.Validate(context.TODO(), "ruleset", "requestBody")
 	assert.NoError(t, err)
 	assert.NotNil(t, results)
 	assert.Equal(t, mockResponse, results)
@@ -72,7 +73,7 @@ func TestValidationClient_Validate_ReturnsError(t *testing.T) {
 	vc := ord.NewValidationClient("http://example.com", client)
 
 	// Test the Validate method
-	results, err := vc.Validate("ruleset", "requestBody")
+	results, err := vc.Validate(context.TODO(), "ruleset", "requestBody")
 	assert.Error(t, err)
 	assert.Nil(t, results)
 }
