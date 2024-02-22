@@ -27,6 +27,7 @@ const (
 	samlAssertionDestURL             = "test-saml-assertion-dest-url"
 	clientCertAuthDestName           = "test-client-cert-auth-dest-name"
 	oauth2ClientCredsDestName        = "test-oauth2-client-creds-dest-name"
+	oauth2mTLSDestName               = "test-oauth2-mTLS-dest-name"
 	destinationDescription           = "test-dest-description"
 	destinationTypeHTTP              = string(destinationcreatorpkg.TypeHTTP)
 	destinationProxyTypeInternet     = string(destinationcreatorpkg.ProxyTypeInternet)
@@ -44,6 +45,9 @@ const (
 	oauth2ClientCredsTokenURL        = "oauth2-token-url"
 	oauth2ClientCredsClientID        = "oauth2-client-id"
 	oauth2ClientCredsClientSecret    = "oauth2-client-secret"
+	oauth2mTLSURL                    = "oauth2-mTLS-url"
+	oauth2mTLSTokenURL               = "oauth2-mTLS-token-url"
+	oauth2mTLSClientID               = "oauth2-mTLS-client-id"
 
 	// Destination Certificate constants
 	certificateName            = "testCertificateName"
@@ -216,6 +220,12 @@ func fixOAuth2ClientCredsDestinationDetails() operators.Destination {
 	return dest
 }
 
+func fixOAuth2mTLSDestinationDetails() operators.Destination {
+	dest := fixDestinationDetails(oauth2mTLSDestName, string(destinationcreatorpkg.AuthTypeOAuth2mTLS), destinationExternalSubaccountID)
+	dest.TokenServiceURLType = string(destinationcreatorpkg.DedicatedTokenServiceURLType)
+	return dest
+}
+
 func fixDestinationsDetailsWithoutSubaccountID() []operators.Destination {
 	return []operators.Destination{
 		fixDestinationDetails(samlAssertionDestName, string(destinationcreatorpkg.AuthTypeSAMLAssertion), ""),
@@ -261,6 +271,14 @@ func fixOAuth2ClientCreds(url, tokenServiceURL, clientID, clientSecret string) *
 		TokenServiceURL: tokenServiceURL,
 		ClientID:        clientID,
 		ClientSecret:    clientSecret,
+	}
+}
+
+func fixOAuth2mTLSCreds(url, tokenServiceURL, clientID string) *operators.OAuth2mTLSAuthentication {
+	return &operators.OAuth2mTLSAuthentication{
+		URL:             url,
+		TokenServiceURL: tokenServiceURL,
+		ClientID:        clientID,
 	}
 }
 
