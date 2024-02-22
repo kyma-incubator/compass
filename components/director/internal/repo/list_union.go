@@ -143,7 +143,7 @@ func (l *unionLister) list(ctx context.Context, resourceType resource.Type, page
 		return nil, persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list page of objects from '%s' table", l.tableName)
 	}
 
-	if len(ids) <= MaxINClauseArgsLimit { 
+	if len(ids) <= MaxINClauseArgsLimit {
 		inCondition := NewInConditionForStringValues(idsColumn, ids)
 		conditions = append(conditions, inCondition)
 	}
