@@ -396,8 +396,8 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 				},
 			},
 			{
-				Query:    regexp.QuoteMeta(`SELECT app_id AS id, COUNT(*) AS total_count FROM public.integration_dependencies WHERE id IS NOT NULL AND (id IN (SELECT id FROM integration_dependencies_tenants WHERE tenant_id = $1)) GROUP BY app_id ORDER BY app_id ASC`),
-				Args:     []driver.Value{tenantID},
+				Query:    regexp.QuoteMeta(`SELECT app_id AS id, COUNT(*) AS total_count FROM public.integration_dependencies WHERE id IS NOT NULL AND (id IN (SELECT id FROM integration_dependencies_tenants WHERE tenant_id = $1)) AND app_id IN ($2, $3, $4) GROUP BY app_id ORDER BY app_id ASC`),
+				Args:     []driver.Value{tenantID, emptyPageAppID, onePageAppID, multiplePagesAppID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(emptyPageAppID, 0).AddRow(onePageAppID, 1).AddRow(multiplePagesAppID, 2)}
@@ -467,9 +467,9 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 			WithArgs(publicVisibility, tenantID, emptyPageAppID, pageSize, 0, publicVisibility, tenantID, onePageAppID, pageSize, 0, publicVisibility, tenantID, multiplePagesAppID, pageSize, 0).
 			WillReturnRows(rows)
 
-		countQuery := regexp.QuoteMeta(`SELECT app_id AS id, COUNT(*) AS total_count FROM public.integration_dependencies WHERE id IN (SELECT id FROM public.integration_dependencies WHERE visibility = $1) AND id IS NOT NULL AND (id IN (SELECT id FROM integration_dependencies_tenants WHERE tenant_id = $2)) GROUP BY app_id ORDER BY app_id ASC`)
+		countQuery := regexp.QuoteMeta(`SELECT app_id AS id, COUNT(*) AS total_count FROM public.integration_dependencies WHERE id IN (SELECT id FROM public.integration_dependencies WHERE visibility = $1) AND id IS NOT NULL AND (id IN (SELECT id FROM integration_dependencies_tenants WHERE tenant_id = $2)) AND app_id IN ($3, $4, $5) GROUP BY app_id ORDER BY app_id ASC`)
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(publicVisibility, tenantID).
+			WithArgs(publicVisibility, tenantID, emptyPageAppID, onePageAppID, multiplePagesAppID).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
 				AddRow(emptyPageAppID, 0).
 				AddRow(onePageAppID, 1).
