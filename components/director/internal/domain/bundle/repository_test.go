@@ -381,8 +381,8 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 				},
 			},
 			{
-				Query:    regexp.QuoteMeta(`SELECT app_id AS id, COUNT(*) AS total_count FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $1)) GROUP BY app_id ORDER BY app_id ASC`),
-				Args:     []driver.Value{tenantID},
+				Query:    regexp.QuoteMeta(`SELECT app_id AS id, COUNT(*) AS total_count FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $1)) AND app_id IN ($2, $3, $4) GROUP BY app_id ORDER BY app_id ASC`),
+				Args:     []driver.Value{tenantID, emptyPageAppID, onePageAppID, multiplePagesAppID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(emptyPageAppID, 0).AddRow(onePageAppID, 1).AddRow(multiplePagesAppID, 2)}

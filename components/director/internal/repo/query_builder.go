@@ -20,6 +20,8 @@ const (
 	NoLock string = ""
 	// NoLimit Represents missing limit clause in SELECT queries.
 	NoLimit int = 0
+	// MaxINClauseArgsLimit Represents a limit for arguments for queries with IN clause.
+	MaxINClauseArgsLimit int = 65500
 )
 
 // QueryBuilder is an interface for building queries about tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.
