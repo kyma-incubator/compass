@@ -174,7 +174,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3659"
+      version: "PR-3673"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -190,7 +190,7 @@ global:
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3608"
+      version: "PR-3662"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
@@ -210,7 +210,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3644"
+      version: "PR-3668"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
@@ -223,7 +223,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3659"
+      version: "PR-3673"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/

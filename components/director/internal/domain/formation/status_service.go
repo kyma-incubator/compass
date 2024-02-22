@@ -47,7 +47,7 @@ func (s *formationStatusService) UpdateWithConstraints(ctx context.Context, form
 	}
 
 	if err := s.formationRepository.Update(ctx, formation); err != nil {
-		if operation == model.DeleteFormation && apperrors.IsUnauthorizedError(err) { // the not found error is disguised behind the unauthorized error
+		if operation == model.DeleteFormation && (apperrors.IsNotFoundError(err) || apperrors.IsUnauthorizedError(err)) { // the not found error is disguised behind the unauthorized error in case of update
 			return nil
 		}
 		log.C(ctx).Errorf("An error occurred while updating formation with ID: %q", formation.ID)
